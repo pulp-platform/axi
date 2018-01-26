@@ -16,66 +16,75 @@
 //
 // This file defines the interfaces we support.
 
+import axi_pkg::*;
+
 
 /// An AXI4 interface.
-interface AXI_BUS
-#(
+interface AXI_BUS #(
    parameter AXI_ADDR_WIDTH = -1,
    parameter AXI_DATA_WIDTH = -1,
    parameter AXI_ID_WIDTH   = -1,
    parameter AXI_USER_WIDTH = -1
+)(
+  input logic clk_i
 );
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
-  logic [AXI_ID_WIDTH-1:0]    aw_id;
-  logic [AXI_ADDR_WIDTH-1:0]  aw_addr;
-  logic [7:0]                 aw_len;
-  logic [2:0]                 aw_size;
-  logic [1:0]                 aw_burst;
-  logic                       aw_lock;
-  logic [3:0]                 aw_cache;
-  logic [2:0]                 aw_prot;
-  logic [3:0]                 aw_qos;
-  logic [3:0]                 aw_region;
-  logic [AXI_USER_WIDTH-1:0]  aw_user;
-  logic                       aw_valid;
-  logic                       aw_ready;
+  typedef logic [AXI_ID_WIDTH-1:0]   id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
 
-  logic [AXI_DATA_WIDTH-1:0]  w_data;
-  logic [AXI_STRB_WIDTH-1:0]  w_strb;
-  logic                       w_last;
-  logic [AXI_USER_WIDTH-1:0]  w_user;
-  logic                       w_valid;
-  logic                       w_ready;
+  id_t        aw_id;
+  addr_t      aw_addr;
+  logic [7:0] aw_len;
+  logic [2:0] aw_size;
+  burst_t     aw_burst;
+  logic       aw_lock;
+  cache_t     aw_cache;
+  prot_t      aw_prot;
+  qos_t       aw_qos;
+  region_t    aw_region;
+  user_t      aw_user;
+  logic       aw_valid;
+  logic       aw_ready;
 
-  logic [AXI_ID_WIDTH-1:0]    b_id;
-  logic [1:0]                 b_resp;
-  logic [AXI_USER_WIDTH-1:0]  b_user;
-  logic                       b_valid;
-  logic                       b_ready;
+  data_t      w_data;
+  strb_t      w_strb;
+  logic       w_last;
+  user_t      w_user;
+  logic       w_valid;
+  logic       w_ready;
 
-  logic [AXI_ID_WIDTH-1:0]    ar_id;
-  logic [AXI_ADDR_WIDTH-1:0]  ar_addr;
-  logic [7:0]                 ar_len;
-  logic [2:0]                 ar_size;
-  logic [1:0]                 ar_burst;
-  logic                       ar_lock;
-  logic [3:0]                 ar_cache;
-  logic [2:0]                 ar_prot;
-  logic [3:0]                 ar_qos;
-  logic [3:0]                 ar_region;
-  logic [AXI_USER_WIDTH-1:0]  ar_user;
-  logic                       ar_valid;
-  logic                       ar_ready;
+  id_t        b_id;
+  resp_t      b_resp;
+  user_t      b_user;
+  logic       b_valid;
+  logic       b_ready;
 
-  logic [AXI_ID_WIDTH-1:0]    r_id;
-  logic [AXI_DATA_WIDTH-1:0]  r_data;
-  logic [1:0]                 r_resp;
-  logic                       r_last;
-  logic [AXI_USER_WIDTH-1:0]  r_user;
-  logic                       r_valid;
-  logic                       r_ready;
+  id_t        ar_id;
+  addr_t      ar_addr;
+  logic [7:0] ar_len;
+  logic [2:0] ar_size;
+  burst_t     ar_burst;
+  logic       ar_lock;
+  cache_t     ar_cache;
+  prot_t      ar_prot;
+  qos_t       ar_qos;
+  region_t    ar_region;
+  user_t      ar_user;
+  logic       ar_valid;
+  logic       ar_ready;
+
+  id_t        r_id;
+  data_t      r_data;
+  resp_t      r_resp;
+  logic       r_last;
+  user_t      r_user;
+  logic       r_valid;
+  logic       r_ready;
 
   modport Master (
     output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_user, aw_valid, input aw_ready,
@@ -178,35 +187,41 @@ endinterface
 
 
 /// An AXI4-Lite interface.
-interface AXI_LITE
-#(
+interface AXI_LITE #(
   parameter AXI_ADDR_WIDTH = -1,
   parameter AXI_DATA_WIDTH = -1
+)(
+  input logic clk_i
 );
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
-  logic [AXI_ADDR_WIDTH-1:0] aw_addr;
-  logic                      aw_valid;
-  logic                      aw_ready;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
 
-  logic [AXI_DATA_WIDTH-1:0] w_data;
-  logic [AXI_STRB_WIDTH-1:0] w_strb;
-  logic                      w_valid;
-  logic                      w_ready;
+  // AW channel
+  addr_t aw_addr;
+  logic  aw_valid;
+  logic  aw_ready;
 
-  logic [1:0]                b_resp;
-  logic                      b_valid;
-  logic                      b_ready;
+  data_t w_data;
+  strb_t w_strb;
+  logic  w_valid;
+  logic  w_ready;
 
-  logic [AXI_ADDR_WIDTH-1:0] ar_addr;
-  logic                      ar_valid;
-  logic                      ar_ready;
+  resp_t b_resp;
+  logic  b_valid;
+  logic  b_ready;
 
-  logic [AXI_DATA_WIDTH-1:0] r_data;
-  logic [1:0]                r_resp;
-  logic                      r_valid;
-  logic                      r_ready;
+  addr_t ar_addr;
+  logic  ar_valid;
+  logic  ar_ready;
+
+  data_t r_data;
+  resp_t r_resp;
+  logic  r_valid;
+  logic  r_ready;
 
   modport Master (
     output aw_addr, aw_valid, input aw_ready,
@@ -225,3 +240,480 @@ interface AXI_LITE
   );
 
 endinterface
+
+
+`ifndef SYNTHESIS
+package axi_test;
+
+  class axi_lite_driver #(
+    parameter AW,
+    parameter DW
+  );
+    virtual AXI_LITE #(
+      .AXI_ADDR_WIDTH(AW),
+      .AXI_DATA_WIDTH(DW)
+    ) axi;
+
+    function new(
+      virtual AXI_LITE #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW)
+      ) axi
+    );
+      this.axi = axi;
+    endfunction
+
+    task reset_master;
+      axi.aw_valid <= 0;
+      axi.w_valid  <= 0;
+      axi.b_ready  <= 0;
+      axi.ar_valid <= 0;
+      axi.r_ready  <= 0;
+    endtask
+
+    task reset_slave;
+      axi.aw_ready <= 0;
+      axi.w_ready  <= 0;
+      axi.b_valid  <= 0;
+      axi.ar_ready <= 0;
+      axi.r_valid  <= 0;
+    endtask
+
+    /// Issue a beat on the AW channel.
+    task send_aw (
+      input logic [AW-1:0] addr
+    );
+      axi.aw_addr  <= addr;
+      axi.aw_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.aw_ready != 1) @(posedge axi.clk_i);
+      axi.aw_addr  <= 'x;
+      axi.aw_valid <= 0;
+    endtask
+
+    /// Issue a beat on the W channel.
+    task send_w (
+      input logic [DW-1:0] data,
+      input logic [DW/8-1:0] strb
+    );
+      axi.w_data  <= data;
+      axi.w_strb  <= strb;
+      axi.w_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.w_ready != 1) @(posedge axi.clk_i);
+      axi.w_data  <= 'x;
+      axi.w_strb  <= 'x;
+      axi.w_valid <= 0;
+    endtask
+
+    /// Issue a beat on the B channel.
+    task send_b (
+      input axi_pkg::resp_t resp
+    );
+      axi.b_resp  <= resp;
+      axi.b_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.b_ready != 1) @(posedge axi.clk_i);
+      axi.b_resp  <= 'x;
+      axi.b_valid <= 0;
+    endtask
+
+    /// Issue a beat on the AR channel.
+    task send_ar (
+      input logic [AW-1:0] addr
+    );
+      axi.ar_addr  <= addr;
+      axi.ar_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.ar_ready != 1) @(posedge axi.clk_i);
+      axi.ar_addr  <= 'x;
+      axi.ar_valid <= 0;
+    endtask
+
+    /// Issue a beat on the R channel.
+    task send_r (
+      input logic [DW-1:0] data,
+      input axi_pkg::resp_t resp
+    );
+      axi.r_data  <= data;
+      axi.r_resp  <= resp;
+      axi.r_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.r_ready != 1) @(posedge axi.clk_i);
+      axi.r_data  <= 'x;
+      axi.r_resp  <= 'x;
+      axi.r_valid <= 0;
+    endtask
+
+    /// Wait for a beat on the AW channel.
+    task recv_aw (
+      output [AW-1:0] addr
+    );
+      axi.aw_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.aw_valid != 1) @(posedge axi.clk_i);
+      addr = axi.aw_addr;
+      axi.aw_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the W channel.
+    task recv_w (
+      output [DW-1:0] data,
+      output [DW/8-1:0] strb
+    );
+      axi.w_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.w_valid != 1) @(posedge axi.clk_i);
+      data = axi.w_data;
+      strb = axi.w_strb;
+      axi.w_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the B channel.
+    task recv_b (
+      output axi_pkg::resp_t resp
+    );
+      axi.b_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.b_valid != 1) @(posedge axi.clk_i);
+      resp = axi.b_resp;
+      axi.b_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the AR channel.
+    task recv_ar (
+      output [AW-1:0] addr
+    );
+      axi.ar_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.ar_valid != 1) @(posedge axi.clk_i);
+      addr = axi.ar_addr;
+      axi.ar_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the R channel.
+    task recv_r (
+      output [DW-1:0] data,
+      output axi_pkg::resp_t resp
+    );
+      axi.r_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.r_valid != 1) @(posedge axi.clk_i);
+      data = axi.r_data;
+      resp = axi.r_resp;
+      axi.r_ready <= 0;
+    endtask
+
+  endclass
+
+
+  /// The data transferred on a beat on the AW/AR channels.
+  class axi_ax_beat #(
+    parameter AW,
+    parameter IW,
+    parameter UW
+  );
+    rand logic [IW-1:0] ax_id     = '0;
+    rand logic [AW-1:0] ax_addr   = '0;
+    logic [7:0]         ax_len    = '0;
+    logic [2:0]         ax_size   = '0;
+    logic [1:0]         ax_burst  = '0;
+    logic               ax_lock   = '0;
+    logic [3:0]         ax_cache  = '0;
+    logic [2:0]         ax_prot   = '0;
+    logic [3:0]         ax_qos    = '0;
+    logic [3:0]         ax_region = '0;
+    rand logic [UW-1:0] ax_user   = '0;
+  endclass
+
+  /// The data transferred on a beat on the W channel.
+  class axi_w_beat #(
+    parameter DW,
+    parameter UW
+  );
+    rand logic [DW-1:0]   w_data = '0;
+    rand logic [DW/8-1:0] w_strb = '0;
+    logic                 w_last = '0;
+    rand logic [UW-1:0]   w_user = '0;
+  endclass
+
+  /// The data transferred on a beat on the B channel.
+  class axi_b_beat #(
+    parameter IW,
+    parameter UW
+  );
+    rand logic [IW-1:0] b_id   = '0;
+    axi_pkg::resp_t     b_resp = '0;
+    rand logic [UW-1:0] b_user = '0;
+  endclass
+
+  /// The data transferred on a beat on the R channel.
+  class axi_r_beat #(
+    parameter DW,
+    parameter IW,
+    parameter UW
+  );
+    rand logic [IW-1:0] r_id   = '0;
+    rand logic [DW-1:0] r_data = '0;
+    axi_pkg::resp_t     r_resp = '0;
+    logic               r_last = '0;
+    rand logic [UW-1:0] r_user = '0;
+  endclass
+
+
+  class axi_driver #(
+    parameter AW,
+    parameter DW,
+    parameter IW,
+    parameter UW
+  );
+    virtual AXI_BUS #(
+      .AXI_ADDR_WIDTH(AW),
+      .AXI_DATA_WIDTH(DW),
+      .AXI_ID_WIDTH(IW),
+      .AXI_USER_WIDTH(UW)
+    ) axi;
+
+    typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat_t;
+    typedef axi_w_beat #(.DW(DW), .UW(UW))            w_beat_t;
+    typedef axi_b_beat #(.IW(IW), .UW(UW))            b_beat_t;
+    typedef axi_r_beat #(.DW(DW), .IW(IW), .UW(UW))   r_beat_t;
+
+    function new(
+      virtual AXI_BUS #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_USER_WIDTH(UW)
+      ) axi
+    );
+      this.axi = axi;
+    endfunction
+
+    task reset_master;
+      axi.aw_valid <= 0;
+      axi.w_valid  <= 0;
+      axi.b_ready  <= 0;
+      axi.ar_valid <= 0;
+      axi.r_ready  <= 0;
+    endtask
+
+    task reset_slave;
+      axi.aw_ready <= 0;
+      axi.w_ready  <= 0;
+      axi.b_valid  <= 0;
+      axi.ar_ready <= 0;
+      axi.r_valid  <= 0;
+    endtask
+
+    /// Issue a beat on the AW channel.
+    task send_aw (
+      input ax_beat_t beat
+    );
+      axi.aw_id     <= beat.ax_id;
+      axi.aw_addr   <= beat.ax_addr;
+      axi.aw_len    <= beat.ax_len;
+      axi.aw_size   <= beat.ax_size;
+      axi.aw_burst  <= beat.ax_burst;
+      axi.aw_lock   <= beat.ax_lock;
+      axi.aw_cache  <= beat.ax_cache;
+      axi.aw_prot   <= beat.ax_prot;
+      axi.aw_qos    <= beat.ax_qos;
+      axi.aw_region <= beat.ax_region;
+      axi.aw_user   <= beat.ax_user;
+      axi.aw_valid  <= 1;
+      @(posedge axi.clk_i);
+      while (axi.aw_ready != 1) @(posedge axi.clk_i);
+      axi.aw_id     <= 'x;
+      axi.aw_addr   <= 'x;
+      axi.aw_len    <= 'x;
+      axi.aw_size   <= 'x;
+      axi.aw_burst  <= 'x;
+      axi.aw_lock   <= 'x;
+      axi.aw_cache  <= 'x;
+      axi.aw_prot   <= 'x;
+      axi.aw_qos    <= 'x;
+      axi.aw_region <= 'x;
+      axi.aw_user   <= 'x;
+      axi.aw_valid  <= 0;
+    endtask
+
+    /// Issue a beat on the W channel.
+    task send_w (
+      input w_beat_t beat
+    );
+      axi.w_data  <= beat.w_data;
+      axi.w_strb  <= beat.w_strb;
+      axi.w_last  <= beat.w_last;
+      axi.w_user  <= beat.w_user;
+      axi.w_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.w_ready != 1) @(posedge axi.clk_i);
+      axi.w_data  <= 'x;
+      axi.w_strb  <= 'x;
+      axi.w_last  <= 'x;
+      axi.w_user  <= 'x;
+      axi.w_valid <= 0;
+    endtask
+
+    /// Issue a beat on the B channel.
+    task send_b (
+      input b_beat_t beat
+    );
+      axi.b_id    <= beat.b_id;
+      axi.b_resp  <= beat.b_resp;
+      axi.b_user  <= beat.b_user;
+      axi.b_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.b_ready != 1) @(posedge axi.clk_i);
+      axi.b_id    <= 'x;
+      axi.b_resp  <= 'x;
+      axi.b_user  <= 'x;
+      axi.b_valid <= 0;
+    endtask
+
+    /// Issue a beat on the AR channel.
+    task send_ar (
+      input ax_beat_t beat
+    );
+      axi.ar_id     <= beat.ax_id;
+      axi.ar_addr   <= beat.ax_addr;
+      axi.ar_len    <= beat.ax_len;
+      axi.ar_size   <= beat.ax_size;
+      axi.ar_burst  <= beat.ax_burst;
+      axi.ar_lock   <= beat.ax_lock;
+      axi.ar_cache  <= beat.ax_cache;
+      axi.ar_prot   <= beat.ax_prot;
+      axi.ar_qos    <= beat.ax_qos;
+      axi.ar_region <= beat.ax_region;
+      axi.ar_user   <= beat.ax_user;
+      axi.ar_valid  <= 1;
+      @(posedge axi.clk_i);
+      while (axi.ar_ready != 1) @(posedge axi.clk_i);
+      axi.ar_id     <= 'x;
+      axi.ar_addr   <= 'x;
+      axi.ar_len    <= 'x;
+      axi.ar_size   <= 'x;
+      axi.ar_burst  <= 'x;
+      axi.ar_lock   <= 'x;
+      axi.ar_cache  <= 'x;
+      axi.ar_prot   <= 'x;
+      axi.ar_qos    <= 'x;
+      axi.ar_region <= 'x;
+      axi.ar_user   <= 'x;
+      axi.ar_valid  <= 0;
+    endtask
+
+    /// Issue a beat on the R channel.
+    task send_r (
+      input r_beat_t beat
+    );
+      axi.r_id    <= beat.r_id;
+      axi.r_data  <= beat.r_data;
+      axi.r_resp  <= beat.r_resp;
+      axi.r_last  <= beat.r_last;
+      axi.r_user  <= beat.r_user;
+      axi.r_valid <= 1;
+      @(posedge axi.clk_i);
+      while (axi.r_ready != 1) @(posedge axi.clk_i);
+      axi.r_id    <= 'x;
+      axi.r_data  <= 'x;
+      axi.r_resp  <= 'x;
+      axi.r_last  <= 'x;
+      axi.r_user  <= 'x;
+      axi.r_valid <= 0;
+    endtask
+
+    /// Wait for a beat on the AW channel.
+    task recv_aw (
+      output ax_beat_t beat
+    );
+      axi.aw_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.aw_valid != 1) @(posedge axi.clk_i);
+      beat = new;
+      beat.ax_id     = axi.aw_id;
+      beat.ax_addr   = axi.aw_addr;
+      beat.ax_len    = axi.aw_len;
+      beat.ax_size   = axi.aw_size;
+      beat.ax_burst  = axi.aw_burst;
+      beat.ax_lock   = axi.aw_lock;
+      beat.ax_cache  = axi.aw_cache;
+      beat.ax_prot   = axi.aw_prot;
+      beat.ax_qos    = axi.aw_qos;
+      beat.ax_region = axi.aw_region;
+      beat.ax_user   = axi.aw_user;
+      axi.aw_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the W channel.
+    task recv_w (
+      output w_beat_t beat
+    );
+      axi.w_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.w_valid != 1) @(posedge axi.clk_i);
+      beat = new;
+      beat.w_data = axi.w_data;
+      beat.w_strb = axi.w_strb;
+      beat.w_last = axi.w_last;
+      beat.w_user = axi.w_user;
+      axi.w_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the B channel.
+    task recv_b (
+      output b_beat_t beat
+    );
+      axi.b_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.b_valid != 1) @(posedge axi.clk_i);
+      beat = new;
+      beat.b_id   = axi.b_id;
+      beat.b_resp = axi.b_resp;
+      beat.b_user = axi.b_user;
+      axi.b_ready <= 0;
+    endtask
+
+    /// Wait for a beat on the AR channel.
+    task recv_ar (
+      output ax_beat_t beat
+    );
+      axi.ar_ready  <= 1;
+      @(posedge axi.clk_i);
+      while (axi.ar_valid != 1) @(posedge axi.clk_i);
+      beat = new;
+      beat.ax_id     = axi.ar_id;
+      beat.ax_addr   = axi.ar_addr;
+      beat.ax_len    = axi.ar_len;
+      beat.ax_size   = axi.ar_size;
+      beat.ax_burst  = axi.ar_burst;
+      beat.ax_lock   = axi.ar_lock;
+      beat.ax_cache  = axi.ar_cache;
+      beat.ax_prot   = axi.ar_prot;
+      beat.ax_qos    = axi.ar_qos;
+      beat.ax_region = axi.ar_region;
+      beat.ax_user   = axi.ar_user;
+      axi.aw_ready  <= 0;
+    endtask
+
+    /// Wait for a beat on the R channel.
+    task recv_r (
+      output r_beat_t beat
+    );
+      axi.r_ready <= 1;
+      @(posedge axi.clk_i);
+      while (axi.r_valid != 1) @(posedge axi.clk_i);
+      beat = new;
+      beat.r_id   = axi.r_id;
+      beat.r_data = axi.r_data;
+      beat.r_resp = axi.r_resp;
+      beat.r_last = axi.r_last;
+      beat.r_user = axi.r_user;
+      axi.r_ready <= 0;
+    endtask
+
+  endclass
+
+endpackage
+`endif
