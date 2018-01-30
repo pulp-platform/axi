@@ -58,6 +58,14 @@ module axi_to_axi_lite #(
     logic [$bits(slave.b_user)-1:0] user;
   } meta_wr_t;
 
+  // HACK: Rather than passing a meta_rd_t and meta_wr_t into the FIFO's data_o
+  //       port, we destructure it into the constituent fields. If we don't do
+  //       this, Synopsys DC 2016.03 throws an "Internal Error" on "meta_rd.id".
+  logic [$bits(slave.r_id)-1:0] meta_rd_id;
+  logic [$bits(slave.r_user)-1:0] meta_rd_user;
+  logic [$bits(slave.b_id)-1:0] meta_wr_id;
+  logic [$bits(slave.b_user)-1:0] meta_wr_user;
+
   // The two FIFOs which hold the transaction information.
   logic rd_full;
   logic wr_full;
@@ -77,7 +85,8 @@ module axi_to_axi_lite #(
     .push_i  ( slave.ar_ready & slave.ar_valid              ),
     // After the last response on the R channel we pop the metadata off the
     // queue.
-    .data_o  ( meta_rd                                      ),
+    .data_o  ( {meta_rd_id, meta_rd_user}                   ),
+    // .data_o  ( meta_rd                                      ),
     .pop_i   ( slave.r_valid & slave.r_ready & slave.r_last )
   );
 
@@ -93,7 +102,8 @@ module axi_to_axi_lite #(
     .data_i  ( {slave.aw_id, slave.aw_user}    ),
     .push_i  ( slave.aw_ready & slave.aw_valid ),
     // After the response on the B channel we pop the metadata off the queue.
-    .data_o  ( meta_wr                         ),
+    .data_o  ( {meta_wr_id, meta_wr_user}                   ),
+    // .data_o  ( meta_wr                                      ),
     .pop_i   ( slave.b_valid & slave.b_ready   )
   );
 
@@ -112,17 +122,17 @@ module axi_to_axi_lite #(
   assign slave.w_ready  = master.w_ready;
 
   // Inject the metadata again on the B and R return paths.
-  assign slave.b_id     = meta_wr.id;
+  assign slave.b_id     = meta_wr_id;
   assign slave.b_resp   = master.b_resp;
-  assign slave.b_user   = meta_wr.user;
+  assign slave.b_user   = meta_wr_user;
   assign slave.b_valid  = master.b_valid;
   assign master.b_ready = slave.b_ready;
 
-  assign slave.r_id     = meta_wr.id;
+  assign slave.r_id     = meta_rd_id;
   assign slave.r_data   = master.r_data;
   assign slave.r_resp   = master.r_resp;
   assign slave.r_last   = '1;
-  assign slave.r_user   = meta_wr.user;
+  assign slave.r_user   = meta_rd_user;
   assign slave.r_valid  = master.r_valid;
   assign master.r_ready = slave.r_ready;
 
