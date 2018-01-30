@@ -18,7 +18,9 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 $VLOG -sv \
 	"$ROOT"/src/axi_pkg.sv \
 	"$ROOT"/src/axi_intf.sv \
+	"$ROOT"/src/axi_fifo.sv \
 	"$ROOT"/src/axi_to_axi_lite.sv \
 	"$ROOT"/src/axi_lite_to_axi.sv \
 	"$ROOT"/test/tb_axi_lite_to_axi.sv \
+	"$ROOT"/test/tb_axi_to_axi_lite.sv \
 	"$ROOT"/test/synth_bench.sv

@@ -14,6 +14,7 @@ set ROOT [file normalize [file join [file dirname [info script]] ..]]
 analyze -format sv [list \
 	$ROOT/src/axi_pkg.sv \
 	$ROOT/src/axi_intf.sv \
+	$ROOT/src/axi_fifo.sv \
 	$ROOT/src/axi_to_axi_lite.sv \
 	$ROOT/src/axi_lite_to_axi.sv \
 	$ROOT/test/synth_bench.sv \
