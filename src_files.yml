@@ -5,3 +5,5 @@ axi:
     - src/axi_fifo.sv
     - src/axi_to_axi_lite.sv
     - src/axi_lite_to_axi.sv
+    - src/axi_lite_xbar.sv
+    - src/axi_arbiter.sv

@@ -24,3 +24,9 @@ for DW in 8 16 32 64 128 256 512 1024; do
 	call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
 	call_vsim tb_axi_to_axi_lite -GDW=$DW -t 1ps -c
 done
+
+for NM in 1 2 3 8; do
+	for NS in 1 2 3 8; do
+		call_vsim tb_axi_lite_xbar -GNUM_MASTER=$NM -GNUM_SLAVE=$NS -t 1ps -c
+	done
+done

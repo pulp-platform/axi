@@ -16,4 +16,5 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 [ ! -z "$VLOG" ] || VLOG="synopsys dc_shell -64"
 
 cat "$ROOT"/scripts/synth.tcl | $SYNOPSYS_DC | tee synth.log 2>&1
+grep -i "warning:" synth.log || true
 ! grep -i "error:" synth.log

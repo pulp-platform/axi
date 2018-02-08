@@ -17,6 +17,10 @@ analyze -format sv [list \
 	$ROOT/src/axi_fifo.sv \
 	$ROOT/src/axi_to_axi_lite.sv \
 	$ROOT/src/axi_lite_to_axi.sv \
+	$ROOT/src/axi_lite_xbar.sv \
+	$ROOT/src/axi_arbiter.sv \
+	$ROOT/src/axi_address_resolver.sv \
+	$ROOT/src/axi_find_first_one.sv \
 	$ROOT/test/synth_bench.sv \
 ]
 

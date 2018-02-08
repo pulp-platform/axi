@@ -21,10 +21,10 @@ import axi_pkg::*;
 
 /// An AXI4 interface.
 interface AXI_BUS #(
-   parameter AXI_ADDR_WIDTH = -1,
-   parameter AXI_DATA_WIDTH = -1,
-   parameter AXI_ID_WIDTH   = -1,
-   parameter AXI_USER_WIDTH = -1
+  parameter AXI_ADDR_WIDTH = -1,
+  parameter AXI_DATA_WIDTH = -1,
+  parameter AXI_ID_WIDTH   = -1,
+  parameter AXI_USER_WIDTH = -1
 )(
   input logic clk_i
 );
@@ -95,6 +95,24 @@ interface AXI_BUS #(
   );
 
   modport Slave (
+    input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_user, aw_valid, output aw_ready,
+    input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
+    output b_id, b_resp, b_user, b_valid, input b_ready,
+    input ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, output ar_ready,
+    output r_id, r_data, r_resp, r_last, r_user, r_valid, input r_ready
+  );
+
+  /// The interface as an output (issuing requests, initiator, master).
+  modport out (
+    output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_user, aw_valid, input aw_ready,
+    output w_data, w_strb, w_last, w_user, w_valid, input w_ready,
+    input b_id, b_resp, b_user, b_valid, output b_ready,
+    output ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, input ar_ready,
+    input r_id, r_data, r_resp, r_last, r_user, r_valid, output r_ready
+  );
+
+  /// The interface as an input (accepting requests, target, slave).
+  modport in (
     input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_user, aw_valid, output aw_ready,
     input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
     output b_id, b_resp, b_user, b_valid, input b_ready,
@@ -228,7 +246,7 @@ interface AXI_LITE #(
     output w_data, w_strb, w_valid, input w_ready,
     input b_resp, b_valid, output b_ready,
     output ar_addr, ar_valid, input ar_ready,
-    input  r_data, r_resp, r_valid, output r_ready
+    input r_data, r_resp, r_valid, output r_ready
   );
 
   modport Slave (
@@ -236,7 +254,25 @@ interface AXI_LITE #(
     input w_data, w_strb, w_valid, output w_ready,
     output b_resp, b_valid, input b_ready,
     input ar_addr, ar_valid, output ar_ready,
-    output  r_data, r_resp, r_valid, input r_ready
+    output r_data, r_resp, r_valid, input r_ready
+  );
+
+  /// The interface as an output (issuing requests, initiator, master).
+  modport out (
+    output aw_addr, aw_valid, input aw_ready,
+    output w_data, w_strb, w_valid, input w_ready,
+    input b_resp, b_valid, output b_ready,
+    output ar_addr, ar_valid, input ar_ready,
+    input r_data, r_resp, r_valid, output r_ready
+  );
+
+  /// The interface as an input (accepting requests, target, slave).
+  modport in (
+    input aw_addr, aw_valid, output aw_ready,
+    input w_data, w_strb, w_valid, output w_ready,
+    output b_resp, b_valid, input b_ready,
+    input ar_addr, ar_valid, output ar_ready,
+    output r_data, r_resp, r_valid, input r_ready
   );
 
 endinterface
@@ -246,8 +282,10 @@ endinterface
 package axi_test;
 
   class axi_lite_driver #(
-    parameter AW,
-    parameter DW
+    parameter int AW,
+    parameter int DW,
+    parameter time TA = 0ns, // stimuli application time
+    parameter time TT = 0ns  // stimuli test time
   );
     virtual AXI_LITE #(
       .AXI_ADDR_WIDTH(AW),
@@ -264,31 +302,47 @@ package axi_test;
     endfunction
 
     task reset_master;
+      axi.aw_addr  <= 0;
       axi.aw_valid <= 0;
       axi.w_valid  <= 0;
+      axi.w_data   <= 0;
+      axi.w_strb   <= 0;
       axi.b_ready  <= 0;
       axi.ar_valid <= 0;
+      axi.ar_addr  <= 0;
       axi.r_ready  <= 0;
     endtask
 
     task reset_slave;
       axi.aw_ready <= 0;
       axi.w_ready  <= 0;
+      axi.b_resp   <= 0;
       axi.b_valid  <= 0;
       axi.ar_ready <= 0;
+      axi.r_data   <= 0;
+      axi.r_resp   <= 0;
       axi.r_valid  <= 0;
+    endtask
+
+    task cycle_start;
+      #TT;
+    endtask
+
+    task cycle_end;
+      @(posedge axi.clk_i);
     endtask
 
     /// Issue a beat on the AW channel.
     task send_aw (
       input logic [AW-1:0] addr
     );
-      axi.aw_addr  <= addr;
-      axi.aw_valid <= 1;
-      @(posedge axi.clk_i);
-      while (axi.aw_ready != 1) @(posedge axi.clk_i);
-      axi.aw_addr  <= 'x;
-      axi.aw_valid <= 0;
+      axi.aw_addr  <= #TA addr;
+      axi.aw_valid <= #TA 1;
+      cycle_start();
+      while (axi.aw_ready != 1) begin cycle_end(); cycle_start(); end
+      cycle_end();
+      axi.aw_addr  <= #TA '0;
+      axi.aw_valid <= #TA 0;
     endtask
 
     /// Issue a beat on the W channel.
@@ -296,38 +350,41 @@ package axi_test;
       input logic [DW-1:0] data,
       input logic [DW/8-1:0] strb
     );
-      axi.w_data  <= data;
-      axi.w_strb  <= strb;
-      axi.w_valid <= 1;
-      @(posedge axi.clk_i);
-      while (axi.w_ready != 1) @(posedge axi.clk_i);
-      axi.w_data  <= 'x;
-      axi.w_strb  <= 'x;
-      axi.w_valid <= 0;
+      axi.w_data  <= #TA data;
+      axi.w_strb  <= #TA strb;
+      axi.w_valid <= #TA 1;
+      cycle_start();
+      while (axi.w_ready != 1) begin cycle_end(); cycle_start(); end
+      cycle_end();
+      axi.w_data  <= #TA '0;
+      axi.w_strb  <= #TA '0;
+      axi.w_valid <= #TA 0;
     endtask
 
     /// Issue a beat on the B channel.
     task send_b (
       input axi_pkg::resp_t resp
     );
-      axi.b_resp  <= resp;
-      axi.b_valid <= 1;
-      @(posedge axi.clk_i);
-      while (axi.b_ready != 1) @(posedge axi.clk_i);
-      axi.b_resp  <= 'x;
-      axi.b_valid <= 0;
+      axi.b_resp  <= #TA resp;
+      axi.b_valid <= #TA 1;
+      cycle_start();
+      while (axi.b_ready != 1) begin cycle_end(); cycle_start(); end
+      cycle_end();
+      axi.b_resp  <= #TA '0;
+      axi.b_valid <= #TA 0;
     endtask
 
     /// Issue a beat on the AR channel.
     task send_ar (
       input logic [AW-1:0] addr
     );
-      axi.ar_addr  <= addr;
-      axi.ar_valid <= 1;
-      @(posedge axi.clk_i);
-      while (axi.ar_ready != 1) @(posedge axi.clk_i);
-      axi.ar_addr  <= 'x;
-      axi.ar_valid <= 0;
+      axi.ar_addr  <= #TA addr;
+      axi.ar_valid <= #TA 1;
+      cycle_start();
+      while (axi.ar_ready != 1) begin cycle_end(); cycle_start(); end
+      cycle_end();
+      axi.ar_addr  <= #TA '0;
+      axi.ar_valid <= #TA 0;
     endtask
 
     /// Issue a beat on the R channel.
@@ -335,25 +392,27 @@ package axi_test;
       input logic [DW-1:0] data,
       input axi_pkg::resp_t resp
     );
-      axi.r_data  <= data;
-      axi.r_resp  <= resp;
-      axi.r_valid <= 1;
-      @(posedge axi.clk_i);
-      while (axi.r_ready != 1) @(posedge axi.clk_i);
-      axi.r_data  <= 'x;
-      axi.r_resp  <= 'x;
-      axi.r_valid <= 0;
+      axi.r_data  <= #TA data;
+      axi.r_resp  <= #TA resp;
+      axi.r_valid <= #TA 1;
+      cycle_start();
+      while (axi.r_ready != 1) begin cycle_end(); cycle_start(); end
+      cycle_end();
+      axi.r_data  <= #TA '0;
+      axi.r_resp  <= #TA '0;
+      axi.r_valid <= #TA 0;
     endtask
 
     /// Wait for a beat on the AW channel.
     task recv_aw (
       output [AW-1:0] addr
     );
-      axi.aw_ready <= 1;
-      @(posedge axi.clk_i);
-      while (axi.aw_valid != 1) @(posedge axi.clk_i);
+      axi.aw_ready <= #TA 1;
+      cycle_start();
+      while (axi.aw_valid != 1) begin cycle_end(); cycle_start(); end
       addr = axi.aw_addr;
-      axi.aw_ready <= 0;
+      cycle_end();
+      axi.aw_ready <= #TA 0;
     endtask
 
     /// Wait for a beat on the W channel.
@@ -361,34 +420,37 @@ package axi_test;
       output [DW-1:0] data,
       output [DW/8-1:0] strb
     );
-      axi.w_ready <= 1;
-      @(posedge axi.clk_i);
-      while (axi.w_valid != 1) @(posedge axi.clk_i);
+      axi.w_ready <= #TA 1;
+      cycle_start();
+      while (axi.w_valid != 1) begin cycle_end(); cycle_start(); end
       data = axi.w_data;
       strb = axi.w_strb;
-      axi.w_ready <= 0;
+      cycle_end();
+      axi.w_ready <= #TA 0;
     endtask
 
     /// Wait for a beat on the B channel.
     task recv_b (
       output axi_pkg::resp_t resp
     );
-      axi.b_ready <= 1;
-      @(posedge axi.clk_i);
-      while (axi.b_valid != 1) @(posedge axi.clk_i);
+      axi.b_ready <= #TA 1;
+      cycle_start();
+      while (axi.b_valid != 1) begin cycle_end(); cycle_start(); end
       resp = axi.b_resp;
-      axi.b_ready <= 0;
+      cycle_end();
+      axi.b_ready <= #TA 0;
     endtask
 
     /// Wait for a beat on the AR channel.
     task recv_ar (
       output [AW-1:0] addr
     );
-      axi.ar_ready <= 1;
-      @(posedge axi.clk_i);
-      while (axi.ar_valid != 1) @(posedge axi.clk_i);
+      axi.ar_ready <= #TA 1;
+      cycle_start();
+      while (axi.ar_valid != 1) begin cycle_end(); cycle_start(); end
       addr = axi.ar_addr;
-      axi.ar_ready <= 0;
+      cycle_end();
+      axi.ar_ready <= #TA 0;
     endtask
 
     /// Wait for a beat on the R channel.
@@ -396,12 +458,13 @@ package axi_test;
       output [DW-1:0] data,
       output axi_pkg::resp_t resp
     );
-      axi.r_ready <= 1;
-      @(posedge axi.clk_i);
-      while (axi.r_valid != 1) @(posedge axi.clk_i);
+      axi.r_ready <= #TA 1;
+      cycle_start();
+      while (axi.r_valid != 1) begin cycle_end(); cycle_start(); end
       data = axi.r_data;
       resp = axi.r_resp;
-      axi.r_ready <= 0;
+      cycle_end();
+      axi.r_ready <= #TA 0;
     endtask
 
   endclass
@@ -717,3 +780,52 @@ package axi_test;
 
 endpackage
 `endif
+
+
+/// An AXI routing table.
+///
+/// For each slave, multiple rules can be defined. Each rule consists of an
+/// address mask and a base. Addresses are masked and then compared against the
+/// base to decide where transfers need to go.
+interface AXI_ROUTING_RULES #(
+  /// The address width.
+  parameter int AXI_ADDR_WIDTH = -1,
+  /// The number of slaves in the routing table.
+  parameter int NUM_SLAVE  = -1,
+  /// The number of rules in the routing table.
+  parameter int NUM_RULES  = -1
+);
+
+  struct packed {
+    logic [AXI_ADDR_WIDTH-1:0] mask;
+    logic [AXI_ADDR_WIDTH-1:0] base;
+  } [NUM_RULES-1:0] rules [NUM_SLAVE];
+
+  modport xbar(input rules);
+  modport cfg(output rules);
+
+endinterface
+
+
+/// An AXI arbitration interface.
+interface AXI_ARBITRATION #(
+  /// The number of requestors.
+  parameter int NUM_REQ = -1
+);
+
+  // Incoming requests.
+  logic [NUM_REQ-1:0] in_req;
+  logic [NUM_REQ-1:0] in_ack;
+
+  // Outgoing request.
+  logic out_req;
+  logic out_ack;
+  logic [$clog2(NUM_REQ)-1:0] out_sel;
+
+  // The arbiter side of the interface.
+  modport arb(input  in_req, out_ack, output out_req, out_sel, in_ack);
+
+  // The requestor side of the interface.
+  modport req(output in_req, out_ack, input  out_req, out_sel, in_ack);
+
+endinterface
