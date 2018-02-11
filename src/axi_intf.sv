@@ -160,8 +160,8 @@ interface AXI_BUS_ASYNC
   logic [AXI_ID_WIDTH-1:0]    b_id;
   logic [1:0]                 b_resp;
   logic [AXI_USER_WIDTH-1:0]  b_user;
-  logic                       b_writetoken;
-  logic                       b_readpointer;
+  logic [BUFFER_WIDTH-1:0]    b_writetoken;
+  logic [BUFFER_WIDTH-1:0]    b_readpointer;
 
   logic [AXI_ID_WIDTH-1:0]    ar_id;
   logic [AXI_ADDR_WIDTH-1:0]  ar_addr;
