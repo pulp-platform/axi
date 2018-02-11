@@ -797,6 +797,7 @@ interface AXI_ROUTING_RULES #(
 );
 
   struct packed {
+    logic enabled;
     logic [AXI_ADDR_WIDTH-1:0] mask;
     logic [AXI_ADDR_WIDTH-1:0] base;
   } [NUM_RULES-1:0] rules [NUM_SLAVE];

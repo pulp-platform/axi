@@ -36,9 +36,9 @@ module axi_arbiter (
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
-      count_q <= 0;
+      count_q <= '0;
     end else if (arb.out_req && arb.out_ack) begin
-      count_q <= (count_d == $bits(arb.in_req) ? 0 : count_d);
+      count_q <= (count_d == $bits(arb.in_req) ? '0 : count_d);
     end
   end
 
@@ -72,7 +72,8 @@ module axi_arbiter_tree #(
 
   // Calculate the number of requests after the head multiplexers. This is equal
   // to ceil(NUM_REQ/2).
-  localparam NUM_INNER_REQ = (NUM_REQ+1)/2;
+  localparam int NUM_INNER_REQ = NUM_REQ > 0 ? 2**($clog2(NUM_REQ)-1) : 0;
+  localparam logic [ID_WIDTH:0] ID_MASK = (1 << ID_WIDTH) - 1;
 
   // Extract the bit that we use for shifting the priorities in the head.
   logic shift_bit;
@@ -104,11 +105,11 @@ module axi_arbiter_tree #(
       assign inner_req[i] = in_req_i[iA] | in_req_i[iB];
       assign in_ack_o[iA] = inner_ack[i] && (sel == 0);
       assign in_ack_o[iB] = inner_ack[i] && (sel == 1);
-      assign inner_id[i]  = (sel ? in_id_i[iB] : in_id_i[iA]) << 1 | sel;
-    end else begin
+      assign inner_id[i]  = (sel << ID_WIDTH) | ((sel ? in_id_i[iB] : in_id_i[iA]) & ID_MASK);
+    end else if (iA < NUM_REQ) begin
       assign inner_req[i] = in_req_i[iA];
       assign in_ack_o[iA] = inner_ack[i];
-      assign inner_id[i]  = in_id_i[iA] << 1 | 0;
+      assign inner_id[i]  = in_id_i[iA] & ID_MASK;
     end
   end
 
@@ -131,8 +132,9 @@ module axi_arbiter_tree #(
     assign inner_ack = out_ack_i;
     assign out_id_o  = inner_id[0];
   end else begin : g_tail
-    assign out_req_o = '0;
-    assign out_id_o  = '0;
+    assign out_req_o   = in_req_i[0];
+    assign in_ack_o[0] = out_ack_i;
+    assign out_id_o    = in_id_i[0];
   end
 
 endmodule

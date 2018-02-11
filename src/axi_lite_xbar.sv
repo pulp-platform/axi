@@ -73,12 +73,12 @@ module axi_lite_xbar_simple #(
   /// The number of slave ports.
   parameter int NUM_SLAVE = 1
 )(
-  input logic            clk_i                   ,
-  input logic            rst_ni                  ,
-  AXI_LITE.in            master [NUM_MASTER-1:0] ,
-  AXI_LITE.out           slave  [NUM_SLAVE-1:0]  ,
-  AXI_ROUTING_RULES.xbar rules                   ,
-  AXI_ARBITRATION.req    arb_rd                  ,
+  input logic            clk_i               ,
+  input logic            rst_ni              ,
+  AXI_LITE.in            master [NUM_MASTER] ,
+  AXI_LITE.out           slave  [NUM_SLAVE]  ,
+  AXI_ROUTING_RULES.xbar rules               ,
+  AXI_ARBITRATION.req    arb_rd              ,
   AXI_ARBITRATION.req    arb_wr
 );
 

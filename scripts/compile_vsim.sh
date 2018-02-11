@@ -32,7 +32,3 @@ $VLOG -sv \
 	"$ROOT"/test/synth_bench.sv
 
 VOPTFLAGS="+cover=bcfst+/dut"
-
-for top in tb_axi_lite_to_axi tb_axi_to_axi_lite synth_bench; do
-	$VOPT $VOPT_FLAGS ${top} -o ${top}_opt +acc -check_synthesis
-done

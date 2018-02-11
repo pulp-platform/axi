@@ -25,6 +25,12 @@ module axi_find_first_one #(
 
   localparam int NUM_LEVELS = $clog2(WIDTH);
 
+  `ifndef SYNTHESIS
+  initial begin
+    assert(WIDTH >= 0);
+  end
+  `endif
+
   logic [WIDTH-1:0][NUM_LEVELS-1:0]          index_lut;
   logic [2**NUM_LEVELS-1:0]                  sel_nodes;
   logic [2**NUM_LEVELS-1:0][NUM_LEVELS-1:0]  index_nodes;
@@ -68,7 +74,7 @@ module axi_find_first_one #(
     end
   endgenerate
 
-  assign first_one_o = index_nodes[0];
-  assign no_ones_o   = ~sel_nodes[0];
+  assign first_one_o = NUM_LEVELS > 0 ? index_nodes[0] : '0;
+  assign no_ones_o   = NUM_LEVELS > 0 ? ~sel_nodes[0]  : '1;
 
 endmodule

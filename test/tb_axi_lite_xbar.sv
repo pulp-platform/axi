@@ -33,12 +33,12 @@ module tb_axi_lite_xbar;
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) master [NUM_MASTER-1:0](clk);
+  ) master [0:NUM_MASTER-1](clk);
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) slave [NUM_SLAVE-1:0](clk);
+  ) slave [0:NUM_SLAVE-1](clk);
 
 
   AXI_ROUTING_RULES #(
@@ -50,8 +50,9 @@ module tb_axi_lite_xbar;
   localparam int SLAVE_SHIFT = (AW-$clog2(NUM_SLAVE));
   for (genvar i = 0; i < NUM_SLAVE; i++) begin
     logic [AW-1:0] addr = i;
-    assign routing.rules[i][0].mask = '1 << SLAVE_SHIFT;
-    assign routing.rules[i][0].base = addr << SLAVE_SHIFT;
+    assign routing.rules[i][0].enabled = 1;
+    assign routing.rules[i][0].mask    = '1 << SLAVE_SHIFT;
+    assign routing.rules[i][0].base    = addr << SLAVE_SHIFT;
   end
 
   axi_lite_xbar i_dut (
@@ -110,7 +111,7 @@ module tb_axi_lite_xbar;
         static logic [DW-1:0] data;
         static axi_pkg::resp_t resp;
         t = new();
-        t.randomize();
+        do t.randomize(); while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
         random_delay();
         drv.send_ar(t.addr);
@@ -130,7 +131,7 @@ module tb_axi_lite_xbar;
         static transaction_t t;
         static axi_pkg::resp_t resp;
         t = new();
-        t.randomize();
+        do t.randomize(); while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
         random_delay();
         drv.send_aw(t.addr);
@@ -150,6 +151,7 @@ module tb_axi_lite_xbar;
       end
     join
 
+    repeat(2) @(posedge clk);
     master_done[i] = 1;
   end
 
@@ -220,7 +222,7 @@ module tb_axi_lite_xbar;
       clk <= 0;
       #(tCK/2);
       if (cycle >= 1000000)
-        $fatal("timeout");
+        $fatal(1, "timeout at %t", $time);
       cycle++;
     end
 

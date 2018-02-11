@@ -39,9 +39,12 @@ module axi_address_resolver #(
     // Match each of the rules.
     for (genvar j = 0; j < NUM_RULES; j++) begin : g_rule
       logic [ADDR_WIDTH-1:0] base, mask;
-      assign base = rules.rules[i][j].base;
-      assign mask = rules.rules[i][j].mask;
-      assign matched_rules[i][j] = (mask != '0 && (addr_i & mask) == (base & mask));
+      logic enabled;
+      assign base    = rules.rules[i][j].base;
+      assign mask    = rules.rules[i][j].mask;
+      assign enabled = rules.rules[i][j].enabled;
+      // If the rules is disabled, it implicitly matches everything.
+      assign matched_rules[i][j] = (~enabled || (addr_i & mask) == (base & mask));
     end
 
     // Check which slaves matched.

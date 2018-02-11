@@ -93,12 +93,12 @@ module axi_lite_xbar_slice #(
   AXI_LITE #(
     .AXI_ADDR_WIDTH(32),
     .AXI_DATA_WIDTH(32)
-  ) xbar_master [NUM_MASTER-1:0]();
+  ) xbar_master [0:NUM_MASTER-1]();
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH(32),
     .AXI_DATA_WIDTH(32)
-  ) xbar_slave [NUM_SLAVE-1:0]();
+  ) xbar_slave [0:NUM_SLAVE-1]();
 
   AXI_ROUTING_RULES #(
     .AXI_ADDR_WIDTH(32),
