@@ -19,15 +19,21 @@ import axi_pkg::*;
 
 /// An AXI4-Lite crossbar.
 module axi_lite_xbar #(
+  /// The address width.
+  parameter int ADDR_WIDTH = -1,
+  /// The data width.
+  parameter int DATA_WIDTH = -1,
   /// The number of master ports.
   parameter int NUM_MASTER = 1,
   /// The number of slave ports.
-  parameter int NUM_SLAVE = 1
+  parameter int NUM_SLAVE = 1,
+  /// The number of routing rules.
+  parameter int NUM_RULES = -1
 )(
-  input logic            clk_i                   ,
-  input logic            rst_ni                  ,
-  AXI_LITE.in            master [NUM_MASTER-1:0] ,
-  AXI_LITE.out           slave  [NUM_SLAVE-1:0]  ,
+  input logic            clk_i               ,
+  input logic            rst_ni              ,
+  AXI_LITE.in            master [NUM_MASTER] ,
+  AXI_LITE.out           slave  [NUM_SLAVE]  ,
   AXI_ROUTING_RULES.xbar rules
 );
 
@@ -37,8 +43,11 @@ module axi_lite_xbar #(
   // For now just instantiate the simple crossbar. We may want to add different
   // implementations later.
   axi_lite_xbar_simple #(
+    .ADDR_WIDTH ( ADDR_WIDTH ),
+    .DATA_WIDTH ( DATA_WIDTH ),
     .NUM_MASTER ( NUM_MASTER ),
-    .NUM_SLAVE  ( NUM_SLAVE  )
+    .NUM_SLAVE  ( NUM_SLAVE  ),
+    .NUM_RULES  ( NUM_RULES  )
   ) i_simple (
     .clk_i  ( clk_i        ),
     .rst_ni ( rst_ni       ),
@@ -50,13 +59,17 @@ module axi_lite_xbar #(
   );
 
   // Instantiate round-robin arbiters for the read and write channels.
-  axi_arbiter i_arb_rd (
+  axi_arbiter #(
+    .NUM_REQ ( NUM_MASTER )
+  ) i_arb_rd (
     .clk_i  ( clk_i        ),
     .rst_ni ( rst_ni       ),
     .arb    ( s_arb_rd.arb )
   );
 
-  axi_arbiter i_arb_wr (
+  axi_arbiter #(
+    .NUM_REQ ( NUM_MASTER )
+  ) i_arb_wr (
     .clk_i  ( clk_i        ),
     .rst_ni ( rst_ni       ),
     .arb    ( s_arb_wr.arb )
@@ -68,10 +81,16 @@ endmodule
 /// A simple implementation of an AXI4-Lite crossbar. Can only serve one master
 /// at a time.
 module axi_lite_xbar_simple #(
+  /// The address width.
+  parameter int ADDR_WIDTH = -1,
+  /// The data width.
+  parameter int DATA_WIDTH = -1,
   /// The number of master ports.
   parameter int NUM_MASTER = 1,
   /// The number of slave ports.
-  parameter int NUM_SLAVE = 1
+  parameter int NUM_SLAVE = 1,
+  /// The number of routing rules.
+  parameter int NUM_RULES = -1
 )(
   input logic            clk_i               ,
   input logic            rst_ni              ,
@@ -86,30 +105,31 @@ module axi_lite_xbar_simple #(
   initial begin
     assert(NUM_MASTER > 0);
     assert(NUM_SLAVE > 0);
-    assert(rules.AXI_ADDR_WIDTH == master[0].AXI_ADDR_WIDTH);
+    assert(NUM_RULES > 0);
+    assert(rules.AXI_ADDR_WIDTH == ADDR_WIDTH);
     assert(rules.NUM_SLAVE == NUM_SLAVE);
   end
 
   // Check master address widths are all equal.
   for (genvar i = 0; i < NUM_MASTER; i++) begin : g_chk_master
     initial begin
-      assert(master[0].AXI_ADDR_WIDTH == master[i].AXI_ADDR_WIDTH);
-      assert(master[0].AXI_DATA_WIDTH == master[i].AXI_DATA_WIDTH);
+      assert(master[i].AXI_ADDR_WIDTH == ADDR_WIDTH);
+      assert(master[i].AXI_DATA_WIDTH == DATA_WIDTH);
     end
   end
 
   // Check slave address widths are all equal.
   for (genvar i = 0; i < NUM_SLAVE; i++) begin
     initial begin
-      assert(slave[i].AXI_ADDR_WIDTH == master[0].AXI_ADDR_WIDTH);
-      assert(slave[i].AXI_DATA_WIDTH == master[0].AXI_DATA_WIDTH);
+      assert(slave[i].AXI_ADDR_WIDTH == ADDR_WIDTH);
+      assert(slave[i].AXI_DATA_WIDTH == DATA_WIDTH);
     end
   end
   `endif
 
-  typedef logic [$bits(master[0].ar_addr)-1:0] addr_t;
-  typedef logic [$bits(master[0].r_data)-1:0]  data_t;
-  typedef logic [$bits(master[0].w_strb)-1:0]  strb_t;
+  typedef logic [ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [DATA_WIDTH-1:0]   data_t;
+  typedef logic [DATA_WIDTH/8-1:0] strb_t;
 
   typedef logic [$clog2(NUM_MASTER)-1:0] master_id_t;
   typedef logic [$clog2(NUM_SLAVE)-1:0]  slave_id_t;
@@ -273,9 +293,9 @@ module axi_lite_xbar_simple #(
   logic rd_match_ok, wr_match_ok;
 
   axi_address_resolver #(
-    .ADDR_WIDTH( $bits(master[0].ar_addr)     ),
-    .NUM_SLAVE ( NUM_SLAVE                    ),
-    .NUM_RULES ( $bits(rules.rules)/NUM_SLAVE/$bits(master[0].ar_addr)/2 ) // wtf svlog
+    .ADDR_WIDTH( ADDR_WIDTH ),
+    .NUM_SLAVE ( NUM_SLAVE  ),
+    .NUM_RULES ( NUM_RULES  )
   ) i_rd_resolver (
     .rules       ( rules           ),
     .addr_i      ( rd_resolve_addr ),
@@ -284,9 +304,9 @@ module axi_lite_xbar_simple #(
   );
 
   axi_address_resolver #(
-    .ADDR_WIDTH( $bits(master[0].aw_addr)     ),
-    .NUM_SLAVE ( NUM_SLAVE                    ),
-    .NUM_RULES ( $bits(rules.rules)/NUM_SLAVE/$bits(master[0].aw_addr)/2 ) // wtf svlog
+    .ADDR_WIDTH( ADDR_WIDTH ),
+    .NUM_SLAVE ( NUM_SLAVE  ),
+    .NUM_RULES ( NUM_RULES  )
   ) i_wr_resolver (
     .rules       ( rules           ),
     .addr_i      ( wr_resolve_addr ),

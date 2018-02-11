@@ -111,8 +111,11 @@ module axi_lite_xbar_slice #(
   end
 
   axi_lite_xbar #(
+    .ADDR_WIDTH(32),
+    .DATA_WIDTH(32),
     .NUM_MASTER(NUM_MASTER),
-    .NUM_SLAVE(NUM_SLAVE)
+    .NUM_SLAVE(NUM_SLAVE),
+    .NUM_RULES(1)
   ) xbar (
     .clk_i  ( clk_i              ),
     .rst_ni ( rst_ni             ),

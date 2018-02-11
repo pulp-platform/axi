@@ -55,7 +55,13 @@ module tb_axi_lite_xbar;
     assign routing.rules[i][0].base    = addr << SLAVE_SHIFT;
   end
 
-  axi_lite_xbar i_dut (
+  axi_lite_xbar #(
+    .ADDR_WIDTH(AW),
+    .DATA_WIDTH(DW),
+    .NUM_MASTER(NUM_MASTER),
+    .NUM_SLAVE(NUM_SLAVE),
+    .NUM_RULES(1)
+  ) i_dut (
     .clk_i  ( clk     ),
     .rst_ni ( rst     ),
     .master ( master  ),

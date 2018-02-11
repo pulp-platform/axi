@@ -16,15 +16,28 @@
 
 
 /// A round-robin arbiter.
-module axi_arbiter (
+module axi_arbiter #(
+  /// The number of requestors.
+  parameter int NUM_REQ = -1
+)(
   input logic clk_i       ,
   input logic rst_ni      ,
   AXI_ARBITRATION.arb arb
 );
 
-  logic [$clog2($bits(arb.in_req))-1:0] count_d, count_q;
+  `ifndef SYNTHESIS
+  initial begin
+    assert(NUM_REQ >= 0);
+    assert(arb.NUM_REQ == NUM_REQ);
+  end
+  `endif
 
-  axi_arbiter_tree #(.NUM_REQ($bits(arb.in_req)), .ID_WIDTH(0)) i_tree (
+  logic [$clog2(NUM_REQ)-1:0] count_d, count_q;
+
+  axi_arbiter_tree #(
+    .NUM_REQ  ( NUM_REQ ),
+    .ID_WIDTH ( 0       )
+  ) i_tree (
     .in_req_i  ( arb.in_req  ),
     .in_ack_o  ( arb.in_ack  ),
     .in_id_i   ( '0          ),
@@ -38,7 +51,7 @@ module axi_arbiter (
     if (~rst_ni) begin
       count_q <= '0;
     end else if (arb.out_req && arb.out_ack) begin
-      count_q <= (count_d == $bits(arb.in_req) ? '0 : count_d);
+      count_q <= (count_d == NUM_REQ ? '0 : count_d);
     end
   end
 
