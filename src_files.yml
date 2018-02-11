@@ -7,3 +7,5 @@ axi:
     - src/axi_lite_to_axi.sv
     - src/axi_lite_xbar.sv
     - src/axi_arbiter.sv
+    - src/axi_address_resolver.sv
+    - src/axi_find_first_one.sv
