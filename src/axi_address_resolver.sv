@@ -43,8 +43,8 @@ module axi_address_resolver #(
       assign base    = rules.rules[i][j].base;
       assign mask    = rules.rules[i][j].mask;
       assign enabled = rules.rules[i][j].enabled;
-      // If the rules is disabled, it implicitly matches everything.
-      assign matched_rules[i][j] = (~enabled || (addr_i & mask) == (base & mask));
+      // If the rules is disabled, it matches nothing.
+      assign matched_rules[i][j] = (enabled && (addr_i & mask) == (base & mask));
     end
 
     // Check which slaves matched.
