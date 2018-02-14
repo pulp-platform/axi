@@ -65,8 +65,8 @@ module axi_address_resolver #(
   // rules in the routing table are not mututally exclusive.
   `ifndef SYNTHESIS
   always @(matched_rules, matched_slaves) begin
-    assert($onehot0(matched_rules));
-    assert($onehot0(matched_slaves));
+    assert ($onehot0(matched_rules)) else $error("%m: more than one rule matches 0x%0h: %0b", addr_i, matched_rules);
+    assert ($onehot0(matched_slaves)) else $error("%m: more than one slave matches 0x%0h: %0b", addr_i, matched_slaves);
   end
   `endif
 
