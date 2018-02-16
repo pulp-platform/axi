@@ -757,7 +757,7 @@ package axi_test;
       beat.ax_qos    = axi.ar_qos;
       beat.ax_region = axi.ar_region;
       beat.ax_user   = axi.ar_user;
-      axi.aw_ready  <= 0;
+      axi.ar_ready  <= 0;
     endtask
 
     /// Wait for a beat on the R channel.
