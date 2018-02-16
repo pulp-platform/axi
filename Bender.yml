@@ -1,0 +1,14 @@
+package:
+  name: axi
+  authors: ["Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"]
+
+sources:
+  - src/axi_pkg.sv
+  - src/axi_intf.sv
+  - src/axi_fifo.sv
+  - src/axi_to_axi_lite.sv
+  - src/axi_lite_to_axi.sv
+  - src/axi_lite_xbar.sv
+  - src/axi_arbiter.sv
+  - src/axi_address_resolver.sv
+  - src/axi_find_first_one.sv
