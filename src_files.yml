@@ -1,6 +1,7 @@
 axi:
   files:
     - src/axi_pkg.sv
+    - src/axi_test.sv
     - src/axi_intf.sv
     - src/axi_fifo.sv
     - src/axi_to_axi_lite.sv
@@ -9,3 +10,5 @@ axi:
     - src/axi_arbiter.sv
     - src/axi_address_resolver.sv
     - src/axi_find_first_one.sv
+    - src/axi_join.sv
+    - src/axi_lite_join.sv

@@ -375,6 +375,8 @@ module axi_lite_xbar_simple #(
           state_rd_d = RD_IDLE;
         end
       end
+      
+      default: state_rd_d = RD_IDLE;
     endcase
   end
 
@@ -458,6 +460,8 @@ module axi_lite_xbar_simple #(
           state_wr_d = WR_IDLE;
         end
       end
+      
+      default: state_wr_d = WR_IDLE;
     endcase
   end
 

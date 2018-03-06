@@ -4,11 +4,18 @@ package:
 
 sources:
   - src/axi_pkg.sv
+  - target: test
+    files:
+      - src/axi_test.sv
   - src/axi_intf.sv
   - src/axi_fifo.sv
   - src/axi_to_axi_lite.sv
   - src/axi_lite_to_axi.sv
   - src/axi_lite_xbar.sv
+  - src/axi_lite_slice.sv
+  - src/axi_spill_register.sv
   - src/axi_arbiter.sv
   - src/axi_address_resolver.sv
   - src/axi_find_first_one.sv
+  - src/axi_join.sv
+  - src/axi_lite_join.sv

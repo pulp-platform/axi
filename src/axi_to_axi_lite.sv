@@ -27,18 +27,18 @@ module axi_to_axi_lite #(
   /// Maximum number of outstanding writes.
   parameter int NUM_PENDING_WR = 1
 )(
-  input logic clk_i,
-  input logic rst_ni,
-  AXI_BUS.Slave slave,
-  AXI_LITE.Master master
+  input logic  clk_i,
+  input logic  rst_ni,
+  AXI_BUS.in   in,
+  AXI_LITE.out out
 );
 
   `ifndef SYNTHESIS
   initial begin
     assert(NUM_PENDING_RD > 0);
     assert(NUM_PENDING_WR > 0);
-    assert(slave.AXI_ADDR_WIDTH == master.AXI_ADDR_WIDTH);
-    assert(slave.AXI_DATA_WIDTH == master.AXI_DATA_WIDTH);
+    assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
+    assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
   end
   `endif
 
@@ -49,22 +49,22 @@ module axi_to_axi_lite #(
 
   // The transaction information that will be stored locally.
   typedef struct packed {
-    logic [$bits(slave.r_id)-1:0] id;
-    logic [$bits(slave.r_user)-1:0] user;
+    logic [$bits(in.r_id)-1:0] id;
+    logic [$bits(in.r_user)-1:0] user;
   } meta_rd_t;
 
   typedef struct packed {
-    logic [$bits(slave.b_id)-1:0] id;
-    logic [$bits(slave.b_user)-1:0] user;
+    logic [$bits(in.b_id)-1:0] id;
+    logic [$bits(in.b_user)-1:0] user;
   } meta_wr_t;
 
   // HACK: Rather than passing a meta_rd_t and meta_wr_t into the FIFO's data_o
   //       port, we destructure it into the constituent fields. If we don't do
   //       this, Synopsys DC 2016.03 throws an "Internal Error" on "meta_rd.id".
-  logic [$bits(slave.r_id)-1:0] meta_rd_id;
-  logic [$bits(slave.r_user)-1:0] meta_rd_user;
-  logic [$bits(slave.b_id)-1:0] meta_wr_id;
-  logic [$bits(slave.b_user)-1:0] meta_wr_user;
+  logic [$bits(in.r_id)-1:0] meta_rd_id;
+  logic [$bits(in.r_user)-1:0] meta_rd_user;
+  logic [$bits(in.b_id)-1:0] meta_wr_id;
+  logic [$bits(in.b_user)-1:0] meta_wr_user;
 
   // The two FIFOs which hold the transaction information.
   logic rd_full;
@@ -81,13 +81,13 @@ module axi_to_axi_lite #(
     .single_element_o (                                     ),
     // For every transaction on the AR channel we push the ID and USER metadata
     // into the queue.
-    .data_i  ( {slave.ar_id, slave.ar_user}                 ),
-    .push_i  ( slave.ar_ready & slave.ar_valid              ),
+    .data_i  ( {in.ar_id, in.ar_user}                 ),
+    .push_i  ( in.ar_ready & in.ar_valid              ),
     // After the last response on the R channel we pop the metadata off the
     // queue.
     .data_o  ( {meta_rd_id, meta_rd_user}                   ),
     // .data_o  ( meta_rd                                      ),
-    .pop_i   ( slave.r_valid & slave.r_ready & slave.r_last )
+    .pop_i   ( in.r_valid & in.r_ready & in.r_last )
   );
 
   axi_fifo #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
@@ -99,41 +99,41 @@ module axi_to_axi_lite #(
     .single_element_o (                                     ),
     // For every transaction on the AW channel we push the ID and USER metadata
     // into the queue.
-    .data_i  ( {slave.aw_id, slave.aw_user}    ),
-    .push_i  ( slave.aw_ready & slave.aw_valid ),
+    .data_i  ( {in.aw_id, in.aw_user}    ),
+    .push_i  ( in.aw_ready & in.aw_valid ),
     // After the response on the B channel we pop the metadata off the queue.
     .data_o  ( {meta_wr_id, meta_wr_user}                   ),
     // .data_o  ( meta_wr                                      ),
-    .pop_i   ( slave.b_valid & slave.b_ready   )
+    .pop_i   ( in.b_valid & in.b_ready   )
   );
 
   // Accept transactions on the AW and AR channels if the corresponding FIFO is
   // not full.
-  assign slave.aw_ready  = ~wr_full & master.aw_ready;
-  assign slave.ar_ready  = ~rd_full & master.ar_ready;
-  assign master.aw_addr  = slave.aw_addr;
-  assign master.ar_addr  = slave.ar_addr;
-  assign master.aw_valid = slave.aw_valid;
-  assign master.ar_valid = slave.ar_valid;
+  assign in.aw_ready  = ~wr_full & out.aw_ready;
+  assign in.ar_ready  = ~rd_full & out.ar_ready;
+  assign out.aw_addr  = in.aw_addr;
+  assign out.ar_addr  = in.ar_addr;
+  assign out.aw_valid = in.aw_valid;
+  assign out.ar_valid = in.ar_valid;
 
-  assign master.w_data  = slave.w_data;
-  assign master.w_strb  = slave.w_strb;
-  assign master.w_valid = slave.w_valid;
-  assign slave.w_ready  = master.w_ready;
+  assign out.w_data  = in.w_data;
+  assign out.w_strb  = in.w_strb;
+  assign out.w_valid = in.w_valid;
+  assign in.w_ready  = out.w_ready;
 
   // Inject the metadata again on the B and R return paths.
-  assign slave.b_id     = meta_wr_id;
-  assign slave.b_resp   = master.b_resp;
-  assign slave.b_user   = meta_wr_user;
-  assign slave.b_valid  = master.b_valid;
-  assign master.b_ready = slave.b_ready;
+  assign in.b_id     = meta_wr_id;
+  assign in.b_resp   = out.b_resp;
+  assign in.b_user   = meta_wr_user;
+  assign in.b_valid  = out.b_valid;
+  assign out.b_ready = in.b_ready;
 
-  assign slave.r_id     = meta_rd_id;
-  assign slave.r_data   = master.r_data;
-  assign slave.r_resp   = master.r_resp;
-  assign slave.r_last   = '1;
-  assign slave.r_user   = meta_rd_user;
-  assign slave.r_valid  = master.r_valid;
-  assign master.r_ready = slave.r_ready;
+  assign in.r_id     = meta_rd_id;
+  assign in.r_data   = out.r_data;
+  assign in.r_resp   = out.r_resp;
+  assign in.r_last   = '1;
+  assign in.r_user   = meta_rd_user;
+  assign in.r_valid  = out.r_valid;
+  assign out.r_ready = in.r_ready;
 
 endmodule
