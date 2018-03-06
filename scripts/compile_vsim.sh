@@ -19,13 +19,11 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 $VLOG -sv \
 	"$ROOT"/src/axi_pkg.sv \
 	"$ROOT"/src/axi_intf.sv \
-	"$ROOT"/src/axi_fifo.sv \
 	"$ROOT"/src/axi_to_axi_lite.sv \
 	"$ROOT"/src/axi_lite_to_axi.sv \
 	"$ROOT"/src/axi_lite_xbar.sv \
 	"$ROOT"/src/axi_arbiter.sv \
 	"$ROOT"/src/axi_address_resolver.sv \
-	"$ROOT"/src/axi_find_first_one.sv \
 	"$ROOT"/test/tb_axi_lite_to_axi.sv \
 	"$ROOT"/test/tb_axi_to_axi_lite.sv \
 	"$ROOT"/test/tb_axi_lite_xbar.sv \

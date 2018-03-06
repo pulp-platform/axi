@@ -55,7 +55,7 @@ module axi_address_resolver #(
   assign match_ok_o = |matched_slaves;
 
   // Determine the index of the slave that matched.
-  axi_find_first_one #(.WIDTH(NUM_SLAVE)) i_lzc (
+  find_first_one #(.WIDTH(NUM_SLAVE), .FLIP(0)) i_lzc (
     .in_i        ( matched_slaves ),
     .first_one_o ( match_idx_o    ),
     .no_ones_o   (                )
