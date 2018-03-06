@@ -5,7 +5,7 @@ variables:
   SYNOPSYS_DC: synopsys-2016.03 dc_shell -64bit
 
 before_script:
-  - export PATH=~fschuiki/.cargo/bin
+  - export PATH=~fschuiki/.cargo/bin:$PATH
   - mkdir -p build
 
 modelsim:
