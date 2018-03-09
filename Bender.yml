@@ -14,7 +14,6 @@ sources:
 
   - src/axi_arbiter.sv
   - src/axi_address_resolver.sv
-  - src/axi_find_first_one.sv
 
   - src/axi_to_axi_lite.sv
   - src/axi_lite_to_axi.sv
