@@ -26,3 +26,5 @@ sources:
   - src/axi_multicut.sv
   - src/axi_join.sv
   - src/axi_modify_address.sv
+
+  - src/axi_id_remap.sv
