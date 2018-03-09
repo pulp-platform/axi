@@ -3,7 +3,7 @@ package:
   authors: ["Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"]
 
 dependencies:
-  common_cells: { git: "git@iis-git.ee.ethz.ch:sasa/common_cells.git", version: 1.1.0 }
+  common_cells: { git: "git@iis-git.ee.ethz.ch:sasa/common_cells.git", version: 1.2 }
 
 sources:
   - src/axi_pkg.sv
@@ -11,12 +11,17 @@ sources:
     files:
       - src/axi_test.sv
   - src/axi_intf.sv
+
+  - src/axi_arbiter.sv
+  - src/axi_address_resolver.sv
+  - src/axi_find_first_one.sv
+
   - src/axi_to_axi_lite.sv
   - src/axi_lite_to_axi.sv
   - src/axi_lite_xbar.sv
-  - src/axi_lite_slice.sv
-  - src/axi_spill_register.sv
-  - src/axi_arbiter.sv
-  - src/axi_address_resolver.sv
-  - src/axi_join.sv
+  - src/axi_lite_cut.sv
   - src/axi_lite_join.sv
+
+  - src/axi_cut.sv
+  - src/axi_join.sv
+  - src/axi_modify_address.sv

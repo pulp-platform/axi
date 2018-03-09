@@ -17,19 +17,19 @@
 import axi_pkg::*;
 
 
-/// An AXI4-Lite slice.
+/// An AXI4-Lite cut.
 ///
 /// Breaks all combinatorial paths between its input and output.
-module axi_lite_slice #(
+module axi_lite_cut #(
   /// The address width.
   parameter int ADDR_WIDTH = -1,
   /// The data width.
   parameter int DATA_WIDTH = -1
 )(
-  input logic            clk_i  ,
-  input logic            rst_ni ,
-  AXI_LITE.in            in     ,
-  AXI_LITE.out           out
+  input logic  clk_i  ,
+  input logic  rst_ni ,
+  AXI_LITE.in  in     ,
+  AXI_LITE.out out
 );
 
   // Check the invariants.
@@ -66,7 +66,7 @@ module axi_lite_slice #(
   channel_ax_t aw_in, aw_out;
   assign aw_in.addr = in.aw_addr;
   assign out.aw_addr = aw_out.addr;
-  axi_spill_register #(channel_ax_t) i_reg_aw (
+  spill_register #(channel_ax_t) i_reg_aw (
     .clk_i   ( clk_i        ),
     .rst_ni  ( rst_ni       ),
     .valid_i ( in.aw_valid  ),
@@ -82,7 +82,7 @@ module axi_lite_slice #(
   assign w_in.strb = in.w_strb;
   assign out.w_data = w_out.data;
   assign out.w_strb = w_out.strb;
-  axi_spill_register #(channel_w_t) i_reg_w (
+  spill_register #(channel_w_t) i_reg_w (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( in.w_valid  ),
@@ -96,7 +96,7 @@ module axi_lite_slice #(
   channel_b_t b_in, b_out;
   assign b_out.resp = out.b_resp;
   assign in.b_resp = b_in.resp;
-  axi_spill_register #(channel_b_t) i_reg_b (
+  spill_register #(channel_b_t) i_reg_b (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( out.b_valid ),
@@ -110,7 +110,7 @@ module axi_lite_slice #(
   channel_ax_t ar_in, ar_out;
   assign ar_in.addr = in.ar_addr;
   assign out.ar_addr = ar_out.addr;
-  axi_spill_register #(channel_ax_t) i_reg_ar (
+  spill_register #(channel_ax_t) i_reg_ar (
     .clk_i   ( clk_i        ),
     .rst_ni  ( rst_ni       ),
     .valid_i ( in.ar_valid  ),
@@ -126,7 +126,7 @@ module axi_lite_slice #(
   assign r_out.resp = out.r_resp;
   assign in.r_data = r_in.data;
   assign in.r_resp = r_in.resp;
-  axi_spill_register #(channel_r_t) i_reg_r (
+  spill_register #(channel_r_t) i_reg_r (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( out.r_valid ),
