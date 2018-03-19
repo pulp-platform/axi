@@ -68,7 +68,7 @@ module axi_id_remap #(
     assign in.r_data     = out.r_data;
     assign in.r_resp     = out.r_resp;
     assign in.r_last     = out.r_last;
-    assign out_r_user    = in.r_user;
+    assign in.r_user     = out.r_user;
 
     assign in.b_resp     =  out.b_resp;
     assign in.b_user     =  out.b_user;
