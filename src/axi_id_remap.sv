@@ -134,8 +134,8 @@ module axi_remap_table #(
     output logic [ID_WIDTH_OUT-1:0] id_o,
 
     input  logic                    release_id_i,
-    input  logic [ID_WIDTH_OUT:0]   rel_id_i,
-    output logic [ID_WIDTH_IN:0]    rel_id_o,
+    input  logic [ID_WIDTH_OUT-1:0] rel_id_i,
+    output logic [ID_WIDTH_IN-1:0]  rel_id_o,
     output logic                    empty_o
 );
 
