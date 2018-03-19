@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - AXI ID Remap
 
+### Fixed
+- Fixed typos in the AXI and AXI-Lite multicuts.
+
 ## 0.3.0 - 2018-03-09
 ### Added
 - AXI and AXI-Lite multicuts
