@@ -6,12 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.4.0 - 2018-03-20
 ### Added
 - Add AXI ID remapper.
 
 ### Fixed
 - Fixed typos in the AXI and AXI-Lite multicuts.
 - Fixed ID width in AXI ID remapper.
+- AXI join now asserts if width of outgoing ID is larger or equal to width of incoming ID.
 
 ## 0.3.0 - 2018-03-09
 ### Added

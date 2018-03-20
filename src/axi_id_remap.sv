@@ -1,13 +1,72 @@
-module axi_id_remap #(
-    parameter  ADDR_WIDTH    = -1,
-    parameter  DATA_WIDTH    = -1,
-    parameter  USER_WIDTH    = -1,
-    parameter  ID_WIDTH_IN   = -1,
-    parameter  ID_WIDTH_OUT  = -1,
-    parameter  TABLE_SIZE    = 1
+// Copyright (c) 2018 ETH Zurich, University of Bologna
+// All rights reserved.
+//
+// This code is under development and not yet released to the public.
+// Until it is released, the code is under the copyright of ETH Zurich and
+// the University of Bologna, and may contain confidential and/or unpublished
+// work. Any reuse/redistribution is strictly forbidden without written
+// permission from ETH Zurich.
+//
+// Bug fixes and contributions will eventually be released under the
+// SolderPad open hardware license in the context of the PULP platform
+// (http://www.pulp-platform.org), under the copyright of ETH Zurich and the
+// University of Bologna.
+//
+// Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+
+/// Change the AXI ID width.
+///
+/// This module instantiates a downsizer if the outgoing ID is smaller than the
+/// incoming ID. Otherwise instantiates a joiner, which implicitly expands AXI
+/// IDs.
+module axi_id_resize #(
+    parameter int ADDR_WIDTH   = -1,
+    parameter int DATA_WIDTH   = -1,
+    parameter int USER_WIDTH   = -1,
+    parameter int ID_WIDTH_IN  = -1,
+    parameter int ID_WIDTH_OUT = -1,
+    parameter int TABLE_SIZE   = 1
 )(
-    input logic clk_i,    // Clock
-    input logic rst_ni, // Clock Enable
+    input logic clk_i,
+    input logic rst_ni,
+    AXI_BUS.in  in,
+    AXI_BUS.out out
+);
+
+    // Instantiate a downsizer if the outgoing ID is smaller, otherwise simply
+    // instantiate a connecor which implicitly extends the ID width.
+    if (ID_WIDTH_IN > ID_WIDTH_OUT) begin : g_remap
+        axi_id_downsize #(
+            .ADDR_WIDTH   ( ADDR_WIDTH   ),
+            .DATA_WIDTH   ( DATA_WIDTH   ),
+            .USER_WIDTH   ( USER_WIDTH   ),
+            .ID_WIDTH_IN  ( ID_WIDTH_IN  ),
+            .ID_WIDTH_OUT ( ID_WIDTH_OUT ),
+            .TABLE_SIZE   ( TABLE_SIZE   )
+        ) i_downsize (
+            .clk_i  ( clk_i  ),
+            .rst_ni ( rst_ni ),
+            .in     ( in     ),
+            .out    ( out    )
+        );
+    end else begin : g_remap
+        axi_join i_join (in, out);
+    end
+
+endmodule
+
+
+/// Re-allocate AXI IDs.
+module axi_id_remap #(
+    parameter int ADDR_WIDTH    = -1,
+    parameter int DATA_WIDTH    = -1,
+    parameter int USER_WIDTH    = -1,
+    parameter int ID_WIDTH_IN   = -1,
+    parameter int ID_WIDTH_OUT  = -1,
+    parameter int TABLE_SIZE    = 1
+)(
+    input logic clk_i,
+    input logic rst_ni,
     AXI_BUS.in  in,
     AXI_BUS.out out
 );
@@ -120,13 +179,14 @@ module axi_id_remap #(
 
 endmodule
 
+
 module axi_remap_table #(
     parameter int          ID_WIDTH_IN  = -1,
     parameter int          ID_WIDTH_OUT = -1,
     parameter int unsigned TABLE_SIZE   =  1
 )(
-    input logic                     clk_i,    // Clock
-    input logic                     rst_ni,  // Asynchronous reset active low
+    input logic                     clk_i,
+    input logic                     rst_ni,
 
     input  logic                    incr_i,
     output logic                    full_o,
