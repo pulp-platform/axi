@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.4.1 - 2018-03-23
+### Fixed
+- Remove time unit from test package. Fixes an issue in the AXI driver.
+
 ## 0.4.0 - 2018-03-20
 ### Added
 - Add AXI ID remapper.

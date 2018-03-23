@@ -16,7 +16,6 @@
 //
 // This file defines the interfaces we support.
 
-timeunit 1ns/1ps;
 import axi_pkg::*;
 
 /// A set of testbench utilities for AXI interfaces.
