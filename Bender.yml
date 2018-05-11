@@ -10,6 +10,7 @@ sources:
   - target: test
     files:
       - src/axi_test.sv
+      - test/tb_axi_id_remap.sv
   - src/axi_intf.sv
 
   - src/axi_arbiter.sv

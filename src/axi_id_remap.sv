@@ -205,7 +205,7 @@ module axi_remap_table #(
     } remap_table_d[TABLE_SIZE-1:0], remap_table_q[TABLE_SIZE-1:0], id;
 
     logic [TABLE_SIZE-1:0] valid;
-    logic [$clog2(TABLE_SIZE)-1:0] current_index;
+    logic [$clog2(TABLE_SIZE):0] current_index;
 
     // generate valid signals
     for (genvar i = 0; i < TABLE_SIZE; i++) begin
@@ -213,7 +213,7 @@ module axi_remap_table #(
     end
 
     assign empty_o = ~(|valid);
-    assign full_o = (current_index == TABLE_SIZE-1) & id.valid;
+    assign full_o = id.valid;
 
     generate
         if (ID_WIDTH_OUT <= $clog2(TABLE_SIZE))
@@ -222,7 +222,7 @@ module axi_remap_table #(
             assign id_o = {{{ID_WIDTH_OUT-$clog2(TABLE_SIZE)}{1'b0}}, current_index};
     endgenerate
 
-    assign rel_id_o = id.id;
+    assign rel_id_o = remap_table_q[rel_id_i].id;
 
     always_comb begin
         current_index = 0;
