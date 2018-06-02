@@ -29,6 +29,7 @@ module axi_to_axi_lite #(
 )(
   input logic  clk_i,
   input logic  rst_ni,
+  input logic  testmode_i,
   AXI_BUS.in   in,
   AXI_LITE.out out
 );
@@ -73,12 +74,13 @@ module axi_to_axi_lite #(
   meta_wr_t meta_wr;
 
   fifo #(.dtype(meta_rd_t), .DEPTH(DEPTH_FIFO_RD)) i_fifo_rd (
-    .clk_i   ( clk_i                                        ),
-    .rst_ni  ( rst_ni                                       ),
-    .flush_i ( '0                                           ),
-    .full_o  ( rd_full                                      ),
-    .empty_o (                                              ),
-    .threshold_o (                                          ),
+    .clk_i       ( clk_i      ),
+    .rst_ni      ( rst_ni     ),
+    .testmode_i  ( testmode_i ),
+    .flush_i     ( '0         ),
+    .full_o      ( rd_full    ),
+    .empty_o     (            ),
+    .threshold_o (            ),
     // For every transaction on the AR channel we push the ID and USER metadata
     // into the queue.
     .data_i  ( {in.ar_id, in.ar_user}                 ),
@@ -90,12 +92,13 @@ module axi_to_axi_lite #(
   );
 
   fifo #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
-    .clk_i   ( clk_i                           ),
-    .rst_ni  ( rst_ni                          ),
-    .flush_i ( '0                              ),
-    .full_o  ( wr_full                         ),
-    .empty_o (                                 ),
-    .threshold_o (                             ),
+    .clk_i        ( clk_i      ),
+    .rst_ni       ( rst_ni     ),
+    .testmode_i   ( testmode_i ),
+    .flush_i      ( '0         ),
+    .full_o       ( wr_full    ),
+    .empty_o      (            ),
+    .threshold_o  (            ),
     // For every transaction on the AW channel we push the ID and USER metadata
     // into the queue.
     .data_i  ( {in.aw_id, in.aw_user}    ),
