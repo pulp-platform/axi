@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.4.3 - 2018-08-01
+### Changed
+- Add license file and adjust copyright headers.
+
 ## 0.4.2 - 2018-06-02
 ### Fixed
 - Add test mode signal to `axi_to_axi_lite` adapter, used in the FIFOs.
