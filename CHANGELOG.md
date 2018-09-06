@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.4.4 - 2018-09-06
+### Changed
+- Make `axi_cut` and `axi_multicut` verilator compatible
+
 ## 0.4.3 - 2018-08-01
 ### Changed
 - Add license file and adjust copyright headers.
