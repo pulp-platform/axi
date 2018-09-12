@@ -1,16 +1,13 @@
-// Copyright (c) 2018 ETH Zurich, University of Bologna
-// All rights reserved.
+// Copyright (c) 2014-2018 ETH Zurich, University of Bologna
 //
-// This code is under development and not yet released to the public.
-// Until it is released, the code is under the copyright of ETH Zurich and
-// the University of Bologna, and may contain confidential and/or unpublished
-// work. Any reuse/redistribution is strictly forbidden without written
-// permission from ETH Zurich.
-//
-// Bug fixes and contributions will eventually be released under the
-// SolderPad open hardware license in the context of the PULP platform
-// (http://www.pulp-platform.org), under the copyright of ETH Zurich and the
-// University of Bologna.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
@@ -121,7 +118,7 @@ module axi_cut #(
   assign out.aw_qos    = aw_out.qos    ;
   assign out.aw_region = aw_out.region ;
   assign out.aw_user   = aw_out.user   ;
-  spill_register #(channel_ax_t) i_reg_aw (
+  spill_register #(.T(channel_ax_t)) i_reg_aw (
     .clk_i   ( clk_i        ),
     .rst_ni  ( rst_ni       ),
     .valid_i ( in.aw_valid  ),
@@ -141,7 +138,7 @@ module axi_cut #(
   assign out.w_strb = w_out.strb ;
   assign out.w_last = w_out.last ;
   assign out.w_user = w_out.user ;
-  spill_register #(channel_w_t) i_reg_w (
+  spill_register #(.T(channel_w_t)) i_reg_w (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( in.w_valid  ),
@@ -159,7 +156,7 @@ module axi_cut #(
   assign in.b_id    = b_in.id    ;
   assign in.b_resp  = b_in.resp  ;
   assign in.b_user  = b_in.user  ;
-  spill_register #(channel_b_t) i_reg_b (
+  spill_register #(.T(channel_b_t)) i_reg_b (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( out.b_valid ),
@@ -193,7 +190,7 @@ module axi_cut #(
   assign out.ar_qos    = ar_out.qos    ;
   assign out.ar_region = ar_out.region ;
   assign out.ar_user   = ar_out.user   ;
-  spill_register #(channel_ax_t) i_reg_ar (
+  spill_register #(.T(channel_ax_t)) i_reg_ar (
     .clk_i   ( clk_i        ),
     .rst_ni  ( rst_ni       ),
     .valid_i ( in.ar_valid  ),
@@ -215,7 +212,7 @@ module axi_cut #(
   assign in.r_resp  = r_in.resp  ;
   assign in.r_last  = r_in.last  ;
   assign in.r_user  = r_in.user  ;
-  spill_register #(channel_r_t) i_reg_r (
+  spill_register #(.T(channel_r_t)) i_reg_r (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
     .valid_i ( out.r_valid ),

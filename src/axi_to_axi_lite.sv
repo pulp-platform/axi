@@ -1,16 +1,13 @@
-// Copyright (c) 2018 ETH Zurich, University of Bologna
-// All rights reserved.
+// Copyright (c) 2014-2018 ETH Zurich, University of Bologna
 //
-// This code is under development and not yet released to the public.
-// Until it is released, the code is under the copyright of ETH Zurich and
-// the University of Bologna, and may contain confidential and/or unpublished
-// work. Any reuse/redistribution is strictly forbidden without written
-// permission from ETH Zurich.
-//
-// Bug fixes and contributions will eventually be released under the
-// SolderPad open hardware license in the context of the PULP platform
-// (http://www.pulp-platform.org), under the copyright of ETH Zurich and the
-// University of Bologna.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
@@ -29,6 +26,7 @@ module axi_to_axi_lite #(
 )(
   input logic  clk_i,
   input logic  rst_ni,
+  input logic  testmode_i,
   AXI_BUS.in   in,
   AXI_LITE.out out
 );
@@ -73,12 +71,13 @@ module axi_to_axi_lite #(
   meta_wr_t meta_wr;
 
   fifo #(.dtype(meta_rd_t), .DEPTH(DEPTH_FIFO_RD)) i_fifo_rd (
-    .clk_i   ( clk_i                                        ),
-    .rst_ni  ( rst_ni                                       ),
-    .flush_i ( '0                                           ),
-    .full_o  ( rd_full                                      ),
-    .empty_o (                                              ),
-    .threshold_o (                                          ),
+    .clk_i       ( clk_i      ),
+    .rst_ni      ( rst_ni     ),
+    .testmode_i  ( testmode_i ),
+    .flush_i     ( '0         ),
+    .full_o      ( rd_full    ),
+    .empty_o     (            ),
+    .threshold_o (            ),
     // For every transaction on the AR channel we push the ID and USER metadata
     // into the queue.
     .data_i  ( {in.ar_id, in.ar_user}                 ),
@@ -90,12 +89,13 @@ module axi_to_axi_lite #(
   );
 
   fifo #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
-    .clk_i   ( clk_i                           ),
-    .rst_ni  ( rst_ni                          ),
-    .flush_i ( '0                              ),
-    .full_o  ( wr_full                         ),
-    .empty_o (                                 ),
-    .threshold_o (                             ),
+    .clk_i        ( clk_i      ),
+    .rst_ni       ( rst_ni     ),
+    .testmode_i   ( testmode_i ),
+    .flush_i      ( '0         ),
+    .full_o       ( wr_full    ),
+    .empty_o      (            ),
+    .threshold_o  (            ),
     // For every transaction on the AW channel we push the ID and USER metadata
     // into the queue.
     .data_i  ( {in.aw_id, in.aw_user}    ),

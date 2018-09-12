@@ -6,9 +6,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
-## 0.4.2 - 2018-09-12
+## 0.4.5 - 2018-09-12
 ### Fixed
 - Fix `common_cells` dependency to open-source repo
+
+## 0.4.4 - 2018-09-06
+### Changed
+- Make `axi_cut` and `axi_multicut` verilator compatible
+
+## 0.4.3 - 2018-08-01
+### Changed
+- Add license file and adjust copyright headers.
+
+## 0.4.2 - 2018-06-02
+### Fixed
+- Add test mode signal to `axi_to_axi_lite` adapter, used in the FIFOs.
+- Remove `axi_find_first_one` from src_files.yml
+- Fix release ID issue in ID `axi_id_remap`
 
 ## 0.4.1 - 2018-03-23
 ### Fixed
