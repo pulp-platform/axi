@@ -70,7 +70,7 @@ module axi_to_axi_lite #(
   meta_rd_t meta_rd;
   meta_wr_t meta_wr;
 
-  fifo_v1 #(.dtype(meta_rd_t), .DEPTH(DEPTH_FIFO_RD)) i_fifo_rd (
+  fifo #(.dtype(meta_rd_t), .DEPTH(DEPTH_FIFO_RD)) i_fifo_rd (
     .clk_i       ( clk_i      ),
     .rst_ni      ( rst_ni     ),
     .testmode_i  ( testmode_i ),
@@ -88,7 +88,7 @@ module axi_to_axi_lite #(
     .pop_i   ( in.r_valid & in.r_ready & in.r_last )
   );
 
-  fifo_v1 #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
+  fifo #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
     .clk_i        ( clk_i      ),
     .rst_ni       ( rst_ni     ),
     .testmode_i   ( testmode_i ),
