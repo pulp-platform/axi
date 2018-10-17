@@ -19,6 +19,8 @@ package axi_pkg;
   typedef logic [2:0] prot_t;
   typedef logic [3:0] qos_t;
   typedef logic [3:0] region_t;
+  typedef logic [7:0] len_t;
+  typedef logic [2:0] size_t;
   typedef logic [5:0] atop_t; // atomic operations
   typedef logic [3:0] nsaid_t; // non-secure address identifier
 
