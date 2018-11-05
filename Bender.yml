@@ -11,6 +11,7 @@ sources:
     files:
       - src/axi_test.sv
       - test/tb_axi_id_remap.sv
+      - test/tb_axi_delayer.sv
   - src/axi_intf.sv
 
   - src/axi_arbiter.sv
@@ -27,5 +28,7 @@ sources:
   - src/axi_multicut.sv
   - src/axi_join.sv
   - src/axi_modify_address.sv
+
+  - src/axi_delayer.sv
 
   - src/axi_id_remap.sv
