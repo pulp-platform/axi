@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - Add axi channel delayer
 
+### Fixed
+- Update `src_files.yml` to match `Bender.yml`.
+
 ## 0.4.5 - 2018-09-12
 ### Fixed
 - Fix `common_cells` dependency to open-source repo
