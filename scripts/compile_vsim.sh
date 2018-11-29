@@ -21,6 +21,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 $VLOG -sv \
 	"$ROOT"/src/axi_pkg.sv \
 	"$ROOT"/src/axi_intf.sv \
+	"$ROOT"/src/axi_test.sv \
 	"$ROOT"/src/axi_to_axi_lite.sv \
 	"$ROOT"/src/axi_lite_to_axi.sv \
 	"$ROOT"/src/axi_lite_xbar.sv \
