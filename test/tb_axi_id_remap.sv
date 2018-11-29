@@ -30,14 +30,14 @@ module tb_axi_id_remap;
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IWO),
     .AXI_USER_WIDTH(UW)
-  ) axi_slave(clk);
+  ) axi_slave();
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
-  ) axi_master(clk);
+  ) axi_master();
 
   axi_id_remap #(
     .ADDR_WIDTH     (AW),
@@ -53,8 +53,10 @@ module tb_axi_id_remap;
     .out    ( axi_slave  )
   );
 
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave);
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master);
+  AXI_CLK axi_clk(clk);
+
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave, axi_clk);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master, axi_clk);
 
   initial begin
     #tCK;

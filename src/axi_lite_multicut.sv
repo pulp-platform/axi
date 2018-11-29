@@ -64,7 +64,7 @@ module axi_lite_multicut #(
     AXI_LITE #(
       .AXI_ADDR_WIDTH ( ADDR_WIDTH ),
       .AXI_DATA_WIDTH ( DATA_WIDTH )
-    ) s_cut[NUM_CUTS-1:0](clk_i);
+    ) s_cut[NUM_CUTS-1:0]();
 
     axi_lite_cut #(
       .ADDR_WIDTH ( ADDR_WIDTH ),

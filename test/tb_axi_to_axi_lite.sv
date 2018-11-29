@@ -26,14 +26,14 @@ module tb_axi_to_axi_lite;
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) axi_lite(clk);
+  ) axi_lite();
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
-  ) axi(clk);
+  ) axi();
 
   axi_to_axi_lite i_dut (
     .clk_i  ( clk      ),
@@ -42,10 +42,12 @@ module tb_axi_to_axi_lite;
     .master ( axi_lite )
   );
 
+  AXI_CLK axi_clk(clk);
+
   typedef axi_test::axi_lite_driver #(.AW(AW), .DW(DW)) axi_lite_drv_t;
   typedef axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW)) axi_drv_t;
-  axi_lite_drv_t axi_lite_drv = new(axi_lite);
-  axi_drv_t axi_drv = new(axi);
+  axi_lite_drv_t axi_lite_drv = new(axi_lite, axi_clk);
+  axi_drv_t axi_drv = new(axi, axi_clk);
 
   initial begin
     #tCK;

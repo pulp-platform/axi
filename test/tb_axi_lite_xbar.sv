@@ -29,13 +29,14 @@ module tb_axi_lite_xbar;
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) master [0:NUM_MASTER-1](clk);
+  ) master [0:NUM_MASTER-1]();
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) slave [0:NUM_SLAVE-1](clk);
+  ) slave [0:NUM_SLAVE-1]();
 
+  AXI_CLK axi_clk (clk);
 
   AXI_ROUTING_RULES #(
     .AXI_ADDR_WIDTH(AW),
@@ -101,7 +102,7 @@ module tb_axi_lite_xbar;
   assign done = &master_done;
   for (genvar i = 0; i < NUM_MASTER; i++) initial begin : g_master
     // Initialize and reset the driver.
-    static driver_t drv = new(master[i]);
+    static driver_t drv = new(master[i], axi_clk);
     drv.reset_master();
     repeat(2) @(posedge clk);
 
@@ -160,7 +161,7 @@ module tb_axi_lite_xbar;
   // Initialize the slave driver processes.
   for (genvar i = 0; i < NUM_SLAVE; i++) initial begin : g_slave
     // Initialize and reset the driver.
-    static driver_t drv = new(slave[i]);
+    static driver_t drv = new(slave[i], axi_clk);
     drv.reset_slave();
     mailbox_rd[i] = new();
     mailbox_wr[i] = new();

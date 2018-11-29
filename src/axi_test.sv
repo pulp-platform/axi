@@ -15,6 +15,11 @@
 
 import axi_pkg::*;
 
+interface AXI_CLK (
+  input logic clk
+);
+endinterface
+
 /// A set of testbench utilities for AXI interfaces.
 package axi_test;
 
@@ -29,14 +34,17 @@ package axi_test;
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW)
     ) axi;
+    virtual AXI_CLK clk;
 
     function new(
       virtual AXI_LITE #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW)
-      ) axi
+      ) axi,
+      virtual AXI_CLK clk
     );
       this.axi = axi;
+      this.clk = clk;
     endfunction
 
     task reset_master;
@@ -67,7 +75,7 @@ package axi_test;
     endtask
 
     task cycle_end;
-      @(posedge axi.clk_i);
+      @(posedge clk.clk);
     endtask
 
     /// Issue a beat on the AW channel.
@@ -277,6 +285,7 @@ package axi_test;
       .AXI_ID_WIDTH(IW),
       .AXI_USER_WIDTH(UW)
     ) axi;
+    virtual AXI_CLK clk;
 
     typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat_t;
     typedef axi_w_beat  #(.DW(DW), .UW(UW))          w_beat_t;
@@ -289,9 +298,11 @@ package axi_test;
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
         .AXI_USER_WIDTH(UW)
-      ) axi
+      ) axi,
+      virtual AXI_CLK clk
     );
       this.axi = axi;
+      this.clk = clk;
     endfunction
 
     task reset_master;
@@ -349,7 +360,7 @@ package axi_test;
     endtask
 
     task cycle_end;
-      @(posedge axi.clk_i);
+      @(posedge clk.clk);
     endtask
 
     /// Issue a beat on the AW channel.
