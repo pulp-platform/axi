@@ -72,7 +72,9 @@ module axi_multicut #(
       .AXI_DATA_WIDTH ( DATA_WIDTH ),
       .AXI_ID_WIDTH   ( ID_WIDTH   ),
       .AXI_USER_WIDTH ( USER_WIDTH )
-    ) s_cut[NUM_CUTS-1:0]();
+    ) s_cut[NUM_CUTS-1:0](
+      .clk_i  (clk_i)
+    );
 
     axi_cut #(
       .ADDR_WIDTH ( ADDR_WIDTH ),
