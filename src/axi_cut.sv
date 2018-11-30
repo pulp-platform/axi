@@ -71,6 +71,7 @@ module axi_cut #(
     prot_t      prot;
     qos_t       qos;
     region_t    region;
+    logic [5:0] atop;   // Only defined on the AW channel.
     user_t      user;
   } channel_ax_t;
 
@@ -106,6 +107,7 @@ module axi_cut #(
   assign aw_in.prot    = in.aw_prot    ;
   assign aw_in.qos     = in.aw_qos     ;
   assign aw_in.region  = in.aw_region  ;
+  assign aw_in.atop    = in.aw_atop    ;
   assign aw_in.user    = in.aw_user    ;
   assign out.aw_id     = aw_out.id     ;
   assign out.aw_addr   = aw_out.addr   ;
@@ -117,6 +119,7 @@ module axi_cut #(
   assign out.aw_prot   = aw_out.prot   ;
   assign out.aw_qos    = aw_out.qos    ;
   assign out.aw_region = aw_out.region ;
+  assign out.aw_atop   = aw_out.atop   ;
   assign out.aw_user   = aw_out.user   ;
   spill_register #(.T(channel_ax_t)) i_reg_aw (
     .clk_i   ( clk_i        ),
@@ -178,6 +181,7 @@ module axi_cut #(
   assign ar_in.prot    = in.ar_prot    ;
   assign ar_in.qos     = in.ar_qos     ;
   assign ar_in.region  = in.ar_region  ;
+  assign ar_in.atop    = 'X            ; // Not defined on the AR channel.
   assign ar_in.user    = in.ar_user    ;
   assign out.ar_id     = ar_out.id     ;
   assign out.ar_addr   = ar_out.addr   ;

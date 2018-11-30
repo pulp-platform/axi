@@ -21,6 +21,7 @@ add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_cache
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_prot
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_qos
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_region
+add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_atop
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_user
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_valid
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_ready
