@@ -45,6 +45,7 @@ module axi_modify_address #(
   assign out.aw_prot   = in.aw_prot;
   assign out.aw_qos    = in.aw_qos;
   assign out.aw_region = in.aw_region;
+  assign out.aw_atop   = in.aw_atop;
   assign out.aw_user   = in.aw_user;
   assign out.aw_valid  = in.aw_valid;
   assign out.w_data    = in.w_data;

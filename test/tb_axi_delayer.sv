@@ -104,6 +104,7 @@ module tb_axi_delayer;
   assign aw_chan_i.prot = axi_master.aw_prot;
   assign aw_chan_i.qos = axi_master.aw_qos;
   assign aw_chan_i.region = axi_master.aw_region;
+  assign aw_chan_i.atop = axi_master.aw_atop;
 
   assign ar_chan_i.id = axi_master.ar_id;
   assign ar_chan_i.addr = axi_master.ar_addr;
@@ -139,6 +140,7 @@ module tb_axi_delayer;
   assign axi_slave.aw_prot = aw_chan_o.prot;
   assign axi_slave.aw_qos = aw_chan_o.qos;
   assign axi_slave.aw_region = aw_chan_o.region;
+  assign axi_slave.aw_atop = aw_chan_o.atop;
 
   assign axi_slave.ar_id = ar_chan_o.id;
   assign axi_slave.ar_addr = ar_chan_o.addr;

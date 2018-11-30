@@ -101,6 +101,7 @@ module axi_id_remap #(
     assign out.aw_prot   = in.aw_prot;
     assign out.aw_qos    = in.aw_qos;
     assign out.aw_region = in.aw_region;
+    assign out.aw_atop   = in.aw_atop;
     assign out.aw_user   = in.aw_user;
 
     assign out.ar_addr   = in.ar_addr;
