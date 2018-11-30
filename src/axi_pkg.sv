@@ -38,6 +38,26 @@ package axi_pkg;
   localparam CACHE_RD_ALLOC   = 4'b0100;
   localparam CACHE_WR_ALLOC   = 4'b1000;
 
+  // ATOP[5:0]
+  localparam ATOP_ATOMICSWAP  = 6'b110000;
+  localparam ATOP_ATOMICCMP   = 6'b110001;
+  // ATOP[5:4]
+  localparam ATOP_NONE        = 2'b00;
+  localparam ATOP_ATOMICSTORE = 2'b01;
+  localparam ATOP_ATOMICLOAD  = 2'b10;
+  // ATOP[3]
+  localparam ATOP_LITTLE_END  = 1'b0;
+  localparam ATOP_BIG_END     = 1'b1;
+  // ATOP[2:0]
+  localparam ATOP_ADD   = 3'b000;
+  localparam ATOP_CLR   = 3'b001;
+  localparam ATOP_EOR   = 3'b010;
+  localparam ATOP_SET   = 3'b011;
+  localparam ATOP_SMAX  = 3'b100;
+  localparam ATOP_SMIN  = 3'b101;
+  localparam ATOP_UMAX  = 3'b110;
+  localparam ATOP_UMIN  = 3'b111;
+
   // 4 is recommended by AXI standard, so lets stick to it, do not change
   localparam IdWidth   = 4;
   localparam UserWidth = 1;
