@@ -224,6 +224,7 @@ package axi_test;
     logic [2:0]         ax_prot   = '0;
     logic [3:0]         ax_qos    = '0;
     logic [3:0]         ax_region = '0;
+    logic [5:0]         ax_atop   = '0; // Only defined on the AW channel.
     rand logic [UW-1:0] ax_user   = '0;
   endclass
 
@@ -305,6 +306,7 @@ package axi_test;
       axi.aw_prot   <= '0;
       axi.aw_qos    <= '0;
       axi.aw_region <= '0;
+      axi.aw_atop   <= '0;
       axi.aw_user   <= '0;
       axi.aw_valid  <= '0;
       axi.w_data    <= '0;
@@ -366,6 +368,7 @@ package axi_test;
       axi.aw_prot   <= #TA beat.ax_prot;
       axi.aw_qos    <= #TA beat.ax_qos;
       axi.aw_region <= #TA beat.ax_region;
+      axi.aw_atop   <= #TA beat.ax_atop;
       axi.aw_user   <= #TA beat.ax_user;
       axi.aw_valid  <= #TA 1;
       cycle_start();
@@ -381,6 +384,7 @@ package axi_test;
       axi.aw_prot   <= #TA '0;
       axi.aw_qos    <= #TA '0;
       axi.aw_region <= #TA '0;
+      axi.aw_atop   <= #TA '0;
       axi.aw_user   <= #TA '0;
       axi.aw_valid  <= #TA 0;
     endtask
@@ -493,6 +497,7 @@ package axi_test;
       beat.ax_prot   = axi.aw_prot;
       beat.ax_qos    = axi.aw_qos;
       beat.ax_region = axi.aw_region;
+      beat.ax_atop   = axi.aw_atop;
       beat.ax_user   = axi.aw_user;
       cycle_end();
       axi.aw_ready <= #TA 0;
@@ -547,6 +552,7 @@ package axi_test;
       beat.ax_prot   = axi.ar_prot;
       beat.ax_qos    = axi.ar_qos;
       beat.ax_region = axi.ar_region;
+      beat.ax_atop   = 'X;  // Not defined on the AR channel.
       beat.ax_user   = axi.ar_user;
       cycle_end();
       axi.ar_ready  <= #TA 0;
