@@ -20,6 +20,7 @@ sources:
       - test/tb_axi_to_axi_lite.sv
   - src/axi_intf.sv
 
+  - src/axi_atop_filter.sv
   - src/axi_arbiter.sv
   - src/axi_address_resolver.sv
 
