@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Remove clock from `AXI_BUS` and `AXI_LITE`.  Such a clock signal is useful for testing purposes
-  but confusing (or even harmful) in hardware designs.  For testing purposes, an `AXI_CLK` interface
-  has been added to `axi_test` instead.
+  but confusing (or even harmful) in hardware designs.  For testing purposes, the `AXI_BUS_DV` and
+  `AXI_LITE_DV` (suffix for "design verification") interfaces have been defined instead.
 
 ### Fixed
 - Update `src_files.yml` to match `Bender.yml`.
