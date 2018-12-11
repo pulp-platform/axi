@@ -67,11 +67,11 @@ module axi_delayer #(
     output logic r_ready_o
 );
     // AW
-    ready_valid_delay #(
+    stream_delay #(
       .StallRandom ( StallRandomInput ),
       .FixedDelay  ( FixedDelayInput  ),
       .payload_t   ( aw_t             )
-    ) i_ready_valid_delay_aw (
+    ) i_stream_delay_aw (
       .clk_i     ( clk_i      ),
       .rst_ni    ( rst_ni     ),
       .payload_i ( aw_chan_i  ),
@@ -83,11 +83,11 @@ module axi_delayer #(
     );
 
     // AR
-    ready_valid_delay #(
+    stream_delay #(
       .StallRandom ( StallRandomInput ),
       .FixedDelay  ( FixedDelayInput  ),
       .payload_t   ( ar_t             )
-    ) i_ready_valid_delay_ar (
+    ) i_stream_delay_ar (
       .clk_i     ( clk_i      ),
       .rst_ni    ( rst_ni     ),
       .payload_i ( ar_chan_i  ),
@@ -99,11 +99,11 @@ module axi_delayer #(
     );
 
     // W
-    ready_valid_delay #(
+    stream_delay #(
       .StallRandom ( StallRandomInput ),
       .FixedDelay  ( FixedDelayInput  ),
       .payload_t   ( w_t              )
-    ) i_ready_valid_delay_w (
+    ) i_stream_delay_w (
       .clk_i     ( clk_i      ),
       .rst_ni    ( rst_ni     ),
       .payload_i ( w_chan_i   ),
@@ -115,11 +115,11 @@ module axi_delayer #(
     );
 
     // B
-    ready_valid_delay #(
+    stream_delay #(
       .StallRandom ( StallRandomOutput ),
       .FixedDelay  ( FixedDelayOutput  ),
       .payload_t   ( b_t               )
-    ) i_ready_valid_delay_b (
+    ) i_stream_delay_b (
       .clk_i     ( clk_i      ),
       .rst_ni    ( rst_ni     ),
       .payload_i ( b_chan_i   ),
@@ -131,11 +131,11 @@ module axi_delayer #(
     );
 
     // R
-     ready_valid_delay #(
+     stream_delay #(
       .StallRandom ( StallRandomOutput ),
       .FixedDelay  ( FixedDelayOutput  ),
       .payload_t   ( r_t               )
-    ) i_ready_valid_delay_r (
+    ) i_stream_delay_r (
       .clk_i     ( clk_i      ),
       .rst_ni    ( rst_ni     ),
       .payload_i ( r_chan_i   ),
