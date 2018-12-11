@@ -25,21 +25,19 @@ module tb_axi_delayer;
   logic rst = 1;
   logic done = 0;
 
-  AXI_BUS #(
+  AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IWO),
     .AXI_USER_WIDTH(UW)
-  ) axi_slave();
+  ) axi_slave(clk);
 
-  AXI_BUS #(
+  AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
-  ) axi_master();
-
-  AXI_CLK axi_clk(clk);
+  ) axi_master(clk);
 
   axi_pkg::aw_chan_t aw_chan_i;
   axi_pkg::w_chan_t  w_chan_i;
@@ -166,8 +164,8 @@ module tb_axi_delayer;
   assign b_chan_i.resp = axi_slave.b_resp;
 
 
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave, axi_clk);
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master, axi_clk);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master);
 
   initial begin
     #tCK;

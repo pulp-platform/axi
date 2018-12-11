@@ -10,6 +10,8 @@
 //
 // Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
+`include "axi/assign.svh"
+
 module tb_axi_id_remap;
 
   parameter AW = 32;
@@ -25,6 +27,13 @@ module tb_axi_id_remap;
   logic rst = 1;
   logic done = 0;
 
+  AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH(AW),
+    .AXI_DATA_WIDTH(DW),
+    .AXI_ID_WIDTH(IWO),
+    .AXI_USER_WIDTH(UW)
+  ) axi_slave_dv(clk);
+
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
@@ -32,12 +41,23 @@ module tb_axi_id_remap;
     .AXI_USER_WIDTH(UW)
   ) axi_slave();
 
+  `AXI_ASSIGN(axi_slave_dv, axi_slave);
+
+  AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH(AW),
+    .AXI_DATA_WIDTH(DW),
+    .AXI_ID_WIDTH(IW),
+    .AXI_USER_WIDTH(UW)
+  ) axi_master_dv(clk);
+
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
   ) axi_master();
+
+  `AXI_ASSIGN(axi_master, axi_master_dv);
 
   axi_id_remap #(
     .ADDR_WIDTH     (AW),
@@ -53,10 +73,8 @@ module tb_axi_id_remap;
     .out    ( axi_slave  )
   );
 
-  AXI_CLK axi_clk(clk);
-
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave, axi_clk);
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master, axi_clk);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master_dv);
 
   initial begin
     #tCK;

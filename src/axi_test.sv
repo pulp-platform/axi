@@ -15,11 +15,6 @@
 
 import axi_pkg::*;
 
-interface AXI_CLK (
-  input logic clk
-);
-endinterface
-
 /// A set of testbench utilities for AXI interfaces.
 package axi_test;
 
@@ -30,21 +25,18 @@ package axi_test;
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
-    virtual AXI_LITE #(
+    virtual AXI_LITE_DV #(
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW)
     ) axi;
-    virtual AXI_CLK clk;
 
     function new(
-      virtual AXI_LITE #(
+      virtual AXI_LITE_DV #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW)
-      ) axi,
-      virtual AXI_CLK clk
+      ) axi
     );
       this.axi = axi;
-      this.clk = clk;
     endfunction
 
     task reset_master;
@@ -75,7 +67,7 @@ package axi_test;
     endtask
 
     task cycle_end;
-      @(posedge clk.clk);
+      @(posedge axi.clk_i);
     endtask
 
     /// Issue a beat on the AW channel.
@@ -279,13 +271,12 @@ package axi_test;
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
-    virtual AXI_BUS #(
+    virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW),
       .AXI_ID_WIDTH(IW),
       .AXI_USER_WIDTH(UW)
     ) axi;
-    virtual AXI_CLK clk;
 
     typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat_t;
     typedef axi_w_beat  #(.DW(DW), .UW(UW))          w_beat_t;
@@ -293,16 +284,14 @@ package axi_test;
     typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UW)) r_beat_t;
 
     function new(
-      virtual AXI_BUS #(
+      virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
         .AXI_USER_WIDTH(UW)
-      ) axi,
-      virtual AXI_CLK clk
+      ) axi
     );
       this.axi = axi;
-      this.clk = clk;
     endfunction
 
     task reset_master;
@@ -360,7 +349,7 @@ package axi_test;
     endtask
 
     task cycle_end;
-      @(posedge clk.clk);
+      @(posedge axi.clk_i);
     endtask
 
     /// Issue a beat on the AW channel.

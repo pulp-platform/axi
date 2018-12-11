@@ -10,6 +10,8 @@
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
+`include "axi/assign.svh"
+
 module tb_axi_to_axi_lite;
 
   parameter AW = 32;
@@ -23,10 +25,24 @@ module tb_axi_to_axi_lite;
   logic rst = 1;
   logic done = 0;
 
+  AXI_LITE_DV #(
+    .AXI_ADDR_WIDTH(AW),
+    .AXI_DATA_WIDTH(DW)
+  ) axi_lite_dv(clk);
+
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
   ) axi_lite();
+
+  `AXI_LITE_ASSIGN(axi_lite_dv, axi_lite);
+
+  AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH(AW),
+    .AXI_DATA_WIDTH(DW),
+    .AXI_ID_WIDTH(IW),
+    .AXI_USER_WIDTH(UW)
+  ) axi_dv(clk);
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
@@ -34,6 +50,8 @@ module tb_axi_to_axi_lite;
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
   ) axi();
+
+  `AXI_ASSIGN(axi, axi_dv);
 
   axi_to_axi_lite i_dut (
     .clk_i      ( clk      ),
@@ -43,12 +61,10 @@ module tb_axi_to_axi_lite;
     .out        ( axi_lite )
   );
 
-  AXI_CLK axi_clk(clk);
-
   typedef axi_test::axi_lite_driver #(.AW(AW), .DW(DW)) axi_lite_drv_t;
   typedef axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW)) axi_drv_t;
-  axi_lite_drv_t axi_lite_drv = new(axi_lite, axi_clk);
-  axi_drv_t axi_drv = new(axi, axi_clk);
+  axi_lite_drv_t axi_lite_drv = new(axi_lite_dv);
+  axi_drv_t axi_drv = new(axi_dv);
 
   initial begin
     #tCK;
