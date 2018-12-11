@@ -5,6 +5,9 @@ package:
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.7.5 }
 
+export_include_dirs:
+  - include
+
 sources:
   - src/axi_pkg.sv
   - target: test
