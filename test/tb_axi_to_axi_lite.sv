@@ -20,6 +20,8 @@ module tb_axi_to_axi_lite;
   parameter UW = 8;
 
   localparam tCK = 1ns;
+  localparam TA = tCK * 1/4;
+  localparam TT = tCK * 3/4;
 
   logic clk = 0;
   logic rst = 1;
@@ -61,8 +63,8 @@ module tb_axi_to_axi_lite;
     .out        ( axi_lite )
   );
 
-  typedef axi_test::axi_lite_driver #(.AW(AW), .DW(DW)) axi_lite_drv_t;
-  typedef axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW)) axi_drv_t;
+  typedef axi_test::axi_lite_driver #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) axi_lite_drv_t;
+  typedef axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)) axi_drv_t;
   axi_lite_drv_t axi_lite_drv = new(axi_lite_dv);
   axi_drv_t axi_drv = new(axi_dv);
 
@@ -90,6 +92,7 @@ module tb_axi_to_axi_lite;
 
     ax.randomize();
     w.randomize();
+    w.last = 1'b1;
     axi_drv.send_aw(ax);
     axi_drv.send_w(w);
     axi_drv.recv_b(b);
