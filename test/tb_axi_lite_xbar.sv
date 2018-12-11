@@ -132,7 +132,10 @@ module tb_axi_lite_xbar;
         static logic [DW-1:0] data;
         static axi_pkg::resp_t resp;
         t = new();
-        do t.randomize(); while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
+        do begin
+          automatic int rand_success = t.randomize();
+          assert(rand_success);
+        end while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
         random_delay();
         drv.send_ar(t.addr);
@@ -152,7 +155,10 @@ module tb_axi_lite_xbar;
         static transaction_t t;
         static axi_pkg::resp_t resp;
         t = new();
-        do t.randomize(); while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
+        do begin
+          automatic int rand_success = t.randomize();
+          assert(rand_success);
+        end while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
         random_delay();
         drv.send_aw(t.addr);
