@@ -36,8 +36,8 @@ module tb_axi_lite_to_axi;
   ) axi();
 
   axi_lite_to_axi i_dut (
-    .slave  ( axi_lite ),
-    .master ( axi      )
+    .in   ( axi_lite ),
+    .out  ( axi      )
   );
 
   AXI_CLK axi_clk(clk);
