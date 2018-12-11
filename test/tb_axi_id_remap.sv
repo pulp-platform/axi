@@ -104,7 +104,7 @@ module tb_axi_id_remap;
         axi_master_drv.send_w(w_beat);
     end
 
-    repeat (6) axi_master_drv.recv_b(b_beat);
+    repeat (4) axi_master_drv.recv_b(b_beat);
 
     done = 1;
   end
