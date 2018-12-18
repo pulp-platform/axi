@@ -25,20 +25,19 @@ module tb_axi_delayer;
   logic rst = 1;
   logic done = 0;
 
-  AXI_BUS #(
+  AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IWO),
     .AXI_USER_WIDTH(UW)
   ) axi_slave(clk);
 
-  AXI_BUS #(
+  AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
   ) axi_master(clk);
-
 
   axi_pkg::aw_chan_t aw_chan_i;
   axi_pkg::w_chan_t  w_chan_i;
@@ -196,7 +195,7 @@ module tb_axi_delayer;
         axi_master_drv.send_w(w_beat);
     end
 
-    repeat (6) axi_master_drv.recv_b(b_beat);
+    repeat (200) axi_master_drv.recv_b(b_beat);
 
     done = 1;
   end
@@ -205,6 +204,7 @@ module tb_axi_delayer;
     automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IWO), .UW(UW)) ax_beat;
     automatic axi_test::axi_w_beat #(.DW(DW), .UW(UW)) w_beat;
     automatic axi_test::axi_b_beat #(.IW(IWO), .UW(UW)) b_beat = new;
+    automatic int b_id_queue[$];
     axi_slave_drv.reset_slave();
     @(posedge clk);
     repeat (200) begin
@@ -212,15 +212,12 @@ module tb_axi_delayer;
         $info("AXI AW: addr %h", ax_beat.ax_addr);
         axi_slave_drv.recv_w(w_beat);
         $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
+        b_id_queue.push_back(ax_beat.ax_id);
     end
-    // b_beat.b_id = 2;
-    // axi_slave_drv.send_b(b_beat);
-    // b_beat.b_id = 0;
-    // axi_slave_drv.send_b(b_beat);
-    // b_beat.b_id = 1;
-    // axi_slave_drv.send_b(b_beat);
-    // b_beat.b_id = 3;
-    // axi_slave_drv.send_b(b_beat);
+    while (b_id_queue.size() != 0) begin
+      b_beat.b_id = b_id_queue.pop_front();
+      axi_slave_drv.send_b(b_beat);
+    end
   end
 // vsim -voptargs=+acc work.tb_axi_delayer
 endmodule

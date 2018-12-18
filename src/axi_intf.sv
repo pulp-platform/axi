@@ -22,8 +22,6 @@ interface AXI_BUS #(
   parameter AXI_DATA_WIDTH = -1,
   parameter AXI_ID_WIDTH   = -1,
   parameter AXI_USER_WIDTH = -1
-)(
-  input logic clk_i
 );
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
@@ -120,6 +118,110 @@ interface AXI_BUS #(
 endinterface
 
 
+/// A clocked AXI4 interface for use in design verification.
+interface AXI_BUS_DV #(
+  parameter AXI_ADDR_WIDTH = -1,
+  parameter AXI_DATA_WIDTH = -1,
+  parameter AXI_ID_WIDTH   = -1,
+  parameter AXI_USER_WIDTH = -1
+)(
+  input logic clk_i
+);
+
+  localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
+
+  typedef logic [AXI_ID_WIDTH-1:0]   id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
+
+  id_t        aw_id;
+  addr_t      aw_addr;
+  logic [7:0] aw_len;
+  logic [2:0] aw_size;
+  burst_t     aw_burst;
+  logic       aw_lock;
+  cache_t     aw_cache;
+  prot_t      aw_prot;
+  qos_t       aw_qos;
+  region_t    aw_region;
+  logic [5:0] aw_atop;
+  user_t      aw_user;
+  logic       aw_valid;
+  logic       aw_ready;
+
+  data_t      w_data;
+  strb_t      w_strb;
+  logic       w_last;
+  user_t      w_user;
+  logic       w_valid;
+  logic       w_ready;
+
+  id_t        b_id;
+  resp_t      b_resp;
+  user_t      b_user;
+  logic       b_valid;
+  logic       b_ready;
+
+  id_t        ar_id;
+  addr_t      ar_addr;
+  logic [7:0] ar_len;
+  logic [2:0] ar_size;
+  burst_t     ar_burst;
+  logic       ar_lock;
+  cache_t     ar_cache;
+  prot_t      ar_prot;
+  qos_t       ar_qos;
+  region_t    ar_region;
+  user_t      ar_user;
+  logic       ar_valid;
+  logic       ar_ready;
+
+  id_t        r_id;
+  data_t      r_data;
+  resp_t      r_resp;
+  logic       r_last;
+  user_t      r_user;
+  logic       r_valid;
+  logic       r_ready;
+
+  modport Master (
+    output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, input aw_ready,
+    output w_data, w_strb, w_last, w_user, w_valid, input w_ready,
+    input b_id, b_resp, b_user, b_valid, output b_ready,
+    output ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, input ar_ready,
+    input r_id, r_data, r_resp, r_last, r_user, r_valid, output r_ready
+  );
+
+  modport Slave (
+    input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, output aw_ready,
+    input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
+    output b_id, b_resp, b_user, b_valid, input b_ready,
+    input ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, output ar_ready,
+    output r_id, r_data, r_resp, r_last, r_user, r_valid, input r_ready
+  );
+
+  /// The interface as an output (issuing requests, initiator, master).
+  modport out (
+    output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, input aw_ready,
+    output w_data, w_strb, w_last, w_user, w_valid, input w_ready,
+    input b_id, b_resp, b_user, b_valid, output b_ready,
+    output ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, input ar_ready,
+    input r_id, r_data, r_resp, r_last, r_user, r_valid, output r_ready
+  );
+
+  /// The interface as an input (accepting requests, target, slave).
+  modport in (
+    input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, output aw_ready,
+    input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
+    output b_id, b_resp, b_user, b_valid, input b_ready,
+    input ar_id, ar_addr, ar_len, ar_size, ar_burst, ar_lock, ar_cache, ar_prot, ar_qos, ar_region, ar_user, ar_valid, output ar_ready,
+    output r_id, r_data, r_resp, r_last, r_user, r_valid, input r_ready
+  );
+
+endinterface
+
 /// An asynchronous AXI4 interface.
 interface AXI_BUS_ASYNC
 #(
@@ -203,6 +305,77 @@ endinterface
 
 /// An AXI4-Lite interface.
 interface AXI_LITE #(
+  parameter AXI_ADDR_WIDTH = -1,
+  parameter AXI_DATA_WIDTH = -1
+);
+
+  localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
+
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+
+  // AW channel
+  addr_t aw_addr;
+  logic  aw_valid;
+  logic  aw_ready;
+
+  data_t w_data;
+  strb_t w_strb;
+  logic  w_valid;
+  logic  w_ready;
+
+  resp_t b_resp;
+  logic  b_valid;
+  logic  b_ready;
+
+  addr_t ar_addr;
+  logic  ar_valid;
+  logic  ar_ready;
+
+  data_t r_data;
+  resp_t r_resp;
+  logic  r_valid;
+  logic  r_ready;
+
+  modport Master (
+    output aw_addr, aw_valid, input aw_ready,
+    output w_data, w_strb, w_valid, input w_ready,
+    input b_resp, b_valid, output b_ready,
+    output ar_addr, ar_valid, input ar_ready,
+    input r_data, r_resp, r_valid, output r_ready
+  );
+
+  modport Slave (
+    input aw_addr, aw_valid, output aw_ready,
+    input w_data, w_strb, w_valid, output w_ready,
+    output b_resp, b_valid, input b_ready,
+    input ar_addr, ar_valid, output ar_ready,
+    output r_data, r_resp, r_valid, input r_ready
+  );
+
+  /// The interface as an output (issuing requests, initiator, master).
+  modport out (
+    output aw_addr, aw_valid, input aw_ready,
+    output w_data, w_strb, w_valid, input w_ready,
+    input b_resp, b_valid, output b_ready,
+    output ar_addr, ar_valid, input ar_ready,
+    input r_data, r_resp, r_valid, output r_ready
+  );
+
+  /// The interface as an input (accepting requests, target, slave).
+  modport in (
+    input aw_addr, aw_valid, output aw_ready,
+    input w_data, w_strb, w_valid, output w_ready,
+    output b_resp, b_valid, input b_ready,
+    input ar_addr, ar_valid, output ar_ready,
+    output r_data, r_resp, r_valid, input r_ready
+  );
+
+endinterface
+
+/// A clocked AXI4-Lite interface for use in design verification.
+interface AXI_LITE_DV #(
   parameter AXI_ADDR_WIDTH = -1,
   parameter AXI_DATA_WIDTH = -1
 )(

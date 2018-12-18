@@ -25,13 +25,13 @@ package axi_test;
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
-    virtual AXI_LITE #(
+    virtual AXI_LITE_DV #(
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW)
     ) axi;
 
     function new(
-      virtual AXI_LITE #(
+      virtual AXI_LITE_DV #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW)
       ) axi
@@ -271,7 +271,7 @@ package axi_test;
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
-    virtual AXI_BUS #(
+    virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW),
       .AXI_ID_WIDTH(IW),
@@ -284,7 +284,7 @@ package axi_test;
     typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UW)) r_beat_t;
 
     function new(
-      virtual AXI_BUS #(
+      virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),

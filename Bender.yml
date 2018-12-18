@@ -3,7 +3,10 @@ package:
   authors: ["Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"]
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.7.5 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
+
+export_include_dirs:
+  - include
 
 sources:
   - src/axi_pkg.sv
@@ -12,6 +15,9 @@ sources:
       - src/axi_test.sv
       - test/tb_axi_id_remap.sv
       - test/tb_axi_delayer.sv
+      - test/tb_axi_lite_to_axi.sv
+      - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_to_axi_lite.sv
   - src/axi_intf.sv
 
   - src/axi_arbiter.sv

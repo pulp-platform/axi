@@ -4,12 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.5.0 - 2018-12-18
 - Add axi channel delayer
+
+### Changed
+- Remove clock from `AXI_BUS` and `AXI_LITE`.  Such a clock signal is useful for testing purposes
+  but confusing (or even harmful) in hardware designs.  For testing purposes, the `AXI_BUS_DV` and
+  `AXI_LITE_DV` (suffix for "design verification") interfaces have been defined instead.
 
 ### Fixed
 - Update `src_files.yml` to match `Bender.yml`.
-- Make `axi_multicut` compatible with current definition of `AXI_BUS`.
+- Add missing `axi_test` to compile script.
 
 ## 0.4.5 - 2018-09-12
 ### Fixed

@@ -22,10 +22,10 @@ call_vsim() {
 	grep "Errors: 0," vsim.log
 }
 
-# for DW in 8 16 32 64 128 256 512 1024; do
-# 	call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
-# 	call_vsim tb_axi_to_axi_lite -GDW=$DW -t 1ps -c
-# done
+for DW in 8 16 32 64 128 256 512 1024; do
+	call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
+	call_vsim tb_axi_to_axi_lite -GDW=$DW -t 1ps -c
+done
 
 test_axi_lite_xbar() {
 	call_vsim tb_axi_lite_xbar -GNUM_MASTER=$1 -GNUM_SLAVE=$2 -t 1ps -c
@@ -42,3 +42,6 @@ done
 for NS in 1 2 3 4 8; do
 	test_axi_lite_xbar 4 $NS
 done
+
+call_vsim tb_axi_delayer
+call_vsim tb_axi_id_remap
