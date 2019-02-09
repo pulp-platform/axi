@@ -35,10 +35,13 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_to_axi_lite.sv
   # Level 3
+  - src/axi_data_width_converter.sv
+  - src/axi_downscale.sv
   - src/axi_id_remap.sv
   - src/axi_lite_multicut.sv
   - src/axi_lite_xbar.sv
   - src/axi_multicut.sv
+  - src/axi_upscale.sv
 
   - target: synth_test
     files:

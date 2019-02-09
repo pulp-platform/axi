@@ -23,3 +23,7 @@ axi:
     - src/axi_delayer.sv
 
     - src/axi_id_remap.sv
+
+    - src/axi_data_width_converter.sv
+    - src/axi_downscale.sv
+    - src/axi_upscale.sv
