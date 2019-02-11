@@ -21,7 +21,7 @@ module tb_axi_data_width_converter;
 
   parameter AW  = 32;
   parameter IW  = 8;
-  parameter DW  = 16;
+  parameter DW  = 64;
   parameter UW  = 8;
   parameter IWO = 4;
   parameter TS  = 4;
@@ -31,22 +31,6 @@ module tb_axi_data_width_converter;
   logic clk  = 0;
   logic rst  = 1;
   logic done = 0;
-
-  AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( DW ),
-    .AXI_ID_WIDTH ( IWO ),
-    .AXI_USER_WIDTH ( UW )
-  ) axi_slave_dv ( clk );
-
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( DW ),
-    .AXI_ID_WIDTH ( IWO ),
-    .AXI_USER_WIDTH ( UW )
-  ) axi_slave ();
-
-  `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
@@ -62,50 +46,34 @@ module tb_axi_data_width_converter;
     .AXI_USER_WIDTH ( UW )
   ) axi_master();
 
-  `AXI_ASSIGN(axi_master, axi_master_dv);
-
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
   axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master_dv);
 
-  AXI_BUS #(
+  AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( 2 * DW ),
+    .AXI_DATA_WIDTH ( 8 * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
-  ) axi_bus_1 ();
-
-  axi_data_width_converter #(
-    .MASTER_DATA_WIDTH ( DW ),
-    .SLAVE_DATA_WIDTH ( 2 * DW )
-  ) dwc_1 (
-    .clk_i ( clk ),
-    .rst_ni ( rst ),
-    .in ( axi_master ),
-    .out ( axi_bus_1 ));
+    ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( 8 * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
-  ) axi_bus_2 ();
+    ) axi_slave ();
+
+  axi_test::axi_driver #(.AW(AW), .DW(8*DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
+
+  `AXI_ASSIGN(axi_master, axi_master_dv);
+  `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   axi_data_width_converter #(
-    .MASTER_DATA_WIDTH ( 2 * DW ),
-    .SLAVE_DATA_WIDTH ( 8 * DW )
-  ) dwc_2 (
+    .MST_DATA_WIDTH ( 1 * DW ),
+    .SLV_DATA_WIDTH ( 8 * DW )
+  ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
-    .in ( axi_bus_1 ),
-    .out ( axi_bus_2 ));
-
-  axi_data_width_converter #(
-    .MASTER_DATA_WIDTH ( 8 * DW ),
-    .SLAVE_DATA_WIDTH ( DW )
-  ) dwc_3 (
-    .clk_i ( clk ),
-    .rst_ni ( rst ),
-    .in ( axi_bus_2 ),
+    .in ( axi_master ),
     .out ( axi_slave ));
 
   initial begin
@@ -129,11 +97,11 @@ module tb_axi_data_width_converter;
     axi_master_drv.reset_master();
     @(posedge clk);
     repeat (200) begin
-        @(posedge clk);
-        void'(randomize(ax_beat));
-        axi_master_drv.send_aw(ax_beat);
-        w_beat.w_data = 'hcafebabe;
-        axi_master_drv.send_w(w_beat);
+      @(posedge clk);
+      void'(randomize(ax_beat));
+      axi_master_drv.send_aw(ax_beat);
+      w_beat.w_data = 'hcafebabe;
+      axi_master_drv.send_w(w_beat);
     end
 
     repeat (200) axi_master_drv.recv_b(b_beat);
@@ -143,17 +111,17 @@ module tb_axi_data_width_converter;
 
   initial begin
     automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IWO), .UW(UW)) ax_beat;
-    automatic axi_test::axi_w_beat #(.DW(DW), .UW(UW)) w_beat;
+    automatic axi_test::axi_w_beat #(.DW(8*DW), .UW(UW)) w_beat;
     automatic axi_test::axi_b_beat #(.IW(IWO), .UW(UW)) b_beat = new;
     automatic int b_id_queue[$];
     axi_slave_drv.reset_slave();
     @(posedge clk);
     repeat (200) begin
-        axi_slave_drv.recv_aw(ax_beat);
-        $info("AXI AW: addr %h", ax_beat.ax_addr);
-        axi_slave_drv.recv_w(w_beat);
-        $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-        b_id_queue.push_back(ax_beat.ax_id);
+      axi_slave_drv.recv_aw(ax_beat);
+      $info("AXI AW: addr %h", ax_beat.ax_addr);
+      axi_slave_drv.recv_w(w_beat);
+      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
+      b_id_queue.push_back(ax_beat.ax_id);
     end
     while (b_id_queue.size() != 0) begin
       b_beat.b_id = b_id_queue.pop_front();
@@ -161,5 +129,5 @@ module tb_axi_data_width_converter;
     end
   end
 
-// vsim -voptargs=+acc work.tb_axi_data_width_converter
+  // vsim -voptargs=+acc work.tb_axi_data_width_converter
 endmodule // tb_axi_data_width_converter
