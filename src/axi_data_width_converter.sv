@@ -18,8 +18,8 @@
 import axi_pkg::*;
 
 module axi_data_width_converter #(
-  parameter int unsigned MASTER_DATA_WIDTH = 64,
-  parameter int unsigned SLAVE_DATA_WIDTH  = 64
+  parameter int unsigned MST_DATA_WIDTH = 64,
+  parameter int unsigned SLV_DATA_WIDTH = 64
 ) (
   input logic clk_i,
   input logic rst_ni,
@@ -36,17 +36,17 @@ module axi_data_width_converter #(
 `endif
 
   generate
-    if (MASTER_DATA_WIDTH == SLAVE_DATA_WIDTH) begin: NO_WIDTH_CONVERSION
+    if (MST_DATA_WIDTH == SLV_DATA_WIDTH) begin: NO_WIDTH_CONVERSION
       axi_join i_axi_join (
         .in,
         .out
       );
     end
 
-    if (MASTER_DATA_WIDTH < SLAVE_DATA_WIDTH) begin: UPSIZE
+    if (MST_DATA_WIDTH < SLV_DATA_WIDTH) begin: UPSIZE
       axi_data_upsize #(
-        .MASTER_DATA_WIDTH ( MASTER_DATA_WIDTH ),
-        .SLAVE_DATA_WIDTH ( SLAVE_DATA_WIDTH )
+        .MST_DATA_WIDTH ( MST_DATA_WIDTH ),
+        .SLV_DATA_WIDTH ( SLV_DATA_WIDTH )
       ) i_axi_data_upsize (
         .clk_i,
         .rst_ni,
@@ -55,10 +55,10 @@ module axi_data_width_converter #(
       );
     end
 
-    if (MASTER_DATA_WIDTH > SLAVE_DATA_WIDTH) begin: DOWNSIZE
+    if (MST_DATA_WIDTH > SLV_DATA_WIDTH) begin: DOWNSIZE
       axi_data_downsize #(
-        .MASTER_DATA_WIDTH ( MASTER_DATA_WIDTH ),
-        .SLAVE_DATA_WIDTH ( SLAVE_DATA_WIDTH )
+        .MST_DATA_WIDTH ( MST_DATA_WIDTH ),
+        .SLV_DATA_WIDTH ( SLV_DATA_WIDTH )
       ) i_axi_data_downsize (
         .clk_i,
         .rst_ni,
