@@ -45,6 +45,12 @@ module axi_data_downsize #(
   typedef logic [SLV_DATA_WIDTH-1:0]   slv_data_t;
   typedef logic [SLV_DATA_WIDTH/8-1:0] slv_strb_t;
 
+  function automatic addr_t align_address(addr_t addr);
+    addr_t retval                        = addr;
+    retval[$clog2(SLV_DATA_WIDTH/8)-1:0] = '0;
+    return retval;
+  endfunction // align_address
+
   // --------------
   // READ
   // --------------
@@ -69,9 +75,9 @@ module axi_data_downsize #(
 
     // AXI assignments
     out.ar_id     = in.ar_id;
-    out.ar_addr   = in.ar_addr;
+    out.ar_addr   = align_address(in.ar_addr);
     out.ar_len    = in.ar_len;
-    out.ar_size   = in.ar_size;
+    out.ar_size   = $unsigned($clog2(SLV_DATA_WIDTH/8));
     out.ar_burst  = in.ar_burst;
     out.ar_lock   = in.ar_lock;
     out.ar_cache  = in.ar_cache;
@@ -146,9 +152,9 @@ module axi_data_downsize #(
 
     // AXI assignments
     out.aw_id     = in.aw_id;
-    out.aw_addr   = in.aw_addr;
+    out.aw_addr   = align_address(in.aw_addr);
     out.aw_len    = in.aw_len;
-    out.aw_size   = in.aw_size;
+    out.aw_size   = $unsigned($clog2(SLV_DATA_WIDTH/8));
     out.aw_burst  = in.aw_burst;
     out.aw_lock   = in.aw_lock;
     out.aw_cache  = in.aw_cache;
