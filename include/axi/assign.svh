@@ -24,6 +24,7 @@
   assign slv.aw_prot    = mst.aw_prot;    \
   assign slv.aw_qos     = mst.aw_qos;     \
   assign slv.aw_region  = mst.aw_region;  \
+  assign slv.aw_atop    = mst.aw_atop;    \
   assign slv.aw_user    = mst.aw_user;    \
   assign slv.aw_valid   = mst.aw_valid;   \
   assign mst.aw_ready   = slv.aw_ready;   \
