@@ -5,7 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-- Add AXI atomic operations (ATOP) filter
+
+## 0.6.0 - 2019-02-27
+
+### Changed
+- AXI interfaces now include the `aw_atop` signal. Interfaces, macros, and existing modules and
+  TBs in this repository have been updated. The ReadMe has been updated to guide users of this
+  repository on how to deal with the `aw_atop` signal.
+
+### Added
+- Add AXI atomic operations (ATOPs) filter.
 
 ### Fixed
 - Replace non-ASCII characters in Solderpad license text.
