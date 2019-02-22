@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - Add AXI atomic operations (ATOP) filter
 
+### Fixed
+- Replace non-ASCII characters in Solderpad license text.
+
 ## 0.5.0 - 2018-12-18
 - Add axi channel delayer
 
