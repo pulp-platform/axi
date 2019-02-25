@@ -25,6 +25,7 @@ module tb_axi_data_width_converter;
   parameter UW  = 8;
   parameter IWO = 4;
   parameter TS  = 4;
+  parameter MULT = 8;
 
   localparam tCK = 1ns;
 
@@ -46,30 +47,42 @@ module tb_axi_data_width_converter;
     .AXI_USER_WIDTH ( UW )
   ) axi_master();
 
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master_dv);
+  axi_test::axi_driver #(
+    .AW ( AW ),
+    .DW ( DW ),
+    .IW ( IW ),
+    .UW ( UW ),
+    .TA ( 200ps ),
+    .TT ( 700ps )) axi_master_drv = new ( axi_master_dv );
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( 4 * DW ),
+    .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
     ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( 4 * DW ),
+    .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
     ) axi_slave ();
 
-  axi_test::axi_driver #(.AW(AW), .DW(4*DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
+  axi_test::axi_driver #(
+    .AW ( AW ),
+    .DW ( MULT * DW ),
+    .IW ( IWO ),
+    .UW ( UW ),
+    .TA ( 200ps ),
+    .TT ( 700ps )) axi_slave_drv = new ( axi_slave_dv );
 
   `AXI_ASSIGN(axi_master, axi_master_dv);
   `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   axi_data_width_converter #(
-    .MST_DATA_WIDTH ( 1 * DW ),
-    .SLV_DATA_WIDTH ( 4 * DW )
+    .MST_DATA_WIDTH ( DW ),
+    .SLV_DATA_WIDTH ( MULT * DW )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
@@ -91,60 +104,101 @@ module tb_axi_data_width_converter;
   end // initial begin
 
   initial begin
-    automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat = new;
-    automatic axi_test::axi_w_beat #(.DW(DW), .UW(UW)) w_beat = new;
-    automatic axi_test::axi_b_beat  #(.IW(IW), .UW(UW)) b_beat;
     axi_master_drv.reset_master();
+
     @(posedge clk);
-    repeat (200) begin
-      @(posedge clk);
-      void'(randomize(ax_beat));
-      ax_beat.ax_burst = axi_pkg::BURST_INCR;
-      ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
-      ax_beat.ax_len   = 5;
-      ax_beat.ax_size  = $clog2(DW/8);
 
-      axi_master_drv.send_aw(ax_beat);
-      w_beat.w_data = 'hcafebabe;
-      w_beat.w_strb = '1;
-      axi_master_drv.send_w(w_beat);
-      axi_master_drv.send_w(w_beat);
-      axi_master_drv.send_w(w_beat);
-      axi_master_drv.send_w(w_beat);
-      axi_master_drv.send_w(w_beat);
-      axi_master_drv.send_w(w_beat);
-    end
+    fork
+      // AR and R channels
+      repeat (200) begin
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat = new;
+        automatic axi_test::axi_r_beat #( .DW ( DW ), .IW ( IW ), .UW ( UW )) r_beat   = new;
 
-    repeat (200) axi_master_drv.recv_b(b_beat);
+        @(posedge clk);
+        void'(randomize(ax_beat));
+        ax_beat.ax_burst = axi_pkg::BURST_INCR;
+        ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
+        ax_beat.ax_size  = $clog2(DW/8);
+        ax_beat.ax_len   = $urandom();
+
+        axi_master_drv.send_ar(ax_beat);
+
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
+          axi_master_drv.recv_r(r_beat);
+          $info("AXI R: data %h", r_beat.r_data);
+        end
+      end
+
+      // AW and W channels
+      repeat (200) begin
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat = new;
+        automatic axi_test::axi_w_beat #( .DW ( DW ), .UW ( UW )) w_beat               = new;
+
+        @(posedge clk);
+        void'(randomize(ax_beat));
+        ax_beat.ax_burst = axi_pkg::BURST_INCR;
+        ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
+        ax_beat.ax_size  = $clog2(DW/8);
+        ax_beat.ax_len   = $urandom();
+
+        axi_master_drv.send_aw(ax_beat);
+
+        w_beat.w_data = 'hcafebabe;
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++)
+          axi_master_drv.send_w(w_beat);
+      end
+
+      // B channel
+      repeat (200) begin
+        automatic axi_test::axi_b_beat #( .IW ( IW ), .UW ( UW )) b_beat = new;
+        axi_master_drv.recv_b(b_beat);
+      end
+    join
 
     done = 1;
   end
 
   initial begin
-    automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IWO), .UW(UW)) ax_beat;
-    automatic axi_test::axi_w_beat #(.DW(4*DW), .UW(UW)) w_beat;
-    automatic axi_test::axi_b_beat #(.IW(IWO), .UW(UW)) b_beat = new;
     automatic int b_id_queue[$];
     axi_slave_drv.reset_slave();
+
     @(posedge clk);
-    repeat (200) begin
-      axi_slave_drv.recv_aw(ax_beat);
-      $info("AXI AW: addr %h", ax_beat.ax_addr);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      axi_slave_drv.recv_w(w_beat);
-      $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
-      b_id_queue.push_back(ax_beat.ax_id);
-    end
+
+    fork
+      // AR and R channels
+      repeat (200) begin
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat    = new;
+        automatic axi_test::axi_r_beat #( .DW ( MULT * DW ), .IW ( IWO), .UW( UW )) r_beat = new;
+
+        axi_slave_drv.recv_ar(ax_beat);
+        $info("AXI AR: addr %h", ax_beat.ax_addr);
+
+        r_beat.r_data = 'hdeadcafe;
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++)
+          axi_slave_drv.send_r(r_beat);
+      end
+
+      // AW and W channels
+      repeat (200) begin
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat = new;
+        automatic axi_test::axi_w_beat #( .DW ( MULT * DW ), .UW( UW )) w_beat          = new;
+
+        axi_slave_drv.recv_aw(ax_beat);
+        $info("AXI AW: addr %h", ax_beat.ax_addr);
+
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
+          axi_slave_drv.recv_w(w_beat);
+          $info("AXI W: data %h, strb %h", w_beat.w_data, w_beat.w_strb);
+        end
+
+        b_id_queue.push_back(ax_beat.ax_id);
+      end
+    join
+
+    // B channel
     while (b_id_queue.size() != 0) begin
+      automatic axi_test::axi_b_beat #( .IW ( IWO ), .UW ( UW )) b_beat = new;
+
       b_beat.b_id = b_id_queue.pop_front();
       axi_slave_drv.send_b(b_beat);
     end
