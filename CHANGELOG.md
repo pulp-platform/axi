@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Replace non-ASCII characters in Solderpad license text.
+- Add a trailing semicolon to the `AXI_ASSIGN()` and `AXI_LITE_ASSIGN()` macros in `assign.svh`
+  (#8). Those macros can now be used without a semicolon. Existing code that uses the macros with a
+  semicolon do not break.
 
 ## 0.5.0 - 2018-12-18
 - Add axi channel delayer
