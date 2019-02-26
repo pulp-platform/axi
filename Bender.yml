@@ -11,9 +11,12 @@ export_include_dirs:
 
 sources:
   - src/axi_pkg.sv
-  - target: test
+  - target: simulation
     files:
       - src/axi_test.sv
+
+  - target: test
+    files:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_id_remap.sv
       - test/tb_axi_delayer.sv
