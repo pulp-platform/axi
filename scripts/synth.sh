@@ -15,7 +15,7 @@
 set -e
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-[ ! -z "$VLOG" ] || VLOG="synopsys dc_shell -64"
+[ ! -z "$SYNOPSYS_DC" ] || SYNOPSYS_DC="synopsys dc_shell -64"
 
 echo 'remove_design -all' > ./synth.tcl
 bender synopsys -t synth_test >> ./synth.tcl
