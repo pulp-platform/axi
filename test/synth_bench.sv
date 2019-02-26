@@ -47,6 +47,21 @@ module synth_bench (
     end
   end
 
+  // ATOP Filter
+  for (genvar iID = 1; iID <= 8; iID++) begin
+    localparam int IW = iID;
+    for (genvar iTxn = 1; iTxn <= 12; iTxn++) begin
+      localparam int WT = iTxn;
+      synth_axi_atop_filter #(
+        .AXI_ADDR_WIDTH     (64),
+        .AXI_DATA_WIDTH     (64),
+        .AXI_ID_WIDTH       (IW),
+        .AXI_USER_WIDTH     (4),
+        .AXI_MAX_WRITE_TXNS (WT)
+      ) i_filter (.*);
+    end
+  end
+
 endmodule
 
 
@@ -118,6 +133,44 @@ module axi_lite_xbar_slice #(
     .master ( xbar_master.in     ),
     .slave  ( xbar_slave.out     ),
     .rules  ( xbar_routing.xbar  )
+  );
+
+endmodule
+
+
+module synth_axi_atop_filter #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned AXI_MAX_WRITE_TXNS = 0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) upstream ();
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) downstream ();
+
+  axi_atop_filter #(
+    .AXI_ID_WIDTH       (AXI_ID_WIDTH),
+    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
+  ) dut (
+    .clk_i  (clk_i),
+    .rst_ni (rst_ni),
+    .slv    (upstream),
+    .mst    (downstream)
   );
 
 endmodule
