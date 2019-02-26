@@ -87,8 +87,17 @@ module synth_slice #(
     .AXI_DATA_WIDTH(DW)
   ) a_lite(), b_lite();
 
-  axi_to_axi_lite a (.slave(a_full.Slave), .master(a_lite.Master), .*);
-  axi_lite_to_axi b (.slave(b_lite.Slave), .master(b_full.Master), .*);
+  axi_to_axi_lite a (
+    .clk_i      (clk_i),
+    .rst_ni     (rst_ni),
+    .testmode_i (1'b0),
+    .in         (a_full.in),
+    .out        (a_lite.out)
+  );
+  axi_lite_to_axi b (
+    .in   (b_lite.in),
+    .out  (b_full.out)
+  );
 
 endmodule
 
