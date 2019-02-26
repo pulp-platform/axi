@@ -20,6 +20,9 @@ sources:
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_to_axi_lite.sv
+  - target: synth_test
+    files:
+      - test/synth_bench.sv
   - src/axi_intf.sv
 
   - src/axi_atop_filter.sv
