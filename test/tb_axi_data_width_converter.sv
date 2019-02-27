@@ -81,8 +81,8 @@ module tb_axi_data_width_converter;
   `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   axi_data_width_converter #(
-    .MST_DATA_WIDTH ( DW ),
-    .SLV_DATA_WIDTH ( MULT * DW )
+    .MI_DATA_WIDTH ( MULT * DW ),
+    .SI_DATA_WIDTH ( DW )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
@@ -118,8 +118,11 @@ module tb_axi_data_width_converter;
         void'(randomize(ax_beat));
         ax_beat.ax_burst = axi_pkg::BURST_INCR;
         ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
-        ax_beat.ax_size  = $clog2(DW/8);
         ax_beat.ax_len   = $urandom();
+
+        ax_beat.ax_size  = $urandom();
+        if (ax_beat.ax_size > $clog2(DW/8))
+          ax_beat.ax_size = $clog2(DW/8);
 
         axi_master_drv.send_ar(ax_beat);
 
@@ -138,12 +141,16 @@ module tb_axi_data_width_converter;
         void'(randomize(ax_beat));
         ax_beat.ax_burst = axi_pkg::BURST_INCR;
         ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
-        ax_beat.ax_size  = $clog2(DW/8);
+        ax_beat.ax_size  = $urandom();
+
         ax_beat.ax_len   = $urandom();
+        if (ax_beat.ax_size > $clog2(DW/8))
+          ax_beat.ax_size = $clog2(DW/8);
 
         axi_master_drv.send_aw(ax_beat);
 
         w_beat.w_data = 'hcafebabe;
+        w_beat.w_strb = '1;
         for (int beat = 0; beat <= ax_beat.ax_len; beat++)
           axi_master_drv.send_w(w_beat);
       end
@@ -173,7 +180,7 @@ module tb_axi_data_width_converter;
         axi_slave_drv.recv_ar(ax_beat);
         $info("AXI AR: addr %h", ax_beat.ax_addr);
 
-        r_beat.r_data = 'hdeadcafe;
+        r_beat.r_data = {MULT{32'hdeadcafe}};
         for (int beat = 0; beat <= ax_beat.ax_len; beat++)
           axi_slave_drv.send_r(r_beat);
       end
