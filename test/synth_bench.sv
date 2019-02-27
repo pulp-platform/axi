@@ -1,10 +1,10 @@
 // Copyright 2018 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
-// License, Version 0.51 (the “License”); you may not use this file except in
+// License, Version 0.51 (the "License"); you may not use this file except in
 // compliance with the License.  You may obtain a copy of the License at
 // http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
 // or agreed to in writing, software, hardware and materials distributed under
-// this License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
@@ -47,6 +47,21 @@ module synth_bench (
     end
   end
 
+  // ATOP Filter
+  for (genvar iID = 1; iID <= 8; iID++) begin
+    localparam int IW = iID;
+    for (genvar iTxn = 1; iTxn <= 12; iTxn++) begin
+      localparam int WT = iTxn;
+      synth_axi_atop_filter #(
+        .AXI_ADDR_WIDTH     (64),
+        .AXI_DATA_WIDTH     (64),
+        .AXI_ID_WIDTH       (IW),
+        .AXI_USER_WIDTH     (4),
+        .AXI_MAX_WRITE_TXNS (WT)
+      ) i_filter (.*);
+    end
+  end
+
 endmodule
 
 
@@ -72,8 +87,17 @@ module synth_slice #(
     .AXI_DATA_WIDTH(DW)
   ) a_lite(), b_lite();
 
-  axi_to_axi_lite a (.slave(a_full.Slave), .master(a_lite.Master), .*);
-  axi_lite_to_axi b (.slave(b_lite.Slave), .master(b_full.Master), .*);
+  axi_to_axi_lite a (
+    .clk_i      (clk_i),
+    .rst_ni     (rst_ni),
+    .testmode_i (1'b0),
+    .in         (a_full.in),
+    .out        (a_lite.out)
+  );
+  axi_lite_to_axi b (
+    .in   (b_lite.in),
+    .out  (b_full.out)
+  );
 
 endmodule
 
@@ -118,6 +142,44 @@ module axi_lite_xbar_slice #(
     .master ( xbar_master.in     ),
     .slave  ( xbar_slave.out     ),
     .rules  ( xbar_routing.xbar  )
+  );
+
+endmodule
+
+
+module synth_axi_atop_filter #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned AXI_MAX_WRITE_TXNS = 0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) upstream ();
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) downstream ();
+
+  axi_atop_filter #(
+    .AXI_ID_WIDTH       (AXI_ID_WIDTH),
+    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
+  ) dut (
+    .clk_i  (clk_i),
+    .rst_ni (rst_ni),
+    .slv    (upstream),
+    .mst    (downstream)
   );
 
 endmodule

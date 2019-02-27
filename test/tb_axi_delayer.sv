@@ -1,10 +1,10 @@
 // Copyright 2018 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
-// License, Version 0.51 (the “License”); you may not use this file except in
+// License, Version 0.51 (the "License"); you may not use this file except in
 // compliance with the License.  You may obtain a copy of the License at
 // http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
 // or agreed to in writing, software, hardware and materials distributed under
-// this License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
@@ -104,6 +104,7 @@ module tb_axi_delayer;
   assign aw_chan_i.prot = axi_master.aw_prot;
   assign aw_chan_i.qos = axi_master.aw_qos;
   assign aw_chan_i.region = axi_master.aw_region;
+  assign aw_chan_i.atop = axi_master.aw_atop;
 
   assign ar_chan_i.id = axi_master.ar_id;
   assign ar_chan_i.addr = axi_master.ar_addr;
@@ -139,6 +140,7 @@ module tb_axi_delayer;
   assign axi_slave.aw_prot = aw_chan_o.prot;
   assign axi_slave.aw_qos = aw_chan_o.qos;
   assign axi_slave.aw_region = aw_chan_o.region;
+  assign axi_slave.aw_atop = aw_chan_o.atop;
 
   assign axi_slave.ar_id = ar_chan_o.id;
   assign axi_slave.ar_addr = ar_chan_o.addr;

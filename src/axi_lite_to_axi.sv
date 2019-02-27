@@ -34,6 +34,7 @@ module axi_lite_to_axi (
   assign out.aw_prot   = '0;
   assign out.aw_qos    = '0;
   assign out.aw_region = '0;
+  assign out.aw_atop   = '0;
   assign out.aw_user   = '0;
   assign out.aw_valid  = in.aw_valid;
   assign in.aw_ready   = out.aw_ready;

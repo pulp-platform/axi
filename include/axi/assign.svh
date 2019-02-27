@@ -24,6 +24,7 @@
   assign slv.aw_prot    = mst.aw_prot;    \
   assign slv.aw_qos     = mst.aw_qos;     \
   assign slv.aw_region  = mst.aw_region;  \
+  assign slv.aw_atop    = mst.aw_atop;    \
   assign slv.aw_user    = mst.aw_user;    \
   assign slv.aw_valid   = mst.aw_valid;   \
   assign mst.aw_ready   = slv.aw_ready;   \
@@ -61,7 +62,7 @@
   assign mst.r_last     = slv.r_last;     \
   assign mst.r_user     = slv.r_user;     \
   assign mst.r_valid    = slv.r_valid;    \
-  assign slv.r_ready    = mst.r_ready
+  assign slv.r_ready    = mst.r_ready;
 
 // Assign an AXI4-Lite master interface to a slave interface, as in `assign slv = mst;`.
 `define AXI_LITE_ASSIGN(slv, mst)     \
@@ -85,6 +86,6 @@
   assign mst.r_data   = slv.r_data;   \
   assign mst.r_resp   = slv.r_resp;   \
   assign mst.r_valid  = slv.r_valid;  \
-  assign slv.r_ready  = mst.r_ready
+  assign slv.r_ready  = mst.r_ready;
 
 `endif

@@ -4,6 +4,7 @@ axi:
     - src/axi_test.sv
     - src/axi_intf.sv
 
+    - src/axi_atop_filter.sv
     - src/axi_arbiter.sv
     - src/axi_address_resolver.sv
 

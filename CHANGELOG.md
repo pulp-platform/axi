@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## 0.6.0 - 2019-02-27
+
+### Changed
+- AXI interfaces now include the `aw_atop` signal. Interfaces, macros, and existing modules and
+  TBs in this repository have been updated. The ReadMe has been updated to guide users of this
+  repository on how to deal with the `aw_atop` signal.
+
+### Added
+- Add AXI atomic operations (ATOPs) filter.
+
+### Fixed
+- Replace non-ASCII characters in Solderpad license text.
+- Add a trailing semicolon to the `AXI_ASSIGN()` and `AXI_LITE_ASSIGN()` macros in `assign.svh`
+  (#8). Those macros can now be used without a semicolon. Existing code that uses the macros with a
+  semicolon do not break.
+
 ## 0.5.0 - 2018-12-18
 - Add axi channel delayer
 
