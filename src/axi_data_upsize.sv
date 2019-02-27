@@ -17,13 +17,13 @@
 //
 // Description:
 // AXI Data Upsize Conversion.
-// Connects a narrow master to a wider slave.
+// Connects a wide master to a narrow slave.
 
 import axi_pkg::*;
 
 module axi_data_upsize #(
-  parameter int unsigned MST_DATA_WIDTH = 64,
-  parameter int unsigned SLV_DATA_WIDTH = 64
+  parameter int unsigned MI_DATA_WIDTH = 64,
+  parameter int unsigned SI_DATA_WIDTH = 64
 ) (
   input logic clk_i,
   input logic rst_ni,
@@ -33,7 +33,7 @@ module axi_data_upsize #(
 
 `ifndef SYNTHESIS
   initial begin
-    assert(MST_DATA_WIDTH < SLV_DATA_WIDTH);
+    assert(SI_DATA_WIDTH < MI_DATA_WIDTH);
   end
 `endif
 
@@ -41,44 +41,54 @@ module axi_data_upsize #(
   // DEFINITIONS
   // --------------
 
-  localparam int unsigned MUL_FACTOR = $clog2(SLV_DATA_WIDTH / MST_DATA_WIDTH);
-  typedef logic [MUL_FACTOR:0]         mfactor_t;
+  localparam addr_t MI_BYTES = MI_DATA_WIDTH/8;
+  localparam addr_t MI_BYTE_MASK = MI_BYTES - 1;
+  typedef logic [MI_DATA_WIDTH-1:0] mi_data_t;
+  typedef logic [MI_BYTES-1:0]      mi_strb_t;
 
-  typedef logic [MST_DATA_WIDTH-1:0]     mst_data_t;
-  typedef logic [MST_DATA_WIDTH/8-1:0]   mst_strb_t;
-  typedef mst_data_t [2**MUL_FACTOR-1:0] slv_data_t;
-  typedef mst_strb_t [2**MUL_FACTOR-1:0] slv_strb_t;
+  localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
+  localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
+  typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
+  typedef logic [SI_BYTES-1:0]      si_strb_t;
 
   function automatic addr_t align_addr(addr_t addr);
-    addr_t retval                        = addr;
-    retval[$clog2(SLV_DATA_WIDTH/8)-1:0] = '0;
-    return retval;
+    return addr & ~MI_BYTE_MASK;
   endfunction // align_addr
-
 
   // --------------
   // READ
   // --------------
 
   enum logic [1:0] { R_IDLE,
-                   R_READ,
-                   R_SERIALIZE } r_state_d, r_state_q;
+                     R_PASSTHROUGH,
+                     R_INCR_UPSIZE,
+                     R_WRAP_UPSIZE } r_state_d, r_state_q;
 
   struct packed {
-    id_t     ar_id;
-    addr_t   ar_addr;
-    len_t    ar_len;
-    size_t   ar_size;
-    burst_t  ar_burst;
-    logic    ar_lock;
-    cache_t  ar_cache;
-    prot_t   ar_prot;
-    qos_t    ar_qos;
-    region_t ar_region;
-    user_t   ar_user;
-    logic    ar_valid;
+    struct packed {
+      id_t     id;
+      addr_t   addr;
+      len_t    len;
+      size_t   size;
+      burst_t  burst;
+      logic    lock;
+      cache_t  cache;
+      prot_t   prot;
+      qos_t    qos;
+      region_t region;
+      user_t   user;
+      logic    valid;
+    } ar;
 
-    logic    serialize;
+    struct packed {
+      id_t      id;
+      mi_data_t data;
+      resp_t    resp;
+      logic     last;
+      logic     valid;
+    } r;
+
+    len_t       len;
   } r_req_d, r_req_q;
 
   always_comb begin
@@ -87,69 +97,156 @@ module axi_data_upsize #(
     r_req_d       = r_req_q;
 
     // AR Channel
-    out.ar_id     = r_req_q.ar_id;
-    out.ar_addr   = r_req_q.ar_addr;
-    out.ar_len    = r_req_q.serialize ? (r_req_q.ar_len >> MUL_FACTOR) : 0; // Un-serializable beats are split into individual requests
-    out.ar_size   = r_req_q.ar_size;
-    out.ar_burst  = r_req_q.ar_burst;
-    out.ar_lock   = r_req_q.ar_lock;
-    out.ar_cache  = r_req_q.ar_cache;
-    out.ar_prot   = r_req_q.ar_prot;
-    out.ar_qos    = r_req_q.ar_qos;
-    out.ar_region = r_req_q.ar_region;
-    out.ar_user   = r_req_q.ar_user;
-    out.ar_valid  = r_req_q.ar_valid;
+    out.ar_id     = r_req_q.ar.id;
+    out.ar_addr   = r_req_q.ar.addr;
+    out.ar_len    = r_req_q.ar.len;
+    out.ar_size   = r_req_q.ar.size;
+    out.ar_burst  = r_req_q.ar.burst;
+    out.ar_lock   = r_req_q.ar.lock;
+    out.ar_cache  = r_req_q.ar.cache;
+    out.ar_prot   = r_req_q.ar.prot;
+    out.ar_qos    = r_req_q.ar.qos;
+    out.ar_region = r_req_q.ar.region;
+    out.ar_user   = r_req_q.ar.user;
+    out.ar_valid  = r_req_q.ar.valid;
     in.ar_ready   = '0;
 
-    in.r_id       = out.r_id;
+    // R Channel
+    in.r_id       = r_req_q.r.id;
     in.r_data     = '0;
-    in.r_resp     = out.r_resp;
+    in.r_resp     = r_req_q.r.resp;
     in.r_last     = '0;
-    in.r_user     = '0; // Due to data serialization/merging, no user data is forwarded
+    in.r_user     = '0; // Due do data serialization/merging, no user data is forwarded
     in.r_valid    = '0;
     out.r_ready   = '0;
 
-    // FSM
+    // Got a grant on the AR channel
+    if (out.ar_valid & out.ar_ready)
+      r_req_d.ar.valid = 1'b0;
+
     case (r_state_q)
-      R_READ: begin
-
+      R_IDLE: begin
+        // Reset channels
+        r_req_d.ar = '0;
+        r_req_d.r  = '0;
       end
 
-      R_SERIALIZE: begin
+      R_PASSTHROUGH, R_INCR_UPSIZE: begin
+        if (r_req_q.r.valid) begin
+          automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
+          automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
+          automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1;
 
-      end
+          // Valid output
+          in.r_valid                 = 1'b1;
+          in.r_last                  = r_req_q.r.last & (r_req_q.len == 0);
+
+          // Serialization
+          for (int b = 0; b < MI_BYTES; b++)
+            if ((b >= mi_offset) &&
+                (b - mi_offset < (1 << r_req_q.ar.size)) &&
+                (b + si_offset - mi_offset < SI_BYTES)) begin
+              in.r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
+            end
+
+          // Acknowledgement
+          if (in.r_ready) begin
+            r_req_d.len     = r_req_q.len - 1;
+
+            case (r_state_q)
+              R_PASSTHROUGH: begin
+                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                r_req_d.r.valid = 1'b0;
+              end
+
+              R_INCR_UPSIZE: begin
+                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
+                  r_req_d.r.valid = 1'b0;
+              end
+            endcase // case (r_state_q)
+
+            if (r_req_q.len == 0) begin
+              r_req_d.r.valid = 1'b0;
+              r_state_d       = R_IDLE;
+            end
+          end // if (in.r_ready)
+        end // if (r_req_q.r.valid)
+
+        // If we are waiting for a word, ready
+        // whenever downstream answers
+        if (!r_req_q.r.valid)
+          out.r_ready = out.r_valid;
+        // Else, ready if the upstream interface is ready
+        else
+          out.r_ready = ~r_req_d.r.valid & out.r_valid;
+
+        // Accept a new word
+        if (out.r_ready & out.r_valid) begin
+          r_req_d.r.id    = out.r_id;
+          r_req_d.r.data  = out.r_data;
+          r_req_d.r.resp  = out.r_resp;
+          r_req_d.r.last  = out.r_last;
+          r_req_d.r.valid = 1'b1;
+        end
+      end // case: R_PASSTHROUGH
     endcase // case (r_state_q)
 
     // Can start new request whenever r_state_d is IDLE
-    if (r_state_d == R_IDLE)
-      // New write request
+    if (r_state_d == R_IDLE) begin
+      // New read request
       if (in.ar_valid) begin
-        r_state_d         = R_READ;
-
         // Save beat
-        r_req_d.ar_addr   = in.ar_addr;
-        r_req_d.ar_len    = in.ar_len;
-        r_req_d.ar_size   = in.ar_size;
-        r_req_d.ar_burst  = in.ar_burst;
-        r_req_d.ar_lock   = in.ar_lock;
-        r_req_d.ar_cache  = in.ar_cache;
-        r_req_d.ar_prot   = in.ar_prot;
-        r_req_d.ar_qos    = in.ar_qos;
-        r_req_d.ar_region = in.ar_region;
-        r_req_d.ar_user   = in.ar_user;
-        r_req_d.ar_valid  = in.ar_valid;
+        r_req_d.ar.id     = in.ar_id;
+        r_req_d.ar.addr   = in.ar_addr;
+        r_req_d.ar.size   = in.ar_size;
+        r_req_d.ar.burst  = in.ar_burst;
+        r_req_d.ar.len    = in.ar_len;
+        r_req_d.ar.lock   = in.ar_lock;
+        r_req_d.ar.cache  = in.ar_cache;
+        r_req_d.ar.prot   = in.ar_prot;
+        r_req_d.ar.qos    = in.ar_qos;
+        r_req_d.ar.region = in.ar_region;
+        r_req_d.ar.user   = in.ar_user;
+        r_req_d.ar.valid  = 1'b1;
+        r_req_d.len       = in.ar_len;
 
-        // Can we serialize the slave responses?
-        if (in.ar_burst == BURST_INCR && |(in.ar_cache & CACHE_MODIFIABLE))
-          r_req_d.serialize = (in.ar_size == $clog2(MST_DATA_WIDTH/8)); // No support for narrow bursts
-        else
-          r_req_d.serialize = 1'b0;
+        if (|(in.ar_cache & CACHE_MODIFIABLE)) begin
+          case (in.ar_burst)
+            BURST_INCR: begin
+              // Evaluate output burst length
+              automatic addr_t size_mask  = (1 << in.ar_size) - 1;
+
+              automatic addr_t addr_start = align_addr(in.ar_addr);
+              automatic addr_t addr_end   = align_addr((in.ar_addr & ~size_mask) + (in.ar_len << in.ar_size));
+
+              r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              r_state_d                   = R_INCR_UPSIZE;
+            end // case: BURST_INCR
+
+            BURST_WRAP: begin
+              // Evaluate output burst length
+              r_req_d.ar.len = (((in.ar_len + 1) << in.ar_size) >> $clog2(MI_BYTES)) - 1;
+              r_state_d      = R_WRAP_UPSIZE;
+
+              // Degenerate case
+              if (r_req_d.ar.len == 0)
+                r_req_d.ar.burst = BURST_INCR;
+
+              // TODO address
+            end
+          endcase // case (in.ar_burst)
+        end else begin
+          // Do nothing
+          r_state_d = R_PASSTHROUGH;
+        end
 
         // Acknowledge this request
         // NOTE: Acknowledgment regardless of an answer
         // on the slave side?
-        in.ar_ready         = 1'b1;
+        in.ar_ready = 1'b1;
       end // if (in.ar_valid)
+    end // if (r_state_d == R_IDLE)
   end
 
   // --------------
@@ -157,27 +254,34 @@ module axi_data_upsize #(
   // --------------
 
   enum logic [1:0] { W_IDLE,
-                   W_MERGE,
-                   W_WRITE } w_state_d, w_state_q;
+                     W_PASSTHROUGH,
+                     W_INCR_UPSIZE,
+                     W_WRAP_UPSIZE } w_state_d, w_state_q;
 
   struct packed {
-    id_t       aw_id;
-    addr_t     aw_addr;
-    len_t      aw_len;
-    size_t     aw_size;
-    burst_t    aw_burst;
-    logic      aw_lock;
-    cache_t    aw_cache;
-    prot_t     aw_prot;
-    qos_t      aw_qos;
-    region_t   aw_region;
-    user_t     aw_user;
-    logic      aw_valid;
+    struct packed {
+      id_t     id;
+      addr_t   addr;
+      len_t    len;
+      size_t   size;
+      burst_t  burst;
+      logic    lock;
+      cache_t  cache;
+      prot_t   prot;
+      qos_t    qos;
+      region_t region;
+      user_t   user;
+      logic    valid;
+    } aw;
 
-    slv_data_t w_data;
-    slv_strb_t w_strb;
+    struct packed {
+      mi_data_t data;
+      mi_strb_t strb;
+      logic     last;
+      logic     valid;
+    } w;
 
-    logic      merging;
+    len_t       len;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -186,26 +290,26 @@ module axi_data_upsize #(
     w_req_d       = w_req_q;
 
     // AW Channel
-    out.aw_id     = w_req_q.aw_id;
-    out.aw_addr   = w_req_q.aw_addr;
-    out.aw_len    = w_req_q.merging ? (w_req_q.aw_len >> MUL_FACTOR) : 0; // Un-mergeable burts are split into individual beats
-    out.aw_size   = w_req_q.aw_size;
-    out.aw_burst  = w_req_q.aw_burst;
-    out.aw_lock   = w_req_q.aw_lock;
-    out.aw_cache  = w_req_q.aw_cache;
-    out.aw_prot   = w_req_q.aw_prot;
-    out.aw_qos    = w_req_q.aw_qos;
-    out.aw_region = w_req_q.aw_region;
-    out.aw_user   = w_req_q.aw_user;
-    out.aw_valid  = w_req_q.aw_valid;
+    out.aw_id     = w_req_q.aw.id;
+    out.aw_addr   = w_req_q.aw.addr;
+    out.aw_len    = w_req_q.aw.len;
+    out.aw_size   = w_req_q.aw.size;
+    out.aw_burst  = w_req_q.aw.burst;
+    out.aw_lock   = w_req_q.aw.lock;
+    out.aw_cache  = w_req_q.aw.cache;
+    out.aw_prot   = w_req_q.aw.prot;
+    out.aw_qos    = w_req_q.aw.qos;
+    out.aw_region = w_req_q.aw.region;
+    out.aw_user   = w_req_q.aw.user;
+    out.aw_valid  = w_req_q.aw.valid;
     in.aw_ready   = '0;
 
     // W Channel
-    out.w_data    = w_req_q.w_data;
-    out.w_strb    = w_req_q.w_strb;
-    out.w_last    = '0;
+    out.w_data    = w_req_q.w.data;
+    out.w_strb    = w_req_q.w.strb;
+    out.w_last    = w_req_q.w.last;
     out.w_user    = '0; // Due to data serialization/merging, no user data is forwarded
-    out.w_valid   = '0;
+    out.w_valid   = w_req_q.w.valid;
     in.w_ready    = '0;
 
     // B Channel
@@ -216,82 +320,130 @@ module axi_data_upsize #(
     in.b_valid    = out.b_valid;
     out.b_ready   = in.b_ready;
 
-    // Issue write beat
-    if (w_state_q == W_WRITE) begin
-      out.w_valid = 1'b1;
+    // Got a grant on the AW channel
+    if (out.aw_valid & out.aw_ready)
+      w_req_d.aw.valid = 1'b0;
 
-      // Send w_last if finished merging or at the end of every beat
-      out.w_last  = (w_req_q.aw_len == '1) || !w_req_q.merging;
+    // Got a grant on the W channel
+    if (out.w_valid & out.w_ready)
+      w_req_d.w = '0;
 
-      if (out.w_ready) begin
-        w_req_d.w_data = '0;
-        w_req_d.w_strb = '0;
-        w_state_d      = (w_req_q.aw_len == '1) ? W_IDLE : W_MERGE;
-      end
-    end // if (w_state_q == W_WRITE)
-
-    // Can accept data whenever w_state_d is MERGE
-    if (w_state_d == W_MERGE) begin
-      // Got a grant on the AW channel
-      if (out.aw_ready)
-        w_req_d.aw_valid = 1'b0;
-
-      // Ready for more data
-      in.w_ready = 1'b1;
-
-      if (in.w_valid) begin
-        // Lane steering
-        automatic integer lane = w_req_q.aw_addr[$clog2(SLV_DATA_WIDTH/8)-1:$clog2(MST_DATA_WIDTH/8)];
-        w_req_d.w_data[lane]   = in.w_data;
-        w_req_d.w_strb[lane]   = in.w_strb;
-
-        w_req_d.aw_len         = w_req_q.aw_len - 1;
-        w_req_d.aw_addr        = w_req_q.aw_addr + (1 << w_req_q.aw_size);
+    case (w_state_q)
+      W_IDLE: begin
+        // Reset channels
+        w_req_d.aw = '0;
+        w_req_d.w  = '0;
       end
 
-      if (w_req_q.merging) begin
-        if ((align_addr(w_req_d.aw_addr) != align_addr(w_req_q.aw_addr)) // Filled up one word
-          || w_req_d.aw_len == '1)                                       // Burst finished
-          w_state_d = W_WRITE;
-      end else begin
-        w_state_d = W_WRITE;
+      W_PASSTHROUGH, W_INCR_UPSIZE, W_WRAP_UPSIZE: begin
+        // If the downstream interface is idle,
+        // ready whenever a new word arrives
+        if (!out.w_valid)
+          in.w_ready = in.w_valid;
+        // Else, ready if the downstream interface is ready
+        else
+          in.w_ready = in.w_valid & out.w_ready;
 
-        // If not finished with this burst, trigger another request on AW
-        if (in.w_valid && (w_req_d.aw_len != '1))
-          w_req_d.aw_valid = 1'b1;
+        if (in.w_ready) begin
+          automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
+          automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
+          automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
+
+          // Lane steering
+          for (int b = 0; b < MI_BYTES; b++)
+            if ((b >= mi_offset) &&
+                (b - mi_offset < (1 << w_req_q.aw.size)) &&
+                (b + si_offset - mi_offset < SI_BYTES)) begin
+              w_req_d.w.data[8 * b +: 8] = in.w_data[8 * (b + si_offset - mi_offset) +: 8];
+              w_req_d.w.strb[b]          = in.w_strb[b + si_offset - mi_offset];
+            end
+
+          w_req_d.len     = w_req_q.len - 1;
+
+          case (w_state_q)
+            W_PASSTHROUGH: begin
+              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+
+              // Forward data as soon as we can
+              w_req_d.w.valid = 1'b1;
+            end
+            W_INCR_UPSIZE: begin
+              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+
+              // Forward when the burst is finished, or when a word was filled up
+              if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
+                w_req_d.w.valid = 1'b1;
+            end
+            W_WRAP_UPSIZE: begin
+              // TODO Address
+            end
+          endcase // case (w_state_q)
+
+          if (w_req_q.len == 0) begin
+            w_req_d.w.last = 1'b1;
+            w_state_d      = W_IDLE;
+          end
+        end
       end
-    end
+    endcase // case (w_state_q)
 
     // Can start new request whenever w_state_d is IDLE
-    if (w_state_d == W_IDLE)
+    if (w_state_d == W_IDLE) begin
       // New write request
       if (in.aw_valid) begin
-        w_state_d         = W_MERGE;
-
         // Save beat
-        w_req_d.aw_addr   = in.aw_addr;
-        w_req_d.aw_len    = in.aw_len;
-        w_req_d.aw_size   = in.aw_size;
-        w_req_d.aw_burst  = in.aw_burst;
-        w_req_d.aw_lock   = in.aw_lock;
-        w_req_d.aw_cache  = in.aw_cache;
-        w_req_d.aw_prot   = in.aw_prot;
-        w_req_d.aw_qos    = in.aw_qos;
-        w_req_d.aw_region = in.aw_region;
-        w_req_d.aw_user   = in.aw_user;
-        w_req_d.aw_valid  = in.aw_valid;
+        w_req_d.aw.id     = in.aw_id;
+        w_req_d.aw.addr   = in.aw_addr;
+        w_req_d.aw.size   = in.aw_size;
+        w_req_d.aw.burst  = in.aw_burst;
+        w_req_d.aw.len    = in.aw_len;
+        w_req_d.aw.lock   = in.aw_lock;
+        w_req_d.aw.cache  = in.aw_cache;
+        w_req_d.aw.prot   = in.aw_prot;
+        w_req_d.aw.qos    = in.aw_qos;
+        w_req_d.aw.region = in.aw_region;
+        w_req_d.aw.user   = in.aw_user;
+        w_req_d.aw.valid  = 1'b1;
+        w_req_d.len       = in.aw_len;
 
-        // Can we merge the master requests?
-        if (in.aw_burst == BURST_INCR && |(in.aw_cache & CACHE_MODIFIABLE))
-          w_req_d.merging = (in.aw_size == $clog2(MST_DATA_WIDTH/8)); // No support for narrow bursts
-        else
-          w_req_d.merging = 1'b0;
+        if (|(in.aw_cache & CACHE_MODIFIABLE)) begin
+          case (in.aw_burst)
+            BURST_INCR: begin
+              // Evaluate output burst length
+              automatic addr_t size_mask  = (1 << in.aw_size) - 1;
+
+              automatic addr_t addr_start = align_addr(in.aw_addr);
+              automatic addr_t addr_end   = align_addr((in.aw_addr & ~size_mask) + (in.aw_len << in.aw_size));
+
+              w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              w_state_d                   = W_INCR_UPSIZE;
+            end // case: BURST_INCR
+
+            BURST_WRAP: begin
+              // Evaluate output burst length
+              w_req_d.aw.len = (((in.aw_len + 1) << in.aw_size) >> $clog2(MI_BYTES)) - 1;
+              w_state_d      = W_WRAP_UPSIZE;
+
+              // Degenerate case
+              if (w_req_d.aw.len == 0) begin
+                w_req_d.aw.burst = BURST_INCR;
+                w_state_d        = W_INCR_UPSIZE;
+              end
+
+              // TODO address
+            end
+          endcase // case (in.aw_burst)
+        end else begin
+          // Do nothing
+          w_state_d = W_PASSTHROUGH;
+        end
 
         // Acknowledge this request
         // NOTE: Acknowledgment regardless of an answer
         // on the slave side?
-        in.aw_ready       = 1'b1;
+        in.aw_ready = 1'b1;
       end // if (in.aw_valid)
+    end // if (w_state_d == W_IDLE)
   end
 
   // --------------
