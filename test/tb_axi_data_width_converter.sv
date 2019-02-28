@@ -149,10 +149,13 @@ module tb_axi_data_width_converter;
 
         axi_master_drv.send_aw(ax_beat);
 
-        w_beat.w_data = 'hcafebabe;
-        w_beat.w_strb = '1;
-        for (int beat = 0; beat <= ax_beat.ax_len; beat++)
+        w_beat.w_data  = 'hcafebabe;
+        w_beat.w_strb  = '1;
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
+          if (beat == ax_beat.ax_len)
+            w_beat.w_last = 1'b1;
           axi_master_drv.send_w(w_beat);
+        end
       end
 
       // B channel
@@ -180,9 +183,12 @@ module tb_axi_data_width_converter;
         axi_slave_drv.recv_ar(ax_beat);
         $info("AXI AR: addr %h", ax_beat.ax_addr);
 
-        r_beat.r_data = {MULT{32'hdeadcafe}};
-        for (int beat = 0; beat <= ax_beat.ax_len; beat++)
+        r_beat.r_data  = {MULT{32'hdeadcafe}};
+        for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
+          if (beat == ax_beat.ax_len)
+            r_beat.r_last = 1'b1;
           axi_slave_drv.send_r(r_beat);
+        end
       end
 
       // AW and W channels
