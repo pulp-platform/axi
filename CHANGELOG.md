@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   not support.
 - Add macros for assigning to and from AXI channel structs and an AXI interface.
 - Add constrained randomizing master and slave test drivers.
+- Add performance monitor.
 
 ### Changed
 - Change `reset` tasks in `axi_driver` and `axi_lite_driver` (both test modules) to functions.

@@ -10,6 +10,8 @@
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
+import axi_pkg::*;
+
 /// A synthesis test bench which instantiates various adapter variants.
 module synth_bench (
   input logic clk_i,
@@ -61,6 +63,35 @@ module synth_bench (
       ) i_filter (.*);
     end
   end
+
+  // Performance Monitor
+  synth_axi_perf_mon #(
+    // Number of monitored AXI interfaces
+    .N_MON          (2),
+    // AXI parameters
+    .AW             (64),
+    .IW             (4),
+    // Capabilities of all interface monitors
+    .CAP_HS         (1'b1),
+    .CAP_FL_TXN     (1'b1),
+    .CAP_FL_DAT     (1'b0),
+    .CAP_TX_DAT     (1'b0),
+    .CAP_STALL      (1'b1),
+    .CAP_RT         (1'b0),
+    .CAP_EXCL       (1'b1),
+    .CAP_ATOP       (1'b1),
+    // Counter widths for all interface monitors
+    .CW_CLK         (56),
+    .CW_HS_CMD      (32),
+    .CW_HS_DAT      (32),
+    .CW_FL_TXN_ACC  (63),
+    .CW_FL_TXN_MAX  (10),
+    .CW_STALL_CMD   (56),
+    .CW_STALL_DAT   (56),
+    .CW_STALL_MAX   (16),
+    .CW_EXCL        (10),
+    .CW_ATOP        (14)
+  ) i_perf_mon ();
 
 endmodule
 
@@ -180,6 +211,151 @@ module synth_axi_atop_filter #(
     .rst_ni (rst_ni),
     .slv    (upstream),
     .mst    (downstream)
+  );
+
+endmodule
+
+module synth_axi_perf_mon #(
+  // Number of monitored AXI interfaces
+  parameter int unsigned  N_MON         = 0,
+  // AXI parameters
+  parameter int unsigned  AW            = 0,
+  parameter int unsigned  IW            = 0,
+  // Capabilities of all interface monitors
+  parameter bit           CAP_HS        = 1'b0,
+  parameter bit           CAP_FL_TXN    = 1'b0,
+  parameter bit           CAP_FL_DAT    = 1'b0,
+  parameter bit           CAP_TX_DAT    = 1'b0,
+  parameter bit           CAP_STALL     = 1'b0,
+  parameter bit           CAP_RT        = 1'b0,
+  parameter bit           CAP_EXCL      = 1'b0,
+  parameter bit           CAP_ATOP      = 1'b0,
+  // Counter widths for all interface monitors
+  parameter int unsigned  CW_CLK        = 0,
+  parameter int unsigned  CW_HS_CMD     = 0,
+  parameter int unsigned  CW_HS_DAT     = 0,
+  parameter int unsigned  CW_FL_TXN_ACC = 0,
+  parameter int unsigned  CW_FL_TXN_MAX = 0,
+  parameter int unsigned  CW_FL_DAT_ACC = 0,
+  parameter int unsigned  CW_FL_DAT_MAX = 0,
+  parameter int unsigned  CW_TX_DAT     = 0,
+  parameter int unsigned  CW_STALL_CMD  = 0,
+  parameter int unsigned  CW_STALL_DAT  = 0,
+  parameter int unsigned  CW_STALL_MAX  = 0,
+  parameter int unsigned  CW_RT_ACC     = 0,
+  parameter int unsigned  CW_RT_MAX     = 0,
+  parameter int unsigned  CW_EXCL       = 0,
+  parameter int unsigned  CW_ATOP       = 0,
+  // Dependent parameters, do not override.
+  parameter type id_t = logic [IW-1:0]
+);
+  // APB Readout and Control Interface
+  logic        pclk_i;
+  logic        preset_ni;
+  logic [31:0] paddr_i;
+  logic  [2:0] pprot_i;
+  logic        psel_i;
+  logic        penable_i;
+  logic        pwrite_i;
+  logic [31:0] pwdata_i;
+  logic  [3:0] pstrb_i;
+  logic        pready_o;
+  logic [31:0] prdata_o;
+  logic        pslverr_o;
+
+  // Monitored AXI Interfaces
+  logic  [N_MON-1:0] clk_axi_i;
+  logic  [N_MON-1:0] rst_axi_ni;
+  id_t   [N_MON-1:0] ar_id_i;
+  len_t  [N_MON-1:0] ar_len_i;
+  size_t [N_MON-1:0] ar_size_i;
+  logic  [N_MON-1:0] ar_lock_i;
+  logic  [N_MON-1:0] ar_valid_i;
+  logic  [N_MON-1:0] ar_ready_i;
+  id_t   [N_MON-1:0] aw_id_i;
+  len_t  [N_MON-1:0] aw_len_i;
+  size_t [N_MON-1:0] aw_size_i;
+  logic  [N_MON-1:0] aw_lock_i;
+  atop_t [N_MON-1:0] aw_atop_i;
+  logic  [N_MON-1:0] aw_valid_i;
+  logic  [N_MON-1:0] aw_ready_i;
+  id_t   [N_MON-1:0] r_id_i;
+  logic  [N_MON-1:0] r_last_i;
+  logic  [N_MON-1:0] r_valid_i;
+  logic  [N_MON-1:0] r_ready_i;
+  logic  [N_MON-1:0] w_last_i;
+  logic  [N_MON-1:0] w_valid_i;
+  logic  [N_MON-1:0] w_ready_i;
+  id_t   [N_MON-1:0] b_id_i;
+  resp_t [N_MON-1:0] b_resp_i;
+  logic  [N_MON-1:0] b_valid_i;
+  logic  [N_MON-1:0] b_ready_i;
+
+  axi_perf_mon #(
+    .N_MON          (N_MON),
+    .IW             (IW),
+    .CAP_HS         (CAP_HS),
+    .CAP_FL_TXN     (CAP_FL_TXN),
+    .CAP_FL_DAT     (CAP_FL_DAT),
+    .CAP_TX_DAT     (CAP_TX_DAT),
+    .CAP_STALL      (CAP_STALL),
+    .CAP_RT         (CAP_RT),
+    .CAP_EXCL       (CAP_EXCL),
+    .CAP_ATOP       (CAP_ATOP),
+    .CW_CLK         (CW_CLK),
+    .CW_HS_CMD      (CW_HS_CMD),
+    .CW_HS_DAT      (CW_HS_DAT),
+    .CW_FL_TXN_ACC  (CW_FL_TXN_ACC),
+    .CW_FL_TXN_MAX  (CW_FL_TXN_MAX),
+    .CW_FL_DAT_ACC  (CW_FL_DAT_ACC),
+    .CW_FL_DAT_MAX  (CW_FL_DAT_MAX),
+    .CW_TX_DAT      (CW_TX_DAT),
+    .CW_STALL_CMD   (CW_STALL_CMD),
+    .CW_STALL_DAT   (CW_STALL_DAT),
+    .CW_STALL_MAX   (CW_STALL_MAX),
+    .CW_RT_ACC      (CW_RT_ACC),
+    .CW_RT_MAX      (CW_RT_MAX),
+    .CW_EXCL        (CW_EXCL),
+    .CW_ATOP        (CW_ATOP)
+  ) dut (
+    .pclk_i,
+    .preset_ni,
+    .paddr_i,
+    .pprot_i,
+    .psel_i,
+    .penable_i,
+    .pwrite_i,
+    .pwdata_i,
+    .pstrb_i,
+    .pready_o,
+    .prdata_o,
+    .pslverr_o,
+    .clk_axi_i,
+    .rst_axi_ni,
+    .ar_id_i,
+    .ar_len_i,
+    .ar_size_i,
+    .ar_lock_i,
+    .ar_valid_i,
+    .ar_ready_i,
+    .aw_id_i,
+    .aw_len_i,
+    .aw_size_i,
+    .aw_lock_i,
+    .aw_atop_i,
+    .aw_valid_i,
+    .aw_ready_i,
+    .r_id_i,
+    .r_last_i,
+    .r_valid_i,
+    .r_ready_i,
+    .w_last_i,
+    .w_valid_i,
+    .w_ready_i,
+    .b_id_i,
+    .b_resp_i,
+    .b_valid_i,
+    .b_ready_i
   );
 
 endmodule
