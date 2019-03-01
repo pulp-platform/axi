@@ -17,7 +17,7 @@
 //
 // Description:
 // AXI Data Upsize Conversion.
-// Connects a wide master to a narrow slave.
+// Connects a wide master to a narrower slave.
 
 import axi_pkg::*;
 
@@ -55,22 +55,13 @@ module axi_data_upsize #(
     return unaligned_addr & ~MI_BYTE_MASK;
   endfunction // align_addr
 
-  function automatic addr_t wrap_addr(addr_t addr, len_t len, size_t size);
-    return addr & ~(((len + 1) << size) - 1);
-  endfunction // wrap_addr
-
-  function automatic addr_t upper_wrap_boundary(addr_t addr, len_t len, size_t size);
-    return wrap_addr(addr, len, size) + ((len + 1) << size);
-  endfunction // upper_wrap_boundary
-
   // --------------
   // READ
   // --------------
 
   enum logic [1:0] { R_IDLE,
                      R_PASSTHROUGH,
-                     R_INCR_UPSIZE,
-                     R_WRAP_UPSIZE } r_state_d, r_state_q;
+                     R_INCR_UPSIZE } r_state_d, r_state_q;
 
   struct packed {
     struct packed {
@@ -139,7 +130,7 @@ module axi_data_upsize #(
         r_req_d.r  = '0;
       end
 
-      R_PASSTHROUGH, R_INCR_UPSIZE, R_WRAP_UPSIZE: begin
+      R_PASSTHROUGH, R_INCR_UPSIZE: begin
         if (r_req_q.r.valid) begin
           automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
@@ -169,16 +160,6 @@ module axi_data_upsize #(
 
               R_INCR_UPSIZE: begin
                 r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
-
-                if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
-                  r_req_d.r.valid = 1'b0;
-              end
-
-              R_WRAP_UPSIZE: begin
-                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
-
-                if (r_req_d.ar.addr >= upper_wrap_boundary(r_req_q.ar.addr, r_req_q.ar.len, r_req_q.ar.size))
-                  r_req_d.ar.addr = upper_wrap_boundary(r_req_q.ar.addr, r_req_q.ar.len, r_req_q.ar.size);
 
                 if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
                   r_req_d.r.valid = 1'b0;
@@ -242,21 +223,6 @@ module axi_data_upsize #(
               r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
               r_state_d                   = R_INCR_UPSIZE;
             end // case: BURST_INCR
-
-            BURST_WRAP: begin
-              automatic addr_t burst_mask = ((in.aw_len + 1) << in.aw_size) - 1;
-
-              // Evaluate output burst length
-              r_req_d.ar.len              = (((in.ar_len + 1) << in.ar_size) >> $clog2(MI_BYTES)) - 1;
-              r_state_d                   = R_WRAP_UPSIZE;
-
-              // Degenerate case
-              if (r_req_d.ar.len == 0)
-                r_req_d.ar.burst = BURST_INCR;
-
-              r_req_d.ar.addr = wrap_addr(in.ar_addr, in.ar_len, in.ar_size) +
-                                (((in.ar_addr & burst_mask) >> $clog2(MI_BYTES)) << $clog2(MI_BYTES));
-            end
           endcase // case (in.ar_burst)
         end else begin
           // Do nothing
@@ -277,8 +243,7 @@ module axi_data_upsize #(
 
   enum logic [1:0] { W_IDLE,
                      W_PASSTHROUGH,
-                     W_INCR_UPSIZE,
-                     W_WRAP_UPSIZE } w_state_d, w_state_q;
+                     W_INCR_UPSIZE } w_state_d, w_state_q;
 
   struct packed {
     struct packed {
@@ -357,12 +322,12 @@ module axi_data_upsize #(
         w_req_d.w  = '0;
       end
 
-      W_PASSTHROUGH, W_INCR_UPSIZE, W_WRAP_UPSIZE: begin
+      W_PASSTHROUGH, W_INCR_UPSIZE: begin
         // If the downstream interface is idle,
         // ready whenever a new word arrives
         if (!out.w_valid)
           in.w_ready = in.w_valid;
-        // Else, ready if the downstream interface is ready
+        // Else, ready if the upstream interface is ready
         else
           in.w_ready = in.w_valid & out.w_ready;
 
@@ -389,18 +354,9 @@ module axi_data_upsize #(
               // Forward data as soon as we can
               w_req_d.w.valid = 1'b1;
             end
+
             W_INCR_UPSIZE: begin
               w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
-
-              // Forward when the burst is finished, or when a word was filled up
-              if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
-                w_req_d.w.valid = 1'b1;
-            end
-            W_WRAP_UPSIZE: begin
-              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
-
-              if (w_req_d.aw.addr >= upper_wrap_boundary(w_req_q.aw.addr, w_req_q.aw.len, w_req_q.aw.size))
-                w_req_d.aw.addr = upper_wrap_boundary(w_req_q.aw.addr, w_req_q.aw.len, w_req_q.aw.size);
 
               // Forward when the burst is finished, or when a word was filled up
               if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
@@ -447,24 +403,6 @@ module axi_data_upsize #(
               w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
               w_state_d                   = W_INCR_UPSIZE;
             end // case: BURST_INCR
-
-            BURST_WRAP: begin
-              automatic addr_t burst_mask = ((in.aw_len + 1) << in.aw_size) - 1;
-
-              // Evaluate output burst length
-              w_req_d.aw.len              = (((in.aw_len + 1) << in.aw_size) >> $clog2(MI_BYTES)) - 1;
-              w_state_d                   = W_WRAP_UPSIZE;
-
-              // Degenerate case
-              if (w_req_d.aw.len == 0) begin
-                w_req_d.aw.burst = BURST_INCR;
-                w_state_d        = W_INCR_UPSIZE;
-              end
-
-              // TODO: Replace %
-              w_req_d.aw.addr = wrap_addr(in.aw_addr, in.aw_len, in.aw_size) +
-                                ((((in.aw_addr & burst_mask) >> $clog2(MI_BYTES)) << $clog2(MI_BYTES)) % SI_BYTES);
-            end
           endcase // case (in.aw_burst)
         end else begin
           // Do nothing

@@ -42,7 +42,6 @@ sources:
   - src/axi_lite_multicut.sv
   - src/axi_lite_xbar.sv
   - src/axi_multicut.sv
-  - src/axi_upscale.sv
 
   - target: synth_test
     files:
@@ -55,6 +54,7 @@ sources:
   - target: test
     files:
       - test/tb_axi_atop_filter.sv
+      - test/tb_axi_data_width_converter.sv
       - test/tb_axi_id_remap.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_axi.sv
