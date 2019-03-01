@@ -46,3 +46,4 @@ done
 call_vsim tb_axi_delayer
 call_vsim tb_axi_id_remap
 call_vsim tb_axi_atop_filter -GN_TXNS=1000
+call_vsim tb_axi_perf_mon
