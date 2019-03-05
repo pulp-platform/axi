@@ -577,4 +577,157 @@ package axi_test;
 
   endclass
 
+  class rand_axi_slave #(
+    // AXI interface parameters
+    parameter int   AW,
+    parameter int   DW,
+    parameter int   IW,
+    parameter int   UW,
+    // Stimuli application and test time
+    parameter time  TA,
+    parameter time  TT,
+    // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
+    parameter int   AX_MIN_WAIT_CYCLES = 0,
+    parameter int   AX_MAX_WAIT_CYCLES = 100,
+    parameter int   R_MIN_WAIT_CYCLES = 0,
+    parameter int   R_MAX_WAIT_CYCLES = 5,
+    parameter int   RESP_MIN_WAIT_CYCLES = 0,
+    parameter int   RESP_MAX_WAIT_CYCLES = 20
+  );
+    typedef axi_test::axi_driver #(
+      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+    ) axi_driver_t;
+    typedef rand_id_queue_pkg::rand_id_queue #(
+      .data_t   (axi_driver_t::ax_beat_t),
+      .ID_WIDTH (IW)
+    ) rand_ax_beat_queue_t;
+    typedef axi_driver_t::ax_beat_t ax_beat_t;
+    typedef axi_driver_t::b_beat_t b_beat_t;
+    typedef axi_driver_t::r_beat_t r_beat_t;
+    typedef axi_driver_t::w_beat_t w_beat_t;
+
+    axi_driver_t          drv;
+    rand_ax_beat_queue_t  ar_queue,
+                          b_queue;
+    ax_beat_t             aw_queue[$];
+
+    function new(
+      virtual AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_USER_WIDTH(UW)
+      ) axi
+    );
+      this.drv = new(axi);
+      this.ar_queue = new;
+      this.b_queue = new;
+    endfunction
+
+    function void reset();
+      drv.reset_slave();
+    endfunction
+
+    // TODO: The `rand_wait` task exists in `rand_verif_pkg`, but that task cannot be called with
+    // `this.drv.axi.clk_i` as `clk` argument.  What is the syntax getting an assignable reference?
+    task automatic rand_wait(input int unsigned min, max);
+      int unsigned rand_success, cycles;
+      rand_success = std::randomize(cycles) with {
+        cycles >= min;
+        cycles <= max;
+      };
+      assert (rand_success) else $error("Failed to randomize wait cycles!");
+      repeat (cycles) @(posedge this.drv.axi.clk_i);
+    endtask
+
+    task recv_ars();
+      forever begin
+        automatic ax_beat_t ar_beat;
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        drv.recv_ar(ar_beat);
+        ar_queue.push(ar_beat.ax_id, ar_beat);
+      end
+    endtask
+
+    task send_rs();
+      forever begin
+        automatic logic rand_success;
+        automatic ax_beat_t ar_beat;
+        automatic r_beat_t r_beat = new;
+        wait (!ar_queue.empty());
+        ar_beat = ar_queue.peek();
+        rand_success = std::randomize(r_beat); assert(rand_success);
+        r_beat.r_id = ar_beat.ax_id;
+        if (ar_beat.ax_lock)
+          r_beat.r_resp[0]= $random();
+        rand_wait(R_MIN_WAIT_CYCLES, R_MAX_WAIT_CYCLES);
+        if (ar_beat.ax_len == '0) begin
+          r_beat.r_last = 1'b1;
+          void'(ar_queue.pop_id(ar_beat.ax_id));
+        end else begin
+          ar_beat.ax_len--;
+          ar_queue.set(ar_beat.ax_id, ar_beat);
+        end
+        drv.send_r(r_beat);
+      end
+    endtask
+
+    task recv_aws();
+      forever begin
+        automatic ax_beat_t aw_beat;
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        drv.recv_aw(aw_beat);
+        aw_queue.push_back(aw_beat);
+        // Atomic{Load,Swap,Compare}s require an R response.
+        if (aw_beat.ax_atop[5]) begin
+          ar_queue.push(aw_beat.ax_id, aw_beat);
+        end
+      end
+    endtask
+
+    task recv_ws();
+      forever begin
+        automatic ax_beat_t aw_beat;
+        forever begin
+          automatic w_beat_t w_beat;
+          rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+          drv.recv_w(w_beat);
+          if (w_beat.w_last)
+            break;
+        end
+        wait (aw_queue.size() > 0);
+        aw_beat = aw_queue.pop_front();
+        b_queue.push(aw_beat.ax_id, aw_beat);
+      end
+    endtask
+
+    task send_bs();
+      forever begin
+        automatic ax_beat_t aw_beat;
+        automatic b_beat_t b_beat = new;
+        automatic logic rand_success;
+        wait (!b_queue.empty());
+        aw_beat = b_queue.pop();
+        rand_success = std::randomize(b_beat); assert(rand_success);
+        b_beat.b_id = aw_beat.ax_id;
+        if (aw_beat.ax_lock) begin
+          b_beat.b_resp[0]= $random();
+        end
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        drv.send_b(b_beat);
+      end
+    endtask
+
+    task run();
+      fork
+        recv_ars();
+        send_rs();
+        recv_aws();
+        recv_ws();
+        send_bs();
+      join
+    endtask
+
+  endclass
+
 endpackage
