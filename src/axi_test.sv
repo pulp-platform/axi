@@ -579,6 +579,432 @@ package axi_test;
 
   endclass
 
+  class rand_axi_master #(
+    // AXI interface parameters
+    parameter int   AW,
+    parameter int   DW,
+    parameter int   IW,
+    parameter int   UW,
+    // Stimuli application and test time
+    parameter time  TA,
+    parameter time  TT,
+    // Maximum number of read and write transactions in flight
+    parameter int   MAX_READ_TXNS,
+    parameter int   MAX_WRITE_TXNS,
+    // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
+    parameter int   AX_MIN_WAIT_CYCLES = 0,
+    parameter int   AX_MAX_WAIT_CYCLES = 100,
+    parameter int   W_MIN_WAIT_CYCLES = 0,
+    parameter int   W_MAX_WAIT_CYCLES = 5,
+    parameter int   RESP_MIN_WAIT_CYCLES = 0,
+    parameter int   RESP_MAX_WAIT_CYCLES = 20,
+    // AXI feature usage
+    parameter int   AXI_MAX_BURST_LEN = 0,
+    parameter bit   AXI_EXCLS = 1'b0,
+    parameter bit   AXI_ATOPS = 1'b0,
+    // Dependent parameters, do not override.
+    parameter int   AXI_STRB_WIDTH = DW/8,
+    parameter int   N_AXI_IDS = 2**IW
+  );
+    typedef axi_test::axi_driver #(
+      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+    ) axi_driver_t;
+    typedef logic [AW-1:0]    addr_t;
+    typedef axi_pkg::burst_t  burst_t;
+    typedef logic [DW-1:0]    data_t;
+    typedef logic [IW-1:0]    id_t;
+    typedef axi_pkg::size_t   size_t;
+    typedef logic [UW-1:0]    user_t;
+
+    typedef axi_driver_t::ax_beat_t ax_beat_t;
+    typedef axi_driver_t::b_beat_t  b_beat_t;
+    typedef axi_driver_t::r_beat_t  r_beat_t;
+    typedef axi_driver_t::w_beat_t  w_beat_t;
+
+    static addr_t PFN_MASK = '{11: 1'b0, 10: 1'b0, 9: 1'b0, 8: 1'b0, 7: 1'b0, 6: 1'b0, 5: 1'b0,
+        4: 1'b0, 3: 1'b0, 2: 1'b0, 1: 1'b0, 0: 1'b0, default: '1};
+
+    axi_driver_t drv;
+
+    int unsigned          r_flight_cnt[N_AXI_IDS-1:0],
+                          w_flight_cnt[N_AXI_IDS-1:0],
+                          tot_r_flight_cnt,
+                          tot_w_flight_cnt;
+    logic [N_AXI_IDS-1:0] atop_resp_b,
+                          atop_resp_r;
+
+    semaphore cnt_sem;
+
+    ax_beat_t aw_queue[$],
+              excl_queue[$];
+
+    function new(
+      virtual AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_USER_WIDTH(UW)
+      ) axi
+    );
+      this.drv = new(axi);
+      this.cnt_sem = new(1);
+      this.reset();
+    endfunction
+
+    function void reset();
+      drv.reset_master();
+      r_flight_cnt = '{default: 0};
+      w_flight_cnt = '{default: 0};
+      tot_r_flight_cnt = 0;
+      tot_w_flight_cnt = 0;
+      atop_resp_b = '0;
+      atop_resp_r = '0;
+    endfunction
+
+    function ax_beat_t new_rand_burst(input addr_t addr_begin, addr_end);
+      automatic logic rand_success;
+      automatic ax_beat_t ax_beat = new;
+      automatic addr_t addr;
+      automatic burst_t burst;
+      automatic id_t id;
+      automatic size_t size;
+      // Randomly pick FIXED or INCR burst.  WRAP is currently not supported.
+      rand_success = std::randomize(burst) with {
+        burst <= axi_pkg::BURST_INCR;
+      }; assert(rand_success);
+      ax_beat.ax_burst = burst;
+      // Randomize burst length.
+      ax_beat.ax_len = $random();
+      // Randomize beat size.
+      rand_success = std::randomize(size) with {
+        2**size <= AXI_STRB_WIDTH;
+      }; assert(rand_success);
+      ax_beat.ax_size = size;
+      // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
+      if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
+        forever begin
+          rand_success = std::randomize(addr) with {
+            addr >= addr_begin;
+            addr <= addr_end;
+          }; assert(rand_success);
+          if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK))
+            break;
+        end
+        ax_beat.ax_addr = addr;
+      end else begin // BURST_INCR
+        forever begin
+          rand_success = std::randomize(addr); assert(rand_success);
+          if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK))
+            break;
+        end
+        ax_beat.ax_addr = addr;
+      end
+      rand_success = std::randomize(id); assert(rand_success);
+      ax_beat.ax_id = id;
+      return ax_beat;
+    endfunction
+
+    task rand_atop_burst(inout ax_beat_t beat);
+      automatic logic rand_success;
+      automatic id_t id;
+      beat.ax_atop[5:4] = $random();
+      if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
+        // Determine `ax_atop`.
+        if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
+            beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
+          // Endianness
+          beat.ax_atop[3] = $random();
+          // Atomic operation
+          beat.ax_atop[2:0] = $random();
+        end else begin // Atomic{Swap,Compare}
+          beat.ax_atop[3:1] = '0;
+          beat.ax_atop[0] = $random();
+        end
+        // Determine `ax_size` and `ax_len`.
+        if (2**beat.ax_size < AXI_STRB_WIDTH) begin
+          // Transaction does *not* occupy full data bus, so we must send just one beat. [E2.1.3]
+          beat.ax_len = '0;
+        end else begin
+          automatic int unsigned bytes;
+          if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+            // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
+            automatic int unsigned log_bytes;
+            rand_success = std::randomize(log_bytes) with {
+              log_bytes > 0; 2**log_bytes >= AXI_STRB_WIDTH; 2**log_bytes <= 32;
+            }; assert(rand_success);
+            bytes = 2**log_bytes;
+          end else begin
+            // Total data transferred in burst can be 1, 2, 4, or 8 B.
+            if (AXI_STRB_WIDTH >= 8) begin
+              bytes = AXI_STRB_WIDTH;
+            end else begin
+              automatic int unsigned log_bytes;
+              rand_success = std::randomize(log_bytes); assert(rand_success);
+              log_bytes = log_bytes % (4 - $clog2(AXI_STRB_WIDTH)) - $clog2(AXI_STRB_WIDTH);
+              bytes = 2**log_bytes;
+            end
+          end
+          beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
+        end
+        // Determine `ax_addr`.
+        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+          // The address must be aligned to half the outbound data size. [E2-337]
+          beat.ax_addr = beat.ax_addr & ~(1<<beat.ax_size - 1);
+        end else begin
+          // The address must be aligned to the data size. [E2-337]
+          beat.ax_addr = beat.ax_addr & ~(1<<(beat.ax_size+1) - 1);
+        end
+        // Determine `ax_burst`.
+        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+          // If the address is aligned to the total size of outgoing data, the burst type must be
+          // INCR. Otherwise, it must be WRAP. [E2-338]
+          beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
+              axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
+        end else begin
+          // Only INCR allowed.
+          beat.ax_burst = axi_pkg::BURST_INCR;
+        end
+        // Determine `ax_id`, which must not be the same as that of any other in-flight AXI
+        // transaction.
+        forever begin
+          cnt_sem.get();
+          rand_success = std::randomize(id); assert(rand_success);
+          if (r_flight_cnt[id] == 0 && w_flight_cnt[id] == 0 && !atop_resp_b[id] &&
+              !atop_resp_r[id]) begin
+            break;
+          end else begin
+            // The random ID does not meet the requirements, so try another ID in the next cycle.
+            cnt_sem.put();
+            rand_wait(1, 1);
+          end
+        end
+        atop_resp_b[id] = 1'b1;
+        if (beat.ax_atop[5] == 1'b1) begin
+          atop_resp_r[id] = 1'b1;
+        end
+      end else begin
+        // Determine `ax_id`, which must not be the same as that of any in-flight ATOP.
+        forever begin
+          cnt_sem.get();
+          rand_success = std::randomize(id); assert(rand_success);
+          if (!atop_resp_b[id] && !atop_resp_r[id]) begin
+            break;
+          end else begin
+            // The random ID does not meet the requirements, so try another ID in the next cycle.
+            cnt_sem.put();
+            rand_wait(1, 1);
+          end
+        end
+      end
+      beat.ax_id = id;
+      w_flight_cnt[id]++;
+      cnt_sem.put();
+    endtask
+
+    function void rand_excl_ar(inout ax_beat_t ar_beat);
+      ar_beat.ax_lock = $random();
+      if (ar_beat.ax_lock) begin
+        automatic logic rand_success;
+        automatic int unsigned n_bytes;
+        automatic size_t size;
+        automatic addr_t addr_mask;
+        // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
+        // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
+        static int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
+        rand_success = std::randomize(n_bytes) with {
+          n_bytes >= 1;
+          n_bytes <= ul;
+        }; assert(rand_success);
+        n_bytes = 2**n_bytes;
+        rand_success = std::randomize(size) with {
+          size >= 0;
+          2**size <= n_bytes;
+          2**size <= AXI_STRB_WIDTH;
+          n_bytes / 2**size <= 16;
+        }; assert(rand_success);
+        ar_beat.ax_size = size;
+        ar_beat.ax_len = n_bytes / 2**size;
+        // The address must be aligned to the total number of bytes in the burst.
+        ar_beat.ax_addr = ar_beat.ax_addr & ~(n_bytes-1);
+      end
+    endfunction
+
+    // TODO: The `rand_wait` task exists in `rand_verif_pkg`, but that task cannot be called with
+    // `this.drv.axi.clk_i` as `clk` argument. What is the syntax for getting an assignable
+    // reference?
+    task automatic rand_wait(input int unsigned min, max);
+      int unsigned rand_success, cycles;
+      rand_success = std::randomize(cycles) with {
+        cycles >= min;
+        cycles <= max;
+      };
+      assert (rand_success) else $error("Failed to randomize wait cycles!");
+      repeat (cycles) @(posedge this.drv.axi.clk_i);
+    endtask
+
+    task send_ars(input int n_reads, addr_t addr_begin, addr_end);
+      automatic logic rand_success;
+      repeat (n_reads) begin
+        automatic id_t id;
+        automatic ax_beat_t ar_beat = new_rand_burst(addr_begin, addr_end);
+        while (tot_r_flight_cnt >= MAX_READ_TXNS) begin
+          rand_wait(1, 1);
+        end
+        if (AXI_EXCLS) begin
+          rand_excl_ar(ar_beat);
+        end
+        if (AXI_ATOPS) begin
+          // The ID must not be the same as that of any in-flight ATOP.
+          forever begin
+            cnt_sem.get();
+            rand_success = std::randomize(id); assert(rand_success);
+            if (!atop_resp_b[id] && !atop_resp_r[id]) begin
+              break;
+            end else begin
+              // The random ID does not meet the requirements, so try another ID in the next cycle.
+              cnt_sem.put();
+              rand_wait(1, 1);
+            end
+          end
+          ar_beat.ax_id = id;
+        end else begin
+          cnt_sem.get();
+        end
+        r_flight_cnt[ar_beat.ax_id]++;
+        tot_r_flight_cnt++;
+        cnt_sem.put();
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        drv.send_ar(ar_beat);
+        if (ar_beat.ax_lock) excl_queue.push_back(ar_beat);
+      end
+    endtask
+
+    task recv_rs(ref logic ar_done, aw_done);
+      while (!(ar_done && tot_r_flight_cnt == 0 &&
+          (!AXI_ATOPS || (AXI_ATOPS && aw_done && atop_resp_r == '0))
+      )) begin
+        automatic r_beat_t r_beat;
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        drv.recv_r(r_beat);
+        if (r_beat.r_last) begin
+          cnt_sem.get();
+          if (atop_resp_r[r_beat.r_id]) begin
+            atop_resp_r[r_beat.r_id] = 1'b0;
+          end else begin
+            r_flight_cnt[r_beat.r_id]--;
+            tot_r_flight_cnt--;
+          end
+          cnt_sem.put();
+        end
+      end
+    endtask
+
+    task send_aws(input int n_writes, addr_t addr_begin, addr_t addr_end);
+      automatic logic rand_success;
+      repeat (n_writes) begin
+        automatic bit excl = 1'b0;
+        automatic ax_beat_t aw_beat;
+        if (AXI_EXCLS && excl_queue.size() > 0) excl = $random();
+        if (excl) begin
+          aw_beat = excl_queue.pop_front();
+        end else begin
+          aw_beat = new_rand_burst(addr_begin, addr_end);
+        end
+        while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin
+          rand_wait(1, 1);
+        end
+        if (AXI_ATOPS) begin
+          if (excl) begin
+            // Make sure the exclusive transfer does not have the same ID as an in-flight ATOP.
+            forever begin
+              cnt_sem.get();
+              if (!atop_resp_b[aw_beat.ax_id] && !atop_resp_r[aw_beat.ax_id]) break;
+              cnt_sem.put();
+              rand_wait(1, 1);
+            end
+            w_flight_cnt[aw_beat.ax_id]++;
+            cnt_sem.put();
+          end else begin
+            rand_atop_burst(aw_beat);
+          end
+        end else begin
+          cnt_sem.get();
+          w_flight_cnt[aw_beat.ax_id]++;
+          cnt_sem.put();
+        end
+        tot_w_flight_cnt++;
+        aw_queue.push_back(aw_beat);
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        drv.send_aw(aw_beat);
+      end
+    endtask
+
+    task send_ws(ref logic aw_done);
+      while (!(aw_done && aw_queue.size() == 0)) begin
+        automatic ax_beat_t aw_beat;
+        automatic addr_t addr;
+        static logic rand_success;
+        wait (aw_queue.size() > 0);
+        aw_beat = aw_queue.pop_front();
+        addr = aw_beat.ax_addr;
+        for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
+          automatic w_beat_t w_beat = new;
+          int unsigned begin_byte, n_bytes;
+          logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
+          rand_success = std::randomize(w_beat); assert (rand_success);
+          // Determine strobe.
+          w_beat.w_strb = '0;
+          n_bytes = 2**aw_beat.ax_size;
+          begin_byte = addr % AXI_STRB_WIDTH;
+          strb_mask = ((1'b1 << n_bytes) - 1) << begin_byte;
+          rand_strb = $random();
+          w_beat.w_strb |= (rand_strb & strb_mask);
+          // Determine last.
+          w_beat.w_last = (i == aw_beat.ax_len);
+          rand_wait(W_MIN_WAIT_CYCLES, W_MAX_WAIT_CYCLES);
+          drv.send_w(w_beat);
+          if (aw_beat.ax_burst == axi_pkg::BURST_INCR)
+            addr += n_bytes;
+        end
+      end
+    endtask
+
+    task recv_bs(ref logic aw_done);
+      while (!(aw_done && tot_w_flight_cnt == 0)) begin
+        automatic b_beat_t b_beat;
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        drv.recv_b(b_beat);
+        cnt_sem.get();
+        if (atop_resp_b[b_beat.b_id]) begin
+          atop_resp_b[b_beat.b_id] = 1'b0;
+        end
+        w_flight_cnt[b_beat.b_id]--;
+        tot_w_flight_cnt--;
+        cnt_sem.put();
+      end
+    endtask
+
+    // Issue n_reads random read and n_writes random write transactions to an address range.
+    task run(input int n_reads, input int n_writes, input addr_t addr_begin, input addr_t addr_end);
+      static logic  ar_done = 1'b0,
+                    aw_done = 1'b0;
+      fork
+        begin
+          send_ars(n_reads, addr_begin, addr_end);
+          ar_done = 1'b1;
+        end
+        recv_rs(ar_done, aw_done);
+        begin
+          send_aws(n_writes, addr_begin, addr_end);
+          aw_done = 1'b1;
+        end
+        send_ws(aw_done);
+        recv_bs(aw_done);
+      join
+    endtask
+
+  endclass
+
   class rand_axi_slave #(
     // AXI interface parameters
     parameter int   AW,
