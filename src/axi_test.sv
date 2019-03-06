@@ -295,7 +295,7 @@ package axi_test;
       this.axi = axi;
     endfunction
 
-    task reset_master;
+    function void reset_master();
       axi.aw_id     <= '0;
       axi.aw_addr   <= '0;
       axi.aw_len    <= '0;
@@ -328,9 +328,9 @@ package axi_test;
       axi.ar_user   <= '0;
       axi.ar_valid  <= '0;
       axi.r_ready   <= '0;
-    endtask
+    endfunction
 
-    task reset_slave;
+    function void reset_slave();
       axi.aw_ready  <= '0;
       axi.w_ready   <= '0;
       axi.b_id      <= '0;
@@ -344,7 +344,7 @@ package axi_test;
       axi.r_last    <= '0;
       axi.r_user    <= '0;
       axi.r_valid   <= '0;
-    endtask
+    endfunction
 
     task cycle_start;
       #TT;
