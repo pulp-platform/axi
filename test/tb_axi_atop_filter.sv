@@ -39,7 +39,7 @@ module tb_axi_atop_filter #(
   parameter int unsigned REQ_MAX_WAIT_CYCLES = 10,
   parameter int unsigned RESP_MIN_WAIT_CYCLES = 0,
   parameter int unsigned RESP_MAX_WAIT_CYCLES = REQ_MAX_WAIT_CYCLES/2,
-  parameter int unsigned N_TXNS = 10000
+  parameter int unsigned N_TXNS = 1000
 );
 
   timeunit 1ns;
