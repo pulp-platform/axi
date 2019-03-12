@@ -51,16 +51,21 @@ module axi_data_downsize #(
   typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
   typedef logic [SI_BYTES-1:0]      si_strb_t;
 
-  function automatic addr_t align_addr(addr_t addr);
-    return addr & ~MI_BYTE_MASK;
+  function automatic addr_t align_addr(addr_t unaligned_addr, size_t size);
+    return unaligned_addr & ~((1 << size) - 1);
   endfunction // align_addr
+
+  // Length of burst after downsizing
+  typedef logic [$clog2(SI_BYTES/MI_BYTES)+7:0] full_len_t;
 
   // --------------
   // READ
   // --------------
 
   enum logic [1:0] { R_IDLE,
-                     R_PASSTHROUGH } r_state_d, r_state_q;
+                     R_PASSTHROUGH,
+                     R_INCR_DOWNSIZE,
+                     R_SPLIT_INCR_DOWNSIZE } r_state_d, r_state_q;
 
   struct packed {
     struct packed {
@@ -86,7 +91,8 @@ module axi_data_downsize #(
       logic     valid;
     } r;
 
-    len_t       len;
+    size_t      size;
+    full_len_t  len;
   } r_req_d, r_req_q;
 
   always_comb begin
@@ -119,7 +125,7 @@ module axi_data_downsize #(
     out.r_ready   = '0;
 
     // Got a grant on the AR channel
-    if (in.ar_valid & in.ar_ready)
+    if (out.ar_valid & out.ar_ready)
       r_req_d.ar.valid = 1'b0;
 
     // Got a grant on the R channel
@@ -133,7 +139,7 @@ module axi_data_downsize #(
         r_req_d.r  = '0;
       end
 
-      R_PASSTHROUGH: begin
+      R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
         // If the upstream interface is idle,
         // ready whenever a new word arrives
         if (!in.r_valid)
@@ -141,6 +147,16 @@ module axi_data_downsize #(
         // Else, ready if the downstream interface is ready
         else
           out.r_ready = out.r_valid & in.r_ready;
+
+        // Trigger another burst request, if needed
+        if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
+          if (!r_req_q.ar.valid && out.ar_ready) begin
+            r_req_d.ar.valid  = 1'b1;
+            r_req_d.ar.len    = (r_req_d.len <= 255) ? r_req_d.len : 255;
+
+            if (r_req_q.len == 0)
+              r_req_d.ar.valid = 1'b0;
+          end
 
         if (out.r_ready) begin
           automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
@@ -150,12 +166,13 @@ module axi_data_downsize #(
           // Lane steering
           for (int b = 0; b < SI_BYTES; b++)
             if ((b >= si_offset) &&
-                (b - si_offset < (1 << r_req_q.ar.size)) &&
+                (b - si_offset < (1 << r_req_q.size)) &&
                 (b + mi_offset - si_offset < MI_BYTES)) begin
               r_req_d.r.data[8 * b +: 8] = out.r_data[8 * (b + mi_offset - si_offset) +: 8];
             end
 
-          r_req_d.len = r_req_q.len - 1;
+          r_req_d.len    = r_req_q.len - 1;
+          r_req_d.ar.len = r_req_q.ar.len - 1;
 
           case (r_state_q)
             R_PASSTHROUGH: begin
@@ -163,6 +180,14 @@ module axi_data_downsize #(
 
               // Forward data as soon as we can
               r_req_d.r.valid = 1'b1;
+            end
+
+            R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
+              r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+
+              // Forward when the burst is finished, or when a word was filled up
+              if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr, r_req_q.size) != align_addr(r_req_q.ar.addr, r_req_q.size)))
+                r_req_d.r.valid = 1'b1;
             end
           endcase // case (w_state_q)
 
@@ -192,9 +217,41 @@ module axi_data_downsize #(
         r_req_d.ar.user   = in.ar_user;
         r_req_d.ar.valid  = 1'b1;
         r_req_d.len       = in.ar_len;
+        r_req_d.size      = in.ar_size;
 
-        // Do nothing
-        r_state_d         = R_PASSTHROUGH;
+        if (|(in.ar_cache & CACHE_MODIFIABLE)) begin
+          case (in.ar_burst)
+            BURST_INCR: begin
+              // Evaluate downsize ratio
+              automatic addr_t size_mask  = (1 << in.ar_size) - 1;
+              automatic addr_t conv_ratio = ((1 << in.ar_size) + MI_BYTES - 1) / MI_BYTES;
+
+              // Evaluate output burst length
+              automatic addr_t align_adj  = (in.ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+              r_req_d.len                 = (in.ar_len + 1) * conv_ratio - align_adj - 1;
+
+              if (conv_ratio == 1) begin
+                r_state_d = R_PASSTHROUGH;
+              end else begin
+                r_req_d.ar.size   = $clog2(MI_BYTES);
+
+                if (r_req_d.len <= 255) begin
+                  r_state_d      = R_INCR_DOWNSIZE;
+                  r_req_d.ar.len = r_req_d.len;
+                end else begin
+                  r_state_d      = R_SPLIT_INCR_DOWNSIZE;
+                  r_req_d.ar.len = 255 - align_adj;
+                end
+              end
+            end // case: BURST_INCR
+
+            default:
+              r_state_d = R_PASSTHROUGH;
+          endcase // case (in.ar_burst)
+        end else begin
+          // Do nothing
+          r_state_d = R_PASSTHROUGH;
+        end
 
         // Acknowledge this request
         // NOTE: Acknowledgment regardless of an answer
@@ -210,7 +267,9 @@ module axi_data_downsize #(
   // --------------
 
   enum logic [1:0] { W_IDLE,
-                     W_PASSTHROUGH } w_state_d, w_state_q;
+                     W_PASSTHROUGH,
+                     W_INCR_DOWNSIZE,
+                     W_SPLIT_INCR_DOWNSIZE } w_state_d, w_state_q;
 
   struct packed {
     struct packed {
@@ -224,6 +283,7 @@ module axi_data_downsize #(
       prot_t   prot;
       qos_t    qos;
       region_t region;
+      atop_t   atop;
       user_t   user;
       logic    valid;
     } aw;
@@ -235,7 +295,8 @@ module axi_data_downsize #(
       logic     valid;
     } w;
 
-    len_t       len;
+    size_t      size;
+    full_len_t  len;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -254,6 +315,7 @@ module axi_data_downsize #(
     out.aw_prot   = w_req_q.aw.prot;
     out.aw_qos    = w_req_q.aw.qos;
     out.aw_region = w_req_q.aw.region;
+    out.aw_atop   = w_req_q.aw.atop;
     out.aw_user   = w_req_q.aw.user;
     out.aw_valid  = w_req_q.aw.valid;
     in.aw_ready   = '0;
@@ -279,7 +341,7 @@ module axi_data_downsize #(
       w_req_d.aw.valid = 1'b0;
 
     case (w_state_q)
-      W_PASSTHROUGH: begin
+      W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
         if (w_req_q.w.valid) begin
           automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
@@ -288,6 +350,16 @@ module axi_data_downsize #(
           // Valid output
           out.w_valid                = 1'b1;
           out.w_last                 = w_req_q.w.last & (w_req_q.len == 0);
+
+        // Trigger another burst request, if needed
+        if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
+          if (!w_req_q.aw.valid && out.aw_ready) begin
+            w_req_d.aw.valid  = 1'b1;
+            w_req_d.aw.len    = (w_req_d.len <= 255) ? w_req_d.len : 255;
+
+            if (w_req_q.len == 0)
+              w_req_d.aw.valid = 1'b0;
+          end
 
           // Serialization
           for (int b = 0; b < SI_BYTES; b++)
@@ -300,12 +372,20 @@ module axi_data_downsize #(
 
           // Acknowledgement
           if (out.w_ready) begin
-            w_req_d.len = w_req_q.len - 1;
+            w_req_d.len    = w_req_q.len - 1;
+            w_req_d.aw.len = w_req_q.aw.len - 1;
 
             case (w_state_q)
               W_PASSTHROUGH: begin
                 w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
                 w_req_d.w.valid = 1'b0;
+              end
+
+              W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
+                w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+
+                if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr, w_req_q.size) != align_addr(w_req_q.aw.addr, w_req_q.size)))
+                  w_req_d.w.valid = 1'b0;
               end
             endcase // case (w_state_q)
 
@@ -349,12 +429,46 @@ module axi_data_downsize #(
         w_req_d.aw.prot   = in.aw_prot;
         w_req_d.aw.qos    = in.aw_qos;
         w_req_d.aw.region = in.aw_region;
+        w_req_d.aw.atop   = in.aw_atop;
         w_req_d.aw.user   = in.aw_user;
         w_req_d.aw.valid  = 1'b1;
         w_req_d.len       = in.aw_len;
+        w_req_d.size      = in.aw_size;
 
         // Do nothing
-        w_state_d         = W_PASSTHROUGH;
+         if (|(in.aw_cache & CACHE_MODIFIABLE)) begin
+          case (in.aw_burst)
+            BURST_INCR: begin
+              // Evaluate downsize ratio
+              automatic addr_t size_mask  = (1 << in.aw_size) - 1;
+              automatic addr_t conv_ratio = ((1 << in.aw_size) + MI_BYTES - 1) / MI_BYTES;
+
+              // Evaluate output burst length
+              automatic addr_t align_adj  = (in.aw_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+              w_req_d.len                 = (in.aw_len + 1) * conv_ratio - align_adj - 1;
+
+              if (conv_ratio == 1) begin
+                w_state_d = W_PASSTHROUGH;
+              end else begin
+                w_req_d.aw.size   = $clog2(MI_BYTES);
+
+                if (w_req_d.len <= 255) begin
+                  w_state_d      = W_INCR_DOWNSIZE;
+                  w_req_d.aw.len = w_req_d.len;
+                end else begin
+                  w_state_d      = W_SPLIT_INCR_DOWNSIZE;
+                  w_req_d.aw.len = 255 - align_adj;
+                end
+              end
+            end // case: BURST_INCR
+
+            default:
+              w_state_d = W_PASSTHROUGH;
+          endcase // case (in.aw_burst)
+        end else begin
+          // Do nothing
+          w_state_d = W_PASSTHROUGH;
+        end
 
         // Acknowledge this request
         // NOTE: Acknowledgment regardless of an answer
