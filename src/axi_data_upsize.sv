@@ -87,6 +87,7 @@ module axi_data_upsize #(
       logic     valid;
     } r;
 
+    size_t      size;
     len_t       len;
   } r_req_d, r_req_q;
 
@@ -134,7 +135,7 @@ module axi_data_upsize #(
         if (r_req_q.r.valid) begin
           automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
-          automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1;
+          automatic addr_t size_mask = (1 << r_req_q.size) - 1;
 
           // Valid output
           in.r_valid                 = 1'b1;
@@ -143,7 +144,7 @@ module axi_data_upsize #(
           // Serialization
           for (int b = 0; b < MI_BYTES; b++)
             if ((b >= mi_offset) &&
-                (b - mi_offset < (1 << r_req_q.ar.size)) &&
+                (b - mi_offset < (1 << r_req_q.size)) &&
                 (b + si_offset - mi_offset < SI_BYTES)) begin
               in.r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
             end
@@ -154,12 +155,12 @@ module axi_data_upsize #(
 
             case (r_state_q)
               R_PASSTHROUGH: begin
-                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
                 r_req_d.r.valid = 1'b0;
               end
 
               R_INCR_UPSIZE: begin
-                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
 
                 if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
                   r_req_d.r.valid = 1'b0;
@@ -210,6 +211,7 @@ module axi_data_upsize #(
         r_req_d.ar.user   = in.ar_user;
         r_req_d.ar.valid  = 1'b1;
         r_req_d.len       = in.ar_len;
+        r_req_d.size      = in.ar_size;
 
         if (|(in.ar_cache & CACHE_MODIFIABLE)) begin
           case (in.ar_burst)
@@ -221,8 +223,12 @@ module axi_data_upsize #(
               automatic addr_t addr_end   = align_addr((in.ar_addr & ~size_mask) + (in.ar_len << in.ar_size));
 
               r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              r_req_d.ar.size             = $clog2(MI_BYTES);
               r_state_d                   = R_INCR_UPSIZE;
             end // case: BURST_INCR
+
+            default:
+              r_state_d = R_PASSTHROUGH;
           endcase // case (in.ar_burst)
         end else begin
           // Do nothing
@@ -257,6 +263,7 @@ module axi_data_upsize #(
       prot_t   prot;
       qos_t    qos;
       region_t region;
+      atop_t   atop;
       user_t   user;
       logic    valid;
     } aw;
@@ -268,6 +275,7 @@ module axi_data_upsize #(
       logic     valid;
     } w;
 
+    size_t      size;
     len_t       len;
   } w_req_d, w_req_q;
 
@@ -287,6 +295,7 @@ module axi_data_upsize #(
     out.aw_prot   = w_req_q.aw.prot;
     out.aw_qos    = w_req_q.aw.qos;
     out.aw_region = w_req_q.aw.region;
+    out.aw_atop   = w_req_q.aw.atop;
     out.aw_user   = w_req_q.aw.user;
     out.aw_valid  = w_req_q.aw.valid;
     in.aw_ready   = '0;
@@ -334,12 +343,12 @@ module axi_data_upsize #(
         if (in.w_ready) begin
           automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
-          automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
+          automatic addr_t size_mask = (1 << w_req_q.size) - 1;
 
           // Lane steering
           for (int b = 0; b < MI_BYTES; b++)
             if ((b >= mi_offset) &&
-                (b - mi_offset < (1 << w_req_q.aw.size)) &&
+                (b - mi_offset < (1 << w_req_q.size)) &&
                 (b + si_offset - mi_offset < SI_BYTES)) begin
               w_req_d.w.data[8 * b +: 8] = in.w_data[8 * (b + si_offset - mi_offset) +: 8];
               w_req_d.w.strb[b]          = in.w_strb[b + si_offset - mi_offset];
@@ -349,14 +358,14 @@ module axi_data_upsize #(
 
           case (w_state_q)
             W_PASSTHROUGH: begin
-              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
 
               // Forward data as soon as we can
               w_req_d.w.valid = 1'b1;
             end
 
             W_INCR_UPSIZE: begin
-              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
 
               // Forward when the burst is finished, or when a word was filled up
               if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
@@ -387,9 +396,11 @@ module axi_data_upsize #(
         w_req_d.aw.prot   = in.aw_prot;
         w_req_d.aw.qos    = in.aw_qos;
         w_req_d.aw.region = in.aw_region;
+        w_req_d.aw.atop   = in.aw_atop;
         w_req_d.aw.user   = in.aw_user;
         w_req_d.aw.valid  = 1'b1;
         w_req_d.len       = in.aw_len;
+        w_req_d.size      = in.aw_size;
 
         if (|(in.aw_cache & CACHE_MODIFIABLE)) begin
           case (in.aw_burst)
@@ -401,8 +412,12 @@ module axi_data_upsize #(
               automatic addr_t addr_end   = align_addr((in.aw_addr & ~size_mask) + (in.aw_len << in.aw_size));
 
               w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              w_req_d.aw.size             = $clog2(MI_BYTES);
               w_state_d                   = W_INCR_UPSIZE;
             end // case: BURST_INCR
+
+            default:
+              w_state_d = W_PASSTHROUGH;
           endcase // case (in.aw_burst)
         end else begin
           // Do nothing

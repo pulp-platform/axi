@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// File          : test_axi_data_width_converter.sv
+// File          : test_axi_dwc_upsize.sv
 // Author        : Matheus Cavalcante <matheusd@student.ethz.ch>
 // Created       : 09.02.2019
 //
@@ -17,9 +17,9 @@
 
 `include "axi/assign.svh"
 
-module tb_axi_data_width_converter;
+module tb_axi_dwc_upsize;
 
-  parameter AW  = 32;
+  parameter AW  = 64;
   parameter IW  = 8;
   parameter DW  = 32;
   parameter UW  = 8;
@@ -35,21 +35,21 @@ module tb_axi_data_width_converter;
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( MULT * DW ),
+    .AXI_DATA_WIDTH ( DW ),
     .AXI_ID_WIDTH ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_master_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( MULT * DW ),
+    .AXI_DATA_WIDTH ( DW ),
     .AXI_ID_WIDTH ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_master();
 
   axi_test::axi_driver #(
     .AW ( AW ),
-    .DW ( MULT * DW ),
+    .DW ( DW ),
     .IW ( IW ),
     .UW ( UW ),
     .TA ( 200ps ),
@@ -57,21 +57,21 @@ module tb_axi_data_width_converter;
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( DW ),
+    .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
     ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
-    .AXI_DATA_WIDTH ( DW ),
+    .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
     ) axi_slave ();
 
   axi_test::axi_driver #(
     .AW ( AW ),
-    .DW ( DW ),
+    .DW ( MULT * DW ),
     .IW ( IWO ),
     .UW ( UW ),
     .TA ( 200ps ),
@@ -81,8 +81,8 @@ module tb_axi_data_width_converter;
   `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   axi_data_width_converter #(
-    .MI_DATA_WIDTH ( DW ),
-    .SI_DATA_WIDTH ( MULT * DW )
+    .MI_DATA_WIDTH ( MULT * DW ),
+    .SI_DATA_WIDTH ( DW )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
@@ -112,7 +112,7 @@ module tb_axi_data_width_converter;
       // AR and R channels
       repeat (200) begin
         automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat      = new;
-        automatic axi_test::axi_r_beat #( .DW ( MULT * DW ), .IW ( IW ), .UW ( UW )) r_beat = new;
+        automatic axi_test::axi_r_beat #( .DW ( DW ), .IW ( IW ), .UW ( UW )) r_beat = new;
 
         @(posedge clk);
         void'(randomize(ax_beat));
@@ -121,8 +121,8 @@ module tb_axi_data_width_converter;
         ax_beat.ax_len   = $urandom();
 
         ax_beat.ax_size  = $urandom();
-        if (ax_beat.ax_size > $clog2(DW/8))
-          ax_beat.ax_size = $clog2(DW/8);
+        if (ax_beat.ax_size > $clog2(DW / 8))
+          ax_beat.ax_size = $clog2(DW / 8);
 
         axi_master_drv.send_ar(ax_beat);
 
@@ -135,7 +135,7 @@ module tb_axi_data_width_converter;
       // AW and W channels
       repeat (200) begin
         automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat = new;
-        automatic axi_test::axi_w_beat #( .DW ( MULT * DW ), .UW ( UW )) w_beat        = new;
+        automatic axi_test::axi_w_beat #( .DW ( DW ), .UW ( UW )) w_beat        = new;
 
         @(posedge clk);
         void'(randomize(ax_beat));
@@ -144,12 +144,12 @@ module tb_axi_data_width_converter;
         ax_beat.ax_size  = $urandom();
 
         ax_beat.ax_len   = $urandom();
-        if (ax_beat.ax_size > $clog2(DW/8))
-          ax_beat.ax_size = $clog2(DW/8);
+        if (ax_beat.ax_size > $clog2(DW / 8))
+          ax_beat.ax_size = $clog2(DW / 8);
 
         axi_master_drv.send_aw(ax_beat);
 
-        w_beat.w_data  = {MULT{32'hcafebabe}};
+        w_beat.w_data  = 32'hcafebabe;
         w_beat.w_strb  = '1;
         for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
           if (beat == ax_beat.ax_len)
@@ -178,12 +178,12 @@ module tb_axi_data_width_converter;
       // AR and R channels
       repeat (200) begin
         automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat    = new;
-        automatic axi_test::axi_r_beat #( .DW ( DW ), .IW ( IWO), .UW( UW )) r_beat = new;
+        automatic axi_test::axi_r_beat #( .DW ( MULT * DW ), .IW ( IWO), .UW( UW )) r_beat = new;
 
         axi_slave_drv.recv_ar(ax_beat);
         $info("AXI AR: addr %h", ax_beat.ax_addr);
 
-        r_beat.r_data = 32'hdeadcafe;
+        r_beat.r_data = {MULT{32'hdeadcafe}};
         for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
           if (beat == ax_beat.ax_len)
             r_beat.r_last = 1'b1;
@@ -194,7 +194,7 @@ module tb_axi_data_width_converter;
       // AW and W channels
       repeat (200) begin
         automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat = new;
-        automatic axi_test::axi_w_beat #( .DW ( DW ), .UW( UW )) w_beat          = new;
+        automatic axi_test::axi_w_beat #( .DW ( MULT * DW ), .UW( UW )) w_beat          = new;
 
         axi_slave_drv.recv_aw(ax_beat);
         $info("AXI AW: addr %h", ax_beat.ax_addr);
@@ -217,5 +217,5 @@ module tb_axi_data_width_converter;
     end
   end
 
-  // vsim -voptargs=+acc work.tb_axi_data_width_converter
-endmodule // tb_axi_data_width_converter
+  // vsim -voptargs=+acc work.tb_axi_dwc_upsize
+endmodule // tb_axi_dwc_upsize
