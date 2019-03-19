@@ -23,12 +23,118 @@ import axi_pkg::*;
 
 module axi_data_upsize #(
   parameter int unsigned MI_DATA_WIDTH = 64,
-  parameter int unsigned SI_DATA_WIDTH = 64
+  parameter int unsigned MI_ID_WIDTH = 4,
+  parameter int unsigned MI_USER_WIDTH = 1,
+  parameter int unsigned SI_DATA_WIDTH = 64,
+  parameter int unsigned SI_ID_WIDTH = 4,
+  parameter int unsigned SI_USER_WIDTH = 1
 ) (
-  input logic clk_i,
-  input logic rst_ni,
-  AXI_BUS.in  in,
-  AXI_BUS.out out
+  input logic                        clk_i,
+  input logic                        rst_ni,
+
+  // SLAVE INTERFACE
+
+  input logic [SI_ID_WIDTH-1:0]      in_aw_id,
+  input addr_t                       in_aw_addr,
+  input len_t                        in_aw_len,
+  input size_t                       in_aw_size,
+  input burst_t                      in_aw_burst,
+  input logic                        in_aw_lock,
+  input cache_t                      in_aw_cache,
+  input prot_t                       in_aw_prot,
+  input qos_t                        in_aw_qos,
+  input region_t                     in_aw_region,
+  input atop_t                       in_aw_atop,
+  input logic [SI_USER_WIDTH-1:0]    in_aw_user,
+  input logic                        in_aw_valid,
+  output logic                       in_aw_ready,
+
+  input logic [SI_DATA_WIDTH-1:0]    in_w_data,
+  input logic [SI_DATA_WIDTH/8-1:0]  in_w_strb,
+  input logic                        in_w_last,
+  input logic [SI_USER_WIDTH-1:0]    in_w_user,
+  input logic                        in_w_valid,
+  output logic                       in_w_ready,
+
+  output logic [SI_ID_WIDTH-1:0]     in_b_id,
+  output resp_t                      in_b_resp,
+  output logic [SI_USER_WIDTH-1:0]   in_b_user,
+  output logic                       in_b_valid,
+  input logic                        in_b_ready,
+
+  input logic [SI_ID_WIDTH-1:0]      in_ar_id,
+  input addr_t                       in_ar_addr,
+  input len_t                        in_ar_len,
+  input size_t                       in_ar_size,
+  input burst_t                      in_ar_burst,
+  input logic                        in_ar_lock,
+  input cache_t                      in_ar_cache,
+  input prot_t                       in_ar_prot,
+  input qos_t                        in_ar_qos,
+  input region_t                     in_ar_region,
+  input logic [SI_USER_WIDTH-1:0]    in_ar_user,
+  input logic                        in_ar_valid,
+  output logic                       in_ar_ready,
+
+  output logic [SI_ID_WIDTH-1:0]     in_r_id,
+  output logic [SI_DATA_WIDTH-1:0]   in_r_data,
+  output resp_t                      in_r_resp,
+  output logic                       in_r_last,
+  output logic [SI_USER_WIDTH-1:0]   in_r_user,
+  output logic                       in_r_valid,
+  input logic                        in_r_ready,
+
+  // MASTER INTERFACE
+
+  output logic [MI_ID_WIDTH-1:0]     out_aw_id,
+  output addr_t                      out_aw_addr,
+  output len_t                       out_aw_len,
+  output size_t                      out_aw_size,
+  output burst_t                     out_aw_burst,
+  output logic                       out_aw_lock,
+  output cache_t                     out_aw_cache,
+  output prot_t                      out_aw_prot,
+  output qos_t                       out_aw_qos,
+  output region_t                    out_aw_region,
+  output atop_t                      out_aw_atop,
+  output logic [MI_USER_WIDTH-1:0]   out_aw_user,
+  output logic                       out_aw_valid,
+  input logic                        out_aw_ready,
+
+  output logic [MI_DATA_WIDTH-1:0]   out_w_data,
+  output logic [MI_DATA_WIDTH/8-1:0] out_w_strb,
+  output logic                       out_w_last,
+  output logic [MI_USER_WIDTH-1:0]   out_w_user,
+  output logic                       out_w_valid,
+  input logic                        out_w_ready,
+
+  input logic [MI_ID_WIDTH-1:0]      out_b_id,
+  input resp_t                       out_b_resp,
+  input logic [MI_USER_WIDTH-1:0]    out_b_user,
+  input logic                        out_b_valid,
+  output logic                       out_b_ready,
+
+  output logic [MI_ID_WIDTH-1:0]     out_ar_id,
+  output addr_t                      out_ar_addr,
+  output len_t                       out_ar_len,
+  output size_t                      out_ar_size,
+  output burst_t                     out_ar_burst,
+  output logic                       out_ar_lock,
+  output cache_t                     out_ar_cache,
+  output prot_t                      out_ar_prot,
+  output qos_t                       out_ar_qos,
+  output region_t                    out_ar_region,
+  output logic [MI_USER_WIDTH-1:0]   out_ar_user,
+  output logic                       out_ar_valid,
+  input logic                        out_ar_ready,
+
+  input logic [MI_ID_WIDTH-1:0]      out_r_id,
+  input logic [MI_DATA_WIDTH-1:0]    out_r_data,
+  input resp_t                       out_r_resp,
+  input logic                        out_r_last,
+  input logic [MI_USER_WIDTH-1:0]    out_r_user,
+  input logic                        out_r_valid,
+  output logic                       out_r_ready
 );
 
 `ifndef SYNTHESIS
@@ -45,11 +151,87 @@ module axi_data_upsize #(
   localparam addr_t MI_BYTE_MASK = MI_BYTES - 1;
   typedef logic [MI_DATA_WIDTH-1:0] mi_data_t;
   typedef logic [MI_BYTES-1:0]      mi_strb_t;
+  typedef logic [MI_ID_WIDTH-1:0]   mi_id_t;
+  typedef logic [MI_USER_WIDTH]     mi_user_t;
 
   localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
   localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
   typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
   typedef logic [SI_BYTES-1:0]      si_strb_t;
+  typedef logic [SI_ID_WIDTH-1:0]   si_id_t;
+  typedef logic [SI_USER_WIDTH]     si_user_t;
+
+  typedef struct packed {
+    mi_id_t      id;
+    addr_t       addr;
+    logic [7:0]  len;
+    logic [2:0]  size;
+    burst_t      burst;
+    logic        lock;
+    cache_t      cache;
+    prot_t       prot;
+    qos_t        qos;
+    region_t     region;
+    logic [5:0]  atop;   // Only defined on the AW channel.
+    mi_user_t    user;
+    logic        valid;
+    logic        ready;
+  } mi_channel_ax_t;
+
+  typedef struct packed {
+    si_id_t      id;
+    addr_t       addr;
+    logic [7:0]  len;
+    logic [2:0]  size;
+    burst_t      burst;
+    logic        lock;
+    cache_t      cache;
+    prot_t       prot;
+    qos_t        qos;
+    region_t     region;
+    logic [5:0]  atop;   // Only defined on the AW channel.
+    si_user_t    user;
+    logic        valid;
+    logic        ready;
+  } si_channel_ax_t;
+
+  typedef struct packed {
+    mi_data_t    data;
+    mi_strb_t    strb;
+    logic        last;
+    mi_user_t    user;
+    logic        valid;
+    logic        ready;
+  } mi_channel_w_t;
+
+  typedef struct packed {
+    si_data_t    data;
+    si_strb_t    strb;
+    logic        last;
+    si_user_t    user;
+    logic        valid;
+    logic        ready;
+  } si_channel_w_t;
+
+  typedef struct packed {
+    mi_id_t      id;
+    mi_data_t    data;
+    resp_t       resp;
+    logic        last;
+    mi_user_t    user;
+    logic        valid;
+    logic        ready;
+  } mi_channel_r_t;
+
+  typedef struct packed {
+    si_id_t      id;
+    si_data_t    data;
+    resp_t       resp;
+    logic        last;
+    si_user_t    user;
+    logic        valid;
+    logic        ready;
+  } si_channel_r_t;
 
   function automatic addr_t align_addr(addr_t unaligned_addr);
     return unaligned_addr & ~MI_BYTE_MASK;
@@ -64,31 +246,11 @@ module axi_data_upsize #(
                      R_INCR_UPSIZE } r_state_d, r_state_q;
 
   struct packed {
-    struct packed {
-      id_t     id;
-      addr_t   addr;
-      len_t    len;
-      size_t   size;
-      burst_t  burst;
-      logic    lock;
-      cache_t  cache;
-      prot_t   prot;
-      qos_t    qos;
-      region_t region;
-      user_t   user;
-      logic    valid;
-    } ar;
+    mi_channel_ax_t ar;
+    mi_channel_r_t  r;
 
-    struct packed {
-      id_t      id;
-      mi_data_t data;
-      resp_t    resp;
-      logic     last;
-      logic     valid;
-    } r;
-
-    size_t      size;
-    len_t       len;
+    size_t          size;
+    len_t           len;
   } r_req_d, r_req_q;
 
   always_comb begin
@@ -97,150 +259,133 @@ module axi_data_upsize #(
     r_req_d       = r_req_q;
 
     // AR Channel
-    out.ar_id     = r_req_q.ar.id;
-    out.ar_addr   = r_req_q.ar.addr;
-    out.ar_len    = r_req_q.ar.len;
-    out.ar_size   = r_req_q.ar.size;
-    out.ar_burst  = r_req_q.ar.burst;
-    out.ar_lock   = r_req_q.ar.lock;
-    out.ar_cache  = r_req_q.ar.cache;
-    out.ar_prot   = r_req_q.ar.prot;
-    out.ar_qos    = r_req_q.ar.qos;
-    out.ar_region = r_req_q.ar.region;
-    out.ar_user   = r_req_q.ar.user;
-    out.ar_valid  = r_req_q.ar.valid;
-    in.ar_ready   = '0;
+    out_ar_id     = r_req_q.ar.id;
+    out_ar_addr   = r_req_q.ar.addr;
+    out_ar_len    = r_req_q.ar.len;
+    out_ar_size   = r_req_q.ar.size;
+    out_ar_burst  = r_req_q.ar.burst;
+    out_ar_lock   = r_req_q.ar.lock;
+    out_ar_cache  = r_req_q.ar.cache;
+    out_ar_prot   = r_req_q.ar.prot;
+    out_ar_qos    = r_req_q.ar.qos;
+    out_ar_region = r_req_q.ar.region;
+    out_ar_user   = r_req_q.ar.user;
+    out_ar_valid  = r_req_q.ar.valid;
+    in_ar_ready   = '0;
 
     // R Channel
-    in.r_id       = r_req_q.r.id;
-    in.r_data     = '0;
-    in.r_resp     = r_req_q.r.resp;
-    in.r_last     = '0;
-    in.r_user     = '0; // Due do data serialization/merging, no user data is forwarded
-    in.r_valid    = '0;
-    out.r_ready   = '0;
+    in_r_id       = r_req_q.r.id;
+    in_r_data     = '0;
+    in_r_resp     = r_req_q.r.resp;
+    in_r_last     = '0;
+    in_r_user     = '0; // Due do data serialization/merging, no user data is forwarded
+    in_r_valid    = '0;
+    out_r_ready   = '0;
 
     // Got a grant on the AR channel
-    if (out.ar_valid & out.ar_ready)
+    if (out_ar_valid && out_ar_ready)
       r_req_d.ar.valid = 1'b0;
 
     case (r_state_q)
       R_IDLE: begin
         // Reset channels
-        r_req_d.ar = '0;
-        r_req_d.r  = '0;
+        r_req_d.ar  = '0;
+        r_req_d.r   = '0;
+
+        // Ready
+        in_ar_ready = 1'b1;
+
+        // New read request
+        if (in_ar_valid) begin
+          // Default state
+          r_state_d         = R_PASSTHROUGH;
+
+          // Save beat
+          r_req_d.ar.id     = in_ar_id;
+          r_req_d.ar.addr   = in_ar_addr;
+          r_req_d.ar.size   = in_ar_size;
+          r_req_d.ar.burst  = in_ar_burst;
+          r_req_d.ar.len    = in_ar_len;
+          r_req_d.ar.lock   = in_ar_lock;
+          r_req_d.ar.cache  = in_ar_cache;
+          r_req_d.ar.prot   = in_ar_prot;
+          r_req_d.ar.qos    = in_ar_qos;
+          r_req_d.ar.region = in_ar_region;
+          r_req_d.ar.user   = in_ar_user;
+          r_req_d.ar.valid  = 1'b1;
+          r_req_d.len       = in_ar_len;
+          r_req_d.size      = in_ar_size;
+
+          if (|(in_ar_cache & CACHE_MODIFIABLE))
+            case (in_ar_burst)
+              BURST_INCR: begin
+                // Evaluate output burst length
+                automatic addr_t size_mask  = (1 << in_ar_size) - 1;
+
+                automatic addr_t addr_start = align_addr(in_ar_addr);
+                automatic addr_t addr_end   = align_addr((in_ar_addr & ~size_mask) + (in_ar_len << in_ar_size));
+
+                r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+                r_req_d.ar.size             = $clog2(MI_BYTES);
+                r_state_d                   = R_INCR_UPSIZE;
+              end // case: BURST_INCR
+            endcase // case (in_ar_burst)
+        end // if (in_ar_valid)
       end
 
       R_PASSTHROUGH, R_INCR_UPSIZE: begin
         if (r_req_q.r.valid) begin
           automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
-          automatic addr_t size_mask = (1 << r_req_q.size) - 1;
 
           // Valid output
-          in.r_valid                 = 1'b1;
-          in.r_last                  = r_req_q.r.last & (r_req_q.len == 0);
+          in_r_valid                 = 1'b1;
+          in_r_last                  = r_req_q.r.last && (r_req_q.len == 0);
 
           // Serialization
           for (int b = 0; b < MI_BYTES; b++)
             if ((b >= mi_offset) &&
                 (b - mi_offset < (1 << r_req_q.size)) &&
                 (b + si_offset - mi_offset < SI_BYTES)) begin
-              in.r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
+              in_r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
             end
 
           // Acknowledgement
-          if (in.r_ready) begin
-            r_req_d.len     = r_req_q.len - 1;
+          if (in_r_ready) begin
+            automatic addr_t size_mask = (1 << r_req_q.size) - 1;
+
+            r_req_d.len                = r_req_q.len - 1;
+            r_req_d.ar.addr            = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
 
             case (r_state_q)
-              R_PASSTHROUGH: begin
-                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
+              R_PASSTHROUGH:
                 r_req_d.r.valid = 1'b0;
-              end
 
-              R_INCR_UPSIZE: begin
-                r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
-
+              R_INCR_UPSIZE:
                 if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
                   r_req_d.r.valid = 1'b0;
-              end
             endcase // case (r_state_q)
 
-            if (r_req_q.len == 0) begin
-              r_req_d.r.valid = 1'b0;
-              r_state_d       = R_IDLE;
-            end
-          end // if (in.r_ready)
+            if (r_req_q.len == 0)
+              r_state_d = R_IDLE;
+          end // if (in_r_ready)
         end // if (r_req_q.r.valid)
 
-        // If we are waiting for a word, ready
-        // whenever downstream answers
-        if (!r_req_q.r.valid)
-          out.r_ready = out.r_valid;
-        // Else, ready if the upstream interface is ready
-        else
-          out.r_ready = ~r_req_d.r.valid & out.r_valid;
+        // We consumed a whole word
+        if (!r_req_d.r.valid) begin
+          out_r_ready = 1'b1;
 
-        // Accept a new word
-        if (out.r_ready & out.r_valid) begin
-          r_req_d.r.id    = out.r_id;
-          r_req_d.r.data  = out.r_data;
-          r_req_d.r.resp  = out.r_resp;
-          r_req_d.r.last  = out.r_last;
-          r_req_d.r.valid = 1'b1;
-        end
-      end // case: R_PASSTHROUGH
+          // Accept a new word
+          if (out_r_valid) begin
+            r_req_d.r.id    = out_r_id;
+            r_req_d.r.data  = out_r_data;
+            r_req_d.r.resp  = out_r_resp;
+            r_req_d.r.last  = out_r_last;
+            r_req_d.r.valid = 1'b1;
+          end
+        end // if (r_req_d.r.valid)
+      end // case: R_PASSTHROUGH, R_INCR_UPSIZE
     endcase // case (r_state_q)
-
-    // Can start new request whenever r_state_d is IDLE
-    if (r_state_d == R_IDLE) begin
-      // New read request
-      if (in.ar_valid) begin
-        // Save beat
-        r_req_d.ar.id     = in.ar_id;
-        r_req_d.ar.addr   = in.ar_addr;
-        r_req_d.ar.size   = in.ar_size;
-        r_req_d.ar.burst  = in.ar_burst;
-        r_req_d.ar.len    = in.ar_len;
-        r_req_d.ar.lock   = in.ar_lock;
-        r_req_d.ar.cache  = in.ar_cache;
-        r_req_d.ar.prot   = in.ar_prot;
-        r_req_d.ar.qos    = in.ar_qos;
-        r_req_d.ar.region = in.ar_region;
-        r_req_d.ar.user   = in.ar_user;
-        r_req_d.ar.valid  = 1'b1;
-        r_req_d.len       = in.ar_len;
-        r_req_d.size      = in.ar_size;
-
-        if (|(in.ar_cache & CACHE_MODIFIABLE)) begin
-          case (in.ar_burst)
-            BURST_INCR: begin
-              // Evaluate output burst length
-              automatic addr_t size_mask  = (1 << in.ar_size) - 1;
-
-              automatic addr_t addr_start = align_addr(in.ar_addr);
-              automatic addr_t addr_end   = align_addr((in.ar_addr & ~size_mask) + (in.ar_len << in.ar_size));
-
-              r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
-              r_req_d.ar.size             = $clog2(MI_BYTES);
-              r_state_d                   = R_INCR_UPSIZE;
-            end // case: BURST_INCR
-
-            default:
-              r_state_d = R_PASSTHROUGH;
-          endcase // case (in.ar_burst)
-        end else begin
-          // Do nothing
-          r_state_d = R_PASSTHROUGH;
-        end
-
-        // Acknowledge this request
-        // NOTE: Acknowledgment regardless of an answer
-        // on the slave side?
-        in.ar_ready = 1'b1;
-      end // if (in.ar_valid)
-    end // if (r_state_d == R_IDLE)
   end
 
   // --------------
@@ -252,31 +397,11 @@ module axi_data_upsize #(
                      W_INCR_UPSIZE } w_state_d, w_state_q;
 
   struct packed {
-    struct packed {
-      id_t     id;
-      addr_t   addr;
-      len_t    len;
-      size_t   size;
-      burst_t  burst;
-      logic    lock;
-      cache_t  cache;
-      prot_t   prot;
-      qos_t    qos;
-      region_t region;
-      atop_t   atop;
-      user_t   user;
-      logic    valid;
-    } aw;
+    mi_channel_ax_t aw;
+    mi_channel_w_t  w;
 
-    struct packed {
-      mi_data_t data;
-      mi_strb_t strb;
-      logic     last;
-      logic     valid;
-    } w;
-
-    size_t      size;
-    len_t       len;
+    size_t          size;
+    len_t           len;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -285,62 +410,98 @@ module axi_data_upsize #(
     w_req_d       = w_req_q;
 
     // AW Channel
-    out.aw_id     = w_req_q.aw.id;
-    out.aw_addr   = w_req_q.aw.addr;
-    out.aw_len    = w_req_q.aw.len;
-    out.aw_size   = w_req_q.aw.size;
-    out.aw_burst  = w_req_q.aw.burst;
-    out.aw_lock   = w_req_q.aw.lock;
-    out.aw_cache  = w_req_q.aw.cache;
-    out.aw_prot   = w_req_q.aw.prot;
-    out.aw_qos    = w_req_q.aw.qos;
-    out.aw_region = w_req_q.aw.region;
-    out.aw_atop   = w_req_q.aw.atop;
-    out.aw_user   = w_req_q.aw.user;
-    out.aw_valid  = w_req_q.aw.valid;
-    in.aw_ready   = '0;
+    out_aw_id     = w_req_q.aw.id;
+    out_aw_addr   = w_req_q.aw.addr;
+    out_aw_len    = w_req_q.aw.len;
+    out_aw_size   = w_req_q.aw.size;
+    out_aw_burst  = w_req_q.aw.burst;
+    out_aw_lock   = w_req_q.aw.lock;
+    out_aw_cache  = w_req_q.aw.cache;
+    out_aw_prot   = w_req_q.aw.prot;
+    out_aw_qos    = w_req_q.aw.qos;
+    out_aw_region = w_req_q.aw.region;
+    out_aw_atop   = w_req_q.aw.atop;
+    out_aw_user   = w_req_q.aw.user;
+    out_aw_valid  = w_req_q.aw.valid;
+    in_aw_ready   = '0;
 
     // W Channel
-    out.w_data    = w_req_q.w.data;
-    out.w_strb    = w_req_q.w.strb;
-    out.w_last    = w_req_q.w.last;
-    out.w_user    = '0; // Due to data serialization/merging, no user data is forwarded
-    out.w_valid   = w_req_q.w.valid;
-    in.w_ready    = '0;
+    out_w_data    = w_req_q.w.data;
+    out_w_strb    = w_req_q.w.strb;
+    out_w_last    = w_req_q.w.last;
+    out_w_user    = '0; // Due to data serialization/merging, no user data is forwarded
+    out_w_valid   = w_req_q.w.valid;
+    in_w_ready    = '0;
 
     // B Channel
     // No latency
-    in.b_id       = out.b_id;
-    in.b_resp     = out.b_resp;
-    in.b_user     = out.b_user;
-    in.b_valid    = out.b_valid;
-    out.b_ready   = in.b_ready;
+    in_b_id       = out_b_id;
+    in_b_resp     = out_b_resp;
+    in_b_user     = out_b_user;
+    in_b_valid    = out_b_valid;
+    out_b_ready   = in_b_ready;
 
     // Got a grant on the AW channel
-    if (out.aw_valid & out.aw_ready)
+    if (out_aw_valid && out_aw_ready)
       w_req_d.aw.valid = 1'b0;
-
-    // Got a grant on the W channel
-    if (out.w_valid & out.w_ready)
-      w_req_d.w = '0;
 
     case (w_state_q)
       W_IDLE: begin
         // Reset channels
-        w_req_d.aw = '0;
-        w_req_d.w  = '0;
+        w_req_d.aw  = '0;
+        w_req_d.w   = '0;
+
+        // Ready
+        in_aw_ready = 1'b1;
+
+        // New write request
+        if (in_aw_valid & in_aw_ready) begin
+          // Default state
+          w_state_d         = W_PASSTHROUGH;
+
+          // Save beat
+          w_req_d.aw.id     = in_aw_id;
+          w_req_d.aw.addr   = in_aw_addr;
+          w_req_d.aw.size   = in_aw_size;
+          w_req_d.aw.burst  = in_aw_burst;
+          w_req_d.aw.len    = in_aw_len;
+          w_req_d.aw.lock   = in_aw_lock;
+          w_req_d.aw.cache  = in_aw_cache;
+          w_req_d.aw.prot   = in_aw_prot;
+          w_req_d.aw.qos    = in_aw_qos;
+          w_req_d.aw.region = in_aw_region;
+          w_req_d.aw.atop   = in_aw_atop;
+          w_req_d.aw.user   = in_aw_user;
+          w_req_d.aw.valid  = 1'b1;
+          w_req_d.len       = in_aw_len;
+          w_req_d.size      = in_aw_size;
+
+          if (|(in_aw_cache & CACHE_MODIFIABLE))
+            case (in_aw_burst)
+              BURST_INCR: begin
+                // Evaluate output burst length
+                automatic addr_t size_mask  = (1 << in_aw_size) - 1;
+
+                automatic addr_t addr_start = align_addr(in_aw_addr);
+                automatic addr_t addr_end   = align_addr((in_aw_addr & ~size_mask) + (in_aw_len << in_aw_size));
+
+                w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+                w_req_d.aw.size             = $clog2(MI_BYTES);
+                w_state_d                   = W_INCR_UPSIZE;
+              end // case: BURST_INCR
+            endcase // case (in_aw_burst)
+        end // if (in_aw_valid)
       end
 
       W_PASSTHROUGH, W_INCR_UPSIZE: begin
-        // If the downstream interface is idle,
-        // ready whenever a new word arrives
-        if (!out.w_valid)
-          in.w_ready = in.w_valid;
-        // Else, ready if the upstream interface is ready
-        else
-          in.w_ready = in.w_valid & out.w_ready;
+        // Got a grant on the W channel
+        if (out_w_valid && out_w_ready)
+          w_req_d.w = '0;
 
-        if (in.w_ready) begin
+        // Ready if downstream interface is idle, or if it is ready
+        in_w_ready  = ~out_w_valid || out_w_ready;
+
+        if (in_w_valid && in_w_ready) begin
           automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
           automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
           automatic addr_t size_mask = (1 << w_req_q.size) - 1;
@@ -350,27 +511,22 @@ module axi_data_upsize #(
             if ((b >= mi_offset) &&
                 (b - mi_offset < (1 << w_req_q.size)) &&
                 (b + si_offset - mi_offset < SI_BYTES)) begin
-              w_req_d.w.data[8 * b +: 8] = in.w_data[8 * (b + si_offset - mi_offset) +: 8];
-              w_req_d.w.strb[b]          = in.w_strb[b + si_offset - mi_offset];
+              w_req_d.w.data[8 * b +: 8] = in_w_data[8 * (b + si_offset - mi_offset) +: 8];
+              w_req_d.w.strb[b]          = in_w_strb[b + si_offset - mi_offset];
             end
 
           w_req_d.len     = w_req_q.len - 1;
+          w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
 
           case (w_state_q)
-            W_PASSTHROUGH: begin
-              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
-
+            W_PASSTHROUGH:
               // Forward data as soon as we can
               w_req_d.w.valid = 1'b1;
-            end
 
-            W_INCR_UPSIZE: begin
-              w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
-
+            W_INCR_UPSIZE:
               // Forward when the burst is finished, or when a word was filled up
               if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
                 w_req_d.w.valid = 1'b1;
-            end
           endcase // case (w_state_q)
 
           if (w_req_q.len == 0) begin
@@ -380,56 +536,6 @@ module axi_data_upsize #(
         end
       end
     endcase // case (w_state_q)
-
-    // Can start new request whenever w_state_d is IDLE
-    if (w_state_d == W_IDLE) begin
-      // New write request
-      if (in.aw_valid) begin
-        // Save beat
-        w_req_d.aw.id     = in.aw_id;
-        w_req_d.aw.addr   = in.aw_addr;
-        w_req_d.aw.size   = in.aw_size;
-        w_req_d.aw.burst  = in.aw_burst;
-        w_req_d.aw.len    = in.aw_len;
-        w_req_d.aw.lock   = in.aw_lock;
-        w_req_d.aw.cache  = in.aw_cache;
-        w_req_d.aw.prot   = in.aw_prot;
-        w_req_d.aw.qos    = in.aw_qos;
-        w_req_d.aw.region = in.aw_region;
-        w_req_d.aw.atop   = in.aw_atop;
-        w_req_d.aw.user   = in.aw_user;
-        w_req_d.aw.valid  = 1'b1;
-        w_req_d.len       = in.aw_len;
-        w_req_d.size      = in.aw_size;
-
-        if (|(in.aw_cache & CACHE_MODIFIABLE)) begin
-          case (in.aw_burst)
-            BURST_INCR: begin
-              // Evaluate output burst length
-              automatic addr_t size_mask  = (1 << in.aw_size) - 1;
-
-              automatic addr_t addr_start = align_addr(in.aw_addr);
-              automatic addr_t addr_end   = align_addr((in.aw_addr & ~size_mask) + (in.aw_len << in.aw_size));
-
-              w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
-              w_req_d.aw.size             = $clog2(MI_BYTES);
-              w_state_d                   = W_INCR_UPSIZE;
-            end // case: BURST_INCR
-
-            default:
-              w_state_d = W_PASSTHROUGH;
-          endcase // case (in.aw_burst)
-        end else begin
-          // Do nothing
-          w_state_d = W_PASSTHROUGH;
-        end
-
-        // Acknowledge this request
-        // NOTE: Acknowledgment regardless of an answer
-        // on the slave side?
-        in.aw_ready = 1'b1;
-      end // if (in.aw_valid)
-    end // if (w_state_d == W_IDLE)
   end
 
   // --------------
