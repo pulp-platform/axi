@@ -60,14 +60,14 @@ module tb_axi_dwc_upsize;
     .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
-    ) axi_slave_dv ( clk );
+  ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( MULT * DW ),
     .AXI_ID_WIDTH ( IWO ),
     .AXI_USER_WIDTH ( UW )
-    ) axi_slave ();
+  ) axi_slave ();
 
   axi_test::axi_driver #(
     .AW ( AW ),
@@ -82,7 +82,11 @@ module tb_axi_dwc_upsize;
 
   axi_data_width_converter #(
     .MI_DATA_WIDTH ( MULT * DW ),
-    .SI_DATA_WIDTH ( DW )
+    .MI_ID_WIDTH ( IWO ),
+    .MI_USER_WIDTH ( UW ),
+    .SI_DATA_WIDTH ( DW ),
+    .SI_ID_WIDTH ( IW ),
+    .SI_USER_WIDTH ( UW )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
