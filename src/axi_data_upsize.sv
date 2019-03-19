@@ -249,8 +249,8 @@ module axi_data_upsize #(
     mi_channel_ax_t ar;
     mi_channel_r_t  r;
 
-    size_t          size;
     len_t           len;
+    size_t          size;
   } r_req_d, r_req_q;
 
   always_comb begin
@@ -287,105 +287,110 @@ module axi_data_upsize #(
       r_req_d.ar.valid = 1'b0;
 
     case (r_state_q)
-      R_IDLE: begin
-        // Reset channels
-        r_req_d.ar  = '0;
-        r_req_d.r   = '0;
-
-        // Ready
-        in_ar_ready = 1'b1;
-
-        // New read request
-        if (in_ar_valid) begin
-          // Default state
-          r_state_d         = R_PASSTHROUGH;
-
-          // Save beat
-          r_req_d.ar.id     = in_ar_id;
-          r_req_d.ar.addr   = in_ar_addr;
-          r_req_d.ar.size   = in_ar_size;
-          r_req_d.ar.burst  = in_ar_burst;
-          r_req_d.ar.len    = in_ar_len;
-          r_req_d.ar.lock   = in_ar_lock;
-          r_req_d.ar.cache  = in_ar_cache;
-          r_req_d.ar.prot   = in_ar_prot;
-          r_req_d.ar.qos    = in_ar_qos;
-          r_req_d.ar.region = in_ar_region;
-          r_req_d.ar.user   = in_ar_user;
-          r_req_d.ar.valid  = 1'b1;
-          r_req_d.len       = in_ar_len;
-          r_req_d.size      = in_ar_size;
-
-          if (|(in_ar_cache & CACHE_MODIFIABLE))
-            case (in_ar_burst)
-              BURST_INCR: begin
-                // Evaluate output burst length
-                automatic addr_t size_mask  = (1 << in_ar_size) - 1;
-
-                automatic addr_t addr_start = align_addr(in_ar_addr);
-                automatic addr_t addr_end   = align_addr((in_ar_addr & ~size_mask) + (in_ar_len << in_ar_size));
-
-                r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
-                r_req_d.ar.size             = $clog2(MI_BYTES);
-                r_state_d                   = R_INCR_UPSIZE;
-              end // case: BURST_INCR
-            endcase // case (in_ar_burst)
-        end // if (in_ar_valid)
-      end
-
       R_PASSTHROUGH, R_INCR_UPSIZE: begin
-        if (r_req_q.r.valid) begin
-          automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
-          automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
+        // Request was accepted
+        if (!r_req_d.ar.valid) begin
+          if (r_req_q.r.valid) begin
+            automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
+            automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
 
-          // Valid output
-          in_r_valid                 = 1'b1;
-          in_r_last                  = r_req_q.r.last && (r_req_q.len == 0);
+            // Valid output
+            in_r_valid                 = 1'b1;
+            in_r_last                  = r_req_q.r.last && (r_req_q.len == 0);
 
-          // Serialization
-          for (int b = 0; b < MI_BYTES; b++)
-            if ((b >= mi_offset) &&
-                (b - mi_offset < (1 << r_req_q.size)) &&
-                (b + si_offset - mi_offset < SI_BYTES)) begin
-              in_r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
-            end
+            // Serialization
+            for (int b = 0; b < MI_BYTES; b++)
+              if ((b >= mi_offset) &&
+                        (b - mi_offset < (1 << r_req_q.size)) &&
+                        (b + si_offset - mi_offset < SI_BYTES)) begin
+                in_r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
+              end
 
-          // Acknowledgement
-          if (in_r_ready) begin
-            automatic addr_t size_mask = (1 << r_req_q.size) - 1;
+            // Acknowledgement
+            if (in_r_ready) begin
+              automatic addr_t size_mask = (1 << r_req_q.size) - 1;
 
-            r_req_d.len                = r_req_q.len - 1;
-            r_req_d.ar.addr            = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
+              r_req_d.len                = r_req_q.len - 1;
+              r_req_d.ar.addr            = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
 
-            case (r_state_q)
-              R_PASSTHROUGH:
-                r_req_d.r.valid = 1'b0;
-
-              R_INCR_UPSIZE:
-                if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
+              case (r_state_q)
+                R_PASSTHROUGH:
                   r_req_d.r.valid = 1'b0;
-            endcase // case (r_state_q)
 
-            if (r_req_q.len == 0)
-              r_state_d = R_IDLE;
-          end // if (in_r_ready)
-        end // if (r_req_q.r.valid)
+                R_INCR_UPSIZE:
+                  if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
+                    r_req_d.r.valid = 1'b0;
+              endcase // case (r_state_q)
 
-        // We consumed a whole word
-        if (!r_req_d.r.valid) begin
-          out_r_ready = 1'b1;
+              if (r_req_q.len == 0)
+                r_state_d = R_IDLE;
+            end // if (in_r_ready)
+          end // if (r_req_q.r.valid)
 
-          // Accept a new word
-          if (out_r_valid) begin
-            r_req_d.r.id    = out_r_id;
-            r_req_d.r.data  = out_r_data;
-            r_req_d.r.resp  = out_r_resp;
-            r_req_d.r.last  = out_r_last;
-            r_req_d.r.valid = 1'b1;
-          end
-        end // if (r_req_d.r.valid)
+          // We consumed a whole word
+          if (!r_req_d.r.valid) begin
+            out_r_ready = 1'b1;
+
+            // Accept a new word
+            if (out_r_valid) begin
+              r_req_d.r.id    = out_r_id;
+              r_req_d.r.data  = out_r_data;
+              r_req_d.r.resp  = out_r_resp;
+              r_req_d.r.last  = out_r_last;
+              r_req_d.r.valid = 1'b1;
+            end
+          end // if (r_req_d.r.valid)
+        end // if (!r_req_d.ar.valid)
       end // case: R_PASSTHROUGH, R_INCR_UPSIZE
     endcase // case (r_state_q)
+
+    // Can start a new request as soon as r_state_d is R_IDLE
+    if (r_state_d == R_IDLE) begin
+      // Reset channels
+      r_req_d.ar  = '0;
+      r_req_d.r   = '0;
+
+      // Ready
+      in_ar_ready = 1'b1;
+
+      // New read request
+      if (in_ar_valid) begin
+        // Default state
+        r_state_d         = R_PASSTHROUGH;
+
+        // Save beat
+        r_req_d.ar.id     = in_ar_id;
+        r_req_d.ar.addr   = in_ar_addr;
+        r_req_d.ar.size   = in_ar_size;
+        r_req_d.ar.burst  = in_ar_burst;
+        r_req_d.ar.len    = in_ar_len;
+        r_req_d.ar.lock   = in_ar_lock;
+        r_req_d.ar.cache  = in_ar_cache;
+        r_req_d.ar.prot   = in_ar_prot;
+        r_req_d.ar.qos    = in_ar_qos;
+        r_req_d.ar.region = in_ar_region;
+        r_req_d.ar.user   = in_ar_user;
+        r_req_d.ar.valid  = 1'b1;
+
+        r_req_d.len       = in_ar_len;
+        r_req_d.size      = in_ar_size;
+
+        if (|(in_ar_cache & CACHE_MODIFIABLE))
+          case (in_ar_burst)
+            BURST_INCR: begin
+              // Evaluate output burst length
+              automatic addr_t size_mask  = (1 << in_ar_size) - 1;
+
+              automatic addr_t addr_start = align_addr(in_ar_addr);
+              automatic addr_t addr_end   = align_addr((in_ar_addr & ~size_mask) + (in_ar_len << in_ar_size));
+
+              r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              r_req_d.ar.size             = $clog2(MI_BYTES);
+              r_state_d                   = R_INCR_UPSIZE;
+            end // case: BURST_INCR
+          endcase // case (in_ar_burst)
+      end // if (in_ar_valid)
+    end
   end
 
   // --------------
@@ -400,8 +405,8 @@ module axi_data_upsize #(
     mi_channel_ax_t aw;
     mi_channel_w_t  w;
 
-    size_t          size;
     len_t           len;
+    size_t          size;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -446,96 +451,101 @@ module axi_data_upsize #(
       w_req_d.aw.valid = 1'b0;
 
     case (w_state_q)
-      W_IDLE: begin
-        // Reset channels
-        w_req_d.aw  = '0;
-        w_req_d.w   = '0;
-
-        // Ready
-        in_aw_ready = 1'b1;
-
-        // New write request
-        if (in_aw_valid & in_aw_ready) begin
-          // Default state
-          w_state_d         = W_PASSTHROUGH;
-
-          // Save beat
-          w_req_d.aw.id     = in_aw_id;
-          w_req_d.aw.addr   = in_aw_addr;
-          w_req_d.aw.size   = in_aw_size;
-          w_req_d.aw.burst  = in_aw_burst;
-          w_req_d.aw.len    = in_aw_len;
-          w_req_d.aw.lock   = in_aw_lock;
-          w_req_d.aw.cache  = in_aw_cache;
-          w_req_d.aw.prot   = in_aw_prot;
-          w_req_d.aw.qos    = in_aw_qos;
-          w_req_d.aw.region = in_aw_region;
-          w_req_d.aw.atop   = in_aw_atop;
-          w_req_d.aw.user   = in_aw_user;
-          w_req_d.aw.valid  = 1'b1;
-          w_req_d.len       = in_aw_len;
-          w_req_d.size      = in_aw_size;
-
-          if (|(in_aw_cache & CACHE_MODIFIABLE))
-            case (in_aw_burst)
-              BURST_INCR: begin
-                // Evaluate output burst length
-                automatic addr_t size_mask  = (1 << in_aw_size) - 1;
-
-                automatic addr_t addr_start = align_addr(in_aw_addr);
-                automatic addr_t addr_end   = align_addr((in_aw_addr & ~size_mask) + (in_aw_len << in_aw_size));
-
-                w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
-                w_req_d.aw.size             = $clog2(MI_BYTES);
-                w_state_d                   = W_INCR_UPSIZE;
-              end // case: BURST_INCR
-            endcase // case (in_aw_burst)
-        end // if (in_aw_valid)
-      end
-
       W_PASSTHROUGH, W_INCR_UPSIZE: begin
         // Got a grant on the W channel
         if (out_w_valid && out_w_ready)
           w_req_d.w = '0;
 
-        // Ready if downstream interface is idle, or if it is ready
-        in_w_ready  = ~out_w_valid || out_w_ready;
+        // Request was accepted
+        if (!w_req_d.aw.valid) begin
+          // Ready if downstream interface is idle, or if it is ready
+          in_w_ready  = ~out_w_valid || out_w_ready;
 
-        if (in_w_valid && in_w_ready) begin
-          automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
-          automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
-          automatic addr_t size_mask = (1 << w_req_q.size) - 1;
+          if (in_w_valid && in_w_ready) begin
+            automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
+            automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
+            automatic addr_t size_mask = (1 << w_req_q.size) - 1;
 
-          // Lane steering
-          for (int b = 0; b < MI_BYTES; b++)
-            if ((b >= mi_offset) &&
-                (b - mi_offset < (1 << w_req_q.size)) &&
-                (b + si_offset - mi_offset < SI_BYTES)) begin
-              w_req_d.w.data[8 * b +: 8] = in_w_data[8 * (b + si_offset - mi_offset) +: 8];
-              w_req_d.w.strb[b]          = in_w_strb[b + si_offset - mi_offset];
-            end
+            // Lane steering
+            for (int b = 0; b < MI_BYTES; b++)
+              if ((b >= mi_offset) &&
+                        (b - mi_offset < (1 << w_req_q.size)) &&
+                        (b + si_offset - mi_offset < SI_BYTES)) begin
+                w_req_d.w.data[8 * b +: 8] = in_w_data[8 * (b + si_offset - mi_offset) +: 8];
+                w_req_d.w.strb[b]          = in_w_strb[b + si_offset - mi_offset];
+              end
 
-          w_req_d.len     = w_req_q.len - 1;
-          w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
+            w_req_d.len     = w_req_q.len - 1;
+            w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
+            w_req_d.w.last  = (w_req_q.len == 0);
 
-          case (w_state_q)
-            W_PASSTHROUGH:
-              // Forward data as soon as we can
-              w_req_d.w.valid = 1'b1;
-
-            W_INCR_UPSIZE:
-              // Forward when the burst is finished, or when a word was filled up
-              if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
+            case (w_state_q)
+              W_PASSTHROUGH:
+                // Forward data as soon as we can
                 w_req_d.w.valid = 1'b1;
-          endcase // case (w_state_q)
 
-          if (w_req_q.len == 0) begin
-            w_req_d.w.last = 1'b1;
-            w_state_d      = W_IDLE;
-          end
-        end
+              W_INCR_UPSIZE:
+                // Forward when the burst is finished, or when a word was filled up
+                if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr) != align_addr(w_req_q.aw.addr)))
+                  w_req_d.w.valid = 1'b1;
+            endcase // case (w_state_q)
+          end // if (in_w_valid && in_w_ready)
+        end // if (!w_req_d.aw.valid)
+
+        if (out_w_valid && out_w_ready)
+          if (w_req_q.len == '1)
+            w_state_d = W_IDLE;
       end
     endcase // case (w_state_q)
+
+    // Can start a new request as soon as w_state_d is W_IDLE
+    if (w_state_d == W_IDLE) begin
+      // Reset channels
+      w_req_d.aw  = '0;
+      w_req_d.w   = '0;
+
+      // Ready
+      in_aw_ready = 1'b1;
+
+      // New write request
+      if (in_aw_valid & in_aw_ready) begin
+        // Default state
+        w_state_d         = W_PASSTHROUGH;
+
+        // Save beat
+        w_req_d.aw.id     = in_aw_id;
+        w_req_d.aw.addr   = in_aw_addr;
+        w_req_d.aw.size   = in_aw_size;
+        w_req_d.aw.burst  = in_aw_burst;
+        w_req_d.aw.len    = in_aw_len;
+        w_req_d.aw.lock   = in_aw_lock;
+        w_req_d.aw.cache  = in_aw_cache;
+        w_req_d.aw.prot   = in_aw_prot;
+        w_req_d.aw.qos    = in_aw_qos;
+        w_req_d.aw.region = in_aw_region;
+        w_req_d.aw.atop   = in_aw_atop;
+        w_req_d.aw.user   = in_aw_user;
+        w_req_d.aw.valid  = 1'b1;
+
+        w_req_d.len       = in_aw_len;
+        w_req_d.size      = in_aw_size;
+
+        if (|(in_aw_cache & CACHE_MODIFIABLE))
+          case (in_aw_burst)
+            BURST_INCR: begin
+              // Evaluate output burst length
+              automatic addr_t size_mask  = (1 << in_aw_size) - 1;
+
+              automatic addr_t addr_start = align_addr(in_aw_addr);
+              automatic addr_t addr_end   = align_addr((in_aw_addr & ~size_mask) + (in_aw_len << in_aw_size));
+
+              w_req_d.aw.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+              w_req_d.aw.size             = $clog2(MI_BYTES);
+              w_state_d                   = W_INCR_UPSIZE;
+            end // case: BURST_INCR
+          endcase // case (in_aw_burst)
+      end // if (in_aw_valid)
+    end
   end
 
   // --------------

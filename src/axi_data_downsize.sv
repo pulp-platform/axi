@@ -253,8 +253,8 @@ module axi_data_downsize #(
     si_channel_ax_t ar;
     si_channel_r_t  r;
 
-    size_t          size;
     full_len_t      len;
+    size_t          size;
   } r_req_d, r_req_q;
 
   always_comb begin
@@ -291,115 +291,121 @@ module axi_data_downsize #(
       r_req_d.ar.valid = 1'b0;
 
     case (r_state_q)
-      R_IDLE: begin
-        // Reset channels
-        r_req_d.ar  = '0;
-        r_req_d.r   = '0;
-
-        // Ready
-        in_ar_ready = 1'b1;
-
-        // New write request
-        if (in_ar_valid) begin
-          // Default state
-          r_state_d         = R_PASSTHROUGH;
-
-          // Save beat
-          r_req_d.ar.id     = in_ar_id;
-          r_req_d.ar.addr   = in_ar_addr;
-          r_req_d.ar.size   = in_ar_size;
-          r_req_d.ar.burst  = in_ar_burst;
-          r_req_d.ar.len    = in_ar_len;
-          r_req_d.ar.lock   = in_ar_lock;
-          r_req_d.ar.cache  = in_ar_cache;
-          r_req_d.ar.prot   = in_ar_prot;
-          r_req_d.ar.qos    = in_ar_qos;
-          r_req_d.ar.region = in_ar_region;
-          r_req_d.ar.user   = in_ar_user;
-          r_req_d.ar.valid  = 1'b1;
-          r_req_d.len       = in_ar_len;
-          r_req_d.size      = in_ar_size;
-
-          if (|(in_ar_cache & CACHE_MODIFIABLE))
-            case (in_ar_burst)
-              BURST_INCR: begin
-                // Evaluate downsize ratio
-                automatic addr_t size_mask  = (1 << in_ar_size) - 1;
-                automatic addr_t conv_ratio = ((1 << in_ar_size) + MI_BYTES - 1) / MI_BYTES;
-
-                // Evaluate output burst length
-                automatic addr_t align_adj  = (in_ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
-                r_req_d.len                 = (in_ar_len + 1) * conv_ratio - align_adj - 1;
-
-                if (conv_ratio != 1) begin
-                  r_req_d.ar.size   = $clog2(MI_BYTES);
-
-                  if (r_req_d.len <= 255) begin
-                    r_state_d      = R_INCR_DOWNSIZE;
-                    r_req_d.ar.len = r_req_d.len;
-                  end else begin
-                    r_state_d      = R_SPLIT_INCR_DOWNSIZE;
-                    r_req_d.ar.len = 255 - align_adj;
-                  end
-                end
-              end // case: BURST_INCR
-            endcase // case (in_ar_burst)
-        end // if (in_ar_valid)
-      end // case: R_IDLE
-
       R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
         // Got a grant on the R channel
         if (in_r_valid && in_r_ready)
           r_req_d.r = '0;
 
-        // Ready to accept more data
-        if (!in_r_valid || (in_r_valid && in_r_ready)) begin
-          out_r_ready = 1'b1;
+        // Request was accepted
+        if (!r_req_d.ar.valid) begin
+          // Ready to accept more data
+          if (!in_r_valid || (in_r_valid && in_r_ready)) begin
+            out_r_ready = 1'b1;
 
-          if (out_r_valid) begin
-            automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
-            automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
-            automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1;
+            if (out_r_valid) begin
+              automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
+              automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
+              automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1;
 
-            // Lane steering
-            for (int b = 0; b < SI_BYTES; b++)
-              if ((b >= si_offset) &&
-                        (b - si_offset < (1 << r_req_q.size)) &&
-                        (b + mi_offset - si_offset < MI_BYTES)) begin
-                r_req_d.r.data[8 * b +: 8] = out_r_data[8 * (b + mi_offset - si_offset) +: 8];
-              end
+              // Lane steering
+              for (int b = 0; b < SI_BYTES; b++)
+                if ((b >= si_offset) &&
+                          (b - si_offset < (1 << r_req_q.size)) &&
+                          (b + mi_offset - si_offset < MI_BYTES)) begin
+                  r_req_d.r.data[8 * b +: 8] = out_r_data[8 * (b + mi_offset - si_offset) +: 8];
+                end
 
-            r_req_d.len     = r_req_q.len - 1;
-            r_req_d.ar.len  = r_req_q.ar.len - 1;
-            r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
-            r_req_d.r.last  = (r_req_q.len == 0);
-            r_req_d.r.id    = out_r_id;
+              r_req_d.len     = r_req_q.len - 1;
+              r_req_d.ar.len  = r_req_q.ar.len - 1;
+              r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+              r_req_d.r.last  = (r_req_q.len == 0);
+              r_req_d.r.id    = out_r_id;
 
-            case (r_state_q)
-              R_PASSTHROUGH:
-                // Forward data as soon as we can
-                r_req_d.r.valid = 1'b1;
-
-              R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
-                // Forward when the burst is finished, or when a word was filled up
-                if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr, r_req_q.size) != align_addr(r_req_q.ar.addr, r_req_q.size)))
+              case (r_state_q)
+                R_PASSTHROUGH:
+                  // Forward data as soon as we can
                   r_req_d.r.valid = 1'b1;
-            endcase // case (r_state_q)
 
-            if (r_req_q.len == '0)
-              r_state_d = R_IDLE;
+                R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
+                  // Forward when the burst is finished, or when a word was filled up
+                  if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr, r_req_q.size) != align_addr(r_req_q.ar.addr, r_req_q.size)))
+                    r_req_d.r.valid = 1'b1;
+              endcase // case (r_state_q)
 
-            // Trigger another burst request, if needed
-            if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
-              // Finished current burst, but whole transaction hasn't finished
-              if (r_req_q.ar.len == '0 && r_req_q.len != '0) begin
-                r_req_d.ar.valid = 1'b1;
-                r_req_d.ar.len   = (r_req_d.len <= 255) ? r_req_d.len : 255;
-              end
-          end // if (out_r_valid)
-        end // if (!in_r_valid || (in_r_valid && in_r_ready))
+              // Trigger another burst request, if needed
+              if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
+                // Finished current burst, but whole transaction hasn't finished
+                if (r_req_q.ar.len == '0 && r_req_q.len != '0) begin
+                  r_req_d.ar.valid = 1'b1;
+                  r_req_d.ar.len   = (r_req_d.len <= 255) ? r_req_d.len : 255;
+                end
+            end // if (out_r_valid)
+          end // if (!in_r_valid || (in_r_valid && in_r_ready))
+        end // if (!r_req_d.ar.valid)
+
+        if (in_r_valid && in_r_ready)
+          if (r_req_q.len == '1)
+            r_state_d = R_IDLE;
       end // case: R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE
     endcase // case (r_state_q)
+
+    // Can start a new request as soon as r_state_d is R_IDLE
+    if (r_state_d == R_IDLE) begin
+      // Reset channels
+      r_req_d.ar  = '0;
+      r_req_d.r   = '0;
+
+      // Ready
+      in_ar_ready = 1'b1;
+
+      // New write request
+      if (in_ar_valid) begin
+        // Default state
+        r_state_d         = R_PASSTHROUGH;
+
+        // Save beat
+        r_req_d.ar.id     = in_ar_id;
+        r_req_d.ar.addr   = in_ar_addr;
+        r_req_d.ar.size   = in_ar_size;
+        r_req_d.ar.burst  = in_ar_burst;
+        r_req_d.ar.len    = in_ar_len;
+        r_req_d.ar.lock   = in_ar_lock;
+        r_req_d.ar.cache  = in_ar_cache;
+        r_req_d.ar.prot   = in_ar_prot;
+        r_req_d.ar.qos    = in_ar_qos;
+        r_req_d.ar.region = in_ar_region;
+        r_req_d.ar.user   = in_ar_user;
+        r_req_d.ar.valid  = 1'b1;
+
+        r_req_d.len       = in_ar_len;
+        r_req_d.size      = in_ar_size;
+
+        if (|(in_ar_cache & CACHE_MODIFIABLE))
+          case (in_ar_burst)
+            BURST_INCR: begin
+              // Evaluate downsize ratio
+              automatic addr_t size_mask  = (1 << in_ar_size) - 1;
+              automatic addr_t conv_ratio = ((1 << in_ar_size) + MI_BYTES - 1) / MI_BYTES;
+
+              // Evaluate output burst length
+              automatic addr_t align_adj  = (in_ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+              r_req_d.len                 = (in_ar_len + 1) * conv_ratio - align_adj - 1;
+
+              if (conv_ratio != 1) begin
+                r_req_d.ar.size   = $clog2(MI_BYTES);
+
+                if (r_req_d.len <= 255) begin
+                  r_state_d      = R_INCR_DOWNSIZE;
+                  r_req_d.ar.len = r_req_d.len;
+                end else begin
+                  r_state_d      = R_SPLIT_INCR_DOWNSIZE;
+                  r_req_d.ar.len = 255 - align_adj;
+                end
+              end // if (conv_ratio != 1)
+            end // case: BURST_INCR
+          endcase // case (in_ar_burst)
+      end // if (in_ar_valid)
+    end
   end
 
   // --------------
@@ -415,8 +421,8 @@ module axi_data_downsize #(
     si_channel_ax_t aw;
     si_channel_w_t  w;
 
-    size_t          size;
     full_len_t      len;
+    size_t          size;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -461,124 +467,129 @@ module axi_data_downsize #(
       w_req_d.aw.valid = 1'b0;
 
     case (w_state_q)
-      W_IDLE: begin
-        // Reset channels
-        w_req_d.aw  = '0;
-        w_req_d.w   = '0;
-
-        // Ready
-        in_aw_ready = 1'b1;
-
-        // New write request
-        if (in_aw_valid && in_aw_ready) begin
-          // Default state
-          w_state_d         = W_PASSTHROUGH;
-
-          // Save beat
-          w_req_d.aw.id     = in_aw_id;
-          w_req_d.aw.addr   = in_aw_addr;
-          w_req_d.aw.size   = in_aw_size;
-          w_req_d.aw.burst  = in_aw_burst;
-          w_req_d.aw.len    = in_aw_len;
-          w_req_d.aw.lock   = in_aw_lock;
-          w_req_d.aw.cache  = in_aw_cache;
-          w_req_d.aw.prot   = in_aw_prot;
-          w_req_d.aw.qos    = in_aw_qos;
-          w_req_d.aw.region = in_aw_region;
-          w_req_d.aw.atop   = in_aw_atop;
-          w_req_d.aw.user   = in_aw_user;
-          w_req_d.aw.valid  = 1'b1;
-          w_req_d.len       = in_aw_len;
-          w_req_d.size      = in_aw_size;
-
-          // Do nothing
-          if (|(in_aw_cache & CACHE_MODIFIABLE))
-            case (in_aw_burst)
-              BURST_INCR: begin
-                // Evaluate downsize ratio
-                automatic addr_t size_mask  = (1 << in_aw_size) - 1;
-                automatic addr_t conv_ratio = ((1 << in_aw_size) + MI_BYTES - 1) / MI_BYTES;
-
-                // Evaluate output burst length
-                automatic addr_t align_adj  = (in_aw_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
-                w_req_d.len                 = (in_aw_len + 1) * conv_ratio - align_adj - 1;
-
-                if (conv_ratio != 1) begin
-                  w_req_d.aw.size   = $clog2(MI_BYTES);
-
-                  if (w_req_d.len <= 255) begin
-                    w_state_d      = W_INCR_DOWNSIZE;
-                    w_req_d.aw.len = w_req_d.len;
-                  end else begin
-                    w_state_d      = W_SPLIT_INCR_DOWNSIZE;
-                    w_req_d.aw.len = 255 - align_adj;
-                  end
-                end
-              end // case: BURST_INCR
-            endcase // case (in_aw_burst)
-        end // if (in_aw_valid)
-      end // case: W_IDLE
-
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
-        if (w_req_q.w.valid) begin
-          automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
-          automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
+        // Request was accepted
+        if (!w_req_d.aw.valid) begin
+          if (w_req_q.w.valid) begin
+            automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
+            automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
 
-          // Valid output
-          out_w_valid                = 1'b1;
-          out_w_last                 = w_req_q.w.last && (w_req_q.len == 0);
+            // Valid output
+            out_w_valid                = 1'b1;
+            out_w_last                 = w_req_q.w.last && (w_req_q.len == 0);
 
-          // Serialization
-          for (int b = 0; b < SI_BYTES; b++)
-            if ((b >= si_offset) &&
-                (b - si_offset < (1 << w_req_q.aw.size)) &&
-                (b + mi_offset - si_offset < MI_BYTES)) begin
-              out_w_data[8 * (b + mi_offset - si_offset) +: 8] = w_req_q.w.data[8 * b +: 8];
-              out_w_strb[b + mi_offset - si_offset]            = w_req_q.w.strb[b];
-            end
-        end // if (w_req_q.w.valid)
+            // Serialization
+            for (int b = 0; b < SI_BYTES; b++)
+              if ((b >= si_offset) &&
+                        (b - si_offset < (1 << w_req_q.aw.size)) &&
+                        (b + mi_offset - si_offset < MI_BYTES)) begin
+                out_w_data[8 * (b + mi_offset - si_offset) +: 8] = w_req_q.w.data[8 * b +: 8];
+                out_w_strb[b + mi_offset - si_offset]            = w_req_q.w.strb[b];
+              end
+          end // if (w_req_q.w.valid)
 
-        // Acknowledgement
-        if (out_w_ready && out_w_valid) begin
-          automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
+          // Acknowledgement
+          if (out_w_ready && out_w_valid) begin
+            automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
 
-          w_req_d.len                = w_req_q.len - 1;
-          w_req_d.aw.len             = w_req_q.aw.len - 1;
-          w_req_d.aw.addr            = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+            w_req_d.len                = w_req_q.len - 1;
+            w_req_d.aw.len             = w_req_q.aw.len - 1;
+            w_req_d.aw.addr            = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
 
-          case (w_state_q)
-            W_PASSTHROUGH:
-              w_req_d.w.valid = 1'b0;
-
-            W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
-              if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr, w_req_q.size) != align_addr(w_req_q.aw.addr, w_req_q.size)))
+            case (w_state_q)
+              W_PASSTHROUGH:
                 w_req_d.w.valid = 1'b0;
-          endcase // case (w_state_q)
 
-          // Trigger another burst request, if needed
-          if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
-            // Finished current burst, but whole transaction hasn't finished
-            if (w_req_q.aw.len == '0 && w_req_q.len != '0) begin
-              w_req_d.aw.valid  = 1'b1;
-              w_req_d.aw.len    = (w_req_d.len <= 255) ? w_req_d.len : 255;
-            end
+              W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
+                if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr, w_req_q.size) != align_addr(w_req_q.aw.addr, w_req_q.size)))
+                  w_req_d.w.valid = 1'b0;
+            endcase // case (w_state_q)
 
-          if (w_req_q.len == 0)
-            w_state_d = W_IDLE;
-        end // if (out_w_ready && out_w_valid)
+            // Trigger another burst request, if needed
+            if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
+              // Finished current burst, but whole transaction hasn't finished
+              if (w_req_q.aw.len == '0 && w_req_q.len != '0) begin
+                w_req_d.aw.valid  = 1'b1;
+                w_req_d.aw.len    = (w_req_d.len <= 255) ? w_req_d.len : 255;
+              end
 
-        // Ready if we consumed a whole word
-        in_w_ready = ~w_req_d.w.valid;
+            if (w_req_q.len == 0)
+              w_state_d = W_IDLE;
+          end // if (out_w_ready && out_w_valid)
 
-        // Accept a new word
-        if (in_w_valid && in_w_ready) begin
-          w_req_d.w.data  = in_w_data;
-          w_req_d.w.strb  = in_w_strb;
-          w_req_d.w.last  = in_w_last;
-          w_req_d.w.valid = 1'b1;
-        end
+          // Ready if we consumed a whole word
+          in_w_ready = ~w_req_d.w.valid;
+
+          // Accept a new word
+          if (in_w_valid && in_w_ready) begin
+            w_req_d.w.data  = in_w_data;
+            w_req_d.w.strb  = in_w_strb;
+            w_req_d.w.last  = in_w_last;
+            w_req_d.w.valid = 1'b1;
+          end
+        end // if (!w_req_d.aw.valid)
       end
     endcase // case (w_state_q)
+
+    // Can start a new request as soon as w_state_d is W_IDLE
+    if (w_state_d == W_IDLE) begin
+      // Reset channels
+      w_req_d.aw  = '0;
+      w_req_d.w   = '0;
+
+      // Ready
+      in_aw_ready = 1'b1;
+
+      // New write request
+      if (in_aw_valid && in_aw_ready) begin
+        // Default state
+        w_state_d         = W_PASSTHROUGH;
+
+        // Save beat
+        w_req_d.aw.id     = in_aw_id;
+        w_req_d.aw.addr   = in_aw_addr;
+        w_req_d.aw.size   = in_aw_size;
+        w_req_d.aw.burst  = in_aw_burst;
+        w_req_d.aw.len    = in_aw_len;
+        w_req_d.aw.lock   = in_aw_lock;
+        w_req_d.aw.cache  = in_aw_cache;
+        w_req_d.aw.prot   = in_aw_prot;
+        w_req_d.aw.qos    = in_aw_qos;
+        w_req_d.aw.region = in_aw_region;
+        w_req_d.aw.atop   = in_aw_atop;
+        w_req_d.aw.user   = in_aw_user;
+        w_req_d.aw.valid  = 1'b1;
+
+        w_req_d.len       = in_aw_len;
+        w_req_d.size      = in_aw_size;
+
+        // Do nothing
+        if (|(in_aw_cache & CACHE_MODIFIABLE))
+          case (in_aw_burst)
+            BURST_INCR: begin
+              // Evaluate downsize ratio
+              automatic addr_t size_mask  = (1 << in_aw_size) - 1;
+              automatic addr_t conv_ratio = ((1 << in_aw_size) + MI_BYTES - 1) / MI_BYTES;
+
+              // Evaluate output burst length
+              automatic addr_t align_adj  = (in_aw_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+              w_req_d.len                 = (in_aw_len + 1) * conv_ratio - align_adj - 1;
+
+              if (conv_ratio != 1) begin
+                w_req_d.aw.size   = $clog2(MI_BYTES);
+
+                if (w_req_d.len <= 255) begin
+                  w_state_d      = W_INCR_DOWNSIZE;
+                  w_req_d.aw.len = w_req_d.len;
+                end else begin
+                  w_state_d      = W_SPLIT_INCR_DOWNSIZE;
+                  w_req_d.aw.len = 255 - align_adj;
+                end
+              end // if (conv_ratio != 1)
+            end // case: BURST_INCR
+          endcase // case (in_aw_burst)
+      end // if (in_aw_valid)
+    end
   end
 
   // --------------
