@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- `axi_id_remap` now raises an error when it receives any atomic operation, which it currently does
+  not support.
+
 ## 0.7.0 - 2019-05-28
 
 ### Changed
