@@ -8,12 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// File          : axi_data_downsize.sv
-// Author        : Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
-// Created       : 31.01.2019
-//
-// Copyright (C) 2019 ETH Zurich, University of Bologna
-// All rights reserved.
+// Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 //
 // Description:
 // AXI Data Downsize Conversion.
