@@ -152,14 +152,14 @@ module axi_data_upsize #(
   typedef logic [MI_DATA_WIDTH-1:0] mi_data_t;
   typedef logic [MI_BYTES-1:0]      mi_strb_t;
   typedef logic [MI_ID_WIDTH-1:0]   mi_id_t;
-  typedef logic [MI_USER_WIDTH]     mi_user_t;
+  typedef logic [MI_USER_WIDTH-1:0] mi_user_t;
 
   localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
   localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
   typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
   typedef logic [SI_BYTES-1:0]      si_strb_t;
   typedef logic [SI_ID_WIDTH-1:0]   si_id_t;
-  typedef logic [SI_USER_WIDTH]     si_user_t;
+  typedef logic [SI_USER_WIDTH-1:0] si_user_t;
 
   typedef struct packed {
     mi_id_t      id;
