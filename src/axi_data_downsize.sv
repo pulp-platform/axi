@@ -29,6 +29,10 @@ module axi_data_downsize #(
   parameter int unsigned USER_WIDTH = 1,
   // Dependent parameters, do not change!
   parameter type addr_t = logic[ADDR_WIDTH-1:0],
+  parameter type si_data_t = logic[SI_DATA_WIDTH-1:0],
+  parameter type si_strb_t = logic[SI_DATA_WIDTH/8-1:0],
+  parameter type mi_data_t = logic[MI_DATA_WIDTH-1:0],
+  parameter type mi_strb_t = logic[MI_DATA_WIDTH/8-1:0],
   parameter type id_t = logic[ID_WIDTH-1:0],
   parameter type user_t = logic[USER_WIDTH-1:0]
 ) (
@@ -52,8 +56,8 @@ module axi_data_downsize #(
   input logic                        in_aw_valid,
   output logic                       in_aw_ready,
 
-  input logic [SI_DATA_WIDTH-1:0]    in_w_data,
-  input logic [SI_DATA_WIDTH/8-1:0]  in_w_strb,
+  input si_data_t                    in_w_data,
+  input si_strb_t                    in_w_strb,
   input logic                        in_w_last,
   input user_t                       in_w_user,
   input logic                        in_w_valid,
@@ -80,7 +84,7 @@ module axi_data_downsize #(
   output logic                       in_ar_ready,
 
   output id_t                        in_r_id,
-  output logic [SI_DATA_WIDTH-1:0]   in_r_data,
+  output si_data_t                   in_r_data,
   output resp_t                      in_r_resp,
   output logic                       in_r_last,
   output user_t                      in_r_user,
@@ -104,8 +108,8 @@ module axi_data_downsize #(
   output logic                       out_aw_valid,
   input logic                        out_aw_ready,
 
-  output logic [MI_DATA_WIDTH-1:0]   out_w_data,
-  output logic [MI_DATA_WIDTH/8-1:0] out_w_strb,
+  output mi_data_t                   out_w_data,
+  output mi_strb_t                   out_w_strb,
   output logic                       out_w_last,
   output user_t                      out_w_user,
   output logic                       out_w_valid,
@@ -132,7 +136,7 @@ module axi_data_downsize #(
   input logic                        out_ar_ready,
 
   input id_t                         out_r_id,
-  input logic [MI_DATA_WIDTH-1:0]    out_r_data,
+  input mi_data_t                    out_r_data,
   input resp_t                       out_r_resp,
   input logic                        out_r_last,
   input user_t                       out_r_user,
@@ -152,13 +156,9 @@ module axi_data_downsize #(
 
   localparam addr_t MI_BYTES = MI_DATA_WIDTH/8;
   localparam addr_t MI_BYTE_MASK = MI_BYTES - 1;
-  typedef logic [MI_DATA_WIDTH-1:0] mi_data_t;
-  typedef logic [MI_BYTES-1:0]      mi_strb_t;
 
   localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
   localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
-  typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
-  typedef logic [SI_BYTES-1:0]      si_strb_t;
 
   typedef struct packed {
     id_t        id;
