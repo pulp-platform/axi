@@ -289,7 +289,7 @@ module axi_data_upsize #(
     case (r_state_q)
       R_PASSTHROUGH, R_INCR_UPSIZE: begin
         // Request was accepted
-        if (!r_req_d.ar.valid) begin
+        if (!r_req_q.ar.valid) begin
           if (r_req_q.r.valid) begin
             automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
             automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
@@ -457,7 +457,7 @@ module axi_data_upsize #(
           w_req_d.w = '0;
 
         // Request was accepted
-        if (!w_req_d.aw.valid) begin
+        if (!w_req_q.aw.valid) begin
           // Ready if downstream interface is idle, or if it is ready
           in_w_ready  = ~out_w_valid || out_w_ready;
 
