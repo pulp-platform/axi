@@ -22,19 +22,20 @@
 import axi_pkg::*;
 
 module axi_data_upsize #(
-  parameter int unsigned MI_DATA_WIDTH = 64,
-  parameter int unsigned MI_ID_WIDTH = 4,
-  parameter int unsigned MI_USER_WIDTH = 1,
   parameter int unsigned SI_DATA_WIDTH = 64,
-  parameter int unsigned SI_ID_WIDTH = 4,
-  parameter int unsigned SI_USER_WIDTH = 1
+  parameter int unsigned MI_DATA_WIDTH = 64,
+  parameter int unsigned ID_WIDTH = 4,
+  parameter int unsigned USER_WIDTH = 1,
+  // Dependent parameters, do not change!
+  parameter type id_t = logic[ID_WIDTH-1:0],
+  parameter type user_t = logic[USER_WIDTH-1:0]
 ) (
   input logic                        clk_i,
   input logic                        rst_ni,
 
   // SLAVE INTERFACE
 
-  input logic [SI_ID_WIDTH-1:0]      in_aw_id,
+  input id_t                         in_aw_id,
   input addr_t                       in_aw_addr,
   input len_t                        in_aw_len,
   input size_t                       in_aw_size,
@@ -45,24 +46,24 @@ module axi_data_upsize #(
   input qos_t                        in_aw_qos,
   input region_t                     in_aw_region,
   input atop_t                       in_aw_atop,
-  input logic [SI_USER_WIDTH-1:0]    in_aw_user,
+  input user_t                       in_aw_user,
   input logic                        in_aw_valid,
   output logic                       in_aw_ready,
 
   input logic [SI_DATA_WIDTH-1:0]    in_w_data,
   input logic [SI_DATA_WIDTH/8-1:0]  in_w_strb,
   input logic                        in_w_last,
-  input logic [SI_USER_WIDTH-1:0]    in_w_user,
+  input user_t                       in_w_user,
   input logic                        in_w_valid,
   output logic                       in_w_ready,
 
-  output logic [SI_ID_WIDTH-1:0]     in_b_id,
+  output id_t                        in_b_id,
   output resp_t                      in_b_resp,
-  output logic [SI_USER_WIDTH-1:0]   in_b_user,
+  output user_t                      in_b_user,
   output logic                       in_b_valid,
   input logic                        in_b_ready,
 
-  input logic [SI_ID_WIDTH-1:0]      in_ar_id,
+  input id_t                         in_ar_id,
   input addr_t                       in_ar_addr,
   input len_t                        in_ar_len,
   input size_t                       in_ar_size,
@@ -72,21 +73,21 @@ module axi_data_upsize #(
   input prot_t                       in_ar_prot,
   input qos_t                        in_ar_qos,
   input region_t                     in_ar_region,
-  input logic [SI_USER_WIDTH-1:0]    in_ar_user,
+  input user_t                       in_ar_user,
   input logic                        in_ar_valid,
   output logic                       in_ar_ready,
 
-  output logic [SI_ID_WIDTH-1:0]     in_r_id,
+  output id_t                        in_r_id,
   output logic [SI_DATA_WIDTH-1:0]   in_r_data,
   output resp_t                      in_r_resp,
   output logic                       in_r_last,
-  output logic [SI_USER_WIDTH-1:0]   in_r_user,
+  output user_t                      in_r_user,
   output logic                       in_r_valid,
   input logic                        in_r_ready,
 
   // MASTER INTERFACE
 
-  output logic [MI_ID_WIDTH-1:0]     out_aw_id,
+  output id_t                        out_aw_id,
   output addr_t                      out_aw_addr,
   output len_t                       out_aw_len,
   output size_t                      out_aw_size,
@@ -97,24 +98,24 @@ module axi_data_upsize #(
   output qos_t                       out_aw_qos,
   output region_t                    out_aw_region,
   output atop_t                      out_aw_atop,
-  output logic [MI_USER_WIDTH-1:0]   out_aw_user,
+  output user_t                      out_aw_user,
   output logic                       out_aw_valid,
   input logic                        out_aw_ready,
 
   output logic [MI_DATA_WIDTH-1:0]   out_w_data,
   output logic [MI_DATA_WIDTH/8-1:0] out_w_strb,
   output logic                       out_w_last,
-  output logic [MI_USER_WIDTH-1:0]   out_w_user,
+  output user_t                      out_w_user,
   output logic                       out_w_valid,
   input logic                        out_w_ready,
 
-  input logic [MI_ID_WIDTH-1:0]      out_b_id,
+  input id_t                         out_b_id,
   input resp_t                       out_b_resp,
-  input logic [MI_USER_WIDTH-1:0]    out_b_user,
+  input user_t                       out_b_user,
   input logic                        out_b_valid,
   output logic                       out_b_ready,
 
-  output logic [MI_ID_WIDTH-1:0]     out_ar_id,
+  output id_t                        out_ar_id,
   output addr_t                      out_ar_addr,
   output len_t                       out_ar_len,
   output size_t                      out_ar_size,
@@ -124,15 +125,15 @@ module axi_data_upsize #(
   output prot_t                      out_ar_prot,
   output qos_t                       out_ar_qos,
   output region_t                    out_ar_region,
-  output logic [MI_USER_WIDTH-1:0]   out_ar_user,
+  output user_t                      out_ar_user,
   output logic                       out_ar_valid,
   input logic                        out_ar_ready,
 
-  input logic [MI_ID_WIDTH-1:0]      out_r_id,
+  input id_t                         out_r_id,
   input logic [MI_DATA_WIDTH-1:0]    out_r_data,
   input resp_t                       out_r_resp,
   input logic                        out_r_last,
-  input logic [MI_USER_WIDTH-1:0]    out_r_user,
+  input user_t                       out_r_user,
   input logic                        out_r_valid,
   output logic                       out_r_ready
 );
@@ -151,18 +152,14 @@ module axi_data_upsize #(
   localparam addr_t MI_BYTE_MASK = MI_BYTES - 1;
   typedef logic [MI_DATA_WIDTH-1:0] mi_data_t;
   typedef logic [MI_BYTES-1:0]      mi_strb_t;
-  typedef logic [MI_ID_WIDTH-1:0]   mi_id_t;
-  typedef logic [MI_USER_WIDTH-1:0] mi_user_t;
 
   localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
   localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
   typedef logic [SI_DATA_WIDTH-1:0] si_data_t;
   typedef logic [SI_BYTES-1:0]      si_strb_t;
-  typedef logic [SI_ID_WIDTH-1:0]   si_id_t;
-  typedef logic [SI_USER_WIDTH-1:0] si_user_t;
 
   typedef struct packed {
-    mi_id_t      id;
+    id_t         id;
     addr_t       addr;
     logic [7:0]  len;
     logic [2:0]  size;
@@ -173,13 +170,13 @@ module axi_data_upsize #(
     qos_t        qos;
     region_t     region;
     logic [5:0]  atop;   // Only defined on the AW channel.
-    mi_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } mi_channel_ax_t;
 
   typedef struct packed {
-    si_id_t      id;
+    id_t         id;
     addr_t       addr;
     logic [7:0]  len;
     logic [2:0]  size;
@@ -190,7 +187,7 @@ module axi_data_upsize #(
     qos_t        qos;
     region_t     region;
     logic [5:0]  atop;   // Only defined on the AW channel.
-    si_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } si_channel_ax_t;
@@ -199,7 +196,7 @@ module axi_data_upsize #(
     mi_data_t    data;
     mi_strb_t    strb;
     logic        last;
-    mi_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } mi_channel_w_t;
@@ -208,27 +205,27 @@ module axi_data_upsize #(
     si_data_t    data;
     si_strb_t    strb;
     logic        last;
-    si_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } si_channel_w_t;
 
   typedef struct packed {
-    mi_id_t      id;
+    id_t         id;
     mi_data_t    data;
     resp_t       resp;
     logic        last;
-    mi_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } mi_channel_r_t;
 
   typedef struct packed {
-    si_id_t      id;
+    id_t         id;
     si_data_t    data;
     resp_t       resp;
     logic        last;
-    si_user_t    user;
+    user_t       user;
     logic        valid;
     logic        ready;
   } si_channel_r_t;
