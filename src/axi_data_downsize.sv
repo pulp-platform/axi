@@ -161,20 +161,20 @@ module axi_data_downsize #(
   typedef logic [SI_BYTES-1:0]      si_strb_t;
 
   typedef struct packed {
-    id_t         id;
-    addr_t       addr;
-    logic [7:0]  len;
-    logic [2:0]  size;
-    burst_t      burst;
-    logic        lock;
-    cache_t      cache;
-    prot_t       prot;
-    qos_t        qos;
-    region_t     region;
-    logic [5:0]  atop;   // Only defined on the AW channel.
-    user_t       user;
-    logic        valid;
-    logic        ready;
+    id_t        id;
+    addr_t      addr;
+    len_t       len;
+    size_t      size;
+    burst_t     burst;
+    logic       lock;
+    cache_t     cache;
+    prot_t      prot;
+    qos_t       qos;
+    region_t    region;
+    atop_t      atop;   // Only defined on the AW channel.
+    user_t      user;
+    logic       valid;
+    logic       ready;
   } channel_ax_t;
 
   typedef struct packed {
