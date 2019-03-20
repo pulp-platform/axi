@@ -18,6 +18,7 @@
 import axi_pkg::*;
 
 module axi_data_width_converter #(
+  parameter int unsigned ADDR_WIDTH = 64,
   parameter int unsigned SI_DATA_WIDTH = 64,
   parameter int unsigned MI_DATA_WIDTH = 64,
   parameter int unsigned ID_WIDTH = 4,
@@ -31,7 +32,7 @@ module axi_data_width_converter #(
 
 `ifndef SYNTHESIS
   initial begin
-    assert(in.AXI_ADDR_WIDTH  == out.AXI_ADDR_WIDTH);
+    assert(in.AXI_ADDR_WIDTH  == out.AXI_ADDR_WIDTH && in.AXI_ADDR_WIDTH == ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH  == SI_DATA_WIDTH);
     assert(out.AXI_DATA_WIDTH == MI_DATA_WIDTH);
     assert(in.AXI_ID_WIDTH    == out.AXI_ID_WIDTH   && in.AXI_ID_WIDTH   == ID_WIDTH);
@@ -49,6 +50,7 @@ module axi_data_width_converter #(
 
     if (SI_DATA_WIDTH < MI_DATA_WIDTH) begin: UPSIZE
     axi_data_upsize #(
+      .ADDR_WIDTH ( ADDR_WIDTH ),
       .SI_DATA_WIDTH ( SI_DATA_WIDTH ),
       .MI_DATA_WIDTH ( MI_DATA_WIDTH ),
       .ID_WIDTH ( ID_WIDTH ),
@@ -160,6 +162,7 @@ module axi_data_width_converter #(
 
     if (SI_DATA_WIDTH > MI_DATA_WIDTH) begin: DOWNSIZE
     axi_data_downsize #(
+      .ADDR_WIDTH ( ADDR_WIDTH ),
       .SI_DATA_WIDTH ( SI_DATA_WIDTH ),
       .MI_DATA_WIDTH ( MI_DATA_WIDTH ),
       .ID_WIDTH ( ID_WIDTH ),

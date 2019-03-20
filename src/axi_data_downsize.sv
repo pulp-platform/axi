@@ -22,11 +22,13 @@
 import axi_pkg::*;
 
 module axi_data_downsize #(
+  parameter int unsigned ADDR_WIDTH = 64,
   parameter int unsigned SI_DATA_WIDTH = 64,
   parameter int unsigned MI_DATA_WIDTH = 64,
   parameter int unsigned ID_WIDTH = 4,
   parameter int unsigned USER_WIDTH = 1,
   // Dependent parameters, do not change!
+  parameter type addr_t = logic[ADDR_WIDTH-1:0],
   parameter type id_t = logic[ID_WIDTH-1:0],
   parameter type user_t = logic[USER_WIDTH-1:0]
 ) (
