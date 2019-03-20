@@ -31,9 +31,11 @@ module axi_data_width_converter #(
 
 `ifndef SYNTHESIS
   initial begin
-    assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
-    assert(in.AXI_ID_WIDTH   == out.AXI_ID_WIDTH  );
-    assert(in.AXI_USER_WIDTH == out.AXI_USER_WIDTH);
+    assert(in.AXI_ADDR_WIDTH  == out.AXI_ADDR_WIDTH);
+    assert(in.AXI_DATA_WIDTH  == SI_DATA_WIDTH);
+    assert(out.AXI_DATA_WIDTH == MI_DATA_WIDTH);
+    assert(in.AXI_ID_WIDTH    == out.AXI_ID_WIDTH   && in.AXI_ID_WIDTH   == ID_WIDTH);
+    assert(in.AXI_USER_WIDTH  == out.AXI_USER_WIDTH && in.AXI_USER_WIDTH == USER_WIDTH);
   end
 `endif
 
