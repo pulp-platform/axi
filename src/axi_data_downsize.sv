@@ -297,7 +297,7 @@ module axi_data_downsize #(
           r_req_d.r = '0;
 
         // Request was accepted
-        if (!r_req_d.ar.valid) begin
+        if (!r_req_q.ar.valid) begin
           // Ready to accept more data
           if (!in_r_valid || (in_r_valid && in_r_ready)) begin
             out_r_ready = 1'b1;
@@ -469,7 +469,7 @@ module axi_data_downsize #(
     case (w_state_q)
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
         // Request was accepted
-        if (!w_req_d.aw.valid) begin
+        if (!w_req_q.aw.valid) begin
           if (w_req_q.w.valid) begin
             automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
             automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
