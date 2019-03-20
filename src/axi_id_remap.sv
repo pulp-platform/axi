@@ -174,6 +174,10 @@ module axi_id_remap #(
         .empty_o      ( empty_id_ar_r                                          )
     );
 
+    // Atomic operations are not supported currently: the ID of an atomic operation must be unique
+    // on *both* the AW/B and AR/R channels.
+    assert property (@(posedge clk_i) disable iff (!rst_ni) in.aw_valid |-> in.aw_atop == '0);
+
 
 endmodule
 
