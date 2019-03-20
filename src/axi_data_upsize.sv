@@ -178,41 +178,41 @@ module axi_data_upsize #(
   } channel_ax_t;
 
   typedef struct packed {
-    mi_data_t    data;
-    mi_strb_t    strb;
-    logic        last;
-    user_t       user;
-    logic        valid;
-    logic        ready;
+    mi_data_t   data;
+    mi_strb_t   strb;
+    logic       last;
+    user_t      user;
+    logic       valid;
+    logic       ready;
   } mi_channel_w_t;
 
   typedef struct packed {
-    si_data_t    data;
-    si_strb_t    strb;
-    logic        last;
-    user_t       user;
-    logic        valid;
-    logic        ready;
+    si_data_t   data;
+    si_strb_t   strb;
+    logic       last;
+    user_t      user;
+    logic       valid;
+    logic       ready;
   } si_channel_w_t;
 
   typedef struct packed {
-    id_t         id;
-    mi_data_t    data;
-    resp_t       resp;
-    logic        last;
-    user_t       user;
-    logic        valid;
-    logic        ready;
+    id_t        id;
+    mi_data_t   data;
+    resp_t      resp;
+    logic       last;
+    user_t      user;
+    logic       valid;
+    logic       ready;
   } mi_channel_r_t;
 
   typedef struct packed {
-    id_t         id;
-    si_data_t    data;
-    resp_t       resp;
-    logic        last;
-    user_t       user;
-    logic        valid;
-    logic        ready;
+    id_t        id;
+    si_data_t   data;
+    resp_t      resp;
+    logic       last;
+    user_t      user;
+    logic       valid;
+    logic       ready;
   } si_channel_r_t;
 
   function automatic addr_t align_addr(addr_t unaligned_addr);
