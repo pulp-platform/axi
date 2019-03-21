@@ -479,8 +479,10 @@ module axi_data_upsize #(
         end // if (!w_req_d.aw.valid)
 
         if (out_w_valid && out_w_ready)
-          if (w_req_q.len == '1)
-            w_state_d = W_IDLE;
+          if (w_req_q.len == '1) begin
+            in_w_ready = 1'b0;
+            w_state_d  = W_IDLE;
+          end
       end
     endcase // case (w_state_q)
 
