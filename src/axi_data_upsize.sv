@@ -255,7 +255,7 @@ module axi_data_upsize #(
     in_r_data     = '0;
     in_r_resp     = r_req_q.r.resp;
     in_r_last     = '0;
-    in_r_user     = '0; // Due do data serialization/merging, no user data is forwarded
+    in_r_user     = '0;
     in_r_valid    = '0;
     out_r_ready   = '0;
 
@@ -282,6 +282,10 @@ module axi_data_upsize #(
                         (b + si_offset - mi_offset < SI_BYTES)) begin
                 in_r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
               end
+
+            // Forward user data
+            if (r_state_q == R_PASSTHROUGH)
+              in_r_user = r_req_q.r.user;
 
             // Acknowledgement
             if (in_r_ready) begin
@@ -313,6 +317,7 @@ module axi_data_upsize #(
               r_req_d.r.id    = out_r_id;
               r_req_d.r.data  = out_r_data;
               r_req_d.r.resp  = out_r_resp;
+              r_req_d.r.user  = out_r_user;
               r_req_d.r.last  = out_r_last;
               r_req_d.r.valid = 1'b1;
             end
@@ -411,7 +416,7 @@ module axi_data_upsize #(
     out_w_data    = w_req_q.w.data;
     out_w_strb    = w_req_q.w.strb;
     out_w_last    = w_req_q.w.last;
-    out_w_user    = '0; // Due to data serialization/merging, no user data is forwarded
+    out_w_user    = w_req_q.w.user;
     out_w_valid   = w_req_q.w.valid;
     in_w_ready    = '0;
 
@@ -455,6 +460,10 @@ module axi_data_upsize #(
             w_req_d.len     = w_req_q.len - 1;
             w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.size);
             w_req_d.w.last  = (w_req_q.len == 0);
+
+            // Forward user data
+            if (w_state_q == W_PASSTHROUGH)
+              w_req_d.w.user = out_w_user;
 
             case (w_state_q)
               W_PASSTHROUGH:

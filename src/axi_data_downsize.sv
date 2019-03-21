@@ -259,7 +259,7 @@ module axi_data_downsize #(
     in_r_data     = r_req_q.r.data;
     in_r_resp     = r_req_q.r.resp;
     in_r_last     = r_req_q.r.last;
-    in_r_user     = '0; // Due do data serialization/merging, no user data is forwarded
+    in_r_user     = r_req_q.r.user;
     in_r_valid    = r_req_q.r.valid;
     out_r_ready   = 1'b0;
 
@@ -297,6 +297,10 @@ module axi_data_downsize #(
               r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
               r_req_d.r.last  = (r_req_q.len == 0);
               r_req_d.r.id    = out_r_id;
+
+              // Forward user data
+              if (r_state_q == R_PASSTHROUGH)
+                r_req_d.r.user = out_r_user;
 
               case (r_state_q)
                 R_PASSTHROUGH:
@@ -427,7 +431,7 @@ module axi_data_downsize #(
     out_w_data    = '0;
     out_w_strb    = '0;
     out_w_last    = '0;
-    out_w_user    = '0; // Due to data serialization/merging, no user data is forwarded
+    out_w_user    = '0;
     out_w_valid   = '0;
     in_w_ready    = '0;
 
@@ -454,6 +458,10 @@ module axi_data_downsize #(
             // Valid output
             out_w_valid                = 1'b1;
             out_w_last                 = w_req_q.w.last && (w_req_q.len == 0);
+
+            // Forward user data
+            if (w_state_q == W_PASSTHROUGH)
+              out_w_user = w_req_q.w.user;
 
             // Serialization
             for (int b = 0; b < SI_BYTES; b++)
@@ -501,6 +509,7 @@ module axi_data_downsize #(
           if (in_w_valid && in_w_ready) begin
             w_req_d.w.data  = in_w_data;
             w_req_d.w.strb  = in_w_strb;
+            w_req_d.w.user  = in_w_user;
             w_req_d.w.last  = in_w_last;
             w_req_d.w.valid = 1'b1;
           end
