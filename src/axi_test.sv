@@ -670,11 +670,13 @@ package axi_test;
       rand_success = std::randomize(burst) with {
         burst <= axi_pkg::BURST_INCR;
       }; assert(rand_success);
-      ax_beat.ax_burst = burst;
+      ax_beat.ax_burst  = burst;
       // Randomize burst length.
-      ax_beat.ax_len = $random();
+      ax_beat.ax_len    = $random();
+      // Toggle modifiable flag
+      ax_beat.ax_cache  = axi_pkg::CACHE_MODIFIABLE;
       // Randomize beat size.
-      rand_success = std::randomize(size) with {
+      rand_success      = std::randomize(size) with {
         2**size <= AXI_STRB_WIDTH;
       }; assert(rand_success);
       ax_beat.ax_size = size;

@@ -33,46 +33,48 @@ module tb_axi_dwc_downsize;
   logic done = 0;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AW ),
+    .AXI_ADDR_WIDTH ( AW        ),
     .AXI_DATA_WIDTH ( MULT * DW ),
-    .AXI_ID_WIDTH ( IW ),
-    .AXI_USER_WIDTH ( UW )
+    .AXI_ID_WIDTH   ( IW        ),
+    .AXI_USER_WIDTH ( UW        )
   ) axi_master_dv ( clk );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AW ),
+    .AXI_ADDR_WIDTH ( AW        ),
     .AXI_DATA_WIDTH ( MULT * DW ),
-    .AXI_ID_WIDTH ( IW ),
-    .AXI_USER_WIDTH ( UW )
+    .AXI_ID_WIDTH   ( IW        ),
+    .AXI_USER_WIDTH ( UW        )
   ) axi_master();
 
-  axi_test::axi_driver #(
-    .AW ( AW ),
-    .DW ( MULT * DW ),
-    .IW ( IW ),
-    .UW ( UW ),
-    .TA ( 200ps ),
-    .TT ( 700ps )) axi_master_drv = new ( axi_master_dv );
+  axi_test::rand_axi_master #(
+    .AW             ( AW        ),
+    .DW             ( MULT * DW ),
+    .IW             ( IW        ),
+    .UW             ( UW        ),
+    .MAX_READ_TXNS  ( 8         ),
+    .MAX_WRITE_TXNS ( 8         ),
+    .TA             ( 200ps     ),
+    .TT             ( 700ps     )) axi_master_drv = new ( axi_master_dv );
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( DW ),
-    .AXI_ID_WIDTH ( IW ),
+    .AXI_ID_WIDTH   ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( DW ),
-    .AXI_ID_WIDTH ( IW ),
+    .AXI_ID_WIDTH   ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_slave ();
 
-  axi_test::axi_driver #(
-    .AW ( AW ),
-    .DW ( DW ),
-    .IW ( IW ),
-    .UW ( UW ),
+  axi_test::rand_axi_slave #(
+    .AW ( AW    ),
+    .DW ( DW    ),
+    .IW ( IW    ),
+    .UW ( UW    ),
     .TA ( 200ps ),
     .TT ( 700ps )) axi_slave_drv = new ( axi_slave_dv );
 
@@ -86,10 +88,10 @@ module tb_axi_dwc_downsize;
     .USER_WIDTH     ( UW        ),
     .NR_OUTSTANDING ( 4         )
   ) dwc_1 (
-    .clk_i ( clk ),
-    .rst_ni ( rst ),
-    .slv ( axi_master ),
-    .mst ( axi_slave ));
+    .clk_i  ( clk        ),
+    .rst_ni ( rst        ),
+    .slv    ( axi_master ),
+    .mst    ( axi_slave  ));
 
   initial begin
     #tCK;
