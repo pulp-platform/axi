@@ -22,6 +22,7 @@ module axi_data_upsize #(
   parameter int unsigned MI_DATA_WIDTH = 64,
   parameter int unsigned ID_WIDTH = 4,
   parameter int unsigned USER_WIDTH = 1,
+  parameter int unsigned NR_OUTSTANDING = 1,
   // Dependent parameters, do not change!
   parameter type addr_t = logic[ADDR_WIDTH-1:0],
   parameter type si_data_t = logic[SI_DATA_WIDTH-1:0],
@@ -155,6 +156,9 @@ module axi_data_upsize #(
   localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
   localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
 
+  // Type for indexing which FSM handles each outstanding transaction
+  typedef logic [$clog2(NR_OUTSTANDING)-1:0] tr_id_t;
+
   typedef struct packed {
     id_t        id;
     addr_t      addr;
@@ -169,7 +173,6 @@ module axi_data_upsize #(
     atop_t      atop;   // Only defined on the AW channel.
     user_t      user;
     logic       valid;
-    logic       ready;
   } channel_ax_t;
 
   typedef struct packed {
@@ -178,7 +181,6 @@ module axi_data_upsize #(
     logic       last;
     user_t      user;
     logic       valid;
-    logic       ready;
   } mi_channel_w_t;
 
   typedef struct packed {
@@ -187,7 +189,6 @@ module axi_data_upsize #(
     logic       last;
     user_t      user;
     logic       valid;
-    logic       ready;
   } si_channel_w_t;
 
   typedef struct packed {
@@ -197,7 +198,6 @@ module axi_data_upsize #(
     logic       last;
     user_t      user;
     logic       valid;
-    logic       ready;
   } mi_channel_r_t;
 
   typedef struct packed {
@@ -207,7 +207,6 @@ module axi_data_upsize #(
     logic       last;
     user_t      user;
     logic       valid;
-    logic       ready;
   } si_channel_r_t;
 
   function automatic addr_t align_addr(addr_t unaligned_addr);
@@ -215,165 +214,312 @@ module axi_data_upsize #(
   endfunction // align_addr
 
   // --------------
+  // MULTIPLEXER
+  // --------------
+
+  channel_ax_t   [NR_OUTSTANDING-1:0]         ar_in;
+  logic [NR_OUTSTANDING-1:0]                  ar_ready_in;
+
+  mi_channel_r_t [NR_OUTSTANDING-1:0]         r_out;
+  logic [NR_OUTSTANDING-1:0]                  r_ready_out;
+
+  si_channel_r_t [NR_OUTSTANDING-1:0]         r_in;
+  logic [NR_OUTSTANDING-1:0]                  r_ready_in;
+  tr_id_t                                     r_in_idx;
+  logic [NR_OUTSTANDING-1:0]                  r_in_req;
+
+generate
+  if (NR_OUTSTANDING >= 2) begin
+    rrarbiter #(
+      .NUM_REQ ( NR_OUTSTANDING )
+    ) i_rrarbiter_r_in (
+      .clk_i,
+      .rst_ni,
+      .flush_i ( 1'b0           ),
+      .en_i    ( |r_in_req      ),
+      .req_i   ( r_in_req       ),
+      .ack_o   ( /* unused   */ ),
+      .vld_o   ( /* unused   */ ),
+      .idx_o   ( r_in_idx       )
+    );
+  end else begin // if (NR_OUTSTANDING >= 2)
+    assign r_in_idx = 1'b0;
+  end // else: !if(NR_OUTSTANDING >= 2)
+endgenerate
+
+  channel_ax_t   [NR_OUTSTANDING-1:0]         ar_out;
+  logic [NR_OUTSTANDING-1:0]                  ar_ready_out;
+  tr_id_t                                     ar_out_idx;
+  logic [NR_OUTSTANDING-1:0]                  ar_out_req;
+
+generate
+  if (NR_OUTSTANDING >= 2) begin
+    rrarbiter #(
+      .NUM_REQ ( NR_OUTSTANDING )
+    ) i_rrarbiter_ar_out (
+      .clk_i,
+      .rst_ni,
+      .flush_i ( 1'b0           ),
+      .en_i    ( |ar_out_req    ),
+      .req_i   ( ar_out_req     ),
+      .ack_o   ( /* unused   */ ),
+      .vld_o   ( /* unused   */ ),
+      .idx_o   ( ar_out_idx     )
+    );
+  end else begin // if (NR_OUTSTANDING >= 2)
+    assign ar_out_idx = 1'b0;
+  end // else: !if(NR_OUTSTANDING >= 2)
+endgenerate
+
+  always_comb begin: mux
+    // Default values
+    ar_in        = '0;
+    r_out        = '0;
+
+    in_ar_ready  = 1'b0;
+    r_ready_in   = '0;
+    ar_ready_out = '0;
+    out_r_ready  = 1'b0;
+
+    // REQUEST SIGNALS
+    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
+      r_in_req[tr]   = r_in[tr].valid;
+      ar_out_req[tr] = ar_out[tr].valid;
+    end
+
+    // INPUT SIGNALS
+    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
+      ar_in[tr].id     = in_ar_id;
+      ar_in[tr].addr   = in_ar_addr;
+      ar_in[tr].len    = in_ar_len;
+      ar_in[tr].size   = in_ar_size;
+      ar_in[tr].burst  = in_ar_burst;
+      ar_in[tr].lock   = in_ar_lock;
+      ar_in[tr].cache  = in_ar_cache;
+      ar_in[tr].prot   = in_ar_prot;
+      ar_in[tr].qos    = in_ar_qos;
+      ar_in[tr].region = in_ar_region;
+      ar_in[tr].user   = in_ar_user;
+      ar_in[tr].valid  = in_ar_valid && (in_ar_id % NR_OUTSTANDING == tr);
+      if (in_ar_id % NR_OUTSTANDING == tr)
+        in_ar_ready   = ar_ready_in[tr];
+
+      r_out[tr].id    = out_r_id;
+      r_out[tr].data  = out_r_data;
+      r_out[tr].resp  = out_r_resp;
+      r_out[tr].last  = out_r_last;
+      r_out[tr].user  = out_r_user;
+      r_out[tr].valid = out_r_valid && (out_r_id % NR_OUTSTANDING == tr);
+      if (out_r_id % NR_OUTSTANDING == tr)
+        out_r_ready = r_ready_out[tr];
+    end
+
+    // OUTPUT SIGNALS
+    out_ar_id                = ar_out[ar_out_idx].id;
+    out_ar_addr              = ar_out[ar_out_idx].addr;
+    out_ar_len               = ar_out[ar_out_idx].len;
+    out_ar_size              = ar_out[ar_out_idx].size;
+    out_ar_burst             = ar_out[ar_out_idx].burst;
+    out_ar_lock              = ar_out[ar_out_idx].lock;
+    out_ar_cache             = ar_out[ar_out_idx].cache;
+    out_ar_prot              = ar_out[ar_out_idx].prot;
+    out_ar_qos               = ar_out[ar_out_idx].qos;
+    out_ar_region            = ar_out[ar_out_idx].region;
+    out_ar_user              = ar_out[ar_out_idx].user;
+    out_ar_valid             = ar_out[ar_out_idx].valid;
+    ar_ready_out[ar_out_idx] = out_ar_ready;
+
+    in_r_id                  = r_in[r_in_idx].id;
+    in_r_data                = r_in[r_in_idx].data;
+    in_r_resp                = r_in[r_in_idx].resp;
+    in_r_last                = r_in[r_in_idx].last;
+    in_r_user                = r_in[r_in_idx].user;
+    in_r_valid               = r_in[r_in_idx].valid;
+    r_ready_in[r_in_idx]     = in_r_ready;
+  end
+
+  // --------------
   // READ
   // --------------
 
-  enum logic [1:0] { R_IDLE,
-                     R_PASSTHROUGH,
-                     R_INCR_UPSIZE } r_state_d, r_state_q;
+  // There is an identical FSM for each possible outstanding transaction
+  generate
+    for (genvar tr = 0; tr < NR_OUTSTANDING; tr++) begin: req_fsm
 
-  struct packed {
-    channel_ax_t    ar;
-    mi_channel_r_t  r;
+      enum logic [1:0] { R_IDLE,
+                         R_PASSTHROUGH,
+                         R_INCR_UPSIZE } r_state_d, r_state_q;
 
-    len_t           len;
-    size_t          size;
-  } r_req_d, r_req_q;
+      struct packed {
+        channel_ax_t   ar;
+        mi_channel_r_t r;
 
-  always_comb begin
-    // Maintain state
-    r_state_d     = r_state_q;
-    r_req_d       = r_req_q;
+        len_t          len;
+        size_t         size;
+      } r_req_d, r_req_q;
 
-    // AR Channel
-    out_ar_id     = r_req_q.ar.id;
-    out_ar_addr   = r_req_q.ar.addr;
-    out_ar_len    = r_req_q.ar.len;
-    out_ar_size   = r_req_q.ar.size;
-    out_ar_burst  = r_req_q.ar.burst;
-    out_ar_lock   = r_req_q.ar.lock;
-    out_ar_cache  = r_req_q.ar.cache;
-    out_ar_prot   = r_req_q.ar.prot;
-    out_ar_qos    = r_req_q.ar.qos;
-    out_ar_region = r_req_q.ar.region;
-    out_ar_user   = r_req_q.ar.user;
-    out_ar_valid  = r_req_q.ar.valid;
-    in_ar_ready   = '0;
+      always_comb begin
+        // Maintain state
+        r_state_d         = r_state_q;
+        r_req_d           = r_req_q;
 
-    // R Channel
-    in_r_id       = r_req_q.r.id;
-    in_r_data     = '0;
-    in_r_resp     = r_req_q.r.resp;
-    in_r_last     = '0;
-    in_r_user     = '0;
-    in_r_valid    = '0;
-    out_r_ready   = '0;
+        // AR Channel
+        ar_out[tr].id     = r_req_q.ar.id;
+        ar_out[tr].addr   = r_req_q.ar.addr;
+        ar_out[tr].len    = r_req_q.ar.len;
+        ar_out[tr].size   = r_req_q.ar.size;
+        ar_out[tr].burst  = r_req_q.ar.burst;
+        ar_out[tr].lock   = r_req_q.ar.lock;
+        ar_out[tr].cache  = r_req_q.ar.cache;
+        ar_out[tr].prot   = r_req_q.ar.prot;
+        ar_out[tr].qos    = r_req_q.ar.qos;
+        ar_out[tr].region = r_req_q.ar.region;
+        ar_out[tr].atop   = '0;
+        ar_out[tr].user   = r_req_q.ar.user;
+        ar_out[tr].valid  = r_req_q.ar.valid;
+        ar_ready_in[tr]   = 1'b0;
 
-    // Got a grant on the AR channel
-    if (out_ar_valid && out_ar_ready)
-      r_req_d.ar.valid = 1'b0;
+        // R Channel
+        r_in[tr].id       = r_req_q.r.id;
+        r_in[tr].data     = '0;
+        r_in[tr].resp     = r_req_q.r.resp;
+        r_in[tr].last     = '0;
+        r_in[tr].user     = '0;
+        r_in[tr].valid    = '0;
+        r_ready_out[tr]   = '0;
 
-    case (r_state_q)
-      R_PASSTHROUGH, R_INCR_UPSIZE: begin
-        // Request was accepted
-        if (!r_req_q.ar.valid) begin
-          if (r_req_q.r.valid) begin
-            automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
-            automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
+        // Got a grant on the AR channel
+        if (ar_out[tr].valid && ar_ready_out[tr])
+          r_req_d.ar.valid = 1'b0;
 
-            // Valid output
-            in_r_valid                 = 1'b1;
-            in_r_last                  = r_req_q.r.last && (r_req_q.len == 0);
+        case (r_state_q)
+          R_PASSTHROUGH, R_INCR_UPSIZE: begin
+            // Request was accepted
+            if (!r_req_q.ar.valid) begin
+              if (r_req_q.r.valid) begin
+                automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
+                automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
 
-            // Serialization
-            for (int b = 0; b < MI_BYTES; b++)
-              if ((b >= mi_offset) &&
-                        (b - mi_offset < (1 << r_req_q.size)) &&
-                        (b + si_offset - mi_offset < SI_BYTES)) begin
-                in_r_data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
-              end
+                // Valid output
+                r_in[tr].valid             = 1'b1;
+                r_in[tr].last              = r_req_q.r.last && (r_req_q.len == 0);
 
-            // Forward user data
-            if (r_state_q == R_PASSTHROUGH)
-              in_r_user = r_req_q.r.user;
+                // Serialization
+                for (int b = 0; b < MI_BYTES; b++)
+                  if ((b >= mi_offset) &&
+                      (b - mi_offset < (1 << r_req_q.size)) &&
+                      (b + si_offset - mi_offset < SI_BYTES)) begin
+                    r_in[tr].data[8 * (b + si_offset - mi_offset) +: 8] = r_req_q.r.data[8 * b +: 8];
+                  end
 
-            // Acknowledgement
-            if (in_r_ready) begin
-              automatic addr_t size_mask = (1 << r_req_q.size) - 1;
+                // Forward user data
+                if (r_state_q == R_PASSTHROUGH)
+                  r_in[tr].user = r_req_q.r.user;
 
-              r_req_d.len                = r_req_q.len - 1;
-              r_req_d.ar.addr            = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
+                // Acknowledgement
+                if (r_ready_in[tr]) begin
+                  automatic addr_t size_mask = (1 << r_req_q.size) - 1;
 
-              case (r_state_q)
-                R_PASSTHROUGH:
-                  r_req_d.r.valid = 1'b0;
+                  r_req_d.len                = r_req_q.len - 1;
+                  r_req_d.ar.addr            = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.size);
 
-                R_INCR_UPSIZE:
-                  if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
-                    r_req_d.r.valid = 1'b0;
-              endcase // case (r_state_q)
+                  case (r_state_q)
+                    R_PASSTHROUGH:
+                      r_req_d.r.valid = 1'b0;
 
-              if (r_req_q.len == 0)
-                r_state_d = R_IDLE;
-            end // if (in_r_ready)
-          end // if (r_req_q.r.valid)
+                    R_INCR_UPSIZE:
+                      if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr) != align_addr(r_req_q.ar.addr)))
+                        r_req_d.r.valid = 1'b0;
+                  endcase // case (r_state_q)
 
-          // We consumed a whole word
-          if (!r_req_d.r.valid) begin
-            out_r_ready = 1'b1;
+                  if (r_req_q.len == 0)
+                    r_state_d = R_IDLE;
+                end // if (r_in[tr].ready)
+              end // if (r_req_q.r.valid)
 
-            // Accept a new word
-            if (out_r_valid) begin
-              r_req_d.r.id    = out_r_id;
-              r_req_d.r.data  = out_r_data;
-              r_req_d.r.resp  = out_r_resp;
-              r_req_d.r.user  = out_r_user;
-              r_req_d.r.last  = out_r_last;
-              r_req_d.r.valid = 1'b1;
-            end
-          end // if (r_req_d.r.valid)
-        end // if (!r_req_d.ar.valid)
-      end // case: R_PASSTHROUGH, R_INCR_UPSIZE
-    endcase // case (r_state_q)
+              // We consumed a whole word
+              if (!r_req_d.r.valid) begin
+                r_ready_out[tr] = 1'b1;
 
-    // Can start a new request as soon as r_state_d is R_IDLE
-    if (r_state_d == R_IDLE) begin
-      // Reset channels
-      r_req_d.ar  = '0;
-      r_req_d.r   = '0;
+                // Accept a new word
+                if (r_out[tr].valid) begin
+                  r_req_d.r.id    = r_out[tr].id;
+                  r_req_d.r.data  = r_out[tr].data;
+                  r_req_d.r.resp  = r_out[tr].resp;
+                  r_req_d.r.user  = r_out[tr].user;
+                  r_req_d.r.last  = r_out[tr].last;
+                  r_req_d.r.valid = 1'b1;
+                end
+              end // if (r_req_d.r.valid)
+            end // if (!r_req_d.ar.valid)
+          end // case: R_PASSTHROUGH, R_INCR_UPSIZE
+        endcase // case (r_state_q)
 
-      // Ready
-      in_ar_ready = 1'b1;
+        // Can start a new request as soon as r_state_d is R_IDLE
+        if (r_state_d == R_IDLE) begin
+          // Reset channels
+          r_req_d.ar      = '0;
+          r_req_d.r       = '0;
 
-      // New read request
-      if (in_ar_valid) begin
-        // Default state
-        r_state_d         = R_PASSTHROUGH;
+          // Ready
+          ar_ready_in[tr] = 1'b1;
 
-        // Save beat
-        r_req_d.ar.id     = in_ar_id;
-        r_req_d.ar.addr   = in_ar_addr;
-        r_req_d.ar.size   = in_ar_size;
-        r_req_d.ar.burst  = in_ar_burst;
-        r_req_d.ar.len    = in_ar_len;
-        r_req_d.ar.lock   = in_ar_lock;
-        r_req_d.ar.cache  = in_ar_cache;
-        r_req_d.ar.prot   = in_ar_prot;
-        r_req_d.ar.qos    = in_ar_qos;
-        r_req_d.ar.region = in_ar_region;
-        r_req_d.ar.user   = in_ar_user;
-        r_req_d.ar.valid  = 1'b1;
+          // New read request
+          if (ar_in[tr].valid) begin
+            // Default state
+            r_state_d         = R_PASSTHROUGH;
 
-        r_req_d.len       = in_ar_len;
-        r_req_d.size      = in_ar_size;
+            // Save beat
+            r_req_d.ar.id     = ar_in[tr].id;
+            r_req_d.ar.addr   = ar_in[tr].addr;
+            r_req_d.ar.size   = ar_in[tr].size;
+            r_req_d.ar.burst  = ar_in[tr].burst;
+            r_req_d.ar.len    = ar_in[tr].len;
+            r_req_d.ar.lock   = ar_in[tr].lock;
+            r_req_d.ar.cache  = ar_in[tr].cache;
+            r_req_d.ar.prot   = ar_in[tr].prot;
+            r_req_d.ar.qos    = ar_in[tr].qos;
+            r_req_d.ar.region = ar_in[tr].region;
+            r_req_d.ar.user   = ar_in[tr].user;
+            r_req_d.ar.valid  = 1'b1;
 
-        if (|(in_ar_cache & CACHE_MODIFIABLE))
-          case (in_ar_burst)
-            BURST_INCR: begin
-              // Evaluate output burst length
-              automatic addr_t size_mask  = (1 << in_ar_size) - 1;
+            r_req_d.len       = ar_in[tr].len;
+            r_req_d.size      = ar_in[tr].size;
 
-              automatic addr_t addr_start = align_addr(in_ar_addr);
-              automatic addr_t addr_end   = align_addr((in_ar_addr & ~size_mask) + (in_ar_len << in_ar_size));
+            if (|(ar_in[tr].cache & CACHE_MODIFIABLE))
+              case (ar_in[tr].burst)
+                BURST_INCR: begin
+                  // Evaluate output burst length
+                  automatic addr_t size_mask  = (1 << ar_in[tr].size) - 1;
 
-              r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
-              r_req_d.ar.size             = $clog2(MI_BYTES);
-              r_state_d                   = R_INCR_UPSIZE;
-            end // case: BURST_INCR
-          endcase // case (in_ar_burst)
-      end // if (in_ar_valid)
-    end
-  end
+                  automatic addr_t addr_start = align_addr(ar_in[tr].addr);
+                  automatic addr_t addr_end   = align_addr((ar_in[tr].addr & ~size_mask) + (ar_in[tr].len << ar_in[tr].size));
+
+                  r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
+                  r_req_d.ar.size             = $clog2(MI_BYTES);
+                  r_state_d                   = R_INCR_UPSIZE;
+                end // case: BURST_INCR
+              endcase // case (ar_in[tr].burst)
+          end // if (ar_in[tr].valid)
+        end
+      end
+
+      // --------------
+      // REGISTERS
+      // --------------
+
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (~rst_ni) begin
+          r_state_q <= R_IDLE;
+          r_req_q   <= '0;
+        end else begin
+          r_state_q <= r_state_d;
+          r_req_q   <= r_req_d;
+        end
+      end // always_ff @ (posedge clk_i or negedge rst_ni)
+
+    end // for (genvar tr = 0; tr < NR_OUTSTANDING; tr++)
+  endgenerate
 
   // --------------
   // WRITE
@@ -451,8 +597,8 @@ module axi_data_upsize #(
             // Lane steering
             for (int b = 0; b < MI_BYTES; b++)
               if ((b >= mi_offset) &&
-                        (b - mi_offset < (1 << w_req_q.size)) &&
-                        (b + si_offset - mi_offset < SI_BYTES)) begin
+                  (b - mi_offset < (1 << w_req_q.size)) &&
+                  (b + si_offset - mi_offset < SI_BYTES)) begin
                 w_req_d.w.data[8 * b +: 8] = in_w_data[8 * (b + si_offset - mi_offset) +: 8];
                 w_req_d.w.strb[b]          = in_w_strb[b + si_offset - mi_offset];
               end
@@ -542,18 +688,26 @@ module axi_data_upsize #(
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
-      r_state_q <= R_IDLE;
-      r_req_q   <= '0;
-
       w_state_q <= W_IDLE;
       w_req_q   <= '0;
     end else begin
-      r_state_q <= r_state_d;
-      r_req_q   <= r_req_d;
-
       w_state_q <= w_state_d;
       w_req_q   <= w_req_d;
     end
+  end // always_ff @ (posedge clk_i or negedge rst_ni)
+
+  // --------------
+  // ASSERTIONS
+  // --------------
+
+  // Validate parameters.
+  // pragma translate_off
+`ifndef VERILATOR
+  initial begin: validate_params
+    assert (2**ID_WIDTH >= NR_OUTSTANDING)
+      else $fatal("The outstanding transactions could not be indexed with the given ID bits!");
   end
+`endif
+  // pragma translate_on
 
 endmodule // axi_data_upsize

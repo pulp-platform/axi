@@ -17,7 +17,8 @@ module axi_data_width_converter #(
   parameter int unsigned SI_DATA_WIDTH = 64,
   parameter int unsigned MI_DATA_WIDTH = 64,
   parameter int unsigned ID_WIDTH = 4,
-  parameter int unsigned USER_WIDTH = 1
+  parameter int unsigned USER_WIDTH = 1,
+  parameter int unsigned NR_OUTSTANDING = 1
 ) (
   input logic clk_i,
   input logic rst_ni,
@@ -49,11 +50,12 @@ module axi_data_width_converter #(
 
     if (SI_DATA_WIDTH < MI_DATA_WIDTH) begin: UPSIZE
     axi_data_upsize #(
-      .ADDR_WIDTH     (ADDR_WIDTH),
-      .SI_DATA_WIDTH  (SI_DATA_WIDTH),
-      .MI_DATA_WIDTH  (MI_DATA_WIDTH),
-      .ID_WIDTH       (ID_WIDTH),
-      .USER_WIDTH     (USER_WIDTH)
+      .ADDR_WIDTH     ( ADDR_WIDTH     ),
+      .SI_DATA_WIDTH  ( SI_DATA_WIDTH  ),
+      .MI_DATA_WIDTH  ( MI_DATA_WIDTH  ),
+      .ID_WIDTH       ( ID_WIDTH       ),
+      .USER_WIDTH     ( USER_WIDTH     ),
+      .NR_OUTSTANDING ( NR_OUTSTANDING )
     ) i_axi_data_upsize (
       .clk_i,
       .rst_ni,
@@ -161,11 +163,12 @@ module axi_data_width_converter #(
 
     if (SI_DATA_WIDTH > MI_DATA_WIDTH) begin: DOWNSIZE
     axi_data_downsize #(
-      .ADDR_WIDTH     (ADDR_WIDTH),
-      .SI_DATA_WIDTH  (SI_DATA_WIDTH),
-      .MI_DATA_WIDTH  (MI_DATA_WIDTH),
-      .ID_WIDTH       (ID_WIDTH),
-      .USER_WIDTH     (USER_WIDTH)
+      .ADDR_WIDTH     ( ADDR_WIDTH     ),
+      .SI_DATA_WIDTH  ( SI_DATA_WIDTH  ),
+      .MI_DATA_WIDTH  ( MI_DATA_WIDTH  ),
+      .ID_WIDTH       ( ID_WIDTH       ),
+      .USER_WIDTH     ( USER_WIDTH     ),
+      .NR_OUTSTANDING ( NR_OUTSTANDING )
     ) i_axi_data_downsize (
       .clk_i,
       .rst_ni,
