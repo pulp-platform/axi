@@ -80,15 +80,16 @@ module tb_axi_dwc_downsize;
   `AXI_ASSIGN(axi_slave_dv, axi_slave);
 
   axi_data_width_converter #(
-    .MI_DATA_WIDTH ( DW ),
-    .SI_DATA_WIDTH ( MULT * DW ),
-    .ID_WIDTH ( IW ),
-    .USER_WIDTH ( UW )
+    .SI_DATA_WIDTH  ( MULT * DW ),
+    .MI_DATA_WIDTH  ( DW        ),
+    .ID_WIDTH       ( IW        ),
+    .USER_WIDTH     ( UW        ),
+    .NR_OUTSTANDING ( 4         )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
-    .in ( axi_master ),
-    .out ( axi_slave ));
+    .slv ( axi_master ),
+    .mst ( axi_slave ));
 
   initial begin
     #tCK;
@@ -120,6 +121,7 @@ module tb_axi_dwc_downsize;
         ax_beat.ax_burst = axi_pkg::BURST_INCR;
         ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
         ax_beat.ax_len   = $urandom();
+        ax_beat.ax_id    = $urandom();
 
         ax_beat.ax_size  = $urandom();
         if (ax_beat.ax_size > $clog2(MULT * DW / 8))
@@ -143,6 +145,7 @@ module tb_axi_dwc_downsize;
         ax_beat.ax_burst = axi_pkg::BURST_INCR;
         ax_beat.ax_cache = axi_pkg::CACHE_MODIFIABLE;
         ax_beat.ax_size  = $urandom();
+        ax_beat.ax_id    = $urandom();
 
         ax_beat.ax_len   = $urandom();
         if (ax_beat.ax_size > $clog2(MULT * DW / 8))
@@ -185,6 +188,7 @@ module tb_axi_dwc_downsize;
         $info("AXI AR: addr %h", ax_beat.ax_addr);
 
         r_beat.r_data = 32'hdeadcafe;
+        r_beat.r_id   = ax_beat.ax_id;
         for (int beat = 0; beat <= ax_beat.ax_len; beat++) begin
           if (beat == ax_beat.ax_len)
             r_beat.r_last = 1'b1;
