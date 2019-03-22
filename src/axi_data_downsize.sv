@@ -220,26 +220,28 @@ module axi_data_downsize #(
   // MULTIPLEXER
   // --------------
 
-  channel_ax_t   [NR_OUTSTANDING-1:0]         tr_slv_ar;
-  logic [NR_OUTSTANDING-1:0]                  tr_slv_ar_ready;
+  channel_ax_t [NR_OUTSTANDING-1:0]        tr_slv_ar;
+  logic [NR_OUTSTANDING-1:0]               tr_slv_ar_ready;
 
-  mi_channel_r_t [NR_OUTSTANDING-1:0]         tr_mst_r;
-  logic [NR_OUTSTANDING-1:0]                  tr_mst_r_ready;
+  mi_channel_r_t [NR_OUTSTANDING-1:0]      tr_mst_r;
+  logic [NR_OUTSTANDING-1:0]               tr_mst_r_ready;
 
-  si_channel_r_t [NR_OUTSTANDING-1:0]         tr_slv_r;
-  logic [NR_OUTSTANDING-1:0]                  tr_slv_r_ready;
-  logic [NR_OUTSTANDING-1:0]                  tr_slv_r_req;
-  tr_id_t                                     tr_slv_r_idx;
+  si_channel_r_t [NR_OUTSTANDING-1:0]      tr_slv_r;
+  logic [NR_OUTSTANDING-1:0]               tr_slv_r_ready;
+  logic [NR_OUTSTANDING-1:0]               tr_slv_r_req;
+  logic                                    tr_slv_r_en_d, tr_slv_r_en_q;
+  tr_id_t                                  tr_slv_r_idx;
 
 generate
   if (NR_OUTSTANDING >= 2) begin
     rrarbiter #(
-      .NUM_REQ ( NR_OUTSTANDING )
+      .NUM_REQ ( NR_OUTSTANDING ),
+      .LOCK_IN ( 1'b1           )
     ) i_rrarbiter_r_slv (
       .clk_i,
       .rst_ni,
       .flush_i ( 1'b0           ),
-      .en_i    ( |tr_slv_r_req  ),
+      .en_i    ( tr_slv_r_en_q  ),
       .req_i   ( tr_slv_r_req   ),
       .ack_o   ( /* unused   */ ),
       .vld_o   ( /* unused   */ ),
@@ -250,20 +252,22 @@ generate
   end // else: !if(NR_OUTSTANDING >= 2)
 endgenerate
 
-  channel_ax_t   [NR_OUTSTANDING-1:0]         tr_mst_ar;
-  logic [NR_OUTSTANDING-1:0]                  tr_mst_ar_ready;
-  logic [NR_OUTSTANDING-1:0]                  tr_mst_ar_req;
-  tr_id_t                                     tr_mst_ar_idx;
+  channel_ax_t   [NR_OUTSTANDING-1:0]      tr_mst_ar;
+  logic [NR_OUTSTANDING-1:0]               tr_mst_ar_ready;
+  logic [NR_OUTSTANDING-1:0]               tr_mst_ar_req;
+  logic                                    tr_mst_ar_en_d, tr_mst_ar_en_q;
+  tr_id_t                                  tr_mst_ar_idx;
 
 generate
   if (NR_OUTSTANDING >= 2) begin
     rrarbiter #(
-      .NUM_REQ ( NR_OUTSTANDING )
+      .NUM_REQ ( NR_OUTSTANDING ),
+      .LOCK_IN ( 1'b1           )
     ) i_rrarbiter_ar_mst (
       .clk_i,
       .rst_ni,
       .flush_i ( 1'b0           ),
-      .en_i    ( |tr_mst_ar_req ),
+      .en_i    ( tr_mst_ar_en_q ),
       .req_i   ( tr_mst_ar_req  ),
       .ack_o   ( /* unused   */ ),
       .vld_o   ( /* unused   */ ),
@@ -283,12 +287,6 @@ endgenerate
     tr_slv_r_ready  = '0;
     tr_mst_ar_ready = '0;
     mst_r_ready     = 1'b0;
-
-    // REQUEST SIGNALS
-    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
-      tr_slv_r_req[tr]  = tr_slv_r[tr].valid;
-      tr_mst_ar_req[tr] = tr_mst_ar[tr].valid;
-    end
 
     // INPUT SIGNALS
     for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
@@ -339,6 +337,26 @@ endgenerate
     slv_r_user                     = tr_slv_r[tr_slv_r_idx].user;
     slv_r_valid                    = tr_slv_r[tr_slv_r_idx].valid;
     tr_slv_r_ready[tr_slv_r_idx]   = slv_r_ready;
+
+    // REQUEST SIGNALS
+    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
+      tr_slv_r_req[tr]  = tr_slv_r[tr].valid;
+      tr_mst_ar_req[tr] = tr_mst_ar[tr].valid;
+    end
+
+    // Disable arbitration if request wasn't acknowledged
+    tr_slv_r_en_d  = !(slv_r_valid && !slv_r_ready);
+    tr_mst_ar_en_d = !(mst_ar_valid && !mst_ar_ready);
+  end // block: mux
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (~rst_ni) begin
+      tr_slv_r_en_q  <= 1'b0;
+      tr_mst_ar_en_q <= 1'b0;
+    end else begin
+      tr_slv_r_en_q  <= tr_slv_r_en_d;
+      tr_mst_ar_en_q <= tr_mst_ar_en_d;
+    end
   end
 
   // --------------
