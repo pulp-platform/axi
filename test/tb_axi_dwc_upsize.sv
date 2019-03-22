@@ -20,10 +20,9 @@
 module tb_axi_dwc_upsize;
 
   parameter AW  = 64;
-  parameter IW  = 8;
+  parameter IW  = 4;
   parameter DW  = 32;
   parameter UW  = 8;
-  parameter IWO = 4;
   parameter TS  = 4;
   parameter MULT = 8;
 
@@ -58,21 +57,21 @@ module tb_axi_dwc_upsize;
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( MULT * DW ),
-    .AXI_ID_WIDTH ( IWO ),
+    .AXI_ID_WIDTH ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_slave_dv ( clk );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AW ),
     .AXI_DATA_WIDTH ( MULT * DW ),
-    .AXI_ID_WIDTH ( IWO ),
+    .AXI_ID_WIDTH ( IW ),
     .AXI_USER_WIDTH ( UW )
   ) axi_slave ();
 
   axi_test::axi_driver #(
     .AW ( AW ),
     .DW ( MULT * DW ),
-    .IW ( IWO ),
+    .IW ( IW ),
     .UW ( UW ),
     .TA ( 200ps ),
     .TT ( 700ps )) axi_slave_drv = new ( axi_slave_dv );
@@ -82,11 +81,9 @@ module tb_axi_dwc_upsize;
 
   axi_data_width_converter #(
     .MI_DATA_WIDTH ( MULT * DW ),
-    .MI_ID_WIDTH ( IWO ),
-    .MI_USER_WIDTH ( UW ),
     .SI_DATA_WIDTH ( DW ),
-    .SI_ID_WIDTH ( IW ),
-    .SI_USER_WIDTH ( UW )
+    .ID_WIDTH ( IW ),
+    .USER_WIDTH ( UW )
   ) dwc_1 (
     .clk_i ( clk ),
     .rst_ni ( rst ),
@@ -181,8 +178,8 @@ module tb_axi_dwc_upsize;
     fork
       // AR and R channels
       repeat (200) begin
-        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat    = new;
-        automatic axi_test::axi_r_beat #( .DW ( MULT * DW ), .IW ( IWO), .UW( UW )) r_beat = new;
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat    = new;
+        automatic axi_test::axi_r_beat #( .DW ( MULT * DW ), .IW ( IW), .UW( UW )) r_beat = new;
 
         axi_slave_drv.recv_ar(ax_beat);
         $info("AXI AR: addr %h", ax_beat.ax_addr);
@@ -197,7 +194,7 @@ module tb_axi_dwc_upsize;
 
       // AW and W channels
       repeat (200) begin
-        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IWO ), .UW ( UW )) ax_beat = new;
+        automatic axi_test::axi_ax_beat #( .AW ( AW ), .IW ( IW ), .UW ( UW )) ax_beat = new;
         automatic axi_test::axi_w_beat #( .DW ( MULT * DW ), .UW( UW )) w_beat          = new;
 
         axi_slave_drv.recv_aw(ax_beat);
@@ -214,7 +211,7 @@ module tb_axi_dwc_upsize;
 
     // B channel
     while (b_id_queue.size() != 0) begin
-      automatic axi_test::axi_b_beat #( .IW ( IWO ), .UW ( UW )) b_beat = new;
+      automatic axi_test::axi_b_beat #( .IW ( IW ), .UW ( UW )) b_beat = new;
 
       b_beat.b_id = b_id_queue.pop_front();
       axi_slave_drv.send_b(b_beat);
