@@ -969,12 +969,11 @@ package axi_test;
     task send_ws(ref logic aw_done);
       while (!(aw_done && aw_queue.size() == 0)) begin
         automatic ax_beat_t aw_beat;
-        automatic addr_t addr, aligned_addr;
+        automatic addr_t addr;
         static logic rand_success;
         wait (aw_queue.size() > 0);
         aw_beat = aw_queue.pop_front();
-        aligned_addr = (aw_beat.ax_addr >> aw_beat.ax_size) << aw_beat.ax_size;
-        addr = aligned_addr;
+        addr = aw_beat.ax_addr;
         for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
           automatic w_beat_t w_beat = new;
           int unsigned begin_byte, n_bytes;
@@ -982,13 +981,8 @@ package axi_test;
           rand_success = std::randomize(w_beat); assert (rand_success);
           // Determine strobe.
           w_beat.w_strb = '0;
-          if (i == 0) begin // first beat
-            n_bytes = 2**aw_beat.ax_size - (aw_beat.ax_addr - aligned_addr);
-            begin_byte = aw_beat.ax_addr % AXI_STRB_WIDTH;
-          end else begin // all following beats
-            n_bytes = 2**aw_beat.ax_size;
-            begin_byte = addr % AXI_STRB_WIDTH;
-          end
+          n_bytes = 2**aw_beat.ax_size;
+          begin_byte = addr % AXI_STRB_WIDTH;
           strb_mask = ((1'b1 << n_bytes) - 1) << begin_byte;
           rand_strb = $random();
           w_beat.w_strb |= (rand_strb & strb_mask);
@@ -997,7 +991,7 @@ package axi_test;
           rand_wait(W_MIN_WAIT_CYCLES, W_MAX_WAIT_CYCLES);
           drv.send_w(w_beat);
           if (aw_beat.ax_burst == axi_pkg::BURST_INCR)
-            addr += 2**aw_beat.ax_size;
+            addr += n_bytes;
         end
       end
     endtask
@@ -1083,7 +1077,6 @@ package axi_test;
       this.drv = new(axi);
       this.ar_queue = new;
       this.b_queue = new;
-      this.reset();
     endfunction
 
     function void reset();
