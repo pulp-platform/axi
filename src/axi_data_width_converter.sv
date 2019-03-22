@@ -33,6 +33,10 @@ module axi_data_width_converter #(
     assert(in.AXI_ID_WIDTH    == out.AXI_ID_WIDTH   && in.AXI_ID_WIDTH   == ID_WIDTH);
     assert(in.AXI_USER_WIDTH  == out.AXI_USER_WIDTH && in.AXI_USER_WIDTH == USER_WIDTH);
   end
+  if (SI_DATA_WIDTH != MI_DATA_WIDTH) begin
+    assert property (@(posedge clk_i) disable iff (~rst_ni) in.aw_valid |-> in.aw_atop[5] == 1'b0)
+      else $error("This module does not yet support atomic transactions with an R resp!");
+  end
 `endif
 
   generate
