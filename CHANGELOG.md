@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_id_remap` now raises an error when it receives any atomic operation, which it currently does
   not support.
 
+### Removed
+- `axi_pkg` previously defined fixed widths for ID, user, address, and data signal and derived
+  structs for the five AXI channels from them.  However, these widths are not equal for all
+  instantiations and usages of this package.  Therefore, they have been removed.
+
 ## 0.7.0 - 2019-05-28
 
 ### Changed
