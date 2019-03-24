@@ -10,6 +10,8 @@
 //
 // Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
+import axi_pkg::*;
+
 module tb_axi_delayer;
 
   parameter AW = 32;
@@ -31,24 +33,74 @@ module tb_axi_delayer;
     .AXI_USER_WIDTH(UW)
   ) axi_slave(clk), axi_master(clk);
 
-  axi_pkg::aw_chan_t aw_chan_i;
-  axi_pkg::w_chan_t  w_chan_i;
-  axi_pkg::b_chan_t  b_chan_o;
-  axi_pkg::ar_chan_t ar_chan_i;
-  axi_pkg::r_chan_t  r_chan_o;
+  typedef logic   [AW-1:0] addr_t;
+  typedef logic   [DW-1:0] data_t;
+  typedef logic   [IW-1:0] id_t;
+  typedef logic [DW/8-1:0] strb_t;
+  typedef logic   [UW-1:0] user_t;
 
-  axi_pkg::aw_chan_t aw_chan_o;
-  axi_pkg::w_chan_t  w_chan_o;
-  axi_pkg::b_chan_t  b_chan_i;
-  axi_pkg::ar_chan_t ar_chan_o;
-  axi_pkg::r_chan_t  r_chan_i;
+  // AW Channel
+  typedef struct packed {
+      id_t     id;
+      addr_t   addr;
+      len_t    len;
+      size_t   size;
+      burst_t  burst;
+      logic   lock;
+      cache_t  cache;
+      prot_t   prot;
+      qos_t    qos;
+      region_t region;
+      atop_t   atop;
+  } aw_chan_t;
+
+  // W Channel
+  typedef struct packed {
+      data_t data;
+      strb_t strb;
+      logic  last;
+  } w_chan_t;
+
+  // B Channel
+  typedef struct packed {
+      id_t   id;
+      resp_t resp;
+  } b_chan_t;
+
+  // AR Channel
+  typedef struct packed {
+      id_t     id;
+      addr_t   addr;
+      len_t    len;
+      size_t   size;
+      burst_t  burst;
+      logic    lock;
+      cache_t  cache;
+      prot_t   prot;
+      qos_t    qos;
+      region_t region;
+  } ar_chan_t;
+
+  // R Channel
+  typedef struct packed {
+      id_t   id;
+      data_t data;
+      resp_t resp;
+      logic  last;
+  } r_chan_t;
+
+  aw_chan_t   aw_chan_i,  aw_chan_o;
+  w_chan_t    w_chan_i,   w_chan_o;
+  b_chan_t    b_chan_i,   b_chan_o;
+  ar_chan_t   ar_chan_i,  ar_chan_o;
+  r_chan_t    r_chan_i,   r_chan_o;
 
   axi_delayer #(
-    .aw_t ( axi_pkg::aw_chan_t ),
-    .w_t  ( axi_pkg::w_chan_t  ),
-    .b_t  ( axi_pkg::b_chan_t  ),
-    .ar_t ( axi_pkg::ar_chan_t ),
-    .r_t  ( axi_pkg::r_chan_t  ),
+    .aw_t ( aw_chan_t ),
+    .w_t  ( w_chan_t  ),
+    .b_t  ( b_chan_t  ),
+    .ar_t ( ar_chan_t ),
+    .r_t  ( r_chan_t  ),
     .FixedDelayInput  ( 0 ),
     .StallRandomInput ( 1 )
   ) i_axi_delayer (
