@@ -364,13 +364,15 @@ endgenerate
   // --------------
 
   // There is an identical FSM for each possible outstanding transaction
+  typedef enum logic [1:0] { R_IDLE,
+                             R_PASSTHROUGH,
+                             R_INCR_DOWNSIZE,
+                             R_SPLIT_INCR_DOWNSIZE } r_state_t;
+
   generate
     for (genvar tr = 0; tr < NR_OUTSTANDING; tr++) begin: req_fsm
 
-      enum logic [1:0] { R_IDLE,
-                         R_PASSTHROUGH,
-                         R_INCR_DOWNSIZE,
-                         R_SPLIT_INCR_DOWNSIZE } r_state_d, r_state_q;
+      r_state_t r_state_d, r_state_q;
 
       struct packed {
         channel_ax_t   ar;
