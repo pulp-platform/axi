@@ -217,11 +217,11 @@ module axi_data_upsize #(
   // MULTIPLEXER
   // --------------
 
-  channel_ax_t [NR_OUTSTANDING-1:0]        int_slv_ar;
   logic [NR_OUTSTANDING-1:0]               int_slv_ar_ready;
+  assign slv_ar_ready = int_slv_ar_ready[slv_ar_id % NR_OUTSTANDING];
 
-  mi_channel_r_t [NR_OUTSTANDING-1:0]      int_mst_r;
   logic [NR_OUTSTANDING-1:0]               int_mst_r_ready;
+  assign mst_r_ready = int_mst_r_ready[mst_r_id % NR_OUTSTANDING];
 
   si_channel_r_t [NR_OUTSTANDING-1:0]      int_slv_r;
   logic [NR_OUTSTANDING-1:0]               int_slv_r_ready;
@@ -229,25 +229,25 @@ module axi_data_upsize #(
   logic                                    int_slv_r_en_d, int_slv_r_en_q;
   tr_id_t                                  int_slv_r_idx;
 
-generate
-  if (NR_OUTSTANDING >= 2) begin
-    rrarbiter #(
-      .NUM_REQ ( NR_OUTSTANDING ),
-      .LOCK_IN ( 1'b1           )
-    ) i_rrarbiter_r_slv (
-      .clk_i,
-      .rst_ni,
-      .flush_i ( 1'b0           ),
-      .en_i    ( int_slv_r_en_q ),
-      .req_i   ( int_slv_r_req  ),
-      .ack_o   ( /* unused   */ ),
-      .vld_o   ( /* unused   */ ),
-      .idx_o   ( int_slv_r_idx  )
-    );
-  end else begin // if (NR_OUTSTANDING >= 2)
-    assign int_slv_r_idx = 1'b0;
-  end // else: !if(NR_OUTSTANDING >= 2)
-endgenerate
+  generate
+    if (NR_OUTSTANDING >= 2) begin
+      rrarbiter #(
+        .NUM_REQ ( NR_OUTSTANDING ),
+        .LOCK_IN ( 1'b1           )
+      ) i_rrarbiter_r_slv (
+        .clk_i,
+        .rst_ni,
+        .flush_i ( 1'b0           ),
+        .en_i    ( int_slv_r_en_q ),
+        .req_i   ( int_slv_r_req  ),
+        .ack_o   ( /* unused   */ ),
+        .vld_o   ( /* unused   */ ),
+        .idx_o   ( int_slv_r_idx  )
+      );
+    end else begin // if (NR_OUTSTANDING >= 2)
+      assign int_slv_r_idx = 1'b0;
+    end // else: !if(NR_OUTSTANDING >= 2)
+  endgenerate
 
   channel_ax_t [NR_OUTSTANDING-1:0]        int_mst_ar;
   logic [NR_OUTSTANDING-1:0]               int_mst_ar_ready;
@@ -255,62 +255,33 @@ endgenerate
   logic                                    int_mst_ar_en_d, int_mst_ar_en_q;
   tr_id_t                                  int_mst_ar_idx;
 
-generate
-  if (NR_OUTSTANDING >= 2) begin
-    rrarbiter #(
-      .NUM_REQ ( NR_OUTSTANDING ),
-      .LOCK_IN ( 1'b1           )
-    ) i_rrarbiter_ar_mst (
-      .clk_i,
-      .rst_ni,
-      .flush_i ( 1'b0            ),
-      .en_i    ( int_mst_ar_en_q ),
-      .req_i   ( int_mst_ar_req  ),
-      .ack_o   ( /* unused    */ ),
-      .vld_o   ( /* unused    */ ),
-      .idx_o   ( int_mst_ar_idx  )
-    );
-  end else begin // if (NR_OUTSTANDING >= 2)
-    assign int_mst_ar_idx = 1'b0;
-  end // else: !if(NR_OUTSTANDING >= 2)
-endgenerate
+  generate
+    if (NR_OUTSTANDING >= 2) begin
+      rrarbiter #(
+        .NUM_REQ ( NR_OUTSTANDING ),
+        .LOCK_IN ( 1'b1           )
+      ) i_rrarbiter_ar_mst (
+        .clk_i,
+        .rst_ni,
+        .flush_i ( 1'b0            ),
+        .en_i    ( int_mst_ar_en_q ),
+        .req_i   ( int_mst_ar_req  ),
+        .ack_o   ( /* unused    */ ),
+        .vld_o   ( /* unused    */ ),
+        .idx_o   ( int_mst_ar_idx  )
+      );
+    end else begin // if (NR_OUTSTANDING >= 2)
+      assign int_mst_ar_idx = 1'b0;
+    end // else: !if(NR_OUTSTANDING >= 2)
+  endgenerate
+
+  /* This multiplexes the requests from all the FSMs handling different
+   * outstanding transactions into a single channel */
 
   always_comb begin: mux
     // Default values
-    int_slv_ar       = '0;
-    int_mst_ar_ready = '0;
-    int_mst_r        = '0;
     int_slv_r_ready  = '0;
-
-    slv_ar_ready     = 1'b0;
-    mst_r_ready      = 1'b0;
-
-    // INPUT SIGNALS
-    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
-      int_slv_ar[tr].id     = slv_ar_id;
-      int_slv_ar[tr].addr   = slv_ar_addr;
-      int_slv_ar[tr].len    = slv_ar_len;
-      int_slv_ar[tr].size   = slv_ar_size;
-      int_slv_ar[tr].burst  = slv_ar_burst;
-      int_slv_ar[tr].lock   = slv_ar_lock;
-      int_slv_ar[tr].cache  = slv_ar_cache;
-      int_slv_ar[tr].prot   = slv_ar_prot;
-      int_slv_ar[tr].qos    = slv_ar_qos;
-      int_slv_ar[tr].region = slv_ar_region;
-      int_slv_ar[tr].user   = slv_ar_user;
-      int_slv_ar[tr].valid  = slv_ar_valid && (slv_ar_id % NR_OUTSTANDING == tr);
-      if (slv_ar_id % NR_OUTSTANDING == tr)
-        slv_ar_ready      = int_slv_ar_ready[tr];
-
-      int_mst_r[tr].id    = mst_r_id;
-      int_mst_r[tr].data  = mst_r_data;
-      int_mst_r[tr].resp  = mst_r_resp;
-      int_mst_r[tr].last  = mst_r_last;
-      int_mst_r[tr].user  = mst_r_user;
-      int_mst_r[tr].valid = mst_r_valid && (mst_r_id % NR_OUTSTANDING == tr);
-      if (mst_r_id % NR_OUTSTANDING == tr)
-        mst_r_ready = int_mst_r_ready[tr];
-    end
+    int_mst_ar_ready = '0;
 
     // OUTPUT SIGNALS
     mst_ar_id                        = int_mst_ar[int_mst_ar_idx].id;
@@ -384,6 +355,7 @@ endgenerate
         r_req_d               = r_req_q;
 
         // AR Channel
+        int_mst_ar[tr]        = '0;
         int_mst_ar[tr].id     = r_req_q.ar.id;
         int_mst_ar[tr].addr   = r_req_q.ar.addr;
         int_mst_ar[tr].len    = r_req_q.ar.len;
@@ -400,9 +372,9 @@ endgenerate
         int_slv_ar_ready[tr]  = 1'b0;
 
         // R Channel
-        int_slv_r[tr].id      = int_mst_r[tr].id;
+        int_slv_r[tr].id      = mst_r_id;
         int_slv_r[tr].data    = '0;
-        int_slv_r[tr].resp    = int_mst_r[tr].resp;
+        int_slv_r[tr].resp    = mst_r_resp;
         int_slv_r[tr].last    = '0;
         int_slv_r[tr].user    = '0;
         int_slv_r[tr].valid   = '0;
@@ -416,25 +388,25 @@ endgenerate
           R_PASSTHROUGH, R_INCR_UPSIZE: begin
             // Request was accepted
             if (!r_req_q.ar.valid) begin
-              if (int_mst_r[tr].valid) begin
+              if (mst_r_valid && (mst_r_id % NR_OUTSTANDING == tr)) begin
                 automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
                 automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
 
                 // Valid output
                 int_slv_r[tr].valid         = 1'b1;
-                int_slv_r[tr].last          = int_mst_r[tr].last && (r_req_q.len == 0);
+                int_slv_r[tr].last          = mst_r_last && (r_req_q.len == 0);
 
                 // Serialization
                 for (int b = 0; b < MI_BYTES; b++)
                   if ((b >= mi_offset) &&
                       (b - mi_offset < (1 << r_req_q.size)) &&
                       (b + si_offset - mi_offset < SI_BYTES)) begin
-                    int_slv_r[tr].data[8 * (b + si_offset - mi_offset) +: 8] = int_mst_r[tr].data[8 * b +: 8];
+                    int_slv_r[tr].data[8 * (b + si_offset - mi_offset) +: 8] = mst_r_data[8 * b +: 8];
                   end
 
                 // Forward user data
                 if (r_state_q == R_PASSTHROUGH)
-                  int_slv_r[tr].user = int_mst_r[tr].user;
+                  int_slv_r[tr].user = mst_r_user;
 
                 // Acknowledgement
                 if (int_slv_r_ready[tr]) begin
@@ -455,7 +427,7 @@ endgenerate
                   if (r_req_q.len == 0)
                     r_state_d = R_IDLE;
                 end // if (int_slv_r[tr].ready)
-              end // if (int_mst_r[tr].valid)
+              end // if (mst_r_valid && (mst_r_id % NR_OUTSTANDING == tr))
             end // if (!r_req_d.ar.valid)
           end // case: R_PASSTHROUGH, R_INCR_UPSIZE
         endcase // case (r_state_q)
@@ -469,42 +441,42 @@ endgenerate
           int_slv_ar_ready[tr] = 1'b1;
 
           // New read request
-          if (int_slv_ar[tr].valid) begin
+          if (slv_ar_valid && (slv_ar_id % NR_OUTSTANDING == tr)) begin
             // Default state
             r_state_d         = R_PASSTHROUGH;
 
             // Save beat
-            r_req_d.ar.id     = int_slv_ar[tr].id;
-            r_req_d.ar.addr   = int_slv_ar[tr].addr;
-            r_req_d.ar.size   = int_slv_ar[tr].size;
-            r_req_d.ar.burst  = int_slv_ar[tr].burst;
-            r_req_d.ar.len    = int_slv_ar[tr].len;
-            r_req_d.ar.lock   = int_slv_ar[tr].lock;
-            r_req_d.ar.cache  = int_slv_ar[tr].cache;
-            r_req_d.ar.prot   = int_slv_ar[tr].prot;
-            r_req_d.ar.qos    = int_slv_ar[tr].qos;
-            r_req_d.ar.region = int_slv_ar[tr].region;
-            r_req_d.ar.user   = int_slv_ar[tr].user;
+            r_req_d.ar.id     = slv_ar_id;
+            r_req_d.ar.addr   = slv_ar_addr;
+            r_req_d.ar.size   = slv_ar_size;
+            r_req_d.ar.burst  = slv_ar_burst;
+            r_req_d.ar.len    = slv_ar_len;
+            r_req_d.ar.lock   = slv_ar_lock;
+            r_req_d.ar.cache  = slv_ar_cache;
+            r_req_d.ar.prot   = slv_ar_prot;
+            r_req_d.ar.qos    = slv_ar_qos;
+            r_req_d.ar.region = slv_ar_region;
+            r_req_d.ar.user   = slv_ar_user;
             r_req_d.ar.valid  = 1'b1;
 
-            r_req_d.len       = int_slv_ar[tr].len;
-            r_req_d.size      = int_slv_ar[tr].size;
+            r_req_d.len       = slv_ar_len;
+            r_req_d.size      = slv_ar_size;
 
-            if (|(int_slv_ar[tr].cache & CACHE_MODIFIABLE))
-              case (int_slv_ar[tr].burst)
+            if (|(slv_ar_cache & CACHE_MODIFIABLE))
+              case (slv_ar_burst)
                 BURST_INCR: begin
                   // Evaluate output burst length
-                  automatic addr_t size_mask  = (1 << int_slv_ar[tr].size) - 1;
+                  automatic addr_t size_mask  = (1 << slv_ar_size) - 1;
 
-                  automatic addr_t addr_start = align_addr(int_slv_ar[tr].addr);
-                  automatic addr_t addr_end   = align_addr((int_slv_ar[tr].addr & ~size_mask) + (int_slv_ar[tr].len << int_slv_ar[tr].size));
+                  automatic addr_t addr_start = align_addr(slv_ar_addr);
+                  automatic addr_t addr_end   = align_addr((slv_ar_addr & ~size_mask) + (slv_ar_len << slv_ar_size));
 
                   r_req_d.ar.len              = (addr_end - addr_start) >> $clog2(MI_BYTES);
                   r_req_d.ar.size             = $clog2(MI_BYTES);
                   r_state_d                   = R_INCR_UPSIZE;
                 end // case: BURST_INCR
-              endcase // case (int_slv_ar[tr].burst)
-          end // if (int_slv_ar[tr].valid)
+              endcase // case (slv_ar_burst)
+          end // if (slv_ar_valid && (slv_ar_id % NR_OUTSTANDING == tr))
         end
       end
 
