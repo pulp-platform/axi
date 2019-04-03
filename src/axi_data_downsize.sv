@@ -140,12 +140,6 @@ module axi_data_downsize #(
   output logic      mst_r_ready
 );
 
-`ifndef SYNTHESIS
-  initial begin
-    assert(SI_DATA_WIDTH > MI_DATA_WIDTH);
-  end
-`endif
-
   // --------------
   // DEFINITIONS
   // --------------
@@ -220,12 +214,6 @@ module axi_data_downsize #(
   // MULTIPLEXER
   // --------------
 
-  logic [NR_OUTSTANDING-1:0]               int_slv_ar_ready;
-  assign slv_ar_ready = int_slv_ar_ready[slv_ar_id % NR_OUTSTANDING];
-
-  logic [NR_OUTSTANDING-1:0]               int_mst_r_ready;
-  assign mst_r_ready = int_mst_r_ready[mst_r_id % NR_OUTSTANDING];
-
   si_channel_r_t [NR_OUTSTANDING-1:0]      int_slv_r;
   logic [NR_OUTSTANDING-1:0]               int_slv_r_ready;
   logic [NR_OUTSTANDING-1:0]               int_slv_r_req;
@@ -283,8 +271,8 @@ module axi_data_downsize #(
 
   always_comb begin: mux
     // Default values
-    int_slv_r_ready  = '0;
-    int_mst_ar_ready = '0;
+    int_slv_r_ready                  = '0;
+    int_mst_ar_ready                 = '0;
 
     // OUTPUT SIGNALS
     mst_ar_id                        = int_mst_ar[int_mst_ar_idx].id;
@@ -340,6 +328,65 @@ module axi_data_downsize #(
                      R_INCR_DOWNSIZE,
                      R_SPLIT_INCR_DOWNSIZE } [NR_OUTSTANDING-1:0] r_state_d, r_state_q;
 
+  // Decides which FSM is idle
+
+  logic [NR_OUTSTANDING-1:0] idle_read_fsm;
+  tr_id_t                    idx_read_fsm;
+  logic                      full_read_fsm;
+
+  for (genvar tr = 0; tr < NR_OUTSTANDING; tr++)
+    assign idle_read_fsm[tr] = (r_state_q[tr] == R_IDLE);
+
+  lzc #(
+    .WIDTH ( NR_OUTSTANDING )
+  ) i_read_lzc (
+    .in_i    ( idle_read_fsm ),
+    .cnt_o   ( idx_read_fsm  ),
+    .empty_o ( full_read_fsm )
+  );
+
+  // This ID queue is used to resolve with FSM is handling
+  // each outstanding read transaction
+
+  logic                      idqueue_push;
+  logic                      idqueue_pop;
+  tr_id_t                    idqueue_id;
+  logic                      idqueue_valid;
+
+  generate
+    if (NR_OUTSTANDING >= 2) begin
+      id_queue #(
+        .ID_WIDTH ( ID_WIDTH       ),
+        .CAPACITY ( NR_OUTSTANDING ),
+        .data_t   ( tr_id_t        )
+      ) i_read_id_queue (
+        .clk_i,
+        .rst_ni,
+
+        .inp_id_i         ( slv_ar_id     ),
+        .inp_data_i       ( idx_read_fsm  ),
+        .inp_req_i        ( idqueue_push  ),
+        .inp_gnt_o        ( /* unused  */ ),
+
+        .oup_id_i         ( mst_r_id      ),
+        .oup_pop_i        ( idqueue_pop   ),
+        .oup_req_i        ( 1'b1          ),
+        .oup_data_o       ( idqueue_id    ),
+        .oup_data_valid_o ( idqueue_valid ),
+        .oup_gnt_o        ( /* unused  */ ),
+
+        // Unused
+        .exists_data_i    ( '0            ),
+        .exists_mask_i    ( '0            ),
+        .exists_req_i     ( '0            ),
+        .exists_o         ( /* unused  */ ),
+        .exists_gnt_o     ( /* unused  */ ));
+      end else begin // if (NR_OUTSTANDING >= 2)
+        assign idqueue_id = 0;
+        assign idqueue_valid = mst_r_valid;
+      end // else: !if(NR_OUTSTANDING >= 2)
+  endgenerate
+
   struct packed {
     channel_ax_t   ar;
     si_channel_r_t r;
@@ -349,6 +396,11 @@ module axi_data_downsize #(
   } [NR_OUTSTANDING-1:0] r_req_d, r_req_q;
 
   always_comb begin
+    idqueue_push    = 1'b0;
+    idqueue_pop     = 1'b0;
+    mst_r_ready     = 1'b0;
+    slv_ar_ready    = 1'b0;
+
     for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
       // Maintain state
       r_state_d[tr]         = r_state_q[tr];
@@ -368,7 +420,6 @@ module axi_data_downsize #(
       int_mst_ar[tr].region = r_req_q[tr].ar.region;
       int_mst_ar[tr].user   = r_req_q[tr].ar.user;
       int_mst_ar[tr].valid  = r_req_q[tr].ar.valid;
-      int_slv_ar_ready[tr]  = 1'b0;
 
       // R Channel
       int_slv_r[tr].id      = r_req_q[tr].r.id;
@@ -377,7 +428,6 @@ module axi_data_downsize #(
       int_slv_r[tr].last    = r_req_q[tr].r.last;
       int_slv_r[tr].user    = r_req_q[tr].r.user;
       int_slv_r[tr].valid   = r_req_q[tr].r.valid;
-      int_mst_r_ready[tr]   = 1'b0;
 
       // Got a grant on the AR channel
       if (int_mst_ar[tr].valid && int_mst_ar_ready[tr])
@@ -386,14 +436,17 @@ module axi_data_downsize #(
       case (r_state_q[tr])
         R_IDLE: begin
           // Reset channels
-          r_req_d[tr].ar       = '0;
-          r_req_d[tr].r        = '0;
+          r_req_d[tr].ar = '0;
+          r_req_d[tr].r  = '0;
 
           // Ready
-          int_slv_ar_ready[tr] = 1'b1;
+          slv_ar_ready   = 1'b1;
 
           // New write request
-          if (slv_ar_valid && (slv_ar_id % NR_OUTSTANDING == tr)) begin
+          if (slv_ar_valid && (idx_read_fsm == tr)) begin
+            // Push to ID queue
+            idqueue_push          = 1'b1;
+
             // Default state
             r_state_d[tr]         = R_PASSTHROUGH;
 
@@ -438,7 +491,7 @@ module axi_data_downsize #(
                   end // if (conv_ratio != 1)
                 end // case: BURST_INCR
               endcase // case (slv_ar_burst)
-          end // if (slv_ar_valid && (slv_ar_id % NR_OUTSTANDING == tr))
+          end // if (slv_ar_valid && (idx_read_fsm == tr))
         end
 
         R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
@@ -447,55 +500,56 @@ module axi_data_downsize #(
             r_req_d[tr].r = '0;
 
           // Request was accepted
-          if (!r_req_q[tr].ar.valid) begin
-            // Ready to accept more data
-            if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr])) begin
-              int_mst_r_ready[tr] = 1'b1;
+          if (!r_req_q[tr].ar.valid)
+            // Our turn
+            if (idqueue_id == tr)
+              // Ready to accept more data
+              if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr])) begin
+                mst_r_ready = 1'b1;
 
-              if (mst_r_valid && (mst_r_id % NR_OUTSTANDING == tr)) begin
-                automatic addr_t mi_offset = r_req_q[tr].ar.addr[$clog2(MI_BYTES)-1:0];
-                automatic addr_t si_offset = r_req_q[tr].ar.addr[$clog2(SI_BYTES)-1:0];
-                automatic addr_t size_mask = (1 << r_req_q[tr].ar.size) - 1;
+                if (mst_r_valid) begin
+                  automatic addr_t mi_offset = r_req_q[tr].ar.addr[$clog2(MI_BYTES)-1:0];
+                  automatic addr_t si_offset = r_req_q[tr].ar.addr[$clog2(SI_BYTES)-1:0];
+                  automatic addr_t size_mask = (1 << r_req_q[tr].ar.size) - 1;
 
-                // Lane steering
-                for (int b = 0; b < SI_BYTES; b++)
-                  if ((b >= si_offset) &&
-                      (b - si_offset < (1 << r_req_q[tr].size)) &&
-                      (b + mi_offset - si_offset < MI_BYTES)) begin
-                    r_req_d[tr].r.data[8 * b +: 8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
-                  end
+                  // Lane steering
+                  for (int b = 0; b < SI_BYTES; b++)
+                    if ((b >= si_offset) &&
+                        (b - si_offset < (1 << r_req_q[tr].size)) &&
+                        (b + mi_offset - si_offset < MI_BYTES)) begin
+                      r_req_d[tr].r.data[8 * b +: 8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
+                    end
 
-                r_req_d[tr].len     = r_req_q[tr].len - 1;
-                r_req_d[tr].ar.len  = r_req_q[tr].ar.len - 1;
-                r_req_d[tr].ar.addr = (r_req_q[tr].ar.addr & ~size_mask) + (1 << r_req_q[tr].ar.size);
-                r_req_d[tr].r.last  = (r_req_q[tr].len == 0);
-                r_req_d[tr].r.id    = mst_r_id;
+                  r_req_d[tr].len     = r_req_q[tr].len - 1;
+                  r_req_d[tr].ar.len  = r_req_q[tr].ar.len - 1;
+                  r_req_d[tr].ar.addr = (r_req_q[tr].ar.addr & ~size_mask) + (1 << r_req_q[tr].ar.size);
+                  r_req_d[tr].r.last  = (r_req_q[tr].len == 0);
+                  r_req_d[tr].r.id    = mst_r_id;
+                  r_req_d[tr].r.user  = mst_r_user;
 
-                // Forward user data
-                if (r_state_q[tr] == R_PASSTHROUGH)
-                  r_req_d[tr].r.user = mst_r_user;
+                  if (r_req_q[tr].len == 0)
+                    idqueue_pop = 1'b1;
 
-                case (r_state_q[tr])
-                  R_PASSTHROUGH:
-                    // Forward data as soon as we can
-                    r_req_d[tr].r.valid = 1'b1;
-
-                  R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
-                    // Forward when the burst is finished, or when a word was filled up
-                    if (r_req_q[tr].len == 0 || (align_addr(r_req_d[tr].ar.addr, r_req_q[tr].size) != align_addr(r_req_q[tr].ar.addr, r_req_q[tr].size)))
+                  case (r_state_q[tr])
+                    R_PASSTHROUGH:
+                      // Forward data as soon as we can
                       r_req_d[tr].r.valid = 1'b1;
-                endcase // case (r_state_q[tr])
 
-                // Trigger another burst request, if needed
-                if (r_state_q[tr] == R_SPLIT_INCR_DOWNSIZE)
-                  // Finished current burst, but whole transaction hasn't finished
-                  if (r_req_q[tr].ar.len == '0 && r_req_q[tr].len != '0) begin
-                    r_req_d[tr].ar.valid = 1'b1;
-                    r_req_d[tr].ar.len   = (r_req_d[tr].len <= 255) ? r_req_d[tr].len : 255;
-                  end
-              end // if (mst_r_valid && (mst_r_id % NR_OUTSTANDING == tr))
-            end // if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr]))
-          end // if (!r_req_d[tr].ar.valid)
+                    R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
+                      // Forward when the burst is finished, or when a word was filled up
+                      if (r_req_q[tr].len == 0 || (align_addr(r_req_d[tr].ar.addr, r_req_q[tr].size) != align_addr(r_req_q[tr].ar.addr, r_req_q[tr].size)))
+                        r_req_d[tr].r.valid = 1'b1;
+                  endcase // case (r_state_q[tr])
+
+                  // Trigger another burst request, if needed
+                  if (r_state_q[tr] == R_SPLIT_INCR_DOWNSIZE)
+                    // Finished current burst, but whole transaction hasn't finished
+                    if (r_req_q[tr].ar.len == '0 && r_req_q[tr].len != '0) begin
+                      r_req_d[tr].ar.valid = 1'b1;
+                      r_req_d[tr].ar.len   = (r_req_d[tr].len <= 255) ? r_req_d[tr].len : 255;
+                    end
+                end // if (mst_r_valid && (idqueue_id == tr))
+              end // if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr]))
 
           if (int_slv_r[tr].valid && int_slv_r_ready[tr])
             if (r_req_q[tr].len == '1)
@@ -503,7 +557,7 @@ module axi_data_downsize #(
         end // case: R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE
       endcase // case (r_state_q[tr])
     end // for (unsigned int tr = 0; tr < NR_OUTSTANDING; tr++)
-  end
+  end // always_comb
 
   // --------------
   // WRITE
@@ -565,7 +619,7 @@ module axi_data_downsize #(
     case (w_state_q)
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
         // Request was accepted
-        if (!w_req_q.aw.valid) begin
+        if (!w_req_q.aw.valid)
           if (slv_w_valid) begin
             automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(MI_BYTES)-1:0];
             automatic addr_t si_offset = w_req_q.aw.addr[$clog2(SI_BYTES)-1:0];
@@ -573,10 +627,7 @@ module axi_data_downsize #(
             // Valid output
             mst_w_valid                = 1'b1;
             mst_w_last                 = slv_w_last && (w_req_q.len == 0);
-
-            // Forward user data
-            if (w_state_q == W_PASSTHROUGH)
-              mst_w_user = slv_w_user;
+            mst_w_user                 = slv_w_user;
 
             // Serialization
             for (int b = 0; b < SI_BYTES; b++)
@@ -616,7 +667,6 @@ module axi_data_downsize #(
             if (w_req_q.len == 0)
               w_state_d = W_IDLE;
           end // if (mst_w_ready && mst_w_valid)
-        end // if (!w_req_d.aw.valid)
       end
     endcase // case (w_state_q)
 
@@ -676,7 +726,7 @@ module axi_data_downsize #(
               end // if (conv_ratio != 1)
             end // case: BURST_INCR
           endcase // case (slv_aw_burst)
-      end // if (slv_aw_valid)
+      end // if (slv_aw_valid && slv_aw_ready)
     end
   end
 
@@ -699,5 +749,22 @@ module axi_data_downsize #(
       w_req_q   <= w_req_d;
     end
   end
+
+  // --------------
+  // ASSERTIONS
+  // --------------
+
+  // Validate parameters.
+  // pragma translate_off
+`ifndef VERILATOR
+  initial begin: validate_params
+    assert(SI_DATA_WIDTH > MI_DATA_WIDTH)
+      else $fatal("Data downsizer not being used for downsizing.");
+
+    assert (2**ID_WIDTH >= NR_OUTSTANDING)
+      else $fatal("The outstanding transactions could not be indexed with the given ID bits!");
+  end
+`endif
+  // pragma translate_on
 
 endmodule // axi_data_downsize
