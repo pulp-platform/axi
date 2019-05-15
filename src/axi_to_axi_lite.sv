@@ -27,8 +27,8 @@ module axi_to_axi_lite #(
   input logic  clk_i,
   input logic  rst_ni,
   input logic  testmode_i,
-  AXI_BUS.in   in,
-  AXI_LITE.out out
+  AXI_BUS.Slave   in,
+  AXI_LITE.Master out
 );
 
   `ifndef SYNTHESIS
