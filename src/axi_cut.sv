@@ -29,8 +29,8 @@ module axi_cut #(
 )(
   input logic clk_i  ,
   input logic rst_ni ,
-  AXI_BUS.in  in     ,
-  AXI_BUS.out out
+  AXI_BUS.Slave  in     ,
+  AXI_BUS.Master out
 );
 
   localparam STRB_WIDTH = DATA_WIDTH / 8;
