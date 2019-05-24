@@ -24,10 +24,10 @@ module axi_id_resize #(
     parameter int ID_WIDTH_OUT = -1,
     parameter int TABLE_SIZE   = 1
 )(
-    input logic clk_i,
-    input logic rst_ni,
-    AXI_BUS.in  in,
-    AXI_BUS.out out
+    input logic     clk_i,
+    input logic     rst_ni,
+    AXI_BUS.Slave   in,
+    AXI_BUS.Master  out
 );
 
     // Instantiate a downsizer if the outgoing ID is smaller, otherwise simply
@@ -62,10 +62,10 @@ module axi_id_remap #(
     parameter int ID_WIDTH_OUT  = -1,
     parameter int TABLE_SIZE    = 1
 )(
-    input logic clk_i,
-    input logic rst_ni,
-    AXI_BUS.in  in,
-    AXI_BUS.out out
+    input logic     clk_i,
+    input logic     rst_ni,
+    AXI_BUS.Slave   in,
+    AXI_BUS.Master  out
 );
 
     logic full_id_aw_b;
