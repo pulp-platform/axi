@@ -23,10 +23,10 @@ module axi_lite_cut #(
   /// The data width.
   parameter int DATA_WIDTH = -1
 )(
-  input logic  clk_i  ,
-  input logic  rst_ni ,
-  AXI_LITE.in  in     ,
-  AXI_LITE.out out
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_LITE.Slave  in     ,
+  AXI_LITE.Master out
 );
 
   // Check the invariants.

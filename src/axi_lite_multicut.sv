@@ -25,10 +25,10 @@ module axi_lite_multicut #(
   // The number of cuts. Must be >= 0.
   parameter int NUM_CUTS = 0
 )(
-  input logic  clk_i  ,
-  input logic  rst_ni ,
-  AXI_LITE.in  in     ,
-  AXI_LITE.out out
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_LITE.Slave  in     ,
+  AXI_LITE.Master out
 );
 
   // Check the invariants.
