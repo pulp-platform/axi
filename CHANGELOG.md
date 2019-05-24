@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Changed
+- The `in` and `out` modports have been removed from the interface definition of both AXI and AXI
+  Lite.  These modports were "aliases" of `Slave` and `Master`, respectively, and caused problems
+  because many tools did not recognize the aliases as being identical to `Slave` and `Master`.
+
 ## 0.6.0 - 2019-02-27
 
 ### Changed
