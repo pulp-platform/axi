@@ -91,12 +91,12 @@ module synth_slice #(
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
-    .in         (a_full.in),
-    .out        (a_lite.out)
+    .in         (a_full.Slave),
+    .out        (a_lite.Master)
   );
   axi_lite_to_axi b (
-    .in   (b_lite.in),
-    .out  (b_full.out)
+    .in   (b_lite.Slave),
+    .out  (b_full.Master)
   );
 
 endmodule
@@ -139,8 +139,8 @@ module axi_lite_xbar_slice #(
   ) xbar (
     .clk_i  ( clk_i              ),
     .rst_ni ( rst_ni             ),
-    .master ( xbar_master.in     ),
-    .slave  ( xbar_slave.out     ),
+    .master ( xbar_master.Slave  ),
+    .slave  ( xbar_slave.Master  ),
     .rules  ( xbar_routing.xbar  )
   );
 
