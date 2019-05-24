@@ -27,10 +27,10 @@ module axi_cut #(
   // The user data width.
   parameter int USER_WIDTH = -1
 )(
-  input logic clk_i  ,
-  input logic rst_ni ,
-  AXI_BUS.Slave  in     ,
-  AXI_BUS.Master out
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_BUS.Slave   in     ,
+  AXI_BUS.Master  out
 );
 
   localparam STRB_WIDTH = DATA_WIDTH / 8;
