@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ETH Zurich, University of Bologna
+// Copyright (c) 20192-2020 ETH Zurich, University of Bologna
 //
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
@@ -30,7 +30,7 @@ module axi_cdc #(
   parameter type axi_req_t  = logic, // encapsulates request channels
   parameter type axi_resp_t = logic, // encapsulates request channels
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned  LOG_DEPTH = 1
+  parameter int unsigned  LogDepth  = 1
 ) (
   // slave side - clocked by `src_clk_i`
   input  logic      src_clk_i,
@@ -47,7 +47,7 @@ module axi_cdc #(
     cdc_fifo_gray #(
         //  We need to cast to bits here because of some arbitrary bug in Synopsys.
         .WIDTH       ( $bits(aw_chan_t)    ),
-        .LOG_DEPTH   ( LOG_DEPTH           )
+        .LOG_DEPTH   ( LogDepth            )
     ) i_cdc_fifo_gray_aw (
         .src_rst_ni,
         .src_clk_i,
@@ -63,7 +63,7 @@ module axi_cdc #(
 
     cdc_fifo_gray #(
         .WIDTH       ( $bits(w_chan_t)    ),
-        .LOG_DEPTH   ( LOG_DEPTH          )
+        .LOG_DEPTH   ( LogDepth           )
     ) i_cdc_fifo_gray_w (
         .src_rst_ni,
         .src_clk_i,
@@ -79,7 +79,7 @@ module axi_cdc #(
 
     cdc_fifo_gray #(
         .WIDTH       ( $bits(b_chan_t)    ),
-        .LOG_DEPTH   ( LOG_DEPTH          )
+        .LOG_DEPTH   ( LogDepth           )
     ) i_cdc_fifo_gray_b (
         .src_rst_ni  ( dst_rst_ni         ),
         .src_clk_i   ( dst_clk_i          ),
@@ -95,7 +95,7 @@ module axi_cdc #(
 
     cdc_fifo_gray #(
         .WIDTH       ( $bits(ar_chan_t)    ),
-        .LOG_DEPTH   ( LOG_DEPTH           )
+        .LOG_DEPTH   ( LogDepth            )
     ) i_cdc_fifo_gray_ar (
         .src_rst_ni,
         .src_clk_i,
@@ -111,7 +111,7 @@ module axi_cdc #(
 
     cdc_fifo_gray #(
         .WIDTH       ( $bits(r_chan_t)    ),
-        .LOG_DEPTH   ( LOG_DEPTH          )
+        .LOG_DEPTH   ( LogDepth           )
     ) i_cdc_fifo_gray_r (
         .src_rst_ni  ( dst_rst_ni         ),
         .src_clk_i   ( dst_clk_i          ),
@@ -132,12 +132,12 @@ endmodule
 
 // interface wrapper
 module axi_cdc_wrap #(
-  parameter int unsigned AXI_ID_WIDTH   = 0,
-  parameter int unsigned AXI_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_DATA_WIDTH = 0,
-  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned AxiIdWidth   = 0,
+  parameter int unsigned AxiAddrWidth = 0,
+  parameter int unsigned AxiDataWidth = 0,
+  parameter int unsigned AxiUserWidth = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LOG_DEPTH = 1
+  parameter int unsigned LogDepth = 1
 ) (
    // slave side - clocked by `src_clk_i`
   input  logic      src_clk_i,
@@ -149,11 +149,11 @@ module axi_cdc_wrap #(
   AXI_BUS.Master    dst
 );
 
-  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  typedef logic [AxiIdWidth-1:0]     id_t;
+  typedef logic [AxiAddrWidth-1:0]   addr_t;
+  typedef logic [AxiDataWidth-1:0]   data_t;
+  typedef logic [AxiDataWidth/8-1:0] strb_t;
+  typedef logic [AxiUserWidth-1:0]   user_t;
   `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
   `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
   `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
@@ -179,7 +179,7 @@ module axi_cdc_wrap #(
     .r_chan_t   ( r_chan_t  ),
     .axi_req_t  ( req_t     ),
     .axi_resp_t ( resp_t    ),
-    .LOG_DEPTH  ( LOG_DEPTH )
+    .LogDepth   ( LogDepth )
   ) i_axi_cdc (
     .src_clk_i,
     .src_rst_ni,
@@ -188,7 +188,7 @@ module axi_cdc_wrap #(
     .dst_clk_i,
     .dst_rst_ni,
     .dst_req_o  ( dst_req  ),
-    .dst_resp_i ( dst_resp ),
+    .dst_resp_i ( dst_resp )
   );
 
   endmodule

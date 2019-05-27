@@ -53,6 +53,7 @@ sources:
   - target: test
     files:
       - test/tb_axi_atop_filter.sv
+      - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
