@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `axi_id_remap` now raises an error when it receives any atomic operation, which it currently does
   not support.
+- Add macros for assigning to and from AXI channel structs and an AXI interface.
 
 ### Removed
 - `axi_pkg` previously defined fixed widths for ID, user, address, and data signal and derived
