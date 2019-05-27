@@ -64,6 +64,7 @@ sources:
     files:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_burst_splitter.sv
+      - test/tb_axi_cdc.sv
       - test/tb_axi_dwc_downsize.sv
       - test/tb_axi_dwc_upsize.sv
       - test/tb_axi_id_remap.sv
