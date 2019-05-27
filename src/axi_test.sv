@@ -1087,6 +1087,7 @@ package axi_test;
       this.drv = new(axi);
       this.ar_queue = new;
       this.b_queue = new;
+      this.reset();
     endfunction
 
     function void reset();
