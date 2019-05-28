@@ -599,7 +599,7 @@ package axi_test;
     parameter int   RESP_MIN_WAIT_CYCLES = 0,
     parameter int   RESP_MAX_WAIT_CYCLES = 20,
     // AXI feature usage
-    parameter int   AXI_MAX_BURST_LEN = 0,
+    parameter int   AXI_MAX_BURST_LEN = 0, // maximum number of beats in burst; 0 = AXI max (256)
     parameter bit   AXI_EXCLS = 1'b0,
     parameter bit   AXI_ATOPS = 1'b0,
     parameter logic [3:0] AXI_MEMORY_TYPES [] = { // all legal memory types enabled by default
@@ -626,6 +626,7 @@ package axi_test;
     typedef axi_pkg::cache_t  cache_t;
     typedef logic [DW-1:0]    data_t;
     typedef logic [IW-1:0]    id_t;
+    typedef axi_pkg::len_t    len_t;
     typedef axi_pkg::size_t   size_t;
     typedef logic [UW-1:0]    user_t;
 
@@ -646,6 +647,8 @@ package axi_test;
     logic [N_AXI_IDS-1:0] atop_resp_b,
                           atop_resp_r;
 
+    len_t                 max_len;
+
     semaphore cnt_sem;
 
     ax_beat_t aw_queue[$],
@@ -659,6 +662,11 @@ package axi_test;
         .AXI_USER_WIDTH(UW)
       ) axi
     );
+      if (AXI_MAX_BURST_LEN <= 0 || AXI_MAX_BURST_LEN > 256) begin
+        this.max_len = 255;
+      end else begin
+        this.max_len = AXI_MAX_BURST_LEN - 1;
+      end
       this.drv = new(axi);
       this.cnt_sem = new(1);
       this.reset();
@@ -681,6 +689,7 @@ package axi_test;
       automatic burst_t burst;
       automatic cache_t cache;
       automatic id_t id;
+      automatic len_t len;
       automatic size_t size;
       // Randomly pick FIXED or INCR burst.  WRAP is currently not supported.
       rand_success = std::randomize(burst) with {
@@ -688,7 +697,10 @@ package axi_test;
       }; assert(rand_success);
       ax_beat.ax_burst = burst;
       // Randomize burst length.
-      ax_beat.ax_len = $random();
+      rand_success = std::randomize(len) with {
+        len <= this.max_len;
+      }; assert(rand_success);
+      ax_beat.ax_len = len;
       // Randomize memory type.
       rand_success = std::randomize(cache) with {
         cache inside {AXI_MEMORY_TYPES};
