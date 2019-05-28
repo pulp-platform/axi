@@ -29,8 +29,8 @@ module axi_lite_xbar #(
 )(
   input logic            clk_i               ,
   input logic            rst_ni              ,
-  AXI_LITE.in            master [NUM_MASTER] ,
-  AXI_LITE.out           slave  [NUM_SLAVE]  ,
+  AXI_LITE.Slave         master [NUM_MASTER] ,
+  AXI_LITE.Master        slave  [NUM_SLAVE]  ,
   AXI_ROUTING_RULES.xbar rules
 );
 
@@ -91,8 +91,8 @@ module axi_lite_xbar_simple #(
 )(
   input logic            clk_i               ,
   input logic            rst_ni              ,
-  AXI_LITE.in            master [NUM_MASTER] ,
-  AXI_LITE.out           slave  [NUM_SLAVE]  ,
+  AXI_LITE.Slave         master [NUM_MASTER] ,
+  AXI_LITE.Master        slave  [NUM_SLAVE]  ,
   AXI_ROUTING_RULES.xbar rules               ,
   AXI_ARBITRATION.req    arb_rd              ,
   AXI_ARBITRATION.req    arb_wr

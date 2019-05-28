@@ -14,8 +14,8 @@
 
 /// A connector that joins two AXI-Lite interfaces.
 module axi_lite_join (
-    AXI_LITE.in  in,
-    AXI_LITE.out out
+    AXI_LITE.Slave  in,
+    AXI_LITE.Master out
 );
 
     `ifndef SYNTHESIS

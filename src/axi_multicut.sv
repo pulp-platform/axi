@@ -29,10 +29,10 @@ module axi_multicut #(
   // The number of cuts. Must be >= 0.
   parameter int NUM_CUTS = 0
 )(
-  input logic clk_i  ,
-  input logic rst_ni ,
-  AXI_BUS.in  in     ,
-  AXI_BUS.out out
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_BUS.Slave   in     ,
+  AXI_BUS.Master  out
 );
 
   // Check the invariants.
@@ -80,10 +80,10 @@ module axi_multicut #(
       .ID_WIDTH   ( ID_WIDTH   ),
       .USER_WIDTH ( USER_WIDTH )
     ) i_first (
-      .clk_i  ( clk_i        ),
-      .rst_ni ( rst_ni       ),
-      .in     ( in           ),
-      .out    ( s_cut[0].out )
+      .clk_i  ( clk_i           ),
+      .rst_ni ( rst_ni          ),
+      .in     ( in              ),
+      .out    ( s_cut[0].Master )
     );
 
     for (genvar i = 1; i < NUM_CUTS-1; i++) begin
@@ -93,10 +93,10 @@ module axi_multicut #(
         .ID_WIDTH   ( ID_WIDTH   ),
         .USER_WIDTH ( USER_WIDTH )
       ) i_middle (
-        .clk_i  ( clk_i         ),
-        .rst_ni ( rst_ni        ),
-        .in     ( s_cut[i-1].in ),
-        .out    ( s_cut[i].out  )
+        .clk_i  ( clk_i             ),
+        .rst_ni ( rst_ni            ),
+        .in     ( s_cut[i-1].Slave  ),
+        .out    ( s_cut[i].Master   )
       );
     end
 
@@ -106,10 +106,10 @@ module axi_multicut #(
       .ID_WIDTH   ( ID_WIDTH   ),
       .USER_WIDTH ( USER_WIDTH )
     ) i_last (
-      .clk_i  ( clk_i                ),
-      .rst_ni ( rst_ni               ),
-      .in     ( s_cut[NUM_CUTS-2].in ),
-      .out    ( out                  )
+      .clk_i  ( clk_i                   ),
+      .rst_ni ( rst_ni                  ),
+      .in     ( s_cut[NUM_CUTS-2].Slave ),
+      .out    ( out                     )
     );
   end
 

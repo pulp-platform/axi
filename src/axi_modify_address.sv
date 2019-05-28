@@ -17,8 +17,8 @@ module axi_modify_address #(
   parameter int ADDR_WIDTH_IN  = -1,
   parameter int ADDR_WIDTH_OUT = ADDR_WIDTH_IN
 )(
-  AXI_BUS.in  in,
-  AXI_BUS.out out,
+  AXI_BUS.Slave   in,
+  AXI_BUS.Master  out,
   output logic [ADDR_WIDTH_IN-1:0]  aw_addr_in,
   output logic [ADDR_WIDTH_IN-1:0]  ar_addr_in,
   input  logic [ADDR_WIDTH_OUT-1:0] aw_addr_out,

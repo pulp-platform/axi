@@ -13,8 +13,8 @@
 
 /// An AXI4-Lite to AXI4 adapter.
 module axi_lite_to_axi (
-  AXI_LITE.in in,
-  AXI_BUS.out out
+  AXI_LITE.Slave  in,
+  AXI_BUS.Master  out
 );
 
   `ifndef SYNTHESIS

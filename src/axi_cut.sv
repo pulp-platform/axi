@@ -27,10 +27,10 @@ module axi_cut #(
   // The user data width.
   parameter int USER_WIDTH = -1
 )(
-  input logic clk_i  ,
-  input logic rst_ni ,
-  AXI_BUS.in  in     ,
-  AXI_BUS.out out
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_BUS.Slave   in     ,
+  AXI_BUS.Master  out
 );
 
   localparam STRB_WIDTH = DATA_WIDTH / 8;
@@ -42,6 +42,7 @@ module axi_cut #(
   typedef logic [USER_WIDTH-1:0] user_t;
 
   // Check the invariants.
+  `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
     assert(ADDR_WIDTH >= 0);
@@ -57,6 +58,7 @@ module axi_cut #(
     assert(out.AXI_ID_WIDTH == ID_WIDTH);
     assert(out.AXI_USER_WIDTH == USER_WIDTH);
   end
+  `endif
   `endif
 
   // Create spill registers to buffer each channel.

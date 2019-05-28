@@ -24,11 +24,11 @@ module axi_to_axi_lite #(
   /// Maximum number of outstanding writes.
   parameter int NUM_PENDING_WR = 1
 )(
-  input logic  clk_i,
-  input logic  rst_ni,
-  input logic  testmode_i,
-  AXI_BUS.in   in,
-  AXI_LITE.out out
+  input logic     clk_i,
+  input logic     rst_ni,
+  input logic     testmode_i,
+  AXI_BUS.Slave   in,
+  AXI_LITE.Master out
 );
 
   `ifndef SYNTHESIS
@@ -84,7 +84,7 @@ module axi_to_axi_lite #(
     .push_i  ( in.ar_ready & in.ar_valid              ),
     // After the last response on the R channel we pop the metadata off the
     // queue.
-    .data_o  ( {meta_rd_id, meta_rd_user}                   ),
+    .data_o  ( {meta_rd_id, meta_rd_user}          ),
     .pop_i   ( in.r_valid & in.r_ready & in.r_last )
   );
 
@@ -101,7 +101,7 @@ module axi_to_axi_lite #(
     .data_i  ( {in.aw_id, in.aw_user}    ),
     .push_i  ( in.aw_ready & in.aw_valid ),
     // After the response on the B channel we pop the metadata off the queue.
-    .data_o  ( {meta_wr_id, meta_wr_user}      ),
+    .data_o  ( {meta_wr_id, meta_wr_user}),
     .pop_i   ( in.b_valid & in.b_ready   )
   );
 

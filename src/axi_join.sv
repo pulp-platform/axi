@@ -14,8 +14,8 @@
 
 /// A connector that joins two AXI interfaces.
 module axi_join (
-    AXI_BUS.in  in,
-    AXI_BUS.out out
+    AXI_BUS.Slave  in,
+    AXI_BUS.Master out
 );
 
     `ifndef SYNTHESIS
