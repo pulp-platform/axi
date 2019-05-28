@@ -1,6 +1,9 @@
 package:
   name: axi
-  authors: ["Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"]
+  authors:
+    - "Andreas Kurth <akurth@iis.ee.ethz.ch>" # current maintainer
+    - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
+    - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
