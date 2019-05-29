@@ -602,6 +602,18 @@ package axi_test;
     parameter int   AXI_MAX_BURST_LEN = 0,
     parameter bit   AXI_EXCLS = 1'b0,
     parameter bit   AXI_ATOPS = 1'b0,
+    parameter logic [3:0] AXI_MEMORY_TYPES [] = { // all legal memory types enabled by default
+      '0,
+                                                                                      axi_pkg::CACHE_BUFFERABLE,
+                                                          axi_pkg::CACHE_MODIFIABLE,
+                                                          axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
+                                axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE,
+                                axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
+      axi_pkg::CACHE_WR_ALLOC |                           axi_pkg::CACHE_MODIFIABLE,
+      axi_pkg::CACHE_WR_ALLOC |                           axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
+      axi_pkg::CACHE_WR_ALLOC | axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE,
+      axi_pkg::CACHE_WR_ALLOC | axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE
+    },
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW
@@ -611,6 +623,7 @@ package axi_test;
     ) axi_driver_t;
     typedef logic [AW-1:0]    addr_t;
     typedef axi_pkg::burst_t  burst_t;
+    typedef axi_pkg::cache_t  cache_t;
     typedef logic [DW-1:0]    data_t;
     typedef logic [IW-1:0]    id_t;
     typedef axi_pkg::size_t   size_t;
@@ -666,6 +679,7 @@ package axi_test;
       automatic ax_beat_t ax_beat = new;
       automatic addr_t addr;
       automatic burst_t burst;
+      automatic cache_t cache;
       automatic id_t id;
       automatic size_t size;
       // Randomly pick FIXED or INCR burst.  WRAP is currently not supported.
@@ -675,6 +689,11 @@ package axi_test;
       ax_beat.ax_burst = burst;
       // Randomize burst length.
       ax_beat.ax_len = $random();
+      // Randomize memory type.
+      rand_success = std::randomize(cache) with {
+        cache inside {AXI_MEMORY_TYPES};
+      };
+      ax_beat.ax_cache = cache;
       // Randomize beat size.
       rand_success = std::randomize(size) with {
         2**size <= AXI_STRB_WIDTH;
