@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- `axi_test`: Constrained randomizing AXI master (`rand_axi_master`) and slave (`rand_axi_slave`).
+  - `rand_axi_master` issues a configurable number of read and write transactions to configurable
+    memory regions (address ranges with associated memory types) and with random properties within
+    constraints (e.g., burst length, exclusive accesses, atomic operations).
+  - `rand_axi_slave` responds to transactions with random delays and data.
+- `axi_pkg`: AXI memory types (`mem_type_t`) and functions `get_arcache` and `get_awcache` to
+  calculate `AxCACHE` bits for a given memory type.
+
+### Changed
+- `axi_test`: The `reset` tasks in `axi_driver` and `axi_lite_driver` are now functions.
+
 
 ## 0.8.2 - 2019-12-20
 
