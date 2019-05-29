@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_id_remap` now raises an error when it receives any atomic operation, which it currently does
   not support.
 - Add macros for assigning to and from AXI channel structs and an AXI interface.
+- Add constrained randomizing master and slave test drivers.
+
+### Changed
+- Change `reset` tasks in `axi_driver` and `axi_lite_driver` (both test modules) to functions.
 
 ### Removed
 - `axi_pkg` previously defined fixed widths for ID, user, address, and data signal and derived
