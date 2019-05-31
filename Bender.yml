@@ -7,7 +7,7 @@ package:
 
 dependencies:
   apb: { git: "https://gitub.com/pulp-platform/apb.git", version: 0.1.0 }
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: counter-ext }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1 }
 
 export_include_dirs:
