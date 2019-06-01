@@ -111,8 +111,8 @@ module axi_to_axi_lite #(
   assign in.ar_ready  = ~rd_full & out.ar_ready;
   assign out.aw_addr  = in.aw_addr;
   assign out.ar_addr  = in.ar_addr;
-  assign out.aw_valid = in.aw_valid;
-  assign out.ar_valid = in.ar_valid;
+  assign out.aw_valid = ~wr_full & in.aw_valid;
+  assign out.ar_valid = ~rd_full & in.ar_valid;
 
   assign out.w_data  = in.w_data;
   assign out.w_strb  = in.w_strb;
