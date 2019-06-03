@@ -17,190 +17,176 @@
 import axi_pkg::*;
 
 module axi_data_downsize #(
-  parameter int unsigned ADDR_WIDTH = 64,
-  parameter int unsigned SI_DATA_WIDTH = 64,
-  parameter int unsigned MI_DATA_WIDTH = 64,
-  parameter int unsigned ID_WIDTH = 4,
-  parameter int unsigned USER_WIDTH = 1,
-  parameter int unsigned NR_OUTSTANDING = 1,
+  parameter int  ADDR_WIDTH     = 64             ,
+  parameter int  SI_DATA_WIDTH  = 64             ,
+  parameter int  MI_DATA_WIDTH  = 64             ,
+  parameter int  ID_WIDTH       = 4              ,
+  parameter int  USER_WIDTH     = 1              ,
+  parameter int  NR_OUTSTANDING = 1              ,
   // Dependent parameters, do not change!
-  parameter type addr_t = logic[ADDR_WIDTH-1:0],
-  parameter type si_data_t = logic[SI_DATA_WIDTH-1:0],
-  parameter type si_strb_t = logic[SI_DATA_WIDTH/8-1:0],
-  parameter type mi_data_t = logic[MI_DATA_WIDTH-1:0],
-  parameter type mi_strb_t = logic[MI_DATA_WIDTH/8-1:0],
-  parameter type id_t = logic[ID_WIDTH-1:0],
-  parameter type user_t = logic[USER_WIDTH-1:0]
+  parameter      MI_BYTES       = MI_DATA_WIDTH/8,
+  parameter      MI_BYTE_MASK   = MI_BYTES - 1   ,
+  parameter      SI_BYTES       = SI_DATA_WIDTH/8,
+  parameter      SI_BYTE_MASK   = SI_BYTES - 1   ,
+  parameter type addr_t         = logic            [   ADDR_WIDTH-1:0],
+  parameter type si_data_t      = logic            [SI_DATA_WIDTH-1:0],
+  parameter type si_strb_t      = logic            [     SI_BYTES-1:0],
+  parameter type mi_data_t      = logic            [MI_DATA_WIDTH-1:0],
+  parameter type mi_strb_t      = logic            [     MI_BYTES-1:0],
+  parameter type id_t           = logic            [     ID_WIDTH-1:0],
+  parameter type user_t         = logic            [   USER_WIDTH-1:0]
 ) (
-  input  logic      clk_i,
-  input  logic      rst_ni,
-
+  input  logic     clk_i        ,
+  input  logic     rst_ni       ,
   // SLAVE INTERFACE
-
-  input  id_t       slv_aw_id,
-  input  addr_t     slv_aw_addr,
-  input  len_t      slv_aw_len,
-  input  size_t     slv_aw_size,
-  input  burst_t    slv_aw_burst,
-  input  logic      slv_aw_lock,
-  input  cache_t    slv_aw_cache,
-  input  prot_t     slv_aw_prot,
-  input  qos_t      slv_aw_qos,
-  input  region_t   slv_aw_region,
-  input  atop_t     slv_aw_atop,
-  input  user_t     slv_aw_user,
-  input  logic      slv_aw_valid,
-  output logic      slv_aw_ready,
-
-  input  si_data_t  slv_w_data,
-  input  si_strb_t  slv_w_strb,
-  input  logic      slv_w_last,
-  input  user_t     slv_w_user,
-  input  logic      slv_w_valid,
-  output logic      slv_w_ready,
-
-  output id_t       slv_b_id,
-  output resp_t     slv_b_resp,
-  output user_t     slv_b_user,
-  output logic      slv_b_valid,
-  input  logic      slv_b_ready,
-
-  input  id_t       slv_ar_id,
-  input  addr_t     slv_ar_addr,
-  input  len_t      slv_ar_len,
-  input  size_t     slv_ar_size,
-  input  burst_t    slv_ar_burst,
-  input  logic      slv_ar_lock,
-  input  cache_t    slv_ar_cache,
-  input  prot_t     slv_ar_prot,
-  input  qos_t      slv_ar_qos,
-  input  region_t   slv_ar_region,
-  input  user_t     slv_ar_user,
-  input  logic      slv_ar_valid,
-  output logic      slv_ar_ready,
-
-  output id_t       slv_r_id,
-  output si_data_t  slv_r_data,
-  output resp_t     slv_r_resp,
-  output logic      slv_r_last,
-  output user_t     slv_r_user,
-  output logic      slv_r_valid,
-  input  logic      slv_r_ready,
-
+  input  id_t      slv_aw_id    ,
+  input  addr_t    slv_aw_addr  ,
+  input  len_t     slv_aw_len   ,
+  input  size_t    slv_aw_size  ,
+  input  burst_t   slv_aw_burst ,
+  input  logic     slv_aw_lock  ,
+  input  cache_t   slv_aw_cache ,
+  input  prot_t    slv_aw_prot  ,
+  input  qos_t     slv_aw_qos   ,
+  input  region_t  slv_aw_region,
+  input  atop_t    slv_aw_atop  ,
+  input  user_t    slv_aw_user  ,
+  input  logic     slv_aw_valid ,
+  output logic     slv_aw_ready ,
+  input  si_data_t slv_w_data   ,
+  input  si_strb_t slv_w_strb   ,
+  input  logic     slv_w_last   ,
+  input  user_t    slv_w_user   ,
+  input  logic     slv_w_valid  ,
+  output logic     slv_w_ready  ,
+  output id_t      slv_b_id     ,
+  output resp_t    slv_b_resp   ,
+  output user_t    slv_b_user   ,
+  output logic     slv_b_valid  ,
+  input  logic     slv_b_ready  ,
+  input  id_t      slv_ar_id    ,
+  input  addr_t    slv_ar_addr  ,
+  input  len_t     slv_ar_len   ,
+  input  size_t    slv_ar_size  ,
+  input  burst_t   slv_ar_burst ,
+  input  logic     slv_ar_lock  ,
+  input  cache_t   slv_ar_cache ,
+  input  prot_t    slv_ar_prot  ,
+  input  qos_t     slv_ar_qos   ,
+  input  region_t  slv_ar_region,
+  input  user_t    slv_ar_user  ,
+  input  logic     slv_ar_valid ,
+  output logic     slv_ar_ready ,
+  output id_t      slv_r_id     ,
+  output si_data_t slv_r_data   ,
+  output resp_t    slv_r_resp   ,
+  output logic     slv_r_last   ,
+  output user_t    slv_r_user   ,
+  output logic     slv_r_valid  ,
+  input  logic     slv_r_ready  ,
   // MASTER INTERFACE
-
-  output id_t       mst_aw_id,
-  output addr_t     mst_aw_addr,
-  output len_t      mst_aw_len,
-  output size_t     mst_aw_size,
-  output burst_t    mst_aw_burst,
-  output logic      mst_aw_lock,
-  output cache_t    mst_aw_cache,
-  output prot_t     mst_aw_prot,
-  output qos_t      mst_aw_qos,
-  output region_t   mst_aw_region,
-  output atop_t     mst_aw_atop,
-  output user_t     mst_aw_user,
-  output logic      mst_aw_valid,
-  input  logic      mst_aw_ready,
-
-  output mi_data_t  mst_w_data,
-  output mi_strb_t  mst_w_strb,
-  output logic      mst_w_last,
-  output user_t     mst_w_user,
-  output logic      mst_w_valid,
-  input  logic      mst_w_ready,
-
-  input  id_t       mst_b_id,
-  input  resp_t     mst_b_resp,
-  input  user_t     mst_b_user,
-  input  logic      mst_b_valid,
-  output logic      mst_b_ready,
-
-  output id_t       mst_ar_id,
-  output addr_t     mst_ar_addr,
-  output len_t      mst_ar_len,
-  output size_t     mst_ar_size,
-  output burst_t    mst_ar_burst,
-  output logic      mst_ar_lock,
-  output cache_t    mst_ar_cache,
-  output prot_t     mst_ar_prot,
-  output qos_t      mst_ar_qos,
-  output region_t   mst_ar_region,
-  output user_t     mst_ar_user,
-  output logic      mst_ar_valid,
-  input  logic      mst_ar_ready,
-
-  input  id_t       mst_r_id,
-  input  mi_data_t  mst_r_data,
-  input  resp_t     mst_r_resp,
-  input  logic      mst_r_last,
-  input  user_t     mst_r_user,
-  input  logic      mst_r_valid,
-  output logic      mst_r_ready
+  output id_t      mst_aw_id    ,
+  output addr_t    mst_aw_addr  ,
+  output len_t     mst_aw_len   ,
+  output size_t    mst_aw_size  ,
+  output burst_t   mst_aw_burst ,
+  output logic     mst_aw_lock  ,
+  output cache_t   mst_aw_cache ,
+  output prot_t    mst_aw_prot  ,
+  output qos_t     mst_aw_qos   ,
+  output region_t  mst_aw_region,
+  output atop_t    mst_aw_atop  ,
+  output user_t    mst_aw_user  ,
+  output logic     mst_aw_valid ,
+  input  logic     mst_aw_ready ,
+  output mi_data_t mst_w_data   ,
+  output mi_strb_t mst_w_strb   ,
+  output logic     mst_w_last   ,
+  output user_t    mst_w_user   ,
+  output logic     mst_w_valid  ,
+  input  logic     mst_w_ready  ,
+  input  id_t      mst_b_id     ,
+  input  resp_t    mst_b_resp   ,
+  input  user_t    mst_b_user   ,
+  input  logic     mst_b_valid  ,
+  output logic     mst_b_ready  ,
+  output id_t      mst_ar_id    ,
+  output addr_t    mst_ar_addr  ,
+  output len_t     mst_ar_len   ,
+  output size_t    mst_ar_size  ,
+  output burst_t   mst_ar_burst ,
+  output logic     mst_ar_lock  ,
+  output cache_t   mst_ar_cache ,
+  output prot_t    mst_ar_prot  ,
+  output qos_t     mst_ar_qos   ,
+  output region_t  mst_ar_region,
+  output user_t    mst_ar_user  ,
+  output logic     mst_ar_valid ,
+  input  logic     mst_ar_ready ,
+  input  id_t      mst_r_id     ,
+  input  mi_data_t mst_r_data   ,
+  input  resp_t    mst_r_resp   ,
+  input  logic     mst_r_last   ,
+  input  user_t    mst_r_user   ,
+  input  logic     mst_r_valid  ,
+  output logic     mst_r_ready
 );
 
   // --------------
   // DEFINITIONS
   // --------------
 
-  localparam addr_t MI_BYTES = MI_DATA_WIDTH/8;
-  localparam addr_t MI_BYTE_MASK = MI_BYTES - 1;
-
-  localparam addr_t SI_BYTES = SI_DATA_WIDTH/8;
-  localparam addr_t SI_BYTE_MASK = SI_BYTES - 1;
-
   // Type for indexing which FSM handles each outstanding transaction
   typedef logic [$clog2(NR_OUTSTANDING)-1:0] tr_id_t;
 
   typedef struct packed {
-    id_t        id;
-    addr_t      addr;
-    len_t       len;
-    size_t      size;
-    burst_t     burst;
-    logic       lock;
-    cache_t     cache;
-    prot_t      prot;
-    qos_t       qos;
-    region_t    region;
-    atop_t      atop;   // Only defined on the AW channel.
-    user_t      user;
-    logic       valid;
+    id_t     id    ;
+    addr_t   addr  ;
+    len_t    len   ;
+    size_t   size  ;
+    burst_t  burst ;
+    logic    lock  ;
+    cache_t  cache ;
+    prot_t   prot  ;
+    qos_t    qos   ;
+    region_t region;
+    atop_t   atop  ; // Only defined on the AW channel.
+    user_t   user  ;
+    logic    valid ;
   } channel_ax_t;
 
   typedef struct packed {
-    mi_data_t   data;
-    mi_strb_t   strb;
-    logic       last;
-    user_t      user;
-    logic       valid;
+    mi_data_t data ;
+    mi_strb_t strb ;
+    logic     last ;
+    user_t    user ;
+    logic     valid;
   } mi_channel_w_t;
 
   typedef struct packed {
-    si_data_t   data;
-    si_strb_t   strb;
-    logic       last;
-    user_t      user;
-    logic       valid;
+    si_data_t data ;
+    si_strb_t strb ;
+    logic     last ;
+    user_t    user ;
+    logic     valid;
   } si_channel_w_t;
 
   typedef struct packed {
-    id_t        id;
-    mi_data_t   data;
-    resp_t      resp;
-    logic       last;
-    user_t      user;
-    logic       valid;
+    id_t      id   ;
+    mi_data_t data ;
+    resp_t    resp ;
+    logic     last ;
+    user_t    user ;
+    logic     valid;
   } mi_channel_r_t;
 
   typedef struct packed {
-    id_t        id;
-    si_data_t   data;
-    resp_t      resp;
-    logic       last;
-    user_t      user;
-    logic       valid;
+    id_t      id   ;
+    si_data_t data ;
+    resp_t    resp ;
+    logic     last ;
+    user_t    user ;
+    logic     valid;
   } si_channel_r_t;
 
   function automatic addr_t align_addr(addr_t unaligned_addr, size_t size);
@@ -214,52 +200,52 @@ module axi_data_downsize #(
   // MULTIPLEXER
   // --------------
 
-  si_channel_r_t [NR_OUTSTANDING-1:0]      int_slv_r;
-  logic [NR_OUTSTANDING-1:0]               int_slv_r_ready;
-  logic [NR_OUTSTANDING-1:0]               int_slv_r_req;
-  logic                                    int_slv_r_en_d, int_slv_r_en_q;
-  tr_id_t                                  int_slv_r_idx;
+  si_channel_r_t [NR_OUTSTANDING-1:0] int_slv_r      ;
+  logic          [NR_OUTSTANDING-1:0] int_slv_r_ready;
+  logic          [NR_OUTSTANDING-1:0] int_slv_r_req  ;
+  logic                               int_slv_r_en_d, int_slv_r_en_q;
+  tr_id_t                             int_slv_r_idx  ;
 
   generate
     if (NR_OUTSTANDING >= 2) begin
       rrarbiter #(
-        .NUM_REQ ( NR_OUTSTANDING ),
-        .LOCK_IN ( 1'b1           )
+        .NUM_REQ(NR_OUTSTANDING),
+        .LOCK_IN(1'b1          )
       ) i_rrarbiter_r_slv (
-        .clk_i,
-        .rst_ni,
-        .flush_i ( 1'b0           ),
-        .en_i    ( int_slv_r_en_q ),
-        .req_i   ( int_slv_r_req  ),
-        .ack_o   ( /* unused   */ ),
-        .vld_o   ( /* unused   */ ),
-        .idx_o   ( int_slv_r_idx  )
+        .clk_i                  ,
+        .rst_ni                 ,
+        .flush_i(1'b0          ),
+        .en_i   (int_slv_r_en_q),
+        .req_i  (int_slv_r_req ),
+        .ack_o  (/* unused   */),
+        .vld_o  (/* unused   */),
+        .idx_o  (int_slv_r_idx )
       );
     end else begin // if (NR_OUTSTANDING >= 2)
       assign int_slv_r_idx = 1'b0;
     end // else: !if(NR_OUTSTANDING >= 2)
   endgenerate
 
-  channel_ax_t [NR_OUTSTANDING-1:0]        int_mst_ar;
-  logic [NR_OUTSTANDING-1:0]               int_mst_ar_ready;
-  logic [NR_OUTSTANDING-1:0]               int_mst_ar_req;
-  logic                                    int_mst_ar_en_d, int_mst_ar_en_q;
-  tr_id_t                                  int_mst_ar_idx;
+  channel_ax_t [NR_OUTSTANDING-1:0] int_mst_ar      ;
+  logic        [NR_OUTSTANDING-1:0] int_mst_ar_ready;
+  logic        [NR_OUTSTANDING-1:0] int_mst_ar_req  ;
+  logic                             int_mst_ar_en_d, int_mst_ar_en_q;
+  tr_id_t                           int_mst_ar_idx  ;
 
   generate
     if (NR_OUTSTANDING >= 2) begin
       rrarbiter #(
-        .NUM_REQ ( NR_OUTSTANDING ),
-        .LOCK_IN ( 1'b1           )
+        .NUM_REQ(NR_OUTSTANDING),
+        .LOCK_IN(1'b1          )
       ) i_rrarbiter_ar_mst (
-        .clk_i,
-        .rst_ni,
-        .flush_i ( 1'b0            ),
-        .en_i    ( int_mst_ar_en_q ),
-        .req_i   ( int_mst_ar_req  ),
-        .ack_o   ( /* unused    */ ),
-        .vld_o   ( /* unused    */ ),
-        .idx_o   ( int_mst_ar_idx  )
+        .clk_i                   ,
+        .rst_ni                  ,
+        .flush_i(1'b0           ),
+        .en_i   (int_mst_ar_en_q),
+        .req_i  (int_mst_ar_req ),
+        .ack_o  (/* unused    */),
+        .vld_o  (/* unused    */),
+        .idx_o  (int_mst_ar_idx )
       );
     end else begin // if (NR_OUTSTANDING >= 2)
       assign int_mst_ar_idx = 1'b0;
@@ -323,75 +309,70 @@ module axi_data_downsize #(
   // --------------
 
   // There is an identical FSM for each possible outstanding transaction
-  enum logic [1:0] { R_IDLE,
-                     R_PASSTHROUGH,
-                     R_INCR_DOWNSIZE,
-                     R_SPLIT_INCR_DOWNSIZE } [NR_OUTSTANDING-1:0] r_state_d, r_state_q;
+  enum logic [1:0] { R_IDLE, R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE } [NR_OUTSTANDING-1:0] r_state_d, r_state_q;
 
   // Decides which FSM is idle
 
   logic [NR_OUTSTANDING-1:0] idle_read_fsm;
-  tr_id_t                    idx_read_fsm;
+  tr_id_t                    idx_read_fsm ;
   logic                      full_read_fsm;
 
   for (genvar tr = 0; tr < NR_OUTSTANDING; tr++)
     assign idle_read_fsm[tr] = (r_state_q[tr] == R_IDLE);
 
-  lzc #(
-    .WIDTH ( NR_OUTSTANDING )
-  ) i_read_lzc (
-    .in_i    ( idle_read_fsm ),
-    .cnt_o   ( idx_read_fsm  ),
-    .empty_o ( full_read_fsm )
+  lzc #(.WIDTH(NR_OUTSTANDING)) i_read_lzc (
+    .in_i   (idle_read_fsm),
+    .cnt_o  (idx_read_fsm ),
+    .empty_o(full_read_fsm)
   );
 
   // This ID queue is used to resolve with FSM is handling
   // each outstanding read transaction
 
-  logic                      idqueue_push;
-  logic                      idqueue_pop;
-  tr_id_t                    idqueue_id;
-  logic                      idqueue_valid;
+  logic   idqueue_push ;
+  logic   idqueue_pop  ;
+  tr_id_t idqueue_id   ;
+  logic   idqueue_valid;
 
   generate
     if (NR_OUTSTANDING >= 2) begin
       id_queue #(
-        .ID_WIDTH ( ID_WIDTH       ),
-        .CAPACITY ( NR_OUTSTANDING ),
-        .data_t   ( tr_id_t        )
+        .ID_WIDTH(ID_WIDTH      ),
+        .CAPACITY(NR_OUTSTANDING),
+        .data_t  (tr_id_t       )
       ) i_read_id_queue (
-        .clk_i,
-        .rst_ni,
+        .clk_i                          ,
+        .rst_ni                         ,
 
-        .inp_id_i         ( slv_ar_id     ),
-        .inp_data_i       ( idx_read_fsm  ),
-        .inp_req_i        ( idqueue_push  ),
-        .inp_gnt_o        ( /* unused  */ ),
+        .inp_id_i        (slv_ar_id    ),
+        .inp_data_i      (idx_read_fsm ),
+        .inp_req_i       (idqueue_push ),
+        .inp_gnt_o       (/* unused  */),
 
-        .oup_id_i         ( mst_r_id      ),
-        .oup_pop_i        ( idqueue_pop   ),
-        .oup_req_i        ( 1'b1          ),
-        .oup_data_o       ( idqueue_id    ),
-        .oup_data_valid_o ( idqueue_valid ),
-        .oup_gnt_o        ( /* unused  */ ),
+        .oup_id_i        (mst_r_id     ),
+        .oup_pop_i       (idqueue_pop  ),
+        .oup_req_i       (1'b1         ),
+        .oup_data_o      (idqueue_id   ),
+        .oup_data_valid_o(idqueue_valid),
+        .oup_gnt_o       (/* unused  */),
 
         // Unused
-        .exists_data_i    ( '0            ),
-        .exists_mask_i    ( '0            ),
-        .exists_req_i     ( '0            ),
-        .exists_o         ( /* unused  */ ),
-        .exists_gnt_o     ( /* unused  */ ));
-      end else begin // if (NR_OUTSTANDING >= 2)
-        assign idqueue_id = 0;
-        assign idqueue_valid = mst_r_valid;
-      end // else: !if(NR_OUTSTANDING >= 2)
+        .exists_data_i   ('0           ),
+        .exists_mask_i   ('0           ),
+        .exists_req_i    ('0           ),
+        .exists_o        (/* unused  */),
+        .exists_gnt_o    (/* unused  */)
+      );
+    end else begin // if (NR_OUTSTANDING >= 2)
+      assign idqueue_id    = 0;
+      assign idqueue_valid = mst_r_valid;
+    end // else: !if(NR_OUTSTANDING >= 2)
   endgenerate
 
   struct packed {
-    channel_ax_t   ar;
-    si_channel_r_t r;
-
-    full_len_t     len;
+    channel_ax_t   ar  ;
+    si_channel_r_t r   ;
+    full_len_t     len ;
     size_t         size;
   } [NR_OUTSTANDING-1:0] r_req_d, r_req_q;
 
@@ -515,8 +496,8 @@ module axi_data_downsize #(
                   // Lane steering
                   for (int b = 0; b < SI_BYTES; b++)
                     if ((b >= si_offset) &&
-                        (b - si_offset < (1 << r_req_q[tr].size)) &&
-                        (b + mi_offset - si_offset < MI_BYTES)) begin
+                      (b - si_offset < (1 << r_req_q[tr].size)) &&
+                      (b + mi_offset - si_offset < MI_BYTES)) begin
                       r_req_d[tr].r.data[8 * b +: 8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
                     end
 
@@ -563,16 +544,12 @@ module axi_data_downsize #(
   // WRITE
   // --------------
 
-  enum logic [1:0] { W_IDLE,
-                     W_PASSTHROUGH,
-                     W_INCR_DOWNSIZE,
-                     W_SPLIT_INCR_DOWNSIZE } w_state_d, w_state_q;
+  enum logic [1:0] { W_IDLE, W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE } w_state_d, w_state_q;
 
   struct packed {
-    channel_ax_t    aw;
-
-    full_len_t      len;
-    size_t          size;
+    channel_ax_t aw  ;
+    full_len_t   len ;
+    size_t       size;
   } w_req_d, w_req_q;
 
   always_comb begin
@@ -632,41 +609,41 @@ module axi_data_downsize #(
             // Serialization
             for (int b = 0; b < SI_BYTES; b++)
               if ((b >= si_offset) &&
-                  (b - si_offset < (1 << w_req_q.aw.size)) &&
-                  (b + mi_offset - si_offset < MI_BYTES)) begin
+                (b - si_offset < (1 << w_req_q.aw.size)) &&
+                (b + mi_offset - si_offset < MI_BYTES)) begin
                 mst_w_data[8 * (b + mi_offset - si_offset) +: 8] = slv_w_data[8 * b +: 8];
                 mst_w_strb[b + mi_offset - si_offset]            = slv_w_strb[b];
               end
           end // if (slv_w_valid)
 
-          // Acknowledgement
-          if (mst_w_ready && mst_w_valid) begin
-            automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
+        // Acknowledgement
+        if (mst_w_ready && mst_w_valid) begin
+          automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
 
-            w_req_d.len                = w_req_q.len - 1;
-            w_req_d.aw.len             = w_req_q.aw.len - 1;
-            w_req_d.aw.addr            = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+          w_req_d.len                = w_req_q.len - 1;
+          w_req_d.aw.len             = w_req_q.aw.len - 1;
+          w_req_d.aw.addr            = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
 
-            case (w_state_q)
-              W_PASSTHROUGH:
+          case (w_state_q)
+            W_PASSTHROUGH:
+              slv_w_ready = 1'b1;
+
+            W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
+              if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr, w_req_q.size) != align_addr(w_req_q.aw.addr, w_req_q.size)))
                 slv_w_ready = 1'b1;
+          endcase // case (w_state_q)
 
-              W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
-                if (w_req_q.len == 0 || (align_addr(w_req_d.aw.addr, w_req_q.size) != align_addr(w_req_q.aw.addr, w_req_q.size)))
-                  slv_w_ready = 1'b1;
-            endcase // case (w_state_q)
+          // Trigger another burst request, if needed
+          if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
+            // Finished current burst, but whole transaction hasn't finished
+            if (w_req_q.aw.len == '0 && w_req_q.len != '0) begin
+              w_req_d.aw.valid  = 1'b1;
+              w_req_d.aw.len    = (w_req_d.len <= 255) ? w_req_d.len : 255;
+            end
 
-            // Trigger another burst request, if needed
-            if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
-              // Finished current burst, but whole transaction hasn't finished
-              if (w_req_q.aw.len == '0 && w_req_q.len != '0) begin
-                w_req_d.aw.valid  = 1'b1;
-                w_req_d.aw.len    = (w_req_d.len <= 255) ? w_req_d.len : 255;
-              end
-
-            if (w_req_q.len == 0)
-              w_state_d = W_IDLE;
-          end // if (mst_w_ready && mst_w_valid)
+          if (w_req_q.len == 0)
+            w_state_d = W_IDLE;
+        end // if (mst_w_ready && mst_w_valid)
       end
     endcase // case (w_state_q)
 
@@ -756,15 +733,15 @@ module axi_data_downsize #(
 
   // Validate parameters.
   // pragma translate_off
-`ifndef VERILATOR
-  initial begin: validate_params
-    assert(SI_DATA_WIDTH > MI_DATA_WIDTH)
-      else $fatal("Data downsizer not being used for downsizing.");
+  `ifndef VERILATOR
+    initial begin: validate_params
+      assert(SI_DATA_WIDTH > MI_DATA_WIDTH)
+        else $fatal("Data downsizer not being used for downsizing.");
 
-    assert (2**ID_WIDTH >= NR_OUTSTANDING)
-      else $fatal("The outstanding transactions could not be indexed with the given ID bits!");
-  end
-`endif
+      assert (2**ID_WIDTH >= NR_OUTSTANDING)
+        else $fatal("The outstanding transactions could not be indexed with the given ID bits!");
+    end
+  `endif
   // pragma translate_on
 
 endmodule // axi_data_downsize
