@@ -198,110 +198,78 @@ module axi_data_upsize #(
   // --------------
 
   si_channel_r_t [NR_OUTSTANDING-1:0] int_slv_r      ;
+  logic          [NR_OUTSTANDING-1:0] int_slv_r_valid;
   logic          [NR_OUTSTANDING-1:0] int_slv_r_ready;
-  logic          [NR_OUTSTANDING-1:0] int_slv_r_req  ;
-  logic                               int_slv_r_en_d ;
-  logic                               int_slv_r_en_q ;
-  tr_id_t                             int_slv_r_idx  ;
+  si_channel_r_t                      arb_slv_r      ;
 
-  generate
-    if (NR_OUTSTANDING >= 2) begin
-      rrarbiter #(
-        .NUM_REQ(NR_OUTSTANDING),
-        .LOCK_IN(1'b1          )
-      ) i_rrarbiter_r_slv (
-        .clk_i                  ,
-        .rst_ni                 ,
-        .flush_i(1'b0          ),
-        .en_i   (int_slv_r_en_q),
-        .req_i  (int_slv_r_req ),
-        .ack_o  (/* unused   */),
-        .vld_o  (/* unused   */),
-        .idx_o  (int_slv_r_idx )
-      );
-    end else begin // if (NR_OUTSTANDING >= 2)
-      assign int_slv_r_idx = 1'b0;
-    end // else: !if(NR_OUTSTANDING >= 2)
-  endgenerate
+  rr_arb_tree #(
+    .NumIn    (NR_OUTSTANDING),
+    .DataType (si_channel_r_t),
+    .AxiVldRdy(1'b1          )
+  ) i_arbiter_slv_r (
+    .clk_i                   ,
+    .rst_ni                  ,
+    .flush_i(1'b0           ),
+    .rr_i   (/* unused */   ),
+    .req_i  (int_slv_r_valid),
+    .gnt_o  (int_slv_r_ready),
+    .data_i (int_slv_r      ),
+    .gnt_i  (slv_r_ready    ),
+    .req_o  (slv_r_valid    ),
+    .data_o (arb_slv_r      ),
+    .idx_o  (/* unused */   )
+  );
 
   channel_ax_t [NR_OUTSTANDING-1:0] int_mst_ar      ;
+  logic        [NR_OUTSTANDING-1:0] int_mst_ar_valid;
   logic        [NR_OUTSTANDING-1:0] int_mst_ar_ready;
-  logic        [NR_OUTSTANDING-1:0] int_mst_ar_req  ;
-  logic                             int_mst_ar_en_d ;
-  logic                             int_mst_ar_en_q ;
-  tr_id_t                           int_mst_ar_idx  ;
+  channel_ax_t                      arb_mst_ar      ;
 
-  generate
-    if (NR_OUTSTANDING >= 2) begin
-      rrarbiter #(
-        .NUM_REQ(NR_OUTSTANDING),
-        .LOCK_IN(1'b1          )
-      ) i_rrarbiter_ar_mst (
-        .clk_i                   ,
-        .rst_ni                  ,
-        .flush_i(1'b0           ),
-        .en_i   (int_mst_ar_en_q),
-        .req_i  (int_mst_ar_req ),
-        .ack_o  (/* unused    */),
-        .vld_o  (/* unused    */),
-        .idx_o  (int_mst_ar_idx )
-      );
-    end else begin // if (NR_OUTSTANDING >= 2)
-      assign int_mst_ar_idx = 1'b0;
-    end // else: !if(NR_OUTSTANDING >= 2)
-  endgenerate
+  rr_arb_tree #(
+    .NumIn    (NR_OUTSTANDING),
+    .DataType (channel_ax_t  ),
+    .AxiVldRdy(1'b1          ),
+    .LockIn   (1'b1          )
+  ) i_arbiter_mst_ar (
+    .clk_i                    ,
+    .rst_ni                   ,
+    .flush_i(1'b0            ),
+    .rr_i   (/* unused */    ),
+    .req_i  (int_mst_ar_valid),
+    .gnt_o  (int_mst_ar_ready),
+    .data_i (int_mst_ar      ),
+    .gnt_i  (mst_ar_ready    ),
+    .req_o  (mst_ar_valid    ),
+    .data_o (arb_mst_ar      ),
+    .idx_o  (/* unused */    )
+  );
 
-  /* This multiplexes the requests from all the FSMs handling different
-   * outstanding transactions into a single channel */
-
-  always_comb begin: mux
-    // Default values
-    int_slv_r_ready  = '0;
-    int_mst_ar_ready = '0;
-
+  always_comb begin
     // OUTPUT SIGNALS
-    mst_ar_id                        = int_mst_ar[int_mst_ar_idx].id;
-    mst_ar_addr                      = int_mst_ar[int_mst_ar_idx].addr;
-    mst_ar_len                       = int_mst_ar[int_mst_ar_idx].len;
-    mst_ar_size                      = int_mst_ar[int_mst_ar_idx].size;
-    mst_ar_burst                     = int_mst_ar[int_mst_ar_idx].burst;
-    mst_ar_lock                      = int_mst_ar[int_mst_ar_idx].lock;
-    mst_ar_cache                     = int_mst_ar[int_mst_ar_idx].cache;
-    mst_ar_prot                      = int_mst_ar[int_mst_ar_idx].prot;
-    mst_ar_qos                       = int_mst_ar[int_mst_ar_idx].qos;
-    mst_ar_region                    = int_mst_ar[int_mst_ar_idx].region;
-    mst_ar_user                      = int_mst_ar[int_mst_ar_idx].user;
-    mst_ar_valid                     = int_mst_ar[int_mst_ar_idx].valid;
-    int_mst_ar_ready[int_mst_ar_idx] = mst_ar_ready;
+    mst_ar_id     = arb_mst_ar.id;
+    mst_ar_addr   = arb_mst_ar.addr;
+    mst_ar_len    = arb_mst_ar.len;
+    mst_ar_size   = arb_mst_ar.size;
+    mst_ar_burst  = arb_mst_ar.burst;
+    mst_ar_lock   = arb_mst_ar.lock;
+    mst_ar_cache  = arb_mst_ar.cache;
+    mst_ar_prot   = arb_mst_ar.prot;
+    mst_ar_qos    = arb_mst_ar.qos;
+    mst_ar_region = arb_mst_ar.region;
+    mst_ar_user   = arb_mst_ar.user;
 
-    slv_r_id                       = int_slv_r[int_slv_r_idx].id;
-    slv_r_data                     = int_slv_r[int_slv_r_idx].data;
-    slv_r_resp                     = int_slv_r[int_slv_r_idx].resp;
-    slv_r_last                     = int_slv_r[int_slv_r_idx].last;
-    slv_r_user                     = int_slv_r[int_slv_r_idx].user;
-    slv_r_valid                    = int_slv_r[int_slv_r_idx].valid;
-    int_slv_r_ready[int_slv_r_idx] = slv_r_ready;
+    slv_r_id      = arb_slv_r.id;
+    slv_r_data    = arb_slv_r.data;
+    slv_r_resp    = arb_slv_r.resp;
+    slv_r_last    = arb_slv_r.last;
+    slv_r_user    = arb_slv_r.user;
 
     // REQUEST SIGNALS
     for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
-      int_slv_r_req[tr]  = int_slv_r[tr].valid;
-      int_mst_ar_req[tr] = int_mst_ar[tr].valid;
+      int_slv_r_valid[tr]  = int_slv_r[tr].valid;
+      int_mst_ar_valid[tr] = int_mst_ar[tr].valid;
     end
-
-    // Disable arbitration if request wasn't acknowledged
-    int_slv_r_en_d  = !(slv_r_valid && !slv_r_ready);
-    int_mst_ar_en_d = !(mst_ar_valid && !mst_ar_ready);
   end // block: mux
-
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (~rst_ni) begin
-      int_slv_r_en_q  <= 1'b0;
-      int_mst_ar_en_q <= 1'b0;
-    end else begin
-      int_slv_r_en_q  <= int_slv_r_en_d;
-      int_mst_ar_en_q <= int_mst_ar_en_d;
-    end
-  end
 
   // --------------
   // READ
@@ -329,45 +297,38 @@ module axi_data_upsize #(
   // This ID queue is used to resolve with FSM is handling
   // each outstanding read transaction
 
-  logic   idqueue_push ;
-  logic   idqueue_pop  ;
-  tr_id_t idqueue_id   ;
-  logic   idqueue_valid;
+  logic [NR_OUTSTANDING-1:0] idqueue_push ;
+  logic [NR_OUTSTANDING-1:0] idqueue_pop  ;
+  tr_id_t                    idqueue_id   ;
+  logic                      idqueue_valid;
 
-  generate
-    if (NR_OUTSTANDING >= 2) begin
-      id_queue #(
-        .ID_WIDTH(ID_WIDTH      ),
-        .CAPACITY(NR_OUTSTANDING),
-        .data_t  (tr_id_t       )
-      ) i_read_id_queue (
-        .clk_i                          ,
-        .rst_ni                         ,
+  id_queue #(
+    .ID_WIDTH(ID_WIDTH      ),
+    .CAPACITY(NR_OUTSTANDING),
+    .data_t  (tr_id_t       )
+  ) i_read_id_queue (
+    .clk_i                          ,
+    .rst_ni                         ,
 
-        .inp_id_i        (slv_ar_id    ),
-        .inp_data_i      (idx_read_fsm ),
-        .inp_req_i       (idqueue_push ),
-        .inp_gnt_o       (/* unused  */),
+    .inp_id_i        (slv_ar_id    ),
+    .inp_data_i      (idx_read_fsm ),
+    .inp_req_i       (|idqueue_push),
+    .inp_gnt_o       (/* unused  */),
 
-        .oup_id_i        (mst_r_id     ),
-        .oup_pop_i       (idqueue_pop  ),
-        .oup_req_i       (1'b1         ),
-        .oup_data_o      (idqueue_id   ),
-        .oup_data_valid_o(idqueue_valid),
-        .oup_gnt_o       (/* unused  */),
+    .oup_id_i        (mst_r_id     ),
+    .oup_pop_i       (|idqueue_pop ),
+    .oup_req_i       (1'b1         ),
+    .oup_data_o      (idqueue_id   ),
+    .oup_data_valid_o(idqueue_valid),
+    .oup_gnt_o       (/* unused  */),
 
-        // Unused
-        .exists_data_i   ('0           ),
-        .exists_mask_i   ('0           ),
-        .exists_req_i    ('0           ),
-        .exists_o        (/* unused  */),
-        .exists_gnt_o    (/* unused  */)
-      );
-    end else begin // if (NR_OUTSTANDING >= 2)
-      assign idqueue_id    = 0;
-      assign idqueue_valid = mst_r_valid;
-    end // else: !if(NR_OUTSTANDING >= 2)
-  endgenerate
+    // Unused
+    .exists_data_i   ('0           ),
+    .exists_mask_i   ('0           ),
+    .exists_req_i    ('0           ),
+    .exists_o        (/* unused  */),
+    .exists_gnt_o    (/* unused  */)
+  );
 
   struct packed {
     channel_ax_t ar  ;
@@ -376,18 +337,18 @@ module axi_data_upsize #(
   } [NR_OUTSTANDING-1:0] r_req_d, r_req_q;
 
   always_comb begin
-    idqueue_push = 1'b0;
-    idqueue_pop  = 1'b0;
+    idqueue_push = '0;
+    idqueue_pop  = '0;
     mst_r_ready  = 1'b0;
     slv_ar_ready = 1'b0;
 
     for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
       // Maintain state
-      r_state_d[tr]         = r_state_q[tr];
-      r_req_d[tr]           = r_req_q[tr];
+      r_state_d[tr] = r_state_q[tr];
+      r_req_d[tr]   = r_req_q[tr];
 
       // AR Channel
-      int_mst_ar[tr]        = '0;
+      int_mst_ar[tr] = '0;
       int_mst_ar[tr].id     = r_req_q[tr].ar.id;
       int_mst_ar[tr].addr   = r_req_q[tr].ar.addr;
       int_mst_ar[tr].len    = r_req_q[tr].ar.len;
@@ -416,20 +377,20 @@ module axi_data_upsize #(
         r_req_d[tr].ar.valid = 1'b0;
 
       case (r_state_q[tr])
-        R_IDLE: begin
+        R_IDLE : begin
           // Reset channels
           r_req_d[tr].ar = '0;
 
           // Ready
-          slv_ar_ready   = 1'b1;
+          slv_ar_ready = 1'b1;
 
           // New read request
           if (slv_ar_valid && (idx_read_fsm == tr)) begin
             // Push to ID queue
-            idqueue_push          = 1'b1;
+            idqueue_push[tr] = 1'b1;
 
             // Default state
-            r_state_d[tr]         = R_PASSTHROUGH;
+            r_state_d[tr] = R_PASSTHROUGH;
 
             // Save beat
             r_req_d[tr].ar.id     = slv_ar_id;
@@ -450,7 +411,7 @@ module axi_data_upsize #(
 
             if (|(slv_ar_cache & CACHE_MODIFIABLE))
               case (slv_ar_burst)
-                BURST_INCR: begin
+                BURST_INCR : begin
                   // Evaluate output burst length
                   automatic addr_t size_mask  = (1 << slv_ar_size) - 1;
 
@@ -459,7 +420,7 @@ module axi_data_upsize #(
 
                   r_req_d[tr].ar.len          = (addr_end - addr_start) >> $clog2(MI_BYTES);
                   r_req_d[tr].ar.size         = $clog2(MI_BYTES);
-                  r_state_d[tr]               = R_INCR_UPSIZE;
+                  r_state_d[tr] = R_INCR_UPSIZE;
                 end // case: BURST_INCR
               endcase // case (slv_ar_burst)
           end // if (slv_ar_valid && (idx_read_fsm == tr))
@@ -468,7 +429,7 @@ module axi_data_upsize #(
         R_PASSTHROUGH, R_INCR_UPSIZE:
           // Request was accepted
           if (!r_req_q[tr].ar.valid)
-            if (mst_r_valid && (idqueue_id == tr)) begin
+            if (mst_r_valid && (idqueue_id == tr) && idqueue_valid) begin
               automatic addr_t mi_offset = r_req_q[tr].ar.addr[$clog2(MI_BYTES)-1:0];
               automatic addr_t si_offset = r_req_q[tr].ar.addr[$clog2(SI_BYTES)-1:0];
 
@@ -481,7 +442,7 @@ module axi_data_upsize #(
                 if ((b >= mi_offset) &&
                   (b - mi_offset < (1 << r_req_q[tr].size)) &&
                   (b + si_offset - mi_offset < SI_BYTES)) begin
-                  int_slv_r[tr].data[8 * (b + si_offset - mi_offset) +: 8] = mst_r_data[8 * b +: 8];
+                  int_slv_r[tr].data[8*(b+si_offset-mi_offset)+:8] = mst_r_data[8 * b +: 8];
                 end
 
               // Acknowledgement
@@ -492,20 +453,20 @@ module axi_data_upsize #(
                 r_req_d[tr].ar.addr        = (r_req_q[tr].ar.addr & ~size_mask) + (1 << r_req_q[tr].size);
 
                 case (r_state_q[tr])
-                  R_PASSTHROUGH:
+                  R_PASSTHROUGH :
                     mst_r_ready = 1'b1;
 
-                  R_INCR_UPSIZE:
+                  R_INCR_UPSIZE :
                     if (r_req_q[tr].len == 0 || (align_addr(r_req_d[tr].ar.addr) != align_addr(r_req_q[tr].ar.addr)))
                       mst_r_ready = 1'b1;
                 endcase // case (r_state_q[tr])
 
-                if (r_req_q[tr].len == 0) begin
-                  r_state_d[tr] = R_IDLE;
-                  idqueue_pop   = 1'b1;
+                if (r_req_q[tr].len == '0) begin
+                  r_state_d[tr]   = R_IDLE;
+                  idqueue_pop[tr] = 1'b1;
                 end
               end // if (int_slv_r[tr].ready)
-            end // if (mst_r_valid && (idqueue_id == tr))
+            end // if (mst_r_valid && (idqueue_id == tr) && idqueue_valid)
       endcase // case (r_state_q[tr])
     end // for (int tr = 0; tr < NR_OUTSTANDING; tr++)
   end // always_comb
