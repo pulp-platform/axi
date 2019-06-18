@@ -92,7 +92,7 @@
   assign axi_if.aw_qos    = aw_struct.qos;    \
   assign axi_if.aw_region = aw_struct.region; \
   assign axi_if.aw_atop   = aw_struct.atop;   \
-  assign axi_if.aw_user   = aw_struct.user;   \
+  assign axi_if.aw_user   = aw_struct.user;
 
 `define AXI_ASSIGN_TO_W(w_struct, axi_if) \
   assign w_struct = '{                    \
@@ -146,7 +146,7 @@
   assign axi_if.ar_prot   = ar_struct.prot;   \
   assign axi_if.ar_qos    = ar_struct.qos;    \
   assign axi_if.ar_region = ar_struct.region; \
-  assign axi_if.ar_user   = ar_struct.user;   \
+  assign axi_if.ar_user   = ar_struct.user;
 
 `define AXI_ASSIGN_TO_R(r_struct, axi_if) \
   assign r_struct = '{                    \
