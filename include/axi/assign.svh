@@ -164,6 +164,44 @@
   assign axi_if.r_last  = r_struct.last;    \
   assign axi_if.r_user  = r_struct.user;
 
+`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   \
+  `AXI_ASSIGN_TO_AW(req_struct.aw, axi_if);     \
+  assign req_struct.aw_valid = axi_if.aw_valid; \
+  `AXI_ASSIGN_TO_W(req_struct.w, axi_if);       \
+  assign req_struct.w_valid = axi_if.w_valid;   \
+  assign req_struct.b_ready = axi_if.b_ready;   \
+  `AXI_ASSIGN_TO_AR(req_struct.ar, axi_if);     \
+  assign req_struct.ar_valid = axi_if.ar_valid; \
+  assign req_struct.r_ready = axi_if.r_ready;
+
+`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct) \
+  `AXI_ASSIGN_FROM_AW(axi_if, req_struct.aw)    \
+  assign axi_if.aw_valid = req_struct.aw_valid; \
+  `AXI_ASSIGN_FROM_W(axi_if, req_struct.w);     \
+  assign axi_if.w_valid = req_struct.w_valid;   \
+  assign axi_if.b_ready = req_struct.b_ready;   \
+  `AXI_ASSIGN_FROM_AR(axi_if, req_struct.ar);   \
+  assign axi_if.ar_valid = req_struct.ar_valid; \
+  assign axi_if.r_ready = req_struct.r_ready;
+
+`define AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) \
+  assign axi_if.aw_ready = resp_struct.aw_ready;  \
+  assign axi_if.ar_ready = resp_struct.ar_ready;  \
+  assign axi_if.w_ready = resp_struct.w_ready;    \
+  assign axi_if.b_valid = resp_struct.b_valid;    \
+  `AXI_ASSIGN_FROM_B(axi_if, resp_struct.b);      \
+  assign axi_if.r_valid = resp_struct.r_valid;    \
+  `AXI_ASSIGN_FROM_R(axi_if, resp_struct.r);
+
+`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if)   \
+  assign resp_struct.aw_ready = axi_if.aw_ready;  \
+  assign resp_struct.ar_ready = axi_if.ar_ready;  \
+  assign resp_struct.w_ready = axi_if.w_ready;    \
+  assign resp_struct.b_valid = axi_if.b_valid;    \
+  `AXI_ASSIGN_TO_B(resp_struct.b, axi_if);        \
+  assign resp_struct.r_valid = axi_if.r_valid;    \
+  `AXI_ASSIGN_TO_R(resp_struct.r, axi_if);
+
 // Assign an AXI4-Lite master interface to a slave interface, as in `assign slv = mst;`.
 `define AXI_LITE_ASSIGN(slv, mst)     \
   assign slv.aw_addr  = mst.aw_addr;  \
