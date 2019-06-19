@@ -29,6 +29,7 @@ sources:
   - src/axi_arbiter.sv
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
+  - src/axi_bypass.sv
   - src/axi_cut.sv
   - src/axi_data_downsize.sv
   - src/axi_data_upsize.sv
