@@ -420,7 +420,8 @@ module tb_axi_perf_mon #(
     axi_master.reset();
     wait (rst_n);
     wait (init_done);
-    axi_master.run(N_READ_TXNS, N_WRITE_TXNS, addr_begin, addr_end);
+    axi_master.add_memory_region(addr_begin, addr_end, axi_pkg::WTHRU_NOALLOCATE);
+    axi_master.run(N_READ_TXNS, N_WRITE_TXNS);
     mst_done = 1'b1;
   end
 

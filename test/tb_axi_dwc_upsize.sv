@@ -109,7 +109,8 @@ module tb_axi_dwc_upsize;
 
   initial begin
     axi_master_drv.reset();
-    axi_master_drv.run(200, 200, '0, '1);
+    axi_master_drv.add_memory_region({AW{1'b0}}, {AW{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    axi_master_drv.run(200, 200);
     done = 1;
   end
 
