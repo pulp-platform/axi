@@ -22,6 +22,7 @@ sources:
   # Level 1
   - src/axi_demux.sv
   - src/axi_intf.sv
+  - src/axi_mux.sv
   - src/axi_perf_mon.sv
   # Level 2
   - src/axi_address_resolver.sv
