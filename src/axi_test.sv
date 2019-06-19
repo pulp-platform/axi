@@ -718,15 +718,17 @@ package axi_test;
             addr >= addr_begin;
             addr <= addr_end;
           }; assert(rand_success);
-          if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK))
+          if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
             break;
+          end
         end
         ax_beat.ax_addr = addr;
       end else begin // BURST_INCR
         forever begin
           rand_success = std::randomize(addr); assert(rand_success);
-          if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK))
+          if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
             break;
+          end
         end
         ax_beat.ax_addr = addr;
       end
