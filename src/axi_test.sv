@@ -710,26 +710,22 @@ package axi_test;
       }; assert(rand_success);
       ax_beat.ax_size = size;
       // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
-      if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-        forever begin
-          rand_success = std::randomize(addr) with {
-            addr >= addr_begin;
-            addr <= addr_end;
-          }; assert(rand_success);
+      forever begin
+        rand_success = std::randomize(addr) with {
+          addr >= addr_begin;
+          addr <= addr_end;
+        }; assert(rand_success);
+        if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
           if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
             break;
           end
-        end
-        ax_beat.ax_addr = addr;
-      end else begin // BURST_INCR
-        forever begin
-          rand_success = std::randomize(addr); assert(rand_success);
+        end else begin // BURST_INCR
           if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
             break;
           end
         end
-        ax_beat.ax_addr = addr;
       end
+      ax_beat.ax_addr = addr;
       rand_success = std::randomize(id); assert(rand_success);
       ax_beat.ax_id = id;
       return ax_beat;
