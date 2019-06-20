@@ -20,6 +20,7 @@ sources:
   # Level 0
   - src/axi_pkg.sv
   # Level 1
+  - src/axi_address_width_converter.sv
   - src/axi_demux.sv
   - src/axi_intf.sv
   - src/axi_mux.sv
