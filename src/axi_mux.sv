@@ -29,6 +29,7 @@ module axi_mux #(
       if (i == sel_i) begin
         slv_resp[i] = mst_resp;
       end else begin
+        slv_resp[i] = 'x;
         slv_resp[i].aw_ready = 1'b0;
         slv_resp[i].ar_ready = 1'b0;
         slv_resp[i].w_ready = 1'b0;
