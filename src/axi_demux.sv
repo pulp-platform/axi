@@ -29,6 +29,7 @@ module axi_demux #(
       if (i == sel_i) begin
         mst_req[i] = slv_req;
       end else begin
+        mst_req[i] = 'x;
         mst_req[i].aw_valid = 1'b0;
         mst_req[i].w_valid = 1'b0;
         mst_req[i].b_ready = 1'b0;
