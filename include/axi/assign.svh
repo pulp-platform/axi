@@ -213,6 +213,73 @@
   assign resp_struct.r_valid = axi_if.r_valid;    \
   `AXI_ASSIGN_TO_R(resp_struct.r, axi_if);
 
+// Procedural assignments between structs
+`define AXI_SET_AW_CHAN(aw_dst, aw_src) \
+  aw_dst.id = aw_src.id;                \
+  aw_dst.addr = aw_src.addr;            \
+  aw_dst.len = aw_src.addr;             \
+  aw_dst.size = aw_src.size;            \
+  aw_dst.burst = aw_src.burst;          \
+  aw_dst.lock = aw_src.lock;            \
+  aw_dst.lock = aw_src.lock;            \
+  aw_dst.cache = aw_src.cache;          \
+  aw_dst.prot = aw_src.prot;            \
+  aw_dst.qos = aw_src.qos;              \
+  aw_dst.region = aw_src.region;        \
+  aw_dst.atop = aw_src.atop;            \
+  aw_dst.user = aw_src.user;
+
+`define AXI_SET_W_CHAN(w_dst, w_src)  \
+  w_dst.data = w_src.data;            \
+  w_dst.strb = w_src.strb;            \
+  w_dst.last = w_src.last;            \
+  w_dst.user = w_src.user;
+
+`define AXI_SET_B_CHAN(b_dst, b_src)  \
+  b_dst.id = b_src.id;                \
+  b_dst.resp = b_src.resp;            \
+  b_dst.user = b_src.user;
+
+`define AXI_SET_AR_CHAN(ar_dst, ar_src) \
+  ar_dst.id = ar_src.id;                \
+  ar_dst.addr = ar_src.addr;            \
+  ar_dst.len = ar_src.addr;             \
+  ar_dst.size = ar_src.size;            \
+  ar_dst.burst = ar_src.burst;          \
+  ar_dst.lock = ar_src.lock;            \
+  ar_dst.lock = ar_src.lock;            \
+  ar_dst.cache = ar_src.cache;          \
+  ar_dst.prot = ar_src.prot;            \
+  ar_dst.qos = ar_src.qos;              \
+  ar_dst.region = ar_src.region;        \
+  ar_dst.user = ar_src.user;
+
+`define AXI_SET_R_CHAN(r_dst, r_src)  \
+  r_dst.id = r_src.id;                \
+  r_dst.data = r_src.data;            \
+  r_dst.resp = r_src.resp;            \
+  r_dst.last = r_src.last;            \
+  r_dst.user = r_src.user;
+
+`define AXI_SET_REQ(req_dst, req_src)       \
+  `AXI_SET_AW_CHAN(req_dst.aw, req_src.aw); \
+  req_dst.aw_valid = req_src.aw_valid;      \
+  `AXI_SET_W_CHAN(req_dst.w, req_src.w);    \
+  req_dst.w_valid = req_src.w_valid;        \
+  req_dst.b_ready = req_src.b_ready;        \
+  `AXI_SET_AR_CHAN(req_dst.ar, req_src.ar); \
+  req_dst.ar_valid = req_src.ar_valid;      \
+  req_dst.r_ready = req_src.r_ready;
+
+`define AXI_SET_RESP(resp_dst, resp_src)    \
+  resp_dst.aw_ready = resp_src.aw_ready;    \
+  resp_dst.ar_ready = resp_src.ar_ready;    \
+  resp_dst.w_ready = resp_src.w_ready;      \
+  `AXI_SET_B_CHAN(resp_dst.b, resp_src.b);  \
+  resp_dst.b_valid = resp_src.b_valid;      \
+  `AXI_SET_R_CHAN(resp_dst.r, resp_src.r);  \
+  resp_dst.r_valid = resp_src.r_valid;
+
 // Assign an AXI4-Lite master interface to a slave interface, as in `assign slv = mst;`.
 `define AXI_LITE_ASSIGN(slv, mst)     \
   assign slv.aw_addr  = mst.aw_addr;  \
