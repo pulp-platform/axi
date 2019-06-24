@@ -26,7 +26,9 @@ module axi_burst_splitter #(
   AXI_BUS.Master  mst
 );
 
+  // --------------------------------------------------
   // AW Channel
+  // --------------------------------------------------
   typedef struct packed {
     id_t              id;
     addr_t            addr;
@@ -103,7 +105,10 @@ module axi_burst_splitter #(
     endcase
   end
 
-  // Feed W channel through, except `last`, which is always set.
+  // --------------------------------------------------
+  // W Channel
+  // --------------------------------------------------
+  // Feed through, except `last`, which is always set.
   assign mst.w_data   = slv.w_data;
   assign mst.w_strb   = slv.w_strb;
   assign mst.w_last   = 1'b1;
@@ -111,11 +116,19 @@ module axi_burst_splitter #(
   assign mst.w_valid  = slv.w_valid;
   assign slv.w_ready  = mst.w_ready;
 
-  // Feed B channel through.
+  // --------------------------------------------------
+  // B Channel
+  // --------------------------------------------------
+  // Feed through.
   `AXI_ASSIGN_B(slv, mst);
+  // TODO: This is wrong. B beats have to be filtered similarly to how the last bit on the R channel
+  // is controlled (plus error latching).
 
-  // AR Channel: Store burst lengths in counters, which are associated to AXI IDs through ID queues
-  // (to allow reordering of responses w.r.t. requests).
+  // --------------------------------------------------
+  // AR Channel
+  // --------------------------------------------------
+  // Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
+  // reordering of responses w.r.t. requests).
   typedef struct packed {
     id_t              id;
     addr_t            addr;
@@ -255,7 +268,10 @@ module axi_burst_splitter #(
     endcase
   end
 
-  // R Channel: Reconstruct `last`, feed rest through.
+  // --------------------------------------------------
+  // R Channel
+  // --------------------------------------------------
+  // Reconstruct `last`, feed rest through.
   logic r_last_d, r_last_q;
   enum logic {RFeedthrough, RWait} r_state_d, r_state_q;
   assign slv.r_id   = mst.r_id;
@@ -312,7 +328,9 @@ module axi_burst_splitter #(
     endcase
   end
 
+  // --------------------------------------------------
   // Flip-Flops
+  // --------------------------------------------------
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) begin
       ar_q        <= '0;
@@ -331,7 +349,9 @@ module axi_burst_splitter #(
     end
   end
 
+  // --------------------------------------------------
   // Assumptions and assertions
+  // --------------------------------------------------
   `ifndef VERILATOR
   // pragma translate_off
   default disable iff (!rst_ni);
