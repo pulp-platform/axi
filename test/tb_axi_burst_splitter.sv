@@ -86,7 +86,8 @@ module tb_axi_burst_splitter #(
   `AXI_ASSIGN_TO_RESP(downstream_resp, downstream_dv);
 
   axi_burst_splitter #(
-    .MAX_READ_TXNS  (MAX_READ_TXNS),
+    .MAX_WRITE_TXNS (MAX_WRITE_TXNS-2),
+    .MAX_READ_TXNS  (MAX_READ_TXNS-2),
     .AW             (ADDR_WIDTH),
     .DW             (DATA_WIDTH),
     .IW             (ID_WIDTH),
