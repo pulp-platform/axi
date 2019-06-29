@@ -15,6 +15,8 @@
 module axi_burst_splitter #(
   // Maximum number of AXI read bursts outstanding at the same time
   parameter int unsigned MAX_READ_TXNS = 0,
+  // Maximum number of AXI write bursts outstanding at the same time
+  parameter int unsigned MAX_WRITE_TXNS = 0,
   // AXI Bus Types
   parameter int unsigned AW = 0,
   parameter int unsigned DW = 0,
@@ -42,66 +44,29 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // AW Channel
   // --------------------------------------------------
-  // Store burst lengths in counters, which are associated to AXI IDs through ID  queues (to allow
-  // reordering of responses w.r.t. requests).
-  aw_chan_t aw_d, aw_q;
-
-  enum logic {AwIdle, AwBusy} aw_state_d, aw_state_q;
-  always_comb begin
-    aw_d = aw_q;
-    aw_state_d = aw_state_q;
-    req_o.aw = '0;
-    req_o.aw_valid = 1'b0;
-    resp_o.aw_ready = 1'b0;
-
-    case (aw_state_q)
-      AwIdle: begin
-        if (req_i.aw_valid) begin
-          if (req_i.aw.len == '0) begin // No splitting required -> feed through.
-            req_o.aw = req_i.aw;
-            req_o.aw_valid = 1'b1;
-            // Acknowledge upstream as soon as downstream is ready.
-            resp_o.aw_ready = resp_i.aw_ready;
-          end else begin
-            // Store AW and acknowledge upstream.
-            aw_d = req_i.aw;
-            resp_o.aw_ready = 1'b1;
-            // Try to feed first burst through.
-            req_o.aw = aw_d;
-            req_o.aw.len = '0;
-            req_o.aw_valid = 1'b1;
-            if (resp_i.aw_ready) begin
-              // Reduce number of bursts still to be sent by one.
-              aw_d.len--;
-              if (aw_d.burst == axi_pkg::BURST_INCR) begin
-                aw_d.addr += (1 << aw_d.size);
-              end
-            end
-            aw_state_d = AwBusy;
-          end
-        end
-      end
-      AwBusy: begin
-        // Send next burst from split.
-        req_o.aw = aw_q;
-        req_o.aw.len = '0;
-        req_o.aw_valid = 1'b1;
-        if (resp_i.aw_ready) begin
-          if (aw_q.len == '0) begin
-            // If this was the last burst, go back to idle.
-            aw_state_d = AwIdle;
-          end else begin
-            // Otherwise, continue with the next burst.
-            aw_d.len--;
-            if (aw_q.burst == axi_pkg::BURST_INCR) begin
-              aw_d.addr += (1 << aw_q.size);
-            end
-          end
-        end
-      end
-      default: aw_state_d = AwIdle;
-    endcase
-  end
+  logic           w_cnt_dec, w_cnt_req, w_cnt_gnt, w_cnt_err;
+  axi_pkg::len_t  w_cnt_len;
+  axi_burst_splitter_ax_chan #(
+    .chan_t   (aw_chan_t),
+    .IW       (IW),
+    .MAX_TXNS (MAX_WRITE_TXNS)
+  ) i_aw_chan (
+    .clk_i,
+    .rst_ni,
+    .ax_i           (req_i.aw),
+    .ax_valid_i     (req_i.aw_valid),
+    .ax_ready_o     (resp_o.aw_ready),
+    .ax_o           (req_o.aw),
+    .ax_valid_o     (req_o.aw_valid),
+    .ax_ready_i     (resp_i.aw_ready),
+    .cnt_id_i       (resp_i.b.id),
+    .cnt_len_o      (w_cnt_len),
+    .cnt_set_err_i  (resp_i.b.resp[1]),
+    .cnt_err_o      (w_cnt_err),
+    .cnt_dec_i      (w_cnt_dec),
+    .cnt_req_i      (w_cnt_req),
+    .cnt_gnt_o      (w_cnt_gnt)
+  );
 
   // --------------------------------------------------
   // W Channel
@@ -117,13 +82,53 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // B Channel
   // --------------------------------------------------
-  // Feed through.
+  // Feed only last B response of a burst through.
+  enum logic {BReady, BWait} b_state_d, b_state_q;
+  logic b_err_d, b_err_q;
+  always_comb begin
+    req_o.b_ready = 1'b0;
+    resp_o.b = '0;
+    resp_o.b_valid = 1'b0;
+    w_cnt_dec = 1'b0;
+    w_cnt_req = 1'b0;
+    b_err_d = b_err_q;
+    b_state_d = b_state_q;
 
-  assign resp_o.b = resp_i.b;
-  assign resp_o.b_valid = resp_i.b_valid;
-  assign req_o.b_ready = req_i.b_ready;
-  // TODO: This is wrong. B beats have to be filtered similarly to how the last bit on the R channel
-  // is controlled (plus error latching).
+    case (b_state_q)
+      BReady: begin
+        if (resp_i.b_valid) begin
+          w_cnt_req = 1'b1;
+          if (w_cnt_gnt) begin
+            if (w_cnt_len == 8'd0) begin
+              resp_o.b = resp_i.b;
+              resp_o.b.resp[1] = w_cnt_err;
+              resp_o.b_valid = 1'b1;
+              w_cnt_dec = 1'b1;
+              if (req_i.b_ready) begin
+                req_o.b_ready = 1'b1;
+              end else begin
+                b_state_d = BWait;
+                b_err_d = w_cnt_err;
+              end
+            end else begin
+              req_o.b_ready = 1'b1;
+              w_cnt_dec = 1'b1;
+            end
+          end
+        end
+      end
+      BWait: begin
+        resp_o.b = resp_i.b;
+        resp_o.b.resp[1] = b_err_q;
+        resp_o.b_valid = 1'b1;
+        if (resp_i.b_valid && req_i.b_ready) begin
+          req_o.b_ready = 1'b1;
+          b_state_d = BReady;
+        end
+      end
+      default: b_state_d = BReady;
+    endcase
+  end
 
   // --------------------------------------------------
   // AR Channel
@@ -138,17 +143,19 @@ module axi_burst_splitter #(
   ) i_ar_chan (
     .clk_i,
     .rst_ni,
-    .ax_i       (req_i.ar),
-    .ax_valid_i (req_i.ar_valid),
-    .ax_ready_o (resp_o.ar_ready),
-    .ax_o       (req_o.ar),
-    .ax_valid_o (req_o.ar_valid),
-    .ax_ready_i (resp_i.ar_ready),
-    .cnt_id_i   (resp_i.r.id),
-    .cnt_len_o  (r_cnt_len),
-    .cnt_dec_i  (r_cnt_dec),
-    .cnt_req_i  (r_cnt_req),
-    .cnt_gnt_o  (r_cnt_gnt)
+    .ax_i           (req_i.ar),
+    .ax_valid_i     (req_i.ar_valid),
+    .ax_ready_o     (resp_o.ar_ready),
+    .ax_o           (req_o.ar),
+    .ax_valid_o     (req_o.ar_valid),
+    .ax_ready_i     (resp_i.ar_ready),
+    .cnt_id_i       (resp_i.r.id),
+    .cnt_len_o      (r_cnt_len),
+    .cnt_set_err_i  (1'b0),
+    .cnt_err_o      (),
+    .cnt_dec_i      (r_cnt_dec),
+    .cnt_req_i      (r_cnt_req),
+    .cnt_gnt_o      (r_cnt_gnt)
   );
 
   // --------------------------------------------------
@@ -207,13 +214,13 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) begin
-      aw_q        <= '0;
-      aw_state_q  <= AwIdle;
+      b_err_q     <= 1'b0;
+      b_state_q   <= BReady;
       r_last_q    <= 1'b0;
       r_state_q   <= RFeedthrough;
     end else begin
-      aw_q        <= aw_d;
-      aw_state_q  <= aw_state_d;
+      b_err_q     <= b_err_d;
+      b_state_q   <= b_state_d;
       r_last_q    <= r_last_d;
       r_state_q   <= r_state_d;
     end
@@ -261,17 +268,19 @@ module axi_burst_splitter_ax_chan #(
   input  logic          rst_ni,
 
   input  chan_t         ax_i,
-  input  chan_t         ax_valid_i,
-  output chan_t         ax_ready_o,
+  input  logic          ax_valid_i,
+  output logic          ax_ready_o,
   output chan_t         ax_o,
-  output chan_t         ax_valid_o,
-  input  chan_t         ax_ready_i,
+  output logic          ax_valid_o,
+  input  logic          ax_ready_i,
 
   input  id_t           cnt_id_i,
   output axi_pkg::len_t cnt_len_o,
+  input  logic          cnt_set_err_i,
+  output logic          cnt_err_o,
   input  logic          cnt_dec_i,
   input  logic          cnt_req_i,
-  output logic          cnt_gnt_o,
+  output logic          cnt_gnt_o
 );
 
   logic cnt_alloc_req, cnt_alloc_gnt;
@@ -281,15 +290,17 @@ module axi_burst_splitter_ax_chan #(
   ) i_cntrs (
     .clk_i,
     .rst_ni,
-    .alloc_id_i   (ax_i.id),
-    .alloc_len_i  (ax_i.len),
-    .alloc_req_i  (cnt_alloc_req),
-    .alloc_gnt_o  (cnt_alloc_gnt),
-    .read_id_i    (cnt_id_i),
-    .read_len_o   (cnt_len_o),
-    .read_dec_i   (cnt_dec_i),
-    .read_req_i   (cnt_req_i),
-    .read_gnt_o   (cnt_gnt_o)
+    .alloc_id_i     (ax_i.id),
+    .alloc_len_i    (ax_i.len),
+    .alloc_req_i    (cnt_alloc_req),
+    .alloc_gnt_o    (cnt_alloc_gnt),
+    .read_id_i      (cnt_id_i),
+    .read_len_o     (cnt_len_o),
+    .read_set_err_i (cnt_set_err_i),
+    .read_err_o     (cnt_err_o),
+    .read_dec_i     (cnt_dec_i),
+    .read_req_i     (cnt_req_i),
+    .read_gnt_o     (cnt_gnt_o)
   );
 
   chan_t ax_d, ax_q;
@@ -304,7 +315,7 @@ module axi_burst_splitter_ax_chan #(
     ax_ready_o = 1'b0;
     case (state_q)
       Idle: begin
-        if (ax_valid_i && r_cnt_alloc_gnt) begin
+        if (ax_valid_i && cnt_alloc_gnt) begin
           if (ax_i.len == '0) begin // No splitting required -> feed through.
             ax_o = ax_i;
             ax_valid_o = 1'b1;
@@ -381,6 +392,8 @@ module axi_burst_splitter_counters #(
 
   input  id_t           read_id_i,
   output axi_pkg::len_t read_len_o,
+  input  logic          read_set_err_i,
+  output logic          read_err_o,
   input  logic          read_dec_i,
   input  logic          read_req_i,
   output logic          read_gnt_o
@@ -388,7 +401,7 @@ module axi_burst_splitter_counters #(
 
   typedef logic [$clog2(MAX_TXNS)-1:0] cnt_idx_t;
   typedef logic [$bits(axi_pkg::len_t):0] cnt_t;
-  logic [MAX_TXNS-1:0]  cnt_dec, cnt_free, cnt_set;
+  logic [MAX_TXNS-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q;
   cnt_t                 cnt_inp;
   cnt_t [MAX_TXNS-1:0]  cnt_oup;
   cnt_idx_t             cnt_free_idx, cnt_r_idx;
@@ -459,6 +472,25 @@ module axi_burst_splitter_counters #(
   always_comb begin
     cnt_set = '0;
     cnt_set[cnt_free_idx] = alloc_req_i & alloc_gnt_o;
+  end
+  always_comb begin
+    err_d = err_q;
+    read_err_o = err_q[cnt_r_idx];
+    if (read_req_i && read_gnt_o && read_set_err_i) begin
+      err_d[cnt_r_idx] = 1'b1;
+      read_err_o = 1'b1;
+    end
+    if (alloc_req_i && alloc_gnt_o) begin
+      err_d[cnt_free_idx] = 1'b0;
+    end
+  end
+
+  always_ff @(posedge clk_i, negedge rst_ni) begin
+    if (!rst_ni) begin
+      err_q <= '0;
+    end else begin
+      err_q <= err_d;
+    end
   end
 
   `ifndef VERILATOR
