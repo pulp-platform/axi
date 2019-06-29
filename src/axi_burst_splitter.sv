@@ -128,89 +128,28 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // AR Channel
   // --------------------------------------------------
-  // Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
-  // reordering of responses w.r.t. requests).
-  ar_chan_t ar_d, ar_q;
-
-  logic           r_cnt_alloc_req, r_cnt_alloc_gnt, r_cnt_dec, r_cnt_req, r_cnt_gnt;
+  // See description of `ax_chan` module.
+  logic           r_cnt_dec, r_cnt_req, r_cnt_gnt;
   axi_pkg::len_t  r_cnt_len;
-  axi_burst_splitter_counters #(
-    .MAX_TXNS (MAX_READ_TXNS),
-    .id_t     (id_t)
-  ) i_cntrs_r (
+  axi_burst_splitter_ax_chan #(
+    .chan_t   (ar_chan_t),
+    .IW       (IW),
+    .MAX_TXNS (MAX_READ_TXNS)
+  ) i_ar_chan (
     .clk_i,
     .rst_ni,
-    .alloc_id_i   (req_i.ar.id),
-    .alloc_len_i  (req_i.ar.len),
-    .alloc_req_i  (r_cnt_alloc_req),
-    .alloc_gnt_o  (r_cnt_alloc_gnt),
-    .read_id_i    (resp_i.r.id),
-    .read_len_o   (r_cnt_len),
-    .read_dec_i   (r_cnt_dec),
-    .read_req_i   (r_cnt_req),
-    .read_gnt_o   (r_cnt_gnt)
+    .ax_i       (req_i.ar),
+    .ax_valid_i (req_i.ar_valid),
+    .ax_ready_o (resp_o.ar_ready),
+    .ax_o       (req_o.ar),
+    .ax_valid_o (req_o.ar_valid),
+    .ax_ready_i (resp_i.ar_ready),
+    .cnt_id_i   (resp_i.r.id),
+    .cnt_len_o  (r_cnt_len),
+    .cnt_dec_i  (r_cnt_dec),
+    .cnt_req_i  (r_cnt_req),
+    .cnt_gnt_o  (r_cnt_gnt)
   );
-
-  enum logic {ArIdle, ArBusy} ar_state_d, ar_state_q;
-  always_comb begin
-    r_cnt_alloc_req = 1'b0;
-    ar_d = ar_q;
-    ar_state_d = ar_state_q;
-    req_o.ar = '0;
-    req_o.ar_valid = 1'b0;
-    resp_o.ar_ready = 1'b0;
-    case (ar_state_q)
-      ArIdle: begin
-        if (req_i.ar_valid && r_cnt_alloc_gnt) begin
-          if (req_i.ar.len == '0) begin // No splitting required -> feed through.
-            req_o.ar = req_i.ar;
-            req_o.ar_valid = 1'b1;
-            // As soon as downstream is ready, allocate a counter and acknowledge upstream.
-            if (resp_i.ar_ready) begin
-              r_cnt_alloc_req = 1'b1;
-              resp_o.ar_ready = 1'b1;
-            end
-          end else begin // Splitting required.
-            // Store AR, allocate a counter, and acknowledge upstream.
-            ar_d = req_i.ar;
-            r_cnt_alloc_req = 1'b1;
-            resp_o.ar_ready = 1'b1;
-            // Try to feed first burst through.
-            req_o.ar = ar_d;
-            req_o.ar.len = '0;
-            req_o.ar_valid = 1'b1;
-            if (resp_i.ar_ready) begin
-              // Reduce number of bursts still to be sent by one and increment address.
-              ar_d.len--;
-              if (ar_d.burst == axi_pkg::BURST_INCR) begin
-                ar_d.addr += (1 << ar_d.size);
-              end
-            end
-            ar_state_d = ArBusy;
-          end
-        end
-      end
-      ArBusy: begin
-        // Sent next burst from split.
-        req_o.ar = ar_q;
-        req_o.ar.len = '0;
-        req_o.ar_valid = 1'b1;
-        if (resp_i.ar_ready) begin
-          if (ar_q.len == '0) begin
-            // If this was the last burst, go back to idle.
-            ar_state_d = ArIdle;
-          end else begin
-            // Otherwise, continue with the next burst.
-            ar_d.len--;
-            if (ar_q.burst == axi_pkg::BURST_INCR) begin
-              ar_d.addr += (1 << ar_q.size);
-            end
-          end
-        end
-      end
-      default: ar_state_d = ArIdle;
-    endcase
-  end
 
   // --------------------------------------------------
   // R Channel
@@ -268,16 +207,12 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) begin
-      ar_q        <= '0;
       aw_q        <= '0;
-      ar_state_q  <= ArIdle;
       aw_state_q  <= AwIdle;
       r_last_q    <= 1'b0;
       r_state_q   <= RFeedthrough;
     end else begin
-      ar_q        <= ar_d;
       aw_q        <= aw_d;
-      ar_state_q  <= ar_state_d;
       aw_state_q  <= aw_state_d;
       r_last_q    <= r_last_d;
       r_state_q   <= r_state_d;
@@ -311,6 +246,124 @@ module axi_burst_splitter #(
 
   // TODO: Add FORCE parameter to split non-modifiable bursts with 16 beats or less only when that
   // parameter is set, to have a standard-compliant alternative?
+
+endmodule
+
+// Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
+// reordering of responses w.r.t. requests).
+module axi_burst_splitter_ax_chan #(
+  parameter type chan_t = logic,
+  parameter int unsigned IW = 0,
+  parameter int unsigned MAX_TXNS = 0,
+  localparam type id_t = logic[IW-1:0]
+) (
+  input  logic          clk_i,
+  input  logic          rst_ni,
+
+  input  chan_t         ax_i,
+  input  chan_t         ax_valid_i,
+  output chan_t         ax_ready_o,
+  output chan_t         ax_o,
+  output chan_t         ax_valid_o,
+  input  chan_t         ax_ready_i,
+
+  input  id_t           cnt_id_i,
+  output axi_pkg::len_t cnt_len_o,
+  input  logic          cnt_dec_i,
+  input  logic          cnt_req_i,
+  output logic          cnt_gnt_o,
+);
+
+  logic cnt_alloc_req, cnt_alloc_gnt;
+  axi_burst_splitter_counters #(
+    .MAX_TXNS (MAX_TXNS),
+    .id_t     (id_t)
+  ) i_cntrs (
+    .clk_i,
+    .rst_ni,
+    .alloc_id_i   (ax_i.id),
+    .alloc_len_i  (ax_i.len),
+    .alloc_req_i  (cnt_alloc_req),
+    .alloc_gnt_o  (cnt_alloc_gnt),
+    .read_id_i    (cnt_id_i),
+    .read_len_o   (cnt_len_o),
+    .read_dec_i   (cnt_dec_i),
+    .read_req_i   (cnt_req_i),
+    .read_gnt_o   (cnt_gnt_o)
+  );
+
+  chan_t ax_d, ax_q;
+
+  enum logic {Idle, Busy} state_d, state_q;
+  always_comb begin
+    cnt_alloc_req = 1'b0;
+    ax_d = ax_q;
+    state_d = state_q;
+    ax_o = '0;
+    ax_valid_o = 1'b0;
+    ax_ready_o = 1'b0;
+    case (state_q)
+      Idle: begin
+        if (ax_valid_i && r_cnt_alloc_gnt) begin
+          if (ax_i.len == '0) begin // No splitting required -> feed through.
+            ax_o = ax_i;
+            ax_valid_o = 1'b1;
+            // As soon as downstream is ready, allocate a counter and acknowledge upstream.
+            if (ax_ready_i) begin
+              cnt_alloc_req = 1'b1;
+              ax_ready_o = 1'b1;
+            end
+          end else begin // Splitting required.
+            // Store Ax, allocate a counter, and acknowledge upstream.
+            ax_d = ax_i;
+            cnt_alloc_req = 1'b1;
+            ax_ready_o = 1'b1;
+            // Try to feed first burst through.
+            ax_o = ax_d;
+            ax_o.len = '0;
+            ax_valid_o = 1'b1;
+            if (ax_ready_i) begin
+              // Reduce number of bursts still to be sent by one and increment address.
+              ax_d.len--;
+              if (ax_d.burst == axi_pkg::BURST_INCR) begin
+                ax_d.addr += (1 << ax_d.size);
+              end
+            end
+            state_d = Busy;
+          end
+        end
+      end
+      Busy: begin
+        // Sent next burst from split.
+        ax_o = ax_q;
+        ax_o.len = '0;
+        ax_valid_o = 1'b1;
+        if (ax_ready_i) begin
+          if (ax_q.len == '0) begin
+            // If this was the last burst, go back to idle.
+            state_d = Idle;
+          end else begin
+            // Otherwise, continue with the next burst.
+            ax_d.len--;
+            if (ax_q.burst == axi_pkg::BURST_INCR) begin
+              ax_d.addr += (1 << ax_q.size);
+            end
+          end
+        end
+      end
+      default: state_d = Idle;
+    endcase
+  end
+
+  always_ff @(posedge clk_i, negedge rst_ni) begin
+    if (!rst_ni) begin
+      ax_q    <= '0;
+      state_q <= Idle;
+    end else begin
+      ax_q    <= ax_d;
+      state_q <= state_d;
+    end
+  end
 
 endmodule
 
