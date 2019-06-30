@@ -66,7 +66,38 @@ module axi_multicut #(
   end
 
   // Handle the cases of two or more cuts.
-  else begin : g_cuts
+  else if (NUM_CUTS == 2) begin : g_cuts_2
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( ADDR_WIDTH ),
+      .AXI_DATA_WIDTH ( DATA_WIDTH ),
+      .AXI_ID_WIDTH   ( ID_WIDTH   ),
+      .AXI_USER_WIDTH ( USER_WIDTH )
+    ) s_cut_0 ();
+
+    axi_cut #(
+      .ADDR_WIDTH ( ADDR_WIDTH ),
+      .DATA_WIDTH ( DATA_WIDTH ),
+      .ID_WIDTH   ( ID_WIDTH   ),
+      .USER_WIDTH ( USER_WIDTH )
+    ) i_first (
+      .clk_i  ( clk_i          ),
+      .rst_ni ( rst_ni         ),
+      .in     ( in             ),
+      .out    ( s_cut_0.Master )
+    );
+    axi_cut #(
+      .ADDR_WIDTH ( ADDR_WIDTH ),
+      .DATA_WIDTH ( DATA_WIDTH ),
+      .ID_WIDTH   ( ID_WIDTH   ),
+      .USER_WIDTH ( USER_WIDTH )
+    ) i_last (
+      .clk_i  ( clk_i          ),
+      .rst_ni ( rst_ni         ),
+      .in     ( s_cut_0.Slave  ),
+      .out    ( out            )
+    );
+
+  end else begin : g_cuts
     AXI_BUS #(
       .AXI_ADDR_WIDTH ( ADDR_WIDTH ),
       .AXI_DATA_WIDTH ( DATA_WIDTH ),
