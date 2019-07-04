@@ -745,13 +745,14 @@ package axi_test;
         // Determine `ax_atop`.
         if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
             beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
+          beat.ax_atop[5:4] = axi_pkg::ATOP_ATOMICLOAD; // (Do not support stores)
           // Endianness
           beat.ax_atop[3] = $random();
           // Atomic operation
           beat.ax_atop[2:0] = $random();
         end else begin // Atomic{Swap,Compare}
           beat.ax_atop[3:1] = '0;
-          beat.ax_atop[0] = $random();
+          //beat.ax_atop[0] = $random(); (Do not support compares)
         end
         // Determine `ax_size` and `ax_len`.
         if (2**beat.ax_size < AXI_STRB_WIDTH) begin
@@ -782,10 +783,10 @@ package axi_test;
         // Determine `ax_addr`.
         if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
           // The address must be aligned to half the outbound data size. [E2-337]
-          beat.ax_addr = beat.ax_addr & ~(1<<beat.ax_size - 1);
+          beat.ax_addr = beat.ax_addr & ~((1'b1<<beat.ax_size) - 1);
         end else begin
           // The address must be aligned to the data size. [E2-337]
-          beat.ax_addr = beat.ax_addr & ~(1<<(beat.ax_size+1) - 1);
+          beat.ax_addr = beat.ax_addr & ~((1'b1<<(beat.ax_size+1)) - 1);
         end
         // Determine `ax_burst`.
         if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
@@ -982,15 +983,15 @@ package axi_test;
         addr = aw_beat.ax_addr;
         for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
           automatic w_beat_t w_beat = new;
-          int unsigned begin_byte, n_bytes;
-          logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
+          automatic int unsigned begin_byte, n_bytes;
+          automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
           rand_success = std::randomize(w_beat); assert (rand_success);
           // Determine strobe.
           w_beat.w_strb = '0;
           n_bytes = 2**aw_beat.ax_size;
           begin_byte = addr % AXI_STRB_WIDTH;
           strb_mask = ((1'b1 << n_bytes) - 1) << begin_byte;
-          rand_strb = $random();
+          rand_success = std::randomize(rand_strb); assert (rand_success);
           w_beat.w_strb |= (rand_strb & strb_mask);
           // Determine last.
           w_beat.w_last = (i == aw_beat.ax_len);

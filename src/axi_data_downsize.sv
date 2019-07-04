@@ -197,13 +197,21 @@ module axi_data_downsize #(
   typedef logic [$clog2(SI_BYTES/MI_BYTES)+7:0] full_len_t;
 
   // --------------
-  // MULTIPLEXER
+  // ARBITERS
   // --------------
 
-  si_channel_r_t [NR_OUTSTANDING-1:0] int_slv_r      ;
-  logic          [NR_OUTSTANDING-1:0] int_slv_r_valid;
-  logic          [NR_OUTSTANDING-1:0] int_slv_r_ready;
-  si_channel_r_t                      arb_slv_r      ;
+  // R
+
+  si_channel_r_t [NR_OUTSTANDING-1:0] slv_r_outstanding      ;
+  logic          [NR_OUTSTANDING-1:0] slv_r_valid_outstanding;
+  logic          [NR_OUTSTANDING-1:0] slv_r_ready_outstanding;
+  si_channel_r_t                      arbiter_slv_r          ;
+
+  assign slv_r_id   = arbiter_slv_r.id;
+  assign slv_r_data = arbiter_slv_r.data;
+  assign slv_r_resp = arbiter_slv_r.resp;
+  assign slv_r_last = arbiter_slv_r.last;
+  assign slv_r_user = arbiter_slv_r.user;
 
   rr_arb_tree #(
     .NumIn    (NR_OUTSTANDING),
@@ -211,23 +219,40 @@ module axi_data_downsize #(
     .AxiVldRdy(1'b1          ),
     .LockIn   (1'b1          )
   ) i_arbiter_slv_r (
-    .clk_i                   ,
-    .rst_ni                  ,
-    .flush_i(1'b0           ),
-    .rr_i   (/* unused */   ),
-    .req_i  (int_slv_r_valid),
-    .gnt_o  (int_slv_r_ready),
-    .data_i (int_slv_r      ),
-    .gnt_i  (slv_r_ready    ),
-    .req_o  (slv_r_valid    ),
-    .data_o (arb_slv_r      ),
-    .idx_o  (/* unused */   )
+    .clk_i                           ,
+    .rst_ni                          ,
+    .flush_i(1'b0                   ),
+    .rr_i   (/* unused */           ),
+    .req_i  (slv_r_valid_outstanding),
+    .gnt_o  (slv_r_ready_outstanding),
+    .data_i (slv_r_outstanding      ),
+    .gnt_i  (slv_r_ready            ),
+    .req_o  (slv_r_valid            ),
+    .data_o (arbiter_slv_r          ),
+    .idx_o  (/* unused */           )
   );
 
-  channel_ax_t [NR_OUTSTANDING-1:0] int_mst_ar      ;
-  logic        [NR_OUTSTANDING-1:0] int_mst_ar_valid;
-  logic        [NR_OUTSTANDING-1:0] int_mst_ar_ready;
-  channel_ax_t                      arb_mst_ar      ;
+  logic [NR_OUTSTANDING-1:0] mst_r_ready_outstanding;
+  assign mst_r_ready = |mst_r_ready_outstanding;
+
+  // AR
+
+  channel_ax_t [NR_OUTSTANDING-1:0] mst_ar_outstanding      ;
+  logic        [NR_OUTSTANDING-1:0] mst_ar_valid_outstanding;
+  logic        [NR_OUTSTANDING-1:0] mst_ar_ready_outstanding;
+  channel_ax_t                      arbiter_mst_ar          ;
+
+  assign mst_ar_id     = arbiter_mst_ar.id;
+  assign mst_ar_addr   = arbiter_mst_ar.addr;
+  assign mst_ar_len    = arbiter_mst_ar.len;
+  assign mst_ar_size   = arbiter_mst_ar.size;
+  assign mst_ar_burst  = arbiter_mst_ar.burst;
+  assign mst_ar_lock   = arbiter_mst_ar.lock;
+  assign mst_ar_cache  = arbiter_mst_ar.cache;
+  assign mst_ar_prot   = arbiter_mst_ar.prot;
+  assign mst_ar_qos    = arbiter_mst_ar.qos;
+  assign mst_ar_region = arbiter_mst_ar.region;
+  assign mst_ar_user   = arbiter_mst_ar.user;
 
   rr_arb_tree #(
     .NumIn    (NR_OUTSTANDING),
@@ -235,66 +260,46 @@ module axi_data_downsize #(
     .AxiVldRdy(1'b1          ),
     .LockIn   (1'b1          )
   ) i_arbiter_mst_ar (
-    .clk_i                    ,
-    .rst_ni                   ,
-    .flush_i(1'b0            ),
-    .rr_i   (/* unused */    ),
-    .req_i  (int_mst_ar_valid),
-    .gnt_o  (int_mst_ar_ready),
-    .data_i (int_mst_ar      ),
-    .gnt_i  (mst_ar_ready    ),
-    .req_o  (mst_ar_valid    ),
-    .data_o (arb_mst_ar      ),
-    .idx_o  (/* unused */    )
+    .clk_i                            ,
+    .rst_ni                           ,
+    .flush_i(1'b0                    ),
+    .rr_i   (/* unused */            ),
+    .req_i  (mst_ar_valid_outstanding),
+    .gnt_o  (mst_ar_ready_outstanding),
+    .data_i (mst_ar_outstanding      ),
+    .gnt_i  (mst_ar_ready            ),
+    .req_o  (mst_ar_valid            ),
+    .data_o (arbiter_mst_ar          ),
+    .idx_o  (/* unused */            )
   );
 
-  always_comb begin
-    // OUTPUT SIGNALS
-    mst_ar_id     = arb_mst_ar.id;
-    mst_ar_addr   = arb_mst_ar.addr;
-    mst_ar_len    = arb_mst_ar.len;
-    mst_ar_size   = arb_mst_ar.size;
-    mst_ar_burst  = arb_mst_ar.burst;
-    mst_ar_lock   = arb_mst_ar.lock;
-    mst_ar_cache  = arb_mst_ar.cache;
-    mst_ar_prot   = arb_mst_ar.prot;
-    mst_ar_qos    = arb_mst_ar.qos;
-    mst_ar_region = arb_mst_ar.region;
-    mst_ar_user   = arb_mst_ar.user;
+  logic [NR_OUTSTANDING-1:0] slv_ar_ready_outstanding;
+  assign slv_ar_ready = |slv_ar_ready_outstanding;
 
-    slv_r_id      = arb_slv_r.id;
-    slv_r_data    = arb_slv_r.data;
-    slv_r_resp    = arb_slv_r.resp;
-    slv_r_last    = arb_slv_r.last;
-    slv_r_user    = arb_slv_r.user;
+  // UNPACK REQUEST SIGNALS
 
-    // REQUEST SIGNALS
-    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
-      int_slv_r_valid[tr]  = int_slv_r[tr].valid;
-      int_mst_ar_valid[tr] = int_mst_ar[tr].valid;
+  generate
+    for (genvar t = 0; t < NR_OUTSTANDING; t++) begin: gen_outstanding_request_signals
+      assign slv_r_valid_outstanding[t]  = slv_r_outstanding[t].valid;
+      assign mst_ar_valid_outstanding[t] = mst_ar_outstanding[t].valid;
     end
-  end // block: mux
+  endgenerate
 
   // --------------
   // READ
   // --------------
 
-  // There is an identical FSM for each possible outstanding transaction
-  enum logic [1:0] { R_IDLE, R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE } [NR_OUTSTANDING-1:0] r_state_d, r_state_q;
+  typedef enum logic [1:0] {
+    R_IDLE, R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE
+  } r_state_t;
 
-  // Decides which FSM is idle
-
-  logic [NR_OUTSTANDING-1:0] idle_read_fsm;
-  tr_id_t                    idx_read_fsm ;
-  logic                      full_read_fsm;
-
-  for (genvar tr = 0; tr < NR_OUTSTANDING; tr++)
-    assign idle_read_fsm[tr] = (r_state_q[tr] == R_IDLE);
+  logic [NR_OUTSTANDING-1:0] idle_read_downsizer;
+  tr_id_t                    idx_idle_downsizer ;
 
   lzc #(.WIDTH(NR_OUTSTANDING)) i_read_lzc (
-    .in_i   (idle_read_fsm),
-    .cnt_o  (idx_read_fsm ),
-    .empty_o(full_read_fsm)
+    .in_i   (idle_read_downsizer),
+    .cnt_o  (idx_idle_downsizer ),
+    .empty_o(                   )
   );
 
   // This ID queue is used to resolve with FSM is handling
@@ -310,199 +315,223 @@ module axi_data_downsize #(
     .CAPACITY(NR_OUTSTANDING),
     .data_t  (tr_id_t       )
   ) i_read_id_queue (
-    .clk_i                          ,
-    .rst_ni                         ,
+    .clk_i                               ,
+    .rst_ni                              ,
 
-    .inp_id_i        (slv_ar_id    ),
-    .inp_data_i      (idx_read_fsm ),
-    .inp_req_i       (|idqueue_push),
-    .inp_gnt_o       (/* unused  */),
+    .inp_id_i        (slv_ar_id         ),
+    .inp_data_i      (idx_idle_downsizer),
+    .inp_req_i       (|idqueue_push     ),
+    .inp_gnt_o       (/* unused  */     ),
 
-    .oup_id_i        (mst_r_id     ),
-    .oup_pop_i       (|idqueue_pop ),
-    .oup_req_i       (1'b1         ),
-    .oup_data_o      (idqueue_id   ),
-    .oup_data_valid_o(idqueue_valid),
-    .oup_gnt_o       (/* unused  */),
+    .oup_id_i        (mst_r_id          ),
+    .oup_pop_i       (|idqueue_pop      ),
+    .oup_req_i       (1'b1              ),
+    .oup_data_o      (idqueue_id        ),
+    .oup_data_valid_o(idqueue_valid     ),
+    .oup_gnt_o       (/* unused  */     ),
 
     // Unused
-    .exists_data_i   ('0           ),
-    .exists_mask_i   ('0           ),
-    .exists_req_i    ('0           ),
-    .exists_o        (/* unused  */),
-    .exists_gnt_o    (/* unused  */)
+    .exists_data_i   ('0                ),
+    .exists_mask_i   ('0                ),
+    .exists_req_i    ('0                ),
+    .exists_o        (/* unused  */     ),
+    .exists_gnt_o    (/* unused  */     )
   );
 
-  struct packed {
-    channel_ax_t   ar  ;
-    si_channel_r_t r   ;
-    full_len_t     len ;
-    size_t         size;
-  } [NR_OUTSTANDING-1:0] r_req_d, r_req_q;
+  generate
+    for (genvar t = 0; t < NR_OUTSTANDING; t++) begin: gen_read_downsizer
+      r_state_t r_state_d, r_state_q;
+      assign idle_read_downsizer[t] = (r_state_q == R_IDLE);
 
-  always_comb begin
-    idqueue_push = '0;
-    idqueue_pop  = '0;
-    mst_r_ready  = 1'b0;
-    slv_ar_ready = 1'b0;
+      struct packed {
+        channel_ax_t   ar  ;
+        si_channel_r_t r   ;
+        full_len_t     len ;
+        size_t         size;
+      } r_req_d, r_req_q;
 
-    for (int tr = 0; tr < NR_OUTSTANDING; tr++) begin
-      // Maintain state
-      r_state_d[tr]         = r_state_q[tr];
-      r_req_d[tr]           = r_req_q[tr];
+      always_comb begin
+        // Maintain state
+        r_state_d = r_state_q;
+        r_req_d   = r_req_q;
 
-      // AR Channel
-      int_mst_ar[tr]        = '0;
-      int_mst_ar[tr].id     = r_req_q[tr].ar.id;
-      int_mst_ar[tr].addr   = r_req_q[tr].ar.addr;
-      int_mst_ar[tr].len    = r_req_q[tr].ar.len;
-      int_mst_ar[tr].size   = r_req_q[tr].ar.size;
-      int_mst_ar[tr].burst  = r_req_q[tr].ar.burst;
-      int_mst_ar[tr].lock   = r_req_q[tr].ar.lock;
-      int_mst_ar[tr].cache  = r_req_q[tr].ar.cache;
-      int_mst_ar[tr].prot   = r_req_q[tr].ar.prot;
-      int_mst_ar[tr].qos    = r_req_q[tr].ar.qos;
-      int_mst_ar[tr].region = r_req_q[tr].ar.region;
-      int_mst_ar[tr].user   = r_req_q[tr].ar.user;
-      int_mst_ar[tr].valid  = r_req_q[tr].ar.valid;
+        // AR Channel
+        mst_ar_outstanding[t] = '{
+          id      : r_req_q.ar.id,
+          addr    : r_req_q.ar.addr,
+          len     : r_req_q.ar.len,
+          size    : r_req_q.ar.size,
+          burst   : r_req_q.ar.burst,
+          lock    : r_req_q.ar.lock,
+          cache   : r_req_q.ar.cache,
+          prot    : r_req_q.ar.prot,
+          qos     : r_req_q.ar.qos,
+          region  : r_req_q.ar.prot,
+          user    : r_req_q.ar.user,
+          valid   : r_req_q.ar.valid,
+          default : '0
+        };
 
-      // R Channel
-      int_slv_r[tr].id      = r_req_q[tr].r.id;
-      int_slv_r[tr].data    = r_req_q[tr].r.data;
-      int_slv_r[tr].resp    = r_req_q[tr].r.resp;
-      int_slv_r[tr].last    = r_req_q[tr].r.last;
-      int_slv_r[tr].user    = r_req_q[tr].r.user;
-      int_slv_r[tr].valid   = r_req_q[tr].r.valid;
+        // R Channel
+        slv_r_outstanding[t] = '{
+          id    : r_req_q.r.id,
+          data  : r_req_q.r.data,
+          resp  : r_req_q.r.resp,
+          last  : r_req_q.r.last,
+          user  : r_req_q.r.user,
+          valid : r_req_q.r.valid
+        };
 
-      // Got a grant on the AR channel
-      if (int_mst_ar[tr].valid && int_mst_ar_ready[tr])
-        r_req_d[tr].ar.valid = 1'b0;
+        idqueue_push[t] = '0;
+        idqueue_pop[t]  = '0;
 
-      case (r_state_q[tr])
-        R_IDLE : begin
-          // Reset channels
-          r_req_d[tr].ar = '0;
-          r_req_d[tr].r  = '0;
+        mst_r_ready_outstanding[t]  = 1'b0;
+        slv_ar_ready_outstanding[t] = 1'b0;
 
-          // Ready
-          slv_ar_ready = 1'b1;
+        // Got a grant on the AR channel
+        if (mst_ar_valid_outstanding[t] && mst_ar_ready_outstanding[t])
+          r_req_d.ar.valid = 1'b0;
 
-          // New write request
-          if (slv_ar_valid && (idx_read_fsm == tr)) begin
-            // Push to ID queue
-            idqueue_push[tr] = 1'b1;
+        case (r_state_q)
+          R_IDLE : begin
+            // Reset channels
+            r_req_d.ar = '0;
+            r_req_d.r  = '0;
 
-            // Default state
-            r_state_d[tr] = R_PASSTHROUGH;
+            // Ready
+            slv_ar_ready_outstanding[t] = 1'b1;
 
-            // Save beat
-            r_req_d[tr].ar.id     = slv_ar_id;
-            r_req_d[tr].ar.addr   = slv_ar_addr;
-            r_req_d[tr].ar.size   = slv_ar_size;
-            r_req_d[tr].ar.burst  = slv_ar_burst;
-            r_req_d[tr].ar.len    = slv_ar_len;
-            r_req_d[tr].ar.lock   = slv_ar_lock;
-            r_req_d[tr].ar.cache  = slv_ar_cache;
-            r_req_d[tr].ar.prot   = slv_ar_prot;
-            r_req_d[tr].ar.qos    = slv_ar_qos;
-            r_req_d[tr].ar.region = slv_ar_region;
-            r_req_d[tr].ar.user   = slv_ar_user;
-            r_req_d[tr].ar.valid  = 1'b1;
+            // New write request
+            if (slv_ar_valid && (idx_idle_downsizer == t)) begin
+              // Push to ID queue
+              idqueue_push[t] = 1'b1;
 
-            r_req_d[tr].len       = slv_ar_len;
-            r_req_d[tr].size      = slv_ar_size;
+              // Default state
+              r_state_d = R_PASSTHROUGH;
 
-            if (|(slv_ar_cache & CACHE_MODIFIABLE))
-              case (slv_ar_burst)
-                BURST_INCR : begin
-                  // Evaluate downsize ratio
-                  automatic addr_t size_mask  = (1 << slv_ar_size) - 1;
-                  automatic addr_t conv_ratio = ((1 << slv_ar_size) + MI_BYTES - 1) / MI_BYTES;
+              // Save beat
+              r_req_d.ar = '{
+                id      : slv_ar_id,
+                addr    : slv_ar_addr,
+                size    : slv_ar_size,
+                burst   : slv_ar_burst,
+                len     : slv_ar_len,
+                lock    : slv_ar_lock,
+                cache   : slv_ar_cache,
+                prot    : slv_ar_prot,
+                qos     : slv_ar_qos,
+                region  : slv_ar_region,
+                user    : slv_ar_user,
+                valid   : 1'b1,
+                default : '0
+              };
+              r_req_d.len  = slv_ar_len;
+              r_req_d.size = slv_ar_size;
 
-                  // Evaluate output burst length
-                  automatic addr_t align_adj  = (slv_ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
-                  r_req_d[tr].len             = (slv_ar_len + 1) * conv_ratio - align_adj - 1;
+              if (|(slv_ar_cache & CACHE_MODIFIABLE))
+                case (slv_ar_burst)
+                  BURST_INCR : begin
+                    // Evaluate downsize ratio
+                    automatic addr_t size_mask  = (1 << slv_ar_size) - 1;
+                    automatic addr_t conv_ratio = ((1 << slv_ar_size) + MI_BYTES - 1) / MI_BYTES;
 
-                  if (conv_ratio != 1) begin
-                    r_req_d[tr].ar.size   = $clog2(MI_BYTES);
+                    // Evaluate output burst length
+                    automatic addr_t align_adj = (slv_ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+                    r_req_d.len = (slv_ar_len + 1) * conv_ratio - align_adj - 1;
 
-                    if (r_req_d[tr].len <= 255) begin
-                      r_state_d[tr] = R_INCR_DOWNSIZE;
-                      r_req_d[tr].ar.len = r_req_d[tr].len;
-                    end else begin
-                      r_state_d[tr] = R_SPLIT_INCR_DOWNSIZE;
-                      r_req_d[tr].ar.len = 255 - align_adj;
+                    if (conv_ratio != 1) begin
+                      r_req_d.ar.size = $clog2(MI_BYTES);
+
+                      if (r_req_d.len <= 255) begin
+                        r_state_d      = R_INCR_DOWNSIZE;
+                        r_req_d.ar.len = r_req_d.len;
+                      end else begin
+                        r_state_d      = R_SPLIT_INCR_DOWNSIZE;
+                        r_req_d.ar.len = 255 - align_adj;
+                      end
+                    end // if (conv_ratio != 1)
+                  end // case: BURST_INCR
+                endcase // slv_ar_burst
+            end // if (slv_ar_valid && (idx_idle_downsizer == tr))
+          end
+
+          R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
+            // Got a grant on the R channel
+            if (slv_r_valid_outstanding[t] && slv_r_ready_outstanding[t])
+              r_req_d.r = '0;
+
+            // Request was accepted
+            if (!r_req_q.ar.valid)
+              // Our turn
+              if ((idqueue_id == t) && idqueue_valid)
+                // Ready to accept more data
+                if (!slv_r_valid_outstanding[t] || (slv_r_valid_outstanding[t] && slv_r_ready_outstanding[t])) begin
+                  mst_r_ready_outstanding[t] = 1'b1;
+
+                  if (mst_r_valid) begin
+                    automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(MI_BYTES)-1:0];
+                    automatic addr_t si_offset = r_req_q.ar.addr[$clog2(SI_BYTES)-1:0];
+                    automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1;
+
+                    // Lane steering
+                    for (int b = 0; b < SI_BYTES; b++) begin
+                      if ((b >= si_offset) &&
+                        (b - si_offset < (1 << r_req_q.size)) &&
+                        (b + mi_offset - si_offset < MI_BYTES)) begin
+                        r_req_d.r.data[8*b+:8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
+                      end
                     end
-                  end // if (conv_ratio != 1)
-                end // case: BURST_INCR
-              endcase // case (slv_ar_burst)
-          end // if (slv_ar_valid && (idx_read_fsm == tr))
+
+                    r_req_d.len     = r_req_q.len - 1;
+                    r_req_d.ar.len  = r_req_q.ar.len - 1;
+                    r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                    r_req_d.r.last  = (r_req_q.len == 0);
+                    r_req_d.r.id    = mst_r_id;
+                    r_req_d.r.user  = mst_r_user;
+
+                    if (r_req_q.len == 0)
+                      idqueue_pop[t] = 1'b1;
+
+                    case (r_state_q)
+                      R_PASSTHROUGH :
+                        // Forward data as soon as we can
+                        r_req_d.r.valid = 1'b1;
+
+                      R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
+                        // Forward when the burst is finished, or when a word was filled up
+                        if (r_req_q.len == 0 || (align_addr(r_req_d.ar.addr, r_req_q.size) != align_addr(r_req_q.ar.addr, r_req_q.size)))
+                          r_req_d.r.valid = 1'b1;
+                    endcase // case (r_state_q[t])
+
+                    // Trigger another burst request, if needed
+                    if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
+                      // Finished current burst, but whole transaction hasn't finished
+                      if (r_req_q.ar.len == '0 && r_req_q.len != '0) begin
+                        r_req_d.ar.valid = 1'b1;
+                        r_req_d.ar.len   = (r_req_d.len <= 255) ? r_req_d.len : 255;
+                      end // if (r_req_q.ar.len == '0 && r_req_q.len != '0)
+                  end // if (mst_r_valid)
+                end // if (!slv_r_valid_outstanding[t] || (slv_r_valid_outstanding[t] && slv_r_ready_outstanding[t]))
+
+            if (slv_r_valid_outstanding[t] && slv_r_ready_outstanding[t])
+              if (r_req_q.len == '1)
+                r_state_d = R_IDLE;
+          end // case: R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE
+        endcase // r_state_q[t]
+      end // always_comb
+
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+          r_state_q <= R_IDLE;
+          r_req_q   <= '0;
+        end else begin
+          r_state_q <= r_state_d;
+          r_req_q   <= r_req_d;
         end
+      end
+    end
+  endgenerate
 
-        R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
-          // Got a grant on the R channel
-          if (int_slv_r[tr].valid && int_slv_r_ready[tr])
-            r_req_d[tr].r = '0;
-
-          // Request was accepted
-          if (!r_req_q[tr].ar.valid)
-            // Our turn
-            if ((idqueue_id == tr) && idqueue_valid)
-              // Ready to accept more data
-              if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr])) begin
-                mst_r_ready = 1'b1;
-
-                if (mst_r_valid) begin
-                  automatic addr_t mi_offset = r_req_q[tr].ar.addr[$clog2(MI_BYTES)-1:0];
-                  automatic addr_t si_offset = r_req_q[tr].ar.addr[$clog2(SI_BYTES)-1:0];
-                  automatic addr_t size_mask = (1 << r_req_q[tr].ar.size) - 1;
-
-                  // Lane steering
-                  for (int b = 0; b < SI_BYTES; b++)
-                    if ((b >= si_offset) &&
-                      (b - si_offset < (1 << r_req_q[tr].size)) &&
-                      (b + mi_offset - si_offset < MI_BYTES)) begin
-                      r_req_d[tr].r.data[8*b+:8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
-                    end
-
-                  r_req_d[tr].len     = r_req_q[tr].len - 1;
-                  r_req_d[tr].ar.len  = r_req_q[tr].ar.len - 1;
-                  r_req_d[tr].ar.addr = (r_req_q[tr].ar.addr & ~size_mask) + (1 << r_req_q[tr].ar.size);
-                  r_req_d[tr].r.last  = (r_req_q[tr].len == 0);
-                  r_req_d[tr].r.id    = mst_r_id;
-                  r_req_d[tr].r.user  = mst_r_user;
-
-                  if (r_req_q[tr].len == 0)
-                    idqueue_pop[tr] = 1'b1;
-
-                  case (r_state_q[tr])
-                    R_PASSTHROUGH :
-                      // Forward data as soon as we can
-                      r_req_d[tr].r.valid = 1'b1;
-
-                    R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
-                      // Forward when the burst is finished, or when a word was filled up
-                      if (r_req_q[tr].len == 0 || (align_addr(r_req_d[tr].ar.addr, r_req_q[tr].size) != align_addr(r_req_q[tr].ar.addr, r_req_q[tr].size)))
-                        r_req_d[tr].r.valid = 1'b1;
-                  endcase // case (r_state_q[tr])
-
-                  // Trigger another burst request, if needed
-                  if (r_state_q[tr] == R_SPLIT_INCR_DOWNSIZE)
-                    // Finished current burst, but whole transaction hasn't finished
-                    if (r_req_q[tr].ar.len == '0 && r_req_q[tr].len != '0) begin
-                      r_req_d[tr].ar.valid = 1'b1;
-                      r_req_d[tr].ar.len   = (r_req_d[tr].len <= 255) ? r_req_d[tr].len : 255;
-                    end
-                end // if ((idqueue_id == tr) && idqueue_valid)
-              end // if (!int_slv_r[tr].valid || (int_slv_r[tr].valid && int_slv_r_ready[tr]))
-
-          if (int_slv_r[tr].valid && int_slv_r_ready[tr])
-            if (r_req_q[tr].len == '1)
-              r_state_d[tr] = R_IDLE;
-        end // case: R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE
-      endcase // case (r_state_q[tr])
-    end // for (unsigned int tr = 0; tr < NR_OUTSTANDING; tr++)
-  end // always_comb
 
   // --------------
   // WRITE
@@ -671,21 +700,11 @@ module axi_data_downsize #(
     end
   end
 
-  // --------------
-  // REGISTERS
-  // --------------
-
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
-      r_state_q <= {NR_OUTSTANDING{R_IDLE}};
-      r_req_q   <= '0;
-
       w_state_q <= W_IDLE;
       w_req_q   <= '0;
     end else begin
-      r_state_q <= r_state_d;
-      r_req_q   <= r_req_d;
-
       w_state_q <= w_state_d;
       w_req_q   <= w_req_d;
     end
