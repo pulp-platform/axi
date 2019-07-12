@@ -77,18 +77,19 @@
 
 `define AXI_ASSIGN_TO_AW(aw_struct, axi_if) \
   assign aw_struct = '{                     \
-    id:     axi_if.aw_id,                   \
-    addr:   axi_if.aw_addr,                 \
-    len:    axi_if.aw_len,                  \
-    size:   axi_if.aw_size,                 \
-    burst:  axi_if.aw_burst,                \
-    lock:   axi_if.aw_lock,                 \
-    cache:  axi_if.aw_cache,                \
-    prot:   axi_if.aw_prot,                 \
-    qos:    axi_if.aw_qos,                  \
-    region: axi_if.aw_region,               \
-    atop:   axi_if.aw_atop,                 \
-    user:   axi_if.aw_user                  \
+    id:      axi_if.aw_id,                  \
+    addr:    axi_if.aw_addr,                \
+    len:     axi_if.aw_len,                 \
+    size:    axi_if.aw_size,                \
+    burst:   axi_if.aw_burst,               \
+    lock:    axi_if.aw_lock,                \
+    cache:   axi_if.aw_cache,               \
+    prot:    axi_if.aw_prot,                \
+    qos:     axi_if.aw_qos,                 \
+    region:  axi_if.aw_region,              \
+    atop:    axi_if.aw_atop,                \
+    user:    axi_if.aw_user,                \
+    default: 'x                             \
   };
 
 `define AXI_ASSIGN_FROM_AW(axi_if, aw_struct) \
@@ -133,17 +134,18 @@
 
 `define AXI_ASSIGN_TO_AR(ar_struct, axi_if) \
   assign ar_struct = '{                     \
-    id:     axi_if.ar_id,                   \
-    addr:   axi_if.ar_addr,                 \
-    len:    axi_if.ar_len,                  \
-    size:   axi_if.ar_size,                 \
-    burst:  axi_if.ar_burst,                \
-    lock:   axi_if.ar_lock,                 \
-    cache:  axi_if.ar_cache,                \
-    prot:   axi_if.ar_prot,                 \
-    qos:    axi_if.ar_qos,                  \
-    region: axi_if.ar_region,               \
-    user:   axi_if.ar_user                  \
+    id:      axi_if.ar_id,                  \
+    addr:    axi_if.ar_addr,                \
+    len:     axi_if.ar_len,                 \
+    size:    axi_if.ar_size,                \
+    burst:   axi_if.ar_burst,               \
+    lock:    axi_if.ar_lock,                \
+    cache:   axi_if.ar_cache,               \
+    prot:    axi_if.ar_prot,                \
+    qos:     axi_if.ar_qos,                 \
+    region:  axi_if.ar_region,              \
+    user:    axi_if.ar_user,                \
+    default: 'x                             \
   };
 
 `define AXI_ASSIGN_FROM_AR(axi_if, ar_struct) \

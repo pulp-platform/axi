@@ -735,12 +735,13 @@ package axi_test;
 
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
-          rand_success = std::randomize(size) with {
-            2**size <= AXI_STRB_WIDTH;
-            2**size <= len;
-          }; assert(rand_success);
+          // The largest size possible
+          size = $clog2(len);
+          if (2**size > AXI_STRB_WIDTH)
+            size = $clog2(AXI_STRB_WIDTH);
+
           ax_beat.ax_size = size;
-          ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+          ax_beat.ax_len = ((len + (1'b1 << size) - 1) >> size) - 1;
 
           rand_success = std::randomize(addr) with {
             addr >= mem_region.addr_begin;
