@@ -735,18 +735,19 @@ package axi_test;
             break;
           end
 
-        rand_success = std::randomize(size) with {
-          2**size <= AXI_STRB_WIDTH;
-          2**size <= len;
-        }; assert(rand_success);
-        ax_beat.ax_size = size;
-        ax_beat.ax_len = len / size;
-
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
+          rand_success = std::randomize(size) with {
+            2**size <= AXI_STRB_WIDTH;
+            2**size <= len;
+          }; assert(rand_success);
+          ax_beat.ax_size = size;
+          ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+
           rand_success = std::randomize(addr) with {
             addr >= mem_region.addr_begin;
             addr <= mem_region.addr_end;
+            addr + len <= mem_region.addr_end;
           }; assert(rand_success);
 
           if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
@@ -760,22 +761,24 @@ package axi_test;
           end
         end
       end else begin
-        rand_success = std::randomize(size) with {
-          2**size <= AXI_STRB_WIDTH;
-        }; assert(rand_success);
-        ax_beat.ax_size = size;
-
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
-          rand_success = std::randomize(addr) with {
-            addr >= mem_region.addr_begin;
-            addr <= mem_region.addr_end;
-          }; assert(rand_success);
           // Randomize burst length.
           rand_success = std::randomize(len) with {
             len <= this.max_len;
           }; assert(rand_success);
+          rand_success = std::randomize(size) with {
+            2**size <= AXI_STRB_WIDTH;
+          }; assert(rand_success);
+          ax_beat.ax_size = size;
           ax_beat.ax_len = len;
+
+          // Randomize address
+          rand_success = std::randomize(addr) with {
+            addr >= mem_region.addr_begin;
+            addr <= mem_region.addr_end;
+            addr + ((len + 1) << size) <= mem_region.addr_end;
+          }; assert(rand_success);
 
           if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
             if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
@@ -1040,14 +1043,17 @@ package axi_test;
         addr = aw_beat.ax_addr;
         for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
           automatic w_beat_t w_beat = new;
-          automatic int unsigned begin_byte, n_bytes;
+          automatic int unsigned begin_byte, end_byte, n_bytes;
           automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
           rand_success = std::randomize(w_beat); assert (rand_success);
           // Determine strobe.
           w_beat.w_strb = '0;
           n_bytes = 2**aw_beat.ax_size;
           begin_byte = addr % AXI_STRB_WIDTH;
-          strb_mask = ((1'b1 << n_bytes) - 1) << begin_byte;
+          end_byte = ((begin_byte + n_bytes) >> aw_beat.ax_size) << aw_beat.ax_size;
+          strb_mask = '0;
+          for (int unsigned b = begin_byte; b < end_byte; b++)
+            strb_mask[b] = 1'b1;
           rand_success = std::randomize(rand_strb); assert (rand_success);
           w_beat.w_strb |= (rand_strb & strb_mask);
           // Determine last.
