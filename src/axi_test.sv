@@ -792,7 +792,12 @@ package axi_test;
       end
 
       ax_beat.ax_addr = addr;
-      rand_success = std::randomize(id); assert(rand_success);
+      forever begin
+        rand_success = std::randomize(id); assert(rand_success);
+        if (r_flight_cnt[id] == 0 && w_flight_cnt[id] == 0) begin
+          break;
+        end
+      end
       ax_beat.ax_id = id;
       return ax_beat;
     endfunction
