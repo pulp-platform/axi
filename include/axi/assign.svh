@@ -89,7 +89,7 @@
     region:  axi_if.aw_region,              \
     atop:    axi_if.aw_atop,                \
     user:    axi_if.aw_user,                \
-    default: 'x                             \
+    default: '0                             \
   };
 
 `define AXI_ASSIGN_FROM_AW(axi_if, aw_struct) \
@@ -145,7 +145,7 @@
     qos:     axi_if.ar_qos,                 \
     region:  axi_if.ar_region,              \
     user:    axi_if.ar_user,                \
-    default: 'x                             \
+    default: '0                             \
   };
 
 `define AXI_ASSIGN_FROM_AR(axi_if, ar_struct) \

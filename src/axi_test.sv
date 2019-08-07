@@ -703,7 +703,7 @@ package axi_test;
       automatic burst_t burst;
       automatic cache_t cache;
       automatic id_t id;
-      automatic len_t len;
+      automatic logic [31:0] len;
       automatic size_t size;
       automatic int unsigned mem_region_idx;
       automatic mem_region_t mem_region;
@@ -736,9 +736,7 @@ package axi_test;
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
           // The largest size possible
-          size = $clog2(len);
-          if (2**size > AXI_STRB_WIDTH)
-            size = $clog2(AXI_STRB_WIDTH);
+          size = $clog2((len >= AXI_STRB_WIDTH) ? AXI_STRB_WIDTH : len);
 
           ax_beat.ax_size = size;
           ax_beat.ax_len = ((len + (1'b1 << size) - 1) >> size) - 1;
@@ -792,12 +790,7 @@ package axi_test;
       end
 
       ax_beat.ax_addr = addr;
-      forever begin
-        rand_success = std::randomize(id); assert(rand_success);
-        if (r_flight_cnt[id] == 0 && w_flight_cnt[id] == 0) begin
-          break;
-        end
-      end
+      rand_success = std::randomize(id); assert(rand_success);
       ax_beat.ax_id = id;
       return ax_beat;
     endfunction
