@@ -14,4 +14,5 @@
 
 set -e
 
-bender vsim -t test
+bender script vsim -t test > compile.tcl
+vsim -c -do 'source compile.tcl; quit'
