@@ -7,7 +7,7 @@ package:
 
 dependencies:
   apb: { git: "https://github.com/pulp-platform/apb.git", version: 0.1.0 }
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: counter-ext }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: master } # TODO: switch to release as soon as counters are released
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1 }
 
 export_include_dirs:
