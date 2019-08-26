@@ -137,7 +137,8 @@ module axi_data_downsize #(
   // --------------
 
   // Type for indexing which FSM handles each outstanding transaction
-  typedef logic [$clog2(NR_OUTSTANDING)-1:0] tr_id_t;
+  localparam TR_ID_WIDTH = NR_OUTSTANDING > 1 ? $clog2(NR_OUTSTANDING) : 1;
+  typedef logic [TR_ID_WIDTH-1:0] tr_id_t;
 
   typedef struct packed {
     id_t     id    ;
