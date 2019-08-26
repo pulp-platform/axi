@@ -237,6 +237,62 @@ module axi_data_downsize #(
   assign mst_r_ready = |mst_r_ready_outstanding;
 
   // AR
+  // Multiplex AR slave between AR and AW for the injection of atomic operations with an R response.
+  logic inject_aw_into_ar_req,  inject_aw_into_ar_gnt,
+        int_slv_ar_req,         int_slv_ar_gnt;
+  logic [NR_OUTSTANDING-1:0] int_slv_ar_gnt_outstanding;
+  assign int_slv_ar_gnt = |int_slv_ar_gnt_outstanding;
+  channel_ax_t slv_ar, slv_aw, int_slv_ar;
+  assign slv_ar = '{
+    id:     slv_ar_id,
+    addr:   slv_ar_addr,
+    len:    slv_ar_len,
+    size:   slv_ar_size,
+    burst:  slv_ar_burst,
+    lock:   slv_ar_lock,
+    cache:  slv_ar_cache,
+    prot:   slv_ar_prot,
+    qos:    slv_ar_qos,
+    region: slv_ar_region,
+    atop:   '0,
+    user:   slv_ar_user,
+    valid:  slv_ar_valid
+  };
+  assign slv_aw = '{
+    id:     slv_aw_id,
+    addr:   slv_aw_addr,
+    len:    slv_aw_len,
+    size:   slv_aw_size,
+    burst:  slv_aw_burst,
+    lock:   slv_aw_lock,
+    cache:  slv_aw_cache,
+    prot:   slv_aw_prot,
+    qos:    slv_aw_qos,
+    region: slv_aw_region,
+    atop:   slv_aw_atop,
+    user:   slv_aw_user,
+    valid:  slv_aw_valid
+  };
+  rr_arb_tree #(
+    .NumIn      (2),
+    .DataWidth  ($bits(int_slv_ar)),
+    .ExtPrio    (1'b0),
+    .AxiVldRdy  (1'b1),
+    .LockIn     (1'b0)
+  ) i_int_slv_ar_arb (
+    .clk_i,
+    .rst_ni,
+    .flush_i  (1'b0),
+    .rr_i     ('0),
+    .req_i    ({inject_aw_into_ar_req,  slv_ar_valid}),
+    .gnt_o    ({inject_aw_into_ar_gnt,  slv_ar_ready}),
+    .data_i   ({slv_aw,                 slv_ar}),
+    .req_o    (int_slv_ar_req),
+    .gnt_i    (int_slv_ar_gnt),
+    .data_o   (int_slv_ar),
+    .idx_o    ()
+  );
+
 
   channel_ax_t [NR_OUTSTANDING-1:0] mst_ar_outstanding      ;
   logic        [NR_OUTSTANDING-1:0] mst_ar_valid_outstanding;
@@ -275,7 +331,7 @@ module axi_data_downsize #(
   );
 
   logic [NR_OUTSTANDING-1:0] slv_ar_ready_outstanding;
-  assign slv_ar_ready = |slv_ar_ready_outstanding;
+  assign int_slv_ar_ready = |slv_ar_ready_outstanding;
 
   // UNPACK REQUEST SIGNALS
 
@@ -319,7 +375,7 @@ module axi_data_downsize #(
     .clk_i                               ,
     .rst_ni                              ,
 
-    .inp_id_i        (slv_ar_id         ),
+    .inp_id_i        (int_slv.arid      ),
     .inp_data_i      (idx_idle_downsizer),
     .inp_req_i       (|idqueue_push     ),
     .inp_gnt_o       (/* unused  */     ),
@@ -386,6 +442,8 @@ module axi_data_downsize #(
         idqueue_push[t] = '0;
         idqueue_pop[t]  = '0;
 
+        int_slv_ar_gnt_outstanding[t] = 1'b0;
+
         mst_r_ready_outstanding[t]  = 1'b0;
         slv_ar_ready_outstanding[t] = 1'b0;
 
@@ -403,7 +461,8 @@ module axi_data_downsize #(
             slv_ar_ready_outstanding[t] = 1'b1;
 
             // New write request
-            if (slv_ar_valid && (idx_idle_downsizer == t)) begin
+            if (int_slv_ar_req && (idx_idle_downsizer == t)) begin
+              int_slv_ar_gnt_outstanding[t] = 1'b1;
               // Push to ID queue
               idqueue_push[t] = 1'b1;
 
@@ -412,33 +471,33 @@ module axi_data_downsize #(
 
               // Save beat
               r_req_d.ar = '{
-                id      : slv_ar_id,
-                addr    : slv_ar_addr,
-                size    : slv_ar_size,
-                burst   : slv_ar_burst,
-                len     : slv_ar_len,
-                lock    : slv_ar_lock,
-                cache   : slv_ar_cache,
-                prot    : slv_ar_prot,
-                qos     : slv_ar_qos,
-                region  : slv_ar_region,
-                user    : slv_ar_user,
-                valid   : 1'b1,
+                id      : int_slv_ar.id,
+                addr    : int_slv_ar.addr,
+                size    : int_slv_ar.size,
+                burst   : int_slv_ar.burst,
+                len     : int_slv_ar.len,
+                lock    : int_slv_ar.lock,
+                cache   : int_slv_ar.cache,
+                prot    : int_slv_ar.prot,
+                qos     : int_slv_ar.qos,
+                region  : int_slv_ar.region,
+                user    : int_slv_ar.user,
+                valid   : &(~int_slv_ar.atop), // Injected "AR"s from AW are not valid.
                 default : '0
               };
-              r_req_d.len  = slv_ar_len;
-              r_req_d.size = slv_ar_size;
+              r_req_d.len  = int_slv_ar.len;
+              r_req_d.size = int_slv_ar.size;
 
-              if (|(slv_ar_cache & CACHE_MODIFIABLE))
-                case (slv_ar_burst)
+              if (|(int_slv_ar.cache & CACHE_MODIFIABLE))
+                case (int_slv_ar.burst)
                   BURST_INCR : begin
                     // Evaluate downsize ratio
-                    automatic addr_t size_mask  = (1 << slv_ar_size) - 1;
-                    automatic addr_t conv_ratio = ((1 << slv_ar_size) + MI_BYTES - 1) / MI_BYTES;
+                    automatic addr_t size_mask  = (1 << int_slv_ar.size) - 1;
+                    automatic addr_t conv_ratio = ((1 << int_slv_ar.size) + MI_BYTES - 1) / MI_BYTES;
 
                     // Evaluate output burst length
-                    automatic addr_t align_adj = (slv_ar_addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
-                    r_req_d.len = (slv_ar_len + 1) * conv_ratio - align_adj - 1;
+                    automatic addr_t align_adj = (int_slv_ar.addr & size_mask & ~MI_BYTE_MASK) / MI_BYTES;
+                    r_req_d.len = (int_slv_ar.len + 1) * conv_ratio - align_adj - 1;
 
                     if (conv_ratio != 1) begin
                       r_req_d.ar.size = $clog2(MI_BYTES);
@@ -452,8 +511,8 @@ module axi_data_downsize #(
                       end
                     end // if (conv_ratio != 1)
                   end // case: BURST_INCR
-                endcase // slv_ar_burst
-            end // if (slv_ar_valid && (idx_idle_downsizer == tr))
+                endcase // int_slv_ar.burst
+            end // if (int_slv_ar_req && (idx_idle_downsizer == tr))
           end
 
           R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
@@ -547,6 +606,8 @@ module axi_data_downsize #(
   } w_req_d, w_req_q;
 
   always_comb begin
+    inject_aw_into_ar_req = 1'b0;
+
     // Maintain state
     w_state_d     = w_state_q;
     w_req_d       = w_req_q;
@@ -646,8 +707,12 @@ module axi_data_downsize #(
       // Reset channels
       w_req_d.aw   = '0;
 
-      // Ready
-      slv_aw_ready = 1'b1;
+      if (slv_aw_valid && slv_aw_atop[5]) begin // ATOP with an R response
+        inject_aw_into_ar_req = 1'b1;
+        slv_aw_ready = inject_aw_into_ar_gnt;
+      end else begin                            // Regular AW
+        slv_aw_ready = 1'b1;
+      end
 
       // New write request
       if (slv_aw_valid && slv_aw_ready) begin
