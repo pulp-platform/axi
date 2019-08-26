@@ -303,7 +303,7 @@ module axi_data_downsize #(
     .empty_o(                   )
   );
 
-  // This ID queue is used to resolve with FSM is handling
+  // This ID queue is used to resolve which FSM is handling
   // each outstanding read transaction
 
   logic [NR_OUTSTANDING-1:0] idqueue_push ;
