@@ -199,7 +199,7 @@ module axi_write_burst_packer #(
           end
         // Otherwise, if the FIFO is full or if there is at least one complete multi-beat burst in
         // the FIFO, drain the FIFO.
-        end else if (w_buf_full || w_compl_d > 0) begin
+        end else if (w_buf_full || (!w_buf_empty && w_compl_d > 0)) begin
           mst_w_valid = 1'b1;
           aw_pend_inc = 1'b1;
           state_d = Drain;
