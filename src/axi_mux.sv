@@ -16,6 +16,11 @@
 // in the MSB's of the axi id. The Response switching happens on these bits.
 // EG: 4 SLV ports: Response of AXI transaction with ID: `6'b100110 will be forwarded
 //     to MST port `2'b10`.
+
+// only used in axi_mux_wrap
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
 module axi_mux #(
   parameter int unsigned NO_SLV_PORTS = 1,     // Number of slave ports
   parameter int unsigned AXI_ID_WIDTH = 1,     // Id Width of the axi going througth
@@ -130,9 +135,9 @@ module axi_mux #(
   //--------------------------------------
   rr_arb_tree #(
     .NumIn    ( NO_SLV_PORTS ),
-    .DataType ( aw_chan_t  ),
-    .AxiVldRdy( 1'b1       ),
-    .LockIn   ( 1'b1       )
+    .DataType ( aw_chan_t    ),
+    .AxiVldRdy( 1'b1         ),
+    .LockIn   ( 1'b1         )
   ) i_aw_arbiter (
     .clk_i  ( clk_i            ),
     .rst_ni ( rst_ni           ),
@@ -165,8 +170,8 @@ module axi_mux #(
   assign switch_aw_id = mst_aw_chan.id[MST_IDX+:MST_IDX_BITS];
   fifo_v3 #(
     .FALL_THROUGH ( FALL_THROUGH ),
-    .DEPTH        ( MAX_W_TRANS   ),
-    .dtype        ( switch_id_t )
+    .DEPTH        ( MAX_W_TRANS  ),
+    .dtype        ( switch_id_t  )
   ) i_w_fifo (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -275,9 +280,9 @@ module axi_mux #(
   //--------------------------------------
   rr_arb_tree #(
     .NumIn    ( NO_SLV_PORTS ),
-    .DataType ( ar_chan_t  ),
-    .AxiVldRdy( 1'b1       ),
-    .LockIn   ( 1'b1       )
+    .DataType ( ar_chan_t    ),
+    .AxiVldRdy( 1'b1         ),
+    .LockIn   ( 1'b1         )
   ) i_ar_arbiter (
     .clk_i  ( clk_i            ),
     .rst_ni ( rst_ni           ),
@@ -340,4 +345,150 @@ module axi_mux #(
     assign mst_r_valid   = mst_r_valid_i;
     assign mst_r_ready_o = mst_r_ready;
   end
+endmodule
+
+// interface wrap
+module axi_mux_wrap #(
+  parameter int unsigned AXI_ID_WIDTH   = 0, // Synopsys DC requires a default value for parameters.
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned NO_SLV_PORTS   = 0, // Number of slave ports
+  // Maximum number of outstanding transactions per write
+  parameter int unsigned MAX_W_TRANS    = 8,
+  // When enabled theoretical one cycle transaction, but long logic paths
+  parameter bit          FALL_THROUGH   = 1'b0,
+  // add spill register on aw mst port, adds a cycle latency on aw channel
+  parameter bit          SPILL_AW       = 1'b1,
+  parameter bit          SPILL_W        = 1'b0,
+  parameter bit          SPILL_B        = 1'b0,
+  // add spill register on ar mst port, adds a cycle latency on ar channel
+  parameter bit          SPILL_AR       = 1'b1,
+  parameter bit          SPILL_R        = 1'b0
+) (
+  input  logic                      clk_i,   // Clock
+  input  logic                      rst_ni,  // Asynchronous reset active low
+  input  logic                      test_i,  // Testmode enable
+  AXI_BUS.Slave  [NO_SLV_PORTS-1:0] slv,     // slave ports
+  AXI_BUS.Master                    mst      // master port
+);
+
+  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
+  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t) ;
+
+  req_t  [NO_SLV_PORTS-1:0] slv_req;
+  resp_t [NO_SLV_PORTS-1:0] slv_resp;
+  req_t                     mst_req;
+  resp_t                    mst_resp;
+
+  // master ports
+  // AW channel
+  aw_chan_t [NO_SLV_PORTS-1:0] slv_aw_chans;
+  logic     [NO_SLV_PORTS-1:0] slv_aw_valids;
+  logic     [NO_SLV_PORTS-1:0] slv_aw_readies;
+  //  W channel
+  w_chan_t  [NO_SLV_PORTS-1:0] slv_w_chans;
+  logic     [NO_SLV_PORTS-1:0] slv_w_valids;
+  logic     [NO_SLV_PORTS-1:0] slv_w_readies;
+  //  B channel
+  b_chan_t  [NO_SLV_PORTS-1:0] slv_b_chans;
+  logic     [NO_SLV_PORTS-1:0] slv_b_valids;
+  logic     [NO_SLV_PORTS-1:0] slv_b_readies;
+  // AR channel
+  ar_chan_t [NO_SLV_PORTS-1:0] slv_ar_chans;
+  logic     [NO_SLV_PORTS-1:0] slv_ar_valids;
+  logic     [NO_SLV_PORTS-1:0] slv_ar_readies;
+  //  R channel
+  r_chan_t  [NO_SLV_PORTS-1:0] slv_r_chans;,
+  logic     [NO_SLV_PORTS-1:0] slv_r_valids;,
+  logic     [NO_SLV_PORTS-1:0] slv_r_readies;
+
+  for (genvar i = 0; i < NO_SLV_PORTS; i++) begin : proc_assign_slv_ports
+    `AXI_ASSIGN_TO_REQ    ( slv_req[i],  slv[i]      );
+    `AXI_ASSIGN_FROM_RESP ( slv[i],      slv_resp[i] );
+
+    assign slv_aw_chans[i]      = slv_req[i].aw       ;
+    assign slv_aw_valids[i]     = slv_req[i].aw_valid ;
+    assign slv_resp[i].aw_ready = slv_aw_readies[i]   ;
+
+    assign slv_w_chans[i]       = slv_req[i].w        ;
+    assign slv_w_valids[i]      = slv_req[i].w_valid  ;
+    assign slv_resp[i].w_ready  = slv_w_readies[i]    ;
+
+    assign slv_resp[i].b        = slv_b_chans[i]      ;
+    assign slv_resp[i].b_valid  = slv_b_valids[i]     ;
+    assign slv_b_readies[i]     = slv_req[i].b_ready  ;
+
+    assign slv_ar_chans[i]      = slv_req[i].ar       ;
+    assign slv_ar_valids[i]     = slv_req[i].ar_valid ;
+    assign slv_resp[i].ar_ready = slv_ar_readies[i]   ;
+
+    assign slv_resp[i].r        = slv_r_chans[i]      ;
+    assign slv_resp[i].r_valid  = slv_r_valids[i]     ;
+    assign slv_r_readies[i]     = slv_req[i].r_ready  ;
+  end
+
+  `AXI_ASSIGN_FROM_REQ  ( mst     , mst_req  );
+  `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      );
+
+  axi_mux #(
+    .NO_SLV_PORTS ( NO_SLV_PORTS ), // Number of slave ports
+    .AXI_ID_WIDTH ( AXI_ID_WIDTH ), // Id Width of the axi going througth
+    .aw_chan_t    ( aw_chan_t    ), // AW Channel Type
+    .w_chan_t     (  w_chan_t    ), //  W Channel Type
+    .b_chan_t     (  b_chan_t    ), //  B Channel Type
+    .ar_chan_t    ( ar_chan_t    ), // AR Channel Type
+    .r_chan_t     (  r_chan_t    ), //  R Channel Type
+    .MAX_W_TRANS  ( MAX_W_TRANS  ),
+    .FALL_THROUGH ( FALL_THROUGH ),
+    .SPILL_AW     ( SPILL_AW     ),
+    .SPILL_W      ( SPILL_W      ),
+    .SPILL_B      ( SPILL_B      ),
+    .SPILL_AR     ( SPILL_AR     ),
+    .SPILL_R      ( SPILL_R      )
+  ) i_axi_mux (
+    .clk_i            ( clk_i             ), // Clock
+    .rst_ni           ( rst_ni            ), // Asynchronous reset active low
+    .test_i           ( test_i            ), // Test Mode enable
+    .slv_aw_chans_i   ( slv_aw_chans      ),
+    .slv_aw_valids_i  ( slv_aw_valids     ),
+    .slv_aw_readies_o ( slv_aw_readies    ),
+    .slv_w_chans_i    ( slv_w_chans       ),
+    .slv_w_valids_i   ( slv_w_valids      ),
+    .slv_w_readies_o  ( slv_w_readies     ),
+    .slv_b_chans_o    ( slv_b_chans       ),
+    .slv_b_valids_o   ( slv_b_valids      ),
+    .slv_b_readies_i  ( slv_b_readies     ),
+    .slv_ar_chans_i   ( slv_ar_chans      ),
+    .slv_ar_valids_i  ( slv_ar_valids     ),
+    .slv_ar_readies_o ( slv_ar_readies    ),
+    .slv_r_chans_o    ( slv_r_chans       ),
+    .slv_r_valids_o   ( slv_r_valids      ),
+    .slv_r_readies_i  ( slv_r_readies     ),
+    .mst_aw_chan_o    ( mst_req.aw        ),
+    .mst_aw_valid_o   ( mst_req.aw_valid  ),
+    .mst_aw_ready_i   ( mst_resp.aw_ready ),
+    .mst_w_chan_o     ( mst_req.w         ),
+    .mst_w_valid_o    ( mst_req.w_valid   ),
+    .mst_w_ready_i    ( mst_resp.w_ready  ),
+    .mst_b_chan_i     ( mst_resp.b        ),
+    .mst_b_valid_i    ( mst_resp.b_valid  ),
+    .mst_b_ready_o    ( mst_req.b_ready   ),
+    .mst_ar_chan_o    ( mst_req.ar        ),
+    .mst_ar_valid_o   ( mst_req.ar_valid  ),
+    .mst_ar_ready_i   ( mst_resp.ar_ready ),
+    .mst_r_chan_i     ( mst_resp.r        ),
+    .mst_r_valid_i    ( mst_resp.r_valid  ),
+    .mst_r_ready_o    ( mst_req.r_ready   )
+  );
 endmodule
