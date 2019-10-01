@@ -22,13 +22,13 @@
 `include "axi/typedef.svh"
 
 module axi_mux #(
-  parameter int unsigned NO_SLV_PORTS = 1,     // Number of slave ports
   parameter int unsigned AXI_ID_WIDTH = 1,     // Id Width of the axi going througth
   parameter type         aw_chan_t    = logic, // AW Channel Type
   parameter type         w_chan_t     = logic, //  W Channel Type
   parameter type         b_chan_t     = logic, //  B Channel Type
   parameter type         ar_chan_t    = logic, // AR Channel Type
   parameter type         r_chan_t     = logic, //  R Channel Type
+  parameter int unsigned NO_SLV_PORTS = 1,     // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MAX_W_TRANS  = 8,
   // When enabled theoretical one cycle transaction, but long logic paths
