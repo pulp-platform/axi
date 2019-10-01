@@ -28,6 +28,7 @@
 // non-atomic bursts [E2.1.4]. That is, an atomic burst may never have the same ID as any other
 // write or read burst that is ongoing at the same time.
 
+// only used in axi_atop_filter_wrap
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
