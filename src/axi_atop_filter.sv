@@ -11,7 +11,7 @@
 // AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
 // have a non-zero `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
 //
-// 1) `aw_atop` is always zero on the `mst` port mst_req_o;
+// 1) `aw_atop` is always zero on the `mst` port;
 //
 // 2) write transactions with non-zero `aw_atop` on the `slv` port are handled in conformance with
 //    the AXI standard by replying to such write transactions with the proper B and R responses. The
@@ -36,8 +36,8 @@ module axi_atop_filter #(
   parameter type req_t  = logic,
   parameter type resp_t = logic
 ) (
-  input  logic    clk_i,
-  input  logic    rst_ni,
+  input  logic  clk_i,
+  input  logic  rst_ni,
   // slave port
   input  req_t  slv_req_i,
   output resp_t slv_resp_o,
@@ -72,12 +72,6 @@ module axi_atop_filter #(
   // Manage AW, W, and B channels.
   always_comb begin
     // Defaults:
-    mst_req_o.aw      = slv_req_i.aw;
-    mst_req_o.aw.atop = '0;
-    mst_req_o.w       = slv_req_i.w;
-
-
-
     // Disable AW and W handshakes.
     mst_req_o.aw_valid  = 1'b0;
     slv_resp_o.aw_ready = 1'b0;
@@ -169,11 +163,10 @@ module axi_atop_filter #(
         mst_req_o.b_ready = 1'b0;
         // Inject error response instead.  Since the B channel has an ID and the atomic burst we are
         // replying to is guaranteed to be the only burst with this ID in flight, we do not have to
-        // observe any ordering and can immediatly inject on the B channel.
+        // observe any ordering and can immediately inject on the B channel.
         slv_resp_o.b = '0;
         slv_resp_o.b.id = id_q;
         slv_resp_o.b.resp = axi_pkg::RESP_SLVERR;
-                                                                                //slv.b_user = '0;
         slv_resp_o.b_valid = 1'b1;
         if (slv_req_i.b_ready) begin
           // If not all beats of the R response have been injected, wait for them. Otherwise, return
@@ -197,14 +190,21 @@ module axi_atop_filter #(
       default: w_state_d = W_FEEDTHROUGH;
     endcase
   end
+  // Connect signals on AW and W channel that are not managed by the control FSM from slave port to
+  // master port.
+  // Feed-through of the AW and W vectors, make sure that downstream aw.atop is always zero
+  always_comb begin
+    // overwrite the atop signal
+    mst_req_o.aw      = slv_req_i.aw;
+    mst_req_o.aw.atop = '0;
+  end
+  assign  mst_req_o.w = slv_req_i.w;
+
+
 
   // Manage R channel.
   always_comb begin
     // Defaults:
-    // Feed all signals on AR through.
-    mst_req_o.ar        = slv_req_i.ar;
-    mst_req_o.ar_valid  = slv_req_i.ar_valid;
-    slv_resp_o.ar_ready = mst_resp_i.ar_ready;
     // Feed read responses through.
     slv_resp_o.r       = mst_resp_i.r;
     slv_resp_o.r_valid = mst_resp_i.r_valid;
@@ -249,6 +249,10 @@ module axi_atop_filter #(
       end
     endcase
   end
+  // Feed all signals on AR through.
+  assign mst_req_o.ar        = slv_req_i.ar;
+  assign mst_req_o.ar_valid  = slv_req_i.ar_valid;
+  assign slv_resp_o.ar_ready = mst_resp_i.ar_ready;
 
   // Keep track of outstanding downstream write bursts and responses.
   always_comb begin
@@ -302,5 +306,61 @@ module axi_atop_filter #(
   end
 `endif
 // pragma translate_on
+endmodule
 
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
+// interface wrapper
+module axi_atop_filter_wrap #(
+  parameter int unsigned AXI_ID_WIDTH   = 0, // Synopsys DC requires a default value for parameters.
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  // Maximum number of AXI write bursts outstanding at the same time
+  parameter int unsigned AXI_MAX_WRITE_TXNS = 0
+) (
+  input  logic    clk_i,
+  input  logic    rst_ni,
+  AXI_BUS.Slave   slv,
+  AXI_BUS.Master  mst
+);
+
+  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
+  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t);
+
+  req_t  slv_req,  mst_req;
+  resp_t slv_resp, mst_resp;
+
+  `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      );
+  `AXI_ASSIGN_FROM_RESP ( slv,      slv_resp );
+
+  `AXI_ASSIGN_FROM_REQ  ( mst     , mst_req  );
+  `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      );
+
+  axi_atop_filter #(
+    .AXI_ID_WIDTH       (AXI_ID_WIDTH       ),
+  // Maximum number of AXI write bursts outstanding at the same time
+    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS ),
+  // AXI request & response type
+    .req_t  ( req_t  ),
+    .resp_t ( resp_t )
+  ) i_axi_atop_filter (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
+  );
 endmodule

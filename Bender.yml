@@ -46,6 +46,7 @@ sources:
   - src/axi_write_burst_packer.sv
   # Level 3
   - src/axi_bypass_wrap.sv
+  - src/axi_atop_filter_wrap.sv
   - src/axi_data_width_converter.sv
   - src/axi_id_remap.sv
   - src/axi_lite_multicut.sv
