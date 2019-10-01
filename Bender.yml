@@ -26,6 +26,7 @@ sources:
   - src/axi_mux.sv
   - src/axi_perf_mon.sv
   # Level 2
+  - src/axi_addr_decode.sv
   - src/axi_address_resolver.sv
   - src/axi_arbiter.sv
   - src/axi_atop_filter.sv
