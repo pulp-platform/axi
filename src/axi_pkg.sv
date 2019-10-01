@@ -138,8 +138,4 @@ package axi_pkg;
     logic [31:0] start_addr;
     logic [31:0] end_addr;
   } xbar_rule_32_t;
-
-
-
-
 endpackage
