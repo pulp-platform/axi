@@ -10,7 +10,7 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI DEMUX V2: This module splits an axi bus from one slv port to multiple mst ports.
+// AXI DEMUX: This module splits an axi bus from one slv port to multiple mst ports.
 // - Each AX vector takes a `slv_ax_select_i` which determines to wich mst port index
 //   the corresponding axi burst gets sent. The selection signal has to be constant during
 //   ax_valid.
