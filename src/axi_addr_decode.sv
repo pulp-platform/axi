@@ -26,24 +26,24 @@
 // Issues warnings if it finds overlapping address regions.
 
 module axi_addr_decode #(
-  parameter int unsigned NoMstPorts     = -1,                      // Number of in rules
-  parameter int unsigned NoRules        = -1,                      // Total Number of rules
+  parameter int unsigned NO_MST_PORTS   = 1,                       // Number MST in rules
+  parameter int unsigned NO_RULES       = 1,                       // Total Number of rules
   parameter type         addr_t         = logic,                   // Axi address Type
   parameter type         rule_t         = axi_pkg::xbar_rule_64_t, // rule type
   // DEPENDENT PARAMETERS DO NOT OVERWRITE!
-  parameter type         mst_port_idx_t = logic [$clog2(NoMstPorts)-1:0] // master port index type
+  parameter type         mst_port_idx_t = logic [$clog2(NO_MST_PORTS)-1:0] // master port index type
 )(
-  input  addr_t               addr_i,         // Address to decode
-  input  rule_t [NoRules-1:0] addr_map_i,     // The address map: rule with the highest index wins
-  output mst_port_idx_t       mst_port_idx_o, // output id of the slv
-  output logic                dec_valid_o,    // decode is valid
-  output logic                dec_error_o,    // decode is not valid
+  input  addr_t                addr_i,         // Address to decode
+  input  rule_t [NO_RULES-1:0] addr_map_i,     // The address map: rule with the highest index wins
+  output mst_port_idx_t        mst_port_idx_o, // output id of the slv
+  output logic                 dec_valid_o,    // decode is valid
+  output logic                 dec_error_o,    // decode is not valid
   // Default slave enable
-  input  logic                en_default_mst_port_i, // enable default salve port
-  input  mst_port_idx_t       default_mst_port_idx_i // Id of default slave
+  input  logic                 en_default_mst_port_i, // enable default salve port
+  input  mst_port_idx_t        default_mst_port_idx_i // Id of default slave
 );
 
-  logic [NoRules-1:0] matched_rules;
+  logic [NO_RULES-1:0] matched_rules; // purely for addr map debugging
 
   always_comb begin : proc_addr_decode
     // default assignments
@@ -53,7 +53,7 @@ module axi_addr_decode #(
     mst_port_idx_o = (en_default_mst_port_i) ? default_mst_port_idx_i : '0;
 
     // match the rules
-    for (int unsigned i = 0; i < NoRules; i++) begin
+    for (int unsigned i = 0; i < NO_RULES; i++) begin
       if ((addr_i >= addr_map_i[i].start_addr) && (addr_i < addr_map_i[i].end_addr)) begin
         matched_rules[i] = 1'b1;
         dec_valid_o      = 1'b1;
@@ -70,15 +70,15 @@ module axi_addr_decode #(
     assert ($bits(addr_i) == $bits(addr_map_i[0].start_addr)) else
       $warning($sformatf("axi_addr_decode> input address has %d bits and address map has %d bits.",
         $bits(addr_i), $bits(addr_map_i[0].start_addr)));
-    assert (NoRules > 0) else
+    assert (NO_RULES > 0) else
       $fatal(1, $sformatf("axi_addr_decode> at leat one rule needed"));
   end
 
   assert final ($onehot0(matched_rules)) else
     $warning("axi_addr_decode> More than one bit set in the one-hot signal, matched_rules");
 
-  for (genvar i = 0; i < NoRules; i++) begin : gen_assert_0
-    for (genvar j = 0; j < NoRules; j++) begin : gen_assert_1
+  for (genvar i = 0; i < NO_RULES; i++) begin : gen_assert_0
+    for (genvar j = 0; j < NO_RULES; j++) begin : gen_assert_1
       if((i != j) && (i < j)) begin : proc_check
 
         check_start_0 : assert final (addr_map_i[i].start_addr <= addr_map_i[i].end_addr) else
@@ -94,22 +94,22 @@ module axi_addr_decode #(
               axi_addr_decode>  #####################################################",
               i ,addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
         // check the SLV ids
-        check_mst_port_idx_0 : assert final (addr_map_i[i].mst_port_idx < NoMstPorts) else
+        check_mst_port_idx_0 : assert final (addr_map_i[i].mst_port_idx < NO_MST_PORTS) else
           $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
               Violating rule %d.\n\
               Rule> mst_port_idx: %h START: %h END: %h\n\
               Rule> MAX_ID: %h\n\
               axi_addr_decode>  #####################################################",
               i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
-              (NoMstPorts-1)));
-        check_mst_port_idx_1 : assert final (addr_map_i[j].mst_port_idx < NoMstPorts) else
+              (NO_MST_PORTS-1)));
+        check_mst_port_idx_1 : assert final (addr_map_i[j].mst_port_idx < NO_MST_PORTS) else
           $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
               Violating rule %d.\n\
               Rule> mst_port_idx: %h START: %h END: %h\n\
               Rule> MAX_ID: %h\n\
               axi_addr_decode>  #####################################################",
               j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr,
-              (NoMstPorts-1)));
+              (NO_MST_PORTS-1)));
         // overlap check
         check_overlap_0 : assert final ((addr_map_i[i].start_addr >= addr_map_i[j].start_addr) ||
                                         (addr_map_i[i].end_addr <= addr_map_i[j].start_addr)) else
