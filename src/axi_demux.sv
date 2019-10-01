@@ -193,7 +193,7 @@ module axi_demux #(
 
     //--------------------------------------
     //--------------------------------------
-    // Channels Control
+    // Channel Control
     //--------------------------------------
     //--------------------------------------
 
@@ -207,7 +207,7 @@ module axi_demux #(
       assign slv_aw_chan_select_in.aw_select = slv_aw_select_i;
       spill_register #(
         .T       ( aw_chan_select_t      )
-      ) i_aw_spill_reg_0 (
+      ) i_aw_spill_reg (
         .clk_i   ( clk_i                 ),
         .rst_ni  ( rst_ni                ),
         .valid_i ( slv_aw_valid_i        ),
@@ -360,7 +360,7 @@ module axi_demux #(
       assign slv_ar_chan_select_in.ar_select = slv_ar_select_i;
       spill_register #(
         .T       ( ar_chan_select_t      )
-      ) i_ar_spill_reg_0 (
+      ) i_ar_spill_reg (
         .clk_i   ( clk_i                 ),
         .rst_ni  ( rst_ni                ),
         .valid_i ( slv_ar_valid_i        ),
@@ -431,23 +431,23 @@ module axi_demux #(
     end
 
     axi_demux_id_counters #(
-      .AXI_ID_BITS         ( AXI_LOOK_BITS    ),
-      .COUNTER_WIDTH      ( ID_COUNTER_WIDTH ),
-      .mst_port_select_t ( select_t       )
+      .AXI_ID_BITS       ( AXI_LOOK_BITS    ),
+      .COUNTER_WIDTH     ( ID_COUNTER_WIDTH ),
+      .mst_port_select_t ( select_t         )
     ) i_ar_id_counter (
-      .clk_i                        ( clk_i                                         ),
-      .rst_ni                       ( rst_ni                                        ),
+      .clk_i                        ( clk_i                                           ),
+      .rst_ni                       ( rst_ni                                          ),
       .lookup_axi_id_i              ( slv_ar_chan_select.ar_chan.id[0+:AXI_LOOK_BITS] ),
-      .lookup_mst_select_o          ( lookup_ar_select                              ),
-      .lookup_mst_select_occupied_o ( ar_select_occupied                            ),
-      .full_o                       ( ar_id_cnt_full                                ),
+      .lookup_mst_select_o          ( lookup_ar_select                                ),
+      .lookup_mst_select_occupied_o ( ar_select_occupied                              ),
+      .full_o                       ( ar_id_cnt_full                                  ),
       .inject_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AXI_LOOK_BITS] ),
-      .inject_i                     ( atop_inject                                   ),
+      .inject_i                     ( atop_inject                                     ),
       .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AXI_LOOK_BITS] ),
-      .push_mst_select_i            ( slv_ar_chan_select.ar_select                  ),
-      .push_i                       ( ar_push                                       ),
+      .push_mst_select_i            ( slv_ar_chan_select.ar_select                    ),
+      .push_i                       ( ar_push                                         ),
       .pop_axi_id_i                 ( slv_r_chan_o.id[0+:AXI_LOOK_BITS]               ),
-      .pop_i                        ( r_pop                                         )
+      .pop_i                        ( r_pop                                           )
     );
 
     // ar demux
