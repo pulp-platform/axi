@@ -49,6 +49,12 @@ module tb_axi_atop_filter_stc #(
   localparam int unsigned AXI_STRB_WIDTH  = AXI_DATA_WIDTH / 8;
   localparam int unsigned NUM_AXI_IDS     = 2**AXI_ID_WIDTH;
 
+  typedef logic [AXI_ID_WIDTH-1:0]   id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
+
   `AXI_TYPEDEF_AW_CHAN_T (aw_chan_t, addr_t, id_t,         user_t);
   `AXI_TYPEDEF_W_CHAN_T  (w_chan_t,  data_t,       strb_t, user_t);
   `AXI_TYPEDEF_B_CHAN_T  (b_chan_t,          id_t,         user_t);
