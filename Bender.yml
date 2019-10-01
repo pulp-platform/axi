@@ -30,6 +30,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_to_axi_lite.sv
   # Level 3
+  - src/axi_decerr_slv.sv
   - src/axi_multicut.sv
 
   - target: synth_test
