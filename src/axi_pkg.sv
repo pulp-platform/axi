@@ -108,4 +108,38 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
+  // cfg struct for the full xbar
+  typedef struct packed {
+    int unsigned NoSlvPorts;         // # of slave ports, this many masters are connected to the xbar
+    int unsigned NoMstPorts;         // # of master ports, this many slaves are connected to the xbar
+    int unsigned MaxMstTrans;        // Maximum number of outstanding transactions per read / write per connected master
+    int unsigned MaxSlvTrans;        // Maximum number of outstanding write transactions per connected slave
+    bit          FallThrough;        // Are the internal Fifo's in Fall through mode? When enabled theoretical one cycle transaction, but long logic paths
+    int unsigned AxiIdWidthSlvPorts; // Axi Id Width of the Slave Ports
+    int unsigned AxiIdWidthMstPorts; // Axi Id Width of the Master Ports, has to be
+    int unsigned AxiAddrWidth;       // Axi Address Width
+    int unsigned AxiDataWidth;       // Axi Data Width
+    int unsigned NoAddrRules;        // # of Address Rules in the memory map
+    logic        GenSpillAwIn;       // Spill register on AW channel between addr decode and demux
+    logic        GenSpillAwOut;      // Spill register on AW channel after mux
+    logic        GenSpillArIn;       // Spill register on AR channel between addr decode and demux
+    logic        GenSpillArOut;      // Spill register on AR channel after mux
+  } xbar_cfg_t;
+
+  // address rule struct for the full xbar
+  typedef struct packed {
+    int unsigned mst_port_idx;
+    logic [63:0] start_addr;
+    logic [63:0] end_addr;
+  } xbar_rule_64_t;
+
+  typedef struct packed {
+    int unsigned mst_port_idx;
+    logic [31:0] start_addr;
+    logic [31:0] end_addr;
+  } xbar_rule_32_t;
+
+
+
+
 endpackage
