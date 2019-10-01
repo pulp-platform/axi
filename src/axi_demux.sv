@@ -43,9 +43,9 @@ module axi_demux #(
   // When enabled theoretical one cycle transaction, but long logic paths
   parameter bit          FALL_THROUGH     = 1'b0,
   // add spill register in aw path before the lookup in id counter
-  parameter bit          SpillAwIn      = 1'b1,
+  parameter bit          SPILL_AW      = 1'b1,
   // add spill register in ar path before the lookup in id counter
-  parameter bit          SpillArIn      = 1'b1,
+  parameter bit          SPILL_AR      = 1'b1,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter type         select_t       = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
 ) (
@@ -154,42 +154,42 @@ module axi_demux #(
     //--------------------------------------
     // comes from face in spill register or not
     aw_chan_select_t slv_aw_chan_select;
-    logic            slv_aw_valid, slv_aw_ready;
+    logic            slv_aw_valid,       slv_aw_ready;
 
     // aw id counter
-    select_t lookup_aw_select;
-    logic    aw_select_occupied, aw_id_cnt_full;
-    logic    aw_push,            b_pop;
+    select_t         lookup_aw_select;
+    logic            aw_select_occupied, aw_id_cnt_full;
+    logic            aw_push,            b_pop;
     // atop inject to the ar channel the id is from the aw channel
-    logic    atop_inject;
+    logic            atop_inject;
 
     // Data in to the fifos is the AW'select signal
     // push signal is the same as aw_push
     // w fifo signals, holds the selection, where the next W beats should go
-    logic    w_fifo_pop;
-    logic    w_fifo_full, w_fifo_empty;
-    select_t w_select;
+    logic            w_fifo_pop;
+    logic            w_fifo_full,        w_fifo_empty;
+    select_t         w_select;
 
     // decision to stall or to connect
     aw_chan_select_t aw_chan_select;
-    logic            aw_valid, aw_ready;
+    logic            aw_valid,           aw_ready;
 
     //--------------------------------------
     // Read Transaction
     //--------------------------------------
     // comes from face in spill register or not
     ar_chan_select_t slv_ar_chan_select;
-    logic            slv_ar_valid, slv_ar_ready;
+    logic            slv_ar_valid,       slv_ar_ready;
 
     // aw id counter
-    select_t lookup_ar_select;
-    logic    ar_select_occupied, ar_id_cnt_full;
-    logic    ar_push,            r_pop;
+    select_t         lookup_ar_select;
+    logic            ar_select_occupied, ar_id_cnt_full;
+    logic            ar_push,            r_pop;
 
     // decision to stall or to connect
-    logic            lock_ar_valid_n, lock_ar_valid_q, load_ar_lock;
     ar_chan_select_t ar_chan_select;
-    logic            ar_valid,       ar_ready;
+    logic            lock_ar_valid_n,    lock_ar_valid_q, load_ar_lock;
+    logic            ar_valid,           ar_ready;
 
     //--------------------------------------
     //--------------------------------------
@@ -201,7 +201,7 @@ module axi_demux #(
     // AW Channel
     //--------------------------------------
     // spil register at the channel input
-    if (SpillAwIn) begin : proc_aw_spill_in
+    if (SPILL_AW) begin : gen_spill_aw
       aw_chan_select_t slv_aw_chan_select_in;
       assign slv_aw_chan_select_in.aw_chan   = slv_aw_chan_i;
       assign slv_aw_chan_select_in.aw_select = slv_aw_select_i;
@@ -217,7 +217,7 @@ module axi_demux #(
         .ready_i ( slv_aw_ready          ),
         .data_o  ( slv_aw_chan_select    )
       );
-    end else begin
+    end else begin : gen_no_spill_aw
       assign slv_aw_chan_select.aw_chan   = slv_aw_chan_i;
       assign slv_aw_chan_select.aw_select = slv_aw_select_i;
       assign slv_aw_valid                 = slv_aw_valid_i;
@@ -354,7 +354,7 @@ module axi_demux #(
     //--------------------------------------
     //  AR Channel
     //--------------------------------------
-    if (SpillArIn) begin : proc_ar_spill_in
+    if (SPILL_AR) begin : gen_spill_ar
       ar_chan_select_t slv_ar_chan_select_in;
       assign slv_ar_chan_select_in.ar_chan   = slv_ar_chan_i;
       assign slv_ar_chan_select_in.ar_select = slv_ar_select_i;
@@ -370,7 +370,7 @@ module axi_demux #(
         .ready_i ( slv_ar_ready          ),
         .data_o  ( slv_ar_chan_select    )
       );
-    end else begin
+    end else begin : gen_no_spill_ar
       assign slv_ar_chan_select.ar_chan   = slv_ar_chan_i;
       assign slv_ar_chan_select.ar_select = slv_ar_select_i;
       assign slv_ar_valid                 = slv_ar_valid_i;
@@ -418,7 +418,7 @@ module axi_demux #(
       end
     end
 
-    // assign the data from one ar spill reg to the next one
+    // assign the data from one ar spill reg to the demux
     assign ar_chan_select = slv_ar_chan_select;
 
     // this ff is needed so that ar does not get deasserted if an atop gets injected
@@ -463,7 +463,7 @@ module axi_demux #(
     assign r_pop = slv_r_valid_o & slv_r_ready_i & slv_r_chan_o.last;
     // Arbitration of the different r responses
     rr_arb_tree #(
-      .NumIn    ( NO_MST_PORTS    ),
+      .NumIn    ( NO_MST_PORTS  ),
       .DataType ( r_chan_t      ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
@@ -656,17 +656,17 @@ module axi_demux_wrap #(
   parameter int unsigned ID_COUNTER_WIDTH = 4,
   parameter int unsigned AXI_LOOK_BITS    = 3,
   parameter bit          FALL_THROUGH     = 1'b0,
-  parameter bit          SpillAwIn        = 1'b1,
-  parameter bit          SpillArIn        = 1'b1,
+  parameter bit          SPILL_AW         = 1'b1,
+  parameter bit          SPILL_AR         = 1'b1,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t       = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
+  parameter type         select_t         = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
 ) (
   input  logic                      clk_i,   // Clock
   input  logic                      rst_ni,  // Asynchronous reset active low
   input  logic                      test_i,  // Testmode enable
+  input  select_t                   slv_aw_select_i, // has to be stable, when aw_valid
+  input  select_t                   slv_ar_select_i, // has to be stable, when ar_valid
   AXI_BUS.Slave                     slv, // slave port
-  input  select_t                   slv_aw_select_i,
-  input  select_t                   slv_ar_select_i,
   AXI_BUS.Master [NO_MST_PORTS-1:0] mst  // master ports
 );
 
@@ -750,8 +750,8 @@ module axi_demux_wrap #(
     .ID_COUNTER_WIDTH ( ID_COUNTER_WIDTH ),
     .AXI_LOOK_BITS    ( AXI_LOOK_BITS    ),
     .FALL_THROUGH     ( FALL_THROUGH     ),
-    .SpillAwIn        ( SpillAwIn        ),
-    .SpillArIn        ( SpillArIn        )
+    .SPILL_AW        ( SPILL_AW        ),
+    .SPILL_AR        ( SPILL_AR        )
   ) i_axi_demux (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
