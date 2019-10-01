@@ -11,7 +11,7 @@
 // AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
 // have a non-zero `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
 //
-// 1) `aw_atop` is always zero on the `mst` port;
+// 1) `aw_atop` is always zero on the `mst` port mst_req_o;
 //
 // 2) write transactions with non-zero `aw_atop` on the `slv` port are handled in conformance with
 //    the AXI standard by replying to such write transactions with the proper B and R responses. The
@@ -44,8 +44,6 @@ module axi_atop_filter_stc #(
   // master port
   output req_t  mst_req_o,
   input  resp_t mst_resp_i
-      // AXI_BUS.Master  mst,
-      // AXI_BUS.Slave   slv
 );
 
   typedef logic [$clog2(AXI_MAX_WRITE_TXNS+1)-1:0] cnt_t;
@@ -89,9 +87,6 @@ module axi_atop_filter_stc #(
     mst_req_o.b_ready   = slv.b_ready;
     slv_resp_o.b_valid  = mst_resp_i.b_valid;
     slv_resp_o.b        = mst_resp_i.b;
-                                                                          //slv.b_id    = mst.b_id;
-                                                                          //slv.b_resp  = mst.b_resp;
-                                                                          //slv.b_user  = mst.b_user;
     // Keep ID stored for B and R response.
     id_d = id_q;
     // Do not push R response commands.
@@ -214,11 +209,6 @@ module axi_atop_filter_stc #(
     slv_resp_o.r       = mst_resp_i.r;
     slv_resp_o.r_valid = mst_resp_i.r_valid;
     mst_req_o.r_ready  = slv_req_i.r_ready;
-                                                          //slv.r_id    = mst.r_id;
-                                                          //slv.r_data  = mst.r_data;
-                                                          //slv.r_resp  = mst.r_resp;
-                                                          //slv.r_last  = mst.r_last;
-                                                          //slv.r_user  = mst.r_user;
     // Do not pop R response command.
     r_resp_cmd_pop_ready = 1'b0;
     // Keep the current value of the beats counter.
@@ -244,12 +234,6 @@ module axi_atop_filter_stc #(
         slv_resp_o.r.resp  = axi_pkg::RESP_SLVERR;
         slv_resp_o.r.last  = (r_beats_q == '0);
         slv_resp_o.r_valid = 1'b1;
-                                                              // slv.r_id = id_q;
-                                                              // slv.r_data = '0;
-                                                              // slv.r_resp = axi_pkg::RESP_SLVERR;
-                                                              // slv.r_user = '0;
-                                                              // slv.r_valid = 1'b1;
-                                                              // slv.r_last = (r_beats_q == '0);
         if (slv_req_i.r_ready) begin
           if (slv_resp_o.r.last) begin
             r_resp_cmd_pop_ready = 1'b1;
@@ -265,43 +249,6 @@ module axi_atop_filter_stc #(
       end
     endcase
   end
-
-                              // Make sure downstream slaves do not get any atomic operations.
-                              // assign mst.aw_atop = '0;
-
-                              // Connect signals on AW and W channel that are not managed by the control FSM from slave port to
-                              // master port.
-                              // assign mst.aw_id      = slv.aw_id;
-                              // assign mst.aw_addr    = slv.aw_addr;
-                              // assign mst.aw_len     = slv.aw_len;
-                              // assign mst.aw_size    = slv.aw_size;
-                              // assign mst.aw_burst   = slv.aw_burst;
-                              // assign mst.aw_lock    = slv.aw_lock;
-                              // assign mst.aw_cache   = slv.aw_cache;
-                              // assign mst.aw_prot    = slv.aw_prot;
-                              // assign mst.aw_qos     = slv.aw_qos;
-                              // assign mst.aw_region  = slv.aw_region;
-                              // assign mst.aw_user    = slv.aw_user;
-                              // assign mst.w_data     = slv.w_data;
-                              // assign mst.w_strb     = slv.w_strb;
-                              // assign mst.w_last     = slv.w_last;
-                              // assign mst.w_user     = slv.w_user;
-
-  // Feed all signals on AR through.
-
-                              // assign mst.ar_id      = slv.ar_id;
-                              // assign mst.ar_addr    = slv.ar_addr;
-                              // assign mst.ar_len     = slv.ar_len;
-                              // assign mst.ar_size    = slv.ar_size;
-                              // assign mst.ar_burst   = slv.ar_burst;
-                              // assign mst.ar_lock    = slv.ar_lock;
-                              // assign mst.ar_cache   = slv.ar_cache;
-                              // assign mst.ar_prot    = slv.ar_prot;
-                              // assign mst.ar_qos     = slv.ar_qos;
-                              // assign mst.ar_region  = slv.ar_region;
-                              // assign mst.ar_user    = slv.ar_user;
-                              // assign mst.ar_valid   = slv.ar_valid;
-                              // assign slv.ar_ready   = mst.ar_ready;
 
   // Keep track of outstanding downstream write bursts and responses.
   always_comb begin
