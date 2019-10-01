@@ -8,6 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+
 // AXI ADDR DECODE: Address decoder for the axi_full_xbar
 // Maps the input addr combinationaly to a master port index.
 // The Address Map `addr_map_i` is a paced array of xbar_rules.
