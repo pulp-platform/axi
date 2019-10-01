@@ -24,6 +24,7 @@ sources:
   - src/axi_atop_filter.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
+  - src/axi_id_prepend.sv
   - src/axi_join.sv
   - src/axi_lite_join.sv
   - src/axi_lite_to_axi.sv
@@ -32,6 +33,8 @@ sources:
   # Level 3
   - src/axi_decerr_slv.sv
   - src/axi_multicut.sv
+  # Level 4
+  # - src/axi_full_xbar.sv
 
   - target: synth_test
     files:
