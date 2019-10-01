@@ -1,0 +1,134 @@
+// Copyright 2019 ETH Zurich and University of Bologna.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+
+// AXI ADDR DECODE: Address decoder for the axi_full_xbar
+// Maps the input addr combinationaly to a master port index.
+// The Address Map `addr_map_i` is a paced array of xbar_rules.
+// Two examples are given in axi_pkg for an address with of 32 and 64 bit.
+// The rule on the MSB position in the array wins if there is an overlap
+// with the ranges.
+
+// en_default_mst_port_i: This option allows for a not mapped address to be decoded
+// onto a default master port index. If eneabled `dec_error_o` is always `1'b0`.
+
+// Assertions: The module checks every time there is a change in the address mapping
+// if the resulting map is valid. Fatals when start_addr > end_addr and on a mapping
+// for a master port index that is not allowed from the parameter.
+// Issues warnings if it finds overlapping address regions.
+
+module axi_addr_decode #(
+  parameter int unsigned NoMstPorts     = -1,                      // Number of in rules
+  parameter int unsigned NoRules        = -1,                      // Total Number of rules
+  parameter type         addr_t         = logic,                   // Axi address Type
+  parameter type         rule_t         = axi_pkg::xbar_rule_64_t, // rule type
+  // DEPENDENT PARAMETERS DO NOT OVERWRITE!
+  parameter type         mst_port_idx_t = logic [$clog2(NoMstPorts)-1:0]       // master port index type
+)(
+  input  addr_t               addr_i,         // Address to decode
+  input  rule_t [NoRules-1:0] addr_map_i,     // The address map // the rule with the highest index wins
+  output mst_port_idx_t       mst_port_idx_o, // output id of the slv
+  output logic                dec_valid_o,    // decode is valid, if en_default_mst_port_i always valid
+  output logic                dec_error_o,    // decode is not valid, always zero, en_default_mst_port_i
+  // Default slave enable
+  input  logic                en_default_mst_port_i, // enable default salve port
+  input  mst_port_idx_t       default_mst_port_idx_i // Id of default slave
+);
+
+  logic [NoRules-1:0] matched_rules;
+
+  always_comb begin : proc_addr_decode
+    // default assignments
+    matched_rules  = '0;
+    dec_valid_o    = 1'b0;
+    dec_error_o    = (en_default_mst_port_i) ? 1'b0 : 1'b1;
+    mst_port_idx_o = (en_default_mst_port_i) ? default_mst_port_idx_i : '0;
+
+    // match the rules
+    for (int unsigned i = 0; i < NoRules; i++) begin
+      if ((addr_i >= addr_map_i[i].start_addr) && (addr_i < addr_map_i[i].end_addr)) begin
+        matched_rules[i] = 1'b1;
+        dec_valid_o      = 1'b1;
+        dec_error_o      = 1'b0;
+        mst_port_idx_o   = mst_port_idx_t'(addr_map_i[i].mst_port_idx);
+      end
+    end
+  end
+
+  // Assumptions and assertions
+  `ifndef VERILATOR
+  // pragma translate_off
+  initial begin : proc_check_parameters
+    assert ($bits(addr_i) == $bits(addr_map_i[0].start_addr)) else
+      $warning($sformatf("axi_addr_decode> input address has %d bits and address map has %d bits.", $bits(addr_i), $bits(addr_map_i[0].start_addr)));
+    assert (NoRules > 0) else
+      $fatal(1, $sformatf("axi_addr_decode> at leat one rule needed"));
+  end
+
+  assert final ($onehot0(matched_rules)) else $warning("axi_addr_decode> More than one bit set in the one-hot signal, matched_rules");
+
+  for (genvar i = 0; i < NoRules; i++) begin : gen_assert_0
+    for (genvar j = 0; j < NoRules; j++) begin : gen_assert_1
+      if((i != j) && (i < j)) begin : proc_check
+
+        check_start_0 : assert final (addr_map_i[i].start_addr <= addr_map_i[i].end_addr) else
+          $fatal(1, $sformatf("This rule has a higher start than end address!!!\n\
+                     Violating rule %d.\n\
+                     Rule> mst_port_idx: %h START: %h END: %h\n\
+                     axi_addr_decode>  #####################################################",
+                     i ,addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr));
+        check_start_1 : assert final (addr_map_i[j].start_addr <= addr_map_i[j].end_addr) else
+          $fatal(1, $sformatf("This rule has a higher start than end address!!!\n\
+                     Violating rule %d.\n\
+                     Rule> mst_port_idx: %h START: %h END: %h\n\
+                     axi_addr_decode>  #####################################################",
+                     i ,addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+        // check the SLV ids
+        check_mst_port_idx_0 : assert final (addr_map_i[i].mst_port_idx < NoMstPorts) else
+          $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
+                     Violating rule %d.\n\
+                     Rule> mst_port_idx: %h START: %h END: %h\n\
+                     Rule> MAX_ID: %h\n\
+                     axi_addr_decode>  #####################################################",
+                     i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr, (NoMstPorts-1)));
+        check_mst_port_idx_1 : assert final (addr_map_i[j].mst_port_idx < NoMstPorts) else
+          $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
+                     Violating rule %d.\n\
+                     Rule> mst_port_idx: %h START: %h END: %h\n\
+                     Rule> MAX_ID: %h\n\
+                     axi_addr_decode>  #####################################################",
+                     j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr, (NoMstPorts-1)));
+        // overlap check
+        check_overlap_0 : assert final ((addr_map_i[i].start_addr >= addr_map_i[j].start_addr) || (addr_map_i[i].end_addr <= addr_map_i[j].start_addr)) else
+          $warning($sformatf("Overlapping address region found!!!\n\
+                    Rule %d: SLV ID: %h START: %h END: %h\n\
+                    Rule %d: SLV ID: %h START: %h END: %h\n\
+                    axi_addr_decode>  #####################################################",
+                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+        check_overlap_1 : assert final ((addr_map_i[j].start_addr >= addr_map_i[i].start_addr) || (addr_map_i[j].end_addr <= addr_map_i[i].start_addr)) else
+          $warning($sformatf("Overlapping address region found!!!\n\
+                    Rule %d: ID: %h START: %h END: %h\n\
+                    Rule %d: ID: %h START: %h END: %h\n\
+                    axi_addr_decode>  #####################################################",
+                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+        check_same_addr : assert final (addr_map_i[i].start_addr != addr_map_i[j].start_addr) else
+          $warning($sformatf("Overlapping address region found!!!\n\
+                    Rule %d: ID: %h START: %h END: %h\n\
+                    Rule %d: ID: %h START: %h END: %h\n\
+                    axi_addr_decode>  #####################################################",
+                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+      end
+    end
+  end
+  // pragma translate_on
+  `endif
+endmodule
