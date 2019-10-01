@@ -36,6 +36,7 @@ sources:
   - src/axi_data_downsize.sv
   - src/axi_data_upsize.sv
   - src/axi_delayer.sv
+  - src/axi_id_prepend.sv
   - src/axi_join.sv
   - src/axi_lite_cut.sv
   - src/axi_lite_join.sv
@@ -45,14 +46,16 @@ sources:
   - src/axi_to_axi_lite.sv
   - src/axi_write_burst_packer.sv
   # Level 3
-  - src/axi_bypass_wrap.sv
   - src/axi_atop_filter_wrap.sv
-  - src/ axi_decerr_slv.sv
+  - src/axi_bypass_wrap.sv
+  - src/axi_decerr_slv.sv
   - src/axi_data_width_converter.sv
   - src/axi_id_remap.sv
   - src/axi_lite_multicut.sv
   - src/axi_lite_xbar.sv
   - src/axi_multicut.sv
+  # Level 4
+  # - src/axi_full_xbar.sv
 
   - target: synth_test
     files:
