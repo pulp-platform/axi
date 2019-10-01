@@ -32,7 +32,7 @@ module axi_addr_decode #(
   parameter type         rule_t         = axi_pkg::xbar_rule_64_t, // rule type
   // DEPENDENT PARAMETERS DO NOT OVERWRITE!
   parameter type         mst_port_idx_t = logic [$clog2(NO_MST_PORTS)-1:0] // master port index type
-)(
+) (
   input  addr_t                addr_i,         // Address to decode
   input  rule_t [NO_RULES-1:0] addr_map_i,     // The address map: rule with the highest index wins
   output mst_port_idx_t        mst_port_idx_o, // output id of the slv
