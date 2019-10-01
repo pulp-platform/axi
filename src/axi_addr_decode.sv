@@ -29,13 +29,13 @@ module axi_addr_decode #(
   parameter type         addr_t         = logic,                   // Axi address Type
   parameter type         rule_t         = axi_pkg::xbar_rule_64_t, // rule type
   // DEPENDENT PARAMETERS DO NOT OVERWRITE!
-  parameter type         mst_port_idx_t = logic [$clog2(NoMstPorts)-1:0]       // master port index type
+  parameter type         mst_port_idx_t = logic [$clog2(NoMstPorts)-1:0] // master port index type
 )(
   input  addr_t               addr_i,         // Address to decode
-  input  rule_t [NoRules-1:0] addr_map_i,     // The address map // the rule with the highest index wins
+  input  rule_t [NoRules-1:0] addr_map_i,     // The address map: rule with the highest index wins
   output mst_port_idx_t       mst_port_idx_o, // output id of the slv
-  output logic                dec_valid_o,    // decode is valid, if en_default_mst_port_i always valid
-  output logic                dec_error_o,    // decode is not valid, always zero, en_default_mst_port_i
+  output logic                dec_valid_o,    // decode is valid
+  output logic                dec_error_o,    // decode is not valid
   // Default slave enable
   input  logic                en_default_mst_port_i, // enable default salve port
   input  mst_port_idx_t       default_mst_port_idx_i // Id of default slave
@@ -66,12 +66,14 @@ module axi_addr_decode #(
   // pragma translate_off
   initial begin : proc_check_parameters
     assert ($bits(addr_i) == $bits(addr_map_i[0].start_addr)) else
-      $warning($sformatf("axi_addr_decode> input address has %d bits and address map has %d bits.", $bits(addr_i), $bits(addr_map_i[0].start_addr)));
+      $warning($sformatf("axi_addr_decode> input address has %d bits and address map has %d bits.",
+        $bits(addr_i), $bits(addr_map_i[0].start_addr)));
     assert (NoRules > 0) else
       $fatal(1, $sformatf("axi_addr_decode> at leat one rule needed"));
   end
 
-  assert final ($onehot0(matched_rules)) else $warning("axi_addr_decode> More than one bit set in the one-hot signal, matched_rules");
+  assert final ($onehot0(matched_rules)) else
+    $warning("axi_addr_decode> More than one bit set in the one-hot signal, matched_rules");
 
   for (genvar i = 0; i < NoRules; i++) begin : gen_assert_0
     for (genvar j = 0; j < NoRules; j++) begin : gen_assert_1
@@ -79,53 +81,57 @@ module axi_addr_decode #(
 
         check_start_0 : assert final (addr_map_i[i].start_addr <= addr_map_i[i].end_addr) else
           $fatal(1, $sformatf("This rule has a higher start than end address!!!\n\
-                     Violating rule %d.\n\
-                     Rule> mst_port_idx: %h START: %h END: %h\n\
-                     axi_addr_decode>  #####################################################",
-                     i ,addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr));
+              Violating rule %d.\n\
+              Rule> mst_port_idx: %h START: %h END: %h\n\
+              axi_addr_decode>  #####################################################",
+              i ,addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr));
         check_start_1 : assert final (addr_map_i[j].start_addr <= addr_map_i[j].end_addr) else
           $fatal(1, $sformatf("This rule has a higher start than end address!!!\n\
-                     Violating rule %d.\n\
-                     Rule> mst_port_idx: %h START: %h END: %h\n\
-                     axi_addr_decode>  #####################################################",
-                     i ,addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+              Violating rule %d.\n\
+              Rule> mst_port_idx: %h START: %h END: %h\n\
+              axi_addr_decode>  #####################################################",
+              i ,addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
         // check the SLV ids
         check_mst_port_idx_0 : assert final (addr_map_i[i].mst_port_idx < NoMstPorts) else
           $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
-                     Violating rule %d.\n\
-                     Rule> mst_port_idx: %h START: %h END: %h\n\
-                     Rule> MAX_ID: %h\n\
-                     axi_addr_decode>  #####################################################",
-                     i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr, (NoMstPorts-1)));
+              Violating rule %d.\n\
+              Rule> mst_port_idx: %h START: %h END: %h\n\
+              Rule> MAX_ID: %h\n\
+              axi_addr_decode>  #####################################################",
+              i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+              (NoMstPorts-1)));
         check_mst_port_idx_1 : assert final (addr_map_i[j].mst_port_idx < NoMstPorts) else
           $fatal(1, $sformatf("This rule has a slave id that is not allowed!!!\n\
-                     Violating rule %d.\n\
-                     Rule> mst_port_idx: %h START: %h END: %h\n\
-                     Rule> MAX_ID: %h\n\
-                     axi_addr_decode>  #####################################################",
-                     j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr, (NoMstPorts-1)));
+              Violating rule %d.\n\
+              Rule> mst_port_idx: %h START: %h END: %h\n\
+              Rule> MAX_ID: %h\n\
+              axi_addr_decode>  #####################################################",
+              j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr,
+              (NoMstPorts-1)));
         // overlap check
-        check_overlap_0 : assert final ((addr_map_i[i].start_addr >= addr_map_i[j].start_addr) || (addr_map_i[i].end_addr <= addr_map_i[j].start_addr)) else
+        check_overlap_0 : assert final ((addr_map_i[i].start_addr >= addr_map_i[j].start_addr) ||
+                                        (addr_map_i[i].end_addr <= addr_map_i[j].start_addr)) else
           $warning($sformatf("Overlapping address region found!!!\n\
-                    Rule %d: SLV ID: %h START: %h END: %h\n\
-                    Rule %d: SLV ID: %h START: %h END: %h\n\
-                    axi_addr_decode>  #####################################################",
-                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
-                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
-        check_overlap_1 : assert final ((addr_map_i[j].start_addr >= addr_map_i[i].start_addr) || (addr_map_i[j].end_addr <= addr_map_i[i].start_addr)) else
+              Rule %d: SLV ID: %h START: %h END: %h\n\
+              Rule %d: SLV ID: %h START: %h END: %h\n\
+              axi_addr_decode>  #####################################################",
+              i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+              j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+        check_overlap_1 : assert final ((addr_map_i[j].start_addr >= addr_map_i[i].start_addr) ||
+                                        (addr_map_i[j].end_addr <= addr_map_i[i].start_addr)) else
           $warning($sformatf("Overlapping address region found!!!\n\
-                    Rule %d: ID: %h START: %h END: %h\n\
-                    Rule %d: ID: %h START: %h END: %h\n\
-                    axi_addr_decode>  #####################################################",
-                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
-                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+              Rule %d: ID: %h START: %h END: %h\n\
+              Rule %d: ID: %h START: %h END: %h\n\
+              axi_addr_decode>  #####################################################",
+              i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+              j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
         check_same_addr : assert final (addr_map_i[i].start_addr != addr_map_i[j].start_addr) else
           $warning($sformatf("Overlapping address region found!!!\n\
-                    Rule %d: ID: %h START: %h END: %h\n\
-                    Rule %d: ID: %h START: %h END: %h\n\
-                    axi_addr_decode>  #####################################################",
-                    i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
-                    j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
+              Rule %d: ID: %h START: %h END: %h\n\
+              Rule %d: ID: %h START: %h END: %h\n\
+              axi_addr_decode>  #####################################################",
+              i, addr_map_i[i].mst_port_idx, addr_map_i[i].start_addr, addr_map_i[i].end_addr,
+              j, addr_map_i[j].mst_port_idx, addr_map_i[j].start_addr, addr_map_i[j].end_addr));
       end
     end
   end
