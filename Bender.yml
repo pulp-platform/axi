@@ -7,7 +7,7 @@ package:
 
 dependencies:
   apb: { git: "https://github.com/pulp-platform/apb.git", rev: release-0.2 }
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: counter-ext }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: v2.0.0 }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1 }
 
 export_include_dirs:
@@ -29,7 +29,6 @@ sources:
   - src/axi_address_resolver.sv
   - src/axi_arbiter.sv
   - src/axi_atop_filter.sv
-  - src/axi_atop_filter_stc.sv
   - src/axi_burst_splitter.sv
   - src/axi_bypass.sv
   - src/axi_cdc.sv
@@ -64,7 +63,6 @@ sources:
   - target: test
     files:
       - test/tb_axi_atop_filter.sv
-      - test/tb_axi_atop_filter_stc.sv
       - test/tb_axi_burst_splitter.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_dwc_downsize.sv

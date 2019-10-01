@@ -11,6 +11,7 @@
 // Testbench for axi_atop_filter
 
 `include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 import axi_pkg::ATOP_ATOMICCMP;
 import axi_pkg::ATOP_ATOMICLOAD;
@@ -48,8 +49,26 @@ module tb_axi_atop_filter #(
   localparam int unsigned AXI_STRB_WIDTH  = AXI_DATA_WIDTH / 8;
   localparam int unsigned NUM_AXI_IDS     = 2**AXI_ID_WIDTH;
 
+  typedef logic [AXI_ID_WIDTH-1:0]   id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T (aw_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_W_CHAN_T  (w_chan_t,  data_t,       strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T  (b_chan_t,          id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T (ar_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T  (r_chan_t,  data_t, id_t,         user_t);
+
+  `AXI_TYPEDEF_REQ_T     (req_t,  aw_chan_t, w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T    (resp_t,  b_chan_t, r_chan_t);
+
   logic clk,
         rst_n;
+
+  req_t  upstream_req,  downstream_req;
+  resp_t upstream_resp, downstream_resp;
 
   clk_rst_gen #(
     .CLK_PERIOD     (TCLK),
@@ -95,14 +114,25 @@ module tb_axi_atop_filter #(
 
   `AXI_ASSIGN(downstream_dv, downstream);
 
+  `AXI_ASSIGN_TO_REQ    ( upstream_req,    upstream       );
+  `AXI_ASSIGN_FROM_RESP ( upstream,        upstream_resp  );
+
+  `AXI_ASSIGN_FROM_REQ  ( downstream,      downstream_req );
+  `AXI_ASSIGN_TO_RESP   ( downstream_resp, downstream     );
+
+
   axi_atop_filter #(
-    .AXI_ID_WIDTH       (AXI_ID_WIDTH),
-    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
+    .AXI_ID_WIDTH       ( AXI_ID_WIDTH       ),
+    .AXI_MAX_WRITE_TXNS ( AXI_MAX_WRITE_TXNS ),
+    .req_t              ( req_t              ),
+    .resp_t             ( resp_t             )
   ) dut (
-    .clk_i  (clk),
-    .rst_ni (rst_n),
-    .slv    (upstream),
-    .mst    (downstream)
+    .clk_i      ( clk             ),
+    .rst_ni     ( rst_n           ),
+    .slv_req_i  ( upstream_req    ),
+    .slv_resp_o ( upstream_resp   ),
+    .mst_req_o  ( downstream_req  ),
+    .mst_resp_i ( downstream_resp )
   );
 
   typedef logic [AXI_ID_WIDTH-1:0]  axi_id_t;
