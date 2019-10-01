@@ -10,7 +10,55 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI XBAR
+// AXI XBAR: A full AXI 4 crossbar with an arbitrary number of slave and master ports.
+// Features:
+//  - AXI4 ID ordering compliance
+//  - Full Customizable Address Mapping with an opional default master ports per slave port
+//  - ATOP support
+//
+//  Configuration: The configuration structs of the parameters and rules can be found in the axi_pkg
+//                 It is neccessary to provide all structs of every axi channel and the request
+//                 and response, because it is not possible to reconstruct the fields of sub
+//                 structs over multiple hierarchies.
+//
+//  Behaviour :
+//    Ordering:    When there is a transaction on a slave port to a master port with the same AXI ID
+//                 than is currently in flight to another master port, the crossbar will stall the
+//                 AX vector till the conflicting transaction is finished.
+//                 There can be to many stalls, because only the LSB's of the AXI id get checked
+//                 for the 'difference' between two axi id's.
+//    Latency:     The crossbar can be configured for different latencies on the channels.
+//                 It does so by introducing spill register on key points in the crossbar.
+//                 - AW: - between address decode and demux onto the crossbar
+//                       - on the master port
+//                 -  W: - on the master port
+//                 -  B: - on the master port
+//                 - AR: - between address decode and demux onto the crossbar
+//                 -     - on the master port
+//                 -  R: - on the master port
+//                 There are further Fifo's between the AW channel and W channel, which 'save'
+//                 the switching decision. There should under no cricumstances spill registers
+//                 be introduced in the channels between the slave port demuxes and master muxes.
+//                 In doing so can lead to a deadlock of the interconnect, as all 4 of the
+//                 deadlock properties will be fullfilled. By populating the switching decision
+//                 into the fifos in the same cycle, there can be no cyclic dependency and because
+//                 of that no deadlock.
+//    Address Map: The address map is defined as an packed array of rule structs.
+//                 Two rule structs for address widths of 32 and 64 bit are provided in axi_pkg.sv
+//                 The address mapping is global in the crossbar and the same for each slave port.
+//                 The adderss decoder expects 3 fields in the struct:
+//                  - mst_port_idx: index of the master port, has to be < #MST ports of the xbar
+//                  - start_addr:   start address of the range the rule describes, is included
+//                  - end_addr:     end address of the range the rule describes, is NOT included
+//                 There can be an arbitrary number of address rules. There can be multiple
+//                 ranges be defined for the same master port. The start address has to be <=
+//                 the end address. Simulation will issue warnings if address ranges overlap.
+//                 If there are overlaps the rule in the highest array position wins.
+//                 The crossbar will answer to a wrong address with a decode error. This can be
+//                 disabled by providing a corresponding default master port. Each Salve port
+//                 Can has its own unique default master port. Which can be individually enabled.
+//                 Be sure to have no pending Ax vector (ax_valid = 1'b1) or the address mapping
+//                 on a slave port when changeing the default master port of it.
 
 module axi_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = logic, // Fixed Cfg of the xbar
@@ -42,6 +90,7 @@ module axi_xbar #(
   input  rule_t     [Cfg.NoAddrRules-1:0] addr_map_i,
   // default mst port for each slv port, that each connected master can have its own default slave
   // enables the address mapping to a default master port per slave port
+  // to disable, set to '0
   input  logic      [Cfg.NoSlvPorts-1:0]                             en_default_mst_port_i,
   // the array of default master ports
   input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
