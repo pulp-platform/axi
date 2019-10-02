@@ -12,9 +12,9 @@
 // Constaraints enforced trough assertions: ID withd of slave and master port
 
 module axi_id_prepend #(
-  parameter int unsigned NoBus             = 1, // Can take multiple axi busses
-  parameter int unsigned AxiIdWidthSlvPort = logic, // Axi Id Width of the Slave Ports
-  parameter int unsigned AxiIdWidthMstPort = logic, // Axi Id Width of the Master Ports
+  parameter int unsigned NoBus             = 1,     // Can take multiple axi busses
+  parameter int unsigned AxiIdWidthSlvPort = 4,     // Axi Id Width of the Slave Ports
+  parameter int unsigned AxiIdWidthMstPort = 6,     // Axi Id Width of the Master Ports
   parameter type         slv_aw_chan_t     = logic, // AW Channel Type for slv port
   parameter type         slv_w_chan_t      = logic, //  W Channel Type for slv port
   parameter type         slv_b_chan_t      = logic, //  B Channel Type for slv port
