@@ -108,25 +108,72 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
-  // cfg struct for the full xbar
+  // axi xbar configurations
+  // enum for the latency modes
+  typedef enum logic [2:0] {
+    NO_LATENCY,
+    CUT_SLV_AX,
+    CUT_MST_AX,
+    CUT_ALL_AX,
+    CUT_SLV_PORTS,
+    CUT_MST_PORTS,
+    CUT_ALL_PORTS
+  } xbar_latency_t;
+  // cfg struct for axi_xbar.sv
   typedef struct packed {
-    int unsigned NoSlvPorts;         // # of slave ports, this many masters are connected to the xbar
-    int unsigned NoMstPorts;         // # of master ports, this many slaves are connected to the xbar
-    int unsigned MaxMstTrans;        // Maximum number of outstanding transactions per read / write per connected master
-    int unsigned MaxSlvTrans;        // Maximum number of outstanding write transactions per connected slave
-    bit          FallThrough;        // Are the internal Fifo's in Fall through mode? When enabled theoretical one cycle transaction, but long logic paths
-    int unsigned AxiIdWidthSlvPorts; // Axi Id Width of the Slave Ports
-    int unsigned AxiIdWidthMstPorts; // Axi Id Width of the Master Ports, has to be
-    int unsigned AxiAddrWidth;       // Axi Address Width
-    int unsigned AxiDataWidth;       // Axi Data Width
-    int unsigned NoAddrRules;        // # of Address Rules in the memory map
-    logic        GenSpillAwIn;       // Spill register on AW channel between addr decode and demux
-    logic        GenSpillAwOut;      // Spill register on AW channel after mux
-    logic        GenSpillArIn;       // Spill register on AR channel between addr decode and demux
-    logic        GenSpillArOut;      // Spill register on AR channel after mux
+    int unsigned   NoSlvPorts;         // # of slave ports, so many masters are connected to the xbar
+    int unsigned   NoMstPorts;         // # of master ports, so many slaves are connected to the xbar
+    int unsigned   MaxMstTrans;        // Maxi # of outstanding transactions per r/w per master
+    int unsigned   MaxSlvTrans;        // Maxi # of outstanding write transactions per slave
+    bit            FallThrough;        // AreAW -> W Fifo's in Fall through mode (1'b0 = long paths)
+    xbar_latency_t LatencyMode;        // See xbar_latency_t and get_xbarlatmode
+    int unsigned   AxiIdWidthSlvPorts; // Axi Id Width of the Slave Ports
+    int unsigned   AxiIdUsedSlvPorts;  // this many LSB's of the SlvPortAxiId get used in demux
+    int unsigned   AxiIdWidthMstPorts; // ==> $clog2(NoSLVPorts) + AxiIdWidthSlvPorts !!
+    int unsigned   AxiAddrWidth;       // Axi Address Width
+    int unsigned   AxiDataWidth;       // Axi Data Width
+    int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
 
-  // address rule struct for the full xbar
+  // Latenency confirurations
+  // This struct holds the bits to be set for parameters SPILL_XX in axi_demux.sv and axi_mux.sv
+  typedef struct packed {
+    bit DemuxAw;
+    bit DemuxW;
+    bit DemuxB;
+    bit DemuxAr;
+    bit DemuxR;
+    bit MuxAw;
+    bit MuxW;
+    bit MuxB;
+    bit MuxAr;
+    bit MuxR;
+  } xbar_spill_t;
+
+  function automatic xbar_spill_t get_xbarlatmode (xbar_latency_t lat);
+    unique case (lat)
+      NO_LATENCY    : return '{default: 1'b0}; // combinational (no spill regs)
+      // one cycle latency on ax channels
+      CUT_SLV_AX    : return '{DemuxAw: 1'b1, DemuxAr: 1'b1, default: 1'b0};
+      // one cycle latency on ax channels
+      CUT_MST_AX    : return '{MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
+      // two cycle latency on ax channels
+      CUT_ALL_AX    : return '{DemuxAw: 1'b1, DemuxAr: 1'b1,
+                               MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
+      // one cycle latency on all channels
+      CUT_SLV_PORTS : return '{DemuxAw: 1'b1, DemuxW: 1'b1,  DemuxB:  1'b1,
+                               DemuxAr: 1'b1, DemuxR: 1'b1,  default: 1'b0};
+      // one cycle latency on all channels
+      CUT_MST_PORTS : return '{MuxAw:   1'b1, MuxW:   1'b1,  MuxB:    1'b1,
+                               MuxAr:   1'b1, MuxR:   1'b1,  default: 1'b0};
+      CUT_ALL_PORTS : return '{default: 1'b1}; // two cycle latency on all channels
+      // default is CUT_ALL_AX
+      default       : return '{DemuxAw: 1'b1, DemuxAr: 1'b1,
+                               MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
+    endcase // lat
+  endfunction
+
+  // address rule struct for the axi xbar
   typedef struct packed {
     int unsigned mst_port_idx;
     logic [63:0] start_addr;

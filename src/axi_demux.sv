@@ -43,9 +43,12 @@ module axi_demux #(
   // When enabled theoretical one cycle transaction, but long logic paths
   parameter bit          FALL_THROUGH     = 1'b0,
   // add spill register in aw path before the lookup in id counter
-  parameter bit          SPILL_AW      = 1'b1,
+  parameter bit          SPILL_AW         = 1'b1,
+  parameter bit          SPILL_W          = 1'b0,
+  parameter bit          SPILL_B          = 1'b0,
   // add spill register in ar path before the lookup in id counter
-  parameter bit          SPILL_AR      = 1'b1,
+  parameter bit          SPILL_AR         = 1'b1,
+  parameter bit          SPILL_R          = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter type         select_t       = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
 ) (
@@ -163,6 +166,7 @@ module axi_demux #(
     // atop inject to the ar channel the id is from the aw channel
     logic            atop_inject;
 
+
     // Data in to the fifos is the AW'select signal
     // push signal is the same as aw_push
     // w fifo signals, holds the selection, where the next W beats should go
@@ -173,6 +177,13 @@ module axi_demux #(
     // decision to stall or to connect
     aw_chan_select_t aw_chan_select;
     logic            aw_valid,           aw_ready;
+
+    // w channel from spill reg
+    w_chan_t         slv_w_chan;
+    logic            slv_w_valid,        slv_w_ready;
+    // b channel to spill register
+    b_chan_t         slv_b_chan;
+    logic            slv_b_valid,        slv_b_ready;
 
     //--------------------------------------
     // Read Transaction
@@ -190,6 +201,10 @@ module axi_demux #(
     ar_chan_select_t ar_chan_select;
     logic            lock_ar_valid_n,    lock_ar_valid_q, load_ar_lock;
     logic            ar_valid,           ar_ready;
+
+    // r channel to spill register
+    r_chan_t         slv_r_chan;
+    logic            slv_r_valid,        slv_r_ready;
 
     //--------------------------------------
     //--------------------------------------
@@ -271,7 +286,7 @@ module axi_demux #(
       .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AXI_LOOK_BITS] ),
       .push_mst_select_i            ( slv_aw_chan_select.aw_select                    ),
       .push_i                       ( aw_push                                         ),
-      .pop_axi_id_i                 ( slv_b_chan_o.id[0+:AXI_LOOK_BITS]               ),
+      .pop_axi_id_i                 ( slv_b_chan.id[0+:AXI_LOOK_BITS]                 ),
       .pop_i                        ( b_pop                                           )
     );
 
@@ -304,23 +319,41 @@ module axi_demux #(
     //--------------------------------------
     //  W Channel
     //--------------------------------------
+    if (SPILL_W) begin : gen_spill_w
+      spill_register #(
+        .T       ( w_chan_t      )
+      ) i_w_spill_reg(
+        .clk_i   ( clk_i         ),
+        .rst_ni  ( rst_ni        ),
+        .valid_i ( slv_w_valid_i ),
+        .ready_o ( slv_w_ready_o ),
+        .data_i  ( slv_w_chan_i  ),
+        .valid_o ( slv_w_valid   ),
+        .ready_i ( slv_w_ready   ),
+        .data_o  ( slv_w_chan    )
+      );
+    end else begin : gen_no_spill_w
+      assign slv_w_chan    = slv_w_chan_i;
+      assign slv_w_valid   = slv_w_valid_i;
+      assign slv_w_ready_o = slv_w_ready;
+    end
     always_comb begin : proc_w_chan
       // Axi W Channel
       for (int unsigned i = 0; i < NO_MST_PORTS; i++) begin
-        mst_w_chans_o[i] = slv_w_chan_i;
+        mst_w_chans_o[i] = slv_w_chan;
       end
       // Axi handshakes
       mst_w_valids_o = '0;
-      slv_w_ready_o  = 1'b0;
+      slv_w_ready    = 1'b0;
       // fifo control
       w_fifo_pop     = 1'b0;
       // Control
       // only do something if we expect some w beats and i_b_decerr_fifo is not full
       if (!w_fifo_empty) begin
-        mst_w_valids_o[w_select] = slv_w_valid_i;
-        slv_w_ready_o            = mst_w_readies_i[w_select];
+        mst_w_valids_o[w_select] = slv_w_valid;
+        slv_w_ready              = mst_w_readies_i[w_select];
         // when the last w beat occurs, pop the select fifo
-        if (slv_w_valid_i && mst_w_readies_i[w_select] && slv_w_chan_i.last) begin
+        if (slv_w_valid && mst_w_readies_i[w_select] && slv_w_chan.last) begin
           w_fifo_pop = 1'b1;
         end
       end
@@ -330,7 +363,26 @@ module axi_demux #(
     //  B Channel
     //--------------------------------------
     // pop from id counter on outward transaction
-    assign b_pop = slv_b_valid_o & slv_b_ready_i;
+    assign b_pop = slv_b_valid & slv_b_ready;
+    // optional spill register
+    if (SPILL_B) begin : gen_spill_b
+      spill_register #(
+        .T       ( b_chan_t      )
+      ) i_b_spill_reg (
+        .clk_i   ( clk_i         ),
+        .rst_ni  ( rst_ni        ),
+        .valid_i ( slv_b_valid   ),
+        .ready_o ( slv_b_ready   ),
+        .data_i  ( slv_b_chan    ),
+        .valid_o ( slv_b_valid_o ),
+        .ready_i ( slv_b_ready_i ),
+        .data_o  ( slv_b_chan_o  )
+      );
+    end else begin : gen_no_spill_b
+      assign slv_b_chan_o  = slv_b_chan;
+      assign slv_b_valid_o = slv_b_valid;
+      assign slv_b_ready   = slv_b_ready_i;
+    end
     // Arbitration of the different b responses
     rr_arb_tree #(
       .NumIn    ( NO_MST_PORTS    ),
@@ -345,9 +397,9 @@ module axi_demux #(
       .req_i  ( mst_b_valids_i    ),
       .gnt_o  ( mst_b_readies_o   ),
       .data_i ( mst_b_chans_i     ),
-      .gnt_i  ( slv_b_ready_i     ),
-      .req_o  ( slv_b_valid_o     ),
-      .data_o ( slv_b_chan_o      ),
+      .gnt_i  ( slv_b_ready       ),
+      .req_o  ( slv_b_valid       ),
+      .data_o ( slv_b_chan        ),
       .idx_o  (                   )
     );
 
@@ -446,7 +498,7 @@ module axi_demux #(
       .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AXI_LOOK_BITS] ),
       .push_mst_select_i            ( slv_ar_chan_select.ar_select                    ),
       .push_i                       ( ar_push                                         ),
-      .pop_axi_id_i                 ( slv_r_chan_o.id[0+:AXI_LOOK_BITS]               ),
+      .pop_axi_id_i                 ( slv_r_chan.id[0+:AXI_LOOK_BITS]                 ),
       .pop_i                        ( r_pop                                           )
     );
 
@@ -460,7 +512,27 @@ module axi_demux #(
     //--------------------------------------
     //  R Channel
     //--------------------------------------
-    assign r_pop = slv_r_valid_o & slv_r_ready_i & slv_r_chan_o.last;
+    assign r_pop = slv_r_valid & slv_r_ready & slv_r_chan.last;
+    // optional spill register
+    if (SPILL_R) begin : gen_spill_r
+      spill_register #(
+        .T       ( r_chan_t      )
+      ) i_r_spill_reg (
+        .clk_i   ( clk_i         ),
+        .rst_ni  ( rst_ni        ),
+        .valid_i ( slv_r_valid   ),
+        .ready_o ( slv_r_ready   ),
+        .data_i  ( slv_r_chan    ),
+        .valid_o ( slv_r_valid_o ),
+        .ready_i ( slv_r_ready_i ),
+        .data_o  ( slv_r_chan_o  )
+      );
+    end else begin : gen_no_spill_r
+      assign slv_r_chan_o  = slv_r_chan;
+      assign slv_r_valid_o = slv_r_valid;
+      assign slv_r_ready   = slv_r_ready_i;
+    end
+
     // Arbitration of the different r responses
     rr_arb_tree #(
       .NumIn    ( NO_MST_PORTS  ),
@@ -475,9 +547,9 @@ module axi_demux #(
       .req_i  ( mst_r_valids_i  ),
       .gnt_o  ( mst_r_readies_o ),
       .data_i ( mst_r_chans_i   ),
-      .gnt_i  ( slv_r_ready_i   ),
-      .req_o  ( slv_r_valid_o   ),
-      .data_o ( slv_r_chan_o    ),
+      .gnt_i  ( slv_r_ready     ),
+      .req_o  ( slv_r_valid     ),
+      .data_o ( slv_r_chan      ),
       .idx_o  (                 )
     );
 
@@ -647,7 +719,7 @@ endmodule
 
 // interface wrapper
 module axi_demux_wrap #(
-  parameter int unsigned AXI_ID_WIDTH     = 0, // Synopsys DC requires a default value for parameters.
+  parameter int unsigned AXI_ID_WIDTH     = 0, // Synopsys DC requires a default value for param.
   parameter int unsigned AXI_ADDR_WIDTH   = 0,
   parameter int unsigned AXI_DATA_WIDTH   = 0,
   parameter int unsigned AXI_USER_WIDTH   = 0,
@@ -661,13 +733,13 @@ module axi_demux_wrap #(
   // Dependent parameters, DO NOT OVERRIDE!
   parameter type         select_t         = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
 ) (
-  input  logic                      clk_i,   // Clock
-  input  logic                      rst_ni,  // Asynchronous reset active low
-  input  logic                      test_i,  // Testmode enable
-  input  select_t                   slv_aw_select_i, // has to be stable, when aw_valid
-  input  select_t                   slv_ar_select_i, // has to be stable, when ar_valid
-  AXI_BUS.Slave                     slv, // slave port
-  AXI_BUS.Master [NO_MST_PORTS-1:0] mst  // master ports
+  input  logic    clk_i,                 // Clock
+  input  logic    rst_ni,                // Asynchronous reset active low
+  input  logic    test_i,                // Testmode enable
+  input  select_t slv_aw_select_i,       // has to be stable, when aw_valid
+  input  select_t slv_ar_select_i,       // has to be stable, when ar_valid
+  AXI_BUS.Slave   slv,                   // slave port
+  AXI_BUS.Master  mst [NO_MST_PORTS-1:0] // master ports
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]     id_t;
@@ -706,8 +778,8 @@ module axi_demux_wrap #(
   logic     [NO_MST_PORTS-1:0] mst_ar_valids;
   logic     [NO_MST_PORTS-1:0] mst_ar_readies;
   //  R channel
-  r_chan_t  [NO_MST_PORTS-1:0] mst_r_chans;,
-  logic     [NO_MST_PORTS-1:0] mst_r_valids;,
+  r_chan_t  [NO_MST_PORTS-1:0] mst_r_chans;
+  logic     [NO_MST_PORTS-1:0] mst_r_valids;
   logic     [NO_MST_PORTS-1:0] mst_r_readies;
 
   `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      );
