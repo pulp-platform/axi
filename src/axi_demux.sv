@@ -564,11 +564,11 @@ module axi_demux #(
     end
     aw_select: assert property( @(posedge clk_i) disable iff (~rst_ni)
                                (slv_aw_select_i < NO_MST_PORTS)) else
-      $fatal(1, "axi_demux> slv_aw_select_i is %d: AW has selected a slave that is not defined.
+      $fatal(1, "axi_demux> slv_aw_select_i is %d: AW has selected a slave that is not defined.\
                  NO_MST_PORTS: %d", slv_aw_select_i, NO_MST_PORTS);
     ar_select: assert property( @(posedge clk_i) disable iff (~rst_ni)
                                (slv_aw_select_i < NO_MST_PORTS)) else
-      $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.
+      $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
                  NO_MST_PORTS: %d", slv_ar_select_i, NO_MST_PORTS);
     aw_valid_stable: assert property( @(posedge clk_i) disable iff (~rst_ni)
                                (aw_valid && !aw_ready) |=> aw_valid) else
@@ -699,7 +699,7 @@ module axi_demux_id_counters #(
     assign cnt_full[i] = overflow | (&in_flight);
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
-        $fatal(1, $sformatf("axi_demux > axi_demux_id_counters > Counter: %0d underflowed.
+        $fatal(1, $sformatf("axi_demux > axi_demux_id_counters > Counter: %0d underflowed.\
                              The reason is probably a faulty Axi response.", i));
   end
 

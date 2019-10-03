@@ -219,25 +219,25 @@ module axi_xbar #(
       @(posedge clk_i)  disable iff (~rst_ni)
         (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
           |=> en_default_mst_port_i[i] == $past(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port
+        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
                                    enable, when there is an unserved Aw beat. Salve Port: %0d", i));
     default_aw_mst_port: assume property(
       @(posedge clk_i) disable iff (~rst_ni)
         (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
           |=> default_mst_port_i[i] == $past(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port,
+        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
                                    when there is an unserved Aw beat. Salve Port: %0d", i));
     default_ar_mst_port_en: assume property(
       @(posedge clk_i) disable iff (~rst_ni)
         (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
           |=> en_default_mst_port_i[i] == $past(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the enable, when
+        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the enable, when\
                                    there is an unserved Ar beat. Salve Port: %0d", i));
     default_ar_mst_port: assume property(
       @(posedge clk_i) disable iff (~rst_ni)
         (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
           |=> default_mst_port_i[i] == $past(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port,
+        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
                                    when there is an unserved Ar beat. Salve Port: %0d", i));
     `endif
     // pragma translate_on
