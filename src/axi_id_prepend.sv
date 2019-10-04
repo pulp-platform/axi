@@ -111,40 +111,40 @@ module axi_id_prepend #(
   end
 
   aw_id   : assert final(
-      mst_aw_chans_o[0].id[$bits(slv_aw_chans_i[0].id)-1:0] == slv_aw_chans_i[0].id)
+      mst_aw_chans_o[0].id[$bits(slv_aw_chans_i[0].id)-1:0] === slv_aw_chans_i[0].id)
         else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  aw_addr : assert final(mst_aw_chans_o[0].addr == slv_aw_chans_i[0].addr)
+  aw_addr : assert final(mst_aw_chans_o[0].addr === slv_aw_chans_i[0].addr)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  aw_len  : assert final(mst_aw_chans_o[0].len == slv_aw_chans_i[0].len)
+  aw_len  : assert final(mst_aw_chans_o[0].len === slv_aw_chans_i[0].len)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  aw_size : assert final(mst_aw_chans_o[0].size == slv_aw_chans_i[0].size)
+  aw_size : assert final(mst_aw_chans_o[0].size === slv_aw_chans_i[0].size)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  aw_qos  : assert final(mst_aw_chans_o[0].qos == slv_aw_chans_i[0].qos)
+  aw_qos  : assert final(mst_aw_chans_o[0].qos === slv_aw_chans_i[0].qos)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
 
   b_id    : assert final(
-      mst_b_chans_i[0].id[$bits(slv_b_chans_o[0].id)-1:0] == slv_b_chans_o[0].id)
+      mst_b_chans_i[0].id[$bits(slv_b_chans_o[0].id)-1:0] === slv_b_chans_o[0].id)
         else $fatal (1, "Something with the B channel id stripping went wrong.");
-  b_resp  : assert final(mst_b_chans_i[0].resp == slv_b_chans_o[0].resp)
+  b_resp  : assert final(mst_b_chans_i[0].resp === slv_b_chans_o[0].resp)
       else $fatal (1, "Something with the B channel id stripping went wrong.");
 
   ar_id   : assert final(
-      mst_ar_chans_o[0].id[$bits(slv_ar_chans_i[0].id)-1:0] == slv_ar_chans_i[0].id)
+      mst_ar_chans_o[0].id[$bits(slv_ar_chans_i[0].id)-1:0] === slv_ar_chans_i[0].id)
         else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  ar_addr : assert final(mst_ar_chans_o[0].addr == slv_ar_chans_i[0].addr)
+  ar_addr : assert final(mst_ar_chans_o[0].addr === slv_ar_chans_i[0].addr)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  ar_len  : assert final(mst_ar_chans_o[0].len == slv_ar_chans_i[0].len)
+  ar_len  : assert final(mst_ar_chans_o[0].len === slv_ar_chans_i[0].len)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  ar_size : assert final(mst_ar_chans_o[0].size == slv_ar_chans_i[0].size)
+  ar_size : assert final(mst_ar_chans_o[0].size === slv_ar_chans_i[0].size)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
-  ar_qos  : assert final(mst_ar_chans_o[0].qos == slv_ar_chans_i[0].qos)
+  ar_qos  : assert final(mst_ar_chans_o[0].qos === slv_ar_chans_i[0].qos)
       else $fatal (1, "Something with the AW channel id prepending went wrong.");
 
-  r_id    : assert final(mst_r_chans_i[0].id[$bits(slv_r_chans_o[0].id)-1:0] == slv_r_chans_o[0].id)
+  r_id    : assert final(mst_r_chans_i[0].id[$bits(slv_r_chans_o[0].id)-1:0] === slv_r_chans_o[0].id)
       else $fatal (1, "Something with the R channel id stripping went wrong.");
-  r_data  : assert final(mst_r_chans_i[0].data == slv_r_chans_o[0].data)
+  r_data  : assert final(mst_r_chans_i[0].data === slv_r_chans_o[0].data)
       else $fatal (1, "Something with the R channel id stripping went wrong.");
-  r_resp  : assert final(mst_r_chans_i[0].resp == slv_r_chans_o[0].resp)
+  r_resp  : assert final(mst_r_chans_i[0].resp === slv_r_chans_o[0].resp)
       else $fatal (1, "Something with the R channel id stripping went wrong.");
   `endif
   // pragma translate_on
