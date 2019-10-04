@@ -8,8 +8,10 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+
 // AXI ID PREPEND: This module prepends/strips the MSB from the AXI ID's.
-// Constaraints enforced trough assertions: ID withd of slave and master port
+// Constraints enforced trough assertions: ID width of slave and master port
 
 module axi_id_prepend #(
   parameter int unsigned NoBus             = 1,     // Can take multiple axi busses
@@ -79,14 +81,14 @@ module axi_id_prepend #(
       mst_aw_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
       mst_ar_chans_o[i]                                   = slv_ar_chans_i[i];
       mst_ar_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
-      // the id should be in the highests bits of the struct, so
+      // the id should be in the highest bits of the struct, so
       // a big channel to small channel assignment should work for cutting the prepended id
       slv_b_chans_o[i] = mst_b_chans_i[i];
       slv_r_chans_o[i] = mst_r_chans_i[i];
     end
   end
 
-  // assign the handshakings and w channel
+  // assign the handshaking's and w channel
   assign mst_w_chans_o    = slv_w_chans_i;
   assign mst_aw_valids_o  = slv_aw_valids_i;
   assign slv_aw_readies_o = mst_aw_readies_i;

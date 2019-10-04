@@ -108,7 +108,7 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
-  // axi xbar configurations
+  // axi_xbar.sv configurations
   // enum for the latency modes
   // encoding:
   // bit [9] DemuxAw;
@@ -132,21 +132,21 @@ package axi_pkg;
   } xbar_latency_t;
   // cfg struct for axi_xbar.sv
   typedef struct packed {
-    int unsigned   NoSlvPorts;         // # of slave ports, so many masters are connected to the xbar
-    int unsigned   NoMstPorts;         // # of master ports, so many slaves are connected to the xbar
+    int unsigned   NoSlvPorts;         // # of slave ports, # masters are connected to the xbar
+    int unsigned   NoMstPorts;         // # of master ports, # slaves are connected to the xbar
     int unsigned   MaxMstTrans;        // Maxi # of outstanding transactions per r/w per master
     int unsigned   MaxSlvTrans;        // Maxi # of outstanding write transactions per slave
-    bit            FallThrough;        // AreAW -> W Fifo's in Fall through mode (1'b0 = long paths)
+    bit            FallThrough;        // AreAW -> W fifo's in Fall through mode (1'b0 = long paths)
     xbar_latency_t LatencyMode;        // See xbar_latency_t and get_xbarlatmode
-    int unsigned   AxiIdWidthSlvPorts; // Axi Id Width of the Slave Ports
+    int unsigned   AxiIdWidthSlvPorts; // AXI ID Width of the Slave Ports
     int unsigned   AxiIdUsedSlvPorts;  // this many LSB's of the SlvPortAxiId get used in demux
     int unsigned   AxiIdWidthMstPorts; // ==> $clog2(NoSLVPorts) + AxiIdWidthSlvPorts !!
-    int unsigned   AxiAddrWidth;       // Axi Address Width
-    int unsigned   AxiDataWidth;       // Axi Data Width
+    int unsigned   AxiAddrWidth;       // AXI Address Width
+    int unsigned   AxiDataWidth;       // AXI Data Width
     int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
 
-  // address rule struct for the axi xbar
+  // address rule struct for the axi_xbar
   typedef struct packed {
     int unsigned mst_port_idx;
     logic [63:0] start_addr;

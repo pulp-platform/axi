@@ -181,11 +181,10 @@ module axi_atop_filter #(
         mst_req.b_ready = 1'b0;
         // Inject error response instead.  Since the B channel has an ID and the atomic burst we are
         // replying to is guaranteed to be the only burst with this ID in flight, we do not have to
-        // observe any ordering and can immediatly inject on the B channel.
+        // observe any ordering and can immediately inject on the B channel.
         slv_resp.b = '0;
         slv_resp.b.id = id_q;
         slv_resp.b.resp = axi_pkg::RESP_SLVERR;
-                                                                                //slv.b_user = '0;
         slv_resp.b_valid = 1'b1;
         if (slv_req.b_ready) begin
           // If not all beats of the R response have been injected, wait for them. Otherwise, return

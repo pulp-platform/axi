@@ -8,7 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-// AXI DECERR SLV: This module always responds with an axi decode error for transactions
+// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+
+// AXI DECERR SLV: This module always responds with an AXI decode error for transactions
 // which are sent to it. Depends on axi_atop_filter for atomics support.
 
 module axi_decerr_slv #(

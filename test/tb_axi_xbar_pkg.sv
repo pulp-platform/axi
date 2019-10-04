@@ -10,7 +10,7 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// axi xbar tb utility
+// tb_axi_xbar.sv utility
 
 package tb_axi_xbar_pkg;
 

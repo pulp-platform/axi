@@ -10,16 +10,16 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI DEMUX: This module splits an axi bus from one slv port to multiple mst ports.
-// - Each AX vector takes a `slv_ax_select_i` which determines to wich mst port index
-//   the corresponding axi burst gets sent. The selection signal has to be constant during
-//   ax_valid.
+// AXI DEMUX: This module splits an AXI bus from one slave port to multiple master ports.
+// - Each AX vector takes a `slv_ax_select_i` to which master port index the corresponding
+//   AXI burst gets sent. The selection signal has to be constant during ax_valid.
 // - There can me multiple transactions in flight to different mast ports, if
 //   they have different id's. The module will stall the Ax if it goes to a different
-//   mst port where other transactions with the same id are still in flight.
-//   This module will reorder read responses fromm different mst ports, when the axi id's are
+//   master port where other transactions with the same id are still in flight.
+//   This module will reorder read responses from different master ports, when the AXI id's are
 //   different!
-// - The module handles atops. The master connected to the slv port has to handle atops accordingly.
+// - The module forwards atomic operations. The master connected to the slave port has to
+//   be able to handle atomics accordingly.
 
 // only used in axi_demux_wrap
 `include "axi/assign.svh"
@@ -126,9 +126,8 @@ module axi_demux #(
   // other non degenerate cases
   end else begin
     //--------------------------------------
-    // Typedefs for the Fifos / Queues
+    // Typedefs for the Fifo's / Queues
     //--------------------------------------
-    // localparam int unsigned AXI_ID_WIDTH = $bits();
     typedef logic [AXI_ID_WIDTH-1:0] axi_id_t;
     typedef struct packed {
       aw_chan_t aw_chan;
@@ -166,8 +165,7 @@ module axi_demux #(
     // atop inject to the ar channel the id is from the aw channel
     logic            atop_inject;
 
-
-    // Data in to the fifos is the AW'select signal
+    // Data in to the fifo's is the AW'select signal
     // push signal is the same as aw_push
     // w fifo signals, holds the selection, where the next W beats should go
     logic            w_fifo_pop;
@@ -176,6 +174,7 @@ module axi_demux #(
 
     // decision to stall or to connect
     aw_chan_select_t aw_chan_select;
+    logic            lock_aw_valid_n,    lock_aw_valid_q, load_aw_lock;
     logic            aw_valid,           aw_ready;
 
     // w channel from spill reg
@@ -215,7 +214,7 @@ module axi_demux #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
-    // spil register at the channel input
+    // spill register at the channel input
     if (SPILL_AW) begin : gen_spill_aw
       aw_chan_select_t slv_aw_chan_select_in;
       assign slv_aw_chan_select_in.aw_chan   = slv_aw_chan_i;
@@ -240,30 +239,61 @@ module axi_demux #(
     end
 
     always_comb begin : proc_aw_chan
-      // Axi Handshakes
+      // AXI Handshakes
       slv_aw_ready = 1'b0;
       aw_valid     = 1'b0;
+      // lock aw_valid
+      lock_aw_valid_n = lock_aw_valid_q;
+      load_aw_lock    = 1'b0;
       // AW id counter and W fifo
       aw_push      = 1'b0;
       // atop injection into ar counter
       atop_inject  = 1'b0;
-      // can start handeling transaction, if id counter and fifo have space in them
-      // also check if we could inject something
-      if (!aw_id_cnt_full && !w_fifo_full && !ar_id_cnt_full) begin
-        // there is a valid AW vector make the id lookup and go further, if it passes
-        if (slv_aw_valid && (!aw_select_occupied ||
-           (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
-          // connect the handshake
-          aw_valid     = 1'b1;
-          slv_aw_ready = aw_ready;
-          // on transaction
-          if (aw_ready) begin
-            aw_push    = 1'b1;
-            if (slv_aw_chan_select.aw_chan.atop[5]) begin
-              atop_inject = 1'b1;
+      // we had an arbitration decision, the valid is locked, wait for the transaction
+      if (lock_aw_valid_q) begin
+        aw_valid = 1'b1;
+        // transaction
+        if (aw_ready) begin
+          slv_aw_ready    = 1'b1;
+          aw_push         = 1'b1;
+          lock_aw_valid_n = 1'b0;
+          load_aw_lock    = 1'b1;
+          if (slv_aw_chan_select.aw_chan.atop[5]) begin
+            atop_inject = 1'b1;
+          end
+        end
+      end else begin
+        // can start handling transaction, if id counter and fifo have space in them
+        // also check if we could inject something
+        if (!aw_id_cnt_full && !w_fifo_full && !ar_id_cnt_full) begin
+          // there is a valid AW vector make the id lookup and go further, if it passes
+          if (slv_aw_valid && (!aw_select_occupied ||
+             (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
+            // connect the handshake
+            aw_valid     = 1'b1;
+            // on transaction
+            if (aw_ready) begin
+              slv_aw_ready = 1'b1;
+              aw_push      = 1'b1;
+              if (slv_aw_chan_select.aw_chan.atop[5]) begin
+                atop_inject = 1'b1;
+              end
+            // no transaction, lock the decision
+            end else begin
+              lock_aw_valid_n = 1'b1;
+              load_aw_lock    = 1'b1;
             end
           end
         end
+      end
+    end
+
+    // this ff is needed so that aw does not get de-asserted if ar_id_cnt gets full (reason: atop)
+    always_ff @(posedge clk_i, negedge rst_ni) begin
+      if (!rst_ni) begin
+        lock_aw_valid_q <= '0;
+      end else if (load_aw_lock) begin
+        lock_aw_valid_q <= lock_aw_valid_n;
       end
     end
 
@@ -338,11 +368,11 @@ module axi_demux #(
       assign slv_w_ready_o = slv_w_ready;
     end
     always_comb begin : proc_w_chan
-      // Axi W Channel
+      // AXI W Channel
       for (int unsigned i = 0; i < NO_MST_PORTS; i++) begin
         mst_w_chans_o[i] = slv_w_chan;
       end
-      // Axi handshakes
+      // AXI handshakes
       mst_w_valids_o = '0;
       slv_w_ready    = 1'b0;
       // fifo control
@@ -430,7 +460,7 @@ module axi_demux #(
     end
 
     always_comb begin : proc_ar_chan
-      // Axi Handshakes
+      // AXI Handshakes
       slv_ar_ready    = 1'b0;
       ar_valid        = 1'b0;
       // lock ar_valid
@@ -449,7 +479,7 @@ module axi_demux #(
           load_ar_lock    = 1'b1;
         end
       end else begin
-        // can start handeling transaction, if id counter has space
+        // can start handling transaction, if id counter has space
         if (!ar_id_cnt_full) begin
           // there is a valid AR vector make the id lookup and go further, if it passes
           if (slv_ar_valid && (!ar_select_occupied ||
@@ -470,10 +500,7 @@ module axi_demux #(
       end
     end
 
-    // assign the data from one ar spill reg to the demux
-    assign ar_chan_select = slv_ar_chan_select;
-
-    // this ff is needed so that ar does not get deasserted if an atop gets injected
+    // this ff is needed so that ar does not get de-asserted if an atop gets injected
     always_ff @(posedge clk_i, negedge rst_ni) begin
       if (!rst_ni) begin
         lock_ar_valid_q <= '0;
@@ -503,6 +530,8 @@ module axi_demux #(
     );
 
     // ar demux
+    // assign the data from one ar spill reg to the demux
+    assign ar_chan_select = slv_ar_chan_select;
     for (genvar i = 0; i < NO_MST_PORTS; i++) begin
       assign mst_ar_chans_o[i] = ar_chan_select.ar_chan;
     end
@@ -557,16 +586,16 @@ module axi_demux #(
 // pragma translate_off
 `ifndef VERILATOR
     initial begin: validate_params
-      no_mst_ports: assert (NO_MST_PORTS > 0) else
+      no_mst_ports: assume (NO_MST_PORTS > 0) else
         $fatal(1, "axi_demux> The Number of slaves (NO_MST_PORTS) has to be at least 1");
-      axi_id_bits:  assert (AXI_ID_WIDTH >= AXI_LOOK_BITS) else
+      axi_id_bits:  assume (AXI_ID_WIDTH >= AXI_LOOK_BITS) else
         $fatal(1, "axi_demux> AXI_ID_BITS has to be equal or smaller than AXI_ID_WIDTH.");
     end
-    aw_select: assert property( @(posedge clk_i) disable iff (~rst_ni)
+    aw_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
                                (slv_aw_select_i < NO_MST_PORTS)) else
       $fatal(1, "axi_demux> slv_aw_select_i is %d: AW has selected a slave that is not defined.\
                  NO_MST_PORTS: %d", slv_aw_select_i, NO_MST_PORTS);
-    ar_select: assert property( @(posedge clk_i) disable iff (~rst_ni)
+    ar_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
                                (slv_aw_select_i < NO_MST_PORTS)) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
                  NO_MST_PORTS: %d", slv_ar_select_i, NO_MST_PORTS);
@@ -588,7 +617,7 @@ module axi_demux #(
 endmodule
 
 module axi_demux_id_counters #(
-  // the lower bits of the axi id that sould be considered, results in 2**AXI_ID_BITS counters
+  // the lower bits of the AXI id that should be considered, results in 2**AXI_ID_BITS counters
   parameter int unsigned AXI_ID_BITS       = 2,
   parameter int unsigned COUNTER_WIDTH     = 4,
   parameter type         mst_port_select_t = logic
@@ -872,5 +901,5 @@ module axi_demux_wrap #(
     .mst_r_chans_i    ( mst_r_chans       ),
     .mst_r_valids_i   ( mst_r_valids      ),
     .mst_r_readies_o  ( mst_r_readies     )
-);
+  );
 endmodule
