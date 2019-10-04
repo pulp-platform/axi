@@ -115,7 +115,7 @@ module axi_xbar #(
   input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
 );
 
-  localparam axi_pkg::xbar_spill_t Spill = xbar_pkg::get_xbarlatmode(Cfg.LatencyMode);
+  localparam axi_pkg::xbar_spill_t Spill = axi_pkg::get_xbarlatmode(Cfg.LatencyMode);
 
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
   typedef logic [$clog2(Cfg.NoSlvPorts)-1:0]     slv_port_idx_t;
