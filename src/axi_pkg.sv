@@ -150,27 +150,68 @@ package axi_pkg;
     bit MuxR;
   } xbar_spill_t;
 
+  // Has to be written this way, otherwise vivado does not recogises this as a const function.
   function automatic xbar_spill_t get_xbarlatmode (xbar_latency_t lat);
-    unique case (lat)
-      NO_LATENCY    : return '{default: 1'b0}; // combinational (no spill regs)
-      // one cycle latency on ax channels
-      CUT_SLV_AX    : return '{DemuxAw: 1'b1, DemuxAr: 1'b1, default: 1'b0};
-      // one cycle latency on ax channels
-      CUT_MST_AX    : return '{MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
-      // two cycle latency on ax channels
-      CUT_ALL_AX    : return '{DemuxAw: 1'b1, DemuxAr: 1'b1,
-                               MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
-      // one cycle latency on all channels
-      CUT_SLV_PORTS : return '{DemuxAw: 1'b1, DemuxW: 1'b1,  DemuxB:  1'b1,
-                               DemuxAr: 1'b1, DemuxR: 1'b1,  default: 1'b0};
-      // one cycle latency on all channels
-      CUT_MST_PORTS : return '{MuxAw:   1'b1, MuxW:   1'b1,  MuxB:    1'b1,
-                               MuxAr:   1'b1, MuxR:   1'b1,  default: 1'b0};
-      CUT_ALL_PORTS : return '{default: 1'b1}; // two cycle latency on all channels
-      // default is CUT_ALL_AX
-      default       : return '{DemuxAw: 1'b1, DemuxAr: 1'b1,
-                               MuxAw:   1'b1, MuxAr:   1'b1, default: 1'b0};
+    xbar_spill_t spill = '0;
+    case (lat)
+      NO_LATENCY    : begin
+        // combinational (no spill regs)
+      end
+      CUT_SLV_AX    : begin
+        // one cycle latency on ax channels
+        spill.DemuxAw = 1'b1;
+        spill.DemuxAr = 1'b1;
+      end
+      CUT_MST_AX    : begin
+        // one cycle latency on ax channels
+        spill.MuxAw   = 1'b1;
+        spill.MuxAr   = 1'b1;
+      end
+      CUT_ALL_AX    : begin
+        // two cycle latency on ax channels
+        spill.DemuxAw = 1'b1;
+        spill.DemuxAr = 1'b1;
+        spill.MuxAw   = 1'b1;
+        spill.MuxAr   = 1'b1;
+      end
+      CUT_SLV_PORTS : begin
+        // one cycle latency on all channels
+        spill.DemuxAw = 1'b1;
+        spill.DemuxW  = 1'b1;
+        spill.DemuxB  = 1'b1;
+        spill.DemuxAr = 1'b1;
+        spill.DemuxR  = 1'b1;
+      end
+      CUT_MST_PORTS : begin
+        // one cycle latency on all channels
+        spill.MuxAw   = 1'b1;
+        spill.MuxW    = 1'b1;
+        spill.MuxB    = 1'b1;
+        spill.MuxAr   = 1'b1;
+        spill.MuxR    = 1'b1;
+      end
+      CUT_ALL_PORTS : begin
+        // two cycle latency on all channels
+        spill.DemuxAw = 1'b1;
+        spill.DemuxW  = 1'b1;
+        spill.DemuxB  = 1'b1;
+        spill.DemuxAr = 1'b1;
+        spill.DemuxR  = 1'b1;
+        spill.MuxAw   = 1'b1;
+        spill.MuxW    = 1'b1;
+        spill.MuxB    = 1'b1;
+        spill.MuxAr   = 1'b1;
+        spill.MuxR    = 1'b1;
+      end
+      default       : begin
+        // default is CUT_ALL_AX
+        spill.DemuxAw = 1'b1;
+        spill.DemuxAr = 1'b1;
+        spill.MuxAw   = 1'b1;
+        spill.MuxAr   = 1'b1;
+      end
     endcase // lat
+    return spill;
   endfunction
 
   // address rule struct for the axi xbar
