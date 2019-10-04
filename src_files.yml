@@ -5,7 +5,6 @@ axi:
     - src/axi_intf.sv
 
     - src/axi_atop_filter.sv
-    - src/axi_atop_filter_stc.sv
     - src/axi_arbiter.sv
     - src/axi_address_resolver.sv
 
@@ -28,3 +27,4 @@ axi:
     - src/axi_data_width_converter.sv
     - src/axi_downscale.sv
     - src/axi_upscale.sv
+ 
