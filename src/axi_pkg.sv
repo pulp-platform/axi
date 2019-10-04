@@ -110,14 +110,25 @@ package axi_pkg;
 
   // axi xbar configurations
   // enum for the latency modes
-  typedef enum logic [2:0] {
-    NO_LATENCY,
-    CUT_SLV_AX,
-    CUT_MST_AX,
-    CUT_ALL_AX,
-    CUT_SLV_PORTS,
-    CUT_MST_PORTS,
-    CUT_ALL_PORTS
+  // encoding:
+  // bit [9] DemuxAw;
+  // bit [8] DemuxW;
+  // bit [7] DemuxB;
+  // bit [6] DemuxAr;
+  // bit [5] DemuxR;
+  // bit [4] MuxAw;
+  // bit [3] MuxW;
+  // bit [2] MuxB;
+  // bit [1] MuxAr;
+  // bit [0] MuxR;
+  typedef enum logic [9:0] {
+    NO_LATENCY    = 10'b000_00_000_00,
+    CUT_SLV_AX    = 10'b100_10_000_00,
+    CUT_MST_AX    = 10'b000_00_100_10,
+    CUT_ALL_AX    = 10'b100_10_100_10,
+    CUT_SLV_PORTS = 10'b111_11_000_00,
+    CUT_MST_PORTS = 10'b000_00_111_11,
+    CUT_ALL_PORTS = 10'b111_11_111_11
   } xbar_latency_t;
   // cfg struct for axi_xbar.sv
   typedef struct packed {
@@ -134,85 +145,6 @@ package axi_pkg;
     int unsigned   AxiDataWidth;       // Axi Data Width
     int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
-
-  // Latenency confirurations
-  // This struct holds the bits to be set for parameters SPILL_XX in axi_demux.sv and axi_mux.sv
-  typedef struct packed {
-    bit DemuxAw;
-    bit DemuxW;
-    bit DemuxB;
-    bit DemuxAr;
-    bit DemuxR;
-    bit MuxAw;
-    bit MuxW;
-    bit MuxB;
-    bit MuxAr;
-    bit MuxR;
-  } xbar_spill_t;
-
-  // Has to be written this way, otherwise vivado does not recogises this as a const function.
-  function automatic xbar_spill_t get_xbarlatmode (xbar_latency_t lat);
-    xbar_spill_t spill = '0;
-    case (lat)
-      NO_LATENCY    : begin
-        // combinational (no spill regs)
-      end
-      CUT_SLV_AX    : begin
-        // one cycle latency on ax channels
-        spill.DemuxAw = 1'b1;
-        spill.DemuxAr = 1'b1;
-      end
-      CUT_MST_AX    : begin
-        // one cycle latency on ax channels
-        spill.MuxAw   = 1'b1;
-        spill.MuxAr   = 1'b1;
-      end
-      CUT_ALL_AX    : begin
-        // two cycle latency on ax channels
-        spill.DemuxAw = 1'b1;
-        spill.DemuxAr = 1'b1;
-        spill.MuxAw   = 1'b1;
-        spill.MuxAr   = 1'b1;
-      end
-      CUT_SLV_PORTS : begin
-        // one cycle latency on all channels
-        spill.DemuxAw = 1'b1;
-        spill.DemuxW  = 1'b1;
-        spill.DemuxB  = 1'b1;
-        spill.DemuxAr = 1'b1;
-        spill.DemuxR  = 1'b1;
-      end
-      CUT_MST_PORTS : begin
-        // one cycle latency on all channels
-        spill.MuxAw   = 1'b1;
-        spill.MuxW    = 1'b1;
-        spill.MuxB    = 1'b1;
-        spill.MuxAr   = 1'b1;
-        spill.MuxR    = 1'b1;
-      end
-      CUT_ALL_PORTS : begin
-        // two cycle latency on all channels
-        spill.DemuxAw = 1'b1;
-        spill.DemuxW  = 1'b1;
-        spill.DemuxB  = 1'b1;
-        spill.DemuxAr = 1'b1;
-        spill.DemuxR  = 1'b1;
-        spill.MuxAw   = 1'b1;
-        spill.MuxW    = 1'b1;
-        spill.MuxB    = 1'b1;
-        spill.MuxAr   = 1'b1;
-        spill.MuxR    = 1'b1;
-      end
-      default       : begin
-        // default is CUT_ALL_AX
-        spill.DemuxAw = 1'b1;
-        spill.DemuxAr = 1'b1;
-        spill.MuxAw   = 1'b1;
-        spill.MuxAr   = 1'b1;
-      end
-    endcase // lat
-    return spill;
-  endfunction
 
   // address rule struct for the axi xbar
   typedef struct packed {
