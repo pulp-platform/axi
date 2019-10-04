@@ -115,6 +115,8 @@ module axi_xbar #(
   input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
 );
 
+  localparam axi_pkg::xbar_spill_t Spill = xbar_pkg::get_xbarlatmode(Cfg.LatencyMode);
+
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
   typedef logic [$clog2(Cfg.NoSlvPorts)-1:0]     slv_port_idx_t;
   typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t; // to account for decerror
@@ -253,11 +255,11 @@ module axi_xbar #(
       .ID_COUNTER_WIDTH ( $clog2(Cfg.MaxMstTrans)),
       .AXI_LOOK_BITS    ( Cfg.AxiIdUsedSlvPorts  ),
       .FALL_THROUGH     ( Cfg.FallThrough        ),
-      .SPILL_AW         ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).DemuxAw ),
-      .SPILL_W          ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).DemuxW  ),
-      .SPILL_B          ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).DemuxB  ),
-      .SPILL_AR         ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).DemuxAr ),
-      .SPILL_R          ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).DemuxR  )
+      .SPILL_AW         ( Spill.DemuxAw          ),
+      .SPILL_W          ( Spill.DemuxW           ),
+      .SPILL_B          ( Spill.DemuxB           ),
+      .SPILL_AR         ( Spill.DemuxAr          ),
+      .SPILL_R          ( Spill.DemuxR           )
     ) i_axi_demux (
       .clk_i            ( clk_i                        ),  // Clock
       .rst_ni           ( rst_ni                       ),  // Asynchronous reset active low
@@ -440,11 +442,11 @@ module axi_xbar #(
       .NO_SLV_PORTS ( Cfg.NoSlvPorts         ), // Number of Masters
       .MAX_W_TRANS  ( Cfg.MaxSlvTrans        ),
       .FALL_THROUGH ( Cfg.FallThrough        ),
-      .SPILL_AW     ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).MuxAw ),
-      .SPILL_W      ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).MuxW  ),
-      .SPILL_B      ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).MuxB  ),
-      .SPILL_AR     ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).MuxAr ),
-      .SPILL_R      ( axi_pkg::get_xbarlatmode(Cfg.LatencyMode).MuxR  )
+      .SPILL_AW     ( Spill.MuxAw            ),
+      .SPILL_W      ( Spill.MuxW             ),
+      .SPILL_B      ( Spill.MuxB             ),
+      .SPILL_AR     ( Spill.MuxAr            ),
+      .SPILL_R      ( Spill.MuxR             )
     ) i_axi_mux (
       .clk_i  ( clk_i  ),   // Clock
       .rst_ni ( rst_ni ),   // Asynchronous reset active low
