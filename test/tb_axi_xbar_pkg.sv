@@ -164,21 +164,6 @@ package tb_axi_xbar_pkg;
             decerr = 1'b0;
           end
         end
-        // populate the expected b queue anyway
-        exp_b = '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1};
-        this.exp_b_queue[i].push(masters_axi[i].aw_id, exp_b);
-        incr_expected_tests(1);
-        // inject expected r beats on this id, if it is an atop
-        if(masters_axi[i].aw_atop[5]) begin
-          // push the required r beats into the right fifo (reuse the exp_b variable)
-          for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin
-            exp_b = (j == masters_axi[i].aw_len) ?
-                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1} :
-                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b0};
-            this.exp_r_queue[i].push(masters_axi[i].aw_id, exp_b);
-            incr_expected_tests(1);
-          end
-        end
         // send the exp aw beat down into the queue of the slave when no decerror
         if (!decerr) begin
           exp_aw_id = {idx_mst_t'(i), masters_axi[i].aw_id};
@@ -193,6 +178,23 @@ package tb_axi_xbar_pkg;
         end else begin
           $display("%0tns > Master %0d: AW to Decerror: Axi ID: %b",
               $time, i, to_slave_idx, masters_axi[i].aw_id);
+        end
+        // populate the expected b queue anyway
+        exp_b = '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1};
+        this.exp_b_queue[i].push(masters_axi[i].aw_id, exp_b);
+        incr_expected_tests(1);
+        $display("        Expect B response.");
+        // inject expected r beats on this id, if it is an atop
+        if(masters_axi[i].aw_atop[5]) begin
+          // push the required r beats into the right fifo (reuse the exp_b variable)
+          $display("        Expect R response, len: %0d.", masters_axi[i].aw_len);
+          for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin
+            exp_b = (j == masters_axi[i].aw_len) ?
+                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1} :
+                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b0};
+            this.exp_r_queue[i].push(masters_axi[i].aw_id, exp_b);
+            incr_expected_tests(1);
+          end
         end
       end
     endtask : monitor_mst_aw
@@ -266,6 +268,8 @@ package tb_axi_xbar_pkg;
       if (masters_axi[i].b_valid && masters_axi[i].b_ready) begin
         incr_conducted_tests(1);
         axi_b_id = masters_axi[i].b_id;
+        $display("%0t > Master %0d: Got last B with id: %b",
+                $time, i, axi_b_id);
         if (this.exp_b_queue[i].empty()) begin
           incr_failed_tests(1);
           $warning("Master %d: unexpected B beat with ID: %b detected!", i, axi_b_id);
@@ -319,7 +323,8 @@ package tb_axi_xbar_pkg;
           incr_expected_tests(1);
         end
         // push the required r beats into the right fifo
-        for (int unsigned j = 0; j <= mst_axi_len; j++) begin
+          $display("        Expect R response, len: %0d.", masters_axi[i].ar_len);
+          for (int unsigned j = 0; j <= mst_axi_len; j++) begin
           exp_mst_r = (j == mst_axi_len) ? '{mst_axi_id: mst_axi_id, last: 1'b1} :
                                            '{mst_axi_id: mst_axi_id, last: 1'b0};
           this.exp_r_queue[i].push(mst_axi_id, exp_mst_r);
@@ -356,6 +361,10 @@ package tb_axi_xbar_pkg;
         incr_conducted_tests(1);
         mst_axi_r_id   = masters_axi[i].r_id;
         mst_axi_r_last = masters_axi[i].r_last;
+        if (mst_axi_r_last) begin
+          $display("%0t > Master %0d: Got last R with id: %b",
+                   $time, i, mst_axi_r_id);
+        end
         if (this.exp_r_queue[i].empty()) begin
           incr_failed_tests(1);
           $warning("Master %d: unexpected R beat with ID: %b detected!", i, mst_axi_r_id);
