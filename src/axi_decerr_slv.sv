@@ -14,11 +14,11 @@
 // which are sent to it. Depends on axi_atop_filter for atomics support.
 
 module axi_decerr_slv #(
-  parameter int unsigned AXI_ID_WIDTH = 0,     // AXI ID Width
-  parameter type         req_t        = logic, // AXI 4 REQUEST struct, with atop field
-  parameter type         resp_t       = logic, // AXI 4 REQUEST struct
-  parameter bit          FALL_THROUGH = 1'b1, // When enabled: in cycle transaction, long paths
-  parameter int unsigned MAX_TRANS    = 1     // Determines the FiFo depth between the channels
+  parameter int unsigned AxiIdWidth  = 0,     // AXI ID Width
+  parameter type         req_t       = logic, // AXI 4 REQUEST struct, with atop field
+  parameter type         resp_t      = logic, // AXI 4 REQUEST struct
+  parameter bit          FallThrough = 1'b1, // When enabled: in cycle transaction, long paths
+  parameter int unsigned MaxTrans    = 1     // Determines the FiFo depth between the channels
 ) (
   input  logic  clk_i,   // Clock
   input  logic  rst_ni,  // Asynchronous reset active low
@@ -27,7 +27,7 @@ module axi_decerr_slv #(
   input  req_t  slv_req_i,
   output resp_t slv_resp_o
 );
-  typedef logic [AXI_ID_WIDTH-1:0] id_t;
+  typedef logic [AxiIdWidth-1:0] id_t;
   typedef struct packed {
     id_t           id;
     axi_pkg::len_t len;
@@ -59,10 +59,10 @@ module axi_decerr_slv #(
   // Atop Filter for atomics support
   //--------------------------------------
   axi_atop_filter #(
-    .AXI_ID_WIDTH       ( AXI_ID_WIDTH ),
-    .AXI_MAX_WRITE_TXNS ( MAX_TRANS    ),
-    .req_t              ( req_t        ),
-    .resp_t             ( resp_t       )
+    .AXI_ID_WIDTH       ( AxiIdWidth ),
+    .AXI_MAX_WRITE_TXNS ( MaxTrans   ),
+    .req_t              ( req_t      ),
+    .resp_t             ( resp_t     )
   ) i_atop_filter (
     .clk_i      ( clk_i       ),
     .rst_ni     ( rst_ni      ),
@@ -86,8 +86,8 @@ module axi_decerr_slv #(
   end
 
   fifo_v3 #(
-    .FALL_THROUGH ( FALL_THROUGH ),
-    .DEPTH        ( MAX_TRANS    ),
+    .FALL_THROUGH ( FallThrough ),
+    .DEPTH        ( MaxTrans    ),
     .dtype        ( id_t         )
   ) i_w_fifo (
     .clk_i      ( clk_i             ),
@@ -107,11 +107,11 @@ module axi_decerr_slv #(
     decerr_resp.w_ready = 1'b0;
     w_fifo_pop          = 1'b0;
     b_fifo_push         = 1'b0;
-    if(!w_fifo_empty && !b_fifo_full) begin
+    if (!w_fifo_empty && !b_fifo_full) begin
       // eat the beats
       decerr_resp.w_ready = 1'b1;
       // on the last w transaction
-      if(decerr_req.w_valid && decerr_req.w.last) begin
+      if (decerr_req.w_valid && decerr_req.w.last) begin
         w_fifo_pop    = 1'b1;
         b_fifo_push   = 1'b1;
       end
@@ -119,7 +119,7 @@ module axi_decerr_slv #(
   end
 
   fifo_v3 #(
-    .FALL_THROUGH ( FALL_THROUGH ),
+    .FALL_THROUGH ( FallThrough  ),
     .DEPTH        ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
     .dtype        ( id_t         )
   ) i_b_fifo (
@@ -142,10 +142,10 @@ module axi_decerr_slv #(
     decerr_resp.b.id    = b_fifo_data;
     decerr_resp.b.resp  = axi_pkg::RESP_DECERR;
     decerr_resp.b_valid = 1'b0;
-    if(!b_fifo_empty) begin
+    if (!b_fifo_empty) begin
       decerr_resp.b_valid = 1'b1;
       // b transaction
-      if(decerr_req.b_ready) begin
+      if (decerr_req.b_ready) begin
         b_fifo_pop = 1'b1;
       end
     end
@@ -158,7 +158,7 @@ module axi_decerr_slv #(
     decerr_resp.ar_ready = ~r_fifo_full;
     r_fifo_push          = 1'b0;
     // ar transaction
-    if(decerr_req.ar_valid && !r_fifo_full) begin
+    if (decerr_req.ar_valid && !r_fifo_full) begin
       r_fifo_push = 1'b1;
     end
   end
@@ -167,9 +167,9 @@ module axi_decerr_slv #(
   assign r_fifo_inp.len = decerr_req.ar.len;
 
   fifo_v3 #(
-    .FALL_THROUGH ( FALL_THROUGH ),
-    .DEPTH        ( MAX_TRANS    ),
-    .dtype        ( r_data_t     )
+    .FALL_THROUGH ( FallThrough ),
+    .DEPTH        ( MaxTrans    ),
+    .dtype        ( r_data_t    )
   ) i_r_fifo (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -218,7 +218,7 @@ module axi_decerr_slv #(
       end
     end else begin
       // when not busy and fifo not empty, start counter decerr gen
-      if(!r_fifo_empty) begin
+      if (!r_fifo_empty) begin
         r_busy_n    = 1'b1;
         r_busy_load = 1'b1;
         r_cnt_load  = 1'b1;
