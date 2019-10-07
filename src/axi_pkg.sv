@@ -111,25 +111,26 @@ package axi_pkg;
   // axi_xbar.sv configurations
   // enum for the latency modes
   // encoding:
-  // bit [9] DemuxAw;
-  // bit [8] DemuxW;
-  // bit [7] DemuxB;
-  // bit [6] DemuxAr;
-  // bit [5] DemuxR;
-  // bit [4] MuxAw;
-  // bit [3] MuxW;
-  // bit [2] MuxB;
-  // bit [1] MuxAr;
-  // bit [0] MuxR;
+  localparam logic [9:0] DemuxAw = (1 << 9);
+  localparam logic [9:0] DemuxW  = (1 << 8);
+  localparam logic [9:0] DemuxB  = (1 << 7);
+  localparam logic [9:0] DemuxAr = (1 << 6);
+  localparam logic [9:0] DemuxR  = (1 << 5);
+  localparam logic [9:0] MuxAw   = (1 << 4);
+  localparam logic [9:0] MuxW    = (1 << 3);
+  localparam logic [9:0] MuxB    = (1 << 2);
+  localparam logic [9:0] MuxAr   = (1 << 1);
+  localparam logic [9:0] MuxR    = (1 << 0);
+
   typedef enum logic [9:0] {
-    NO_LATENCY    = 10'b000_00_000_00,
-    CUT_SLV_AX    = 10'b100_10_000_00,
-    CUT_MST_AX    = 10'b000_00_100_10,
-    CUT_ALL_AX    = 10'b100_10_100_10,
-    CUT_SLV_PORTS = 10'b111_11_000_00,
-    CUT_MST_PORTS = 10'b000_00_111_11,
-    CUT_ALL_PORTS = 10'b111_11_111_11
-  } xbar_latency_t;
+    NO_LATENCY    = '0,
+    CUT_SLV_AX    = DemuxAw | DemuxAr,
+    CUT_MST_AX    = MuxAw | MuxAr,
+    CUT_ALL_AX    = DemuxAw | DemuxAr | MuxAw | MuxAr,
+    CUT_SLV_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
+    CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
+    CUT_ALL_PORTS = '1
+  } xbar_latency_e;
   // cfg struct for axi_xbar.sv
   typedef struct packed {
     int unsigned   NoSlvPorts;         // # of slave ports, # masters are connected to the xbar
@@ -137,7 +138,7 @@ package axi_pkg;
     int unsigned   MaxMstTrans;        // Maxi # of outstanding transactions per r/w per master
     int unsigned   MaxSlvTrans;        // Maxi # of outstanding write transactions per slave
     bit            FallThrough;        // AreAW -> W fifo's in Fall through mode (1'b0 = long paths)
-    xbar_latency_t LatencyMode;        // See xbar_latency_t and get_xbarlatmode
+    xbar_latency_e LatencyMode;        // See xbar_latency_t and get_xbarlatmode
     int unsigned   AxiIdWidthSlvPorts; // AXI ID Width of the Slave Ports
     int unsigned   AxiIdUsedSlvPorts;  // this many LSB's of the SlvPortAxiId get used in demux
     int unsigned   AxiIdWidthMstPorts; // ==> $clog2(NoSLVPorts) + AxiIdWidthSlvPorts !!
