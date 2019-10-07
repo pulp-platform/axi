@@ -28,10 +28,6 @@
 // non-atomic bursts [E2.1.4]. That is, an atomic burst may never have the same ID as any other
 // write or read burst that is ongoing at the same time.
 
-// only used in axi_atop_filter_wrap
-`include "axi/assign.svh"
-`include "axi/typedef.svh"
-
 module axi_atop_filter #(
   parameter int unsigned AXI_ID_WIDTH = 0,  // Synopsys DC requires a default value for parameters.
   // Maximum number of AXI write bursts outstanding at the same time
@@ -73,8 +69,13 @@ module axi_atop_filter #(
   logic r_resp_cmd_push_valid,  r_resp_cmd_push_ready,
         r_resp_cmd_pop_valid,   r_resp_cmd_pop_ready;
 
-  // fix Internal error: unhandled IDL type ../../src/vlog/vsymtab.c(5443) <net_type>.
-  // Please contact Questa support at http://supportnet.mentor.com
+  // During simulation with questa the following error was encountered:
+  // > unhandled IDL type ../../src/vlog/vsymtab.c(5443) <net_type>.
+  // > Please contact Questa support at http://supportnet.mentor.com
+  // It has something to do with directly assigning an input port to an
+  // output port in an always comb block.
+  // (eg: `mst_req_o.aw = slv_req_i.aw;`)
+  // Adding these assignments fixed the problem.
   req_t  slv_req,  mst_req;
   resp_t slv_resp, mst_resp;
   assign slv_req    = slv_req_i;
@@ -314,6 +315,9 @@ module axi_atop_filter #(
 `endif
 // pragma translate_on
 endmodule
+
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 // interface wrapper
 module axi_atop_filter_wrap #(
