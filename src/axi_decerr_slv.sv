@@ -11,7 +11,7 @@
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
 // AXI DECERR SLV: This module always responds with an AXI decode error for transactions
-// which are sent to it. Depends on axi_atop_filter for atomics support.
+// which are sent to it. Depends on `axi_atop_filter` for atomics support.
 
 module axi_decerr_slv #(
   parameter int unsigned AxiIdWidth  = 0,     // AXI ID Width

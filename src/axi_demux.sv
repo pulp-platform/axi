@@ -211,7 +211,6 @@ module axi_demux #(
     // AW Channel
     //--------------------------------------
     // spill register at the channel input
-    // if (SpillAw) begin : gen_spill_aw
     aw_chan_select_t slv_aw_chan_select_in;
     assign slv_aw_chan_select_in.aw_chan   = slv_aw_chan_i;
     assign slv_aw_chan_select_in.aw_select = slv_aw_select_i;
@@ -228,12 +227,6 @@ module axi_demux #(
       .ready_i ( slv_aw_ready          ),
       .data_o  ( slv_aw_chan_select    )
     );
-    // end else begin : gen_no_spill_aw
-    //  assign slv_aw_chan_select.aw_chan   = slv_aw_chan_i;
-    //  assign slv_aw_chan_select.aw_select = slv_aw_select_i;
-    //  assign slv_aw_valid                 = slv_aw_valid_i;
-    //  assign slv_aw_ready_o               = slv_aw_ready;
-    // end
 
     // Control of the AW handshake
     always_comb begin : proc_aw_chan
@@ -299,9 +292,6 @@ module axi_demux #(
       end
     end
 
-    // assign the data from one aw spill reg to the next one
-    // assign aw_chan_select = slv_aw_chan_select;
-
     axi_demux_id_counters #(
       .AxiIdBits         ( AxiLookBits    ),
       .CounterWidth      ( IdCounterWidth ),
@@ -343,17 +333,13 @@ module axi_demux #(
 
     // AW demux
     // replicate AW channels
-    assign mst_aw_chans_o = {NoMstPorts{slv_aw_chan_select.aw_chan}};
-    // for (genvar i = 0; i < NoMstPorts; i++) begin
-    //   assign mst_aw_chans_o[i] = aw_chan_select.aw_chan;
-    // end
+    assign mst_aw_chans_o  = {NoMstPorts{slv_aw_chan_select.aw_chan}};
     assign mst_aw_valids_o = (aw_valid) ? (1 << slv_aw_chan_select.aw_select)            : '0;
     assign aw_ready        = (aw_valid) ? mst_aw_readies_i[slv_aw_chan_select.aw_select] : 1'b0;
 
     //--------------------------------------
     //  W Channel
     //--------------------------------------
-    // if (SpillW) begin : gen_spill_w
     spill_register #(
       .T       ( w_chan_t      ),
       .Bypass  ( ~SpillW       )
@@ -367,19 +353,11 @@ module axi_demux #(
       .ready_i ( slv_w_ready   ),
       .data_o  ( slv_w_chan    )
     );
-    //end else begin : gen_no_spill_w
-    //  assign slv_w_chan    = slv_w_chan_i;
-    //  assign slv_w_valid   = slv_w_valid_i;
-    //  assign slv_w_ready_o = slv_w_ready;
-    //end
 
     // AXI W Channel
     // replicate the W channels
     assign mst_w_chans_o = {NoMstPorts{slv_w_chan}};
     always_comb begin : proc_w_chan
-      // for (int unsigned i = 0; i < NoMstPorts; i++) begin
-      //   mst_w_chans_o[i] = slv_w_chan;
-      // end
       // AXI handshakes
       mst_w_valids_o = '0;
       slv_w_ready    = 1'b0;
@@ -403,7 +381,6 @@ module axi_demux #(
     // pop from id counter on outward transaction
     assign b_pop = slv_b_valid & slv_b_ready;
     // optional spill register
-    // if (SpillB) begin : gen_spill_b
     spill_register #(
       .T       ( b_chan_t      ),
       .Bypass  ( ~SpillB       )
@@ -417,11 +394,6 @@ module axi_demux #(
       .ready_i ( slv_b_ready_i ),
       .data_o  ( slv_b_chan_o  )
     );
-    // end else begin : gen_no_spill_b
-    //   assign slv_b_chan_o  = slv_b_chan;
-    //   assign slv_b_valid_o = slv_b_valid;
-    //   assign slv_b_ready   = slv_b_ready_i;
-    // end
 
     // Arbitration of the different b responses
     rr_arb_tree #(
@@ -446,7 +418,6 @@ module axi_demux #(
     //--------------------------------------
     //  AR Channel
     //--------------------------------------
-    // if (SpillAr) begin : gen_spill_ar
     ar_chan_select_t slv_ar_chan_select_in;
     assign slv_ar_chan_select_in.ar_chan   = slv_ar_chan_i;
     assign slv_ar_chan_select_in.ar_select = slv_ar_select_i;
@@ -463,12 +434,6 @@ module axi_demux #(
       .ready_i ( slv_ar_ready          ),
       .data_o  ( slv_ar_chan_select    )
     );
-    //end else begin : gen_no_spill_ar
-    //  assign slv_ar_chan_select.ar_chan   = slv_ar_chan_i;
-    //  assign slv_ar_chan_select.ar_select = slv_ar_select_i;
-    //  assign slv_ar_valid                 = slv_ar_valid_i;
-    //  assign slv_ar_ready_o               = slv_ar_ready;
-    //end
 
     // control of the AR handshake
     always_comb begin : proc_ar_chan
@@ -546,14 +511,8 @@ module axi_demux #(
     );
 
     // ar demux
-    // assign the data from one ar spill reg to the demux
-    // assign ar_chan_select = slv_ar_chan_select;
-
-    assign mst_ar_chans_o = {NoMstPorts{slv_ar_chan_select.ar_chan}};
-
-    // for (genvar i = 0; i < NoMstPorts; i++) begin
-    //   assign mst_ar_chans_o[i] = ar_chan_select.ar_chan;
-    // end
+    // replicate ar channel
+    assign mst_ar_chans_o  = {NoMstPorts{slv_ar_chan_select.ar_chan}};
     assign mst_ar_valids_o = (ar_valid) ? (1 << slv_ar_chan_select.ar_select)            : '0;
     assign ar_ready        = (ar_valid) ? mst_ar_readies_i[slv_ar_chan_select.ar_select] : 1'b0;
 
@@ -562,7 +521,6 @@ module axi_demux #(
     //--------------------------------------
     assign r_pop = slv_r_valid & slv_r_ready & slv_r_chan.last;
     // optional spill register
-    // if (SpillR) begin : gen_spill_r
     spill_register #(
       .T       ( r_chan_t      ),
       .Bypass  ( ~SpillR       )
@@ -576,11 +534,6 @@ module axi_demux #(
       .ready_i ( slv_r_ready_i ),
       .data_o  ( slv_r_chan_o  )
     );
-    // end else begin : gen_no_spill_r
-    //   assign slv_r_chan_o  = slv_r_chan;
-    //   assign slv_r_valid_o = slv_r_valid;
-    //   assign slv_r_ready   = slv_r_ready_i;
-    // end
 
     // Arbitration of the different r responses
     rr_arb_tree #(
@@ -729,6 +682,7 @@ module axi_demux_id_counters #(
         end
       endcase
     end
+
     delta_counter #(
       .WIDTH           ( CounterWidth ),
       .STICKY_OVERFLOW ( 1'b0         )

@@ -72,8 +72,6 @@ module tb_axi_xbar;
   `AXI_TYPEDEF_REQ_T     (     slv_req_t, aw_chan_slv_t, w_chan_t, ar_chan_slv_t);
   `AXI_TYPEDEF_RESP_T    (    slv_resp_t,  b_chan_slv_t,            r_chan_slv_t);
 
-
-
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{mst_port_idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
     '{mst_port_idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
@@ -84,18 +82,6 @@ module tb_axi_xbar;
     '{mst_port_idx: 32'd1, start_addr: 32'h0000_3000, end_addr: 32'h0000_4000},
     '{mst_port_idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
-  //localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
-  //  '{slv_id: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
-  //  '{slv_id: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
-  //  '{slv_id: 32'd5, start_addr: 32'h0000_8200, end_addr: 32'h0000_9000},
-  //  '{slv_id: 32'd4, start_addr: 32'h0000_7100, end_addr: 32'h0000_8000},
-  //  '{slv_id: 32'd5, start_addr: 32'h0000_6300, end_addr: 32'h0000_7000},
-  //  '{slv_id: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6300},
-  //  '{slv_id: 32'd1, start_addr: 32'h0000_3010, end_addr: 32'h0000_4000},
-  //  '{slv_id: 32'd0, start_addr: 32'h0000_2050, end_addr: 32'h0000_3000},
-  //  '{slv_id: 32'd1, start_addr: 32'h0000_0500, end_addr: 32'h0000_0600},
-  //  '{slv_id: 32'd3, start_addr: 32'h0000_0000, end_addr: 32'h0000_0500}
-  //};
 
   typedef axi_test::rand_axi_master #(
     // AXI interface parameters
@@ -238,10 +224,10 @@ module tb_axi_xbar;
     join
   end
 
-  // -------------
+  //-----------------------------------
   // Clock generator
-  // -------------
-  clk_rst_gen #(
+  //-----------------------------------
+    clk_rst_gen #(
     .CLK_PERIOD    ( CyclTime ),
     .RST_CLK_CYCLES( 5        )
   ) i_clk_gen (

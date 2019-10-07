@@ -13,23 +13,23 @@
 // AXI ADDR DECODE: Address decoder for the axi_full_xbar
 // Maps the input address combinational to a master port index.
 // The Address Map `addr_map_i` is a paced array of xbar_rules.
-// Two examples are given in axi_pkg for an address with of 32 and 64 bit.
+// Two examples are given in `axi_pkg` for an address width of 32 and 64 bit.
 // The rule on the MSB position in the array wins if there is an overlap
 // with the ranges.
 
-// en_default_mst_port_i: This option allows for a not mapped address to be decoded
+// `en_default_mst_port_i`: This option allows for a not mapped address to be decoded
 // onto a default master port index. If enabled `dec_error_o` is always `1'b0`.
 
 // Assertions: The module checks every time there is a change in the address mapping
-// if the resulting map is valid. Fatals when start_addr is higher than end_addr and on a mapping
-// for a master port index that is not allowed from the parameter.
+// if the resulting map is valid. Fatals when `start_addr` is higher than `end_addr`
+// and on a mapping for a master port index that is not allowed from the parameter.
 // Issues warnings if it finds overlapping address regions.
 
 module axi_addr_decode #(
-  parameter int unsigned NoMstPorts   = 1,                       // Number MST in rules
-  parameter int unsigned NoRules       = 1,                       // Total Number of rules
-  parameter type         addr_t         = logic,                   // AXI address type
-  parameter type         rule_t         = axi_pkg::xbar_rule_64_t, // rule type
+  parameter int unsigned NoMstPorts = 1,                       // Number MST in rules
+  parameter int unsigned NoRules    = 1,                       // Total Number of rules
+  parameter type         addr_t     = logic,                   // AXI address type
+  parameter type         rule_t     = axi_pkg::xbar_rule_64_t, // rule type
   // DEPENDENT PARAMETERS DO NOT OVERWRITE!
   parameter type         mst_port_idx_t = logic [$clog2(NoMstPorts)-1:0] // master port index type
 ) (

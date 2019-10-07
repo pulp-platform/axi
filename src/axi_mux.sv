@@ -172,6 +172,7 @@ module axi_mux #(
       .data_o ( mst_aw_chan      ),
       .idx_o  (                  )
     );
+
     always_comb begin : proc_aw_chan
       // default assignments
       w_fifo_push    = 1'b0;
@@ -188,7 +189,9 @@ module axi_mux #(
         end
       end
     end
+
     assign switch_aw_id = mst_aw_chan.id[MstIdx+:MstIdxBits];
+
     fifo_v3 #(
       .FALL_THROUGH ( FallThrough ),
       .DEPTH        ( MaxWTrans  ),
@@ -206,7 +209,7 @@ module axi_mux #(
       .data_o    ( w_fifo_data  ),
       .pop_i     ( w_fifo_pop   )
     );
-    // if (SpillAw) begin : gen_SpillAw
+
     spill_register #(
       .T       ( aw_chan_t      ),
       .Bypass  ( ~SpillAw       ) // Param indicated that we want a spill reg
@@ -220,11 +223,6 @@ module axi_mux #(
       .ready_i ( mst_aw_ready_i ),
       .data_o  ( mst_aw_chan_o  )
     );
-    //end else begin : gen_no_SpillAw
-    //  assign mst_aw_chan_o  = mst_aw_chan;
-    //  assign mst_aw_valid_o = mst_aw_valid;
-    //  assign mst_aw_ready   = mst_aw_ready_i;
-    //end
 
     //--------------------------------------
     // W Channel
@@ -247,7 +245,7 @@ module axi_mux #(
         end
       end
     end
-    // if (SpillW) begin : gen_SpillW
+
     spill_register #(
       .T       ( w_chan_t      ),
       .Bypass  ( ~SpillW       )
@@ -261,11 +259,6 @@ module axi_mux #(
       .ready_i ( mst_w_ready_i ),
       .data_o  ( mst_w_chan_o  )
     );
-    // end else begin : gen_no_SpillW
-    //   assign mst_w_chan_o  = mst_w_chan;
-    //   assign mst_w_valid_o = mst_w_valid;
-    //   assign mst_w_ready   = mst_w_ready_i;
-    // end
 
     //--------------------------------------
     // B Channel
@@ -282,7 +275,7 @@ module axi_mux #(
       slv_b_valids_o[switch_b_id] = mst_b_valid;
       mst_b_ready                 = slv_b_readies_i[switch_b_id];
     end
-    // if (SpillB) begin : gen_SpillB
+
     spill_register #(
       .T       ( b_chan_t      ),
       .Bypass  ( ~SpillB       )
@@ -296,11 +289,6 @@ module axi_mux #(
       .ready_i ( mst_b_ready   ),
       .data_o  ( mst_b_chan    )
     );
-    // end else begin : gen_no_SpillB
-    //   assign mst_b_chan    = mst_b_chan_i;
-    //   assign mst_b_valid   = mst_b_valid_i;
-    //   assign mst_b_ready_o = mst_b_ready;
-    // end
 
     //--------------------------------------
     // AR Channel
@@ -323,7 +311,7 @@ module axi_mux #(
       .data_o ( mst_ar_chan      ),
       .idx_o  (                  )
     );
-    // if (SpillAr) begin : gen_SpillAr
+
     spill_register #(
       .T       ( ar_chan_t      ),
       .Bypass  ( ~SpillAr       )
@@ -337,11 +325,6 @@ module axi_mux #(
       .ready_i ( mst_ar_ready_i ),
       .data_o  ( mst_ar_chan_o  )
     );
-    //end else begin : gen_no_SpillAr
-    //  assign mst_ar_chan_o  = mst_ar_chan;
-    //  assign mst_ar_valid_o = ar_valid;
-    //  assign ar_ready       = mst_ar_ready_i;
-    //end
 
     //--------------------------------------
     // R Channel
@@ -358,7 +341,7 @@ module axi_mux #(
       slv_r_valids_o[switch_r_id] = mst_r_valid;
       mst_r_ready                 = slv_r_readies_i[switch_r_id];
     end
-    // if (SPILL_R) begin : gen_spill_r
+
     spill_register #(
       .T       ( r_chan_t      ),
       .Bypass  ( ~SpillR       )
@@ -372,11 +355,6 @@ module axi_mux #(
       .ready_i ( mst_r_ready   ),
       .data_o  ( mst_r_chan    )
     );
-    // end else begin : gen_no_spill_r
-    //   assign mst_r_chan    = mst_r_chan_i;
-    //   assign mst_r_valid   = mst_r_valid_i;
-    //   assign mst_r_ready_o = mst_r_ready;
-    // end
   end
 endmodule
 

@@ -52,7 +52,8 @@
 //                 AX vector till the conflicting transaction is finished.
 //                 There can be to many stalls, because only the LSB's of the AXI id get checked
 //                 for the 'difference' between two AXI id's. Determined in Cfg struct by the
-//                 Field .AxiIdUsedSlvPorts, this has to be <= .AxiIdWidthSlvPorts
+//                 Field `.AxiIdUsedSlvPorts`, this has to be smaller or equal than
+//                 `.AxiIdWidthSlvPorts`.
 //    Latency:     The crossbar can be configured for different latencies on the channels.
 //                 It does so by introducing spill register in the demuxes and muxes.
 //                 In axi_pkg.sv exists the enum xbar_latency_t which has some configurations
@@ -68,9 +69,9 @@
 //                 Two rule structs for address widths of 32 and 64 bit are provided in axi_pkg.sv
 //                 The address mapping is global in the crossbar and the same for each slave port.
 //                 The address decoder expects 3 fields in the struct:
-//                  - mst_port_idx: index of the master port, has to be < #MST ports of the xbar
-//                  - start_addr:   start address of the range the rule describes, is included
-//                  - end_addr:     end address of the range the rule describes, is NOT included
+//                  - `mst_port_idx`: index of the master port, has to be < #MST ports of the xbar
+//                  - `start_addr`:   start address of the range the rule describes, is included
+//                  - `end_addr`:     end address of the range the rule describes, is NOT included
 //                 There can be an arbitrary number of address rules. There can be multiple
 //                 ranges be defined for the same master port. The start address has to be <=
 //                 the end address. Simulation will issue warnings if address ranges overlap.
@@ -78,7 +79,7 @@
 //                 The crossbar will answer to a wrong address with a decode error. This can be
 //                 disabled by providing a corresponding default master port. Each Salve port
 //                 Can has its own unique default master port. Which can be individually enabled.
-//                 Be sure to have no pending Ax vector (ax_valid = 1'b1) or the address mapping
+//                 Be sure to have no pending Ax vector (`ax_valid = 1'b1`) or the address mapping
 //                 on a slave port when changing the default master port of it.
 
 module axi_xbar #(
@@ -171,9 +172,9 @@ module axi_xbar #(
   mst_r_chan_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_r_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_r_valids,  mst_r_readies;
 
-  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : proc_gen_slv_port_demux
+  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
     logic [$clog2(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
-    mst_port_idx_t                      slv_aw_select, slv_ar_select;
+    mst_port_idx_t                     slv_aw_select, slv_ar_select;
     logic                              dec_aw_valid,  dec_aw_error;
     logic                              dec_ar_valid,  dec_ar_error;
 
@@ -337,7 +338,7 @@ module axi_xbar #(
     );
 
     // assign only the signals that do not go to the decerror to the xbar
-    for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : proc_gen_xbar_assign
+    for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_assign
       assign xbar_aw_chans[i][j]  = slv_aw_chans[i][j];
       assign xbar_aw_valids[i][j] = slv_aw_valids[i][j];
       assign slv_aw_readies[i][j] = xbar_aw_readies[i][j];
@@ -408,8 +409,8 @@ module axi_xbar #(
     );
   end
 
-  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : proc_xbar_slv_ports
-    for (genvar j = 0; j <= Cfg.NoMstPorts; j++) begin : proc_xbar_mst_ports
+  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_xbar_slv_cross
+    for (genvar j = 0; j <= Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
       // AW Channel
       assign mst_aw_chans[j][i]  = aw_chans[i][j];
       assign mst_aw_valids[j][i] = aw_valids[i][j];
@@ -433,7 +434,7 @@ module axi_xbar #(
     end
   end
 
-  for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : proc_gen_mst_port_mux
+  for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_mux #(
       .AxiIDWidth  ( Cfg.AxiIdWidthMstPorts ), // Id Width of the axi going througth
       .aw_chan_t   ( mst_aw_chan_t          ), // AW Channel Type
