@@ -181,10 +181,10 @@ module axi_xbar #(
     slv_resp_t decerr_resp;
 
     axi_addr_decode #(
-      .NO_MST_PORTS ( Cfg.NoMstPorts  ),
-      .addr_t       ( addr_t          ),
-      .NO_RULES     ( Cfg.NoAddrRules ),
-      .rule_t       ( rule_t          )
+      .NoMstPorts ( Cfg.NoMstPorts  ),
+      .addr_t     ( addr_t          ),
+      .NoRules    ( Cfg.NoAddrRules ),
+      .rule_t     ( rule_t          )
     ) i_axi_aw_decode (
       .addr_i                 ( slv_ports_req_i[i].aw.addr ),
       .addr_map_i             ( addr_map_i                 ),
@@ -196,10 +196,10 @@ module axi_xbar #(
     );
 
     axi_addr_decode #(
-      .NO_MST_PORTS ( Cfg.NoMstPorts  ),
-      .addr_t       ( addr_t          ),
-      .NO_RULES     ( Cfg.NoAddrRules ),
-      .rule_t       ( rule_t          )
+      .NoMstPorts ( Cfg.NoMstPorts  ),
+      .addr_t     ( addr_t          ),
+      .NoRules    ( Cfg.NoAddrRules ),
+      .rule_t     ( rule_t          )
     ) i_axi_ar_decode (
       .addr_i                 ( slv_ports_req_i[i].ar.addr ),
       .addr_map_i             ( addr_map_i                 ),
@@ -246,22 +246,22 @@ module axi_xbar #(
     `endif
     // pragma translate_on
     axi_demux #(
-      .AXI_ID_WIDTH     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
-      .aw_chan_t        ( slv_aw_chan_t          ),  // AW Channel Type
-      .w_chan_t         ( w_chan_t               ),  //  W Channel Type
-      .b_chan_t         ( slv_b_chan_t           ),  //  B Channel Type
-      .ar_chan_t        ( slv_ar_chan_t          ),  // AR Channel Type
-      .r_chan_t         ( slv_r_chan_t           ),  //  R Channel Type
-      .NO_MST_PORTS     ( Cfg.NoMstPorts + 1     ),
-      .MAX_TRANS        ( Cfg.MaxMstTrans        ),
-      .ID_COUNTER_WIDTH ( $clog2(Cfg.MaxMstTrans)),
-      .AXI_LOOK_BITS    ( Cfg.AxiIdUsedSlvPorts  ),
-      .FALL_THROUGH     ( Cfg.FallThrough        ),
-      .SPILL_AW         ( Cfg.LatencyMode[9]     ),
-      .SPILL_W          ( Cfg.LatencyMode[8]     ),
-      .SPILL_B          ( Cfg.LatencyMode[7]     ),
-      .SPILL_AR         ( Cfg.LatencyMode[6]     ),
-      .SPILL_R          ( Cfg.LatencyMode[5]     )
+      .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
+      .aw_chan_t      ( slv_aw_chan_t          ),  // AW Channel Type
+      .w_chan_t       ( w_chan_t               ),  //  W Channel Type
+      .b_chan_t       ( slv_b_chan_t           ),  //  B Channel Type
+      .ar_chan_t      ( slv_ar_chan_t          ),  // AR Channel Type
+      .r_chan_t       ( slv_r_chan_t           ),  //  R Channel Type
+      .NoMstPorts     ( Cfg.NoMstPorts + 1     ),
+      .MaxTrans       ( Cfg.MaxMstTrans        ),
+      .IdCounterWidth ( $clog2(Cfg.MaxMstTrans)),
+      .AxiLookBits    ( Cfg.AxiIdUsedSlvPorts  ),
+      .FallThrough    ( Cfg.FallThrough        ),
+      .SpillAw        ( Cfg.LatencyMode[9]     ),
+      .SpillW         ( Cfg.LatencyMode[8]     ),
+      .SpillB         ( Cfg.LatencyMode[7]     ),
+      .SpillAr        ( Cfg.LatencyMode[6]     ),
+      .SpillR         ( Cfg.LatencyMode[5]     )
     ) i_axi_demux (
       .clk_i            ( clk_i                        ),  // Clock
       .rst_ni           ( rst_ni                       ),  // Asynchronous reset active low
@@ -322,11 +322,11 @@ module axi_xbar #(
     assign decerr_req.r_ready                = slv_r_readies[i][Cfg.NoMstPorts];
 
     axi_decerr_slv #(
-      .AXI_ID_WIDTH ( Cfg.AxiIdWidthSlvPorts      ), // ID Width
-      .req_t        ( slv_req_t                   ), // AXI 4 REQUEST struct
-      .resp_t       ( slv_resp_t                  ), // AXI 4 REQUEST struct
-      .FALL_THROUGH ( 1'b0                        ),
-      .MAX_TRANS    ( $clog2(Cfg.MaxMstTrans) + 1 )
+      .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts      ), // ID Width
+      .req_t       ( slv_req_t                   ), // AXI 4 REQUEST struct
+      .resp_t      ( slv_resp_t                  ), // AXI 4 REQUEST struct
+      .FallThrough ( 1'b0                        ),
+      .MaxTrans    ( $clog2(Cfg.MaxMstTrans) + 1 )
     ) i_axi_decerr_slv (
       .clk_i      ( clk_i       ),  // Clock
       .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
@@ -435,20 +435,20 @@ module axi_xbar #(
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : proc_gen_mst_port_mux
     axi_mux #(
-      .AXI_ID_WIDTH ( Cfg.AxiIdWidthMstPorts ), // Id Width of the axi going througth
-      .aw_chan_t    ( mst_aw_chan_t          ), // AW Channel Type
-      .w_chan_t     ( w_chan_t               ), //  W Channel Type
-      .b_chan_t     ( mst_b_chan_t           ), //  B Channel Type
-      .ar_chan_t    ( mst_ar_chan_t          ), // AR Channel Type
-      .r_chan_t     ( mst_r_chan_t           ), //  R Channel Type
-      .NO_SLV_PORTS ( Cfg.NoSlvPorts         ), // Number of Masters
-      .MAX_W_TRANS  ( Cfg.MaxSlvTrans        ),
-      .FALL_THROUGH ( Cfg.FallThrough        ),
-      .SPILL_AW     ( Cfg.LatencyMode[4]     ),
-      .SPILL_W      ( Cfg.LatencyMode[3]     ),
-      .SPILL_B      ( Cfg.LatencyMode[2]     ),
-      .SPILL_AR     ( Cfg.LatencyMode[1]     ),
-      .SPILL_R      ( Cfg.LatencyMode[0]     )
+      .AxiIDWidth  ( Cfg.AxiIdWidthMstPorts ), // Id Width of the axi going througth
+      .aw_chan_t   ( mst_aw_chan_t          ), // AW Channel Type
+      .w_chan_t    ( w_chan_t               ), //  W Channel Type
+      .b_chan_t    ( mst_b_chan_t           ), //  B Channel Type
+      .ar_chan_t   ( mst_ar_chan_t          ), // AR Channel Type
+      .r_chan_t    ( mst_r_chan_t           ), //  R Channel Type
+      .NoSlvPorts  ( Cfg.NoSlvPorts         ), // Number of Masters
+      .MaxWTrans   ( Cfg.MaxSlvTrans        ),
+      .FallThrough ( Cfg.FallThrough        ),
+      .SpillAw     ( Cfg.LatencyMode[4]     ),
+      .SpillW      ( Cfg.LatencyMode[3]     ),
+      .SpillB      ( Cfg.LatencyMode[2]     ),
+      .SpillAr     ( Cfg.LatencyMode[1]     ),
+      .SpillR      ( Cfg.LatencyMode[0]     )
     ) i_axi_mux (
       .clk_i  ( clk_i  ),   // Clock
       .rst_ni ( rst_ni ),   // Asynchronous reset active low
