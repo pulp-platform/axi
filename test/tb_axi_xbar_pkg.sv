@@ -10,10 +10,12 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// tb_axi_xbar.sv utility
+// tb_axi_xbar.sv: Implements an AXI bus monitor, that is tuned for the AXI crossbar.
+//                 It snoops on each of the slaves and master ports of the crossbar and
+//                 populates fifo's and id_queues to validate that no AXI beats get
+//                 lost or sent to the wrong destination.
 
 package tb_axi_xbar_pkg;
-
   class axi_xbar_monitor #(
     parameter int unsigned AxiAddrWidth,
     parameter int unsigned AxiDataWidth,
@@ -49,7 +51,6 @@ package tb_axi_xbar_pkg;
       logic        last;
     } slave_exp_t;
 
-
     typedef rand_id_queue_pkg::rand_id_queue #(
       .data_t   ( master_exp_t      ),
       .ID_WIDTH ( AxiIdWidthMasters )
@@ -58,7 +59,6 @@ package tb_axi_xbar_pkg;
       .data_t   ( exp_ax_t         ),
       .ID_WIDTH ( AxiIdWidthSlaves )
     ) ax_queue_t;
-
 
     typedef rand_id_queue_pkg::rand_id_queue #(
       .data_t   ( slave_exp_t      ),
@@ -146,6 +146,10 @@ package tb_axi_xbar_pkg;
       @(posedge masters_axi[0].clk_i);
     endtask
 
+    // This task monitors a slave ports of the crossbar. Every time an AW beat is seen
+    // it populates an id queue at the right master port (if there is no expected decode error),
+    // populates the expected b response in its own id_queue and in case when the atomic bit [5]
+    // is set it also injects an expected response in the R channel.
     task automatic monitor_mst_aw(input int unsigned i);
       idx_slv_t    to_slave_idx;
       exp_ax_t     exp_aw;
@@ -199,6 +203,9 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_mst_aw
 
+    // This task monitors a slave port of the crossbar. Every time there is an AW vector it
+    // gets checked for its contents and if it was expected. The task then pushes an expected
+    // amount of W beats in the respective fifo. Emphasis of the last flag.
     task monitor_slv_aw(input int unsigned i);
       exp_ax_t    exp_aw;
       slave_exp_t exp_slv_w;
@@ -236,6 +243,7 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_slv_aw
 
+    // This task just pushes every W beat that gets sent on a master port in its respective fifo.
     task monitor_slv_w(input int unsigned i);
       slave_exp_t     act_slv_w;
       if (slaves_axi[i].w_valid && slaves_axi[i].w_ready) begin
@@ -245,6 +253,9 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_slv_w
 
+    // This task compares the expected and actual W beats on a master port. The reason that
+    // this is not done in `monitor_slv_w` is that there can be per protocol W beats on the
+    // channel, before AW is sent to the slave.
     task check_slv_w(input int unsigned i);
       slave_exp_t exp_w, act_w;
       forever begin
@@ -262,13 +273,14 @@ package tb_axi_xbar_pkg;
       end
     endtask : check_slv_w
 
+    // This task checks if a B response is allowed on a slave port of the crossbar.
     task automatic monitor_mst_b(input int unsigned i);
       master_exp_t exp_b;
       mst_axi_id_t axi_b_id;
       if (masters_axi[i].b_valid && masters_axi[i].b_ready) begin
         incr_conducted_tests(1);
         axi_b_id = masters_axi[i].b_id;
-        $display("%0t > Master %0d: Got last B with id: %b",
+        $display("%0tns > Master %0d: Got last B with id: %b",
                 $time, i, axi_b_id);
         if (this.exp_b_queue[i].empty()) begin
           incr_failed_tests(1);
@@ -283,6 +295,10 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_mst_b
 
+    // This task monitors the AR channel of a slave port of the crossbar. For each AR it populates
+    // the corresponding ID queue with the number of r beats indicated on the `ar_len` field.
+    // Emphasis on the last flag. We will detect reordering, if the last flags do not match,
+    // as each `random` burst tend to have a different length.
     task automatic monitor_mst_ar(input int unsigned i);
       mst_axi_id_t   mst_axi_id;
       axi_addr_t     mst_axi_addr;
@@ -333,6 +349,8 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_mst_ar
 
+    // This task monitors a master port of the crossbar and checks if a transmitted AR beat was
+    // expected.
     task automatic monitor_slv_ar(input int unsigned i);
       exp_ax_t       exp_slv_ar;
       slv_axi_id_t   slv_axi_id;
@@ -353,6 +371,8 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_slv_ar
 
+    // This task does the R channel monitoring on a slave port. It compares the last flags,
+    // which are determined by the sequence of previously sent AR vectors.
     task automatic monitor_mst_r(input int unsigned i);
       master_exp_t exp_mst_r;
       mst_axi_id_t mst_axi_r_id;
@@ -362,7 +382,7 @@ package tb_axi_xbar_pkg;
         mst_axi_r_id   = masters_axi[i].r_id;
         mst_axi_r_last = masters_axi[i].r_last;
         if (mst_axi_r_last) begin
-          $display("%0t > Master %0d: Got last R with id: %b",
+          $display("%0tns > Master %0d: Got last R with id: %b",
                    $time, i, mst_axi_r_id);
         end
         if (this.exp_r_queue[i].empty()) begin
@@ -383,6 +403,7 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_mst_r
 
+    // Some tasks to manage bookkeeping of the tests conducted.
     task incr_expected_tests(input int unsigned times);
       cnt_sem.get();
       this.tests_expected += times;
@@ -401,7 +422,10 @@ package tb_axi_xbar_pkg;
       cnt_sem.put();
     endtask : incr_failed_tests
 
-
+    // This task invokes the various monitoring tasks. It first forks in two, spitting
+    // the tasks that should continuously run and the ones that get invoked every clock cycle.
+    // For the tasks every clock cycle all processes that only push something in the fifo's and
+    // Queues get run. When they are finished the processes that pop something get run.
     task run();
       Continous: fork
         proc_check_slv_w: begin
