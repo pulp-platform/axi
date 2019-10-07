@@ -21,36 +21,32 @@
 // - The module forwards atomic operations. The master connected to the slave port has to
 //   be able to handle atomics accordingly.
 
-// only used in axi_demux_wrap
-`include "axi/assign.svh"
-`include "axi/typedef.svh"
-
 module axi_demux #(
-  parameter int unsigned AXI_ID_WIDTH     = 1,     // ID Width
-  parameter type         aw_chan_t        = logic, // AW Channel Type
-  parameter type         w_chan_t         = logic, //  W Channel Type
-  parameter type         b_chan_t         = logic, //  B Channel Type
-  parameter type         ar_chan_t        = logic, // AR Channel Type
-  parameter type         r_chan_t         = logic, //  R Channel Type
+  parameter int unsigned AxiIdWidth     = 1,     // ID Width
+  parameter type         aw_chan_t      = logic, // AW Channel Type
+  parameter type         w_chan_t       = logic, //  W Channel Type
+  parameter type         b_chan_t       = logic, //  B Channel Type
+  parameter type         ar_chan_t      = logic, // AR Channel Type
+  parameter type         r_chan_t       = logic, //  R Channel Type
   // Number of Master ports, that can be connected to
-  parameter int unsigned NO_MST_PORTS     = 3,
+  parameter int unsigned NoMstPorts     = 3,
   // Maximum number of outstanding transactions, determined the depth of the w fifo
-  parameter int unsigned MAX_TRANS        = 8,
+  parameter int unsigned MaxTrans       = 8,
   // lies in conjunction with max trans, but is the counter width, can be $log2 if desired
-  parameter int unsigned ID_COUNTER_WIDTH = 4,
+  parameter int unsigned IdCounterWidth = 4,
   // the lower bits of the axi id, that get used for stalling on 'same' id to a different mst port
-  parameter int unsigned AXI_LOOK_BITS    = 3,
+  parameter int unsigned AxiLookBits    = 3,
   // When enabled theoretical one cycle transaction, but long logic paths
-  parameter bit          FALL_THROUGH     = 1'b0,
+  parameter bit          FallThrough    = 1'b0,
   // add spill register in aw path before the lookup in id counter
-  parameter bit          SPILL_AW         = 1'b1,
-  parameter bit          SPILL_W          = 1'b0,
-  parameter bit          SPILL_B          = 1'b0,
+  parameter bit          SpillAw        = 1'b1,
+  parameter bit          SpillW         = 1'b0,
+  parameter bit          SpillB         = 1'b0,
   // add spill register in ar path before the lookup in id counter
-  parameter bit          SPILL_AR         = 1'b1,
-  parameter bit          SPILL_R          = 1'b0,
+  parameter bit          SpillAr        = 1'b1,
+  parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t       = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
+  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0] // MST port select type
 ) (
   input  logic clk_i,   // Clock
   input  logic rst_ni,  // Asynchronous reset active low
@@ -80,28 +76,28 @@ module axi_demux #(
   input  logic                        slv_r_ready_i,
   // master ports
   // AW channel
-  output aw_chan_t [NO_MST_PORTS-1:0] mst_aw_chans_o,
-  output logic     [NO_MST_PORTS-1:0] mst_aw_valids_o,
-  input  logic     [NO_MST_PORTS-1:0] mst_aw_readies_i,
+  output aw_chan_t [NoMstPorts-1:0] mst_aw_chans_o,
+  output logic     [NoMstPorts-1:0] mst_aw_valids_o,
+  input  logic     [NoMstPorts-1:0] mst_aw_readies_i,
   //  W channel
-  output w_chan_t  [NO_MST_PORTS-1:0] mst_w_chans_o,
-  output logic     [NO_MST_PORTS-1:0] mst_w_valids_o,
-  input  logic     [NO_MST_PORTS-1:0] mst_w_readies_i,
+  output w_chan_t  [NoMstPorts-1:0] mst_w_chans_o,
+  output logic     [NoMstPorts-1:0] mst_w_valids_o,
+  input  logic     [NoMstPorts-1:0] mst_w_readies_i,
   //  B channel
-  input  b_chan_t  [NO_MST_PORTS-1:0] mst_b_chans_i,
-  input  logic     [NO_MST_PORTS-1:0] mst_b_valids_i,
-  output logic     [NO_MST_PORTS-1:0] mst_b_readies_o,
+  input  b_chan_t  [NoMstPorts-1:0] mst_b_chans_i,
+  input  logic     [NoMstPorts-1:0] mst_b_valids_i,
+  output logic     [NoMstPorts-1:0] mst_b_readies_o,
   // AR channel
-  output ar_chan_t [NO_MST_PORTS-1:0] mst_ar_chans_o,
-  output logic     [NO_MST_PORTS-1:0] mst_ar_valids_o,
-  input  logic     [NO_MST_PORTS-1:0] mst_ar_readies_i,
+  output ar_chan_t [NoMstPorts-1:0] mst_ar_chans_o,
+  output logic     [NoMstPorts-1:0] mst_ar_valids_o,
+  input  logic     [NoMstPorts-1:0] mst_ar_readies_i,
   //  R channel
-  input  r_chan_t  [NO_MST_PORTS-1:0] mst_r_chans_i,
-  input  logic     [NO_MST_PORTS-1:0] mst_r_valids_i,
-  output logic     [NO_MST_PORTS-1:0] mst_r_readies_o
+  input  r_chan_t  [NoMstPorts-1:0] mst_r_chans_i,
+  input  logic     [NoMstPorts-1:0] mst_r_valids_i,
+  output logic     [NoMstPorts-1:0] mst_r_readies_o
 );
   // pass through if only one master port
-  if (NO_MST_PORTS == unsigned'(1)) begin
+  if (NoMstPorts == 32'h1) begin : gen_no_demux
     // aw channel
     assign mst_aw_chans_o[0]  = slv_aw_chan_i;
     assign mst_aw_valids_o[0] = slv_aw_valid_i;
@@ -124,11 +120,11 @@ module axi_demux #(
     assign mst_r_readies_o[0] = slv_r_ready_i;
 
   // other non degenerate cases
-  end else begin
+  end else begin : gen_demux
     //--------------------------------------
     // Typedefs for the Fifo's / Queues
     //--------------------------------------
-    typedef logic [AXI_ID_WIDTH-1:0] axi_id_t;
+    typedef logic [AxiIdWidth-1:0] axi_id_t;
     typedef struct packed {
       aw_chan_t aw_chan;
       select_t  aw_select;
@@ -173,7 +169,7 @@ module axi_demux #(
     select_t         w_select;
 
     // decision to stall or to connect
-    aw_chan_select_t aw_chan_select;
+    // aw_chan_select_t aw_chan_select;
     logic            lock_aw_valid_n,    lock_aw_valid_q, load_aw_lock;
     logic            aw_valid,           aw_ready;
 
@@ -197,7 +193,7 @@ module axi_demux #(
     logic            ar_push,            r_pop;
 
     // decision to stall or to connect
-    ar_chan_select_t ar_chan_select;
+    // ar_chan_select_t ar_chan_select;
     logic            lock_ar_valid_n,    lock_ar_valid_q, load_ar_lock;
     logic            ar_valid,           ar_ready;
 
@@ -215,34 +211,40 @@ module axi_demux #(
     // AW Channel
     //--------------------------------------
     // spill register at the channel input
-    if (SPILL_AW) begin : gen_spill_aw
-      aw_chan_select_t slv_aw_chan_select_in;
-      assign slv_aw_chan_select_in.aw_chan   = slv_aw_chan_i;
-      assign slv_aw_chan_select_in.aw_select = slv_aw_select_i;
-      spill_register #(
-        .T       ( aw_chan_select_t      )
-      ) i_aw_spill_reg (
-        .clk_i   ( clk_i                 ),
-        .rst_ni  ( rst_ni                ),
-        .valid_i ( slv_aw_valid_i        ),
-        .ready_o ( slv_aw_ready_o        ),
-        .data_i  ( slv_aw_chan_select_in ),
-        .valid_o ( slv_aw_valid          ),
-        .ready_i ( slv_aw_ready          ),
-        .data_o  ( slv_aw_chan_select    )
-      );
-    end else begin : gen_no_spill_aw
-      assign slv_aw_chan_select.aw_chan   = slv_aw_chan_i;
-      assign slv_aw_chan_select.aw_select = slv_aw_select_i;
-      assign slv_aw_valid                 = slv_aw_valid_i;
-      assign slv_aw_ready_o               = slv_aw_ready;
-    end
+    // if (SpillAw) begin : gen_spill_aw
+    aw_chan_select_t slv_aw_chan_select_in;
+    assign slv_aw_chan_select_in.aw_chan   = slv_aw_chan_i;
+    assign slv_aw_chan_select_in.aw_select = slv_aw_select_i;
+    spill_register #(
+      .T       ( aw_chan_select_t      ),
+      .Bypass  ( ~SpillAw              ) // because module param indicates if we want a spill reg
+    ) i_aw_spill_reg (
+      .clk_i   ( clk_i                 ),
+      .rst_ni  ( rst_ni                ),
+      .valid_i ( slv_aw_valid_i        ),
+      .ready_o ( slv_aw_ready_o        ),
+      .data_i  ( slv_aw_chan_select_in ),
+      .valid_o ( slv_aw_valid          ),
+      .ready_i ( slv_aw_ready          ),
+      .data_o  ( slv_aw_chan_select    )
+    );
+    // end else begin : gen_no_spill_aw
+    //  assign slv_aw_chan_select.aw_chan   = slv_aw_chan_i;
+    //  assign slv_aw_chan_select.aw_select = slv_aw_select_i;
+    //  assign slv_aw_valid                 = slv_aw_valid_i;
+    //  assign slv_aw_ready_o               = slv_aw_ready;
+    // end
 
+    // Control of the AW handshake
     always_comb begin : proc_aw_chan
       // AXI Handshakes
       slv_aw_ready = 1'b0;
       aw_valid     = 1'b0;
-      // lock aw_valid
+      // `lock_aw_valid`, used to be protocol conform as it is not allowed to deassert
+      // a valid if there was no corresponding ready. As this process has to be able to inject
+      // an AXI ID into the counter of the AR channel on an atop. There could be a case where
+      // this process waits on `aw_ready` but in the mean time on the AR channel the counter gets
+      // full.
       lock_aw_valid_n = lock_aw_valid_q;
       load_aw_lock    = 1'b0;
       // AW id counter and W fifo
@@ -263,22 +265,22 @@ module axi_demux #(
           end
         end
       end else begin
-        // can start handling transaction, if id counter and fifo have space in them
-        // also check if we could inject something
+        // Process can start handling a transaction, if its `i_aw_id_counter` and `w_fifo` have
+        // space in them. Further check if we could inject something on the AR channel.
         if (!aw_id_cnt_full && !w_fifo_full && !ar_id_cnt_full) begin
           // there is a valid AW vector make the id lookup and go further, if it passes
           if (slv_aw_valid && (!aw_select_occupied ||
              (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
             // connect the handshake
             aw_valid     = 1'b1;
-            // on transaction
+            // on AW transaction
             if (aw_ready) begin
               slv_aw_ready = 1'b1;
               aw_push      = 1'b1;
               if (slv_aw_chan_select.aw_chan.atop[5]) begin
                 atop_inject = 1'b1;
               end
-            // no transaction, lock the decision
+            // no AW transaction this cycle, lock the decision
             end else begin
               lock_aw_valid_n = 1'b1;
               load_aw_lock    = 1'b1;
@@ -298,33 +300,33 @@ module axi_demux #(
     end
 
     // assign the data from one aw spill reg to the next one
-    assign aw_chan_select = slv_aw_chan_select;
+    // assign aw_chan_select = slv_aw_chan_select;
 
     axi_demux_id_counters #(
-      .AXI_ID_BITS       ( AXI_LOOK_BITS    ),
-      .COUNTER_WIDTH     ( ID_COUNTER_WIDTH ),
-      .mst_port_select_t ( select_t         )
+      .AxiIdBits         ( AxiLookBits    ),
+      .CounterWidth      ( IdCounterWidth ),
+      .mst_port_select_t ( select_t       )
     ) i_aw_id_counter (
-      .clk_i                        ( clk_i                                           ),
-      .rst_ni                       ( rst_ni                                          ),
-      .lookup_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AXI_LOOK_BITS] ),
-      .lookup_mst_select_o          ( lookup_aw_select                                ),
-      .lookup_mst_select_occupied_o ( aw_select_occupied                              ),
-      .full_o                       ( aw_id_cnt_full                                  ),
-      .inject_axi_id_i              ( '0                                              ),
-      .inject_i                     ( 1'b0                                            ),
-      .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AXI_LOOK_BITS] ),
-      .push_mst_select_i            ( slv_aw_chan_select.aw_select                    ),
-      .push_i                       ( aw_push                                         ),
-      .pop_axi_id_i                 ( slv_b_chan.id[0+:AXI_LOOK_BITS]                 ),
-      .pop_i                        ( b_pop                                           )
+      .clk_i                        ( clk_i                                         ),
+      .rst_ni                       ( rst_ni                                        ),
+      .lookup_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+      .lookup_mst_select_o          ( lookup_aw_select                              ),
+      .lookup_mst_select_occupied_o ( aw_select_occupied                            ),
+      .full_o                       ( aw_id_cnt_full                                ),
+      .inject_axi_id_i              ( '0                                            ),
+      .inject_i                     ( 1'b0                                          ),
+      .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+      .push_mst_select_i            ( slv_aw_chan_select.aw_select                  ),
+      .push_i                       ( aw_push                                       ),
+      .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
+      .pop_i                        ( b_pop                                         )
     );
 
     // fifos to save w selection
     fifo_v3 #(
-      .FALL_THROUGH( FALL_THROUGH ),
-      .DEPTH       ( MAX_TRANS    ),
-      .dtype       ( select_t     )
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH        ( MaxTrans    ),
+      .dtype        ( select_t    )
     ) i_w_fifo (
       .clk_i     ( clk_i                        ),
       .rst_ni    ( rst_ni                       ),
@@ -339,39 +341,45 @@ module axi_demux #(
       .pop_i     ( w_fifo_pop                   )  // controlled from proc_w_chan
     );
 
-    // aw demux
-    for (genvar i = 0; i < NO_MST_PORTS; i++) begin
-      assign mst_aw_chans_o[i] = aw_chan_select.aw_chan;
-    end
-    assign mst_aw_valids_o = (aw_valid) ? (1 << aw_chan_select.aw_select) : '0;
-    assign aw_ready  = mst_aw_readies_i[aw_chan_select.aw_select];
+    // AW demux
+    // replicate AW channels
+    assign mst_aw_chans_o = {NoMstPorts{slv_aw_chan_select.aw_chan}};
+    // for (genvar i = 0; i < NoMstPorts; i++) begin
+    //   assign mst_aw_chans_o[i] = aw_chan_select.aw_chan;
+    // end
+    assign mst_aw_valids_o = (aw_valid) ? (1 << slv_aw_chan_select.aw_select)            : '0;
+    assign aw_ready        = (aw_valid) ? mst_aw_readies_i[slv_aw_chan_select.aw_select] : 1'b0;
 
     //--------------------------------------
     //  W Channel
     //--------------------------------------
-    if (SPILL_W) begin : gen_spill_w
-      spill_register #(
-        .T       ( w_chan_t      )
-      ) i_w_spill_reg(
-        .clk_i   ( clk_i         ),
-        .rst_ni  ( rst_ni        ),
-        .valid_i ( slv_w_valid_i ),
-        .ready_o ( slv_w_ready_o ),
-        .data_i  ( slv_w_chan_i  ),
-        .valid_o ( slv_w_valid   ),
-        .ready_i ( slv_w_ready   ),
-        .data_o  ( slv_w_chan    )
-      );
-    end else begin : gen_no_spill_w
-      assign slv_w_chan    = slv_w_chan_i;
-      assign slv_w_valid   = slv_w_valid_i;
-      assign slv_w_ready_o = slv_w_ready;
-    end
+    // if (SpillW) begin : gen_spill_w
+    spill_register #(
+      .T       ( w_chan_t      ),
+      .Bypass  ( ~SpillW       )
+    ) i_w_spill_reg(
+      .clk_i   ( clk_i         ),
+      .rst_ni  ( rst_ni        ),
+      .valid_i ( slv_w_valid_i ),
+      .ready_o ( slv_w_ready_o ),
+      .data_i  ( slv_w_chan_i  ),
+      .valid_o ( slv_w_valid   ),
+      .ready_i ( slv_w_ready   ),
+      .data_o  ( slv_w_chan    )
+    );
+    //end else begin : gen_no_spill_w
+    //  assign slv_w_chan    = slv_w_chan_i;
+    //  assign slv_w_valid   = slv_w_valid_i;
+    //  assign slv_w_ready_o = slv_w_ready;
+    //end
+
+    // AXI W Channel
+    // replicate the W channels
+    assign mst_w_chans_o = {NoMstPorts{slv_w_chan}};
     always_comb begin : proc_w_chan
-      // AXI W Channel
-      for (int unsigned i = 0; i < NO_MST_PORTS; i++) begin
-        mst_w_chans_o[i] = slv_w_chan;
-      end
+      // for (int unsigned i = 0; i < NoMstPorts; i++) begin
+      //   mst_w_chans_o[i] = slv_w_chan;
+      // end
       // AXI handshakes
       mst_w_valids_o = '0;
       slv_w_ready    = 1'b0;
@@ -395,30 +403,32 @@ module axi_demux #(
     // pop from id counter on outward transaction
     assign b_pop = slv_b_valid & slv_b_ready;
     // optional spill register
-    if (SPILL_B) begin : gen_spill_b
-      spill_register #(
-        .T       ( b_chan_t      )
-      ) i_b_spill_reg (
-        .clk_i   ( clk_i         ),
-        .rst_ni  ( rst_ni        ),
-        .valid_i ( slv_b_valid   ),
-        .ready_o ( slv_b_ready   ),
-        .data_i  ( slv_b_chan    ),
-        .valid_o ( slv_b_valid_o ),
-        .ready_i ( slv_b_ready_i ),
-        .data_o  ( slv_b_chan_o  )
-      );
-    end else begin : gen_no_spill_b
-      assign slv_b_chan_o  = slv_b_chan;
-      assign slv_b_valid_o = slv_b_valid;
-      assign slv_b_ready   = slv_b_ready_i;
-    end
+    // if (SpillB) begin : gen_spill_b
+    spill_register #(
+      .T       ( b_chan_t      ),
+      .Bypass  ( ~SpillB       )
+    ) i_b_spill_reg (
+      .clk_i   ( clk_i         ),
+      .rst_ni  ( rst_ni        ),
+      .valid_i ( slv_b_valid   ),
+      .ready_o ( slv_b_ready   ),
+      .data_i  ( slv_b_chan    ),
+      .valid_o ( slv_b_valid_o ),
+      .ready_i ( slv_b_ready_i ),
+      .data_o  ( slv_b_chan_o  )
+    );
+    // end else begin : gen_no_spill_b
+    //   assign slv_b_chan_o  = slv_b_chan;
+    //   assign slv_b_valid_o = slv_b_valid;
+    //   assign slv_b_ready   = slv_b_ready_i;
+    // end
+
     // Arbitration of the different b responses
     rr_arb_tree #(
-      .NumIn    ( NO_MST_PORTS    ),
-      .DataType ( b_chan_t        ),
-      .AxiVldRdy( 1'b1            ),
-      .LockIn   ( 1'b1            )
+      .NumIn    ( NoMstPorts    ),
+      .DataType ( b_chan_t      ),
+      .AxiVldRdy( 1'b1          ),
+      .LockIn   ( 1'b1          )
     ) i_b_mux (
       .clk_i  ( clk_i             ),
       .rst_ni ( rst_ni            ),
@@ -436,39 +446,45 @@ module axi_demux #(
     //--------------------------------------
     //  AR Channel
     //--------------------------------------
-    if (SPILL_AR) begin : gen_spill_ar
-      ar_chan_select_t slv_ar_chan_select_in;
-      assign slv_ar_chan_select_in.ar_chan   = slv_ar_chan_i;
-      assign slv_ar_chan_select_in.ar_select = slv_ar_select_i;
-      spill_register #(
-        .T       ( ar_chan_select_t      )
-      ) i_ar_spill_reg (
-        .clk_i   ( clk_i                 ),
-        .rst_ni  ( rst_ni                ),
-        .valid_i ( slv_ar_valid_i        ),
-        .ready_o ( slv_ar_ready_o        ),
-        .data_i  ( slv_ar_chan_select_in ),
-        .valid_o ( slv_ar_valid          ),
-        .ready_i ( slv_ar_ready          ),
-        .data_o  ( slv_ar_chan_select    )
-      );
-    end else begin : gen_no_spill_ar
-      assign slv_ar_chan_select.ar_chan   = slv_ar_chan_i;
-      assign slv_ar_chan_select.ar_select = slv_ar_select_i;
-      assign slv_ar_valid                 = slv_ar_valid_i;
-      assign slv_ar_ready_o               = slv_ar_ready;
-    end
+    // if (SpillAr) begin : gen_spill_ar
+    ar_chan_select_t slv_ar_chan_select_in;
+    assign slv_ar_chan_select_in.ar_chan   = slv_ar_chan_i;
+    assign slv_ar_chan_select_in.ar_select = slv_ar_select_i;
+    spill_register #(
+      .T       ( ar_chan_select_t      ),
+      .Bypass  ( ~SpillAr              )
+    ) i_ar_spill_reg (
+      .clk_i   ( clk_i                 ),
+      .rst_ni  ( rst_ni                ),
+      .valid_i ( slv_ar_valid_i        ),
+      .ready_o ( slv_ar_ready_o        ),
+      .data_i  ( slv_ar_chan_select_in ),
+      .valid_o ( slv_ar_valid          ),
+      .ready_i ( slv_ar_ready          ),
+      .data_o  ( slv_ar_chan_select    )
+    );
+    //end else begin : gen_no_spill_ar
+    //  assign slv_ar_chan_select.ar_chan   = slv_ar_chan_i;
+    //  assign slv_ar_chan_select.ar_select = slv_ar_select_i;
+    //  assign slv_ar_valid                 = slv_ar_valid_i;
+    //  assign slv_ar_ready_o               = slv_ar_ready;
+    //end
 
+    // control of the AR handshake
     always_comb begin : proc_ar_chan
       // AXI Handshakes
       slv_ar_ready    = 1'b0;
       ar_valid        = 1'b0;
-      // lock ar_valid
+      // `lock ar_valid`: Used to be protocol conform as it is not allowed to deassert `ar_valid`,
+      // if there was no corresponding `ar_ready`. There is the possibility that an injection
+      // of a R response from an `atop` from the AW channel can change the occupied flag of the
+      // `i_ar_id_counter`, even if it was previously empty. This FF prevents the deassertion.
       lock_ar_valid_n = lock_ar_valid_q;
       load_ar_lock    = 1'b0;
       // AR id counter
       ar_push         = 1'b0;
-      // we had an arbitration decision, the valid is locked, wait for the transaction
+      // The process had an arbitration decision in a previous cycle, the valid is locked,
+      // wait for the AR transaction.
       if (lock_ar_valid_q) begin
         ar_valid = 1'b1;
         // transaction
@@ -479,18 +495,18 @@ module axi_demux #(
           load_ar_lock    = 1'b1;
         end
       end else begin
-        // can start handling transaction, if id counter has space
+        // The process can start handling AR transaction if `i_ar_id_counter` has space.
         if (!ar_id_cnt_full) begin
-          // there is a valid AR vector make the id lookup and go further, if it passes
+          // There is a valid AR vector make the id lookup.
           if (slv_ar_valid && (!ar_select_occupied ||
              (slv_ar_chan_select.ar_select == lookup_ar_select))) begin
-            // connect the handshake
+            // connect the AR handshake
             ar_valid     = 1'b1;
             // on transaction
-            if(ar_ready) begin
+            if (ar_ready) begin
               slv_ar_ready = 1'b1;
               ar_push      = 1'b1;
-            // no transaction, lock the valid decision!
+            // no transaction this cycle, lock the valid decision!
             end else begin
               lock_ar_valid_n = 1'b1;
               load_ar_lock    = 1'b1;
@@ -510,64 +526,68 @@ module axi_demux #(
     end
 
     axi_demux_id_counters #(
-      .AXI_ID_BITS       ( AXI_LOOK_BITS    ),
-      .COUNTER_WIDTH     ( ID_COUNTER_WIDTH ),
-      .mst_port_select_t ( select_t         )
+      .AxiIdBits         ( AxiLookBits    ),
+      .CounterWidth      ( IdCounterWidth ),
+      .mst_port_select_t ( select_t       )
     ) i_ar_id_counter (
-      .clk_i                        ( clk_i                                           ),
-      .rst_ni                       ( rst_ni                                          ),
-      .lookup_axi_id_i              ( slv_ar_chan_select.ar_chan.id[0+:AXI_LOOK_BITS] ),
-      .lookup_mst_select_o          ( lookup_ar_select                                ),
-      .lookup_mst_select_occupied_o ( ar_select_occupied                              ),
-      .full_o                       ( ar_id_cnt_full                                  ),
-      .inject_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AXI_LOOK_BITS] ),
-      .inject_i                     ( atop_inject                                     ),
-      .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AXI_LOOK_BITS] ),
-      .push_mst_select_i            ( slv_ar_chan_select.ar_select                    ),
-      .push_i                       ( ar_push                                         ),
-      .pop_axi_id_i                 ( slv_r_chan.id[0+:AXI_LOOK_BITS]                 ),
-      .pop_i                        ( r_pop                                           )
+      .clk_i                        ( clk_i                                         ),
+      .rst_ni                       ( rst_ni                                        ),
+      .lookup_axi_id_i              ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
+      .lookup_mst_select_o          ( lookup_ar_select                              ),
+      .lookup_mst_select_occupied_o ( ar_select_occupied                            ),
+      .full_o                       ( ar_id_cnt_full                                ),
+      .inject_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+      .inject_i                     ( atop_inject                                   ),
+      .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
+      .push_mst_select_i            ( slv_ar_chan_select.ar_select                  ),
+      .push_i                       ( ar_push                                       ),
+      .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]                 ),
+      .pop_i                        ( r_pop                                         )
     );
 
     // ar demux
     // assign the data from one ar spill reg to the demux
-    assign ar_chan_select = slv_ar_chan_select;
-    for (genvar i = 0; i < NO_MST_PORTS; i++) begin
-      assign mst_ar_chans_o[i] = ar_chan_select.ar_chan;
-    end
-    assign mst_ar_valids_o = (ar_valid) ? (1 << ar_chan_select.ar_select) : '0;
-    assign ar_ready        = mst_ar_readies_i[ar_chan_select.ar_select];
+    // assign ar_chan_select = slv_ar_chan_select;
+
+    assign mst_ar_chans_o = {NoMstPorts{slv_ar_chan_select.ar_chan}};
+
+    // for (genvar i = 0; i < NoMstPorts; i++) begin
+    //   assign mst_ar_chans_o[i] = ar_chan_select.ar_chan;
+    // end
+    assign mst_ar_valids_o = (ar_valid) ? (1 << slv_ar_chan_select.ar_select)            : '0;
+    assign ar_ready        = (ar_valid) ? mst_ar_readies_i[slv_ar_chan_select.ar_select] : 1'b0;
 
     //--------------------------------------
     //  R Channel
     //--------------------------------------
     assign r_pop = slv_r_valid & slv_r_ready & slv_r_chan.last;
     // optional spill register
-    if (SPILL_R) begin : gen_spill_r
-      spill_register #(
-        .T       ( r_chan_t      )
-      ) i_r_spill_reg (
-        .clk_i   ( clk_i         ),
-        .rst_ni  ( rst_ni        ),
-        .valid_i ( slv_r_valid   ),
-        .ready_o ( slv_r_ready   ),
-        .data_i  ( slv_r_chan    ),
-        .valid_o ( slv_r_valid_o ),
-        .ready_i ( slv_r_ready_i ),
-        .data_o  ( slv_r_chan_o  )
-      );
-    end else begin : gen_no_spill_r
-      assign slv_r_chan_o  = slv_r_chan;
-      assign slv_r_valid_o = slv_r_valid;
-      assign slv_r_ready   = slv_r_ready_i;
-    end
+    // if (SpillR) begin : gen_spill_r
+    spill_register #(
+      .T       ( r_chan_t      ),
+      .Bypass  ( ~SpillR       )
+    ) i_r_spill_reg (
+      .clk_i   ( clk_i         ),
+      .rst_ni  ( rst_ni        ),
+      .valid_i ( slv_r_valid   ),
+      .ready_o ( slv_r_ready   ),
+      .data_i  ( slv_r_chan    ),
+      .valid_o ( slv_r_valid_o ),
+      .ready_i ( slv_r_ready_i ),
+      .data_o  ( slv_r_chan_o  )
+    );
+    // end else begin : gen_no_spill_r
+    //   assign slv_r_chan_o  = slv_r_chan;
+    //   assign slv_r_valid_o = slv_r_valid;
+    //   assign slv_r_ready   = slv_r_ready_i;
+    // end
 
     // Arbitration of the different r responses
     rr_arb_tree #(
-      .NumIn    ( NO_MST_PORTS  ),
-      .DataType ( r_chan_t      ),
-      .AxiVldRdy( 1'b1          ),
-      .LockIn   ( 1'b1          )
+      .NumIn    ( NoMstPorts  ),
+      .DataType ( r_chan_t    ),
+      .AxiVldRdy( 1'b1        ),
+      .LockIn   ( 1'b1        )
     ) i_r_mux (
       .clk_i  ( clk_i           ),
       .rst_ni ( rst_ni          ),
@@ -586,19 +606,19 @@ module axi_demux #(
 // pragma translate_off
 `ifndef VERILATOR
     initial begin: validate_params
-      no_mst_ports: assume (NO_MST_PORTS > 0) else
-        $fatal(1, "axi_demux> The Number of slaves (NO_MST_PORTS) has to be at least 1");
-      axi_id_bits:  assume (AXI_ID_WIDTH >= AXI_LOOK_BITS) else
-        $fatal(1, "axi_demux> AXI_ID_BITS has to be equal or smaller than AXI_ID_WIDTH.");
+      no_mst_ports: assume (NoMstPorts > 0) else
+        $fatal(1, "axi_demux> The Number of slaves (NoMstPorts) has to be at least 1");
+      AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
+        $fatal(1, "axi_demux> AxiIdBits has to be equal or smaller than AxiIdWidth.");
     end
     aw_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                               (slv_aw_select_i < NO_MST_PORTS)) else
+                               (slv_aw_select_i < NoMstPorts)) else
       $fatal(1, "axi_demux> slv_aw_select_i is %d: AW has selected a slave that is not defined.\
-                 NO_MST_PORTS: %d", slv_aw_select_i, NO_MST_PORTS);
+                 NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
     ar_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                               (slv_aw_select_i < NO_MST_PORTS)) else
+                               (slv_aw_select_i < NoMstPorts)) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
-                 NO_MST_PORTS: %d", slv_ar_select_i, NO_MST_PORTS);
+                 NoMstPorts: %d", slv_ar_select_i, NoMstPorts);
     aw_valid_stable: assert property( @(posedge clk_i) disable iff (~rst_ni)
                                (aw_valid && !aw_ready) |=> aw_valid) else
       $fatal(1, $sformatf("axi_demux> aw_valid was deasserted, when aw_ready = 0 in last cycle."));
@@ -606,11 +626,11 @@ module axi_demux #(
                                (ar_valid && !ar_ready) |=> ar_valid) else
       $fatal(1, $sformatf("axi_demux> ar_valid was deasserted, when ar_ready = 0 in last cycle."));
     aw_stable: assert property( @(posedge clk_i) disable iff (~rst_ni) (aw_valid && !aw_ready)
-                               |=> (aw_chan_select == $past(aw_chan_select))) else
-      $fatal(1, $sformatf("axi_demux> aw_chan_select unstable with valid set."));
+                               |=> (slv_aw_chan_select == $past(slv_aw_chan_select))) else
+      $fatal(1, $sformatf("axi_demux> slv_aw_chan_select unstable with valid set."));
     ar_stable: assert property( @(posedge clk_i) disable iff (~rst_ni) (ar_valid && !ar_ready)
-                               |=> (ar_chan_select == $past(ar_chan_select))) else
-      $fatal(1, $sformatf("axi_demux> aw_chan_select unstable with valid set."));
+                               |=> (slv_ar_chan_select == $past(slv_ar_chan_select))) else
+      $fatal(1, $sformatf("axi_demux> slv_aw_chan_select unstable with valid set."));
 `endif
 // pragma translate_on
   end
@@ -618,41 +638,41 @@ endmodule
 
 module axi_demux_id_counters #(
   // the lower bits of the AXI id that should be considered, results in 2**AXI_ID_BITS counters
-  parameter int unsigned AXI_ID_BITS       = 2,
-  parameter int unsigned COUNTER_WIDTH     = 4,
+  parameter int unsigned AxiIdBits         = 2,
+  parameter int unsigned CounterWidth      = 4,
   parameter type         mst_port_select_t = logic
 ) (
   input clk_i,   // Clock
   input rst_ni,  // Asynchronous reset active low
   // lookup
-  input  logic [AXI_ID_BITS-1:0] lookup_axi_id_i,
-  output mst_port_select_t       lookup_mst_select_o,
-  output logic                   lookup_mst_select_occupied_o,
+  input  logic [AxiIdBits-1:0] lookup_axi_id_i,
+  output mst_port_select_t     lookup_mst_select_o,
+  output logic                 lookup_mst_select_occupied_o,
   // push
-  output logic                   full_o,
-  input  logic [AXI_ID_BITS-1:0] push_axi_id_i,
-  input  mst_port_select_t       push_mst_select_i,
-  input  logic                   push_i,
+  output logic                 full_o,
+  input  logic [AxiIdBits-1:0] push_axi_id_i,
+  input  mst_port_select_t     push_mst_select_i,
+  input  logic                 push_i,
   // inject, for atops in ar channel
-  input  logic [AXI_ID_BITS-1:0] inject_axi_id_i,
-  input  logic                   inject_i,
+  input  logic [AxiIdBits-1:0] inject_axi_id_i,
+  input  logic                 inject_i,
   // pop
-  input  logic [AXI_ID_BITS-1:0] pop_axi_id_i,
-  input  logic                   pop_i
+  input  logic [AxiIdBits-1:0] pop_axi_id_i,
+  input  logic                 pop_i
 );
-  localparam int unsigned NO_COUNTERS = 2**AXI_ID_BITS;
-  typedef logic [COUNTER_WIDTH-1:0] cnt_t;
+  localparam int unsigned NoCounters = 2**AxiIdBits;
+  typedef logic [CounterWidth-1:0] cnt_t;
 
   // registers, gets loaded, when push_en
-  mst_port_select_t [NO_COUNTERS-1:0] mst_select_q;
+  mst_port_select_t [NoCounters-1:0] mst_select_q;
 
   // counter signals
-  logic [NO_COUNTERS-1:0] push_en;
-  logic [NO_COUNTERS-1:0] inject_en;
-  logic [NO_COUNTERS-1:0] pop_en;
+  logic [NoCounters-1:0] push_en;
+  logic [NoCounters-1:0] inject_en;
+  logic [NoCounters-1:0] pop_en;
 
-  logic [NO_COUNTERS-1:0] occupied;
-  logic [NO_COUNTERS-1:0] cnt_full;
+  logic [NoCounters-1:0] occupied;
+  logic [NoCounters-1:0] cnt_full;
 
   //-----------------------------------
   // Lookup
@@ -667,7 +687,7 @@ module axi_demux_id_counters #(
   assign pop_en    = (pop_i)    ? (1 << pop_axi_id_i)    : '0;
   assign full_o    = |cnt_full;
   // counters
-  for (genvar i = 0; i < NO_COUNTERS; i++) begin : gen_counters
+  for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
     logic cnt_en;
     logic cnt_down;
     cnt_t cnt_delta;
@@ -710,7 +730,7 @@ module axi_demux_id_counters #(
       endcase
     end
     delta_counter #(
-      .WIDTH           ( COUNTER_WIDTH ),
+      .WIDTH           ( CounterWidth ),
       .STICKY_OVERFLOW ( 1'b0         )
     ) i_in_flight_cnt (
       .clk_i      ( clk_i     ),
@@ -737,7 +757,7 @@ module axi_demux_id_counters #(
     if (!rst_ni) begin
       mst_select_q <= '0;
     end else begin
-      for (int unsigned i = 0; i < NO_COUNTERS; i++) begin
+      for (int unsigned i = 0; i < NoCounters; i++) begin
         if (push_en[i]) begin
           mst_select_q[i] <= push_mst_select_i;
         end
@@ -747,74 +767,79 @@ module axi_demux_id_counters #(
 endmodule
 
 // interface wrapper
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
 module axi_demux_wrap #(
-  parameter int unsigned AXI_ID_WIDTH     = 0, // Synopsys DC requires a default value for param.
-  parameter int unsigned AXI_ADDR_WIDTH   = 0,
-  parameter int unsigned AXI_DATA_WIDTH   = 0,
-  parameter int unsigned AXI_USER_WIDTH   = 0,
-  parameter int unsigned NO_MST_PORTS     = 3,
-  parameter int unsigned MAX_TRANS        = 8,
-  parameter int unsigned ID_COUNTER_WIDTH = 4,
-  parameter int unsigned AXI_LOOK_BITS    = 3,
-  parameter bit          FALL_THROUGH     = 1'b0,
-  parameter bit          SPILL_AW         = 1'b1,
-  parameter bit          SPILL_AR         = 1'b1,
+  parameter int unsigned AxiIdWidth     = 0, // Synopsys DC requires a default value for param.
+  parameter int unsigned AxiAddrWidth   = 0,
+  parameter int unsigned AxiDataWidth   = 0,
+  parameter int unsigned AxiUserWidth   = 0,
+  parameter int unsigned NoMstPorts     = 3,
+  parameter int unsigned MaxTrans       = 8,
+  parameter int unsigned IdCounterWidth = 4,
+  parameter int unsigned AxiLookBits    = 3,
+  parameter bit          FallThrough    = 1'b0,
+  parameter bit          SpillAw        = 1'b1,
+  parameter bit          SpillW         = 1'b0,
+  parameter bit          SpillB         = 1'b0,
+  parameter bit          SpillAr        = 1'b1,
+  parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t         = logic [$clog2(NO_MST_PORTS)-1:0] // MST port select type
+  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0] // MST port select type
 ) (
-  input  logic    clk_i,                 // Clock
-  input  logic    rst_ni,                // Asynchronous reset active low
-  input  logic    test_i,                // Testmode enable
-  input  select_t slv_aw_select_i,       // has to be stable, when aw_valid
-  input  select_t slv_ar_select_i,       // has to be stable, when ar_valid
-  AXI_BUS.Slave   slv,                   // slave port
-  AXI_BUS.Master  mst [NO_MST_PORTS-1:0] // master ports
+  input  logic    clk_i,               // Clock
+  input  logic    rst_ni,              // Asynchronous reset active low
+  input  logic    test_i,              // Testmode enable
+  input  select_t slv_aw_select_i,     // has to be stable, when aw_valid
+  input  select_t slv_ar_select_i,     // has to be stable, when ar_valid
+  AXI_BUS.Slave   slv,                 // slave port
+  AXI_BUS.Master  mst [NoMstPorts-1:0] // master ports
 );
 
-  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
-  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t) ;
+  typedef logic [AxiIdWidth-1:0]       id_t;
+  typedef logic [AxiAddrWidth-1:0]   addr_t;
+  typedef logic [AxiDataWidth-1:0]   data_t;
+  typedef logic [AxiDataWidth/8-1:0] strb_t;
+  typedef logic [AxiUserWidth-1:0]   user_t;
+  `AXI_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_W_CHAN_T (  w_chan_t, data_t,       strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T (  b_chan_t,         id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t, id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T (  r_chan_t, data_t, id_t,         user_t);
+  `AXI_TYPEDEF_REQ_T    (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T   (    resp_t,  b_chan_t, r_chan_t) ;
 
-  req_t                     slv_req;
-  resp_t                    slv_resp;
-  req_t  [NO_MST_PORTS-1:0] mst_req;
-  resp_t [NO_MST_PORTS-1:0] mst_resp;
+  req_t                   slv_req;
+  resp_t                  slv_resp;
+  req_t  [NoMstPorts-1:0] mst_req;
+  resp_t [NoMstPorts-1:0] mst_resp;
 
   // master ports
   // AW channel
-  aw_chan_t [NO_MST_PORTS-1:0] mst_aw_chans;
-  logic     [NO_MST_PORTS-1:0] mst_aw_valids;
-  logic     [NO_MST_PORTS-1:0] mst_aw_readies;
+  aw_chan_t [NoMstPorts-1:0] mst_aw_chans;
+  logic     [NoMstPorts-1:0] mst_aw_valids;
+  logic     [NoMstPorts-1:0] mst_aw_readies;
   //  W channel
-  w_chan_t  [NO_MST_PORTS-1:0] mst_w_chans;
-  logic     [NO_MST_PORTS-1:0] mst_w_valids;
-  logic     [NO_MST_PORTS-1:0] mst_w_readies;
+  w_chan_t  [NoMstPorts-1:0] mst_w_chans;
+  logic     [NoMstPorts-1:0] mst_w_valids;
+  logic     [NoMstPorts-1:0] mst_w_readies;
   //  B channel
-  b_chan_t  [NO_MST_PORTS-1:0] mst_b_chans;
-  logic     [NO_MST_PORTS-1:0] mst_b_valids;
-  logic     [NO_MST_PORTS-1:0] mst_b_readies;
+  b_chan_t  [NoMstPorts-1:0] mst_b_chans;
+  logic     [NoMstPorts-1:0] mst_b_valids;
+  logic     [NoMstPorts-1:0] mst_b_readies;
   // AR channel
-  ar_chan_t [NO_MST_PORTS-1:0] mst_ar_chans;
-  logic     [NO_MST_PORTS-1:0] mst_ar_valids;
-  logic     [NO_MST_PORTS-1:0] mst_ar_readies;
+  ar_chan_t [NoMstPorts-1:0] mst_ar_chans;
+  logic     [NoMstPorts-1:0] mst_ar_valids;
+  logic     [NoMstPorts-1:0] mst_ar_readies;
   //  R channel
-  r_chan_t  [NO_MST_PORTS-1:0] mst_r_chans;
-  logic     [NO_MST_PORTS-1:0] mst_r_valids;
-  logic     [NO_MST_PORTS-1:0] mst_r_readies;
+  r_chan_t  [NoMstPorts-1:0] mst_r_chans;
+  logic     [NoMstPorts-1:0] mst_r_valids;
+  logic     [NoMstPorts-1:0] mst_r_readies;
 
   `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      );
   `AXI_ASSIGN_FROM_RESP ( slv,      slv_resp );
 
-  for (genvar i = 0; i < NO_MST_PORTS; i++) begin : proc_assign_mst_ports
+  for (genvar i = 0; i < NoMstPorts; i++) begin : proc_assign_mst_ports
     assign mst_req[i].aw       = mst_aw_chans[i]      ;
     assign mst_req[i].aw_valid = mst_aw_valids[i]     ;
     assign mst_aw_readies[i]   = mst_resp[i].aw_ready ;
@@ -840,19 +865,22 @@ module axi_demux_wrap #(
   end
 
   axi_demux #(
-    .AXI_ID_WIDTH     ( AXI_ID_WIDTH     ), // ID Width
-    .aw_chan_t        ( aw_chan_t        ), // AW Channel Type
-    .w_chan_t         (  w_chan_t        ), //  W Channel Type
-    .b_chan_t         (  b_chan_t        ), //  B Channel Type
-    .ar_chan_t        ( ar_chan_t        ), // AR Channel Type
-    .r_chan_t         (  r_chan_t        ), //  R Channel Type
-    .NO_MST_PORTS     ( NO_MST_PORTS     ),
-    .MAX_TRANS        ( MAX_TRANS        ),
-    .ID_COUNTER_WIDTH ( ID_COUNTER_WIDTH ),
-    .AXI_LOOK_BITS    ( AXI_LOOK_BITS    ),
-    .FALL_THROUGH     ( FALL_THROUGH     ),
-    .SPILL_AW        ( SPILL_AW        ),
-    .SPILL_AR        ( SPILL_AR        )
+    .AxiIdWidth     ( AxiIdWidth     ), // ID Width
+    .aw_chan_t      ( aw_chan_t      ), // AW Channel Type
+    .w_chan_t       (  w_chan_t      ), //  W Channel Type
+    .b_chan_t       (  b_chan_t      ), //  B Channel Type
+    .ar_chan_t      ( ar_chan_t      ), // AR Channel Type
+    .r_chan_t       (  r_chan_t      ), //  R Channel Type
+    .NoMstPorts     ( NoMstPorts     ),
+    .MaxTrans       ( MaxTrans       ),
+    .IdCounterWidth ( IdCounterWidth ),
+    .AxiLookBits    ( AxiLookBits    ),
+    .FallThrough    ( FallThrough    ),
+    .SpillAw        ( SpillAw        ),
+    .SpillW         ( SpillW         ),
+    .SpillB         ( SpillR         ),
+    .SpillAr        ( SpillAr        ),
+    .SpillR         ( SpillR         )
   ) i_axi_demux (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
