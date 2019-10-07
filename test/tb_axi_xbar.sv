@@ -252,64 +252,35 @@ module tb_axi_xbar;
   //-----------------------------------
   // DUT
   //-----------------------------------
-  // if(!TestAxiNode) begin : gen_dut
-    axi_xbar #(
-      .Cfg          ( xbar_cfg ),
-      .slv_aw_chan_t( aw_chan_mst_t ),
-      .mst_aw_chan_t( aw_chan_slv_t ),
-      .w_chan_t     (  w_chan_t     ),
-      .slv_b_chan_t (  b_chan_mst_t ),
-      .mst_b_chan_t (  b_chan_slv_t ),
-      .slv_ar_chan_t( ar_chan_mst_t ),
-      .mst_ar_chan_t( ar_chan_slv_t ),
-      .slv_r_chan_t (  r_chan_mst_t ),
-      .mst_r_chan_t (  r_chan_slv_t ),
-      .slv_req_t    ( mst_req_t     ),
-      .slv_resp_t   ( mst_resp_t    ),
-      .mst_req_t    ( slv_req_t     ),
-      .mst_resp_t   ( slv_resp_t    ),
-      .rule_t       (rule_t         )
-    ) i_xbar_dut (
-      .clk_i      ( clk      ),
-      .rst_ni     ( rst_n    ),
-      .test_i     ( 1'b0     ),
-      .slv_ports_req_i  ( masters_req  ),
-      .slv_ports_resp_o ( masters_resp ),
-      .mst_ports_req_o  ( slaves_req   ),
-      .mst_ports_resp_i ( slaves_resp  ),
-      .addr_map_i       ( AddrMap      ),
-      .en_default_mst_port_i ( '0      ),
-      .default_mst_port_i    ( '0      )
-    );
-//  end else begin
-//    logic [NoSlaves-1:0][tb_full_xbar_axi_pkg::AddrWidth-1:0] node_start_addr_array;
-//    logic [NoSlaves-1:0][tb_full_xbar_axi_pkg::AddrWidth-1:0] node_end_addr_array;
-//
-//    for (genvar i = 0; i < xbar_cfg.NoAddrRules; i++) begin
-//      assign node_start_addr_array[i] = AddrMap[i].start_addr;
-//      assign node_end_addr_array[i]   = AddrMap[i].end_addr -1;
-//    end
-//
-//    axi_node_wrap_with_slices #(
-//      .NB_MASTER          ( NoSlaves                             ),
-//      .NB_SLAVE           ( NoMasters                            ),
-//      .AXI_ADDR_WIDTH     ( tb_full_xbar_axi_pkg::AddrWidth      ),
-//      .AXI_DATA_WIDTH     ( tb_full_xbar_axi_pkg::DataWidth      ),
-//      .AXI_ID_WIDTH       ( tb_full_xbar_axi_pkg::IdWidthMasters ),
-//      .AXI_USER_WIDTH     ( tb_full_xbar_axi_pkg::UserWidth      ),
-//      .MASTER_SLICE_DEPTH ( 1                                    ),
-//      .SLAVE_SLICE_DEPTH  ( 1                                    )
-//    ) i_axi_node_dut (
-//      .clk       ( clk       ),
-//      .rst_n     ( rst_n     ),
-//      .test_en_i ( test_en_i ),
-//      .slave     ( master    ),
-//      .master    ( slave     ),
-//    // Memory map
-//      .start_addr_i ( node_start_addr_array ),
-//      .end_addr_i   ( node_end_addr_array   )
-//    );
-//  end
+  axi_xbar #(
+    .Cfg          ( xbar_cfg ),
+    .slv_aw_chan_t( aw_chan_mst_t ),
+    .mst_aw_chan_t( aw_chan_slv_t ),
+    .w_chan_t     (  w_chan_t     ),
+    .slv_b_chan_t (  b_chan_mst_t ),
+    .mst_b_chan_t (  b_chan_slv_t ),
+    .slv_ar_chan_t( ar_chan_mst_t ),
+    .mst_ar_chan_t( ar_chan_slv_t ),
+    .slv_r_chan_t (  r_chan_mst_t ),
+    .mst_r_chan_t (  r_chan_slv_t ),
+    .slv_req_t    ( mst_req_t     ),
+    .slv_resp_t   ( mst_resp_t    ),
+    .mst_req_t    ( slv_req_t     ),
+    .mst_resp_t   ( slv_resp_t    ),
+    .rule_t       (rule_t         )
+  ) i_xbar_dut (
+    .clk_i      ( clk      ),
+    .rst_ni     ( rst_n    ),
+    .test_i     ( 1'b0     ),
+    .slv_ports_req_i  ( masters_req  ),
+    .slv_ports_resp_o ( masters_resp ),
+    .mst_ports_req_o  ( slaves_req   ),
+    .mst_ports_resp_i ( slaves_resp  ),
+    .addr_map_i       ( AddrMap      ),
+    .en_default_mst_port_i ( '0      ),
+    .default_mst_port_i    ( '0      )
+  );
+
 
   for (genvar i = 0; i < NoMasters; i++) begin : gen_connect_master_monitor
     assign master_monitor_dv[i].aw_id     = master[i].aw_id    ;
