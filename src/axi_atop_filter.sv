@@ -73,33 +73,26 @@ module axi_atop_filter #(
   // > unhandled IDL type ../../src/vlog/vsymtab.c(5443) <net_type>.
   // > Please contact Questa support at http://supportnet.mentor.com
   // It has something to do with directly assigning an input port to an
-  // output port in an always comb block.
-  // (eg: `mst_req_o.aw = slv_req_i.aw;`)
-  // Adding these assignments fixed the problem.
-  req_t  slv_req,  mst_req;
-  resp_t slv_resp, mst_resp;
-  assign slv_req    = slv_req_i;
-  assign slv_resp_o = slv_resp;
-  assign mst_req_o  = mst_req;
-  assign mst_resp   = mst_resp_i;
-
+  // output port in an always_comb block.
+  // Work around: Use the `vlog` argument `-svinputport=compat`
+  // It defaults the structs on ports to wire instead of var
 
   // Manage AW, W, and B channels.
   always_comb begin
     // Defaults:
-    mst_req.aw      = slv_req.aw;
-    mst_req.aw.atop = '0;
-    mst_req.w       = slv_req.w;
+    mst_req_o.aw      = slv_req_i.aw;
+    mst_req_o.aw.atop = '0;
+    mst_req_o.w       = slv_req_i.w;
 
     // Disable AW and W handshakes.
-    mst_req.aw_valid  = 1'b0;
-    slv_resp.aw_ready = 1'b0;
-    mst_req.w_valid   = 1'b0;
-    slv_resp.w_ready  = 1'b0;
+    mst_req_o.aw_valid  = 1'b0;
+    slv_resp_o.aw_ready = 1'b0;
+    mst_req_o.w_valid   = 1'b0;
+    slv_resp_o.w_ready  = 1'b0;
     // Feed write responses through.
-    mst_req.b_ready   = slv_req.b_ready;
-    slv_resp.b_valid  = mst_resp.b_valid;
-    slv_resp.b        = mst_resp.b;
+    mst_req_o.b_ready   = slv_req_i.b_ready;
+    slv_resp_o.b_valid  = mst_resp_i.b_valid;
+    slv_resp_o.b        = mst_resp_i.b;
     // Keep ID stored for B and R response.
     id_d = id_q;
     // Do not push R response commands.
@@ -111,23 +104,23 @@ module axi_atop_filter #(
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
         if (w_cnt_q < AXI_MAX_WRITE_TXNS) begin
-          mst_req.aw_valid  = slv_req.aw_valid;   //
-          slv_resp.aw_ready = mst_resp.aw_ready;  //
+          mst_req_o.aw_valid  = slv_req_i.aw_valid;   //
+          slv_resp_o.aw_ready = mst_resp_i.aw_ready;  //
         end
         // Feed W channel through if at least one AW request is outstanding.  This does not allow
         // W beats before the corresponding AW because we need to know the `atop` of an AW to decide
         // what to do with the W beats.
         if (w_cnt_q > 0) begin
-          mst_req.w_valid  = slv_req.w_valid;
-          slv_resp.w_ready = mst_resp.w_ready;
+          mst_req_o.w_valid  = slv_req_i.w_valid;
+          slv_resp_o.w_ready = mst_resp_i.w_ready;
         end
         // Filter out AWs that are atomic operations.
-        if (slv_req.aw_valid && slv_req.aw.atop[5:4] != axi_pkg::ATOP_NONE) begin
-          mst_req.aw_valid  = 1'b0; // Do not let AW pass to master port.
-          slv_resp.aw_ready = 1'b1; // Absorb AW on slave port.
-          id_d = slv_req.aw.id; // Store ID for B response.
+        if (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] != axi_pkg::ATOP_NONE) begin
+          mst_req_o.aw_valid  = 1'b0; // Do not let AW pass to master port.
+          slv_resp_o.aw_ready = 1'b1; // Absorb AW on slave port.
+          id_d = slv_req_i.aw.id; // Store ID for B response.
           // All atomic operations except atomic stores require a response on the R channel.
-          if (slv_req.aw.atop[5:4] != axi_pkg::ATOP_ATOMICSTORE) begin
+          if (slv_req_i.aw.atop[5:4] != axi_pkg::ATOP_ATOMICSTORE) begin
             // Push R response command.  We do not have to wait for the ready of the register
             // because we know it is ready: we are its only master and will wait for the register to
             // be emptied before going back to the `W_FEEDTHROUGH` state.
@@ -138,9 +131,9 @@ module axi_atop_filter #(
             w_state_d = BLOCK_AW;
           // If there are no outstanding W bursts, absorb the W beats for this atomic AW.
           end else begin
-            mst_req.w_valid  = 1'b0; // Do not let W beats pass to master port.
-            slv_resp.w_ready = 1'b1; // Absorb W beats on slave port.
-            if (slv_req.w_valid && slv_req.w.last) begin
+            mst_req_o.w_valid  = 1'b0; // Do not let W beats pass to master port.
+            slv_resp_o.w_ready = 1'b1; // Absorb W beats on slave port.
+            if (slv_req_i.w_valid && slv_req_i.w.last) begin
               // If the W beat is valid and the last, proceed by injecting the B response.
               w_state_d = INJECT_B;
             end else begin
@@ -154,12 +147,12 @@ module axi_atop_filter #(
       BLOCK_AW: begin
         // Feed W channel through to let outstanding bursts complete.
         if (w_cnt_q > 0) begin
-          mst_req.w_valid  = slv_req.w_valid;
-          slv_resp.w_ready = mst_resp.w_ready;
+          mst_req_o.w_valid  = slv_req_i.w_valid;
+          slv_resp_o.w_ready = mst_resp_i.w_ready;
         end else begin
           // If there are no more outstanding W bursts, start absorbing the next W burst.
-          slv_resp.w_ready   = 1'b1;
-          if (slv_req.w_valid && slv_req.w.last) begin
+          slv_resp_o.w_ready   = 1'b1;
+          if (slv_req_i.w_valid && slv_req_i.w.last) begin
             // If the W beat is valid and the last, proceed by injecting the B response.
             w_state_d = INJECT_B;
           end else begin
@@ -171,23 +164,23 @@ module axi_atop_filter #(
 
       ABSORB_W: begin
         // Absorb all W beats of the current burst.
-        slv_resp.w_ready = 1'b1;
-        if (slv_req.w_valid && slv_req.w.last) begin
+        slv_resp_o.w_ready = 1'b1;
+        if (slv_req_i.w_valid && slv_req_i.w.last) begin
           w_state_d = INJECT_B;
         end
       end
 
       INJECT_B: begin
         // Pause forwarding of B response.
-        mst_req.b_ready = 1'b0;
+        mst_req_o.b_ready = 1'b0;
         // Inject error response instead.  Since the B channel has an ID and the atomic burst we are
         // replying to is guaranteed to be the only burst with this ID in flight, we do not have to
         // observe any ordering and can immediately inject on the B channel.
-        slv_resp.b = '0;
-        slv_resp.b.id = id_q;
-        slv_resp.b.resp = axi_pkg::RESP_SLVERR;
-        slv_resp.b_valid = 1'b1;
-        if (slv_req.b_ready) begin
+        slv_resp_o.b = '0;
+        slv_resp_o.b.id = id_q;
+        slv_resp_o.b.resp = axi_pkg::RESP_SLVERR;
+        slv_resp_o.b_valid = 1'b1;
+        if (slv_req_i.b_ready) begin
           // If not all beats of the R response have been injected, wait for them. Otherwise, return
           // to `W_FEEDTHROUGH`.
           if (r_resp_cmd_pop_valid && !r_resp_cmd_pop_ready) begin
@@ -214,13 +207,13 @@ module axi_atop_filter #(
   always_comb begin
     // Defaults:
     // Feed all signals on AR through.
-    mst_req.ar        = slv_req.ar;
-    mst_req.ar_valid  = slv_req.ar_valid;
-    slv_resp.ar_ready = mst_resp.ar_ready;
+    mst_req_o.ar        = slv_req_i.ar;
+    mst_req_o.ar_valid  = slv_req_i.ar_valid;
+    slv_resp_o.ar_ready = mst_resp_i.ar_ready;
     // Feed read responses through.
-    slv_resp.r       = mst_resp.r;
-    slv_resp.r_valid = mst_resp.r_valid;
-    mst_req.r_ready  = slv_req.r_ready;
+    slv_resp_o.r       = mst_resp_i.r;
+    slv_resp_o.r_valid = mst_resp_i.r_valid;
+    mst_req_o.r_ready  = slv_req_i.r_ready;
     // Do not pop R response command.
     r_resp_cmd_pop_ready = 1'b0;
     // Keep the current value of the beats counter.
@@ -240,14 +233,14 @@ module axi_atop_filter #(
       end
 
       INJECT_R: begin
-        mst_req.r_ready  = 1'b0;
-        slv_resp.r       = '0;
-        slv_resp.r.id    = id_q;
-        slv_resp.r.resp  = axi_pkg::RESP_SLVERR;
-        slv_resp.r.last  = (r_beats_q == '0);
-        slv_resp.r_valid = 1'b1;
-        if (slv_req.r_ready) begin
-          if (slv_resp.r.last) begin
+        mst_req_o.r_ready  = 1'b0;
+        slv_resp_o.r       = '0;
+        slv_resp_o.r.id    = id_q;
+        slv_resp_o.r.resp  = axi_pkg::RESP_SLVERR;
+        slv_resp_o.r.last  = (r_beats_q == '0);
+        slv_resp_o.r_valid = 1'b1;
+        if (slv_req_i.r_ready) begin
+          if (slv_resp_o.r.last) begin
             r_resp_cmd_pop_ready = 1'b1;
             r_state_d = R_FEEDTHROUGH;
           end else begin
@@ -265,10 +258,10 @@ module axi_atop_filter #(
   // Keep track of outstanding downstream write bursts and responses.
   always_comb begin
     w_cnt_d = w_cnt_q;
-    if (mst_req.aw_valid && mst_resp.aw_ready) begin
+    if (mst_req_o.aw_valid && mst_resp_i.aw_ready) begin
       w_cnt_d += 1;
     end
-    if (mst_req.w_valid && mst_resp.w_ready && mst_req.w.last) begin
+    if (mst_req_o.w_valid && mst_resp_i.w_ready && mst_req_o.w.last) begin
       w_cnt_d -= 1;
     end
   end
@@ -303,7 +296,7 @@ module axi_atop_filter #(
     .ready_i    (r_resp_cmd_pop_ready),
     .data_o     (r_resp_cmd_pop)
   );
-  assign r_resp_cmd_push.len = slv_req.aw.len;
+  assign r_resp_cmd_push.len = slv_req_i.aw.len;
 
 // pragma translate_off
 `ifndef VERILATOR
