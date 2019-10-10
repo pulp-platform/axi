@@ -90,4 +90,56 @@
     r_chan_t  r;                                        \
   } resp_t;
 
+`define AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)  \
+  typedef struct packed {                                   \
+    addr_t          addr;                                   \
+    axi_pkg::prot_t prot;                                   \
+  } aw_chan_lite_t;                                         \
+
+`define AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_lite_t, data_t, strb_t)  \
+  typedef struct packed {                                         \
+    data_t   data;                                                \
+    strb_t   strb;                                                \
+  } w_chan_lite_t                                                 \
+
+`define AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)  \
+  typedef struct packed {                         \
+    axi_pkg::resp_t resp;                         \
+  } b_chan_lite_t;                                \
+
+`define AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)  \
+  typedef struct packed {                                   \
+    addr_t          addr;                                   \
+    axi_pkg::prot_t prot;                                   \
+  } ar_chan_lite_t;                                         \
+
+`define AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)  \
+  typedef struct packed {                                 \
+    data_t          data;                                 \
+    axi_pkg::resp_t resp;                                 \
+  } r_chan_lite_t;                                        \
+
+`define AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)  \
+  typedef struct packed {                                                                  \
+    aw_chan_lite_t aw;                                                                     \
+    logic          aw_valid;                                                               \
+    w_chan_lite_t  w;                                                                      \
+    logic          w_valid;                                                                \
+    logic          b_ready;                                                                \
+    ar_chan_lite_t ar;                                                                     \
+    logic          ar_valid;                                                               \
+    logic          r_ready;                                                                \
+  } req_lite_t;                                                                            \
+
+`define AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)  \
+  typedef struct packed {                                                   \
+    logic          aw_ready;                                                \
+    logic          w_ready;                                                 \
+    b_chan_lite_t  b;                                                       \
+    logic          b_valid;                                                 \
+    logic          ar_ready;                                                \
+    r_chan_lite_t  r;                                                       \
+    logic          r_valid;                                                 \
+  } resp_lite_t;                                                            \
+
 `endif

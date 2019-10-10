@@ -306,4 +306,92 @@
   assign mst.r_valid  = slv.r_valid;  \
   assign slv.r_ready  = mst.r_ready;
 
+`define AXI_LITE_ASSIGN_TO_AW(aw_lite_struct, axi_lite_if) \
+  assign aw_lite_struct = '{                               \
+    addr:    axi_if.aw_addr                                \
+    default: '0                                            \
+  };
+  // prot not in interface!
+
+`define AXI_LITE_ASSIGN_FROM_AW(axi_lite_if, aw_lite_struct) \
+  assign axi_if.aw_addr   = aw_struct.addr;
+  // prot not in interface!
+
+`define AXI_LITE_ASSIGN_TO_W(w_lite_struct, axi_lite_if) \
+  assign w_lite_struct = '{                              \
+    data: axi_lite_if.w_data,                            \
+    strb: axi_lite_if.w_strb                             \
+  };
+
+`define AXI_LITE_ASSIGN_FROM_W(axi_lite_if, w_lite_struct) \
+  assign axi_lite_if.w_data  = w_lite_struct.data;         \
+  assign axi_lite_if.w_strb  = w_lite_struct.strb;
+
+`define AXI_LITE_ASSIGN_TO_B(b_lite_struct, axi_lite_if) \
+  assign b_lite_struct = '{                              \
+    resp: axi_lite_if.b_resp                             \
+  };
+
+`define AXI_LITE_ASSIGN_FROM_B(axi_lite_if, b_lite_struct) \
+  assign axi_lite_if.b_resp  = b_lite_struct.resp;
+
+`define AXI_LITE_ASSIGN_TO_AR(ar_lite_struct, axi_lite_if) \
+  assign ar_lite_struct = '{                               \
+    addr:    axi_lite_if.ar_addr,                          \
+    default: '0                                            \
+  };
+  // prot not in interface!
+
+`define AXI_LITE_ASSIGN_FROM_AR(axi_lite_if, ar_lite_struct) \
+  assign axi_lite_if.ar_addr   = ar_lite_struct.addr;
+  // prot not in interface!
+
+`define AXI_LITE_ASSIGN_TO_R(r_lite_struct, axi_lite_if) \
+  assign r_lite_struct = '{                              \
+    data: axi_lite_if.r_data,                            \
+    resp: axi_lite_if.r_resp,                            \
+  };
+
+`define AXI_LITE_ASSIGN_FROM_R(axi_lite_if, r_lite_struct) \
+  assign axi_lite_if.r_data  = r_lite_struct.data;    \
+  assign axi_lite_if.r_resp  = r_lite_struct.resp;
+
+`define AXI_LITE_ASSIGN_TO_REQ(req_lite_struct, axi_lite_if)   \
+  `AXI_LITE_ASSIGN_TO_AW(req_lite_struct.aw, axi_lite_if);     \
+  assign req_lite_struct.aw_valid = axi_lite_if.aw_valid;      \
+  `AXI_LITE_ASSIGN_TO_W(req_lite_struct.w, axi_lite_if);       \
+  assign req_lite_struct.w_valid = axi_lite_if.w_valid;        \
+  assign req_lite_struct.b_ready = axi_lite_if.b_ready;        \
+  `AXI_LITE_ASSIGN_TO_AR(req_lite_struct.ar, axi_lite_if);     \
+  assign req_lite_struct.ar_valid = axi_lite_if.ar_valid;      \
+  assign req_lite_struct.r_ready = axi_lite_if.r_ready;
+
+`define AXI_LITE_ASSIGN_FROM_REQ(axi_lite_if, req_lite_struct) \
+  `AXI_LITE_ASSIGN_FROM_AW(axi_lite_if, req_lite_struct.aw)    \
+  assign axi_lite_if.aw_valid = req_lite_struct.aw_valid;      \
+  `AXI_LITE_ASSIGN_FROM_W(axi_lite_if, req_lite_struct.w);     \
+  assign axi_lite_if.w_valid = req_lite_struct.w_valid;        \
+  assign axi_lite_if.b_ready = req_lite_struct.b_ready;        \
+  `AXI_LITE_ASSIGN_FROM_AR(axi_lite_if, req_lite_struct.ar);   \
+  assign axi_lite_if.ar_valid = req_lite_struct.ar_valid;      \
+  assign axi_lite_if.r_ready = req_lite_struct.r_ready;
+
+`define AXI_LITE_ASSIGN_FROM_RESP(axi_lite_if, resp_lite_struct) \
+  assign axi_lite_if.aw_ready = resp_lite_struct.aw_ready;       \
+  assign axi_lite_if.ar_ready = resp_lite_struct.ar_ready;       \
+  assign axi_lite_if.w_ready = resp_lite_struct.w_ready;         \
+  assign axi_lite_if.b_valid = resp_lite_struct.b_valid;         \
+  `AXI_LITE_ASSIGN_FROM_B(axi_lite_if, resp_lite_struct.b);      \
+  assign axi_lite_if.r_valid = resp_lite_struct.r_valid;         \
+  `AXI_LITE_ASSIGN_FROM_R(axi_lite_if, resp_lite_struct.r);
+
+`define AXI_LITE_ASSIGN_TO_RESP(resp_lite_struct, axi_lite_if)   \
+  assign resp_lite_struct.aw_ready = axi_lite_if.aw_ready;       \
+  assign resp_lite_struct.ar_ready = axi_lite_if.ar_ready;       \
+  assign resp_lite_struct.w_ready = axi_lite_if.w_ready;         \
+  assign resp_lite_struct.b_valid = axi_lite_if.b_valid;         \
+  `AXI_LITE_ASSIGN_TO_B(resp_lite_struct.b, axi_lite_if);        \
+  assign resp_lite_struct.r_valid = axi_lite_if.r_valid;         \
+  `AXI_LITE_ASSIGN_TO_R(resp_lite_struct.r, axi_lite_if);
+
 `endif
