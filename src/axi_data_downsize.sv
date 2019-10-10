@@ -375,7 +375,7 @@ module axi_data_downsize #(
     .clk_i                               ,
     .rst_ni                              ,
 
-    .inp_id_i        (int_slv.arid      ),
+    .inp_id_i        (int_slv_ar.id     ),
     .inp_data_i      (idx_idle_downsizer),
     .inp_req_i       (|idqueue_push     ),
     .inp_gnt_o       (/* unused  */     ),
