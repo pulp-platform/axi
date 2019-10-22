@@ -51,7 +51,7 @@ module axi_multicut #(
   );
 
   // AXI cuts (if needed)
-  for (genvar i = 0; i < NUM_CUTS; i++) begin
+  for (genvar i = 0; i < NUM_CUTS; i++) begin : g_cuts
     axi_cut #(
       .ADDR_WIDTH ( ADDR_WIDTH ),
       .DATA_WIDTH ( DATA_WIDTH ),
