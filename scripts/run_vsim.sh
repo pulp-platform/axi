@@ -33,7 +33,7 @@ test_axi_lite_xbar() {
 
 # regression test cases
 test_axi_lite_xbar 1 1
-# test_axi_lite_xbar 4 9 # This seems to be a bug in ModelSim!
+test_axi_lite_xbar 4 9
 
 for NM in 1 2 3 4 8; do
 	test_axi_lite_xbar $NM 4
