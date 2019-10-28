@@ -137,12 +137,18 @@ module tb_axi_lite_xbar;
           assert(rand_success);
         end while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
+        fork
+          begin
+            random_delay();
+            drv.send_ar(t.addr);
+            mailbox_rd[t.addr >> SLAVE_SHIFT].put(t);
+          end
+          begin
+            random_delay();
+            drv.recv_r(data, resp);
+          end
+        join
         random_delay();
-        drv.send_ar(t.addr);
-        // queue_rd[t.addr >> SLAVE_SHIFT].push_back(t);
-        mailbox_rd[t.addr >> SLAVE_SHIFT].put(t);
-        random_delay();
-        drv.recv_r(data, resp);
         tests_total++;
         if (t.data != data || t.resp != resp) begin
           tests_failed++;
@@ -160,14 +166,22 @@ module tb_axi_lite_xbar;
           assert(rand_success);
         end while ((t.addr >> SLAVE_SHIFT) >= NUM_SLAVE);
         t.resp = axi_pkg::RESP_OKAY;
+        fork
+          begin
+            random_delay();
+            drv.send_aw(t.addr);
+            mailbox_wr[t.addr >> SLAVE_SHIFT].put(t);
+          end
+          begin
+            random_delay();
+            drv.send_w(t.data, t.strb);
+          end
+          begin
+            random_delay();
+            drv.recv_b(resp);
+          end
+        join
         random_delay();
-        drv.send_aw(t.addr);
-        // queue_wr[t.addr >> SLAVE_SHIFT].push_back(t);
-        mailbox_wr[t.addr >> SLAVE_SHIFT].put(t);
-        random_delay();
-        drv.send_w(t.data, t.strb);
-        random_delay();
-        drv.recv_b(resp);
         tests_total++;
         if (t.resp != resp) begin
           tests_failed++;
@@ -216,12 +230,17 @@ module tb_axi_lite_xbar;
         static logic [AW-1:0] addr;
         static logic [DW-1:0] data;
         static logic [DW/8-1:0] strb;
-        random_delay();
-        drv.recv_aw(addr);
-        // t = queue_wr[i].pop_front();
-        mailbox_wr[i].get(t);
-        random_delay();
-        drv.recv_w(data, strb);
+        fork
+          begin
+            random_delay();
+            drv.recv_aw(addr);
+            mailbox_wr[i].get(t);
+          end
+          begin
+            random_delay();
+            drv.recv_w(data, strb);
+          end
+        join
         random_delay();
         drv.send_b(t.resp);
         tests_total++;
