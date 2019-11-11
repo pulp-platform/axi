@@ -212,9 +212,9 @@ package axi_test;
 
   /// The data transferred on a beat on the AW/AR channels.
   class axi_ax_beat #(
-    parameter AW,
-    parameter IW,
-    parameter UW
+    parameter AW = 32,
+    parameter IW = 8 ,
+    parameter UW = 1
   );
     rand logic [IW-1:0] ax_id     = '0;
     rand logic [AW-1:0] ax_addr   = '0;
@@ -232,8 +232,8 @@ package axi_test;
 
   /// The data transferred on a beat on the W channel.
   class axi_w_beat #(
-    parameter DW,
-    parameter UW
+    parameter DW = 32,
+    parameter UW = 1
   );
     rand logic [DW-1:0]   w_data = '0;
     rand logic [DW/8-1:0] w_strb = '0;
@@ -243,8 +243,8 @@ package axi_test;
 
   /// The data transferred on a beat on the B channel.
   class axi_b_beat #(
-    parameter IW,
-    parameter UW
+    parameter IW = 8,
+    parameter UW = 1
   );
     rand logic [IW-1:0] b_id   = '0;
     axi_pkg::resp_t     b_resp = '0;
@@ -253,9 +253,9 @@ package axi_test;
 
   /// The data transferred on a beat on the R channel.
   class axi_r_beat #(
-    parameter DW,
-    parameter IW,
-    parameter UW
+    parameter DW = 32,
+    parameter IW = 8 ,
+    parameter UW = 1
   );
     rand logic [IW-1:0] r_id   = '0;
     rand logic [DW-1:0] r_data = '0;
@@ -267,10 +267,10 @@ package axi_test;
 
   /// A driver for AXI4 interface.
   class axi_driver #(
-    parameter int  AW       ,
-    parameter int  DW       ,
-    parameter int  IW       ,
-    parameter int  UW       ,
+    parameter int  AW = 32  ,
+    parameter int  DW = 32  ,
+    parameter int  IW = 8   ,
+    parameter int  UW = 1   ,
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
@@ -581,16 +581,16 @@ package axi_test;
 
   class rand_axi_master #(
     // AXI interface parameters
-    parameter int   AW,
-    parameter int   DW,
-    parameter int   IW,
-    parameter int   UW,
+    parameter int   AW = 32,
+    parameter int   DW = 32,
+    parameter int   IW = 8,
+    parameter int   UW = 1,
     // Stimuli application and test time
-    parameter time  TA,
-    parameter time  TT,
+    parameter time  TA = 0ps,
+    parameter time  TT = 0ps,
     // Maximum number of read and write transactions in flight
-    parameter int   MAX_READ_TXNS,
-    parameter int   MAX_WRITE_TXNS,
+    parameter int   MAX_READ_TXNS = 1,
+    parameter int   MAX_WRITE_TXNS = 1,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
     parameter int   AX_MAX_WAIT_CYCLES = 100,
@@ -1104,13 +1104,13 @@ package axi_test;
 
   class rand_axi_slave #(
     // AXI interface parameters
-    parameter int   AW,
-    parameter int   DW,
-    parameter int   IW,
-    parameter int   UW,
+    parameter int   AW = 32,
+    parameter int   DW = 32,
+    parameter int   IW = 8,
+    parameter int   UW = 1,
     // Stimuli application and test time
-    parameter time  TA,
-    parameter time  TT,
+    parameter time  TA = 0ps,
+    parameter time  TT = 0ps,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
     parameter int   AX_MAX_WAIT_CYCLES = 100,
