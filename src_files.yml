@@ -1,7 +1,6 @@
 axi:
   files:
     - src/axi_pkg.sv
-    - src/axi_test.sv
     - src/axi_intf.sv
 
     - src/axi_atop_filter.sv
@@ -23,3 +22,9 @@ axi:
     - src/axi_delayer.sv
 
     - src/axi_id_remap.sv
+
+axi_sim:
+  files:
+    - src/axi_test.sv
+  flags:
+    - skip_synthesis
