@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.7.1 - 2019-11-19
+
+### Changed
+- axi_multicut: Simplified implementation without changing I/O behavior.
+
+### Fixed
+- src_files: Removed `axi_test.sv` from synthesized files.
+- tb_axi_lite_xbar: Fixed AW->W dependency.
+
 ## 0.7.0 - 2019-05-28
 
 ### Changed
