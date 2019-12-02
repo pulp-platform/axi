@@ -337,7 +337,7 @@ module axi_atop_filter_wrap #(
   `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
   `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
   `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t) ;
+  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t);
 
   req_t  slv_req,  mst_req;
   resp_t slv_resp, mst_resp;
