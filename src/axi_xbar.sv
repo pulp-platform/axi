@@ -10,7 +10,7 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI XBAR: A full AXI 4 crossbar with an arbitrary number of slave and master ports.
+// AXI XBAR: A full AXI 4+ATOP crossbar with an arbitrary number of slave and master ports.
 // Features:
 //  - AXI4 ID ordering compliance
 //  - Full Customizable Address Mapping with an optional default master ports per slave port
@@ -24,68 +24,68 @@
 //                                     master modules can be connected to it.
 //               - NoMstPorts:         The number of master ports created on the xbar. This many
 //                                     slave modules can be connected to it.
-//               - MaxMstTrans:        Each master module connected to the crossbar can issue
-//                                     in the worst case this many read and write transactions.
+//               - MaxMstTrans:        Each master module connected to the crossbar can have at
+//                                     most this many read and write transactions in flight.
 //               - MaxSlvTrans:        Each master port of the crossbar (to the slave modules)
-//                                     supports at most this may transactions in flight by id.
-//               - FallThrough:        The fifo's which store the switching decision from the
+//                                     supports at most this may transactions in flight per ID.
+//               - FallThrough:        The FIFOs that store the switching decision from the
 //                                     AW channel to the W channel are in FallThrough mode.
 //                                     Can lead to combinational switching, but the longest path in
 //                                     synthesis will be longer.
-//               - LatencyMode:        A 10 bit vector which encodes the generation of spill
+//               - LatencyMode:        A 10-bit vector which encodes the generation of spill
 //                                     registers on different points in the crossbar.
-//                                     The enum xbar_latency_t found in axi_pkg.sv has some
+//                                     The enum xbar_latency_t found in axi_pkg has some
 //                                     common configurations.
 //               - AxiIdWidthSlvPorts: The AXI ID width of the slave ports.
-//               - AxiIdUsedSlvPorts:  The crossbar uses this many LSB's of the slave port AXI ID
+//               - AxiIdUsedSlvPorts:  The crossbar uses this many LSBs of the slave port AXI ID
 //                                     to determine the uniqueness of an AXI ID. This value
 //                                     has to be equal or smaller than the AXI ID width of the
 //                                     slave ports.
 //               - AxiIdWidthMstPorts: The AXI ID width of the master ports.
-//               - AxiAddrWidth:       The AXI ADDRESS width of the slave ports.
-//               - AxiDataWidth:       The AXI DATA width of the slave ports.
+//               - AxiAddrWidth:       The AXI address width of the slave ports.
+//               - AxiDataWidth:       The AXI data width of the slave ports.
 //               - NoAddrRules:        The crossbar has this many address rules.
 //
 //  Behavior :
 //    Ordering:    When there is a transaction on a slave port to a master port with the same AXI ID
-//                 than is currently in flight to another master port, the crossbar will stall the
-//                 AX vector till the conflicting transaction is finished.
-//                 There can be to many stalls, because only the LSB's of the AXI id get checked
-//                 for the 'difference' between two AXI id's. Determined in Cfg struct by the
-//                 Field `.AxiIdUsedSlvPorts`, this has to be smaller or equal than
+//                 as currently in flight to another master port, the crossbar will stall the
+//                 AX channel till the conflicting transaction is finished.
+//                 There can be the possibility of accidental stalls, because only the LSB's of the
+//                 AXI ID get checked for the 'difference' between two AXI id's. Determined in Cfg
+//                 struct by the Field `.AxiIdUsedSlvPorts`, this has to be smaller or equal than
 //                 `.AxiIdWidthSlvPorts`.
 //    Latency:     The crossbar can be configured for different latencies on the channels.
 //                 It does so by introducing spill register in the demuxes and muxes.
-//                 In axi_pkg.sv exists the enum xbar_latency_t which has some configurations
-//                 predefined, but any 10 bit vector can be used.
-//                 There are further fifo's between the AW channel and W channel, which 'save'
-//                 the switching decision. There should under no circumstances spill registers
-//                 be introduced in the channels between the slave port demuxes and master muxes.
-//                 In doing so can lead to a deadlock of the interconnect, as all 4 of the
-//                 deadlock properties will be fulfilled. By populating the switching decision
-//                 into the fifo's in the same cycle, there can be no cyclic dependency, so
+//                 axi_pkg defines enum xbar_latency_t, which has some configurations
+//                 predefined, but any 10-bit vector can be used.
+//                 There are further FIFOs between the AW channel and W channel, which 'save'
+//                 the switching decision. Under no circumstances may spill registers
+//                 be inserted into the channels between the slave port demuxes and master muxes.
+//                 Doing so can lead to a deadlock of the interconnect, as all 4 of the
+//                 deadlock properties will be fulfilled. By forwarding the switching decision
+//                 into the FIFOs in the same cycle, there can be no cyclic dependency, so
 //                 no deadlock.
-//    Address Map: The address map is defined as an packed array of rule structs.
-//                 Two rule structs for address widths of 32 and 64 bit are provided in axi_pkg.sv
+//    Address Map: The address map is defined as a packed array of rule structs.
+//                 Two rule structs for address widths of 32 and 64 bit are provided in axi_pkg
 //                 The address mapping is global in the crossbar and the same for each slave port.
 //                 The address decoder expects 3 fields in the struct:
-//                  - `mst_port_idx`: index of the master port, has to be < #MST ports of the xbar
-//                  - `start_addr`:   start address of the range the rule describes, is included
-//                  - `end_addr`:     end address of the range the rule describes, is NOT included
+//                  - `idx`:        index of the master port, has to be < #MST ports of the xbar
+//                  - `start_addr`: start address of the range the rule describes, is included
+//                  - `end_addr`:   end address of the range the rule describes, is NOT included
 //                 There can be an arbitrary number of address rules. There can be multiple
-//                 ranges be defined for the same master port. The start address has to be <=
+//                 ranges defined for the same master port. The start address has to be <=
 //                 the end address. Simulation will issue warnings if address ranges overlap.
-//                 If there are overlaps the rule in the highest array position wins.
+//                 If there are overlaps, the rule in the highest array position wins.
 //                 The crossbar will answer to a wrong address with a decode error. This can be
-//                 disabled by providing a corresponding default master port. Each Salve port
-//                 Can has its own unique default master port. Which can be individually enabled.
-//                 Be sure to have no pending Ax vector (`ax_valid = 1'b1`) or the address mapping
-//                 on a slave port when changing the default master port of it.
+//                 disabled by providing a corresponding default master port. Each salve port
+//                 can has its own unique default master port, which can be individually enabled.
+//                 Be sure to have no pending Ax request (`ax_valid = 1'b1`) or the address mapping
+//                 on a slave port when changing the default master port.
 
 module axi_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0, // Fixed Cfg of the xbar
-  parameter type slv_aw_chan_t      = logic, // AW Channel Type slave  ports, needs atop field
-  parameter type mst_aw_chan_t      = logic, // AW Channel Type master ports, needs atop field
+  parameter type slv_aw_chan_t      = logic, // AW Channel Type slave  ports, needs ATOP field
+  parameter type mst_aw_chan_t      = logic, // AW Channel Type master ports, needs ATOP field
   parameter type w_chan_t           = logic, //  W Channel Type both   ports
   parameter type slv_b_chan_t       = logic, //  B Channel Type slave  ports
   parameter type mst_b_chan_t       = logic, //  B Channel Type master ports
@@ -97,32 +97,30 @@ module axi_xbar #(
   parameter type slv_resp_t         = logic, // encapsulates separate channels response slave  ports
   parameter type mst_req_t          = logic, // encapsulates separate channels request  master ports
   parameter type mst_resp_t         = logic, // encapsulates separate channels response master ports
-  parameter type rule_t             = axi_pkg::xbar_rule_64_t    // AXIaddress decoding rule
+  parameter type rule_t             = axi_pkg::xbar_rule_64_t // address decoding rule
 ) (
-  input  logic clk_i,  // Clock
-  input  logic rst_ni, // Asynchronous reset active low
-  input  logic test_i, // Test mode enable
-  // slave ports, connect here the master modules
-  input  slv_req_t  [Cfg.NoSlvPorts-1:0]  slv_ports_req_i,
-  output slv_resp_t [Cfg.NoSlvPorts-1:0]  slv_ports_resp_o,
-  // master ports, connect here the slave modules
-  output mst_req_t  [Cfg.NoMstPorts-1:0]  mst_ports_req_o,
-  input  mst_resp_t [Cfg.NoMstPorts-1:0]  mst_ports_resp_i,
-  // addr map input
-  input  rule_t     [Cfg.NoAddrRules-1:0] addr_map_i,
-  // default mst port for each slv port, that each connected master can have its own default slave
-  // enables the address mapping to a default master port per slave port
-  // to disable, set to '0
+  input  logic                                                       clk_i,  // Clock
+  // Asynchronous reset active low
+  input  logic                                                       rst_ni,
+  input  logic                                                       test_i, // Test mode enable
+  // slave ports, connect the master modules here
+  input  slv_req_t  [Cfg.NoSlvPorts-1:0]                             slv_ports_req_i,
+  output slv_resp_t [Cfg.NoSlvPorts-1:0]                             slv_ports_resp_o,
+  // master ports, connect the slave modules here
+  output mst_req_t  [Cfg.NoMstPorts-1:0]                             mst_ports_req_o,
+  input  mst_resp_t [Cfg.NoMstPorts-1:0]                             mst_ports_resp_i,
+  // address map
+  input  rule_t     [Cfg.NoAddrRules-1:0]                            addr_map_i,
+  // default master port for each slave port, set to '0 to disable
   input  logic      [Cfg.NoSlvPorts-1:0]                             en_default_mst_port_i,
   // the array of default master ports
   input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
 );
 
-  // localparam axi_pkg::xbar_spill_t Spill = axi_pkg::get_xbarlatmode(Cfg.LatencyMode);
-
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
   typedef logic [$clog2(Cfg.NoSlvPorts)-1:0]     slv_port_idx_t;
-  typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t; // to account for decerror
+  // to account for the decoding error slave
+  typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 
   // signals from the axi_demuxes
   slv_aw_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_aw_chans;
@@ -136,7 +134,7 @@ module axi_xbar #(
   slv_r_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_r_chans;
   logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_r_valids,  slv_r_readies;
 
-  // signals that get id prepended, the same as the ones above, but without the decerr
+  // signals that get ID prepended, the same as the ones above, but without the decerr
   slv_aw_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_aw_chans;
   logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_aw_valids, xbar_aw_readies;
   w_chan_t      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_w_chans;
@@ -219,30 +217,26 @@ module axi_xbar #(
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
     `ifndef VERILATOR
-    // these assertions could potentially trigger wrong
-    default_aw_mst_port_en: assume property(
-      @(posedge clk_i)  disable iff (~rst_ni)
-        (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> en_default_mst_port_i[i] == $past(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
+    default disable iff (~rst_ni);
+    default_aw_mst_port_en: assert property(
+      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
+          |=> $stable(en_default_mst_port_i[i]))
+        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
                                    enable, when there is an unserved Aw beat. Salve Port: %0d", i));
-    default_aw_mst_port: assume property(
-      @(posedge clk_i) disable iff (~rst_ni)
-        (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> default_mst_port_i[i] == $past(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
+    default_aw_mst_port: assert property(
+      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
+          |=> $stable(default_mst_port_i[i]))
+        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Aw beat. Salve Port: %0d", i));
-    default_ar_mst_port_en: assume property(
-      @(posedge clk_i) disable iff (~rst_ni)
-        (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> en_default_mst_port_i[i] == $past(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the enable, when\
+    default_ar_mst_port_en: assert property(
+      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
+          |=> $stable(en_default_mst_port_i[i]))
+        else $fatal (1, $sformatf("It is not allowed to change the enable, when\
                                    there is an unserved Ar beat. Salve Port: %0d", i));
-    default_ar_mst_port: assume property(
-      @(posedge clk_i) disable iff (~rst_ni)
-        (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> default_mst_port_i[i] == $past(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("axi_full_xbar > It is not allowed to change the default mst port\
+    default_ar_mst_port: assert property(
+      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
+          |=> $stable(default_mst_port_i[i]))
+        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Ar beat. Salve Port: %0d", i));
     `endif
     // pragma translate_on
@@ -323,9 +317,9 @@ module axi_xbar #(
     assign decerr_req.r_ready                = slv_r_readies[i][Cfg.NoMstPorts];
 
     axi_decerr_slv #(
-      .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts      ), // ID Width
-      .req_t       ( slv_req_t                   ), // AXI 4 REQUEST struct
-      .resp_t      ( slv_resp_t                  ), // AXI 4 REQUEST struct
+      .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts      ), // ID width
+      .req_t       ( slv_req_t                   ), // AXI request struct
+      .resp_t      ( slv_resp_t                  ), // AXI response struct
       .FallThrough ( 1'b0                        ),
       .MaxTrans    ( $clog2(Cfg.MaxMstTrans) + 1 )
     ) i_axi_decerr_slv (
@@ -436,7 +430,7 @@ module axi_xbar #(
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_mux #(
-      .AxiIDWidth  ( Cfg.AxiIdWidthMstPorts ), // Id Width of the axi going througth
+      .AxiIDWidth  ( Cfg.AxiIdWidthMstPorts ), // ID width of the axi going througth
       .aw_chan_t   ( mst_aw_chan_t          ), // AW Channel Type
       .w_chan_t    ( w_chan_t               ), //  W Channel Type
       .b_chan_t    ( mst_b_chan_t           ), //  B Channel Type
@@ -491,13 +485,13 @@ module axi_xbar #(
   `ifndef VERILATOR
   initial begin : check_params
     id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == $bits(slv_aw_chans[0][0].id)) else
-      $fatal(1, $sformatf("axi_full_xbar> Slv_req and aw_chan id width not equal."));
+      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == $bits(slv_r_chans[0][0].id)) else
-      $fatal(1, $sformatf("axi_full_xbar> Slv_req and aw_chan id width not equal."));
+      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_mst_req_ports: assert ($bits(mst_ports_req_o[0].aw.id) == $bits(mst_aw_chans[0][0].id)) else
-      $fatal(1, $sformatf("axi_full_xbar> Slv_req and aw_chan id width not equal."));
+      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_mst_resp_ports: assert ($bits(mst_ports_resp_i[0].r.id) == $bits(mst_r_chans[0][0].id)) else
-      $fatal(1, $sformatf("axi_full_xbar> Slv_req and aw_chan id width not equal."));
+      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
   end
   `endif
   // pragma translate_on
