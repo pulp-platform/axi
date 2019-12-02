@@ -100,7 +100,7 @@ module tb_axi_xbar;
     // Maximum number of read and write transactions in flight
     .MAX_READ_TXNS  ( 20    ),
     .MAX_WRITE_TXNS ( 20    ),
-    .AXI_ATOPS      ( 1'b1  )
+    .AXI_ATOPS      ( 1'b0  )
   ) rand_axi_master_t;
   typedef axi_test::rand_axi_slave #(
     // AXI interface parameters

@@ -800,7 +800,6 @@ module axi_demux_wrap #(
     .r_chan_t       (  r_chan_t      ), //  R Channel Type
     .NoMstPorts     ( NoMstPorts     ),
     .MaxTrans       ( MaxTrans       ),
-    .IdCounterWidth ( IdCounterWidth ),
     .AxiLookBits    ( AxiLookBits    ),
     .FallThrough    ( FallThrough    ),
     .SpillAw        ( SpillAw        ),
