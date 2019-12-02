@@ -10,10 +10,10 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// tb_axi_xbar.sv: Implements an AXI bus monitor, that is tuned for the AXI crossbar.
-//                 It snoops on each of the slaves and master ports of the crossbar and
-//                 populates fifo's and id_queues to validate that no AXI beats get
-//                 lost or sent to the wrong destination.
+// The `tb_axi_xbar_pgk` implements an AXI bus monitor that is tuned for the AXI crossbar.
+// It snoops on each of the slaves and master ports of the crossbar and
+// populates fifo's and id_queues to validate that no AXI beats get
+// lost or sent to the wrong destination.
 
 package tb_axi_xbar_pkg;
   class axi_xbar_monitor #(

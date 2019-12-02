@@ -11,15 +11,20 @@
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
 // Testbench for axi_xbar.sv
+// The crossbar gets instantiated with a number of random axi master ans slave modules.
+// Each random master executes a fixed number of writes and reads onto the whole addess map.
+// A monitor checks the bus, if the transactions follow the expected switching path.
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
 module tb_axi_xbar;
   // Dut parameters
-  // localparam bit          TestAxiNode = 1'b0;
   localparam int unsigned NoMasters   = 6;    // How many Axi Masters there are
   localparam int unsigned NoSlaves    = 8;    // How many Axi Slaves  there are
+  // Random master no Transactions
+  localparam int unsigned NoWrites   = 1000;  // How many writes per master
+  localparam int unsigned NoReads    = 1000;  // How many reads per master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -186,7 +191,7 @@ module tb_axi_xbar;
                                       axi_pkg::DEVICE_NONBUFFERABLE);
     rand_axi_master.reset();
     @(posedge rst_n);
-    rand_axi_master.run(5000, 5000);
+    rand_axi_master.run(NoReads, NoWrites);
     end_of_sim[i] <= 1'b1;
   end
 
