@@ -75,7 +75,8 @@ module axi_id_prepend #(
   output logic         [NoBus-1:0] mst_r_readies_o
 );
 
-  always_comb begin : proc_id_prepend
+  // prepend the ID
+  always_comb begin
     for (int unsigned i = 0; i < NoBus; i++) begin : gen_id_prepend
       mst_aw_chans_o[i]                                   = slv_aw_chans_i[i];
       mst_aw_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
