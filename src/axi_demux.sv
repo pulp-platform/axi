@@ -21,6 +21,9 @@
 // - In accordance with the AXI spec, this module can reorder and interleave read responses from
 //   different master ports when the IDs of the responses differ.
 
+// register macros
+`include "common_cells/registers.svh"
+
 module axi_demux #(
   parameter int unsigned AxiIdWidth     = 1,     // ID Width
   parameter type         aw_chan_t      = logic, // AW Channel Type
@@ -221,7 +224,7 @@ module axi_demux #(
     );
 
     // Control of the AW handshake
-    always_comb begin : proc_aw_chan
+    always_comb begin
       // AXI Handshakes
       slv_aw_ready = 1'b0;
       aw_valid     = 1'b0;
@@ -273,13 +276,7 @@ module axi_demux #(
 
     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
     // prevent further pushing
-    always_ff @(posedge clk_i, negedge rst_ni) begin : proc_lock_aw_reg
-      if (!rst_ni) begin
-        lock_aw_valid_q <= '0;
-      end else if (load_aw_lock) begin
-        lock_aw_valid_q <= lock_aw_valid_d;
-      end
-    end
+    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     axi_demux_id_counters #(
       .AxiIdBits         ( AxiLookBits    ),
@@ -347,7 +344,7 @@ module axi_demux #(
     // AXI W Channel
     // replicate the W channels
     assign mst_w_chans_o = {NoMstPorts{slv_w_chan}};
-    always_comb begin : proc_w_chan
+    always_comb begin
       // AXI handshakes
       mst_w_valids_o = '0;
       slv_w_ready    = 1'b0;
@@ -421,7 +418,7 @@ module axi_demux #(
     );
 
     // control of the AR handshake
-    always_comb begin : proc_ar_chan
+    always_comb begin
       // AXI Handshakes
       slv_ar_ready    = 1'b0;
       ar_valid        = 1'b0;
@@ -467,13 +464,7 @@ module axi_demux #(
     end
 
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    always_ff @(posedge clk_i, negedge rst_ni) begin : proc_lock_ar_reg
-      if (!rst_ni) begin
-        lock_ar_valid_q <= '0;
-      end else if (load_ar_lock) begin
-        lock_ar_valid_q <= lock_ar_valid_d;
-      end
-    end
+    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
 
     axi_demux_id_counters #(
       .AxiIdBits         ( AxiLookBits    ),
@@ -676,6 +667,9 @@ module axi_demux_id_counters #(
     assign occupied[i] = |in_flight;
     assign cnt_full[i] = overflow | (&in_flight);
 
+    // holds the selection signal for this id
+    `FFLARN(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
+
 // pragma translate_off
 `ifndef VERILATOR
     // Validate parameters.
@@ -686,18 +680,18 @@ module axi_demux_id_counters #(
 `endif
 // pragma translate_on
   end
-
-  always_ff @(posedge clk_i, negedge rst_ni) begin : proc_mst_port_sel_reg
-    if (!rst_ni) begin
-      mst_select_q <= '0;
-    end else begin
-      for (int unsigned i = 0; i < NoCounters; i++) begin
-        if (push_en[i]) begin
-          mst_select_q[i] <= push_mst_select_i;
-        end
-      end
-    end
-  end
+  // moved to macro in genvar above
+  // always_ff @(posedge clk_i, negedge rst_ni) begin : proc_mst_port_sel_reg
+  //   if (!rst_ni) begin
+  //     mst_select_q <= '0;
+  //   end else begin
+  //     for (int unsigned i = 0; i < NoCounters; i++) begin
+  //       if (push_en[i]) begin
+  //         mst_select_q[i] <= push_mst_select_i;
+  //       end
+  //     end
+  //   end
+  // end
 endmodule
 
 // interface wrapper
