@@ -108,7 +108,7 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
-  // axi_xbar.sv configurations
+  // Configuration of axi_xbar
   // enum for the latency modes
   // encoding:
   localparam logic [9:0] DemuxAw = (1 << 9);
@@ -121,7 +121,6 @@ package axi_pkg;
   localparam logic [9:0] MuxB    = (1 << 2);
   localparam logic [9:0] MuxAr   = (1 << 1);
   localparam logic [9:0] MuxR    = (1 << 0);
-
   typedef enum logic [9:0] {
     NO_LATENCY    = '0,
     CUT_SLV_AX    = DemuxAw | DemuxAr,
@@ -131,7 +130,7 @@ package axi_pkg;
     CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
     CUT_ALL_PORTS = '1
   } xbar_latency_e;
-  // cfg struct for axi_xbar.sv
+
   typedef struct packed {
     int unsigned   NoSlvPorts;         // # of slave ports, # masters are connected to the xbar
     int unsigned   NoMstPorts;         // # of master ports, # slaves are connected to the xbar
@@ -147,7 +146,7 @@ package axi_pkg;
     int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
 
-  // address rule struct for the axi_xbar
+  // address rules for axi_xbar
   typedef struct packed {
     int unsigned mst_port_idx;
     logic [63:0] start_addr;
