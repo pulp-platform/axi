@@ -352,7 +352,7 @@
     resp: axi_lite_if.r_resp,                            \
   };
 
-`define AXI_ASSIGN_FROM_R(axi_lite_if, r_lite_struct) \
+`define AXI_LITE_ASSIGN_FROM_R(axi_lite_if, r_lite_struct) \
   assign axi_lite_if.r_data  = r_lite_struct.data;    \
   assign axi_lite_if.r_resp  = r_lite_struct.resp;
 
