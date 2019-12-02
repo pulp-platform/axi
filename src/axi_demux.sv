@@ -10,16 +10,16 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI DEMUX: This module splits an AXI bus from one slave port to multiple master ports.
-// - Each AX vector takes a `slv_ax_select_i` to which master port index the corresponding
-//   AXI burst gets sent. The selection signal has to be constant during ax_valid.
-// - There can me multiple transactions in flight to different mast ports, if
-//   they have different id's. The module will stall the Ax if it goes to a different
-//   master port where other transactions with the same id are still in flight.
+// AXI Demultiplexer: This module splits an AXI bus from one slave port to multiple master ports.
+// - The AW and AR channels each have a `_select_i` to determine the master port to which
+//   they are sent. The selection signal has to be constant during ax_valid.
+// - Multiple transactions can be in flight to different mast ports if
+//   they have different IDs. The module will stall the Ax if it goes to a different
+//   master port where other transactions with the same ID are still in flight.
 //   This module will reorder read responses from different master ports, when the AXI id's are
 //   different!
-// - The module forwards atomic operations. The master connected to the slave port has to
-//   be able to handle atomics accordingly.
+// - In accordance with the AXI spec, this module can reorder and interleave read responses from
+//   different master ports when the IDs of the responses differ.
 
 module axi_demux #(
   parameter int unsigned AxiIdWidth     = 1,     // ID Width
@@ -28,21 +28,20 @@ module axi_demux #(
   parameter type         b_chan_t       = logic, //  B Channel Type
   parameter type         ar_chan_t      = logic, // AR Channel Type
   parameter type         r_chan_t       = logic, //  R Channel Type
-  // Number of Master ports, that can be connected to
+  // Number of Master ports that can be connected
   parameter int unsigned NoMstPorts     = 3,
-  // Maximum number of outstanding transactions, determined the depth of the w fifo
+  // Maximum number of outstanding transactions, determines the depth of the W FIFO
   parameter int unsigned MaxTrans       = 8,
-  // lies in conjunction with max trans, but is the counter width, can be $log2 if desired
-  parameter int unsigned IdCounterWidth = 4,
   // the lower bits of the axi id, that get used for stalling on 'same' id to a different mst port
+  // the number of couters that get instatntiated is 2**`AxiLookBits`
   parameter int unsigned AxiLookBits    = 3,
-  // When enabled theoretical one cycle transaction, but long logic paths
+  // If enabled, this demultiplexer is purely combinatorial
   parameter bit          FallThrough    = 1'b0,
-  // add spill register in aw path before the lookup in id counter
+  // add spill register in AW path before the lookup in ID counter
   parameter bit          SpillAw        = 1'b1,
   parameter bit          SpillW         = 1'b0,
   parameter bit          SpillB         = 1'b0,
-  // add spill register in ar path before the lookup in id counter
+  // add spill register in AR path before the lookup in ID counter
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
@@ -53,27 +52,27 @@ module axi_demux #(
   input  logic test_i,  // Testmode enable
   // slave port
   // AW channel
-  input  aw_chan_t                    slv_aw_chan_i,
-  input  select_t                     slv_aw_select_i, // Has to be cycle stable when slv_aw_valid_i
-  input  logic                        slv_aw_valid_i,
-  output logic                        slv_aw_ready_o,
+  input  aw_chan_t                  slv_aw_chan_i,
+  input  select_t                   slv_aw_select_i, // must be stable while slv_aw_valid_i
+  input  logic                      slv_aw_valid_i,
+  output logic                      slv_aw_ready_o,
   //  W channel
-  input  w_chan_t                     slv_w_chan_i,
-  input  logic                        slv_w_valid_i,
-  output logic                        slv_w_ready_o,
+  input  w_chan_t                   slv_w_chan_i,
+  input  logic                      slv_w_valid_i,
+  output logic                      slv_w_ready_o,
   //  B channel
-  output b_chan_t                     slv_b_chan_o,
-  output logic                        slv_b_valid_o,
-  input  logic                        slv_b_ready_i,
+  output b_chan_t                   slv_b_chan_o,
+  output logic                      slv_b_valid_o,
+  input  logic                      slv_b_ready_i,
   // AR channel
-  input  ar_chan_t                    slv_ar_chan_i,
-  input  select_t                     slv_ar_select_i, // Has to be cycle stable when slv_ar_valid_i
-  input  logic                        slv_ar_valid_i,
-  output logic                        slv_ar_ready_o,
+  input  ar_chan_t                  slv_ar_chan_i,
+  input  select_t                   slv_ar_select_i, // must be stable while slv_ar_valid_i
+  input  logic                      slv_ar_valid_i,
+  output logic                      slv_ar_ready_o,
   //  R channel
-  output r_chan_t                     slv_r_chan_o,
-  output logic                        slv_r_valid_o,
-  input  logic                        slv_r_ready_i,
+  output r_chan_t                   slv_r_chan_o,
+  output logic                      slv_r_valid_o,
+  input  logic                      slv_r_ready_i,
   // master ports
   // AW channel
   output aw_chan_t [NoMstPorts-1:0] mst_aw_chans_o,
@@ -96,6 +95,10 @@ module axi_demux #(
   input  logic     [NoMstPorts-1:0] mst_r_valids_i,
   output logic     [NoMstPorts-1:0] mst_r_readies_o
 );
+
+  // lies in conjunction with max trans, is the counter width
+  localparam int unsigned IdCounterWidth = $clog2(MaxTrans);
+
   // pass through if only one master port
   if (NoMstPorts == 32'h1) begin : gen_no_demux
     // aw channel
@@ -133,13 +136,6 @@ module axi_demux #(
       ar_chan_t ar_chan;
       select_t  ar_select;
     } ar_chan_select_t;
-    typedef struct packed {
-      axi_id_t id;
-      select_t select;
-    } id_queue_data_t;
-    id_queue_data_t id_mask;
-    assign id_mask.id     = '1;
-    assign id_mask.select = '0;
 
     //--------------------------------------
     //--------------------------------------
@@ -150,54 +146,50 @@ module axi_demux #(
     //--------------------------------------
     // Write Transaction
     //--------------------------------------
-    // comes from face in spill register or not
+    // comes from spill register at input
     aw_chan_select_t slv_aw_chan_select;
     logic            slv_aw_valid,       slv_aw_ready;
 
-    // aw id counter
+    // AW ID counter
     select_t         lookup_aw_select;
     logic            aw_select_occupied, aw_id_cnt_full;
-    logic            aw_push,            b_pop;
-    // atop inject to the ar channel the id is from the aw channel
+    logic            aw_push;
+    // Upon an ATOP load, inject IDs from the AW into the AR channel
     logic            atop_inject;
 
-    // Data in to the fifo's is the AW'select signal
-    // push signal is the same as aw_push
-    // w fifo signals, holds the selection, where the next W beats should go
+    // W FIFO: stores the decision to which master W beats should go
     logic            w_fifo_pop;
     logic            w_fifo_full,        w_fifo_empty;
     select_t         w_select;
 
-    // decision to stall or to connect
-    // aw_chan_select_t aw_chan_select;
-    logic            lock_aw_valid_n,    lock_aw_valid_q, load_aw_lock;
+    // Register which locks the AW valid signal
+    logic            lock_aw_valid_d,    lock_aw_valid_q, load_aw_lock;
     logic            aw_valid,           aw_ready;
 
-    // w channel from spill reg
+    // W channel from spill reg
     w_chan_t         slv_w_chan;
     logic            slv_w_valid,        slv_w_ready;
-    // b channel to spill register
+    // B channel to spill register
     b_chan_t         slv_b_chan;
     logic            slv_b_valid,        slv_b_ready;
 
     //--------------------------------------
     // Read Transaction
     //--------------------------------------
-    // comes from face in spill register or not
+    // comes from spill register at input
     ar_chan_select_t slv_ar_chan_select;
     logic            slv_ar_valid,       slv_ar_ready;
 
-    // aw id counter
+    // AR ID counter
     select_t         lookup_ar_select;
     logic            ar_select_occupied, ar_id_cnt_full;
-    logic            ar_push,            r_pop;
+    logic            ar_push;
 
-    // decision to stall or to connect
-    // ar_chan_select_t ar_chan_select;
-    logic            lock_ar_valid_n,    lock_ar_valid_q, load_ar_lock;
+    // Register which locks the AR valid signel
+    logic            lock_ar_valid_d,    lock_ar_valid_q, load_ar_lock;
     logic            ar_valid,           ar_ready;
 
-    // r channel to spill register
+    // R channel to spill register
     r_chan_t         slv_r_chan;
     logic            slv_r_valid,        slv_r_ready;
 
@@ -235,14 +227,14 @@ module axi_demux #(
       aw_valid     = 1'b0;
       // `lock_aw_valid`, used to be protocol conform as it is not allowed to deassert
       // a valid if there was no corresponding ready. As this process has to be able to inject
-      // an AXI ID into the counter of the AR channel on an atop. There could be a case where
+      // an AXI ID into the counter of the AR channel on an ATOP, there could be a case where
       // this process waits on `aw_ready` but in the mean time on the AR channel the counter gets
       // full.
-      lock_aw_valid_n = lock_aw_valid_q;
+      lock_aw_valid_d = lock_aw_valid_q;
       load_aw_lock    = 1'b0;
-      // AW id counter and W fifo
+      // AW ID counter and W FIFO
       aw_push      = 1'b0;
-      // atop injection into ar counter
+      // ATOP injection into ar counter
       atop_inject  = 1'b0;
       // we had an arbitration decision, the valid is locked, wait for the transaction
       if (lock_aw_valid_q) begin
@@ -250,15 +242,12 @@ module axi_demux #(
         // transaction
         if (aw_ready) begin
           slv_aw_ready    = 1'b1;
-          aw_push         = 1'b1;
-          lock_aw_valid_n = 1'b0;
+          lock_aw_valid_d = 1'b0;
           load_aw_lock    = 1'b1;
-          if (slv_aw_chan_select.aw_chan.atop[5]) begin
-            atop_inject = 1'b1;
-          end
+          atop_inject     = slv_aw_chan_select.aw_chan.atop[5]; // inject the ATOP if necessary
         end
       end else begin
-        // Process can start handling a transaction, if its `i_aw_id_counter` and `w_fifo` have
+        // Process can start handling a transaction if its `i_aw_id_counter` and `w_fifo` have
         // space in them. Further check if we could inject something on the AR channel.
         if (!aw_id_cnt_full && !w_fifo_full && !ar_id_cnt_full) begin
           // there is a valid AW vector make the id lookup and go further, if it passes
@@ -266,16 +255,15 @@ module axi_demux #(
              (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
             // connect the handshake
             aw_valid     = 1'b1;
+            // push arbitration to the W FIFO regardless, do not wait for the AW transaction
+            aw_push      = 1'b1;
             // on AW transaction
             if (aw_ready) begin
               slv_aw_ready = 1'b1;
-              aw_push      = 1'b1;
-              if (slv_aw_chan_select.aw_chan.atop[5]) begin
-                atop_inject = 1'b1;
-              end
+              atop_inject  = slv_aw_chan_select.aw_chan.atop[5];
             // no AW transaction this cycle, lock the decision
             end else begin
-              lock_aw_valid_n = 1'b1;
+              lock_aw_valid_d = 1'b1;
               load_aw_lock    = 1'b1;
             end
           end
@@ -283,12 +271,13 @@ module axi_demux #(
       end
     end
 
-    // this ff is needed so that aw does not get de-asserted if ar_id_cnt gets full (reason: atop)
-    always_ff @(posedge clk_i, negedge rst_ni) begin
+    // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
+    // prevent further pushing
+    always_ff @(posedge clk_i, negedge rst_ni) begin : proc_lock_aw_reg
       if (!rst_ni) begin
         lock_aw_valid_q <= '0;
       end else if (load_aw_lock) begin
-        lock_aw_valid_q <= lock_aw_valid_n;
+        lock_aw_valid_q <= lock_aw_valid_d;
       end
     end
 
@@ -309,10 +298,11 @@ module axi_demux #(
       .push_mst_select_i            ( slv_aw_chan_select.aw_select                  ),
       .push_i                       ( aw_push                                       ),
       .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
-      .pop_i                        ( b_pop                                         )
+      .pop_i                        ( slv_b_valid & slv_b_ready                     )
     );
+    // pop from ID counter on outward transaction
 
-    // fifos to save w selection
+    // FIFO to save W selection
     fifo_v3 #(
       .FALL_THROUGH ( FallThrough ),
       .DEPTH        ( MaxTrans    ),
@@ -361,25 +351,20 @@ module axi_demux #(
       // AXI handshakes
       mst_w_valids_o = '0;
       slv_w_ready    = 1'b0;
-      // fifo control
+      // FIFO control
       w_fifo_pop     = 1'b0;
-      // Control
-      // only do something if we expect some w beats and i_b_decerr_fifo is not full
+      // Control: only do something if we expect some w beats and i_b_decerr_fifo is not full
       if (!w_fifo_empty) begin
         mst_w_valids_o[w_select] = slv_w_valid;
         slv_w_ready              = mst_w_readies_i[w_select];
-        // when the last w beat occurs, pop the select fifo
-        if (slv_w_valid && mst_w_readies_i[w_select] && slv_w_chan.last) begin
-          w_fifo_pop = 1'b1;
-        end
+        // when the last W beat occurs, pop the select FIFO
+        w_fifo_pop = slv_w_valid & mst_w_readies_i[w_select] & slv_w_chan.last;
       end
     end
 
     //--------------------------------------
     //  B Channel
     //--------------------------------------
-    // pop from id counter on outward transaction
-    assign b_pop = slv_b_valid & slv_b_ready;
     // optional spill register
     spill_register #(
       .T       ( b_chan_t      ),
@@ -395,7 +380,7 @@ module axi_demux #(
       .data_o  ( slv_b_chan_o  )
     );
 
-    // Arbitration of the different b responses
+    // Arbitration of the different B responses
     rr_arb_tree #(
       .NumIn    ( NoMstPorts    ),
       .DataType ( b_chan_t      ),
@@ -440,11 +425,11 @@ module axi_demux #(
       // AXI Handshakes
       slv_ar_ready    = 1'b0;
       ar_valid        = 1'b0;
-      // `lock ar_valid`: Used to be protocol conform as it is not allowed to deassert `ar_valid`,
+      // `lock_ar_valid`: Used to be protocol conform as it is not allowed to deassert `ar_valid`
       // if there was no corresponding `ar_ready`. There is the possibility that an injection
       // of a R response from an `atop` from the AW channel can change the occupied flag of the
       // `i_ar_id_counter`, even if it was previously empty. This FF prevents the deassertion.
-      lock_ar_valid_n = lock_ar_valid_q;
+      lock_ar_valid_d = lock_ar_valid_q;
       load_ar_lock    = 1'b0;
       // AR id counter
       ar_push         = 1'b0;
@@ -456,13 +441,13 @@ module axi_demux #(
         if (ar_ready) begin
           slv_ar_ready    = 1'b1;
           ar_push         = 1'b1;
-          lock_ar_valid_n = 1'b0;
+          lock_ar_valid_d = 1'b0;
           load_ar_lock    = 1'b1;
         end
       end else begin
         // The process can start handling AR transaction if `i_ar_id_counter` has space.
         if (!ar_id_cnt_full) begin
-          // There is a valid AR vector make the id lookup.
+          // There is a valid AR, so look the ID up.
           if (slv_ar_valid && (!ar_select_occupied ||
              (slv_ar_chan_select.ar_select == lookup_ar_select))) begin
             // connect the AR handshake
@@ -473,7 +458,7 @@ module axi_demux #(
               ar_push      = 1'b1;
             // no transaction this cycle, lock the valid decision!
             end else begin
-              lock_ar_valid_n = 1'b1;
+              lock_ar_valid_d = 1'b1;
               load_ar_lock    = 1'b1;
             end
           end
@@ -482,11 +467,11 @@ module axi_demux #(
     end
 
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    always_ff @(posedge clk_i, negedge rst_ni) begin
+    always_ff @(posedge clk_i, negedge rst_ni) begin : proc_lock_ar_reg
       if (!rst_ni) begin
         lock_ar_valid_q <= '0;
       end else if (load_ar_lock) begin
-        lock_ar_valid_q <= lock_ar_valid_n;
+        lock_ar_valid_q <= lock_ar_valid_d;
       end
     end
 
@@ -507,11 +492,12 @@ module axi_demux #(
       .push_mst_select_i            ( slv_ar_chan_select.ar_select                  ),
       .push_i                       ( ar_push                                       ),
       .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]                 ),
-      .pop_i                        ( r_pop                                         )
+      .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last   )
     );
+    // pop the ID from the counter on a last read transaction
 
-    // ar demux
-    // replicate ar channel
+    // AR demux
+    // replicate AR channel
     assign mst_ar_chans_o  = {NoMstPorts{slv_ar_chan_select.ar_chan}};
     assign mst_ar_valids_o = (ar_valid) ? (1 << slv_ar_chan_select.ar_select)            : '0;
     assign ar_ready        = (ar_valid) ? mst_ar_readies_i[slv_ar_chan_select.ar_select] : 1'b0;
@@ -519,7 +505,6 @@ module axi_demux #(
     //--------------------------------------
     //  R Channel
     //--------------------------------------
-    assign r_pop = slv_r_valid & slv_r_ready & slv_r_chan.last;
     // optional spill register
     spill_register #(
       .T       ( r_chan_t      ),
@@ -560,43 +545,41 @@ module axi_demux #(
 `ifndef VERILATOR
     initial begin: validate_params
       no_mst_ports: assume (NoMstPorts > 0) else
-        $fatal(1, "axi_demux> The Number of slaves (NoMstPorts) has to be at least 1");
+        $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
       AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
-        $fatal(1, "axi_demux> AxiIdBits has to be equal or smaller than AxiIdWidth.");
+        $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
     end
-    aw_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                               (slv_aw_select_i < NoMstPorts)) else
-      $fatal(1, "axi_demux> slv_aw_select_i is %d: AW has selected a slave that is not defined.\
+    default disable iff (!rst_ni);
+    aw_select: assume property( @(posedge clk_i) (slv_aw_select_i < NoMstPorts)) else
+      $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\
                  NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
-    ar_select: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                               (slv_aw_select_i < NoMstPorts)) else
+    ar_select: assume property( @(posedge clk_i) (slv_aw_select_i < NoMstPorts)) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
                  NoMstPorts: %d", slv_ar_select_i, NoMstPorts);
-    aw_valid_stable: assert property( @(posedge clk_i) disable iff (~rst_ni)
-                               (aw_valid && !aw_ready) |=> aw_valid) else
-      $fatal(1, $sformatf("axi_demux> aw_valid was deasserted, when aw_ready = 0 in last cycle."));
-    ar_valid_stable: assert property( @(posedge clk_i) disable iff (~rst_ni)
+    aw_valid_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready) |=> aw_valid) else
+      $fatal(1, "aw_valid was deasserted, when aw_ready = 0 in last cycle.");
+    ar_valid_stable: assert property( @(posedge clk_i)
                                (ar_valid && !ar_ready) |=> ar_valid) else
-      $fatal(1, $sformatf("axi_demux> ar_valid was deasserted, when ar_ready = 0 in last cycle."));
-    aw_stable: assert property( @(posedge clk_i) disable iff (~rst_ni) (aw_valid && !aw_ready)
-                               |=> (slv_aw_chan_select == $past(slv_aw_chan_select))) else
-      $fatal(1, $sformatf("axi_demux> slv_aw_chan_select unstable with valid set."));
-    ar_stable: assert property( @(posedge clk_i) disable iff (~rst_ni) (ar_valid && !ar_ready)
-                               |=> (slv_ar_chan_select == $past(slv_ar_chan_select))) else
-      $fatal(1, $sformatf("axi_demux> slv_aw_chan_select unstable with valid set."));
+      $fatal(1, "ar_valid was deasserted, when ar_ready = 0 in last cycle.");
+    aw_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
+                               |=> $stable(slv_aw_chan_select)) else
+      $fatal(1, "slv_aw_chan_select unstable with valid set.");
+    ar_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
+                               |=> $stable(slv_ar_chan_select)) else
+      $fatal(1, "slv_aw_chan_select unstable with valid set.");
 `endif
 // pragma translate_on
   end
 endmodule
 
 module axi_demux_id_counters #(
-  // the lower bits of the AXI id that should be considered, results in 2**AXI_ID_BITS counters
+  // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
   parameter int unsigned AxiIdBits         = 2,
   parameter int unsigned CounterWidth      = 4,
   parameter type         mst_port_select_t = logic
 ) (
-  input clk_i,   // Clock
-  input rst_ni,  // Asynchronous reset active low
+  input                        clk_i,   // Clock
+  input                        rst_ni,  // Asynchronous reset active low
   // lookup
   input  logic [AxiIdBits-1:0] lookup_axi_id_i,
   output mst_port_select_t     lookup_mst_select_o,
@@ -606,7 +589,7 @@ module axi_demux_id_counters #(
   input  logic [AxiIdBits-1:0] push_axi_id_i,
   input  mst_port_select_t     push_mst_select_i,
   input  logic                 push_i,
-  // inject, for atops in ar channel
+  // inject ATOPs in AR channel
   input  logic [AxiIdBits-1:0] inject_axi_id_i,
   input  logic                 inject_i,
   // pop
@@ -616,16 +599,11 @@ module axi_demux_id_counters #(
   localparam int unsigned NoCounters = 2**AxiIdBits;
   typedef logic [CounterWidth-1:0] cnt_t;
 
-  // registers, gets loaded, when push_en
+  // registers, each gets loaded when push_en[i]
   mst_port_select_t [NoCounters-1:0] mst_select_q;
 
   // counter signals
-  logic [NoCounters-1:0] push_en;
-  logic [NoCounters-1:0] inject_en;
-  logic [NoCounters-1:0] pop_en;
-
-  logic [NoCounters-1:0] occupied;
-  logic [NoCounters-1:0] cnt_full;
+  logic [NoCounters-1:0] push_en, inject_en, pop_en, occupied, cnt_full;
 
   //-----------------------------------
   // Lookup
@@ -641,11 +619,8 @@ module axi_demux_id_counters #(
   assign full_o    = |cnt_full;
   // counters
   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
-    logic cnt_en;
-    logic cnt_down;
-    cnt_t cnt_delta;
-    cnt_t in_flight;
-    logic overflow;
+    logic cnt_en, cnt_down, overflow;
+    cnt_t cnt_delta, in_flight;
     always_comb begin : proc_control
       case ({push_en[i], inject_en[i], pop_en[i]})
         3'b001  : begin // pop_i = -1
@@ -700,13 +675,18 @@ module axi_demux_id_counters #(
     );
     assign occupied[i] = |in_flight;
     assign cnt_full[i] = overflow | (&in_flight);
+
+// pragma translate_off
+`ifndef VERILATOR
+    // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
-        $fatal(1, $sformatf("axi_demux > axi_demux_id_counters > Counter: %0d underflowed.\
-                             The reason is probably a faulty Axi response.", i));
+        $fatal(1, "axi_demux_id_counters > Counter: %0d underflowed.\
+                   The reason is probably a faulty AXI response.", i);
+`endif
+// pragma translate_on
   end
 
-  // flip flops that hold the selects
   always_ff @(posedge clk_i, negedge rst_ni) begin : proc_mst_port_sel_reg
     if (!rst_ni) begin
       mst_select_q <= '0;
@@ -730,7 +710,6 @@ module axi_demux_wrap #(
   parameter int unsigned AxiUserWidth   = 0,
   parameter int unsigned NoMstPorts     = 3,
   parameter int unsigned MaxTrans       = 8,
-  parameter int unsigned IdCounterWidth = 4,
   parameter int unsigned AxiLookBits    = 3,
   parameter bit          FallThrough    = 1'b0,
   parameter bit          SpillAw        = 1'b1,
@@ -793,7 +772,7 @@ module axi_demux_wrap #(
   `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      );
   `AXI_ASSIGN_FROM_RESP ( slv,      slv_resp );
 
-  for (genvar i = 0; i < NoMstPorts; i++) begin : proc_assign_mst_ports
+  for (genvar i = 0; i < NoMstPorts; i++) begin : gen_assign_mst_ports
     assign mst_req[i].aw       = mst_aw_chans[i]      ;
     assign mst_req[i].aw_valid = mst_aw_valids[i]     ;
     assign mst_aw_readies[i]   = mst_resp[i].aw_ready ;
@@ -842,7 +821,7 @@ module axi_demux_wrap #(
     // slave port
     // AW channel
     .slv_aw_chan_i    ( slv_req.aw        ),
-    .slv_aw_select_i  ( slv_aw_select_i   ), // Has to be cycle stable when slv_aw_valid_i
+    .slv_aw_select_i  ( slv_aw_select_i   ), // must be stable while slv_aw_valid_i
     .slv_aw_valid_i   ( slv_req.aw_valid  ),
     .slv_aw_ready_o   ( slv_resp.aw_ready ),
     //  W channel
@@ -855,7 +834,7 @@ module axi_demux_wrap #(
     .slv_b_ready_i    ( slv_req.b_ready   ),
     // AR channel
     .slv_ar_chan_i    ( slv_req.ar        ),
-    .slv_ar_select_i  ( slv_ar_select_i   ), // Has to be cycle stable when slv_ar_valid_i
+    .slv_ar_select_i  ( slv_ar_select_i   ), // must be stable while slv_ar_valid_i
     .slv_ar_valid_i   ( slv_req.ar_valid  ),
     .slv_ar_ready_o   ( slv_resp.ar_ready ),
     //  R channel
