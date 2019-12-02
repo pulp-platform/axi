@@ -11,7 +11,7 @@
 // AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
 // have a non-zero `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
 //
-// 1) `aw_atop` is always zero on the `mst` port mst_req_o;
+// 1) `aw_atop` is always zero on the `mst` port;
 //
 // 2) write transactions with non-zero `aw_atop` on the `slv` port are handled in conformance with
 //    the AXI standard by replying to such write transactions with the proper B and R responses. The
@@ -36,8 +36,8 @@ module axi_atop_filter #(
   parameter type req_t  = logic,
   parameter type resp_t = logic
 ) (
-  input  logic    clk_i,
-  input  logic    rst_ni,
+  input  logic  clk_i,
+  input  logic  rst_ni,
   // slave port
   input  req_t  slv_req_i,
   output resp_t slv_resp_o,
@@ -69,21 +69,9 @@ module axi_atop_filter #(
   logic r_resp_cmd_push_valid,  r_resp_cmd_push_ready,
         r_resp_cmd_pop_valid,   r_resp_cmd_pop_ready;
 
-  // During simulation with questa the following error was encountered:
-  // > unhandled IDL type ../../src/vlog/vsymtab.c(5443) <net_type>.
-  // > Please contact Questa support at http://supportnet.mentor.com
-  // It has something to do with directly assigning an input port to an
-  // output port in an always_comb block.
-  // Work around: Use the `vlog` argument `-svinputport=compat`
-  // It defaults the structs on ports to wire instead of var
-
   // Manage AW, W, and B channels.
   always_comb begin
     // Defaults:
-    mst_req_o.aw      = slv_req_i.aw;
-    mst_req_o.aw.atop = '0;
-    mst_req_o.w       = slv_req_i.w;
-
     // Disable AW and W handshakes.
     mst_req_o.aw_valid  = 1'b0;
     slv_resp_o.aw_ready = 1'b0;
@@ -104,8 +92,8 @@ module axi_atop_filter #(
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
         if (w_cnt_q < AXI_MAX_WRITE_TXNS) begin
-          mst_req_o.aw_valid  = slv_req_i.aw_valid;   //
-          slv_resp_o.aw_ready = mst_resp_i.aw_ready;  //
+          mst_req_o.aw_valid  = slv_req_i.aw_valid;
+          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         end
         // Feed W channel through if at least one AW request is outstanding.  This does not allow
         // W beats before the corresponding AW because we need to know the `atop` of an AW to decide
@@ -151,7 +139,7 @@ module axi_atop_filter #(
           slv_resp_o.w_ready = mst_resp_i.w_ready;
         end else begin
           // If there are no more outstanding W bursts, start absorbing the next W burst.
-          slv_resp_o.w_ready   = 1'b1;
+          slv_resp_o.w_ready = 1'b1;
           if (slv_req_i.w_valid && slv_req_i.w.last) begin
             // If the W beat is valid and the last, proceed by injecting the B response.
             w_state_d = INJECT_B;
@@ -202,14 +190,21 @@ module axi_atop_filter #(
       default: w_state_d = W_FEEDTHROUGH;
     endcase
   end
+  // Connect signals on AW and W channel that are not managed by the control FSM from slave port to
+  // master port.
+  // Feed-through of the AW and W vectors, make sure that downstream aw.atop is always zero
+  always_comb begin
+    // overwrite the atop signal
+    mst_req_o.aw      = slv_req_i.aw;
+    mst_req_o.aw.atop = '0;
+  end
+  assign  mst_req_o.w       = slv_req_i.w;
+
+
 
   // Manage R channel.
   always_comb begin
     // Defaults:
-    // Feed all signals on AR through.
-    mst_req_o.ar        = slv_req_i.ar;
-    mst_req_o.ar_valid  = slv_req_i.ar_valid;
-    slv_resp_o.ar_ready = mst_resp_i.ar_ready;
     // Feed read responses through.
     slv_resp_o.r       = mst_resp_i.r;
     slv_resp_o.r_valid = mst_resp_i.r_valid;
@@ -254,6 +249,10 @@ module axi_atop_filter #(
       end
     endcase
   end
+  // Feed all signals on AR through.
+  assign mst_req_o.ar        = slv_req_i.ar;
+  assign mst_req_o.ar_valid  = slv_req_i.ar_valid;
+  assign slv_resp_o.ar_ready = mst_resp_i.ar_ready;
 
   // Keep track of outstanding downstream write bursts and responses.
   always_comb begin
@@ -357,8 +356,8 @@ module axi_atop_filter_wrap #(
     .req_t  ( req_t  ),
     .resp_t ( resp_t )
   ) i_axi_atop_filter (
-    .clk_i      ( clk_i    ),
-    .rst_ni     ( rst_ni   ),
+    .clk_i,
+    .rst_ni,
     .slv_req_i  ( slv_req  ),
     .slv_resp_o ( slv_resp ),
     .mst_req_o  ( mst_req  ),
