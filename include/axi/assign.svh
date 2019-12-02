@@ -346,10 +346,10 @@
   assign axi_lite_if.ar_addr   = ar_lite_struct.addr;
   // prot not in interface!
 
-`define AXI_ASSIGN_TO_R(r_lite_struct, axi_lite_if) \
-  assign r_lite_struct = '{                         \
-    data: axi_lite_if.r_data,                       \
-    resp: axi_lite_if.r_resp,                       \
+`define AXI_LITE_ASSIGN_TO_R(r_lite_struct, axi_lite_if) \
+  assign r_lite_struct = '{                              \
+    data: axi_lite_if.r_data,                            \
+    resp: axi_lite_if.r_resp,                            \
   };
 
 `define AXI_ASSIGN_FROM_R(axi_lite_if, r_lite_struct) \
