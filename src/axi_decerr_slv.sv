@@ -10,15 +10,15 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI DECERR SLV: This module always responds with an AXI decode error for transactions
+// AXI Decode Error Slave: This module always responds with an AXI decode error for transactions
 // which are sent to it. Depends on `axi_atop_filter` for atomics support.
 
 module axi_decerr_slv #(
   parameter int unsigned AxiIdWidth  = 0,     // AXI ID Width
-  parameter type         req_t       = logic, // AXI 4 REQUEST struct, with atop field
-  parameter type         resp_t      = logic, // AXI 4 REQUEST struct
+  parameter type         req_t       = logic, // AXI 4 request struct, with atop field
+  parameter type         resp_t      = logic, // AXI 4 response struct
   parameter bit          FallThrough = 1'b1, // When enabled: in cycle transaction, long paths
-  parameter int unsigned MaxTrans    = 1     // Determines the FiFo depth between the channels
+  parameter int unsigned MaxTrans    = 1     // Maximum # of accepted transactions before stalling
 ) (
   input  logic  clk_i,   // Clock
   input  logic  rst_ni,  // Asynchronous reset active low
@@ -53,7 +53,7 @@ module axi_decerr_slv #(
   logic    r_cnt_clear, r_cnt_en, r_cnt_load;
   axi_pkg::len_t r_current_beat;
   // r status
-  logic    r_busy_n, r_busy_q, r_busy_load;
+  logic    r_busy_d, r_busy_q, r_busy_load;
 
   //--------------------------------------
   // Atop Filter for atomics support
@@ -75,15 +75,9 @@ module axi_decerr_slv #(
   //--------------------------------------
   // Write Transactions
   //--------------------------------------
-  always_comb begin : proc_aw_channel
-    // default assignments
-    decerr_resp.aw_ready = ~w_fifo_full;
-    w_fifo_push          = 1'b0;
-    // aw transaction
-    if(decerr_req.aw_valid && !w_fifo_full) begin
-      w_fifo_push    = 1'b1;
-    end
-  end
+  // push, when there is room in the fifo
+  assign w_fifo_push          = decerr_req.aw_valid & ~w_fifo_full;
+  assign decerr_resp.aw_ready = ~w_fifo_full;
 
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough ),
@@ -145,24 +139,18 @@ module axi_decerr_slv #(
     if (!b_fifo_empty) begin
       decerr_resp.b_valid = 1'b1;
       // b transaction
-      if (decerr_req.b_ready) begin
-        b_fifo_pop = 1'b1;
-      end
+      b_fifo_pop = decerr_req.b_ready;
     end
   end
 
   //--------------------------------------
   // Read Transactions
   //--------------------------------------
-  always_comb begin : proc_ar_channel
-    decerr_resp.ar_ready = ~r_fifo_full;
-    r_fifo_push          = 1'b0;
-    // ar transaction
-    if (decerr_req.ar_valid && !r_fifo_full) begin
-      r_fifo_push = 1'b1;
-    end
-  end
+  // push if there is room in the fifo
+  assign r_fifo_push          = decerr_req.ar_valid & ~r_fifo_full;
+  assign decerr_resp.ar_ready = ~r_fifo_full;
 
+  // fifo data assignment
   assign r_fifo_inp.id  = decerr_req.ar.id;
   assign r_fifo_inp.len = decerr_req.ar.len;
 
@@ -186,7 +174,7 @@ module axi_decerr_slv #(
 
   always_comb begin : proc_r_channel
     // default assignments
-    r_busy_n    = r_busy_q;
+    r_busy_d    = r_busy_q;
     r_busy_load = 1'b0;
     // r fifo signals
     r_fifo_pop  = 1'b0;
@@ -203,14 +191,12 @@ module axi_decerr_slv #(
     // control
     if (r_busy_q) begin
       decerr_resp.r_valid = 1'b1;
-      if (r_current_beat == '0) begin
-        decerr_resp.r.last = 1'b1;
-      end
+      decerr_resp.r.last = (r_current_beat == '0);
       // r transaction
       if (decerr_req.r_ready) begin
         r_cnt_en = 1'b1;
         if (r_current_beat == '0) begin
-          r_busy_n    = 1'b0;
+          r_busy_d    = 1'b0;
           r_busy_load = 1'b1;
           r_cnt_clear = 1'b1;
           r_fifo_pop  = 1'b1;
@@ -219,7 +205,7 @@ module axi_decerr_slv #(
     end else begin
       // when not busy and fifo not empty, start counter decerr gen
       if (!r_fifo_empty) begin
-        r_busy_n    = 1'b1;
+        r_busy_d    = 1'b1;
         r_busy_load = 1'b1;
         r_cnt_load  = 1'b1;
       end
@@ -230,7 +216,7 @@ module axi_decerr_slv #(
     if (!rst_ni) begin
       r_busy_q <= '0;
     end else if (r_busy_load) begin
-      r_busy_q <= r_busy_n;
+      r_busy_q <= r_busy_d;
     end
   end
 
