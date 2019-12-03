@@ -541,10 +541,12 @@ module axi_demux #(
         $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
     end
     default disable iff (!rst_ni);
-    aw_select: assume property( @(posedge clk_i) (slv_aw_select_i < NoMstPorts)) else
+    aw_select: assume property( @(posedge clk_i) (slv_aw_valid_i |->
+                                                 (slv_aw_select_i < NoMstPorts))) else
       $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\
                  NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
-    ar_select: assume property( @(posedge clk_i) (slv_aw_select_i < NoMstPorts)) else
+    ar_select: assume property( @(posedge clk_i) (slv_ar_valid_i |->
+                                                 (slv_ar_select_i < NoMstPorts))) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
                  NoMstPorts: %d", slv_ar_select_i, NoMstPorts);
     aw_valid_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready) |=> aw_valid) else
