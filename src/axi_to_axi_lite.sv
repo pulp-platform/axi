@@ -40,11 +40,6 @@ module axi_to_axi_lite #(
   end
   `endif
 
-  // Round the maximum number of pending transactions up to the next power of
-  // two. This is required by the implementation of the FIFO.
-  localparam int DEPTH_FIFO_RD = 2**$clog2(NUM_PENDING_RD);
-  localparam int DEPTH_FIFO_WR = 2**$clog2(NUM_PENDING_WR);
-
   // The transaction information that will be stored locally.
   typedef struct packed {
     logic [$bits(in.r_id)-1:0] id;
@@ -70,7 +65,7 @@ module axi_to_axi_lite #(
   meta_rd_t meta_rd;
   meta_wr_t meta_wr;
 
-  fifo #(.dtype(meta_rd_t), .DEPTH(DEPTH_FIFO_RD)) i_fifo_rd (
+  fifo #(.dtype(meta_rd_t), .DEPTH(NUM_PENDING_RD)) i_fifo_rd (
     .clk_i       ( clk_i      ),
     .rst_ni      ( rst_ni     ),
     .testmode_i  ( testmode_i ),
@@ -88,7 +83,7 @@ module axi_to_axi_lite #(
     .pop_i   ( in.r_valid & in.r_ready & in.r_last )
   );
 
-  fifo #(.dtype(meta_wr_t), .DEPTH(DEPTH_FIFO_WR)) i_fifo_wr (
+  fifo #(.dtype(meta_wr_t), .DEPTH(NUM_PENDING_WR)) i_fifo_wr (
     .clk_i        ( clk_i      ),
     .rst_ni       ( rst_ni     ),
     .testmode_i   ( testmode_i ),
@@ -111,8 +106,8 @@ module axi_to_axi_lite #(
   assign in.ar_ready  = ~rd_full & out.ar_ready;
   assign out.aw_addr  = in.aw_addr;
   assign out.ar_addr  = in.ar_addr;
-  assign out.aw_valid = in.aw_valid;
-  assign out.ar_valid = in.ar_valid;
+  assign out.aw_valid = ~wr_full & in.aw_valid;
+  assign out.ar_valid = ~rd_full & in.ar_valid;
 
   assign out.w_data  = in.w_data;
   assign out.w_strb  = in.w_strb;
