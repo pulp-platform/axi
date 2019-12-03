@@ -82,7 +82,13 @@ module synth_slice #(
   axi_to_axi_lite_intf a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
+`ifdef _VCP // PAK2591
+    .testmode_i (ariane_pkg::ALDEC_1B0),
+
+`else
     .testmode_i (1'b0),
+
+`endif
     .in         (a_full.Slave),
     .out        (a_lite.Master)
   );

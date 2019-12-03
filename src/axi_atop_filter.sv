@@ -289,8 +289,20 @@ module axi_atop_filter #(
   ) r_resp_cmd (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
+`ifdef _VCP // PAK2591
+    .clr_i      (ariane_pkg::ALDEC_1B0),
+
+`else
     .clr_i      (1'b0),
+
+`endif
+`ifdef _VCP // PAK2591
+    .testmode_i (ariane_pkg::ALDEC_1B0),
+
+`else
     .testmode_i (1'b0),
+
+`endif
     .valid_i    (r_resp_cmd_push_valid),
     .ready_o    (r_resp_cmd_push_ready),
     .data_i     (r_resp_cmd_push),
