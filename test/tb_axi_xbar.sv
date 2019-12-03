@@ -78,14 +78,14 @@ module tb_axi_xbar;
   `AXI_TYPEDEF_RESP_T    (    slv_resp_t,  b_chan_slv_t,            r_chan_slv_t);
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
-    '{mst_port_idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
-    '{mst_port_idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
-    '{mst_port_idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
-    '{mst_port_idx: 32'd4, start_addr: 32'h0000_7000, end_addr: 32'h0000_8000},
-    '{mst_port_idx: 32'd3, start_addr: 32'h0000_6300, end_addr: 32'h0000_7000},
-    '{mst_port_idx: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6300},
-    '{mst_port_idx: 32'd1, start_addr: 32'h0000_3000, end_addr: 32'h0000_4000},
-    '{mst_port_idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
+    '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
+    '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
+    '{idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
+    '{idx: 32'd4, start_addr: 32'h0000_7000, end_addr: 32'h0000_8000},
+    '{idx: 32'd3, start_addr: 32'h0000_6300, end_addr: 32'h0000_7000},
+    '{idx: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6300},
+    '{idx: 32'd1, start_addr: 32'h0000_3000, end_addr: 32'h0000_4000},
+    '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
   typedef axi_test::rand_axi_master #(

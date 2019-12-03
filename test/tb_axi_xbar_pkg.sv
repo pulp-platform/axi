@@ -164,7 +164,7 @@ package tb_axi_xbar_pkg;
         for (int unsigned j = 0; j < NoAddrRules; j++) begin
           if ((masters_axi[i].aw_addr >= AddrMap[j].start_addr) &&
               (masters_axi[i].aw_addr < AddrMap[j].end_addr)) begin
-            to_slave_idx = idx_slv_t'(AddrMap[j].mst_port_idx);
+            to_slave_idx = idx_slv_t'(AddrMap[j].idx);
             decerr = 1'b0;
           end
         end
@@ -320,7 +320,7 @@ package tb_axi_xbar_pkg;
         exp_slv_idx    = '0;
         for (int unsigned j = 0; j < NoAddrRules; j++) begin
           if ((mst_axi_addr >= AddrMap[j].start_addr) && (mst_axi_addr < AddrMap[j].end_addr)) begin
-            exp_slv_idx = AddrMap[j].mst_port_idx;
+            exp_slv_idx = AddrMap[j].idx;
             exp_decerr  = 1'b0;
           end
         end

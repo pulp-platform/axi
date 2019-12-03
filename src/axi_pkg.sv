@@ -146,15 +146,15 @@ package axi_pkg;
     int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
 
-  // address rules for axi_xbar
+  // address rules for axi_xbar address decoder from common_cells
   typedef struct packed {
-    int unsigned mst_port_idx;
+    int unsigned idx;
     logic [63:0] start_addr;
     logic [63:0] end_addr;
   } xbar_rule_64_t;
 
   typedef struct packed {
-    int unsigned mst_port_idx;
+    int unsigned idx;
     logic [31:0] start_addr;
     logic [31:0] end_addr;
   } xbar_rule_32_t;

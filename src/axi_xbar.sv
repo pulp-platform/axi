@@ -179,34 +179,34 @@ module axi_xbar #(
     slv_req_t  decerr_req;
     slv_resp_t decerr_resp;
 
-    axi_addr_decode #(
-      .NoMstPorts ( Cfg.NoMstPorts  ),
-      .addr_t     ( addr_t          ),
+    addr_decode #(
+      .NoIndices  ( Cfg.NoMstPorts  ),
       .NoRules    ( Cfg.NoAddrRules ),
+      .addr_t     ( addr_t          ),
       .rule_t     ( rule_t          )
     ) i_axi_aw_decode (
-      .addr_i                 ( slv_ports_req_i[i].aw.addr ),
-      .addr_map_i             ( addr_map_i                 ),
-      .mst_port_idx_o         ( dec_aw                     ),
-      .dec_valid_o            ( dec_aw_valid               ),
-      .dec_error_o            ( dec_aw_error               ),
-      .en_default_mst_port_i  ( en_default_mst_port_i[i]   ),
-      .default_mst_port_idx_i ( default_mst_port_i[i]      )
+      .addr_i           ( slv_ports_req_i[i].aw.addr ),
+      .addr_map_i       ( addr_map_i                 ),
+      .idx_o            ( dec_aw                     ),
+      .dec_valid_o      ( dec_aw_valid               ),
+      .dec_error_o      ( dec_aw_error               ),
+      .en_default_idx_i ( en_default_mst_port_i[i]   ),
+      .default_idx_i    ( default_mst_port_i[i]      )
     );
 
-    axi_addr_decode #(
-      .NoMstPorts ( Cfg.NoMstPorts  ),
+    addr_decode #(
+      .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),
       .rule_t     ( rule_t          )
     ) i_axi_ar_decode (
-      .addr_i                 ( slv_ports_req_i[i].ar.addr ),
-      .addr_map_i             ( addr_map_i                 ),
-      .mst_port_idx_o         ( dec_ar                     ),
-      .dec_valid_o            ( dec_ar_valid               ),
-      .dec_error_o            ( dec_ar_error               ),
-      .en_default_mst_port_i  ( en_default_mst_port_i[i]   ),
-      .default_mst_port_idx_i ( default_mst_port_i[i]      )
+      .addr_i           ( slv_ports_req_i[i].ar.addr ),
+      .addr_map_i       ( addr_map_i                 ),
+      .idx_o            ( dec_ar                     ),
+      .dec_valid_o      ( dec_ar_valid               ),
+      .dec_error_o      ( dec_ar_error               ),
+      .en_default_idx_i ( en_default_mst_port_i[i]   ),
+      .default_idx_i    ( default_mst_port_i[i]      )
     );
 
     assign slv_aw_select = (dec_aw_error) ?
