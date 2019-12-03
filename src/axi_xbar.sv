@@ -249,7 +249,6 @@ module axi_xbar #(
       .r_chan_t       ( slv_r_chan_t           ),  //  R Channel Type
       .NoMstPorts     ( Cfg.NoMstPorts + 1     ),
       .MaxTrans       ( Cfg.MaxMstTrans        ),
-      .IdCounterWidth ( $clog2(Cfg.MaxMstTrans)),
       .AxiLookBits    ( Cfg.AxiIdUsedSlvPorts  ),
       .FallThrough    ( Cfg.FallThrough        ),
       .SpillAw        ( Cfg.LatencyMode[9]     ),
