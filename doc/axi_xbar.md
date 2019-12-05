@@ -10,7 +10,7 @@ The crossbar has a variable number of slave and master ports. To the slave ports
 One defining characteristic of the master ports is that the AXI ID width of them is wider than the one of the slave ports. This has to do with the used AXI multiplexers. The ID width of the master ports can be calculated with:
 
 ```
-id_width_master_port = id_width_slave_port + log<sub>2<\sub>(no_slave_ports)
+id_width_master_port = id_width_slave_port + log_2(no_slave_ports)
 ```
 
 The design has one global address mapping for all its master ports. The design of the address mapping allows for multiple physical address ranges to be mapped to the same master port. It is also possible to change the address mapping, as the map is defined as a signal. However this change should only be done, when no master connected to the crossbar has an open transaction currently in flight.
