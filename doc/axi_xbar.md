@@ -1,17 +1,17 @@
 ### AXI Full Crossbar
 
 This module is called `axi_xbar`. It features a full crossbar design, meaning that each master module, which is connected to the bar's slave ports, has a direct wiring to the salves connected to the master ports of the design.
-A block-diagram of the crossbar is shown in [@fig:block-axi-xbar].
+A block-diagram of the crossbar is shown below:
 
-![Block-diagram showing the design of the full AXI4 Crossbar.](figures/axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar."){#fig:block-axi-xbar width=95%}
+![Block-diagram showing the design of the full AXI4 Crossbar.](figures/axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar.")
 
 The crossbar has a variable number of slave and master ports. To the slave ports master modules get connected. The opposite applies to the master ports.
 
-One defining characteristic of the master ports is that the AXI ID width of them is wider than the one of the slave ports. This has to do with the used AXI multiplexers. The ID width of the master ports can be calculated with [@eq:xbar-id]:
+One defining characteristic of the master ports is that the AXI ID width of them is wider than the one of the slave ports. This has to do with the used AXI multiplexers. The ID width of the master ports can be calculated with:
 
-$$
-id\_width\_master\_port = id\_width\_slave\_port + \log_2(no_\_slave\_ports)
-$$ {#eq:xbar-id}
+```
+id\_width\_master\_port = id\_width\_slave\_port + log<sub>2<\sub>(no_\_slave\_ports)
+```
 
 The design has one global address mapping for all its master ports. The design of the address mapping allows for multiple physical address ranges to be mapped to the same master port. It is also possible to change the address mapping, as the map is defined as a signal. However this change should only be done, when no master connected to the crossbar has an open transaction currently in flight.
 
@@ -21,7 +21,7 @@ Each slave port has the possibility to get a default master port mapping. Meanin
 
 The crossbar features a configuration struct which fixes all parameters needed in the submodules instantiated in the design. One of these is called `LatencyMode`. This is a special enum defined in the package `axi_pkg` of the repository. It defines which spill register of the axi demuxes and muxes get instantiated. The recommended configuration is to have a latency of two on the AW and AR channels as they have the most and longest control logic in them. The reason being the ID counters. Additionally it is recommended to not set the fall-through parameter as then the longest path will be long. It is however possible to run the crossbar in a fully combinatorical fashion. Further, like with the other AXI modules, it is necessary to give the AXI channel structs as parameters. Due to the extension of the ID it is necessary to define the structs for each the slave and the master ports. The final parameter specifies the rule struct of the address mapping.
 
-Following [@tbl:params-axi-xbar] describes the parameters of the configuration struct in detail:
+Following table describes the parameters of the configuration struct in detail:
 
 | Name | Type | Function |
 |:------------------ |:----------------- |:---------------------------------- |
@@ -38,7 +38,6 @@ Following [@tbl:params-axi-xbar] describes the parameters of the configuration s
 | `AxiDataWidth` | `int unsigned` | The AXI DATA width of the slave ports. |
 | `NoAddrRules` | `int unsigned` | The crossbar has this many address rules. |
 
-: Parameters of the Module `axi_xbar` {#tbl:params-axi-xbar}
 
 The non trivial ports of the full crossbar can be described as follows:
 * `slv_ports_req_i`, `slv_ports_resp_o`: Are defining the slave ports of the crossbar. They are arrays of the requests and responses of all master modules on the design. The array index corresponds to the index of the slave port. This index will be prepended to all requests of a particular master module when it leaves the crossbar through one of the master ports.
