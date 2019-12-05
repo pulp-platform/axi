@@ -1,4 +1,4 @@
-### AXI Full Crossbar
+# AXI Full Crossbar
 
 This module is called `axi_xbar`. It features a full crossbar design, meaning that each master module, which is connected to the bar's slave ports, has a direct wiring to the salves connected to the master ports of the design.
 A block-diagram of the crossbar is shown below:
