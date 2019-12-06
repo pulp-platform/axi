@@ -152,7 +152,7 @@ module axi_write_burst_packer #(
   buf_idx_t   aw_pend_d,    aw_pend_q,
               w_compl_d,    w_compl_q;
   state_e     state_d,      state_q;
-  logic       aw_pend_inc,  aw_pend_dec,
+  logic       aw_pend_inc,  aw_pend_dec, aw_reg_valid,
               w_buf_full,   w_buf_empty;
 
   // Pack W beats in FIFO.
