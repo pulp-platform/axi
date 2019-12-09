@@ -25,6 +25,8 @@ module tb_axi_xbar;
   // Random master no Transactions
   localparam int unsigned NoWrites   = 1000;  // How many writes per master
   localparam int unsigned NoReads    = 1000;  // How many reads per master
+  // Random Master Atomics
+  localparam bit          EnAtop     = 1'b1;
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -90,17 +92,17 @@ module tb_axi_xbar;
 
   typedef axi_test::rand_axi_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth      ),
-    .DW ( AxiDataWidth      ),
-    .IW ( AxiIdWidthMasters ),
-    .UW ( AxiUserWidth      ),
+    .AW ( AxiAddrWidth       ),
+    .DW ( AxiDataWidth       ),
+    .IW ( AxiIdWidthMasters  ),
+    .UW ( AxiUserWidth       ),
     // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          ),
+    .TA ( ApplTime           ),
+    .TT ( TestTime           ),
     // Maximum number of read and write transactions in flight
-    .MAX_READ_TXNS  ( 20    ),
-    .MAX_WRITE_TXNS ( 20    ),
-    .AXI_ATOPS      ( 1'b0  )
+    .MAX_READ_TXNS  ( 20     ),
+    .MAX_WRITE_TXNS ( 20     ),
+    .AXI_ATOPS      ( EnAtop )
   ) rand_axi_master_t;
   typedef axi_test::rand_axi_slave #(
     // AXI interface parameters
@@ -150,7 +152,7 @@ module tb_axi_xbar;
     .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
     .AXI_USER_WIDTH ( AxiUserWidth      )
   ) master_monitor_dv [NoMasters-1:0] (clk);
-  for (genvar i = 0; i < NoMasters; i++) begin
+  for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
     `AXI_ASSIGN           ( master[i],      master_dv[i]    );
     `AXI_ASSIGN_TO_REQ    ( masters_req[i], master[i]       );
     `AXI_ASSIGN_FROM_RESP ( master[i],      masters_resp[i] );
@@ -174,7 +176,7 @@ module tb_axi_xbar;
     .AXI_ID_WIDTH   ( AxiIdWidthSlaves ),
     .AXI_USER_WIDTH ( AxiUserWidth     )
   ) slave_monitor_dv [NoSlaves-1:0](clk);
-  for (genvar i = 0; i < NoSlaves; i++) begin: gen_conn_dv_slaves
+  for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_ASSIGN          ( slave_dv[i],    slave[i]      );
     `AXI_ASSIGN_FROM_REQ ( slave[i],       slaves_req[i] );
     `AXI_ASSIGN_TO_RESP  ( slaves_resp[i], slave[i]      );
@@ -183,23 +185,27 @@ module tb_axi_xbar;
   // AXI Rand Masters and Slaves
   // -------------------------------
   // Masters control simulation run time
-  for (genvar i = 0; i < NoMasters; i++) initial begin : proc_gen_mst
-    static rand_axi_master_t rand_axi_master = new ( master_dv[i] );
-    end_of_sim[i] <= 1'b0;
-    rand_axi_master.add_memory_region(AddrMap[0].start_addr,
+  for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
+    initial begin
+      static rand_axi_master_t rand_axi_master = new ( master_dv[i] );
+      end_of_sim[i] <= 1'b0;
+      rand_axi_master.add_memory_region(AddrMap[0].start_addr,
                                       AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-    rand_axi_master.reset();
-    @(posedge rst_n);
-    rand_axi_master.run(NoReads, NoWrites);
-    end_of_sim[i] <= 1'b1;
+      rand_axi_master.reset();
+      @(posedge rst_n);
+      rand_axi_master.run(NoReads, NoWrites);
+      end_of_sim[i] <= 1'b1;
+    end
   end
 
-  for (genvar i = 0; i < NoSlaves; i++) initial begin : proc_gen_slv
-    static rand_axi_slave_t rand_axi_slave = new( slave_dv[i] );
-    rand_axi_slave.reset();
-    @(posedge rst_n);
-    rand_axi_slave.run();
+  for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
+    initial begin
+      static rand_axi_slave_t rand_axi_slave = new( slave_dv[i] );
+      rand_axi_slave.reset();
+      @(posedge rst_n);
+      rand_axi_slave.run();
+    end
   end
 
   initial begin : proc_monitor
@@ -271,6 +277,79 @@ module tb_axi_xbar;
     .en_default_mst_port_i ( '0      ),
     .default_mst_port_i    ( '0      )
   );
+
+  // logger for master modules
+  for (genvar i = 0; i < NoMasters; i++) begin : gen_master_logger
+    axi_chan_logger #(
+      .TestTime  ( TestTime      ), // Time after clock, where sampling happens
+      .LoggerName( $sformatf("axi_logger_master_%0d", i)),
+      .aw_chan_t ( aw_chan_mst_t ), // axi AW type
+      .w_chan_t  (  w_chan_t     ), // axi  W type
+      .b_chan_t  (  b_chan_mst_t ), // axi  B type
+      .ar_chan_t ( ar_chan_mst_t ), // axi AR type
+      .r_chan_t  (  r_chan_mst_t )  // axi  R type
+    ) i_mst_channel_logger (
+      .clk_i      ( clk         ),    // Clock
+      .rst_ni     ( rst_n       ),    // Asynchronous reset active low, when `1'b0` no sampling
+      .end_sim_i  ( &end_of_sim ),
+      // AW channel
+      .aw_chan_i  ( masters_req[i].aw        ),
+      .aw_valid_i ( masters_req[i].aw_valid  ),
+      .aw_ready_i ( masters_resp[i].aw_ready ),
+      //  W channel
+      .w_chan_i   ( masters_req[i].w         ),
+      .w_valid_i  ( masters_req[i].w_valid   ),
+      .w_ready_i  ( masters_resp[i].w_ready  ),
+      //  B channel
+      .b_chan_i   ( masters_resp[i].b        ),
+      .b_valid_i  ( masters_resp[i].b_valid  ),
+      .b_ready_i  ( masters_req[i].b_ready   ),
+      // AR channel
+      .ar_chan_i  ( masters_req[i].ar        ),
+      .ar_valid_i ( masters_req[i].ar_valid  ),
+      .ar_ready_i ( masters_resp[i].ar_ready ),
+      //  R channel
+      .r_chan_i   ( masters_resp[i].r        ),
+      .r_valid_i  ( masters_resp[i].r_valid  ),
+      .r_ready_i  ( masters_req[i].r_ready   )
+    );
+  end
+  // logger for slave modules
+  for (genvar i = 0; i < NoSlaves; i++) begin : gen_slave_logger
+    axi_chan_logger #(
+      .TestTime  ( TestTime      ), // Time after clock, where sampling happens
+      .LoggerName( $sformatf("axi_logger_slave_%0d",i)),
+      .aw_chan_t ( aw_chan_slv_t ), // axi AW type
+      .w_chan_t  (  w_chan_t     ), // axi  W type
+      .b_chan_t  (  b_chan_slv_t ), // axi  B type
+      .ar_chan_t ( ar_chan_slv_t ), // axi AR type
+      .r_chan_t  (  r_chan_slv_t )  // axi  R type
+    ) i_slv_channel_logger (
+      .clk_i      ( clk         ),    // Clock
+      .rst_ni     ( rst_n       ),    // Asynchronous reset active low, when `1'b0` no sampling
+      .end_sim_i  ( &end_of_sim ),
+      // AW channel
+      .aw_chan_i  ( slaves_req[i].aw        ),
+      .aw_valid_i ( slaves_req[i].aw_valid  ),
+      .aw_ready_i ( slaves_resp[i].aw_ready ),
+      //  W channel
+      .w_chan_i   ( slaves_req[i].w         ),
+      .w_valid_i  ( slaves_req[i].w_valid   ),
+      .w_ready_i  ( slaves_resp[i].w_ready  ),
+      //  B channel
+      .b_chan_i   ( slaves_resp[i].b        ),
+      .b_valid_i  ( slaves_resp[i].b_valid  ),
+      .b_ready_i  ( slaves_req[i].b_ready   ),
+      // AR channel
+      .ar_chan_i  ( slaves_req[i].ar        ),
+      .ar_valid_i ( slaves_req[i].ar_valid  ),
+      .ar_ready_i ( slaves_resp[i].ar_ready ),
+      //  R channel
+      .r_chan_i   ( slaves_resp[i].r        ),
+      .r_valid_i  ( slaves_resp[i].r_valid  ),
+      .r_ready_i  ( slaves_req[i].r_ready   )
+    );
+  end
 
 
   for (genvar i = 0; i < NoMasters; i++) begin : gen_connect_master_monitor

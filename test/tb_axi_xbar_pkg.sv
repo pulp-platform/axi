@@ -206,7 +206,7 @@ package tb_axi_xbar_pkg;
     // This task monitors a slave port of the crossbar. Every time there is an AW vector it
     // gets checked for its contents and if it was expected. The task then pushes an expected
     // amount of W beats in the respective fifo. Emphasis of the last flag.
-    task monitor_slv_aw(input int unsigned i);
+    task automatic monitor_slv_aw(input int unsigned i);
       exp_ax_t    exp_aw;
       slave_exp_t exp_slv_w;
       //  $display("%0t > Was triggered: aw_valid %b, aw_ready: %b",
@@ -233,18 +233,18 @@ package tb_axi_xbar_pkg;
         incr_conducted_tests(3);
 
         // push the required w beats into the right fifo
+        incr_expected_tests(slaves_axi[i].aw_len + 1);
         for (int unsigned j = 0; j <= slaves_axi[i].aw_len; j++) begin
           exp_slv_w = (j == slaves_axi[i].aw_len) ?
               '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b1} :
               '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b0};
           this.exp_w_fifo[i].push_back(exp_slv_w);
-          incr_expected_tests(1);
         end
       end
     endtask : monitor_slv_aw
 
     // This task just pushes every W beat that gets sent on a master port in its respective fifo.
-    task monitor_slv_w(input int unsigned i);
+    task automatic monitor_slv_w(input int unsigned i);
       slave_exp_t     act_slv_w;
       if (slaves_axi[i].w_valid && slaves_axi[i].w_ready) begin
         // $display("%0t > W beat on Slave %0d, last flag: %b", $time, i, slaves_axi[i].w_last);
@@ -256,11 +256,10 @@ package tb_axi_xbar_pkg;
     // This task compares the expected and actual W beats on a master port. The reason that
     // this is not done in `monitor_slv_w` is that there can be per protocol W beats on the
     // channel, before AW is sent to the slave.
-    task check_slv_w(input int unsigned i);
+    task automatic check_slv_w(input int unsigned i);
       slave_exp_t exp_w, act_w;
-      forever begin
-        wait(this.exp_w_fifo[i].size() != 0 && this.act_w_fifo[i].size() != 0);
-        // $display("%0t > Check W beat on SLV %0d", $time, i);
+      while (this.exp_w_fifo[i].size() != 0 && this.act_w_fifo[i].size() != 0) begin
+
         exp_w = this.exp_w_fifo[i].pop_front();
         act_w = this.act_w_fifo[i].pop_front();
         // do the check
@@ -268,7 +267,7 @@ package tb_axi_xbar_pkg;
         if(exp_w.last != act_w.last) begin
           incr_failed_tests(1);
           $warning("Slave %d: unexpected W beat last flag %b, expected: %b.",
-                   i, act_w.last, exp_w.last);
+                 i, act_w.last, exp_w.last);
         end
       end
     endtask : check_slv_w
@@ -428,11 +427,11 @@ package tb_axi_xbar_pkg;
     // Queues get run. When they are finished the processes that pop something get run.
     task run();
       Continous: fork
-        proc_check_slv_w: begin
-          for (int unsigned i = 0; i < NoSlaves; i++) begin
-            check_slv_w(i);
-          end
-        end
+        //proc_check_slv_w: begin
+        //  for (int unsigned i = 0; i < NoSlaves; i++) begin
+        //    check_slv_w(i);
+        //  end
+        //end
         begin
           do begin
             cycle_start();
@@ -461,6 +460,7 @@ package tb_axi_xbar_pkg;
                 monitor_slv_w(i);
               end
             end
+            // These only pop somethong from the queses
             PopMon: fork
               proc_mst_b: begin
                 for (int unsigned i = 0; i < NoMasters; i++) begin
@@ -478,6 +478,12 @@ package tb_axi_xbar_pkg;
                 end
               end
             join : PopMon
+            // check the slave W fifos last
+            proc_check_slv_w: begin
+              for (int unsigned i = 0; i < NoSlaves; i++) begin
+                check_slv_w(i);
+              end
+            end
             cycle_end();
           end while (1'b1);
         end
