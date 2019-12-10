@@ -27,12 +27,12 @@
 //               - MaxMstTrans:        Each master module connected to the crossbar can have at
 //                                     most this many read and write transactions in flight.
 //               - MaxSlvTrans:        Each master port of the crossbar (to the slave modules)
-//                                     supports at most this may transactions in flight per ID.
+//                                     supports at most this many transactions in flight per ID.
 //               - FallThrough:        The FIFOs that store the switching decision from the
 //                                     AW channel to the W channel are in FallThrough mode.
 //                                     Can lead to combinational switching, but the longest path in
 //                                     synthesis will be longer.
-//               - LatencyMode:        A 10-bit vector which encodes the generation of spill
+//               - LatencyMode:        A 10-bit vector that encodes the generation of spill
 //                                     registers on different points in the crossbar.
 //                                     The enum xbar_latency_t found in axi_pkg has some
 //                                     common configurations.
@@ -77,10 +77,11 @@
 //                 the end address. Simulation will issue warnings if address ranges overlap.
 //                 If there are overlaps, the rule in the highest array position wins.
 //                 The crossbar will answer to a wrong address with a decode error. This can be
-//                 disabled by providing a corresponding default master port. Each salve port
-//                 can has its own unique default master port, which can be individually enabled.
-//                 Be sure to have no pending Ax request (`ax_valid = 1'b1`) or the address mapping
-//                 on a slave port when changing the default master port.
+//                 disabled by providing a corresponding default master port. Each slave port
+//                 can have its own unique default master port, which can be individually enabled.
+//                 Be sure to have no pending Ax request (`ax_valid = 1'b1`) when changing the
+//                 global address mapping. The same applies when changing a default master port for
+//                 the respective slave port.
 
 module axi_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0, // Fixed Cfg of the xbar
@@ -222,22 +223,22 @@ module axi_xbar #(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
           |=> $stable(en_default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   enable, when there is an unserved Aw beat. Salve Port: %0d", i));
+                                   enable, when there is an unserved Aw beat. Slave Port: %0d", i));
     default_aw_mst_port: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
           |=> $stable(default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Aw beat. Salve Port: %0d", i));
+                                   when there is an unserved Aw beat. Slave Port: %0d", i));
     default_ar_mst_port_en: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
           |=> $stable(en_default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the enable, when\
-                                   there is an unserved Ar beat. Salve Port: %0d", i));
+                                   there is an unserved Ar beat. Slave Port: %0d", i));
     default_ar_mst_port: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
           |=> $stable(default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Ar beat. Salve Port: %0d", i));
+                                   when there is an unserved Ar beat. Slave Port: %0d", i));
     `endif
     // pragma translate_on
     axi_demux #(
