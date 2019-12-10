@@ -8,7 +8,7 @@
 `axi_xbar` is a fully-connected crossbar, which means that each master module that is connected to a *slave port* for of the crossbar has direct wires to all slave modules that are connected to the *master ports* of the crossbar.
 A block-diagram of the crossbar is shown below:
 
-![Block-diagram showing the design of the full AXI4 Crossbar.](figures/axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar.")
+![Block-diagram showing the design of the full AXI4 Crossbar.](axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar.")
 
 The crossbar has a configurable number of slave and master ports.
 
