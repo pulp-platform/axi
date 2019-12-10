@@ -99,7 +99,6 @@ module axi_demux #(
   output logic     [NoMstPorts-1:0] mst_r_readies_o
 );
 
-  // lies in conjunction with max trans, is the counter width
   localparam int unsigned IdCounterWidth = $clog2(MaxTrans);
 
   // pass through if only one master port
@@ -682,18 +681,6 @@ module axi_demux_id_counters #(
 `endif
 // pragma translate_on
   end
-  // moved to macro in genvar above
-  // always_ff @(posedge clk_i, negedge rst_ni) begin : proc_mst_port_sel_reg
-  //   if (!rst_ni) begin
-  //     mst_select_q <= '0;
-  //   end else begin
-  //     for (int unsigned i = 0; i < NoCounters; i++) begin
-  //       if (push_en[i]) begin
-  //         mst_select_q[i] <= push_mst_select_i;
-  //       end
-  //     end
-  //   end
-  // end
 endmodule
 
 // interface wrapper
