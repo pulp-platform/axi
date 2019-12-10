@@ -198,7 +198,7 @@ module axi_atop_filter #(
     mst_req_o.aw      = slv_req_i.aw;
     mst_req_o.aw.atop = '0;
   end
-  assign  mst_req_o.w       = slv_req_i.w;
+  assign  mst_req_o.w = slv_req_i.w;
 
 
 
