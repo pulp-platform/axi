@@ -2,7 +2,7 @@
 
 The opposite function to the AXI demultiplexer is performed by the AXI Multiplexer. It merges multiple AXI-4 connections and merges them into one. The requests from multiple slave ports of the module get interleaved and transmitted over its one master port.
 
-![Block-diagram of the AXI 4 Multiplexer Module.](figures/axi_mux.png  "Block-diagram of the AXI 4 Multiplexer Module.")
+![Block-diagram of the AXI 4 Multiplexer Module.](axi_mux.png  "Block-diagram of the AXI 4 Multiplexer Module.")
 
 The Multiplexer module is has a simpler structure than the demultiplexer introduced in the previous section. The requests on the AW and AR channels get merged with the same round robin arbitration used for merging the responses in the demultiplexer. One key difference however is the mechanism how the multiplexer determines from which slave port a request came. It uses for this the higher bits of the `axi_id` field of a request. The number of bits can be calculated with:
 
