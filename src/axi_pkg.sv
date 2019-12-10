@@ -152,9 +152,7 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
-  // Configuration of axi_xbar
-  // enum for the latency modes
-  // encoding:
+  // `xbar_latency_e` and `xbar_cfg_t` are documented in `doc/axi_xbar.md`.
   localparam logic [9:0] DemuxAw = (1 << 9);
   localparam logic [9:0] DemuxW  = (1 << 8);
   localparam logic [9:0] DemuxB  = (1 << 7);
@@ -174,29 +172,27 @@ package axi_pkg;
     CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
     CUT_ALL_PORTS = '1
   } xbar_latency_e;
-
   typedef struct packed {
-    int unsigned   NoSlvPorts;         // # of slave ports, # masters are connected to the xbar
-    int unsigned   NoMstPorts;         // # of master ports, # slaves are connected to the xbar
-    int unsigned   MaxMstTrans;        // Maxi # of outstanding transactions per r/w per master
-    int unsigned   MaxSlvTrans;        // Maxi # of outstanding write transactions per slave
-    bit            FallThrough;        // AreAW -> W fifo's in Fall through mode (1'b0 = long paths)
-    xbar_latency_e LatencyMode;        // See xbar_latency_t and get_xbarlatmode
-    int unsigned   AxiIdWidthSlvPorts; // AXI ID Width of the Slave Ports
-    int unsigned   AxiIdUsedSlvPorts;  // this many LSB's of the SlvPortAxiId get used in demux
-    int unsigned   AxiIdWidthMstPorts; // ==> $clog2(NoSLVPorts) + AxiIdWidthSlvPorts !!
-    int unsigned   AxiAddrWidth;       // AXI Address Width
-    int unsigned   AxiDataWidth;       // AXI Data Width
-    int unsigned   NoAddrRules;        // # of Address Rules in the memory map
+    int unsigned   NoSlvPorts;
+    int unsigned   NoMstPorts;
+    int unsigned   MaxMstTrans;
+    int unsigned   MaxSlvTrans;
+    bit            FallThrough;
+    xbar_latency_e LatencyMode;
+    int unsigned   AxiIdWidthSlvPorts;
+    int unsigned   AxiIdUsedSlvPorts;
+    int unsigned   AxiIdWidthMstPorts;
+    int unsigned   AxiAddrWidth;
+    int unsigned   AxiDataWidth;
+    int unsigned   NoAddrRules;
   } xbar_cfg_t;
 
-  // address rules for axi_xbar address decoder from common_cells
+  // Commonly used rule types for `axi_xbar`: 64- and 32-bit addresses.
   typedef struct packed {
     int unsigned idx;
     logic [63:0] start_addr;
     logic [63:0] end_addr;
   } xbar_rule_64_t;
-
   typedef struct packed {
     int unsigned idx;
     logic [31:0] start_addr;
