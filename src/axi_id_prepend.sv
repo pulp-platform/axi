@@ -30,7 +30,7 @@ module axi_id_prepend #(
   // DEPENDENT PARAMETER DO NOT OVERWRITE!
   parameter int unsigned PreIdWidth        = AxiIdWidthMstPort - AxiIdWidthSlvPort
 ) (
-  input  logic [PreIdWidth-1:0] pre_id_i, // ID to be prependet
+  input  logic [PreIdWidth-1:0] pre_id_i, // ID to be prepended
   // slave port (input), connect master modules here
   // AW channel
   input  slv_aw_chan_t [NoBus-1:0] slv_aw_chans_i,
