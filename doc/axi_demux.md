@@ -2,7 +2,7 @@
 
 The functionality of the AXI Demultiplexer is to split one AXI connection into multiple ones. It hereby has to adhere to the AXI ordering scheme.
 
-![Block-diagram of the AXI DEMULTIPLEXER.](figures/axi_demux.png "Block-diagram of the AXI DEMULTIPLEXER.")
+![Block-diagram of the AXI DEMULTIPLEXER.](axi_demux.png "Block-diagram of the AXI DEMULTIPLEXER.")
 
 The main problem is to comply to the AXI4 ordering scheme, which arises by connecting one master module to multiple slave modules. As different slave modules could answer with different latencies, simple arbitration of the responses will not be enough. The demultiplexer has to have the capability to be aware to which slave a request was forwarded.
 
