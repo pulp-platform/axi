@@ -11,7 +11,7 @@
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
 // Testbench for axi_xbar.sv
-// The crossbar gets instantiated with a number of random axi master ans slave modules.
+// The crossbar gets instantiated with a number of random axi master and slave modules.
 // Each random master executes a fixed number of writes and reads onto the whole addess map.
 // A monitor checks the bus, if the transactions follow the expected switching path.
 

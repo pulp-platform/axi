@@ -10,9 +10,9 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// The `tb_axi_xbar_pgk` implements an AXI bus monitor that is tuned for the AXI crossbar.
+// `axi_xbar_monitor` implements an AXI bus monitor that is tuned for the AXI crossbar.
 // It snoops on each of the slaves and master ports of the crossbar and
-// populates fifo's and id_queues to validate that no AXI beats get
+// populates FIFOs and ID queues to validate that no AXI beats get
 // lost or sent to the wrong destination.
 
 package tb_axi_xbar_pkg;
@@ -427,11 +427,6 @@ package tb_axi_xbar_pkg;
     // Queues get run. When they are finished the processes that pop something get run.
     task run();
       Continous: fork
-        //proc_check_slv_w: begin
-        //  for (int unsigned i = 0; i < NoSlaves; i++) begin
-        //    check_slv_w(i);
-        //  end
-        //end
         begin
           do begin
             cycle_start();

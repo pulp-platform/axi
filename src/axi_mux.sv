@@ -198,7 +198,7 @@ module axi_mux #(
           load_aw_lock    = 1'b1;
         end
       end else begin
-        if(!w_fifo_full && aw_valid) begin
+        if (!w_fifo_full && aw_valid) begin
           mst_aw_valid = 1'b1;
           w_fifo_push = 1'b1;
           if (mst_aw_ready) begin
