@@ -10,111 +10,34 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI XBAR: A full AXI 4+ATOP crossbar with an arbitrary number of slave and master ports.
-// Features:
-//  - AXI4 ID ordering compliance
-//  - Full Customizable Address Mapping with an optional default master ports per slave port
-//  - ATOP support
-//
-//  Configuration: The configuration structs of the parameters and rules can be found in the axi_pkg
-//                 It is necessary to provide all structs of every AXI channel and the request
-//                 and response, because it is not possible to reconstruct the fields of sub
-//                 structs over multiple hierarchies.
-//    Fields:    - NoSlvPorts:         The Number of slave ports created on the xbar. This many
-//                                     master modules can be connected to it.
-//               - NoMstPorts:         The number of master ports created on the xbar. This many
-//                                     slave modules can be connected to it.
-//               - MaxMstTrans:        Each master module connected to the crossbar can have at
-//                                     most this many read and write transactions in flight.
-//               - MaxSlvTrans:        Each master port of the crossbar (to the slave modules)
-//                                     supports at most this many transactions in flight per ID.
-//               - FallThrough:        The FIFOs that store the switching decision from the
-//                                     AW channel to the W channel are in FallThrough mode.
-//                                     Can lead to combinational switching, but the longest path in
-//                                     synthesis will be longer.
-//               - LatencyMode:        A 10-bit vector that encodes the generation of spill
-//                                     registers on different points in the crossbar.
-//                                     The enum xbar_latency_t found in axi_pkg has some
-//                                     common configurations.
-//               - AxiIdWidthSlvPorts: The AXI ID width of the slave ports.
-//               - AxiIdUsedSlvPorts:  The crossbar uses this many LSBs of the slave port AXI ID
-//                                     to determine the uniqueness of an AXI ID. This value
-//                                     has to be equal or smaller than the AXI ID width of the
-//                                     slave ports.
-//               - AxiIdWidthMstPorts: The AXI ID width of the master ports.
-//               - AxiAddrWidth:       The AXI address width of the slave ports.
-//               - AxiDataWidth:       The AXI data width of the slave ports.
-//               - NoAddrRules:        The crossbar has this many address rules.
-//
-//  Behavior :
-//    Ordering:    When there is a transaction on a slave port to a master port with the same AXI ID
-//                 as currently in flight to another master port, the crossbar will stall the
-//                 AX channel till the conflicting transaction is finished.
-//                 There can be the possibility of accidental stalls, because only the LSB's of the
-//                 AXI ID get checked for the 'difference' between two AXI id's. Determined in Cfg
-//                 struct by the Field `.AxiIdUsedSlvPorts`, this has to be smaller or equal than
-//                 `.AxiIdWidthSlvPorts`.
-//    Latency:     The crossbar can be configured for different latencies on the channels.
-//                 It does so by introducing spill register in the demuxes and muxes.
-//                 axi_pkg defines enum xbar_latency_t, which has some configurations
-//                 predefined, but any 10-bit vector can be used.
-//                 There are further FIFOs between the AW channel and W channel, which 'save'
-//                 the switching decision. Under no circumstances may spill registers
-//                 be inserted into the channels between the slave port demuxes and master muxes.
-//                 Doing so can lead to a deadlock of the interconnect, as all 4 of the
-//                 deadlock properties will be fulfilled. By forwarding the switching decision
-//                 into the FIFOs in the same cycle, there can be no cyclic dependency, so
-//                 no deadlock.
-//    Address Map: The address map is defined as a packed array of rule structs.
-//                 Two rule structs for address widths of 32 and 64 bit are provided in axi_pkg
-//                 The address mapping is global in the crossbar and the same for each slave port.
-//                 The address decoder expects 3 fields in the struct:
-//                  - `idx`:        index of the master port, has to be < #MST ports of the xbar
-//                  - `start_addr`: start address of the range the rule describes, is included
-//                  - `end_addr`:   end address of the range the rule describes, is NOT included
-//                 There can be an arbitrary number of address rules. There can be multiple
-//                 ranges defined for the same master port. The start address has to be <=
-//                 the end address. Simulation will issue warnings if address ranges overlap.
-//                 If there are overlaps, the rule in the highest array position wins.
-//                 The crossbar will answer to a wrong address with a decode error. This can be
-//                 disabled by providing a corresponding default master port. Each slave port
-//                 can have its own unique default master port, which can be individually enabled.
-//                 Be sure to have no pending Ax request (`ax_valid = 1'b1`) when changing the
-//                 global address mapping. The same applies when changing a default master port for
-//                 the respective slave port.
-
+// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
+// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar #(
-  parameter axi_pkg::xbar_cfg_t Cfg = '0, // Fixed Cfg of the xbar
-  parameter type slv_aw_chan_t      = logic, // AW Channel Type slave  ports, needs ATOP field
-  parameter type mst_aw_chan_t      = logic, // AW Channel Type master ports, needs ATOP field
-  parameter type w_chan_t           = logic, //  W Channel Type both   ports
-  parameter type slv_b_chan_t       = logic, //  B Channel Type slave  ports
-  parameter type mst_b_chan_t       = logic, //  B Channel Type master ports
-  parameter type slv_ar_chan_t      = logic, // AR Channel Type slave  ports
-  parameter type mst_ar_chan_t      = logic, // AR Channel Type master ports
-  parameter type slv_r_chan_t       = logic, //  R Channel Type slave  ports
-  parameter type mst_r_chan_t       = logic, //  R Channel Type master ports
-  parameter type slv_req_t          = logic, // encapsulates separate channels request  slave  ports
-  parameter type slv_resp_t         = logic, // encapsulates separate channels response slave  ports
-  parameter type mst_req_t          = logic, // encapsulates separate channels request  master ports
-  parameter type mst_resp_t         = logic, // encapsulates separate channels response master ports
-  parameter type rule_t             = axi_pkg::xbar_rule_64_t // address decoding rule
+  parameter axi_pkg::xbar_cfg_t Cfg = '0,
+  parameter type slv_aw_chan_t      = logic,
+  parameter type mst_aw_chan_t      = logic,
+  parameter type w_chan_t           = logic,
+  parameter type slv_b_chan_t       = logic,
+  parameter type mst_b_chan_t       = logic,
+  parameter type slv_ar_chan_t      = logic,
+  parameter type mst_ar_chan_t      = logic,
+  parameter type slv_r_chan_t       = logic,
+  parameter type mst_r_chan_t       = logic,
+  parameter type slv_req_t          = logic,
+  parameter type slv_resp_t         = logic,
+  parameter type mst_req_t          = logic,
+  parameter type mst_resp_t         = logic,
+  parameter type rule_t             = axi_pkg::xbar_rule_64_t
 ) (
-  input  logic                                                       clk_i,  // Clock
-  // Asynchronous reset active low
+  input  logic                                                       clk_i,
   input  logic                                                       rst_ni,
-  input  logic                                                       test_i, // Test mode enable
-  // slave ports, connect the master modules here
+  input  logic                                                       test_i,
   input  slv_req_t  [Cfg.NoSlvPorts-1:0]                             slv_ports_req_i,
   output slv_resp_t [Cfg.NoSlvPorts-1:0]                             slv_ports_resp_o,
-  // master ports, connect the slave modules here
   output mst_req_t  [Cfg.NoMstPorts-1:0]                             mst_ports_req_o,
   input  mst_resp_t [Cfg.NoMstPorts-1:0]                             mst_ports_resp_i,
-  // address map
   input  rule_t     [Cfg.NoAddrRules-1:0]                            addr_map_i,
-  // default master port for each slave port, set to '0 to disable
   input  logic      [Cfg.NoSlvPorts-1:0]                             en_default_mst_port_i,
-  // the array of default master ports
   input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
 );
 
