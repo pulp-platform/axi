@@ -1,63 +1,112 @@
-# AXI Full Crossbar
+# AXI4+ATOP Fully-Connected Crossbar
 
-This module is called `axi_xbar`. It features a full crossbar design, meaning that each master module, which is connected to the bar's slave ports, has a direct wiring to the salves connected to the master ports of the design.
+`axi_xbar` is a fully-connected crossbar that implements the full AXI4 specification plus atomic operations (ATOPs) from AXI5.
+
+
+## Design Overview
+
+`axi_xbar` is a fully-connected crossbar, which means that each master module that is connected to a *slave port* for of the crossbar has direct wires to all slave modules that are connected to the *master ports* of the crossbar.
 A block-diagram of the crossbar is shown below:
 
 ![Block-diagram showing the design of the full AXI4 Crossbar.](figures/axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar.")
 
-The crossbar has a variable number of slave and master ports. To the slave ports master modules get connected. The opposite applies to the master ports.
+The crossbar has a configurable number of slave and master ports.
 
-One defining characteristic of the master ports is that the AXI ID width of them is wider than the one of the slave ports. This has to do with the used AXI multiplexers. The ID width of the master ports can be calculated with:
-
+The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports is:
 ```
-id_width_master_port = id_width_slave_port + log_2(no_slave_ports)
+AxiIdWidthMstPorts = AxiIdWidthSlvPorts + log_2(NoSlvPorts)
 ```
 
-The design has one global address mapping for all its master ports. The design of the address mapping allows for multiple physical address ranges to be mapped to the same master port. It is also possible to change the address mapping, as the map is defined as a signal. However this change should only be done, when no master connected to the crossbar has an open transaction currently in flight.
 
-Each master module connected to the crossbar has its own decode error slave module. When the address decoding encounters a decode error, the transaction gets absorbed in this module. The module absorbs each transaction made to it and answers always with a decode error response. The data of the read response is defined on each beat with the symbol `32h'BADCAB1E`. This response gets truncated or zero extended to match the configured data with of the module.
+## Address Map
 
-Each slave port has the possibility to get a default master port mapping. Meaning that unmatched addresses get set to the indicated master port, instead to the decode error slave module. The same restriction applies to the default master port mapping regarding the changing of the applied signal.
+One address map is shared by all master ports.  The *address map* contains an arbitrary number of rules (but at least one).  Each *rule* maps one address range to one master port.  Multiple rules can map to the same master port.  The address ranges of two rules may overlap: in case two address ranges overlap, the rule at the higher (more significant) position in the address map prevails.
 
-The crossbar features a configuration struct which fixes all parameters needed in the submodules instantiated in the design. One of these is called `LatencyMode`. This is a special enum defined in the package `axi_pkg` of the repository. It defines which spill register of the axi demuxes and muxes get instantiated. The recommended configuration is to have a latency of two on the AW and AR channels as they have the most and longest control logic in them. The reason being the ID counters. Additionally it is recommended to not set the fall-through parameter as then the longest path will be long. It is however possible to run the crossbar in a fully combinatorical fashion. Further, like with the other AXI modules, it is necessary to give the AXI channel structs as parameters. Due to the extension of the ID it is necessary to define the structs for each the slave and the master ports. The final parameter specifies the rule struct of the address mapping.
+Each address range includes the start address but does **not** include the end address.  That is, an address *matches* an address range if and only if
+```
+    addr >= start_addr && addr < end_addr
+```
+The start address must be less than or equal to the end address.
 
-Following table describes the parameters of the configuration struct in detail:
-
-| Name | Type | Function |
-|:------------------ |:----------------- |:---------------------------------- |
-| `NoSlvPorts` | `int unsigned` | The Number of slave ports created on the crossbar. This many master modules can be connected to it. |
-| `NoMstPorts` | `int unsigned` | The number of master ports created on the xbar. This many slave modules can be connected to it. |
-| `MaxMstTrans` | `int unsigned` | Each master module connected to the crossbar can issue this many read and write transactions in the worst case. |
-| `MaxSlvTrans` | `int unsigned` | Each master port of the crossbar (to the slave modules) supports at most this may transactions in flight by id. |
-| `FallThrough` | `bit` | The FIFO's which store the switching decision from the AW channel to the W channel are in FallThrough mode. |
-| `LatencyMode` | `enum logic [9:0]` | A 10 bit vector which encodes the generation of spill registers on different points in the crossbar. The `enum xbar_latency_t` found in `axi_pkg` has some common configurations. |
-| `AxiIdWidthSlvPorts` | `int unsigned` | The AXI ID width of the slave ports. |
-| `AxiIdUsedSlvPorts` | `int unsigned` |  The crossbar uses this many LSB's of the slave port AXI ID to determine the uniqueness of an AXI ID. This value has to be equal or smaller than the AXI ID width of the slave ports. |
-| `AxiIdWidthMstPorts` | `int unsigned` | The AXI ID width of the master ports. |
-| `AxiAddrWidth` | `int unsigned` | The AXI ADDRESS width of the slave ports. |
-| `AxiDataWidth` | `int unsigned` | The AXI DATA width of the slave ports. |
-| `NoAddrRules` | `int unsigned` | The crossbar has this many address rules. |
+The address map can be defined and changed at run time (it is an input signal to the crossbar).  However, the address map must not be changed while any AW or AR channel of any slave port is valid.
 
 
-The non trivial ports of the full crossbar can be described as follows:
-* `slv_ports_req_i`, `slv_ports_resp_o`: Are defining the slave ports of the crossbar. They are arrays of the requests and responses of all master modules on the design. The array index corresponds to the index of the slave port. This index will be prepended to all requests of a particular master module when it leaves the crossbar through one of the master ports.
-* `mst_ports_req_o`,`mst_ports_resp_i`: Are defining the master ports of the crossbar. Again they are defined as an array respectively. When a default master port is chosen, the request with the corresponding index will transmit the AXI request.
-* `addr_map_i`: The physical address map of the crossbar. It defines which AXI address ranges get mapped to which master port. The detailed description of the fields of this array of structs was described in [@sec:axi-address-decoding].
-`en_default_mst_port_i`: This vector has the width equal to the number of slave ports defined in the configuration struct of the crossbar. The vector index corresponding to the slave port. When set, the default master port for this particular slave port is enabled. When it is not needed to have a default master port mapping set this port to `'0`. In this case the crossbar will answer with decode errors, when a master issues a request to an unmapped address.
-`defaut_mst_port_i`: This array is a collection of indices specifying the default master port of the respective slave port when it is enabled. When the functionality is not needed set this input to `'0`.
+## Decode Errors and Default Slave Port
+
+Each slave port has its own internal *decode error slave* module.  If the address of a transaction does not match any rule, the transaction is routed to that decode error slave module.  That module absorbs each transaction and responds with a decode error (with the proper number of beats).  The data of each read response beat is `32'hBADCAB1E` (zero-extended or truncated to match the data width).
+
+Each slave port can have a default master port.  If the default master port is enabled for a slave port, any address on that slave port that does not match any rule is routed to the default master port instead of the decode error slave.  The default master port can be enabled and changed at run time (it is an input signal to the crossbar), and the same restrictions as for the address map apply.
 
 
-The crossbar was functionally tested with targeted random verification. The design can be instantiated with a variable number of random AXI master and slave modules to it. The test-bench has a monitor, which snoops on the AXI transactions of each master and slave port of the design. The monitor models the crossbar with a network of FIFO's. When the monitor sees a new transaction of one of the master modules, it models how many beats of the other channels it expects and to which slave module the transaction should be sent. All master modules are sending transactions at the same time, saturating the crossbar.
+## Configuration
 
-During implementation there was a version of the crossbar which also had the option for spill registers between the AXI demuxes and muxes. However the test-bench revealed that that version could lead to deadlocks in the W channel where two different muxes at the master ports would cyclic wait on two different demuxes. It turned out that in this configuration with the spill registers between the switching modules all four of the deadlock criteria where met. The criteria being:
+The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg_t` struct.  That struct has the following fields:
 
-> 1. Mutual Exclusion
-> 2. Hold and Wait
-> 3. No Preemption
-> 4. Circular Wait
+| Name                 | Type               | Definition |
+|:---------------------|:-------------------|:-----------|
+| `NoSlvPorts`         | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
+| `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
+| `MaxMstTrans`        | `int unsigned`     | Each slave port can have at most this many transactions in flight. |
+| `MaxSlvTrans`        | `int unsigned`     | Each master port can have at most this many transactions per ID in flight. |
+| `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from the AW channel. |
+| `LatencyMode`        | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
+| `AxiIdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
+| `AxiIdUsedSlvPorts`  | `int unsigned`     | The number of slave port ID bits (starting at the least significant) the crossbar uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidthSlvPorts`. |
+| `AxiIdWidthMstPorts` | `int unsigned`     | The AXI ID width of the master ports. |
+| `AxiAddrWidth`       | `int unsigned`     | The AXI address width. |
+| `AxiDataWidth`       | `int unsigned`     | The AXI data width. |
+| `NoAddrRules`        | `int unsigned`     | The number of address map rules. |
 
-The first criteria is given in the nature of a multiplexer for an AXI W channel. The property being that all W beats have to arrive in order of the AW vectors regardless of ID at the slave module. So the different master ports of the multiplexer exclude each other because the order is given by the arbitration tree of the AW channel.
+(A transaction is *in flight* from the perspective of the crossbar when the handshake of the `Ax` beat of a transaction has been completed on a slave port but the handshake of the (last) response of that transaction has not yet been completed on the slave port.)
 
-The second and third criteria are inherent to the AXI protocol. The valid signal has to be hold at high when it is set till the corresponding ready signal also goes to high indicating a transfer of a beat. And the protocol further states that when a transaction is initialized with an AW or AR beat then all of the corresponding W, B or R beats have to complete otherwise the protocol is violated.
+The other parameters are types to define the ports of the crossbar.  The `*_chan_t` and `*_req_t`/`*_resp_t` types must be bound in accordance to the configuration with the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.  The `rule_t` type must be bound to an address decoding rule with the same address width as in the configuration, and `axi_pkg` contains definitions for 64- and 32-bit addresses.
 
-This leaves only the fourth property to break so that a deadlock is not possible. Having the spill registers between a master port of the demultiplexer and a slave port of the multiplexer can lead to circular dependency states inside the W FIFO's. This comes from the particular way the round robin arbiter from the AW channel in the multiplexer defines its priorities. It is constructed in a way by giving each of its slave ports an increasing priority and then comparing pairwise down till a winner is chosen. When the winner gets transferred the priority state is advanced by one position, preventing starvation. The problem can be shown with an example. Have an arbitration tree with 10 inputs. Two requests want to be served in the same clock cycle. The one with the higher priority wins and the priority state advances. In the next cycle again the same two inputs have a request waiting. Again it is possible that the same port as last time wins as the priority shifted only one position further. This can lead in conjunction with the other arbitration trees in the other muxes of the crossbar to the cyclic dependencies inside the FIFO's. Now removing the spill register between the demux and mux, it forces the switching decision into the W FIFO's in the same clock cycle. This leads to a strict ordering of the switching decision,  preventing the creation of circular waiting.
+### Pipelining and Latency
+
+The `LatencyMode` parameter allows to insert spill registers after each channel (AW, W, B, AR, and R) of each master port (i.e., each multiplexer) and before each channel of each slave port (i.e., each demultiplexer).  Spill registers cut combinatorial paths, so this parameter reduces the length of combinatorial paths through the crossbar.
+
+Some common configurations are given in the `xbar_latency_e` `enum`.  The recommended configuration (`CUT_ALL_AX`) is to have a latency of 2 on the AW and AR channels because these channels have the most combinatorial logic on them.  Additionally, `FallThrough` should be set to `0` to prevent logic on the AW channel from extending combinatorial paths on the W channel.  However, it is possible to run the crossbar in a fully combinatorial configuration by setting `LatencyMode` to `NO_LATENCY` and `FallThrough` to `1`.
+
+
+## Ports
+
+| Name                    | Description |
+|:------------------------|:------------|
+| `clk_i`                 | Clock to which all other signals (except `rst_ni`) are synchronous. |
+| `rst_ni`                | Reset, asynchronous, active-low. |
+| `test_i`                | Test mode enable (active-high). |
+| `slv_ports_*`           | Array of slave ports of the crossbar.  The array index of each port is the index of the slave port.  This index will be prepended to all requests at one of the master ports. |
+| `mst_ports_*`           | Array of master ports of the crossbar.  The array index of each port is the index of the master port. |
+| `addr_map_i`            | Address map of the crossbar (see section *Address Map* above). |
+| `en_default_mst_port_i` | One bit per slave port that defines whether the default master port is active for that slave port (see section *Decode Errors and Default Slave Port* above). |
+| `default_mst_port_i`    | One master port index per slave port that defines the default master port for that slave port (if active). |
+
+
+## Ordering and Stalls
+
+When one slave port receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the crossbar stalls the AR or AW channel of that slave port.  To determine whether two transactions have the same ID, the `AxiIdUsedSlvPorts` least-significant bits are compared.  That parameter can be set to the full `AxiIdWidthSlvPorts` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
+
+The reason for this ordering constraint is that AXI transactions with the same ID and direction must remain ordered.  If this crossbar would forward both transactions described above, the second master port could get a response before the first one, and the crossbar would have to reorder the responses before returning them on the master port.  However, for efficiency reasons, this crossbar does not have reorder buffers.
+
+
+## Verification Methodology
+
+This module has been verified with a directed random verification testbench, described and implemented in `test/tb_axi_xbar.sv`.
+
+
+## Design Rationale for No Pipelining Inside Crossbar
+
+Inserting spill registers between demuxers and muxers seems attractive to further reduce the length of combinatorial paths in the crossbar.  However, this can lead to deadlocks in the W channel where two different muxes at the master ports would circular wait on two different demuxes (TODO).  In fact, spill registers between the switching modules causes all four deadlock criteria to be met.  Recall that the criteria are:
+
+1. Mutual Exclusion
+2. Hold and Wait
+3. No Preemption
+4. Circular Wait
+
+The first criterion is given by the nature of a multiplexer on the W channel: all W beats have to arrive in the same order as the AW beats regardless of the ID at the slave module.  Thus, the different master ports of the multiplexer exclude each other because the order is given by the arbitration tree of the AW channel.
+
+The second and third criterion are inherent to the AXI protocol:  For (2), the valid signal has to be held high until the ready signal goes high.  For (3), AXI does not allow interleaving of W beats and requires W bursts to be in the same order as AW beats.
+
+The fourth criterion is thus the only one that can be broken to prevent deadlocks.  However, inserting a spill register between a master port of the demultiplexer and a slave port of the multiplexer can lead to a circular dependency inside the W FIFOs.  This comes from the particular way the round robin arbiter from the AW channel in the multiplexer defines its priorities.  It is constructed in a way by giving each of its slave ports an increasing priority and then comparing pairwise down till a winner is chosen.  When the winner gets transferred, the priority state is advanced by one position, preventing starvation.
+
+The problem can be shown with an example.  Assume an arbitration tree with 10 inputs.  Two requests want to be served in the same clock cycle.  The one with the higher priority wins and the priority state advances.  In the next cycle again the same two inputs have a request waiting.  Again it is possible that the same port as last time wins as the priority shifted only one position further.  This can lead in conjunction with the other arbitration trees in the other muxes of the crossbar to the circular dependencies inside the FIFOs.  Removing the spill register between the demultiplexer and multiplexer forces the switching decision into the W FIFOs in the same clock cycle.  This leads to a strict ordering of the switching decision, thus preventing the circular wait.
