@@ -10,10 +10,12 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// Testbench for axi_xbar.sv
-// The crossbar gets instantiated with a number of random axi master and slave modules.
-// Each random master executes a fixed number of writes and reads onto the whole addess map.
-// A monitor checks the bus, if the transactions follow the expected switching path.
+// Directed Random Verification Testbench for `axi_xbar`:  The crossbar is instantiated with
+// a number of random axi master and slave modules.  Each random master executes a fixed number of
+// writes and reads over the whole addess map.  All masters simultaneously issue transactions
+// through the crossbar, thereby saturating it.  A monitor, which snoops the transactions of each
+// master and slave port and models the crossbar with a network of FIFOs, checks whether each
+// transaction follows the expected route.
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
