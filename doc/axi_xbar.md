@@ -46,8 +46,8 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 |:---------------------|:-------------------|:-----------|
 | `NoSlvPorts`         | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
 | `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
-| `MaxMstTrans`        | `int unsigned`     | Each slave port can have at most this many transactions [in flight](doc#in-flight). |
-| `MaxSlvTrans`        | `int unsigned`     | Each master port can have at most this many transactions per ID [in flight](doc#in-flight). |
+| `MaxMstTrans`        | `int unsigned`     | Each slave port can have at most this many transactions [in flight](../doc#in-flight). |
+| `MaxSlvTrans`        | `int unsigned`     | Each master port can have at most this many transactions per ID [in flight](../doc#in-flight). |
 | `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from the AW channel. |
 | `LatencyMode`        | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
 | `AxiIdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
