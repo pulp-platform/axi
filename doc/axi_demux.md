@@ -1,34 +1,76 @@
 # AXI Demultiplexer
 
-The functionality of the AXI Demultiplexer is to split one AXI connection into multiple ones. It hereby has to adhere to the AXI ordering scheme.
-
-![Block-diagram of the AXI DEMULTIPLEXER.](axi_demux.png "Block-diagram of the AXI DEMULTIPLEXER.")
-
-The main problem is to comply to the AXI4 ordering scheme, which arises by connecting one master module to multiple slave modules. As different slave modules could answer with different latencies, simple arbitration of the responses will not be enough. The demultiplexer has to have the capability to be aware to which slave a request was forwarded.
-
-This implementation uses for this a number of counters to provide this functionality. Each counter has a unique mapping determined by the lower bits of the `axi_id` of the request. Further for each counter there exists a register which holds the selection signal of the request. This selection signal determines, which master port of the demultiplexer the request should be forwarded. When a transaction arrives at the demultiplexer it checks in the counters, if the `axi_id` is present and if yes, to which master port previous requests where forwarded. If the lookup is positive, meaning other requests with the same `axi_id` are in flight, the multiplexer will forward the request only if the selected master port of the previous transactions is the same. Otherwise the transaction gets stalled till the previous transactions are terminated. This prevents accidental reordering, as for each `axi_id` only one master port at a time can have active transaction with the ID in flight.
-
-The selection determined by a AW request will be put into a FIFO which serves the W channel. As all AW requests have to be delivered in order the selection from the FIFO simply connects the handshakes to the right master port. When  the last flagged W beat is transmitted the selection gets poped from the FIFO.
-
-All responses of the slave modules connected to the master port get merged with a round robin scheme provided by the `rr_arb_tree` module. This module is part of the *common_cells* repository of the *pulp-platform*. It is possible to use the simple round robin scheme, because the ID counters in it self provide that one particular `axi_id` could only be forwarded one of the master ports. The demultiplexer thus has the capability to interleave AXI responses with different id's.
-
-When the last response of a AXI transaction gets sent over the slave port of the demultiplexer, the ID counter corresponding to the `axi_id` gets decreased.
+`axi_demux` splits one AXI connection into multiple ones.  It implements the full AXI4 specification plus atomic operations (ATOPs) from AXI5.
 
 
-The demultiplexer is also able to handle atomic AXI transactions. The issue with this type of transaction is that one AW request can lead to a response on the B *and* the R channel. This introduces a dependency between the channels which was previously not defined in the AXI protocol. To be able to also handle atomic transactions an injection into the ID counter of the read channels is introduced. Every time the demultiplexer forwards a atomic transaction having also a read response, the corresponding counter of both ID counters get increased. This injection into the counters of the read channels is necessary so that it does not go into an underflow state, as the responses from an atomic instruction are indistinguishable form a normal transaction. This injection can lead to increased latency in the read channels. The reason being that an injected atomic could stall an AR request when the `axi_id` maps to the same counter. However this should under normal circumstances only have a small impact as atomic transactions are limited to a small burst length, meaning the injected ID in the read channels gets cleared in a timely fashion.
+## Design Overview
 
-The following table shows the parameters of the module. The module also needs the five structs describing the different AXI channels.
+The demultiplexer has one *slave port* and a configurable number of *master ports*.  A block diagram is shown below:
 
-| Name          | Type | Function |
-|:------------------ |:----------------- |:---------------------------------- |
-| `AxiIdWidth`  | `int unsigned` | The width of the AXI transaction ID in bits. |
-| `NoMstPorts`  | `int unsigned` | How many master ports the demultiplexer features. This many slave modules can be connected to the demultiplexer.|
-| `MaxTrans` | `int unsigned` | The depth of the FIFO holding the selection signal between the AW and W channel. |
-| `IdCounterWidth` | `int unsigned` | The bit-width of the `axi_id` counters. A good value is `$clog2(MaxTrans)` as then all bits can be used in the AW channel. |
-| `AxiLookBits` | `int unsigned` | How many of the lower bits of the `axi_id` will be used for determining the mapping to the ID counters. |
-| `FallThrough` | `bit` | Is the FIFO between the AW and W channel in fall-through mode. Enabling will lead to longer cycle delays. |
-| `SpillXX` | `bit` | Enables the optional spill-register on the respective channel. |
+![Block diagram of the AXI demultiplexer](axi_demux.png "Block diagram of the AXI demultiplexer")
+
+The AW and AR channels each have a *select* input, to determine the master port to which they are sent.  The select can, for example, be driven by an (external) address decoder to map address ranges to different AXI slaves.
+
+Beats on the W channel are routed by demultiplexer according to the selection for the corresponding AW beat.  This relies on the AXI property that W bursts must be sent in the same order as AW beats and beats from different W bursts may not be interleaved.
+
+Beats on the B and R channel are multiplexed from the master ports to the slave port with a round-robin arbitration tree.
 
 
-The ports of the demultiplexer module are defined by the AXI4 channel structs. It features one slave port with and additional select input for the AW and AR channel respectively. The selection signal simply is the bit representation to which master port the transaction should be forwarded. The selection signal has to be stable as long as its respective `ax_valid` signal is high.
-The master ports are split onto the five AXI channels. Each channel port is defined as an array. The selection signal from the slave port determines to which channel index of the array the request will be forwarded.
+## Configuration
+
+This demultiplexer is configured through the parameters listed in the following table:
+
+| Name                 | Type               | Definition |
+|:---------------------|:-------------------|:-----------|
+| `AxiIdWidth`         | `int unsigned`     | The AXI ID width (of all ports). |
+| `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the demultiplexer (in other words, how many AXI slave modules can be attached). |
+| `MaxTrans`           | `int unsigned`     | The slave port can have at most this many transactions [in flight](../doc#in-flight). |
+| `AxiLookBits`        | `int unsigned`     | The number of ID bits (starting at the least significant) the demultiplexer uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidth`. |
+| `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the demultiplexer to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from `slv_aw_select_i`. |
+| `SpillXX`            | `bit`              | Inserts one spill register on the respective channel (AW, W, B, AR, and R) before the demultiplexer. |
+
+The other parameters are types to define the ports of the demultiplexer.  The `_*chan_t` types must be bound in accordance to the configuration using the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.
+
+### Pipelining and Latency
+
+The `SpillXX` parameters allow to insert spill register before each channel of the demultiplexer.  Spill registers cut all combinatorial paths of a channel (i.e., both payload and handshake).  Thus, they add one cycle of latency per channel but do not impair throughput.
+
+If all `SpillXX` and `FallThrough` are disabled, all paths through this multiplexer are combinatorial (i.e., have zero sequential latency).
+
+
+## Ports
+
+| Name                              | Description |
+|:----------------------------------|:------------|
+| `clk_i`                           | Clock to which all other signals (except `rst_ni`) are synchronous. |
+| `rst_ni`                          | Reset, asynchronous, active-low. |
+| `test_i`                          | Test mode enable (active-high). |
+| `slv_*` (except `slv_*_select_i`) | Single slave port of the demultiplexer. |
+| `slv_{aw,ar}_select_i`            | Index of the master port to which a write or read, respectively, is demultiplexed.  This signal must be stable while a handshake on the AW respectively AR channel is [pending](../doc#pending). |
+| `mst_*`                           | Array of master ports of the demultiplexer.  The array index of each port is the index of the master port. |
+
+
+## Ordering and Stalls
+
+When the demultiplexer receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the demultiplexer stalls the AR or AW channel, respectively.  To determine whether two transactions have the same ID, the `AxiLookBits` least-significant bits are compared.  That parameter can be set to the full `AxiIdWidth` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
+
+The reason for this behavior are AXI ordering constraints, see the [documentation of the crossbar](axi_xbar.md#ordering-and-stalls) for details.
+
+### Implementation
+
+`2 * 2^AxiLookBits` counters track the number of [in-flight](../doc#in-flight) transactions.  That is, for each ID in the (potentially) reduced set of IDs of `AxiLookBits` bits, there is one counter for write transactions and one for read transactions.  Each counter can count up to (and including) `MaxTrans`, and there is a register that holds the index of the master port to which a counter is assigned.
+
+When the demultiplexer gets an AW or an AR, it indexes the counters with the AXI ID.  If the indexed counter has a value greater than zero and its master port index register is not equal to the index to which the AW or AR is to be sent, a transaction with the same direction and ID is already in flight to another master port.  The demultiplexer then stalls the AW or AR.  In all other cases, the demultiplexer forwards the AW or AR, increments the value of the indexed counter, and sets the master port index of the counter.  A counter is decremented upon a handshake a B respectively last R beat at a slave port.
+
+W beats are routed to the master port defined by the value of `slv_aw_select_i` for the corresponding AW.  As the order of the W bursts is given by the order of the AWs, the select signals are stored in a FIFO queue.  This FIFO is pushed upon a handshake on the AW slave channel and popped upon a handshake of the last W beat of a burst on a W master channel.
+
+
+## Atomic Transactions
+
+The demultiplexer also supports AXI atomic transactions (initiated by an AW with `atop` field not equal to zero).  A part of AXI atomic transactions, namely atomic loads, require a response on the B *and* the R channel.
+
+### Implementation
+
+Atomic loads introduce a dependency between the read and write channels that otherwise does not exist in AXI.  In this demultiplexer, the ID counters of the read channel must be aware of R beats without a corresponding AR.  Otherwise, they would underflow upon atomic loads.  To prevent this, the AW channel of the demultiplexer can "inject" the ID of an atomic load to the ID counter of the AR channel.  This is possible because atomic transactions must have an ID that is unique with respect to *all* other transactions (i.e., reads *and* writes) currently in flight.
+
+As only a part of the AXI ID is compared to determine whether two transactions have the same ID (see section *Ordering and Stalls*), atomic loads can lead to additional false conflict stalls on the read channel.  However, atomic transactions are short bursts and thus usually complete relatively fast, so this should not reduce throughput under non-degenerate conditions.
