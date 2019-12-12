@@ -9,7 +9,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-// Macros to assign AXI Interfaces
+// Macros to assign AXI Interfaces and Structs
 
 `ifndef AXI_ASSIGN_SVH_
 `define AXI_ASSIGN_SVH_
@@ -83,6 +83,246 @@
   `AXI_ASSIGN_B(mst, slv)     \
   `AXI_ASSIGN_AR(slv, mst)    \
   `AXI_ASSIGN_R(mst, slv)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal implementation for assigning interfaces from structs, allows for standalone assignments
+// (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with the same
+// code.
+`define AXI_FROM_AW(opt_as, axi_if, aw_struct)  \
+  opt_as axi_if.aw_id     = aw_struct.id;       \
+  opt_as axi_if.aw_addr   = aw_struct.addr;     \
+  opt_as axi_if.aw_len    = aw_struct.len;      \
+  opt_as axi_if.aw_size   = aw_struct.size;     \
+  opt_as axi_if.aw_burst  = aw_struct.burst;    \
+  opt_as axi_if.aw_lock   = aw_struct.lock;     \
+  opt_as axi_if.aw_cache  = aw_struct.cache;    \
+  opt_as axi_if.aw_prot   = aw_struct.prot;     \
+  opt_as axi_if.aw_qos    = aw_struct.qos;      \
+  opt_as axi_if.aw_region = aw_struct.region;   \
+  opt_as axi_if.aw_atop   = aw_struct.atop;     \
+  opt_as axi_if.aw_user   = aw_struct.user;
+`define AXI_FROM_W(opt_as, axi_if, w_struct)  \
+  opt_as axi_if.w_data  = w_struct.data;      \
+  opt_as axi_if.w_strb  = w_struct.strb;      \
+  opt_as axi_if.w_last  = w_struct.last;      \
+  opt_as axi_if.w_user  = w_struct.user;
+`define AXI_FROM_B(opt_as, axi_if, b_struct)  \
+  opt_as axi_if.b_id    = b_struct.id;        \
+  opt_as axi_if.b_resp  = b_struct.resp;      \
+  opt_as axi_if.b_user  = b_struct.user;
+`define AXI_FROM_AR(opt_as, axi_if, ar_struct)  \
+  opt_as axi_if.ar_id     = ar_struct.id;       \
+  opt_as axi_if.ar_addr   = ar_struct.addr;     \
+  opt_as axi_if.ar_len    = ar_struct.len;      \
+  opt_as axi_if.ar_size   = ar_struct.size;     \
+  opt_as axi_if.ar_burst  = ar_struct.burst;    \
+  opt_as axi_if.ar_lock   = ar_struct.lock;     \
+  opt_as axi_if.ar_cache  = ar_struct.cache;    \
+  opt_as axi_if.ar_prot   = ar_struct.prot;     \
+  opt_as axi_if.ar_qos    = ar_struct.qos;      \
+  opt_as axi_if.ar_region = ar_struct.region;   \
+  opt_as axi_if.ar_user   = ar_struct.user;
+`define AXI_FROM_R(opt_as, axi_if, r_struct)  \
+  opt_as axi_if.r_id    = r_struct.id;        \
+  opt_as axi_if.r_data  = r_struct.data;      \
+  opt_as axi_if.r_resp  = r_struct.resp;      \
+  opt_as axi_if.r_last  = r_struct.last;      \
+  opt_as axi_if.r_user  = r_struct.user;
+`define AXI_FROM_REQ(opt_as, axi_if, req_struct)  \
+  `AXI_FROM_AW(opt_as, axi_if, req_struct.aw);    \
+  opt_as axi_if.aw_valid = req_struct.aw_valid;   \
+  `AXI_FROM_W(opt_as, axi_if, req_struct.w);      \
+  opt_as axi_if.w_valid = req_struct.w_valid;     \
+  opt_as axi_if.b_ready = req_struct.b_ready;     \
+  `AXI_FROM_AR(opt_as, axi_if, req_struct.ar);    \
+  opt_as axi_if.ar_valid = req_struct.ar_valid;   \
+  opt_as axi_if.r_ready = req_struct.r_ready;
+`define AXI_FROM_RESP(opt_as, axi_if, resp_struct)  \
+  opt_as axi_if.aw_ready = resp_struct.aw_ready;    \
+  opt_as axi_if.ar_ready = resp_struct.ar_ready;    \
+  opt_as axi_if.w_ready = resp_struct.w_ready;      \
+  opt_as axi_if.b_valid = resp_struct.b_valid;      \
+  `AXI_FROM_B(opt_as, axi_if, resp_struct.b);       \
+  opt_as axi_if.r_valid = resp_struct.r_valid;      \
+  `AXI_FROM_R(opt_as, axi_if, resp_struct.r);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting an interface from channel or request/response structs inside a process.
+//
+// The channel macros `AXI_SET_FROM_XX(axi_if, xx_struct)` set the payload signals of the `axi_if`
+// interface from the signals in `xx_struct`.  They do not set the handshake signals.
+// The request macro `AXI_SET_FROM_REQ(axi_if, req_struct)` sets all request channels (AW, W, AR)
+// and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the `axi_if`
+// interface from the signals in `req_struct`.
+// The response macro `AXI_SET_FROM_RESP(axi_if, resp_struct)` sets both response channels (B and R)
+// and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the `axi_if`
+// interface from the signals in `resp_struct`.
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_SET_FROM_REQ(my_if, my_req_struct);
+// end
+`define AXI_SET_FROM_AW(axi_if, aw_struct)      `AXI_FROM_AW(, axi_if, aw_struct)
+`define AXI_SET_FROM_W(axi_if, w_struct)        `AXI_FROM_W(, axi_if, w_struct)
+`define AXI_SET_FROM_B(axi_if, b_struct)        `AXI_FROM_B(, axi_if, b_struct)
+`define AXI_SET_FROM_AR(axi_if, ar_struct)      `AXI_FROM_AR(, axi_if, ar_struct)
+`define AXI_SET_FROM_R(axi_if, r_struct)        `AXI_FROM_R(, axi_if, r_struct)
+`define AXI_SET_FROM_REQ(axi_if, req_struct)    `AXI_FROM_REQ(, axi_if, req_struct)
+`define AXI_SET_FROM_RESP(axi_if, resp_struct)  `AXI_FROM_RESP(, axi_if, resp_struct)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning an interface from channel or request/response structs outside a process.
+//
+// The channel macros `AXI_ASSIGN_FROM_XX(axi_if, xx_struct)` assign the payload signals of the
+// `axi_if` interface from the signals in `xx_struct`.  They do not assign the handshake signals.
+// The request macro `AXI_ASSIGN_FROM_REQ(axi_if, req_struct)` assigns all request channels (AW, W,
+// AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
+// `axi_if` interface from the signals in `req_struct`.
+// The response macro `AXI_ASSIGN_FROM_RESP(axi_if, resp_struct)` assigns both response channels (B
+// and R) and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the
+// `axi_if` interface from the signals in `resp_struct`.
+//
+// Usage Example:
+// `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct);
+`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `AXI_FROM_AW(assign, axi_if, aw_struct)
+`define AXI_ASSIGN_FROM_W(axi_if, w_struct)       `AXI_FROM_W(assign, axi_if, w_struct)
+`define AXI_ASSIGN_FROM_B(axi_if, b_struct)       `AXI_FROM_B(assign, axi_if, b_struct)
+`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct)     `AXI_FROM_AR(assign, axi_if, ar_struct)
+`define AXI_ASSIGN_FROM_R(axi_if, r_struct)       `AXI_FROM_R(assign, axi_if, r_struct)
+`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct)   `AXI_FROM_REQ(assign, axi_if, req_struct)
+`define AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) `AXI_FROM_RESP(assign, axi_if, resp_struct)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal implementation for assigning to structs from interfaces, allows for standalone
+// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
+// the same code.
+`define AXI_TO_AW(opt_as, aw_struct, axi_if)  \
+  opt_as aw_struct = '{                       \
+    id:      axi_if.aw_id,                    \
+    addr:    axi_if.aw_addr,                  \
+    len:     axi_if.aw_len,                   \
+    size:    axi_if.aw_size,                  \
+    burst:   axi_if.aw_burst,                 \
+    lock:    axi_if.aw_lock,                  \
+    cache:   axi_if.aw_cache,                 \
+    prot:    axi_if.aw_prot,                  \
+    qos:     axi_if.aw_qos,                   \
+    region:  axi_if.aw_region,                \
+    atop:    axi_if.aw_atop,                  \
+    user:    axi_if.aw_user                   \
+  };
+`define AXI_TO_W(opt_as, w_struct, axi_if)  \
+  opt_as w_struct = '{                      \
+    data: axi_if.w_data,                    \
+    strb: axi_if.w_strb,                    \
+    last: axi_if.w_last,                    \
+    user: axi_if.w_user                     \
+  };
+`define AXI_TO_B(opt_as, b_struct, axi_if)  \
+  opt_as b_struct = '{                      \
+    id:   axi_if.b_id,                      \
+    resp: axi_if.b_resp,                    \
+    user: axi_if.b_user                     \
+  };
+`define AXI_TO_AR(opt_as, ar_struct, axi_if)  \
+  opt_as ar_struct = '{                       \
+    id:      axi_if.ar_id,                    \
+    addr:    axi_if.ar_addr,                  \
+    len:     axi_if.ar_len,                   \
+    size:    axi_if.ar_size,                  \
+    burst:   axi_if.ar_burst,                 \
+    lock:    axi_if.ar_lock,                  \
+    cache:   axi_if.ar_cache,                 \
+    prot:    axi_if.ar_prot,                  \
+    qos:     axi_if.ar_qos,                   \
+    region:  axi_if.ar_region,                \
+    user:    axi_if.ar_user                   \
+  };
+`define AXI_TO_R(opt_as, r_struct, axi_if)  \
+  opt_as r_struct = '{                      \
+    id:   axi_if.r_id,                      \
+    data: axi_if.r_data,                    \
+    resp: axi_if.r_resp,                    \
+    last: axi_if.r_last,                    \
+    user: axi_if.r_user                     \
+  };
+`define AXI_TO_REQ(opt_as, req_struct, axi_if)  \
+  `AXI_TO_AW(opt_as, req_struct.aw, axi_if);    \
+  opt_as req_struct.aw_valid = axi_if.aw_valid; \
+  `AXI_TO_W(opt_as, req_struct.w, axi_if);      \
+  opt_as req_struct.w_valid = axi_if.w_valid;   \
+  opt_as req_struct.b_ready = axi_if.b_ready;   \
+  `AXI_TO_AR(opt_as, req_struct.ar, axi_if);    \
+  opt_as req_struct.ar_valid = axi_if.ar_valid; \
+  opt_as req_struct.r_ready = axi_if.r_ready;
+`define AXI_TO_RESP(opt_as, resp_struct, axi_if)  \
+  opt_as resp_struct.aw_ready = axi_if.aw_ready;  \
+  opt_as resp_struct.ar_ready = axi_if.ar_ready;  \
+  opt_as resp_struct.w_ready = axi_if.w_ready;    \
+  opt_as resp_struct.b_valid = axi_if.b_valid;    \
+  `AXI_TO_B(opt_as, resp_struct.b, axi_if);       \
+  opt_as resp_struct.r_valid = axi_if.r_valid;    \
+  `AXI_TO_R(opt_as, resp_struct.r, axi_if);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting channel or request/response structs from an interface inside a process.
+//
+// The channel macros `AXI_SET_TO_XX(xx_struct, axi_if)` set the signals of `xx_struct` to the
+// payload signals of that channel in the `axi_if` interface.  They do not set the handshake
+// signals.
+// The request macro `AXI_SET_TO_REQ(axi_if, req_struct)` sets all signals of `req_struct` (i.e.,
+// request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR valid and
+// B and R ready)) to the signals in the `axi_if` interface.
+// The response macro `AXI_SET_TO_RESP(axi_if, resp_struct)` sets all signals of `resp_struct`
+// (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
+// AW, W, and AR ready)) to the signals in the `axi_if` interface.
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_SET_TO_REQ(my_req_struct, my_if);
+// end
+`define AXI_SET_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(, aw_struct, axi_if)
+`define AXI_SET_TO_W(w_struct, axi_if)       `AXI_TO_W(, w_struct, axi_if)
+`define AXI_SET_TO_B(b_struct, axi_if)       `AXI_TO_B(, b_struct, axi_if)
+`define AXI_SET_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(, ar_struct, axi_if)
+`define AXI_SET_TO_R(r_struct, axi_if)       `AXI_TO_R(, r_struct, axi_if)
+`define AXI_SET_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(, req_struct, axi_if)
+`define AXI_SET_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(, resp_struct, axi_if)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from an interface outside a process.
+//
+// The channel macros `AXI_ASSIGN_TO_XX(xx_struct, axi_if)` assign the signals of `xx_struct` to the
+// payload signals of that channel in the `axi_if` interface.  They do not assign the handshake
+// signals.
+// The request macro `AXI_ASSIGN_TO_REQ(axi_if, req_struct)` assigns all signals of `req_struct`
+// (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR
+// valid and B and R ready)) to the signals in the `axi_if` interface.
+// The response macro `AXI_ASSIGN_TO_RESP(axi_if, resp_struct)` assigns all signals of `resp_struct`
+// (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
+// AW, W, and AR ready)) to the signals in the `axi_if` interface.
+//
+// Usage Example:
+// `AXI_ASSIGN_TO_REQ(my_req_struct, my_if);
+`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(assign, aw_struct, axi_if)
+`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `AXI_TO_W(assign, w_struct, axi_if)
+`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `AXI_TO_B(assign, b_struct, axi_if)
+`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(assign, ar_struct, axi_if)
+`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `AXI_TO_R(assign, r_struct, axi_if)
+`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(assign, req_struct, axi_if)
+`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(assign, resp_struct, axi_if)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
