@@ -85,28 +85,49 @@
   `AXI_ASSIGN_R(mst, slv)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Assign an AXI4-Lite master interface to a slave interface, as in `assign slv = mst;`.
-`define AXI_LITE_ASSIGN(slv, mst)     \
-  assign slv.aw_addr  = mst.aw_addr;  \
-  assign slv.aw_valid = mst.aw_valid; \
-  assign mst.aw_ready = slv.aw_ready; \
-                                      \
-  assign slv.w_data   = mst.w_data;   \
-  assign slv.w_strb   = mst.w_strb;   \
-  assign slv.w_valid  = mst.w_valid;  \
-  assign mst.w_ready  = slv.w_ready;  \
-                                      \
-  assign mst.b_resp   = slv.b_resp;   \
-  assign mst.b_valid  = slv.b_valid;  \
-  assign slv.b_ready  = mst.b_ready;  \
-                                      \
-  assign slv.ar_addr  = mst.ar_addr;  \
-  assign slv.ar_valid = mst.ar_valid; \
-  assign mst.ar_ready = slv.ar_ready; \
-                                      \
-  assign mst.r_data   = slv.r_data;   \
-  assign mst.r_resp   = slv.r_resp;   \
-  assign mst.r_valid  = slv.r_valid;  \
-  assign slv.r_ready  = mst.r_ready;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning one AXI-Lite interface to another, as if you would do `assign slv = mst;`
+//
+// The channel assignments `AXI_LITE_ASSIGN_XX(dst, src)` assign all payload and the valid signal of
+// the `XX` channel from the `src` to the `dst` interface and they assign the ready signal from the
+// `src` to the `dst` interface.
+// The interface assignment `AXI_LITE_ASSIGN(dst, src)` assigns all channels including handshakes as
+// if `src` was the master of `dst`.
+//
+// Usage Example:
+// `AXI_LITE_ASSIGN(slv, mst);
+// `AXI_LITE_ASSIGN_AW(dst, src);
+// `AXI_LITE_ASSIGN_R(dst, src);
+`define AXI_LITE_ASSIGN_AW(dst, src)  \
+  assign dst.aw_addr  = src.aw_addr;  \
+  assign dst.aw_valid = src.aw_valid; \
+  assign src.aw_ready = dst.aw_ready;
+`define AXI_LITE_ASSIGN_W(dst, src)   \
+  assign dst.w_data   = src.w_data;   \
+  assign dst.w_strb   = src.w_strb;   \
+  assign dst.w_valid  = src.w_valid;  \
+  assign src.w_ready  = dst.w_ready;
+`define AXI_LITE_ASSIGN_B(dst, src)   \
+  assign dst.b_resp   = src.b_resp;   \
+  assign dst.b_valid  = src.b_valid;  \
+  assign src.b_ready  = dst.b_ready;
+`define AXI_LITE_ASSIGN_AR(dst, src)  \
+  assign dst.ar_addr  = src.ar_addr;  \
+  assign dst.ar_valid = src.ar_valid; \
+  assign src.ar_ready = dst.ar_ready;
+`define AXI_LITE_ASSIGN_R(dst, src)   \
+  assign dst.r_data   = src.r_data;   \
+  assign dst.r_resp   = src.r_resp;   \
+  assign dst.r_valid  = src.r_valid;  \
+  assign src.r_ready  = dst.r_ready;
+`define AXI_LITE_ASSIGN(slv, mst) \
+  `AXI_LITE_ASSIGN_AW(slv, mst)   \
+  `AXI_LITE_ASSIGN_W(slv, mst)    \
+  `AXI_LITE_ASSIGN_B(mst, slv)    \
+  `AXI_LITE_ASSIGN_AR(slv, mst)   \
+  `AXI_LITE_ASSIGN_R(mst, slv)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 `endif
