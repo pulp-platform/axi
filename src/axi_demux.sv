@@ -10,53 +10,36 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// AXI Demultiplexer: This module splits an AXI bus from one slave port to multiple master ports.
-// - The AW and AR channels each have a `_select_i` to determine the master port to which
-//   they are sent. The selection signal has to be constant during ax_valid.
-// - Multiple transactions can be in flight to different mast ports if
-//   they have different IDs. The module will stall the Ax if it goes to a different
-//   master port where other transactions with the same ID are still in flight.
-//   This module will reorder read responses from different master ports, when the AXI id's are
-//   different!
-// - In accordance with the AXI spec, this module can reorder and interleave read responses from
-//   different master ports when the IDs of the responses differ.
-
-// register macros
 `include "common_cells/registers.svh"
 
+// axi_demux: Demultiplex an AXI bus from one slave port to multiple master ports.
+// See `doc/axi_demux.md` for the documentation, including the definition of parameters and ports.
 module axi_demux #(
-  parameter int unsigned AxiIdWidth     = 1,     // ID Width
-  parameter type         aw_chan_t      = logic, // AW Channel Type
-  parameter type         w_chan_t       = logic, //  W Channel Type
-  parameter type         b_chan_t       = logic, //  B Channel Type
-  parameter type         ar_chan_t      = logic, // AR Channel Type
-  parameter type         r_chan_t       = logic, //  R Channel Type
-  // Number of Master ports that can be connected
+  parameter int unsigned AxiIdWidth     = 1,
+  parameter type         aw_chan_t      = logic,
+  parameter type         w_chan_t       = logic,
+  parameter type         b_chan_t       = logic,
+  parameter type         ar_chan_t      = logic,
+  parameter type         r_chan_t       = logic,
   parameter int unsigned NoMstPorts     = 3,
-  // Maximum number of outstanding transactions, determines the depth of the W FIFO
   parameter int unsigned MaxTrans       = 8,
-  // the lower bits of the axi id, that get used for stalling on 'same' id to a different mst port
-  // the number of couters that get instatntiated is 2**`AxiLookBits`
   parameter int unsigned AxiLookBits    = 3,
-  // If enabled, this demultiplexer is purely combinatorial
   parameter bit          FallThrough    = 1'b0,
-  // add spill register in AW path before the lookup in ID counter
   parameter bit          SpillAw        = 1'b1,
   parameter bit          SpillW         = 1'b0,
   parameter bit          SpillB         = 1'b0,
-  // add spill register in AR path before the lookup in ID counter
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0] // MST port select type
+  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0]
 ) (
-  input  logic clk_i,   // Clock
-  input  logic rst_ni,  // Asynchronous reset active low
-  input  logic test_i,  // Testmode enable
-  // slave port
+  input  logic clk_i,
+  input  logic rst_ni,
+  input  logic test_i,
+  // Slave Port
   // AW channel
   input  aw_chan_t                  slv_aw_chan_i,
-  input  select_t                   slv_aw_select_i, // must be stable while slv_aw_valid_i
+  input  select_t                   slv_aw_select_i,
   input  logic                      slv_aw_valid_i,
   output logic                      slv_aw_ready_o,
   //  W channel
@@ -69,14 +52,14 @@ module axi_demux #(
   input  logic                      slv_b_ready_i,
   // AR channel
   input  ar_chan_t                  slv_ar_chan_i,
-  input  select_t                   slv_ar_select_i, // must be stable while slv_ar_valid_i
+  input  select_t                   slv_ar_select_i,
   input  logic                      slv_ar_valid_i,
   output logic                      slv_ar_ready_o,
   //  R channel
   output r_chan_t                   slv_r_chan_o,
   output logic                      slv_r_valid_o,
   input  logic                      slv_r_ready_i,
-  // master ports
+  // Master Ports
   // AW channel
   output aw_chan_t [NoMstPorts-1:0] mst_aw_chans_o,
   output logic     [NoMstPorts-1:0] mst_aw_valids_o,
