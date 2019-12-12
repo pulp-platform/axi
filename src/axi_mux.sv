@@ -12,78 +12,87 @@
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
 // AXI Multiplexer: This module multiplexes the AXI4 slave ports down to one master port.
-// The MSBs of each AXI ID must contain the index of the corresponding slave port.
-// Responses are switched based on these bits.  For example, with 4 slave ports
+// The AXI IDs from the slave ports get extended with the respective slave port index.
+// The extension width can be calculated with `$clog2(NoSlvPorts)`. This means the AXI
+// ID for the master port has to be this `$clog2(NoSlvPorts)` wider than the ID for the
+// slave ports.
+// Responses are switched based on these bits. For example, with 4 slave ports
 // a response with ID `6'b100110` will be forwarded to slave port 2 (`2'b10`).
 
 // register macros
 `include "common_cells/registers.svh"
 
 module axi_mux #(
-  parameter int unsigned AxiIDWidth  = 1,
-  parameter type         aw_chan_t   = logic, // AW Channel Type
-  parameter type         w_chan_t    = logic, //  W Channel Type
-  parameter type         b_chan_t    = logic, //  B Channel Type
-  parameter type         ar_chan_t   = logic, // AR Channel Type
-  parameter type         r_chan_t    = logic, //  R Channel Type
-  parameter int unsigned NoSlvPorts  = 1,     // Number of slave ports
+  // AXI parameter and channel types
+  parameter int unsigned SlvAxiIDWidth = 1,     // AXI ID width slave ports
+  parameter int unsigned MstAxiIDWidth = 1,     // AXI ID width master port
+  parameter type         slv_aw_chan_t = logic, // AW Channel Type, slave ports
+  parameter type         mst_aw_chan_t = logic, // AW Channel Type, master port
+  parameter type         w_chan_t      = logic, //  W Channel Type, all ports
+  parameter type         slv_b_chan_t  = logic, //  B Channel Type, slave ports
+  parameter type         mst_b_chan_t  = logic, //  B Channel Type, master port
+  parameter type         slv_ar_chan_t = logic, // AR Channel Type, slave ports
+  parameter type         mst_ar_chan_t = logic, // AR Channel Type, master port
+  parameter type         slv_r_chan_t  = logic, //  R Channel Type, slave ports
+  parameter type         mst_r_chan_t  = logic, //  R Channel Type, master port
+  parameter int unsigned NoSlvPorts    = 1,     // Number of slave ports
   // Maximum number of outstanding transactions per write
-  parameter int unsigned MaxWTrans   = 8,
+  parameter int unsigned MaxWTrans     = 8,
   // If enabled, this multiplexer is purely combinatorial
-  parameter bit          FallThrough = 1'b0,
+  parameter bit          FallThrough   = 1'b0,
   // add spill register on write master ports, adds a cycle latency on write channels
-  parameter bit          SpillAw     = 1'b1,
-  parameter bit          SpillW      = 1'b0,
-  parameter bit          SpillB      = 1'b0,
+  parameter bit          SpillAw       = 1'b1,
+  parameter bit          SpillW        = 1'b0,
+  parameter bit          SpillB        = 1'b0,
   // add spill register on read master ports, adds a cycle latency on read channels
-  parameter bit          SpillAr     = 1'b1,
-  parameter bit          SpillR      = 1'b0
+  parameter bit          SpillAr       = 1'b1,
+  parameter bit          SpillR        = 1'b0
 ) (
-  input  logic                      clk_i,    // Clock
-  input  logic                      rst_ni,   // Asynchronous reset active low
-  input  logic                      test_i,   // Test Mode enable
+  input  logic                          clk_i,    // Clock
+  input  logic                          rst_ni,   // Asynchronous reset active low
+  input  logic                          test_i,   // Test Mode enable
   // slave ports (AXI inputs), connect master modules here
   // AW channel
-  input  aw_chan_t [NoSlvPorts-1:0] slv_aw_chans_i,
-  input  logic     [NoSlvPorts-1:0] slv_aw_valids_i,
-  output logic     [NoSlvPorts-1:0] slv_aw_readies_o,
+  input  slv_aw_chan_t [NoSlvPorts-1:0] slv_aw_chans_i,
+  input  logic         [NoSlvPorts-1:0] slv_aw_valids_i,
+  output logic         [NoSlvPorts-1:0] slv_aw_readies_o,
   //  W channel
-  input  w_chan_t  [NoSlvPorts-1:0] slv_w_chans_i,
-  input  logic     [NoSlvPorts-1:0] slv_w_valids_i,
-  output logic     [NoSlvPorts-1:0] slv_w_readies_o,
+  input  w_chan_t      [NoSlvPorts-1:0] slv_w_chans_i,
+  input  logic         [NoSlvPorts-1:0] slv_w_valids_i,
+  output logic         [NoSlvPorts-1:0] slv_w_readies_o,
   //  B channel
-  output b_chan_t  [NoSlvPorts-1:0] slv_b_chans_o,
-  output logic     [NoSlvPorts-1:0] slv_b_valids_o,
-  input  logic     [NoSlvPorts-1:0] slv_b_readies_i,
+  output slv_b_chan_t  [NoSlvPorts-1:0] slv_b_chans_o,
+  output logic         [NoSlvPorts-1:0] slv_b_valids_o,
+  input  logic         [NoSlvPorts-1:0] slv_b_readies_i,
   // AR channel
-  input  ar_chan_t [NoSlvPorts-1:0] slv_ar_chans_i,
-  input  logic     [NoSlvPorts-1:0] slv_ar_valids_i,
-  output logic     [NoSlvPorts-1:0] slv_ar_readies_o,
+  input  slv_ar_chan_t [NoSlvPorts-1:0] slv_ar_chans_i,
+  input  logic         [NoSlvPorts-1:0] slv_ar_valids_i,
+  output logic         [NoSlvPorts-1:0] slv_ar_readies_o,
   //  R channel
-  output r_chan_t  [NoSlvPorts-1:0] slv_r_chans_o,
-  output logic     [NoSlvPorts-1:0] slv_r_valids_o,
-  input  logic     [NoSlvPorts-1:0] slv_r_readies_i,
+  output slv_r_chan_t  [NoSlvPorts-1:0] slv_r_chans_o,
+  output logic         [NoSlvPorts-1:0] slv_r_valids_o,
+  input  logic         [NoSlvPorts-1:0] slv_r_readies_i,
   // master port (AXI outputs), connect slave modules here
   // AW channel
-  output aw_chan_t                  mst_aw_chan_o,
-  output logic                      mst_aw_valid_o,
-  input  logic                      mst_aw_ready_i,
+  output mst_aw_chan_t                  mst_aw_chan_o,
+  output logic                          mst_aw_valid_o,
+  input  logic                          mst_aw_ready_i,
   //  W channel
-  output w_chan_t                   mst_w_chan_o,
-  output logic                      mst_w_valid_o,
-  input  logic                      mst_w_ready_i,
+  output w_chan_t                       mst_w_chan_o,
+  output logic                          mst_w_valid_o,
+  input  logic                          mst_w_ready_i,
   //  B channel
-  input  b_chan_t                   mst_b_chan_i,
-  input  logic                      mst_b_valid_i,
-  output logic                      mst_b_ready_o,
+  input  mst_b_chan_t                   mst_b_chan_i,
+  input  logic                          mst_b_valid_i,
+  output logic                          mst_b_ready_o,
   // AR channel
-  output ar_chan_t                  mst_ar_chan_o,
-  output logic                      mst_ar_valid_o,
-  input  logic                      mst_ar_ready_i,
+  output mst_ar_chan_t                  mst_ar_chan_o,
+  output logic                          mst_ar_valid_o,
+  input  logic                          mst_ar_ready_i,
   //  R channel
-  input  r_chan_t                   mst_r_chan_i,
-  input  logic                      mst_r_valid_i,
-  output logic                      mst_r_ready_o
+  input  mst_r_chan_t                   mst_r_chan_i,
+  input  logic                          mst_r_valid_i,
+  output logic                          mst_r_ready_o
 );
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
@@ -114,70 +123,136 @@ module axi_mux #(
     // typedef for the w_fifo
     localparam int unsigned MstIdxBits = $clog2(NoSlvPorts);
     // these are for finding the right bit of the return ID for the switching
-    localparam int unsigned MstIdx     = AxiIDWidth - MstIdxBits;
+    localparam int unsigned MstIdx     = MstAxiIDWidth - MstIdxBits;
 
     typedef logic [MstIdxBits-1:0] switch_id_t;
 
+    // AXI channels between the ID prepend unit and the rest of the multiplexer
+    mst_aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
+    logic         [NoSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
+    w_chan_t      [NoSlvPorts-1:0] slv_w_chans;
+    logic         [NoSlvPorts-1:0] slv_w_valids,  slv_w_readies;
+    mst_b_chan_t  [NoSlvPorts-1:0] slv_b_chans;
+    logic         [NoSlvPorts-1:0] slv_b_valids,  slv_b_readies;
+    mst_ar_chan_t [NoSlvPorts-1:0] slv_ar_chans;
+    logic         [NoSlvPorts-1:0] slv_ar_valids, slv_ar_readies;
+    mst_r_chan_t  [NoSlvPorts-1:0] slv_r_chans;
+    logic         [NoSlvPorts-1:0] slv_r_valids,  slv_r_readies;
+
+    // These signals are all ID prepended
     // AW channel
-    aw_chan_t   mst_aw_chan;
-    logic       mst_aw_valid, mst_aw_ready;
+    mst_aw_chan_t   mst_aw_chan;
+    logic           mst_aw_valid, mst_aw_ready;
 
     // AW master handshake internal, so that we are able to stall, if w_fifo is full
-    logic       aw_valid,     aw_ready;
+    logic           aw_valid,     aw_ready;
 
     // FF to lock the AW valid signal, when a new arbitration decision is made the decision
     // gets pushed into the W FIFO, when it now stalls prevent subsequent pushing
     // This FF removes AW to W dependency
-    logic       lock_aw_valid_d, lock_aw_valid_q;
-    logic       load_aw_lock;
+    logic           lock_aw_valid_d, lock_aw_valid_q;
+    logic           load_aw_lock;
 
     // signals for the FIFO that holds the last switching decision of the AW channel
-    logic       w_fifo_full,  w_fifo_empty;
-    logic       w_fifo_push,  w_fifo_pop;
-    switch_id_t w_fifo_data;
+    logic           w_fifo_full,  w_fifo_empty;
+    logic           w_fifo_push,  w_fifo_pop;
+    switch_id_t     w_fifo_data;
 
     // W channel spill reg
-    w_chan_t    mst_w_chan;
-    logic       mst_w_valid,  mst_w_ready;
+    w_chan_t        mst_w_chan;
+    logic           mst_w_valid,  mst_w_ready;
 
     // master ID in the b_id
-    switch_id_t switch_b_id;
+    switch_id_t     switch_b_id;
 
     // B channel spill reg
-    b_chan_t    mst_b_chan;
-    logic       mst_b_valid;
+    mst_b_chan_t    mst_b_chan;
+    logic           mst_b_valid;
 
     // AR channel for when spill is enabled
-    ar_chan_t   mst_ar_chan;
-    logic       ar_valid,     ar_ready;
+    mst_ar_chan_t   mst_ar_chan;
+    logic           ar_valid,     ar_ready;
 
     // master ID in the r_id
-    switch_id_t switch_r_id;
+    switch_id_t     switch_r_id;
 
     // R channel spill reg
-    r_chan_t    mst_r_chan;
-    logic       mst_r_valid;
+    mst_r_chan_t    mst_r_chan;
+    logic           mst_r_valid;
+
+    //--------------------------------------
+    // ID prepend for all slave ports
+    //--------------------------------------
+    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_id_prepend
+      axi_id_prepend #(
+        .NoBus            ( 32'd1               ), // one AXI bus per slave port
+        .AxiIdWidthSlvPort( SlvAxiIDWidth       ),
+        .AxiIdWidthMstPort( MstAxiIDWidth       ),
+        .slv_aw_chan_t    ( slv_aw_chan_t       ),
+        .slv_w_chan_t     ( w_chan_t            ),
+        .slv_b_chan_t     ( slv_b_chan_t        ),
+        .slv_ar_chan_t    ( slv_ar_chan_t       ),
+        .slv_r_chan_t     ( slv_r_chan_t        ),
+        .mst_aw_chan_t    ( mst_aw_chan_t       ),
+        .mst_w_chan_t     ( w_chan_t            ),
+        .mst_b_chan_t     ( mst_b_chan_t        ),
+        .mst_ar_chan_t    ( mst_ar_chan_t       ),
+        .mst_r_chan_t     ( mst_r_chan_t        )
+      ) i_id_prepend (
+        .pre_id_i         ( switch_id_t'(i)     ),
+        .slv_aw_chans_i   ( slv_aw_chans_i[i]   ),
+        .slv_aw_valids_i  ( slv_aw_valids_i[i]  ),
+        .slv_aw_readies_o ( slv_aw_readies_o[i] ),
+        .slv_w_chans_i    ( slv_w_chans_i[i]    ),
+        .slv_w_valids_i   ( slv_w_valids_i[i]   ),
+        .slv_w_readies_o  ( slv_w_readies_o[i]  ),
+        .slv_b_chans_o    ( slv_b_chans_o[i]    ),
+        .slv_b_valids_o   ( slv_b_valids_o[i]   ),
+        .slv_b_readies_i  ( slv_b_readies_i[i]  ),
+        .slv_ar_chans_i   ( slv_ar_chans_i[i]   ),
+        .slv_ar_valids_i  ( slv_ar_valids_i[i]  ),
+        .slv_ar_readies_o ( slv_ar_readies_o[i] ),
+        .slv_r_chans_o    ( slv_r_chans_o[i]    ),
+        .slv_r_valids_o   ( slv_r_valids_o[i]   ),
+        .slv_r_readies_i  ( slv_r_readies_i[i]  ),
+        .mst_aw_chans_o   ( slv_aw_chans[i]     ),
+        .mst_aw_valids_o  ( slv_aw_valids[i]    ),
+        .mst_aw_readies_i ( slv_aw_readies[i]   ),
+        .mst_w_chans_o    ( slv_w_chans[i]      ),
+        .mst_w_valids_o   ( slv_w_valids[i]     ),
+        .mst_w_readies_i  ( slv_w_readies[i]    ),
+        .mst_b_chans_i    ( slv_b_chans[i]      ),
+        .mst_b_valids_i   ( slv_b_valids[i]     ),
+        .mst_b_readies_o  ( slv_b_readies[i]    ),
+        .mst_ar_chans_o   ( slv_ar_chans[i]     ),
+        .mst_ar_valids_o  ( slv_ar_valids[i]    ),
+        .mst_ar_readies_i ( slv_ar_readies[i]   ),
+        .mst_r_chans_i    ( slv_r_chans[i]      ),
+        .mst_r_valids_i   ( slv_r_valids[i]     ),
+        .mst_r_readies_o  ( slv_r_readies[i]    )
+      );
+    end
 
     //--------------------------------------
     // AW Channel
     //--------------------------------------
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts ),
-      .DataType ( aw_chan_t    ),
-      .AxiVldRdy( 1'b1         ),
-      .LockIn   ( 1'b1         )
+      .NumIn    ( NoSlvPorts    ),
+      .DataType ( mst_aw_chan_t ),
+      .AxiVldRdy( 1'b1          ),
+      .LockIn   ( 1'b1          )
     ) i_aw_arbiter (
-      .clk_i  ( clk_i            ),
-      .rst_ni ( rst_ni           ),
-      .flush_i( 1'b0             ),
-      .rr_i   ( '0               ),
-      .req_i  ( slv_aw_valids_i  ),
-      .gnt_o  ( slv_aw_readies_o ),
-      .data_i ( slv_aw_chans_i   ),
-      .gnt_i  ( aw_ready         ),
-      .req_o  ( aw_valid         ),
-      .data_o ( mst_aw_chan      ),
-      .idx_o  (                  )
+      .clk_i  ( clk_i           ),
+      .rst_ni ( rst_ni          ),
+      .flush_i( 1'b0            ),
+      .rr_i   ( '0              ),
+      .req_i  ( slv_aw_valids   ),
+      .gnt_o  ( slv_aw_readies  ),
+      .data_i ( slv_aw_chans    ),
+      .gnt_i  ( aw_ready        ),
+      .req_o  ( aw_valid        ),
+      .data_o ( mst_aw_chan     ),
+      .idx_o  (                 )
     );
 
     // control of the AW channel
@@ -216,8 +291,8 @@ module axi_mux #(
 
     fifo_v3 #(
       .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxWTrans  ),
-      .dtype        ( switch_id_t  )
+      .DEPTH        ( MaxWTrans   ),
+      .dtype        ( switch_id_t )
     ) i_w_fifo (
       .clk_i     ( clk_i                              ),
       .rst_ni    ( rst_ni                             ),
@@ -233,7 +308,7 @@ module axi_mux #(
     );
 
     spill_register #(
-      .T       ( aw_chan_t      ),
+      .T       ( mst_aw_chan_t  ),
       .Bypass  ( ~SpillAw       ) // Param indicated that we want a spill reg
     ) i_aw_spill_reg (
       .clk_i   ( clk_i          ),
@@ -249,20 +324,20 @@ module axi_mux #(
     //--------------------------------------
     // W Channel
     //--------------------------------------
-    // mux
-    assign mst_w_chan = slv_w_chans_i[w_fifo_data];
+    // multiplexer
+    assign mst_w_chan = slv_w_chans[w_fifo_data];
     always_comb begin
       // default assignments
-      mst_w_valid     = 1'b0;
-      slv_w_readies_o = '0;
-      w_fifo_pop      = 1'b0;
+      mst_w_valid   = 1'b0;
+      slv_w_readies = '0;
+      w_fifo_pop    = 1'b0;
       // control
       if (!w_fifo_empty) begin
         // connect the handshake
-        mst_w_valid                  = slv_w_valids_i[w_fifo_data];
-        slv_w_readies_o[w_fifo_data] = mst_w_ready;
+        mst_w_valid                = slv_w_valids[w_fifo_data];
+        slv_w_readies[w_fifo_data] = mst_w_ready;
         // pop FIFO on a last transaction
-        w_fifo_pop = slv_w_valids_i[w_fifo_data] & mst_w_ready & mst_w_chan.last;
+        w_fifo_pop = slv_w_valids[w_fifo_data] & mst_w_ready & mst_w_chan.last;
       end
     end
 
@@ -284,49 +359,49 @@ module axi_mux #(
     // B Channel
     //--------------------------------------
     // replicate B channels
-    assign slv_b_chans_o = {NoSlvPorts{mst_b_chan}};
+    assign slv_b_chans  = {NoSlvPorts{mst_b_chan}};
     // control B channel handshake
-    assign switch_b_id    = mst_b_chan.id[MstIdx+:MstIdxBits];
-    assign slv_b_valids_o = (mst_b_valid) ? (1 << switch_b_id) : '0;
+    assign switch_b_id  = mst_b_chan.id[MstIdx+:MstIdxBits];
+    assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
     spill_register #(
-      .T       ( b_chan_t      ),
-      .Bypass  ( ~SpillB       )
+      .T       ( mst_b_chan_t ),
+      .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( mst_b_valid_i                ),
-      .ready_o ( mst_b_ready_o                ),
-      .data_i  ( mst_b_chan_i                 ),
-      .valid_o ( mst_b_valid                  ),
-      .ready_i ( slv_b_readies_i[switch_b_id] ),
-      .data_o  ( mst_b_chan                   )
+      .clk_i   ( clk_i                      ),
+      .rst_ni  ( rst_ni                     ),
+      .valid_i ( mst_b_valid_i              ),
+      .ready_o ( mst_b_ready_o              ),
+      .data_i  ( mst_b_chan_i               ),
+      .valid_o ( mst_b_valid                ),
+      .ready_i ( slv_b_readies[switch_b_id] ),
+      .data_o  ( mst_b_chan                 )
     );
 
     //--------------------------------------
     // AR Channel
     //--------------------------------------
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts ),
-      .DataType ( ar_chan_t  ),
-      .AxiVldRdy( 1'b1       ),
-      .LockIn   ( 1'b1       )
+      .NumIn    ( NoSlvPorts    ),
+      .DataType ( mst_ar_chan_t ),
+      .AxiVldRdy( 1'b1          ),
+      .LockIn   ( 1'b1          )
     ) i_ar_arbiter (
-      .clk_i  ( clk_i            ),
-      .rst_ni ( rst_ni           ),
-      .flush_i( 1'b0             ),
-      .rr_i   ( '0               ),
-      .req_i  ( slv_ar_valids_i  ),
-      .gnt_o  ( slv_ar_readies_o ),
-      .data_i ( slv_ar_chans_i   ),
-      .gnt_i  ( ar_ready         ),
-      .req_o  ( ar_valid         ),
-      .data_o ( mst_ar_chan      ),
-      .idx_o  (                  )
+      .clk_i  ( clk_i           ),
+      .rst_ni ( rst_ni          ),
+      .flush_i( 1'b0            ),
+      .rr_i   ( '0              ),
+      .req_i  ( slv_ar_valids   ),
+      .gnt_o  ( slv_ar_readies  ),
+      .data_i ( slv_ar_chans    ),
+      .gnt_i  ( ar_ready        ),
+      .req_o  ( ar_valid        ),
+      .data_o ( mst_ar_chan     ),
+      .idx_o  (                 )
     );
 
     spill_register #(
-      .T       ( ar_chan_t      ),
+      .T       ( mst_ar_chan_t  ),
       .Bypass  ( ~SpillAr       )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i          ),
@@ -343,23 +418,23 @@ module axi_mux #(
     // R Channel
     //--------------------------------------
     // replicate R channels
-    assign slv_r_chans_o = {NoSlvPorts{mst_r_chan}};
+    assign slv_r_chans  = {NoSlvPorts{mst_r_chan}};
     // R channel handshake control
-    assign switch_r_id    = mst_r_chan.id[MstIdx+:MstIdxBits];
-    assign slv_r_valids_o = (mst_r_valid) ? (1 << switch_r_id) : '0;
+    assign switch_r_id  = mst_r_chan.id[MstIdx+:MstIdxBits];
+    assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
     spill_register #(
-      .T       ( r_chan_t      ),
-      .Bypass  ( ~SpillR       )
+      .T       ( mst_r_chan_t ),
+      .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( mst_r_valid_i                ),
-      .ready_o ( mst_r_ready_o                ),
-      .data_i  ( mst_r_chan_i                 ),
-      .valid_o ( mst_r_valid                  ),
-      .ready_i ( slv_r_readies_i[switch_r_id] ),
-      .data_o  ( mst_r_chan                   )
+      .clk_i   ( clk_i                      ),
+      .rst_ni  ( rst_ni                     ),
+      .valid_i ( mst_r_valid_i              ),
+      .ready_o ( mst_r_ready_o              ),
+      .data_i  ( mst_r_chan_i               ),
+      .valid_o ( mst_r_valid                ),
+      .ready_i ( slv_r_readies[switch_r_id] ),
+      .data_o  ( mst_r_chan                 )
     );
   end
 endmodule
@@ -368,22 +443,23 @@ endmodule
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 module axi_mux_wrap #(
-  parameter int unsigned AxiIDWidth   = 0, // Synopsys DC requires a default value for parameters.
-  parameter int unsigned AxiAddrWidth = 0,
-  parameter int unsigned AxiDataWidth = 0,
-  parameter int unsigned AxiUserWidth = 0,
-  parameter int unsigned NoSlvPorts   = 0, // Number of slave ports
+  parameter int unsigned SlvAxiIDWidth = 0, // Synopsys DC requires a default value for parameters.
+  parameter int unsigned MstAxiIDWidth = 0,
+  parameter int unsigned AxiAddrWidth  = 0,
+  parameter int unsigned AxiDataWidth  = 0,
+  parameter int unsigned AxiUserWidth  = 0,
+  parameter int unsigned NoSlvPorts    = 0, // Number of slave ports
   // Maximum number of outstanding transactions per write
-  parameter int unsigned MaxWTrans    = 8,
+  parameter int unsigned MaxWTrans     = 8,
   // if enabled, this multiplexer is purely combinatorial
-  parameter bit          FallThrough  = 1'b0,
+  parameter bit          FallThrough   = 1'b0,
   // add spill register on write master ports, adds a cycle latency on write channels
-  parameter bit          SpillAw      = 1'b1,
-  parameter bit          SpillW       = 1'b0,
-  parameter bit          SpillB       = 1'b0,
+  parameter bit          SpillAw       = 1'b1,
+  parameter bit          SpillW        = 1'b0,
+  parameter bit          SpillB        = 1'b0,
   // add spill register on read master ports, adds a cycle latency on read channels
-  parameter bit          SpillAr      = 1'b1,
-  parameter bit          SpillR       = 1'b0
+  parameter bit          SpillAr       = 1'b1,
+  parameter bit          SpillR        = 1'b0
 ) (
   input  logic   clk_i,                // Clock
   input  logic   rst_ni,               // Asynchronous reset active low
@@ -392,45 +468,59 @@ module axi_mux_wrap #(
   AXI_BUS.Master mst                   // master port
 );
 
-  typedef logic [AxiIDWidth-1:0]       id_t;
+  typedef logic [SlvAxiIDWidth-1:0]  slv_id_t;
+  typedef logic [MstAxiIDWidth-1:0]  mst_id_t;
   typedef logic [AxiAddrWidth-1:0]   addr_t;
   typedef logic [AxiDataWidth-1:0]   data_t;
   typedef logic [AxiDataWidth/8-1:0] strb_t;
   typedef logic [AxiUserWidth-1:0]   user_t;
-  `AXI_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T (  w_chan_t, data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T (  b_chan_t,         id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T (  r_chan_t, data_t, id_t,         user_t);
-  `AXI_TYPEDEF_REQ_T    (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T   (    resp_t,  b_chan_t, r_chan_t) ;
+  // channels typedef
+  `AXI_TYPEDEF_AW_CHAN_T( slv_aw_chan_t, addr_t, slv_id_t,         user_t);
+  `AXI_TYPEDEF_AW_CHAN_T( mst_aw_chan_t, addr_t, mst_id_t,         user_t);
 
-  req_t  [NoSlvPorts-1:0] slv_req;
-  resp_t [NoSlvPorts-1:0] slv_resp;
-  req_t                   mst_req;
-  resp_t                  mst_resp;
+  `AXI_TYPEDEF_W_CHAN_T (      w_chan_t, data_t,       strb_t, user_t);
+
+  `AXI_TYPEDEF_B_CHAN_T (  slv_b_chan_t,         slv_id_t,         user_t);
+  `AXI_TYPEDEF_B_CHAN_T (  mst_b_chan_t,         mst_id_t,         user_t);
+
+  `AXI_TYPEDEF_AR_CHAN_T( slv_ar_chan_t, addr_t, slv_id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T( mst_ar_chan_t, addr_t, mst_id_t,         user_t);
+
+  `AXI_TYPEDEF_R_CHAN_T (  slv_r_chan_t, data_t, slv_id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T (  mst_r_chan_t, data_t, mst_id_t,         user_t);
+
+  `AXI_TYPEDEF_REQ_T    (     slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t);
+  `AXI_TYPEDEF_RESP_T   (    slv_resp_t,  slv_b_chan_t, slv_r_chan_t) ;
+
+  `AXI_TYPEDEF_REQ_T    (     mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t);
+  `AXI_TYPEDEF_RESP_T   (    mst_resp_t,  mst_b_chan_t, mst_r_chan_t) ;
+
+  slv_req_t     [NoSlvPorts-1:0] slv_req;
+  slv_resp_t    [NoSlvPorts-1:0] slv_resp;
+  mst_req_t                      mst_req;
+  mst_resp_t                     mst_resp;
 
   // master ports
   // AW channel
-  aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
-  logic     [NoSlvPorts-1:0] slv_aw_valids;
-  logic     [NoSlvPorts-1:0] slv_aw_readies;
+  slv_aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
+  logic         [NoSlvPorts-1:0] slv_aw_valids;
+  logic         [NoSlvPorts-1:0] slv_aw_readies;
   //  W channel
-  w_chan_t  [NoSlvPorts-1:0] slv_w_chans;
-  logic     [NoSlvPorts-1:0] slv_w_valids;
-  logic     [NoSlvPorts-1:0] slv_w_readies;
+  w_chan_t      [NoSlvPorts-1:0] slv_w_chans;
+  logic         [NoSlvPorts-1:0] slv_w_valids;
+  logic         [NoSlvPorts-1:0] slv_w_readies;
   //  B channel
-  b_chan_t  [NoSlvPorts-1:0] slv_b_chans;
-  logic     [NoSlvPorts-1:0] slv_b_valids;
-  logic     [NoSlvPorts-1:0] slv_b_readies;
+  slv_b_chan_t  [NoSlvPorts-1:0] slv_b_chans;
+  logic         [NoSlvPorts-1:0] slv_b_valids;
+  logic         [NoSlvPorts-1:0] slv_b_readies;
   // AR channel
-  ar_chan_t [NoSlvPorts-1:0] slv_ar_chans;
-  logic     [NoSlvPorts-1:0] slv_ar_valids;
-  logic     [NoSlvPorts-1:0] slv_ar_readies;
+  slv_ar_chan_t [NoSlvPorts-1:0] slv_ar_chans;
+  logic         [NoSlvPorts-1:0] slv_ar_valids;
+  logic         [NoSlvPorts-1:0] slv_ar_readies;
   //  R channel
-  r_chan_t  [NoSlvPorts-1:0] slv_r_chans;
-  logic     [NoSlvPorts-1:0] slv_r_valids;
-  logic     [NoSlvPorts-1:0] slv_r_readies;
+  slv_r_chan_t  [NoSlvPorts-1:0] slv_r_chans;
+  logic         [NoSlvPorts-1:0] slv_r_valids;
+  logic         [NoSlvPorts-1:0] slv_r_readies;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
     `AXI_ASSIGN_TO_REQ    ( slv_req[i],  slv[i]      );
@@ -461,20 +551,25 @@ module axi_mux_wrap #(
   `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      );
 
   axi_mux #(
-    .NoSlvPorts  ( NoSlvPorts  ), // Number of slave ports
-    .AxiIDWidth  ( AxiIDWidth  ),
-    .aw_chan_t   ( aw_chan_t   ), // AW Channel Type
-    .w_chan_t    (  w_chan_t   ), //  W Channel Type
-    .b_chan_t    (  b_chan_t   ), //  B Channel Type
-    .ar_chan_t   ( ar_chan_t   ), // AR Channel Type
-    .r_chan_t    (  r_chan_t   ), //  R Channel Type
-    .MaxWTrans   ( MaxWTrans   ),
-    .FallThrough ( FallThrough ),
-    .SpillAw     ( SpillAw     ),
-    .SpillW      ( SpillW      ),
-    .SpillB      ( SpillB      ),
-    .SpillAr     ( SpillAr     ),
-    .SpillR      ( SpillR      )
+    .SlvAxiIDWidth ( SlvAxiIDWidth ),
+    .MstAxiIDWidth ( MstAxiIDWidth ),
+    .slv_aw_chan_t ( slv_aw_chan_t ), // AW Channel Type, slave ports
+    .mst_aw_chan_t ( mst_aw_chan_t ), // AW Channel Type, master port
+    .w_chan_t      ( w_chan_t      ), //  W Channel Type, all ports
+    .slv_b_chan_t  ( slv_b_chan_t  ), //  B Channel Type, slave ports
+    .mst_b_chan_t  ( mst_b_chan_t  ), //  B Channel Type, master port
+    .slv_ar_chan_t ( slv_ar_chan_t ), // AR Channel Type, slave ports
+    .mst_ar_chan_t ( mst_ar_chan_t ), // AR Channel Type, master port
+    .slv_r_chan_t  ( slv_r_chan_t  ), //  R Channel Type, slave ports
+    .mst_r_chan_t  ( mst_r_chan_t  ), //  R Channel Type, master port
+    .NoSlvPorts    ( NoSlvPorts    ), // Number of slave ports
+    .MaxWTrans     ( MaxWTrans     ),
+    .FallThrough   ( FallThrough   ),
+    .SpillAw       ( SpillAw       ),
+    .SpillW        ( SpillW        ),
+    .SpillB        ( SpillB        ),
+    .SpillAr       ( SpillAr       ),
+    .SpillR        ( SpillR        )
   ) i_axi_mux (
     .clk_i            ( clk_i             ), // Clock
     .rst_ni           ( rst_ni            ), // Asynchronous reset active low

@@ -42,11 +42,10 @@ module axi_xbar #(
 );
 
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
-  typedef logic [$clog2(Cfg.NoSlvPorts)-1:0]     slv_port_idx_t;
   // to account for the decoding error slave
   typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 
-  // signals from the axi_demuxes
+  // signals from the axi_demuxes, one index more for decode error
   slv_aw_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_aw_chans;
   logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_aw_valids, slv_aw_readies;
   w_chan_t      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_w_chans;
@@ -58,40 +57,16 @@ module axi_xbar #(
   slv_r_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_r_chans;
   logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_r_valids,  slv_r_readies;
 
-  // signals that get ID prepended, the same as the ones above, but without the decerr
-  slv_aw_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_aw_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_aw_valids, xbar_aw_readies;
-  w_chan_t      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_w_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_w_valids,  xbar_w_readies;
-  slv_b_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_b_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_b_valids,  xbar_b_readies;
-  slv_ar_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_ar_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_ar_valids, xbar_ar_readies;
-  slv_r_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_r_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] xbar_r_valids,  xbar_r_readies;
-
-  // signals from the axi_id_prepend
-  mst_aw_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] aw_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] aw_valids,     aw_readies;
-  w_chan_t      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] w_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] w_valids,      w_readies;
-  mst_b_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] b_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] b_valids,      b_readies;
-  mst_ar_chan_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] ar_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] ar_valids,     ar_readies;
-  mst_r_chan_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] r_chans;
-  logic         [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] r_valids,      r_readies;
-
-  // signals into the axi_muxes
-  mst_aw_chan_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_chans;
+  // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
+  slv_aw_chan_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_valids, mst_aw_readies;
   w_chan_t      [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_w_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_w_valids,  mst_w_readies;
-  mst_b_chan_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_b_chans;
+  slv_b_chan_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_b_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_b_valids,  mst_b_readies;
-  mst_ar_chan_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_ar_chans;
+  slv_ar_chan_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_ar_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_ar_valids, mst_ar_readies;
-  mst_r_chan_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_r_chans;
+  slv_r_chan_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_r_chans;
   logic         [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_r_valids,  mst_r_readies;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
@@ -218,7 +193,7 @@ module axi_xbar #(
       .mst_r_readies_o  ( slv_r_readies[i]             )
     );
 
-    // decode errors
+    // connect the decode error module to the last index of the demux master port
     assign decerr_req.aw                     = slv_aw_chans[i][Cfg.NoMstPorts];
     assign decerr_req.aw_valid               = slv_aw_valids[i][Cfg.NoMstPorts];
     assign slv_aw_readies[i][Cfg.NoMstPorts] = decerr_resp.aw_ready;
@@ -253,120 +228,55 @@ module axi_xbar #(
       .slv_req_i  ( decerr_req  ),
       .slv_resp_o ( decerr_resp )
     );
-
-    // assign only the signals that do not go to the decerror to the xbar
-    for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_assign
-      assign xbar_aw_chans[i][j]  = slv_aw_chans[i][j];
-      assign xbar_aw_valids[i][j] = slv_aw_valids[i][j];
-      assign slv_aw_readies[i][j] = xbar_aw_readies[i][j];
-
-      assign xbar_w_chans[i][j]   = slv_w_chans[i][j];
-      assign xbar_w_valids[i][j]  = slv_w_valids[i][j];
-      assign slv_w_readies[i][j]  = xbar_w_readies[i][j];
-
-      assign slv_b_chans[i][j]    = xbar_b_chans[i][j] ;
-      assign slv_b_valids[i][j]   = xbar_b_valids[i][j];
-      assign xbar_b_readies[i][j] = slv_b_readies[i][j];
-
-      assign xbar_ar_chans[i][j]  = slv_ar_chans[i][j];
-      assign xbar_ar_valids[i][j] = slv_ar_valids[i][j];
-      assign slv_ar_readies[i][j] = xbar_ar_readies[i][j];
-
-      assign slv_r_chans[i][j]    = xbar_r_chans[i][j];
-      assign slv_r_valids[i][j]   = xbar_r_valids[i][j];
-      assign xbar_r_readies[i][j] = slv_r_readies[i][j];
-    end
-
-    axi_id_prepend #(
-      .NoBus            ( Cfg.NoMstPorts         ),
-      .AxiIdWidthSlvPort( Cfg.AxiIdWidthSlvPorts ),
-      .AxiIdWidthMstPort( Cfg.AxiIdWidthMstPorts ),
-      .slv_aw_chan_t    ( slv_aw_chan_t          ),
-      .slv_w_chan_t     ( w_chan_t               ),
-      .slv_b_chan_t     ( slv_b_chan_t           ),
-      .slv_ar_chan_t    ( slv_ar_chan_t          ),
-      .slv_r_chan_t     ( slv_r_chan_t           ),
-      .mst_aw_chan_t    ( mst_aw_chan_t          ),
-      .mst_w_chan_t     ( w_chan_t               ),
-      .mst_b_chan_t     ( mst_b_chan_t           ),
-      .mst_ar_chan_t    ( mst_ar_chan_t          ),
-      .mst_r_chan_t     ( mst_r_chan_t           )
-    ) i_id_prepend (
-      .pre_id_i         ( slv_port_idx_t'(i) ),
-      .slv_aw_chans_i   ( xbar_aw_chans[i]   ),
-      .slv_aw_valids_i  ( xbar_aw_valids[i]  ),
-      .slv_aw_readies_o ( xbar_aw_readies[i] ),
-      .slv_w_chans_i    ( xbar_w_chans[i]    ),
-      .slv_w_valids_i   ( xbar_w_valids[i]   ),
-      .slv_w_readies_o  ( xbar_w_readies[i]  ),
-      .slv_b_chans_o    ( xbar_b_chans[i]    ),
-      .slv_b_valids_o   ( xbar_b_valids[i]   ),
-      .slv_b_readies_i  ( xbar_b_readies[i]  ),
-      .slv_ar_chans_i   ( xbar_ar_chans[i]   ),
-      .slv_ar_valids_i  ( xbar_ar_valids[i]  ),
-      .slv_ar_readies_o ( xbar_ar_readies[i] ),
-      .slv_r_chans_o    ( xbar_r_chans[i]    ),
-      .slv_r_valids_o   ( xbar_r_valids[i]   ),
-      .slv_r_readies_i  ( xbar_r_readies[i]  ),
-      .mst_aw_chans_o   ( aw_chans[i]        ),
-      .mst_aw_valids_o  ( aw_valids[i]       ),
-      .mst_aw_readies_i ( aw_readies[i]      ),
-      .mst_w_chans_o    ( w_chans[i]         ),
-      .mst_w_valids_o   ( w_valids[i]        ),
-      .mst_w_readies_i  ( w_readies[i]       ),
-      .mst_b_chans_i    ( b_chans[i]         ),
-      .mst_b_valids_i   ( b_valids[i]        ),
-      .mst_b_readies_o  ( b_readies[i]       ),
-      .mst_ar_chans_o   ( ar_chans[i]        ),
-      .mst_ar_valids_o  ( ar_valids[i]       ),
-      .mst_ar_readies_i ( ar_readies[i]      ),
-      .mst_r_chans_i    ( r_chans[i]         ),
-      .mst_r_valids_i   ( r_valids[i]        ),
-      .mst_r_readies_o  ( r_readies[i]       )
-    );
   end
 
+  // cross all channels
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_xbar_slv_cross
-    for (genvar j = 0; j <= Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
+    for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
       // AW Channel
-      assign mst_aw_chans[j][i]  = aw_chans[i][j];
-      assign mst_aw_valids[j][i] = aw_valids[i][j];
-      assign aw_readies[i][j]    = mst_aw_readies[j][i];
+      assign mst_aw_chans[j][i]   = slv_aw_chans[i][j];
+      assign mst_aw_valids[j][i]  = slv_aw_valids[i][j];
+      assign slv_aw_readies[i][j] = mst_aw_readies[j][i];
       // W Channel
-      assign mst_w_chans[j][i]   = w_chans[i][j];
-      assign mst_w_valids[j][i]  = w_valids[i][j];
-      assign w_readies[i][j]     = mst_w_readies[j][i];
+      assign mst_w_chans[j][i]    = slv_w_chans[i][j];
+      assign mst_w_valids[j][i]   = slv_w_valids[i][j];
+      assign slv_w_readies[i][j]  = mst_w_readies[j][i];
       // B Channel
-      assign b_chans[i][j]       = mst_b_chans[j][i];
-      assign b_valids[i][j]      = mst_b_valids[j][i];
-      assign mst_b_readies[j][i] = b_readies[i][j];
+      assign slv_b_chans[i][j]    = mst_b_chans[j][i];
+      assign slv_b_valids[i][j]   = mst_b_valids[j][i];
+      assign mst_b_readies[j][i]  = slv_b_readies[i][j];
       // AR Channel
-      assign mst_ar_chans[j][i]  = ar_chans[i][j];
-      assign mst_ar_valids[j][i] = ar_valids[i][j];
-      assign ar_readies[i][j]    = mst_ar_readies[j][i];
+      assign mst_ar_chans[j][i]   = slv_ar_chans[i][j];
+      assign mst_ar_valids[j][i]  = slv_ar_valids[i][j];
+      assign slv_ar_readies[i][j] = mst_ar_readies[j][i];
       // R Channel
-      assign r_chans[i][j]       = mst_r_chans[j][i];
-      assign r_valids[i][j]      = mst_r_valids[j][i];
-      assign mst_r_readies[j][i] = r_readies[i][j];
+      assign slv_r_chans[i][j]    = mst_r_chans[j][i];
+      assign slv_r_valids[i][j]   = mst_r_valids[j][i];
+      assign mst_r_readies[j][i]  = slv_r_readies[i][j];
     end
   end
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_mux #(
-      .AxiIDWidth  ( Cfg.AxiIdWidthMstPorts ), // ID width of the axi going througth
-      .aw_chan_t   ( mst_aw_chan_t          ), // AW Channel Type
-      .w_chan_t    ( w_chan_t               ), //  W Channel Type
-      .b_chan_t    ( mst_b_chan_t           ), //  B Channel Type
-      .ar_chan_t   ( mst_ar_chan_t          ), // AR Channel Type
-      .r_chan_t    ( mst_r_chan_t           ), //  R Channel Type
-      .NoSlvPorts  ( Cfg.NoSlvPorts         ), // Number of Masters
-      .MaxWTrans   ( Cfg.MaxSlvTrans        ),
-      .FallThrough ( Cfg.FallThrough        ),
-      .SpillAw     ( Cfg.LatencyMode[4]     ),
-      .SpillW      ( Cfg.LatencyMode[3]     ),
-      .SpillB      ( Cfg.LatencyMode[2]     ),
-      .SpillAr     ( Cfg.LatencyMode[1]     ),
-      .SpillR      ( Cfg.LatencyMode[0]     )
+      .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
+      .MstAxiIDWidth ( Cfg.AxiIdWidthMstPorts ), // ID width of the master port
+      .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
+      .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
+      .w_chan_t      ( w_chan_t               ), //  W Channel Type, all ports
+      .slv_b_chan_t  ( slv_b_chan_t           ), //  B Channel Type, slave ports
+      .mst_b_chan_t  ( mst_b_chan_t           ), //  B Channel Type, master port
+      .slv_ar_chan_t ( slv_ar_chan_t          ), // AR Channel Type, slave ports
+      .mst_ar_chan_t ( mst_ar_chan_t          ), // AR Channel Type, master port
+      .slv_r_chan_t  ( slv_r_chan_t           ), //  R Channel Type, slave ports
+      .mst_r_chan_t  ( mst_r_chan_t           ), //  R Channel Type, master port
+      .NoSlvPorts    ( Cfg.NoSlvPorts         ), // Number of Masters for the module
+      .MaxWTrans     ( Cfg.MaxSlvTrans        ),
+      .FallThrough   ( Cfg.FallThrough        ),
+      .SpillAw       ( Cfg.LatencyMode[4]     ),
+      .SpillW        ( Cfg.LatencyMode[3]     ),
+      .SpillB        ( Cfg.LatencyMode[2]     ),
+      .SpillAr       ( Cfg.LatencyMode[1]     ),
+      .SpillR        ( Cfg.LatencyMode[0]     )
     ) i_axi_mux (
       .clk_i  ( clk_i  ),   // Clock
       .rst_ni ( rst_ni ),   // Asynchronous reset active low
@@ -407,13 +317,13 @@ module axi_xbar #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : check_params
-    id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == $bits(slv_aw_chans[0][0].id)) else
+    id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == $bits(slv_r_chans[0][0].id)) else
+    id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_mst_req_ports: assert ($bits(mst_ports_req_o[0].aw.id) == $bits(mst_aw_chans[0][0].id)) else
+    id_mst_req_ports: assert ($bits(mst_ports_req_o[0].aw.id) == Cfg.AxiIdWidthMstPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_mst_resp_ports: assert ($bits(mst_ports_resp_i[0].r.id) == $bits(mst_r_chans[0][0].id)) else
+    id_mst_resp_ports: assert ($bits(mst_ports_resp_i[0].r.id) == Cfg.AxiIdWidthMstPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
   end
   `endif
