@@ -370,4 +370,193 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal implementation for assigning Lite interfaces from structs, allows for standalone
+// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
+// the same code.
+`define AXI_LITE_FROM_AW(opt_as, axi_lite_if, aw_lite_struct) \
+  opt_as axi_lite_if.aw_addr = aw_lite_struct.addr;
+  // prot not in interface!
+`define AXI_LITE_FROM_W(opt_as, axi_lite_if, w_lite_struct)  \
+  opt_as axi_lite_if.w_data = w_lite_struct.data;            \
+  opt_as axi_lite_if.w_strb = w_lite_struct.strb;
+`define AXI_LITE_FROM_B(opt_as, axi_lite_if, b_lite_struct) \
+  opt_as axi_lite_if.b_resp = b_lite_struct.resp;
+`define AXI_LITE_FROM_AR(opt_as, axi_lite_if, ar_lite_struct) \
+  opt_as axi_lite_if.ar_addr = ar_lite_struct.addr;
+  // prot not in interface!
+`define AXI_LITE_FROM_R(opt_as, axi_lite_if, r_lite_struct) \
+  opt_as axi_lite_if.r_data  = r_lite_struct.data;          \
+  opt_as axi_lite_if.r_resp  = r_lite_struct.resp;
+`define AXI_LITE_FROM_REQ(axi_lite_if, req_lite_struct)       \
+  `AXI_LITE_FROM_AW(opt_as, axi_lite_if, req_lite_struct.aw); \
+  opt_as axi_lite_if.aw_valid = req_lite_struct.aw_valid;     \
+  `AXI_LITE_FROM_W(opt_as, axi_lite_if, req_lite_struct.w);   \
+  opt_as axi_lite_if.w_valid = req_lite_struct.w_valid;       \
+  opt_as axi_lite_if.b_ready = req_lite_struct.b_ready;       \
+  `AXI_LITE_FROM_AR(opt_as, axi_lite_if, req_lite_struct.ar); \
+  opt_as axi_lite_if.ar_valid = req_lite_struct.ar_valid;     \
+  opt_as axi_lite_if.r_ready = req_lite_struct.r_ready;
+`define AXI_LITE_FROM_RESP(opt_as, axi_lite_if, resp_lite_struct) \
+  opt_as axi_lite_if.aw_ready = resp_lite_struct.aw_ready;        \
+  opt_as axi_lite_if.ar_ready = resp_lite_struct.ar_ready;        \
+  opt_as axi_lite_if.w_ready = resp_lite_struct.w_ready;          \
+  opt_as axi_lite_if.b_valid = resp_lite_struct.b_valid;          \
+  `AXI_LITE_FROM_B(opt_as, axi_lite_if, resp_lite_struct.b);      \
+  opt_as axi_lite_if.r_valid = resp_lite_struct.r_valid;          \
+  `AXI_LITE_FROM_R(opt_as, axi_lite_if, resp_lite_struct.r);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting a Lite interface from channel or request/response structs inside a process.
+//
+// The channel macros `AXI_LITE_SET_FROM_XX(axi_if, xx_struct)` set the payload signals of the
+// `axi_if` interface from the signals in `xx_struct`.  They do not set the handshake signals.
+// The request macro `AXI_LITE_SET_FROM_REQ(axi_if, req_struct)` sets all request channels (AW, W,
+// AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
+// `axi_if` interface from the signals in `req_struct`.
+// The response macro `AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)` sets both response channels (B
+// and R) and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the
+// `axi_if` interface from the signals in `resp_struct`.
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct);
+// end
+`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `AXI_LITE_FROM_AW(, axi_if, aw_struct)
+`define AXI_LITE_SET_FROM_W(axi_if, w_struct)        `AXI_LITE_FROM_W(, axi_if, w_struct)
+`define AXI_LITE_SET_FROM_B(axi_if, b_struct)        `AXI_LITE_FROM_B(, axi_if, b_struct)
+`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct)      `AXI_LITE_FROM_AR(, axi_if, ar_struct)
+`define AXI_LITE_SET_FROM_R(axi_if, r_struct)        `AXI_LITE_FROM_R(, axi_if, r_struct)
+`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct)    `AXI_LITE_FROM_REQ(, axi_if, req_struct)
+`define AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)  `AXI_LITE_FROM_RESP(, axi_if, resp_struct)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning a Lite interface from channel or request/response structs outside a process.
+//
+// The channel macros `AXI_LITE_ASSIGN_FROM_XX(axi_if, xx_struct)` assign the payload signals of the
+// `axi_if` interface from the signals in `xx_struct`.  They do not assign the handshake signals.
+// The request macro `AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)` assigns all request channels
+// (AW, W, AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
+// `axi_if` interface from the signals in `req_struct`.
+// The response macro `AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct)` assigns both response
+// channels (B and R) and the response-side handshake signals (B and R valid and AW, W, and AR
+// ready) of the `axi_if` interface from the signals in `resp_struct`.
+//
+// Usage Example:
+// `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct);
+`define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `AXI_LITE_FROM_AW(assign, axi_if, aw_struct)
+`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `AXI_LITE_FROM_W(assign, axi_if, w_struct)
+`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `AXI_LITE_FROM_B(assign, axi_if, b_struct)
+`define AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)     `AXI_LITE_FROM_AR(assign, axi_if, ar_struct)
+`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)       `AXI_LITE_FROM_R(assign, axi_if, r_struct)
+`define AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)   `AXI_LITE_FROM_REQ(assign, axi_if, req_struct)
+`define AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct) `AXI_LITE_FROM_RESP(assign, axi_if, resp_struct)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal implementation for assigning to Lite structs from interfaces, allows for standalone
+// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
+// the same code.
+`define AXI_LITE_TO_AW(opt_as, aw_lite_struct, axi_lite_if) \
+  opt_as aw_lite_struct = '{                                \
+    addr: axi_if.aw_addr,                                   \
+    prot: '0
+  };
+  // prot not in interface!
+`define AXI_LITE_TO_W(opt_as, w_lite_struct, axi_lite_if) \
+  opt_as w_lite_struct = '{                               \
+    data: axi_lite_if.w_data,                             \
+    strb: axi_lite_if.w_strb                              \
+  };
+`define AXI_LITE_TO_B(opt_as, b_lite_struct, axi_lite_if) \
+  opt_as b_lite_struct = '{                               \
+    resp: axi_lite_if.b_resp                              \
+  };
+`define AXI_LITE_TO_AR(opt_as, ar_lite_struct, axi_lite_if) \
+  opt_as ar_lite_struct = '{                                \
+    addr: axi_lite_if.ar_addr,                              \
+    prot: '0                                                \
+  };
+`define AXI_LITE_TO_R(opt_as, r_lite_struct, axi_lite_if) \
+  opt_as r_lite_struct = '{                               \
+    data: axi_lite_if.r_data,                             \
+    resp: axi_lite_if.r_resp,                             \
+  };
+`define AXI_LITE_TO_REQ(opt_as, req_lite_struct, axi_lite_if) \
+  `AXI_LITE_TO_AW(opt_as, req_lite_struct.aw, axi_lite_if);   \
+  opt_as req_lite_struct.aw_valid = axi_lite_if.aw_valid;     \
+  `AXI_LITE_TO_W(opt_as, req_lite_struct.w, axi_lite_if);     \
+  opt_as req_lite_struct.w_valid = axi_lite_if.w_valid;       \
+  opt_as req_lite_struct.b_ready = axi_lite_if.b_ready;       \
+  `AXI_LITE_TO_AR(opt_as, req_lite_struct.ar, axi_lite_if);   \
+  opt_as req_lite_struct.ar_valid = axi_lite_if.ar_valid;     \
+  opt_as req_lite_struct.r_ready = axi_lite_if.r_ready;
+`define AXI_LITE_TO_RESP(opt_as, resp_lite_struct, axi_lite_if) \
+  opt_as resp_lite_struct.aw_ready = axi_lite_if.aw_ready;      \
+  opt_as resp_lite_struct.ar_ready = axi_lite_if.ar_ready;      \
+  opt_as resp_lite_struct.w_ready = axi_lite_if.w_ready;        \
+  opt_as resp_lite_struct.b_valid = axi_lite_if.b_valid;        \
+  `AXI_LITE_TO_B(opt_as, resp_lite_struct.b, axi_lite_if);      \
+  opt_as resp_lite_struct.r_valid = axi_lite_if.r_valid;        \
+  `AXI_LITE_TO_R(opt_as, resp_lite_struct.r, axi_lite_if);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting channel or request/response structs from an interface inside a process.
+//
+// The channel macros `AXI_LITE_SET_TO_XX(xx_struct, axi_if)` set the signals of `xx_struct` to the
+// payload signals of that channel in the `axi_if` interface.  They do not set the handshake
+// signals.
+// The request macro `AXI_LITE_SET_TO_REQ(axi_if, req_struct)` sets all signals of `req_struct`
+// (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR
+// valid and B and R ready)) to the signals in the `axi_if` interface.
+// The response macro `AXI_LITE_SET_TO_RESP(axi_if, resp_struct)` sets all signals of `resp_struct`
+// (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
+// AW, W, and AR ready)) to the signals in the `axi_if` interface.
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if);
+// end
+`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(, aw_struct, axi_if)
+`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(, w_struct, axi_if)
+`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(, b_struct, axi_if)
+`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(, ar_struct, axi_if)
+`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(, r_struct, axi_if)
+`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(, req_struct, axi_if)
+`define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(, resp_struct, axi_if)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from an interface outside a process.
+//
+// The channel macros `AXI_LITE_ASSIGN_TO_XX(xx_struct, axi_if)` assign the signals of `xx_struct`
+// to the payload signals of that channel in the `axi_if` interface.  They do not assign the
+// handshake signals.
+// The request macro `AXI_LITE_ASSIGN_TO_REQ(axi_if, req_struct)` assigns all signals of
+// `req_struct` (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW,
+// W, and AR valid and B and R ready)) to the signals in the `axi_if` interface.
+// The response macro `AXI_LITE_ASSIGN_TO_RESP(axi_if, resp_struct)` assigns all signals of
+// `resp_struct` (i.e., response channel (B and R) payload and response-side handshake signals (B
+// and R valid and AW, W, and AR ready)) to the signals in the `axi_if` interface.
+//
+// Usage Example:
+// `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if);
+`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(assign, aw_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(assign, w_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(assign, b_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(assign, ar_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(assign, r_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(assign, req_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(assign, resp_struct, axi_if)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 `endif
