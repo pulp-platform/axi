@@ -12,11 +12,74 @@
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 
-/// A connector allows addresses of AXI requests to be changed.
+// A connector allows addresses of AXI requests to be changed.
 module axi_modify_address #(
+  parameter type slv_addr_t = logic, // address type of slave port
+  parameter type  slv_req_t = logic, // request type slave port
+  parameter type slv_resp_t = logic, // response type slave port
+  parameter type mst_addr_t = logic, // address type of master port
+  parameter type  mst_req_t = logic, // request type master port
+  parameter type mst_resp_t = logic, // response type master port
+) (
+  // slave port
+  input  slv_req_t  slv_req_i,
+  output slv_resp_t slv_resp_o,
+  output slv_addr_t slv_aw_addr_o,
+  output slv_addr_t slv_ar_addr_o,
+  // master port
+  output slv_req_t  mst_req_o,
+  input  slv_resp_t mst_resp_i,
+  input  slv_addr_t mst_aw_addr_i,
+  input  slv_addr_t mst_ar_addr_i
+);
+  assign slv_aw_addr_o = slv_req_i.aw.addr;
+  assign slv_ar_addr_o = slv_req_i.ar.addr;
+
+  assign mst_req_o = '{
+    aw: '{
+      id:     slv_req_i.aw.id,
+      addr:   mst_aw_addr_i,
+      len:    slv_req_i.aw.len,
+      size:   slv_req_i.aw.size,
+      burst:  slv_req_i.aw.burst,
+      lock:   slv_req_i.aw.lock,
+      cache:  slv_req_i.aw.cache,
+      prot:   slv_req_i.aw.prot,
+      qos:    slv_req_i.aw.qos,
+      region: slv_req_i.aw.region,
+      atop:   slv_req_i.aw.atop,
+      user:   slv_req_i.aw.user,
+      default: '0
+    },
+    aw_valid: slv_req_i.aw_valid,
+    w:        slv_req_i.w,
+    b_ready:  slv_req_i.b_ready,
+    ar: '{
+      id:     slv_req_i.ar.id,
+      addr:   mst_ar_addr_i,
+      len:    slv_req_i.ar.len,
+      size:   slv_req_i.ar.size,
+      burst:  slv_req_i.ar.burst,
+      lock:   slv_req_i.ar.lock,
+      cache:  slv_req_i.ar.cache,
+      prot:   slv_req_i.ar.prot,
+      qos:    slv_req_i.ar.qos,
+      region: slv_req_i.ar.region,
+      user:   slv_req_i.ar.user,
+      default: '0
+    },
+    ar_valid: slv_req_i.ar_valid,
+    r_ready:  slv_req_i.r_ready,
+    default: '0
+  };
+
+  assign slv_resp_o = mst_resp_i;
+endmodule
+
+module axi_modify_address_intf #(
   parameter int ADDR_WIDTH_IN  = -1,
   parameter int ADDR_WIDTH_OUT = ADDR_WIDTH_IN
-)(
+) (
   AXI_BUS.Slave   in,
   AXI_BUS.Master  out,
   output logic [ADDR_WIDTH_IN-1:0]  aw_addr_in,
