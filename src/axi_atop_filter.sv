@@ -331,6 +331,7 @@ module axi_atop_filter_intf #(
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+
   `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
   `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
   `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
@@ -349,12 +350,12 @@ module axi_atop_filter_intf #(
   `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      );
 
   axi_atop_filter #(
-    .AXI_ID_WIDTH       (AXI_ID_WIDTH       ),
+    .AXI_ID_WIDTH       ( AXI_ID_WIDTH       ),
   // Maximum number of AXI write bursts outstanding at the same time
-    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS ),
+    .AXI_MAX_WRITE_TXNS ( AXI_MAX_WRITE_TXNS ),
   // AXI request & response type
-    .req_t  ( req_t  ),
-    .resp_t ( resp_t )
+    .req_t              ( req_t              ),
+    .resp_t             ( resp_t             )
   ) i_axi_atop_filter (
     .clk_i,
     .rst_ni,
