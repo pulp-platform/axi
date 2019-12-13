@@ -16,7 +16,7 @@
 //
 // These can be used to relax timing pressure on very long AXI busses.
 module axi_multicut #(
-  parameter int     NoCuts = -1 // Number of cuts. Must be >= 0.
+  parameter int unsigned NoCuts = 32'd1 // Number of cuts. Must be >= 0.
     // AXI channel structs
   parameter type aw_chan_t = logic,
   parameter type  w_chan_t = logic,
@@ -90,13 +90,16 @@ module axi_multicut #(
   // pragma translate_on
 endmodule
 
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
 // interface wrapper
 module axi_multicut_intf #(
-  parameter int ADDR_WIDTH = -1, // The address width.
-  parameter int DATA_WIDTH = -1, // The data width.
-  parameter int ID_WIDTH   = -1, // The ID width.
-  parameter int USER_WIDTH = -1, // The user data width.
-  parameter int NUM_CUTS   = 0   // The number of cuts. Must be >= 0.
+  parameter int unsigned ADDR_WIDTH = -1, // The address width.
+  parameter int unsigned DATA_WIDTH = -1, // The data width.
+  parameter int unsigned ID_WIDTH   = -1, // The ID width.
+  parameter int unsigned USER_WIDTH = -1, // The user data width.
+  parameter int unsigned NUM_CUTS   =  0  // The number of cuts. Must be >= 0.
 ) (
   input logic    clk_i,
   input logic    rst_ni,
@@ -110,22 +113,22 @@ module axi_multicut_intf #(
   typedef logic [DATA_WIDTH/8-1:0] strb_t;
   typedef logic [USER_WIDTH-1:0]   user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
-  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t);
+  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t)
+  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t)
+  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t)
+  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t)
+  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t           )
 
   req_t  slv_req,  mst_req;
   resp_t slv_resp, mst_resp;
 
-  `AXI_ASSIGN_TO_REQ    ( slv_req,  in       );
-  `AXI_ASSIGN_FROM_RESP ( in,       slv_resp );
+  `AXI_ASSIGN_TO_REQ    ( slv_req,  in       )
+  `AXI_ASSIGN_FROM_RESP ( in,       slv_resp )
 
-  `AXI_ASSIGN_FROM_REQ  ( out     , mst_req  );
-  `AXI_ASSIGN_TO_RESP   ( mst_resp, out      );
+  `AXI_ASSIGN_FROM_REQ  ( out     , mst_req  )
+  `AXI_ASSIGN_TO_RESP   ( mst_resp, out      )
 
   axi_multicut #(
     .NoCuts    (  NUM_CUTS ),
@@ -151,10 +154,6 @@ module axi_multicut_intf #(
   `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
-    assert(ADDR_WIDTH >= 0);
-    assert(DATA_WIDTH >= 0);
-    assert(ID_WIDTH >= 0);
-    assert(USER_WIDTH >= 0);
     assert(in.AXI_ADDR_WIDTH == ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH == DATA_WIDTH);
     assert(in.AXI_ID_WIDTH == ID_WIDTH);
@@ -163,6 +162,76 @@ module axi_multicut_intf #(
     assert(out.AXI_DATA_WIDTH == DATA_WIDTH);
     assert(out.AXI_ID_WIDTH == ID_WIDTH);
     assert(out.AXI_USER_WIDTH == USER_WIDTH);
+  end
+  `endif
+  `endif
+  `endif
+  // pragma translate_on
+endmodule
+
+module axi_lite_multicut_intf #(
+  // The address width.
+  parameter int unsigned ADDR_WIDTH = -1,
+  // The data width.
+  parameter int unsigned DATA_WIDTH = -1,
+  // The number of cuts. Must be >= 0.
+  parameter int unsigned NUM_CUTS   =  0
+) (
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_LITE.Slave  in     ,
+  AXI_LITE.Master out
+);
+
+  typedef logic [ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [DATA_WIDTH-1:0]   data_t;
+  typedef logic [DATA_WIDTH/8-1:0] strb_t;
+
+  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t         )
+  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t )
+  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_t                 )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t         )
+  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t         )
+  `AXI_LITE_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t           )
+
+  req_t  slv_req,  mst_req;
+  resp_t slv_resp, mst_resp;
+
+  `AXI_LITE_ASSIGN_TO_REQ    ( slv_req,  in       )
+  `AXI_LITE_ASSIGN_FROM_RESP ( in,       slv_resp )
+
+  `AXI_LITE_ASSIGN_FROM_REQ  ( out     , mst_req  )
+  `AXI_LITE_ASSIGN_TO_RESP   ( mst_resp, out      )
+
+  axi_multicut #(
+    .NoCuts    (  NUM_CUTS ),
+    .aw_chan_t ( aw_chan_t ),
+    .w_chan_t  (  w_chan_t ),
+    .b_chan_t  (  b_chan_t ),
+    .ar_chan_t ( ar_chan_t ),
+    .r_chan_t  (  r_chan_t ),
+    .req_t     (     req_t ),
+    .resp_t    (    resp_t )
+  ) i_axi_multicut (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
+  );
+
+  // Check the invariants.
+  // pragma translate_off
+  `ifndef VERILATOR
+  `ifndef VCS
+  `ifndef SYNTHESIS
+  initial begin
+    assert(in.AXI_ADDR_WIDTH == ADDR_WIDTH);
+    assert(in.AXI_DATA_WIDTH == DATA_WIDTH);
+    assert(out.AXI_ADDR_WIDTH == ADDR_WIDTH);
+    assert(out.AXI_DATA_WIDTH == DATA_WIDTH);
   end
   `endif
   `endif
