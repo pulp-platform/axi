@@ -11,9 +11,6 @@
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
-import axi_pkg::*;
-
-
 /// An AXI4 cut.
 ///
 /// Breaks all combinatorial paths between its input and output.
@@ -27,11 +24,11 @@ module axi_cut #(
   parameter type ar_chan_t = logic,
   parameter type  r_chan_t = logic,
   // AXI request & response structs
-  parameter type req_t     = logic,
-  parameter type resp_t    = logic
+  parameter type     req_t = logic,
+  parameter type    resp_t = logic
 ) (
-  input logic     clk_i  ,
-  input logic     rst_ni ,
+  input logic   clk_i,
+  input logic   rst_ni,
   // salve port
   input  req_t  slv_req_i,
   output resp_t slv_resp_o,
