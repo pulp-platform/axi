@@ -196,3 +196,66 @@ module axi_cut_intf #(
   `endif
   // pragma translate_on
 endmodule
+
+module axi_lite_cut_intf #(
+  // bypass enable
+  parameter bit          BYPASS     = 1'b0,
+  /// The address width.
+  parameter int unsigned ADDR_WIDTH = -1,
+  /// The data width.
+  parameter int unsigned DATA_WIDTH = -1
+) (
+  input logic     clk_i  ,
+  input logic     rst_ni ,
+  AXI_LITE.Slave  in     ,
+  AXI_LITE.Master out
+);
+
+  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+
+  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t        )
+  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_t                )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t        )
+  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t        )
+  `AXI_LITE_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t)
+
+  axi_cut #(
+    .Bypass    (    BYPASS ),
+    .aw_chan_t ( aw_chan_t ),
+    .w_chan_t  (  w_chan_t ),
+    .b_chan_t  (  b_chan_t ),
+    .ar_chan_t ( ar_chan_t ),
+    .r_chan_t  (  r_chan_t ),
+    .req_t     (     req_t ),
+    .resp_t    (    resp_t )
+  ) i_axi_cut (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
+  );
+
+  // Check the invariants.
+  // pragma translate_off
+  `ifndef VERILATOR
+  `ifndef VCS
+  `ifndef SYNTHESIS
+  initial begin
+    assert(ADDR_WIDTH >= 0);
+    assert(DATA_WIDTH >= 0);
+    assert(in.AXI_ADDR_WIDTH == ADDR_WIDTH);
+    assert(in.AXI_DATA_WIDTH == DATA_WIDTH);
+    assert(out.AXI_ADDR_WIDTH == ADDR_WIDTH);
+    assert(out.AXI_DATA_WIDTH == DATA_WIDTH);
+  end
+  `endif
+  `endif
+  `endif
+  // pragma translate_on
+endmodule
