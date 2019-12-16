@@ -51,7 +51,7 @@ module tb_axi_delayer;
   axi_pkg::ar_chan_t ar_chan_o;
   axi_pkg::r_chan_t  r_chan_i;
 
-  axi_delayer #(
+  axi_delayer_wrap #(
     .aw_t ( axi_pkg::aw_chan_t ),
     .w_t  ( axi_pkg::w_chan_t  ),
     .b_t  ( axi_pkg::b_chan_t  ),
