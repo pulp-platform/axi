@@ -19,7 +19,7 @@ module axi_modify_address #(
   parameter type slv_resp_t = logic, // response type slave port
   parameter type mst_addr_t = logic, // address type of master port
   parameter type  mst_req_t = logic, // request type master port
-  parameter type mst_resp_t = logic, // response type master port
+  parameter type mst_resp_t = logic  // response type master port
 ) (
   // slave port
   input  slv_req_t  slv_req_i,

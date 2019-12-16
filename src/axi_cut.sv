@@ -211,9 +211,9 @@ module axi_lite_cut_intf #(
   AXI_LITE.Master out
 );
 
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+  typedef logic [ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [DATA_WIDTH-1:0]   data_t;
+  typedef logic [DATA_WIDTH/8-1:0] strb_t;
 
   `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t        )
   `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t)

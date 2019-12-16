@@ -16,7 +16,7 @@
 //
 // These can be used to relax timing pressure on very long AXI busses.
 module axi_multicut #(
-  parameter int unsigned NoCuts = 32'd1 // Number of cuts. Must be >= 0.
+  parameter int unsigned NoCuts = 32'd1, // Number of cuts. Must be >= 0.
     // AXI channel structs
   parameter type aw_chan_t = logic,
   parameter type  w_chan_t = logic,
