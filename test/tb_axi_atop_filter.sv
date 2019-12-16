@@ -95,9 +95,12 @@ module tb_axi_atop_filter #(
 
   `AXI_ASSIGN(downstream_dv, downstream);
 
-  axi_atop_filter #(
+  axi_atop_filter_intf #(
     .AXI_ID_WIDTH       (AXI_ID_WIDTH),
-    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
+    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS),
+    .AXI_ADDR_WIDTH     (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH     (AXI_DATA_WIDTH),
+    .AXI_USER_WIDTH     (AXI_USER_WIDTH)
   ) dut (
     .clk_i  (clk),
     .rst_ni (rst_n),

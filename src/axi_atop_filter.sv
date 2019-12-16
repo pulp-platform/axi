@@ -364,4 +364,13 @@ module axi_atop_filter_intf #(
     .mst_req_o  ( mst_req  ),
     .mst_resp_i ( mst_resp )
   );
+// pragma translate_off
+`ifndef VERILATOR
+  initial begin: p_assertions
+    assert (AXI_ADDR_WIDTH >= 1) else $fatal("AXI ADDR width must be at least 1!");
+    assert (AXI_DATA_WIDTH >= 1) else $fatal("AXI DATA width must be at least 1!");
+    assert (AXI_USER_WIDTH >= 1) else $fatal("AXI USER width must be at least 1!");
+  end
+`endif
+// pragma translate_on
 endmodule
