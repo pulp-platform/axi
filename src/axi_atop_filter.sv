@@ -29,9 +29,9 @@
 // write or read burst that is ongoing at the same time.
 
 module axi_atop_filter #(
-  parameter int unsigned AXI_ID_WIDTH = 0,  // Synopsys DC requires a default value for parameters.
+  parameter int unsigned AxiIdWidth = 0,  // Synopsys DC requires a default value for parameters.
   // Maximum number of AXI write bursts outstanding at the same time
-  parameter int unsigned AXI_MAX_WRITE_TXNS = 0,
+  parameter int unsigned AxiMaxWriteTxns = 0,
   // AXI request & response type
   parameter type req_t  = logic,
   parameter type resp_t = logic
@@ -46,7 +46,7 @@ module axi_atop_filter #(
   input  resp_t mst_resp_i
 );
 
-  typedef logic [$clog2(AXI_MAX_WRITE_TXNS+1)-1:0] cnt_t;
+  typedef logic [$clog2(AxiMaxWriteTxns+1)-1:0] cnt_t;
   cnt_t   w_cnt_d, w_cnt_q;
 
   typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
@@ -55,7 +55,7 @@ module axi_atop_filter #(
   typedef enum logic { R_FEEDTHROUGH, INJECT_R } r_state_t;
   r_state_t   r_state_d, r_state_q;
 
-  typedef logic [AXI_ID_WIDTH-1:0] id_t;
+  typedef logic [AxiIdWidth-1:0] id_t;
   id_t  id_d, id_q;
 
   typedef logic [7:0] len_t;
@@ -91,7 +91,7 @@ module axi_atop_filter #(
     unique case (w_state_q)
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
-        if (w_cnt_q < AXI_MAX_WRITE_TXNS) begin
+        if (w_cnt_q < AxiMaxWriteTxns) begin
           mst_req_o.aw_valid  = slv_req_i.aw_valid;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         end
@@ -198,7 +198,7 @@ module axi_atop_filter #(
     mst_req_o.aw      = slv_req_i.aw;
     mst_req_o.aw.atop = '0;
   end
-  assign  mst_req_o.w = slv_req_i.w;
+  assign mst_req_o.w = slv_req_i.w;
 
 
 
@@ -300,8 +300,8 @@ module axi_atop_filter #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AXI_ID_WIDTH >= 1) else $fatal("AXI ID width must be at least 1!");
-    assert (AXI_MAX_WRITE_TXNS >= 1)
+    assert (AxiIdWidth >= 1) else $fatal("AXI ID width must be at least 1!");
+    assert (AxiMaxWriteTxns >= 1)
       else $fatal("Maximum number of outstanding write transactions must be at least 1!");
   end
 `endif
@@ -350,12 +350,12 @@ module axi_atop_filter_intf #(
   `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      )
 
   axi_atop_filter #(
-    .AXI_ID_WIDTH       ( AXI_ID_WIDTH       ),
+    .AxiIdWidth      ( AXI_ID_WIDTH       ),
   // Maximum number of AXI write bursts outstanding at the same time
-    .AXI_MAX_WRITE_TXNS ( AXI_MAX_WRITE_TXNS ),
+    .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
   // AXI request & response type
-    .req_t              ( req_t              ),
-    .resp_t             ( resp_t             )
+    .req_t           ( req_t              ),
+    .resp_t          ( resp_t             )
   ) i_axi_atop_filter (
     .clk_i,
     .rst_ni,

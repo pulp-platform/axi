@@ -16,8 +16,8 @@
 //
 // These can be used to relax timing pressure on very long AXI busses.
 module axi_multicut #(
-  parameter int unsigned NoCuts = 32'd1, // Number of cuts. Must be >= 0.
-    // AXI channel structs
+  parameter int unsigned NoCuts = 32'd1, // Number of cuts.
+  // AXI channel structs
   parameter type aw_chan_t = logic,
   parameter type  w_chan_t = logic,
   parameter type  b_chan_t = logic,
@@ -95,11 +95,11 @@ endmodule
 
 // interface wrapper
 module axi_multicut_intf #(
-  parameter int unsigned ADDR_WIDTH = -1, // The address width.
-  parameter int unsigned DATA_WIDTH = -1, // The data width.
-  parameter int unsigned ID_WIDTH   = -1, // The ID width.
-  parameter int unsigned USER_WIDTH = -1, // The user data width.
-  parameter int unsigned NUM_CUTS   =  0  // The number of cuts. Must be >= 0.
+  parameter int unsigned ADDR_WIDTH = 0, // The address width.
+  parameter int unsigned DATA_WIDTH = 0, // The data width.
+  parameter int unsigned ID_WIDTH   = 0, // The ID width.
+  parameter int unsigned USER_WIDTH = 0, // The user data width.
+  parameter int unsigned NUM_CUTS   = 0  // The number of cuts.
 ) (
   input logic    clk_i,
   input logic    rst_ni,
@@ -154,14 +154,18 @@ module axi_multicut_intf #(
   `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
-    assert(in.AXI_ADDR_WIDTH == ADDR_WIDTH);
-    assert(in.AXI_DATA_WIDTH == DATA_WIDTH);
-    assert(in.AXI_ID_WIDTH == ID_WIDTH);
-    assert(in.AXI_USER_WIDTH == USER_WIDTH);
-    assert(out.AXI_ADDR_WIDTH == ADDR_WIDTH);
-    assert(out.AXI_DATA_WIDTH == DATA_WIDTH);
-    assert(out.AXI_ID_WIDTH == ID_WIDTH);
-    assert(out.AXI_USER_WIDTH == USER_WIDTH);
+    assert ( ADDR_WIDTH > 0 ) else $fatal(1, "Wrong addr width parameter");
+    assert ( DATA_WIDTH > 0 ) else $fatal(1, "Wrong data width parameter");
+    assert ( ID_WIDTH   > 0 ) else $fatal(1, "Wrong id   width parameter");
+    assert ( USER_WIDTH > 0 ) else $fatal(1, "Wrong user width parameter");
+    assert ( in.AXI_ADDR_WIDTH  == ADDR_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( in.AXI_DATA_WIDTH  == DATA_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( in.AXI_ID_WIDTH    == ID_WIDTH   ) else $fatal(1, "Wrong interface definition");
+    assert ( in.AXI_USER_WIDTH  == USER_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_ADDR_WIDTH == ADDR_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_DATA_WIDTH == DATA_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_ID_WIDTH   == ID_WIDTH   ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_USER_WIDTH == USER_WIDTH ) else $fatal(1, "Wrong interface definition");
   end
   `endif
   `endif
@@ -171,11 +175,11 @@ endmodule
 
 module axi_lite_multicut_intf #(
   // The address width.
-  parameter int unsigned ADDR_WIDTH = -1,
+  parameter int unsigned ADDR_WIDTH = 0,
   // The data width.
-  parameter int unsigned DATA_WIDTH = -1,
-  // The number of cuts. Must be >= 0.
-  parameter int unsigned NUM_CUTS   =  0
+  parameter int unsigned DATA_WIDTH = 0,
+  // The number of cuts.
+  parameter int unsigned NUM_CUTS   = 0
 ) (
   input logic     clk_i  ,
   input logic     rst_ni ,
@@ -228,10 +232,12 @@ module axi_lite_multicut_intf #(
   `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
-    assert(in.AXI_ADDR_WIDTH == ADDR_WIDTH);
-    assert(in.AXI_DATA_WIDTH == DATA_WIDTH);
-    assert(out.AXI_ADDR_WIDTH == ADDR_WIDTH);
-    assert(out.AXI_DATA_WIDTH == DATA_WIDTH);
+    assert ( ADDR_WIDTH > 0 ) else $fatal(1, "Wrong addr width parameter");
+    assert ( DATA_WIDTH > 0 ) else $fatal(1, "Wrong data width parameter");
+    assert ( in.AXI_ADDR_WIDTH == ADDR_WIDTH  ) else $fatal(1, "Wrong interface definition");
+    assert ( in.AXI_DATA_WIDTH == DATA_WIDTH  ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_ADDR_WIDTH == ADDR_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert ( out.AXI_DATA_WIDTH == DATA_WIDTH ) else $fatal(1, "Wrong interface definition");
   end
   `endif
   `endif
