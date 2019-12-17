@@ -21,8 +21,6 @@ sources:
   # Level 1
   - src/axi_intf.sv
   # Level 2
-  - src/axi_address_resolver.sv
-  - src/axi_arbiter.sv
   - src/axi_atop_filter.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
@@ -33,7 +31,6 @@ sources:
   - src/axi_to_axi_lite.sv
   # Level 3
   - src/axi_id_remap.sv
-  - src/axi_lite_xbar.sv
   - src/axi_multicut.sv
 
   - target: synth_test
@@ -50,5 +47,4 @@ sources:
       - test/tb_axi_id_remap.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_axi.sv
-      - test/tb_axi_lite_xbar.sv
       - test/tb_axi_to_axi_lite.sv

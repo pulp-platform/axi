@@ -19,8 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - typedef: fixed bugs
 
 ### Removed
-- axi_lite_cut:      removed file, functionality in axi_cut
-- axi_lite_multicut: removed file, functionality in axi_multicut
+- axi_address_resolver: removed file, superseded by `common_cells: addr_decoder`
+- axi_arbiter:          removed file, instead `axi_demux`, `axi_mux` annd `common_cells:rrarb_tree` should be used
+- axi_lite_cut:         removed file, functionality in axi_cut
+- axi_lite_multicut:    removed file, functionality in axi_multicut
+- axi_lite_xbar:        removed file, to be rewritten
 
 
 ## 0.7.2 - 2019-12-03
