@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Changed
+- axi_atop_filter:    changed to structs, added interface wrapper
+- axi_cut:            changed to structs, added interface wrapper for FULL and LITE AXI
+- axi_delayer:        changed to structs, added interface wrapper
+- axi_lite_to_axi:    changed to structs
+- axi_modify_address: changed to structs
+- axi_multicut:       changed to structs, added axi_lite_multicut_intf
+
+### Fixed
+- assign:  fixed bugs
+- typedef: fixed bugs
+
+### Removed
+- axi_lite_cut:      removed file, functionality in axi_cut
+- axi_lite_multicut: removed file, functionality in axi_multicut
+
+
 ## 0.7.2 - 2019-12-03
 
 ### Fixed
