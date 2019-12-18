@@ -65,6 +65,10 @@ The individual changes for each module follow.
   you prefer interfaces, please replace any `axi_lite_cut` with the newly added `axi_lite_cut_intf`
   module.
 - `axi_lite_multicut`: same rationale and transition procedure as for `axi_lite_cut`.
+- In `axi_pkg`, the `*Width` `localparam`s and the `id_t`, `addr_t`, etc. `typedef`s have been
+  removed.  There is no one-fits-all value of these parameters, so we cannot provide a generic
+  definition for them in this package.  Please use the added macros in `typedef.svh` to define your
+  own types with a few lines of code (which you can put into your own package, for example).
 
 
 ## 0.7.2 - 2019-12-03
