@@ -8,7 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// Authors:
+// Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 

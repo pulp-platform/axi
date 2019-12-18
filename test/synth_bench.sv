@@ -9,6 +9,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 /// A synthesis test bench which instantiates various adapter variants.
 module synth_bench (

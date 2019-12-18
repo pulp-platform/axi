@@ -8,6 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+// Author:
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
+
 // AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
 // have a non-zero `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
 //

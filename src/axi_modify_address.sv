@@ -10,6 +10,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 
 // A connector that allows addresses of AXI requests to be changed.
