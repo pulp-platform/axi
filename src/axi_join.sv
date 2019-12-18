@@ -13,7 +13,7 @@
 
 
 /// A connector that joins two AXI interfaces.
-module axi_join (
+module axi_join_intf (
     AXI_BUS.Slave  in,
     AXI_BUS.Master out
 );
