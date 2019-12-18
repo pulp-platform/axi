@@ -79,14 +79,14 @@ module synth_slice #(
     .AXI_DATA_WIDTH(DW)
   ) a_lite(), b_lite();
 
-  axi_to_axi_lite a (
+  axi_to_axi_lite_intf a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
     .in         (a_full.Slave),
     .out        (a_lite.Master)
   );
-  axi_lite_to_axi b (
+  axi_lite_to_axi_intf b (
     .in   (b_lite.Slave),
     .out  (b_full.Master)
   );
@@ -119,7 +119,7 @@ module synth_axi_atop_filter #(
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) downstream ();
 
-  axi_atop_filter #(
+  axi_atop_filter_intf #(
     .AXI_ID_WIDTH       (AXI_ID_WIDTH),
     .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
   ) dut (
