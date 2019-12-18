@@ -4,27 +4,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 
-### Changed
-- axi_atop_filter:    changed to structs, added interface wrapper
-- axi_cut:            changed to structs, added interface wrapper for FULL and LITE AXI
-- axi_delayer:        changed to structs, added interface wrapper
-- axi_lite_to_axi:    changed to structs
-- axi_modify_address: changed to structs
-- axi_multicut:       changed to structs, added axi_lite_multicut_intf
+All modules have been changed from SystemVerilog interfaces to struct ports.  Thus, all modules in
+this repository are now available in tools that do not support interfaces.  Interfaces are now
+opt-in: every module has a variant with `_intf` suffix that is functionally equivalent but has
+interfaces instead of struct port.  If you would like to keep using interfaces, please add an
+`_intf` suffix to any module you are using from this repository.  The `_intf` variants are drop-in
+compatible with the non-suffixed modules prior to this release.
 
-### Fixed
-- assign:  fixed bugs
-- typedef: fixed bugs
+We encourage the use of structs to build AXI infrastructure, and we have added a set of `typdef`
+macros and have extended the `assign` macros to keep designers productive and prevent mismatches.
+
+Additionally, we have removed a set of modules that had known issues.  We will provide new
+implementations for these modules in near-term releases and no longer support the removed modules.
+
+The individual changes for each module follow.
+
+### Added
+- `assign.svh`:
+  - Macros for setting an AXI or AXI-Lite interface from channel or request/response structs inside
+    a process (`AXI_SET_FROM_*` and `AXI_LITE_SET_FROM_*`) and outside a process like an assignment
+    (`AXI_ASSIGN_FROM_*` and `AXI_LITE_ASSIGN_FROM_*`).
+  - Macros for setting channel or request/response structs to the signals of an AXI or AXI-Lite
+    interface inside a process (`AXI_SET_TO_*` and `AXI_LITE_SET_TO_*`) and outside a process like
+    an assignment (`AXI_ASSIGN_TO_*`, `AXI_LITE_ASSIGN_TO_*`).
+- `typedef.svh`: Macros for defining AXI or AXI-Lite channel (`AXI_TYPEDEF_*_CHAN_T` and
+  `AXI_LITE_TYPEDEF_*_CHAN_T`) and request/response structs (`AXI_TYPEDEF_RE{Q,SP}_T` and
+  `AXI_LITE_TYPEDEF_RE{Q,SP}_T`).
+
+### Changed
+- `axi_atop_filter` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_atop_filter_intf` module if you prefer interfaces.
+- `axi_cut` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_cut_intf` module if you prefer interfaces.
+- `axi_delayer` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_delayer_intf` module if you prefer interfaces.
+- `axi_join` has been renamed to `axi_join_intf`.  To join two structs, simply assign them instead.
+- `axi_multicut` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_multicut_intf` module if you prefer interfaces.
+- `axi_modify_address` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_modify_address_intf` module if you prefer interfaces.
+- `axi_lite_to_axi` has been changed from interfaces to struct ports.  Please use the newly added
+  `axi_lite_to_axi_intf` module if you prefer interfaces.
 
 ### Removed
-- axi_address_resolver: removed file, superseded by `common_cells: addr_decoder`
-- axi_arbiter:          removed file, instead `axi_demux`, `axi_mux` annd `common_cells: rr_arb_tree` should be used
-- axi_id_remap:         removed file, to be superseded
-- axi_lite_cut:         removed file, functionality in axi_cut
-- axi_lite_multicut:    removed file, functionality in axi_multicut
-- axi_lite_xbar:        removed file, to be rewritten
+- `axi_lite_xbar`:  This interconnect module was not a full crossbar and its routing rules interface
+  no longer fits our demands.  A replacement will be provided in a near-term release.
+- `axi_address_resolver` was used together with `axi_lite_xbar` and is removed along with it.  If a
+  standalone replacement for this module is required, please use `addr_decoder` from `common_cells`.
+- `axi_arbiter` was used together with `axi_lite_xbar` and is removed along with it.  If a
+  standalone replacement of this module is required, please use `rr_arb_tree` from `common_cells`.
+  A near-term release will introduce an AXI multiplexer and demultiplexer to suit protocol-specific
+  needs.
+- `axi_id_remap` had problems with ordering and ATOPs.  A new, correct implementation will be
+  provided in a near-term release.
+- `axi_lite_cut` has been rendered unnecessary by changing `axi_cut` to struct ports.  To get a cut
+  with AXI-Lite ports, simply pass AXI-Lite channels and request/response structs as parameters.  If
+  you prefer interfaces, please replace any `axi_lite_cut` with the newly added `axi_lite_cut_intf`
+  module.
+- `axi_lite_multicut`: same rationale and transition procedure as for `axi_lite_cut`.
 
 
 ## 0.7.2 - 2019-12-03
