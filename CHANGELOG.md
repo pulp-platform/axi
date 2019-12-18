@@ -41,7 +41,8 @@ The individual changes for each module follow.
   `axi_cut_intf` module if you prefer interfaces.
 - `axi_delayer` has been changed from interfaces to struct ports.  Please use the newly added
   `axi_delayer_intf` module if you prefer interfaces.
-- `axi_join` has been renamed to `axi_join_intf`.  To join two structs, simply assign them instead.
+- `axi_join` has been renamed to `axi_join_intf`, and `axi_lite_join` has been renamed to
+  `axi_lite_join_intf`.  To join two structs, simply assign them instead.
 - `axi_multicut` has been changed from interfaces to struct ports.  Please use the newly added
   `axi_multicut_intf` module if you prefer interfaces.
 - `axi_modify_address` has been changed from interfaces to struct ports.  Please use the newly added

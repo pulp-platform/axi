@@ -15,7 +15,7 @@
 `include "axi/assign.svh"
 
 /// A connector that joins two AXI-Lite interfaces.
-module axi_lite_join (
+module axi_lite_join_intf (
   AXI_LITE.Slave  in,
   AXI_LITE.Master out
 );
