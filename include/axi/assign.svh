@@ -388,14 +388,14 @@
 `define AXI_LITE_FROM_R(opt_as, axi_lite_if, r_lite_struct) \
   opt_as axi_lite_if.r_data  = r_lite_struct.data;          \
   opt_as axi_lite_if.r_resp  = r_lite_struct.resp;
-`define AXI_LITE_FROM_REQ(axi_lite_if, req_lite_struct)       \
-  `AXI_LITE_FROM_AW(opt_as, axi_lite_if, req_lite_struct.aw); \
-  opt_as axi_lite_if.aw_valid = req_lite_struct.aw_valid;     \
-  `AXI_LITE_FROM_W(opt_as, axi_lite_if, req_lite_struct.w);   \
-  opt_as axi_lite_if.w_valid = req_lite_struct.w_valid;       \
-  opt_as axi_lite_if.b_ready = req_lite_struct.b_ready;       \
-  `AXI_LITE_FROM_AR(opt_as, axi_lite_if, req_lite_struct.ar); \
-  opt_as axi_lite_if.ar_valid = req_lite_struct.ar_valid;     \
+`define AXI_LITE_FROM_REQ(opt_as, axi_lite_if, req_lite_struct) \
+  `AXI_LITE_FROM_AW(opt_as, axi_lite_if, req_lite_struct.aw);   \
+  opt_as axi_lite_if.aw_valid = req_lite_struct.aw_valid;       \
+  `AXI_LITE_FROM_W(opt_as, axi_lite_if, req_lite_struct.w);     \
+  opt_as axi_lite_if.w_valid = req_lite_struct.w_valid;         \
+  opt_as axi_lite_if.b_ready = req_lite_struct.b_ready;         \
+  `AXI_LITE_FROM_AR(opt_as, axi_lite_if, req_lite_struct.ar);   \
+  opt_as axi_lite_if.ar_valid = req_lite_struct.ar_valid;       \
   opt_as axi_lite_if.r_ready = req_lite_struct.r_ready;
 `define AXI_LITE_FROM_RESP(opt_as, axi_lite_if, resp_lite_struct) \
   opt_as axi_lite_if.aw_ready = resp_lite_struct.aw_ready;        \
@@ -465,7 +465,7 @@
 `define AXI_LITE_TO_AW(opt_as, aw_lite_struct, axi_lite_if) \
   opt_as aw_lite_struct = '{                                \
     addr: axi_if.aw_addr,                                   \
-    prot: '0
+    prot: '0                                                \
   };
   // prot not in interface!
 `define AXI_LITE_TO_W(opt_as, w_lite_struct, axi_lite_if) \
@@ -485,7 +485,7 @@
 `define AXI_LITE_TO_R(opt_as, r_lite_struct, axi_lite_if) \
   opt_as r_lite_struct = '{                               \
     data: axi_lite_if.r_data,                             \
-    resp: axi_lite_if.r_resp,                             \
+    resp: axi_lite_if.r_resp                              \
   };
 `define AXI_LITE_TO_REQ(opt_as, req_lite_struct, axi_lite_if) \
   `AXI_LITE_TO_AW(opt_as, req_lite_struct.aw, axi_lite_if);   \

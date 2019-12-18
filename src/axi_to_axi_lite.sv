@@ -23,7 +23,7 @@ module axi_to_axi_lite #(
   parameter int NUM_PENDING_RD = 1,
   /// Maximum number of outstanding writes.
   parameter int NUM_PENDING_WR = 1
-)(
+) (
   input logic     clk_i,
   input logic     rst_ni,
   input logic     testmode_i,

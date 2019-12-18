@@ -10,8 +10,6 @@ axi:
     - src/axi_to_axi_lite.sv
     - src/axi_lite_to_axi.sv
     - src/axi_lite_xbar.sv
-    - src/axi_lite_cut.sv
-    - src/axi_lite_multicut.sv
     - src/axi_lite_join.sv
 
     - src/axi_cut.sv
