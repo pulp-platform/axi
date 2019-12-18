@@ -39,15 +39,6 @@ module synth_bench (
     synth_slice #(.AW(32), .DW(32), .IW(IUW), .UW(IUW)) s(.*);
   end
 
-  // Crossbar
-  for (genvar i = 0; i < 3; i++) begin : xbar_master
-    localparam int NM = NUM_SLAVE_MASTER[i];
-    for (genvar j = 0; j < 3; j++) begin : xbar_slave
-      localparam int NS = NUM_SLAVE_MASTER[j];
-      axi_lite_xbar_slice #(.NUM_MASTER(NM), .NUM_SLAVE(NS)) i_xbar (.*);
-    end
-  end
-
   // ATOP Filter
   for (genvar iID = 1; iID <= 8; iID++) begin
     localparam int IW = iID;
@@ -98,51 +89,6 @@ module synth_slice #(
   axi_lite_to_axi b (
     .in   (b_lite.Slave),
     .out  (b_full.Master)
-  );
-
-endmodule
-
-
-module axi_lite_xbar_slice #(
-  parameter int NUM_MASTER = -1,
-  parameter int NUM_SLAVE = -1
-)(
-  input logic clk_i,
-  input logic rst_ni
-);
-
-  AXI_LITE #(
-    .AXI_ADDR_WIDTH(32),
-    .AXI_DATA_WIDTH(32)
-  ) xbar_master [0:NUM_MASTER-1]();
-
-  AXI_LITE #(
-    .AXI_ADDR_WIDTH(32),
-    .AXI_DATA_WIDTH(32)
-  ) xbar_slave [0:NUM_SLAVE-1]();
-
-  AXI_ROUTING_RULES #(
-    .AXI_ADDR_WIDTH(32),
-    .NUM_SLAVE(NUM_SLAVE),
-    .NUM_RULES(1)
-  ) xbar_routing();
-
-  for (genvar i = 0; i < NUM_SLAVE; i++) begin
-    assign xbar_routing.rules[i] = {{ 32'hfffff000, 32'h00010000 * i }};
-  end
-
-  axi_lite_xbar #(
-    .ADDR_WIDTH(32),
-    .DATA_WIDTH(32),
-    .NUM_MASTER(NUM_MASTER),
-    .NUM_SLAVE(NUM_SLAVE),
-    .NUM_RULES(1)
-  ) xbar (
-    .clk_i  ( clk_i              ),
-    .rst_ni ( rst_ni             ),
-    .master ( xbar_master.Slave  ),
-    .slave  ( xbar_slave.Master  ),
-    .rules  ( xbar_routing.xbar  )
   );
 
 endmodule
