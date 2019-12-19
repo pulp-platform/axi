@@ -11,8 +11,10 @@
 # specific language governing permissions and limitations under the License.
 #
 # Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+# Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 set -e
 
 bender script vsim -t test > compile.tcl
-vsim -c -do 'source compile.tcl; quit'
+echo 'return 0' >> compile.tcl
+vsim -c -do 'exit -code [source compile.tcl]'

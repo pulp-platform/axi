@@ -9,6 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 
@@ -53,7 +54,7 @@ module tb_axi_lite_to_axi;
 
   `AXI_ASSIGN(axi_dv, axi);
 
-  axi_lite_to_axi i_dut (
+  axi_lite_to_axi_intf i_dut (
     .in   ( axi_lite ),
     .out  ( axi      )
   );

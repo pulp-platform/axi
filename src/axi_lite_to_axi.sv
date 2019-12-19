@@ -10,19 +10,87 @@
 // specific language governing permissions and limitations under the License.
 //
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 /// An AXI4-Lite to AXI4 adapter.
-module axi_lite_to_axi (
+module axi_lite_to_axi #(
+  // LITE AXI structs
+  parameter type  req_lite_t = logic,
+  parameter type resp_lite_t = logic,
+  // FULL AXI structs
+  parameter type       req_t = logic,
+  parameter type      resp_t = logic
+) (
+  // Slave AXI LITE port
+  input  req_lite_t  slv_req_lite_i,
+  output resp_lite_t slv_resp_lite_o,
+  // Master AXI port
+  output req_t       mst_req_o,
+  input  resp_t      mst_resp_i
+);
+  localparam int unsigned write_size = $unsigned($clog2($bits(mst_req_o.w.data)/8));
+  localparam int unsigned read_size  = $unsigned($clog2($bits(mst_req_o.r.data)/8));
+
+  // request assign
+  assign mst_req_o = '{
+    aw: '{
+      addr:  slv_req_lite_i.aw.addr,
+      port:  slv_req_lite_i.aw.prot,
+      size:  axi_pkg::size_t'(write_size),
+      burst: axi_pkg::BURST_FIXED,
+      default: '0
+    },
+    aw_valid: slv_req_lite_i.aw_valid,
+    w: '{
+      data: slv_req_lite_i.w.data,
+      strb: slv_req_lite_i.w.strb,
+      last: 1'b1,
+      default: '0
+    },
+    w_valid: slv_req_lite_i.w_valid,
+    b_ready: slv_req_lite_i.b_ready,
+    ar: '{
+      addr:  slv_req_lite_i.ar.addr,
+      prot:  slv_req_lite_i.ar.prot,
+      size:  axi_pkg::size_t'(read_size),
+      burst: axi_pkg::BURST_FIXED,
+      default: '0
+    },
+    ar_valid: slv_req_lite_i.ar_valid,
+    r_ready:  slv_req_lite_i.r_ready,
+    default:   '0
+  };
+  // response assign
+  assign slv_resp_lite_o = '{
+    aw_ready: mst_resp_i.aw_ready,
+    w_ready:  mst_resp_i.w_ready,
+    b: '{
+      resp: mst_resp_i.b.resp,
+      default: '0
+    },
+    b_valid:  mst_resp_i.b_valid,
+    ar_ready: mst_resp_i.ar_ready,
+    r: '{
+      data: mst_resp_i.r.data,
+      resp: mst_resp_i.r.resp,
+      default: '0
+    },
+    r_valid: mst_resp_i.r_valid,
+    default: '0
+  };
+endmodule
+
+module axi_lite_to_axi_intf (
   AXI_LITE.Slave  in,
   AXI_BUS.Master  out
 );
 
-  `ifndef SYNTHESIS
+// pragma translate_off
   initial begin
     assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
   end
-  `endif
+// pragma translate_on
 
   assign out.aw_id     = '0;
   assign out.aw_addr   = in.aw_addr;

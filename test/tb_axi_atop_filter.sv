@@ -8,6 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+// Author:
+// Andreas Kurth  <akurth@iis.ee.ethz.ch>
+
 // Testbench for axi_atop_filter
 
 `include "axi/assign.svh"
@@ -95,9 +98,12 @@ module tb_axi_atop_filter #(
 
   `AXI_ASSIGN(downstream_dv, downstream);
 
-  axi_atop_filter #(
+  axi_atop_filter_intf #(
     .AXI_ID_WIDTH       (AXI_ID_WIDTH),
-    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS)
+    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS),
+    .AXI_ADDR_WIDTH     (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH     (AXI_DATA_WIDTH),
+    .AXI_USER_WIDTH     (AXI_USER_WIDTH)
   ) dut (
     .clk_i  (clk),
     .rst_ni (rst_n),
@@ -528,7 +534,7 @@ module tb_axi_atop_filter #(
         w_beat.w_strb = upstream.w_strb;
         w_beat.w_last = upstream.w_last;
         w_beat.w_user = upstream.w_user;
-        assert (w_cmd_queue.size() > 0) else $fatal("upstream.W: Undecided beat!");
+        assert (w_cmd_queue.size() > 0) else $fatal(1, "upstream.W: Undecided beat!");
         w_cmd = w_cmd_queue[0];
         if (w_cmd.thru) begin
           w_xfer_queue.push_back(w_beat);
