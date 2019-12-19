@@ -39,6 +39,49 @@ package axi_pkg;
   localparam CACHE_RD_ALLOC   = 4'b0100;
   localparam CACHE_WR_ALLOC   = 4'b1000;
 
+  // Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
+  function shortint unsigned num_bytes(size_t size);
+    return 1 << size;
+  endfunction
+
+  // An overly long address type lets us define functions that work generically for shorter
+  // addresses.  We rely on the synthesizer to optimize the unused bits away.
+  typedef logic [127:0] largest_addr_t;
+
+  // Aligned address of burst (see A3-51).
+  function largest_addr_t aligned_addr(largest_addr_t addr, size_t size);
+    return (addr >> size) << size;
+  endfunction
+
+  // Address of beat (see A3-51).
+  function automatic largest_addr_t
+  beat_addr(largest_addr_t addr, size_t size, shortint unsigned i_beat);
+    if (i_beat == 0) begin
+      return addr;
+    end else begin
+      return aligned_addr(addr, size) + i_beat * num_bytes(size);
+    end
+  endfunction
+
+  // Index of lowest beat in byte (see A3-51).
+  function automatic shortint unsigned
+  beat_lower_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
+      shortint unsigned i_beat);
+    largest_addr_t _addr = beat_addr(addr, size, i_beat);
+    return _addr - (_addr / strobe_width) * strobe_width;
+  endfunction
+
+  // Index of highest beat in byte (see A3-51).
+  function automatic shortint unsigned
+  beat_upper_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
+      shortint unsigned i_beat);
+    if (i_beat == 0) begin
+      return aligned_addr(addr, size) + (num_bytes(size) - 1) - (addr / strobe_width) * strobe_width;
+    end else begin
+      return beat_lower_byte(addr, size, strobe_width, i_beat) + num_bytes(size) - 1;
+    end
+  endfunction
+
   // ATOP[5:0]
   localparam ATOP_ATOMICSWAP  = 6'b110000;
   localparam ATOP_ATOMICCMP   = 6'b110001;
