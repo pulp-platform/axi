@@ -85,12 +85,14 @@ module axi_lite_to_axi_intf (
   AXI_BUS.Master  out
 );
 
-  `ifndef SYNTHESIS
+// pragma translate_off
+`ifndef SYNTHESIS
   initial begin
     assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
   end
-  `endif
+`endif
+// pragma translate_on
 
   assign out.aw_id     = '0;
   assign out.aw_addr   = in.aw_addr;

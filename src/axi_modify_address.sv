@@ -145,10 +145,12 @@ module axi_modify_address_intf #(
     .mst_ar_addr_i ( ar_addr_out )
   );
 
-  `ifndef SYNTHESIS
+// pragma translate_off
+`ifndef VERILATOR
   initial begin
     assert(ADDR_WIDTH_IN > 0);
     assert(ADDR_WIDTH_OUT > 0);
   end
-  `endif
+`endif
+// pragma translate_on
 endmodule

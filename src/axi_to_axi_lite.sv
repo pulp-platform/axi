@@ -148,12 +148,14 @@ module axi_to_axi_lite #(
   assign slv_resp_o.r_valid = mst_resp_i.r_valid;
   assign mst_req_o.r_ready = slv_req_i.r_ready;
 
-`ifndef SYNTHESIS
+// pragma translate_off
+`ifndef VERILATOR
   initial begin
     assert(NumPendingRd > 0) else $fatal(1, "Number of pending reads must be greater than 0!");
     assert(NumPendingWr > 0) else $fatal(1, "Number of pending writes must be greater than 0!");
   end
 `endif
+// pragma translate_on
 
 endmodule
 
@@ -226,13 +228,13 @@ module axi_to_axi_lite_intf #(
     .mst_resp_i   ( mst_resp )
   );
 
-  // pragma translate_off
+// pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AXI_ADDR_WIDTH >= 1) else $fatal("AXI ADDR width must be at least 1!");
-    assert (AXI_DATA_WIDTH >= 1) else $fatal("AXI DATA width must be at least 1!");
-    assert (AXI_ID_WIDTH   >= 1) else $fatal("AXI ID width must be at least 1!");
-    assert (AXI_USER_WIDTH >= 1) else $fatal("AXI USER width must be at least 1!");
+    assert (AXI_ADDR_WIDTH >= 1) else $fatal(1, "AXI ADDR width must be at least 1!");
+    assert (AXI_DATA_WIDTH >= 1) else $fatal(1, "AXI DATA width must be at least 1!");
+    assert (AXI_ID_WIDTH   >= 1) else $fatal(1, "AXI ID width must be at least 1!");
+    assert (AXI_USER_WIDTH >= 1) else $fatal(1, "AXI USER width must be at least 1!");
   end
 `endif
 // pragma translate_on
