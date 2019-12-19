@@ -11,8 +11,9 @@ All modules have been changed from SystemVerilog interfaces to struct ports.  Th
 this repository are now available in tools that do not support interfaces.  Interfaces are now
 opt-in: every module has a variant with `_intf` suffix that is functionally equivalent but has
 interfaces instead of struct ports.  If you would like to keep using interfaces, please add an
-`_intf` suffix to any module you are using from this repository.  The `_intf` variants are drop-in
-compatible with the non-suffixed modules prior to this release.
+`_intf` suffix to any module you are using from this repository.  Some `_intf` variants require more
+parameters (e.g., to define the ID width) than the module prior to this release, but otherwise the
+`_intf` variants are drop-in replacements.
 
 We encourage the use of structs to build AXI infrastructure, and we have added a set of `typdef`
 macros and have extended the `assign` macros to keep designers productive and prevent mismatches.
