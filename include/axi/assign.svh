@@ -467,7 +467,7 @@
 // the same code.
 `define AXI_LITE_TO_AW(opt_as, aw_lite_struct, axi_lite_if) \
   opt_as aw_lite_struct = '{                                \
-    addr: axi_if.aw_addr,                                   \
+    addr: axi_lite_if.aw_addr,                              \
     prot: '0                                                \
   };
   // prot not in interface!
