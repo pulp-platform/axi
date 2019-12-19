@@ -86,12 +86,10 @@ module axi_lite_to_axi_intf (
 );
 
 // pragma translate_off
-`ifndef SYNTHESIS
   initial begin
     assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
   end
-`endif
 // pragma translate_on
 
   assign out.aw_id     = '0;
