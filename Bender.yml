@@ -43,7 +43,6 @@ sources:
   - target: test
     files:
       - test/tb_axi_atop_filter.sv
-      - test/tb_axi_id_remap.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_to_axi_lite.sv
