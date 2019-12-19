@@ -176,7 +176,6 @@ module axi_cut_intf #(
   // Check the invariants.
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
     assert ( ADDR_WIDTH > 0 ) else $fatal(1, "Wrong addr width parameter");
@@ -192,7 +191,6 @@ module axi_cut_intf #(
     assert ( out.AXI_ID_WIDTH   == ID_WIDTH  ) else $fatal(1, "Wrong interface definition");
     assert ( out.AXI_USER_WIDTH == USER_WIDTH) else $fatal(1, "Wrong interface definition");
   end
-  `endif
   `endif
   `endif
   // pragma translate_on
@@ -248,7 +246,6 @@ module axi_lite_cut_intf #(
   // Check the invariants.
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
     assert ( ADDR_WIDTH > 0) else $fatal(1, "Wrong addr width parameter");
@@ -258,7 +255,6 @@ module axi_lite_cut_intf #(
     assert ( out.AXI_ADDR_WIDTH == ADDR_WIDTH ) else $fatal(1, "Wrong interface definition");
     assert ( out.AXI_DATA_WIDTH == DATA_WIDTH ) else $fatal(1, "Wrong interface definition");
   end
-  `endif
   `endif
   `endif
   // pragma translate_on
