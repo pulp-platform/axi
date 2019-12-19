@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 All modules have been changed from SystemVerilog interfaces to struct ports.  Thus, all modules in
 this repository are now available in tools that do not support interfaces.  Interfaces are now
 opt-in: every module has a variant with `_intf` suffix that is functionally equivalent but has
-interfaces instead of struct port.  If you would like to keep using interfaces, please add an
+interfaces instead of struct ports.  If you would like to keep using interfaces, please add an
 `_intf` suffix to any module you are using from this repository.  The `_intf` variants are drop-in
 compatible with the non-suffixed modules prior to this release.
 
