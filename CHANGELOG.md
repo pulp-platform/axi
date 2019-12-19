@@ -254,6 +254,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_xbar`: Add parameter to disable support for atomic operations (`ATOPs`).
+- Add last level cache `axi_llc_top`.
 
 ### Changed
 - `AXI_BUS`, `AXI_BUS_ASYNC`, `AXI_BUS_DV`, `AXI_LITE`, and `AXI_LITE_DV`: Change type of every
