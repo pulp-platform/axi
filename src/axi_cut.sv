@@ -177,18 +177,18 @@ module axi_cut_intf #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assert ( ADDR_WIDTH > 0 ) else $fatal(1, "Wrong addr width parameter");
-    assert ( DATA_WIDTH > 0 ) else $fatal(1, "Wrong data width parameter");
-    assert ( ID_WIDTH   > 0 ) else $fatal(1, "Wrong id   width parameter");
-    assert ( USER_WIDTH > 0 ) else $fatal(1, "Wrong user width parameter");
-    assert ( in.AXI_ADDR_WIDTH  == ADDR_WIDTH) else $fatal(1, "Wrong interface definition");
-    assert ( in.AXI_DATA_WIDTH  == DATA_WIDTH) else $fatal(1, "Wrong interface definition");
-    assert ( in.AXI_ID_WIDTH    == ID_WIDTH  ) else $fatal(1, "Wrong interface definition");
-    assert ( in.AXI_USER_WIDTH  == USER_WIDTH) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_ADDR_WIDTH == ADDR_WIDTH) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_DATA_WIDTH == DATA_WIDTH) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_ID_WIDTH   == ID_WIDTH  ) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_USER_WIDTH == USER_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (ADDR_WIDTH > 0) else $fatal(1, "Wrong addr width parameter");
+    assert (DATA_WIDTH > 0) else $fatal(1, "Wrong data width parameter");
+    assert (ID_WIDTH   > 0) else $fatal(1, "Wrong id   width parameter");
+    assert (USER_WIDTH > 0) else $fatal(1, "Wrong user width parameter");
+    assert (in.AXI_ADDR_WIDTH  == ADDR_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (in.AXI_DATA_WIDTH  == DATA_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (in.AXI_ID_WIDTH    == ID_WIDTH)   else $fatal(1, "Wrong interface definition");
+    assert (in.AXI_USER_WIDTH  == USER_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_ADDR_WIDTH == ADDR_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_DATA_WIDTH == DATA_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_ID_WIDTH   == ID_WIDTH)   else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_USER_WIDTH == USER_WIDTH) else $fatal(1, "Wrong interface definition");
   end
   `endif
   // pragma translate_on
@@ -245,12 +245,12 @@ module axi_lite_cut_intf #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assert ( ADDR_WIDTH > 0) else $fatal(1, "Wrong addr width parameter");
-    assert ( DATA_WIDTH > 0) else $fatal(1, "Wrong data width parameter");
-    assert ( in.AXI_ADDR_WIDTH == ADDR_WIDTH  ) else $fatal(1, "Wrong interface definition");
-    assert ( in.AXI_DATA_WIDTH == DATA_WIDTH  ) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_ADDR_WIDTH == ADDR_WIDTH ) else $fatal(1, "Wrong interface definition");
-    assert ( out.AXI_DATA_WIDTH == DATA_WIDTH ) else $fatal(1, "Wrong interface definition");
+    assert (ADDR_WIDTH > 0) else $fatal(1, "Wrong addr width parameter");
+    assert (DATA_WIDTH > 0) else $fatal(1, "Wrong data width parameter");
+    assert (in.AXI_ADDR_WIDTH == ADDR_WIDTH)  else $fatal(1, "Wrong interface definition");
+    assert (in.AXI_DATA_WIDTH == DATA_WIDTH)  else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_ADDR_WIDTH == ADDR_WIDTH) else $fatal(1, "Wrong interface definition");
+    assert (out.AXI_DATA_WIDTH == DATA_WIDTH) else $fatal(1, "Wrong interface definition");
   end
   `endif
   // pragma translate_on
