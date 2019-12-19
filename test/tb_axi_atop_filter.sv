@@ -534,7 +534,7 @@ module tb_axi_atop_filter #(
         w_beat.w_strb = upstream.w_strb;
         w_beat.w_last = upstream.w_last;
         w_beat.w_user = upstream.w_user;
-        assert (w_cmd_queue.size() > 0) else $fatal("upstream.W: Undecided beat!");
+        assert (w_cmd_queue.size() > 0) else $fatal(1, "upstream.W: Undecided beat!");
         w_cmd = w_cmd_queue[0];
         if (w_cmd.thru) begin
           w_xfer_queue.push_back(w_beat);

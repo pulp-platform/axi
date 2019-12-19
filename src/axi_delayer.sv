@@ -184,10 +184,10 @@ module axi_delayer_intf #(
   // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AXI_ID_WIDTH >= 1) else $fatal("AXI ID width must be at least 1!");
-    assert (AXI_ADDR_WIDTH >= 1) else $fatal("AXI ADDR width must be at least 1!");
-    assert (AXI_DATA_WIDTH >= 1) else $fatal("AXI DATA width must be at least 1!");
-    assert (AXI_USER_WIDTH >= 1) else $fatal("AXI USER width must be at least 1!");
+    assert (AXI_ID_WIDTH >= 1) else $fatal(1, "AXI ID width must be at least 1!");
+    assert (AXI_ADDR_WIDTH >= 1) else $fatal(1, "AXI ADDR width must be at least 1!");
+    assert (AXI_DATA_WIDTH >= 1) else $fatal(1, "AXI DATA width must be at least 1!");
+    assert (AXI_USER_WIDTH >= 1) else $fatal(1, "AXI USER width must be at least 1!");
   end
 `endif
 // pragma translate_on
