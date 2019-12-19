@@ -224,6 +224,9 @@ module axi_lite_cut_intf #(
   `AXI_LITE_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t)
 
+  req_t   slv_req,  mst_req;
+  resp_t  slv_resp, mst_resp;
+
   axi_cut #(
     .Bypass    (    BYPASS ),
     .aw_chan_t ( aw_chan_t ),
