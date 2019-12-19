@@ -16,4 +16,5 @@
 set -e
 
 bender script vsim -t test > compile.tcl
-vsim -c -do 'source compile.tcl; quit'
+echo 'return 0' >> compile.tcl
+vsim -c -do 'exit -code [source compile.tcl]'
