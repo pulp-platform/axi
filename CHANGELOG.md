@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+
+## 0.8.1 - 2019-12-19
+
 ### Added
 - `axi_pkg`: Functions to calculate addresses and byte positions within a beat.
 
