@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_to_mem_banked`:  AXI4+ATOP slave to control on chip memory, with banking support, higher
                         throughput than `axi_to_mem`.
 - `Bender`: Add dependency `tech_cells_generic` `v0.2.2` for generic SRAM macro for simulation.
+- Add last level cache `axi_llc_top`.
 
 ### Changed
 - `AXI_BUS`, `AXI_BUS_ASYNC`, `AXI_BUS_DV`, `AXI_LITE`, and `AXI_LITE_DV`: Change type of every
