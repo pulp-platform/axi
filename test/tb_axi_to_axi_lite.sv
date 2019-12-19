@@ -56,7 +56,14 @@ module tb_axi_to_axi_lite;
 
   `AXI_ASSIGN(axi, axi_dv);
 
-  axi_to_axi_lite i_dut (
+  axi_to_axi_lite_intf #(
+    .AXI_ADDR_WIDTH (AW),
+    .AXI_DATA_WIDTH (DW),
+    .AXI_ID_WIDTH   (IW),
+    .AXI_USER_WIDTH (UW),
+    .NUM_PENDING_RD (1),
+    .NUM_PENDING_WR (1)
+  ) i_dut (
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
     .testmode_i ( 1'b0     ),
