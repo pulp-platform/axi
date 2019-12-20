@@ -216,10 +216,6 @@ module axi_xbar #(
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_mst_req_ports: assert ($bits(mst_ports_req_o[0].aw.id) == Cfg.AxiIdWidthMstPorts) else
-      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_mst_resp_ports: assert ($bits(mst_ports_resp_i[0].r.id) == Cfg.AxiIdWidthMstPorts) else
-      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
   end
   `endif
   // pragma translate_on

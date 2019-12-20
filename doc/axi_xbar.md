@@ -12,10 +12,7 @@ A block-diagram of the crossbar is shown below:
 
 The crossbar has a configurable number of slave and master ports.
 
-The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports is:
-```
-AxiIdWidthMstPorts = AxiIdWidthSlvPorts + log_2(NoSlvPorts)
-```
+The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports must be `AxiIdWidthSlvPorts + $clog_2(NoSlvPorts)`.
 
 
 ## Address Map
@@ -52,7 +49,6 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 | `LatencyMode`        | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
 | `AxiIdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
 | `AxiIdUsedSlvPorts`  | `int unsigned`     | The number of slave port ID bits (starting at the least significant) the crossbar uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidthSlvPorts`. |
-| `AxiIdWidthMstPorts` | `int unsigned`     | The AXI ID width of the master ports. |
 | `AxiAddrWidth`       | `int unsigned`     | The AXI address width. |
 | `AxiDataWidth`       | `int unsigned`     | The AXI data width. |
 | `NoAddrRules`        | `int unsigned`     | The number of address map rules. |
