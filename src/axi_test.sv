@@ -1094,8 +1094,8 @@ package axi_test;
 
     // Issue n_reads random read and n_writes random write transactions to an address range.
     task run(input int n_reads, input int n_writes);
-      static logic  ar_done = 1'b0,
-                    aw_done = 1'b0;
+      automatic logic  ar_done = 1'b0,
+                       aw_done = 1'b0;
       fork
         begin
           send_ars(n_reads);
