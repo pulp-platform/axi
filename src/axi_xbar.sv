@@ -259,7 +259,6 @@ module axi_xbar #(
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_mux #(
       .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
-      .MstAxiIDWidth ( Cfg.AxiIdWidthMstPorts ), // ID width of the master port
       .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
       .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
       .w_chan_t      ( w_chan_t               ), //  W Channel Type, all ports

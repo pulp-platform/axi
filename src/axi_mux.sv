@@ -25,7 +25,6 @@
 module axi_mux #(
   // AXI parameter and channel types
   parameter int unsigned SlvAxiIDWidth = 0,     // AXI ID width, slave ports
-  parameter int unsigned MstAxiIDWidth = 1,     // AXI ID width master port
   parameter type         slv_aw_chan_t = logic, // AW Channel Type, slave ports
   parameter type         mst_aw_chan_t = logic, // AW Channel Type, master port
   parameter type         w_chan_t      = logic, //  W Channel Type, all ports
@@ -94,6 +93,10 @@ module axi_mux #(
   input  logic                          mst_r_valid_i,
   output logic                          mst_r_ready_o
 );
+
+  localparam int unsigned MstIdxBits    = $clog2(NoSlvPorts);
+  localparam int unsigned MstAxiIDWidth = SlvAxiIDWidth + MstIdxBits;
+
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
     // AW channel
@@ -119,11 +122,6 @@ module axi_mux #(
 
   // other non degenerate cases
   end else begin : gen_mux
-
-    // typedef for the w_fifo
-    localparam int unsigned MstIdxBits = $clog2(NoSlvPorts);
-    // these are for finding the right bit of the return ID for the switching
-    localparam int unsigned MstIdx     = MstAxiIDWidth - MstIdxBits;
 
     typedef logic [MstIdxBits-1:0] switch_id_t;
 
@@ -294,17 +292,17 @@ module axi_mux #(
       .DEPTH        ( MaxWTrans   ),
       .dtype        ( switch_id_t )
     ) i_w_fifo (
-      .clk_i     ( clk_i                              ),
-      .rst_ni    ( rst_ni                             ),
-      .flush_i   ( 1'b0                               ),
-      .testmode_i( test_i                             ),
-      .full_o    ( w_fifo_full                        ),
-      .empty_o   ( w_fifo_empty                       ),
-      .usage_o   (                                    ),
-      .data_i    ( mst_aw_chan.id[MstIdx+:MstIdxBits] ),
-      .push_i    ( w_fifo_push                        ),
-      .data_o    ( w_fifo_data                        ),
-      .pop_i     ( w_fifo_pop                         )
+      .clk_i     ( clk_i                                     ),
+      .rst_ni    ( rst_ni                                    ),
+      .flush_i   ( 1'b0                                      ),
+      .testmode_i( test_i                                    ),
+      .full_o    ( w_fifo_full                               ),
+      .empty_o   ( w_fifo_empty                              ),
+      .usage_o   (                                           ),
+      .data_i    ( mst_aw_chan.id[SlvAxiIDWidth+:MstIdxBits] ),
+      .push_i    ( w_fifo_push                               ),
+      .data_o    ( w_fifo_data                               ),
+      .pop_i     ( w_fifo_pop                                )
     );
 
     spill_register #(
@@ -361,7 +359,7 @@ module axi_mux #(
     // replicate B channels
     assign slv_b_chans  = {NoSlvPorts{mst_b_chan}};
     // control B channel handshake
-    assign switch_b_id  = mst_b_chan.id[MstIdx+:MstIdxBits];
+    assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
     spill_register #(
@@ -420,7 +418,7 @@ module axi_mux #(
     // replicate R channels
     assign slv_r_chans  = {NoSlvPorts{mst_r_chan}};
     // R channel handshake control
-    assign switch_r_id  = mst_r_chan.id[MstIdx+:MstIdxBits];
+    assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
     spill_register #(
