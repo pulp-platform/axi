@@ -82,6 +82,56 @@ package axi_pkg;
     end
   endfunction
 
+  // MEMORY TYPE
+  typedef enum logic [3:0] {
+    DEVICE_NONBUFFERABLE,
+    DEVICE_BUFFERABLE,
+    NORMAL_NONCACHEABLE_NONBUFFERABLE,
+    NORMAL_NONCACHEABLE_BUFFERABLE,
+    WTHRU_NOALLOCATE,
+    WTHRU_RALLOCATE,
+    WTHRU_WALLOCATE,
+    WTHRU_RWALLOCATE,
+    WBACK_NOALLOCATE,
+    WBACK_RALLOCATE,
+    WBACK_WALLOCATE,
+    WBACK_RWALLOCATE
+  } mem_type_t;
+
+  function automatic logic [3:0] get_arcache(mem_type_t mtype);
+    unique case (mtype)
+      DEVICE_NONBUFFERABLE              : return 4'b0000;
+      DEVICE_BUFFERABLE                 : return 4'b0001;
+      NORMAL_NONCACHEABLE_NONBUFFERABLE : return 4'b0010;
+      NORMAL_NONCACHEABLE_BUFFERABLE    : return 4'b0011;
+      WTHRU_NOALLOCATE                  : return 4'b1010;
+      WTHRU_RALLOCATE                   : return 4'b1110;
+      WTHRU_WALLOCATE                   : return 4'b1010;
+      WTHRU_RWALLOCATE                  : return 4'b1110;
+      WBACK_NOALLOCATE                  : return 4'b1011;
+      WBACK_RALLOCATE                   : return 4'b1111;
+      WBACK_WALLOCATE                   : return 4'b1011;
+      WBACK_RWALLOCATE                  : return 4'b1111;
+    endcase // mtype
+  endfunction
+
+  function automatic logic [3:0] get_awcache(mem_type_t mtype);
+    unique case (mtype)
+      DEVICE_NONBUFFERABLE              : return 4'b0000;
+      DEVICE_BUFFERABLE                 : return 4'b0001;
+      NORMAL_NONCACHEABLE_NONBUFFERABLE : return 4'b0010;
+      NORMAL_NONCACHEABLE_BUFFERABLE    : return 4'b0011;
+      WTHRU_NOALLOCATE                  : return 4'b0110;
+      WTHRU_RALLOCATE                   : return 4'b0110;
+      WTHRU_WALLOCATE                   : return 4'b1110;
+      WTHRU_RWALLOCATE                  : return 4'b1110;
+      WBACK_NOALLOCATE                  : return 4'b0111;
+      WBACK_RALLOCATE                   : return 4'b0111;
+      WBACK_WALLOCATE                   : return 4'b1111;
+      WBACK_RWALLOCATE                  : return 4'b1111;
+    endcase // mtype
+  endfunction
+
   // ATOP[5:0]
   localparam ATOP_ATOMICSWAP  = 6'b110000;
   localparam ATOP_ATOMICCMP   = 6'b110001;

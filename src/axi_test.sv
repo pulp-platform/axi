@@ -602,18 +602,6 @@ package axi_test;
     parameter int   AXI_MAX_BURST_LEN = 0, // maximum number of beats in burst; 0 = AXI max (256)
     parameter bit   AXI_EXCLS = 1'b0,
     parameter bit   AXI_ATOPS = 1'b0,
-    parameter logic [3:0] AXI_MEMORY_TYPES [] = { // all legal memory types enabled by default
-      '0,
-                                                                                      axi_pkg::CACHE_BUFFERABLE,
-                                                          axi_pkg::CACHE_MODIFIABLE,
-                                                          axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
-                                axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE,
-                                axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
-      axi_pkg::CACHE_WR_ALLOC |                           axi_pkg::CACHE_MODIFIABLE,
-      axi_pkg::CACHE_WR_ALLOC |                           axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE,
-      axi_pkg::CACHE_WR_ALLOC | axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE,
-      axi_pkg::CACHE_WR_ALLOC | axi_pkg::CACHE_RD_ALLOC | axi_pkg::CACHE_MODIFIABLE | axi_pkg::CACHE_BUFFERABLE
-    },
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW
@@ -621,14 +609,15 @@ package axi_test;
     typedef axi_test::axi_driver #(
       .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
     ) axi_driver_t;
-    typedef logic [AW-1:0]    addr_t;
-    typedef axi_pkg::burst_t  burst_t;
-    typedef axi_pkg::cache_t  cache_t;
-    typedef logic [DW-1:0]    data_t;
-    typedef logic [IW-1:0]    id_t;
-    typedef axi_pkg::len_t    len_t;
-    typedef axi_pkg::size_t   size_t;
-    typedef logic [UW-1:0]    user_t;
+    typedef logic [AW-1:0]      addr_t;
+    typedef axi_pkg::burst_t    burst_t;
+    typedef axi_pkg::cache_t    cache_t;
+    typedef logic [DW-1:0]      data_t;
+    typedef logic [IW-1:0]      id_t;
+    typedef axi_pkg::len_t      len_t;
+    typedef axi_pkg::size_t     size_t;
+    typedef logic [UW-1:0]      user_t;
+    typedef axi_pkg::mem_type_t mem_type_t;
 
     typedef axi_driver_t::ax_beat_t ax_beat_t;
     typedef axi_driver_t::b_beat_t  b_beat_t;
@@ -653,6 +642,13 @@ package axi_test;
 
     ax_beat_t aw_queue[$],
               excl_queue[$];
+
+    typedef struct packed {
+      addr_t     addr_begin;
+      addr_t     addr_end;
+      mem_type_t mem_type;
+    } mem_region_t;
+    mem_region_t mem_map[$];
 
     function new(
       virtual AXI_BUS_DV #(
@@ -682,7 +678,11 @@ package axi_test;
       atop_resp_r = '0;
     endfunction
 
-    function ax_beat_t new_rand_burst(input addr_t addr_begin, addr_end);
+    function void add_memory_region(input addr_t addr_begin, input addr_t addr_end, input mem_type_t mem_type);
+      mem_map.push_back({addr_begin, addr_end, mem_type});
+    endfunction
+
+    function ax_beat_t new_rand_burst(input logic is_read);
       automatic logic rand_success;
       automatic ax_beat_t ax_beat = new;
       automatic addr_t addr;
@@ -691,21 +691,21 @@ package axi_test;
       automatic id_t id;
       automatic len_t len;
       automatic size_t size;
+      automatic int unsigned mem_region_idx;
+      automatic mem_region_t mem_region;
+
+      // Randomly pick a memory region
+      rand_success = std::randomize(mem_region_idx) with {
+        mem_region_idx < mem_map.size();
+      }; assert(rand_success);
+      mem_region = mem_map[mem_region_idx];
       // Randomly pick FIXED or INCR burst.  WRAP is currently not supported.
       rand_success = std::randomize(burst) with {
         burst <= axi_pkg::BURST_INCR;
       }; assert(rand_success);
       ax_beat.ax_burst = burst;
-      // Randomize burst length.
-      rand_success = std::randomize(len) with {
-        len <= this.max_len;
-      }; assert(rand_success);
-      ax_beat.ax_len = len;
-      // Randomize memory type.
-      rand_success = std::randomize(cache) with {
-        cache inside {AXI_MEMORY_TYPES};
-      };
-      ax_beat.ax_cache = cache;
+      // Determine memory type.
+      ax_beat.ax_cache = is_read ? axi_pkg::get_arcache(mem_region.mem_type) : axi_pkg::get_awcache(mem_region.mem_type);
       // Randomize beat size.
       rand_success = std::randomize(size) with {
         2**size <= AXI_STRB_WIDTH;
@@ -714,9 +714,15 @@ package axi_test;
       // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
       forever begin
         rand_success = std::randomize(addr) with {
-          addr >= addr_begin;
-          addr <= addr_end;
+          addr >= mem_region.addr_begin;
+          addr <= mem_region.addr_end;
         }; assert(rand_success);
+        // Randomize burst length.
+        rand_success = std::randomize(len) with {
+          len <= this.max_len;
+        }; assert(rand_success);
+        ax_beat.ax_len = len;
+
         if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
           if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
             break;
@@ -871,11 +877,11 @@ package axi_test;
       repeat (cycles) @(posedge this.drv.axi.clk_i);
     endtask
 
-    task send_ars(input int n_reads, addr_t addr_begin, addr_end);
+    task send_ars(input int n_reads);
       automatic logic rand_success;
       repeat (n_reads) begin
         automatic id_t id;
-        automatic ax_beat_t ar_beat = new_rand_burst(addr_begin, addr_end);
+        automatic ax_beat_t ar_beat = new_rand_burst(1'b1);
         while (tot_r_flight_cnt >= MAX_READ_TXNS) begin
           rand_wait(1, 1);
         end
@@ -928,7 +934,7 @@ package axi_test;
       end
     endtask
 
-    task send_aws(input int n_writes, addr_t addr_begin, addr_t addr_end);
+    task send_aws(input int n_writes);
       automatic logic rand_success;
       repeat (n_writes) begin
         automatic bit excl = 1'b0;
@@ -937,7 +943,7 @@ package axi_test;
         if (excl) begin
           aw_beat = excl_queue.pop_front();
         end else begin
-          aw_beat = new_rand_burst(addr_begin, addr_end);
+          aw_beat = new_rand_burst(1'b0);
         end
         while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin
           rand_wait(1, 1);
@@ -1014,17 +1020,17 @@ package axi_test;
     endtask
 
     // Issue n_reads random read and n_writes random write transactions to an address range.
-    task run(input int n_reads, input int n_writes, input addr_t addr_begin, input addr_t addr_end);
+    task run(input int n_reads, input int n_writes);
       static logic  ar_done = 1'b0,
                     aw_done = 1'b0;
       fork
         begin
-          send_ars(n_reads, addr_begin, addr_end);
+          send_ars(n_reads);
           ar_done = 1'b1;
         end
         recv_rs(ar_done, aw_done);
         begin
-          send_aws(n_writes, addr_begin, addr_end);
+          send_aws(n_writes);
           aw_done = 1'b1;
         end
         send_ws(aw_done);
