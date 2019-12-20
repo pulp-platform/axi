@@ -20,7 +20,6 @@ module tb_axi_delayer;
   parameter DW = 32;
   parameter IW = 8;
   parameter UW = 8;
-  parameter IWO = 4;
   parameter TS = 4;
 
   localparam tCK = 1ns;
@@ -32,29 +31,16 @@ module tb_axi_delayer;
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IWO),
+    .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
-  ) axi_slave_dv(clk);
+  ) axi_slave_dv(clk), axi_master_dv(clk);
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IWO),
+    .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
-  ) axi_slave();
+  ) axi_slave(), axi_master();
   `AXI_ASSIGN(axi_slave_dv, axi_slave);
-
-  AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH(AW),
-    .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IW),
-    .AXI_USER_WIDTH(UW)
-  ) axi_master_dv(clk);
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH(AW),
-    .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IW),
-    .AXI_USER_WIDTH(UW)
-  ) axi_master();
   `AXI_ASSIGN(axi_master, axi_master_dv);
 
   axi_delayer_intf #(
@@ -71,7 +57,7 @@ module tb_axi_delayer;
     .mst        ( axi_slave   )
   );
 
-  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IWO), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
+  axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_slave_drv = new(axi_slave_dv);
   axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(200ps), .TT(700ps)) axi_master_drv = new(axi_master_dv);
 
   initial begin
@@ -108,9 +94,9 @@ module tb_axi_delayer;
   end
 
   initial begin
-    automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IWO), .UW(UW)) ax_beat;
+    automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat;
     automatic axi_test::axi_w_beat #(.DW(DW), .UW(UW)) w_beat;
-    automatic axi_test::axi_b_beat #(.IW(IWO), .UW(UW)) b_beat = new;
+    automatic axi_test::axi_b_beat #(.IW(IW), .UW(UW)) b_beat = new;
     automatic int b_id_queue[$];
     axi_slave_drv.reset_slave();
     @(posedge clk);
