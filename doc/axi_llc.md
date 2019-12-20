@@ -32,9 +32,7 @@ It is also required to provide the detailed AXI4 structs as parameters for the r
 
 The overall size in bytes of the LLC in byte can be calculated with:
 
-$ LlcSize = SetAssocitativity * NoLines * NoBlocks * \frac{DataWidthFull}{8} $
-
-
+![Equation axi_llc size](axi_llc_size_equ.gif "Equation axi_llc size")
 
 The AXI4 protocol issues its transfers in a bursted fashion. The idea of the LLC is to use most of the control information provided by the protocol to implement the cache control in a decentralized way. To achieve that a data-flow based control scheme is chosen.
 
