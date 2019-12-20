@@ -24,7 +24,7 @@
 
 module axi_mux #(
   // AXI parameter and channel types
-  parameter int unsigned SlvAxiIDWidth = 1,     // AXI ID width slave ports
+  parameter int unsigned SlvAxiIDWidth = 0,     // AXI ID width, slave ports
   parameter int unsigned MstAxiIDWidth = 1,     // AXI ID width master port
   parameter type         slv_aw_chan_t = logic, // AW Channel Type, slave ports
   parameter type         mst_aw_chan_t = logic, // AW Channel Type, master port
@@ -35,7 +35,7 @@ module axi_mux #(
   parameter type         mst_ar_chan_t = logic, // AR Channel Type, master port
   parameter type         slv_r_chan_t  = logic, //  R Channel Type, slave ports
   parameter type         mst_r_chan_t  = logic, //  R Channel Type, master port
-  parameter int unsigned NoSlvPorts    = 1,     // Number of slave ports
+  parameter int unsigned NoSlvPorts    = 0,     // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MaxWTrans     = 8,
   // If enabled, this multiplexer is purely combinatorial
