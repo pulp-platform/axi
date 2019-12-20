@@ -437,6 +437,19 @@ module axi_mux #(
       .data_o  ( mst_r_chan                 )
     );
   end
+
+// pragma translate_off
+`ifndef VERILATOR
+  initial begin
+    assert (SlvAxiIDWidth > 0) else $fatal(1, "AXI ID width of slave ports must be non-zero!");
+    assert (NoSlvPorts > 0) else $fatal(1, "Number of slave ports must be non-zero!");
+    assert (MaxWTrans > 0)
+      else $fatal(1, "Maximum number of outstanding writes must be non-zero!");
+    assert (MstAxiIDWidth >= SlvAxiIDWidth + $clog2(NoSlvPorts))
+      else $fatal(1, "AXI ID width of master ports must be wide enough to identify slave ports!");
+  end
+`endif
+// pragma translate_on
 endmodule
 
 // interface wrap
