@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+
+## 0.8.2 - 2019-12-20
+
 ### Fixed
 - `src_files.yml`: Add `only_local` flag for `axi_test`.
 - `axi_test`:
