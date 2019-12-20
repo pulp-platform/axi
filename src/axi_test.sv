@@ -14,10 +14,11 @@
 //
 // This file defines the interfaces we support.
 
-import axi_pkg::*;
 
 /// A set of testbench utilities for AXI interfaces.
 package axi_test;
+
+  import axi_pkg::*;
 
   /// A driver for AXI4-Lite interface.
   class axi_lite_driver #(
