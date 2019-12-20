@@ -131,7 +131,8 @@ module tb_axi_atop_filter #(
   initial begin
     axi_master.reset();
     wait(rst_n);
-    axi_master.run(N_TXNS, N_TXNS, {AXI_ADDR_WIDTH{1'b0}}, {AXI_ADDR_WIDTH{1'b1}});
+    axi_master.add_memory_region({AXI_ADDR_WIDTH{1'b0}}, {AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    axi_master.run(N_TXNS, N_TXNS);
     mst_done = 1'b1;
   end
 
