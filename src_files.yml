@@ -18,3 +18,4 @@ axi_sim:
     - src/axi_test.sv
   flags:
     - skip_synthesis
+    - only_local
