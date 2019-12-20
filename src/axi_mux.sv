@@ -447,6 +447,23 @@ module axi_mux #(
       else $fatal(1, "Maximum number of outstanding writes must be non-zero!");
     assert (MstAxiIDWidth >= SlvAxiIDWidth + $clog2(NoSlvPorts))
       else $fatal(1, "AXI ID width of master ports must be wide enough to identify slave ports!");
+    // Assert ID widths (one slave is sufficient since they all have the same type).
+    assert ($unsigned($bits(slv_aw_chans_i[0].id)) == SlvAxiIDWidth)
+      else $fatal(1, "ID width of AW channel of slave ports does not match parameter!");
+    assert ($unsigned($bits(slv_ar_chans_i[0].id)) == SlvAxiIDWidth)
+      else $fatal(1, "ID width of AR channel of slave ports does not match parameter!");
+    assert ($unsigned($bits(slv_b_chans_o[0].id)) == SlvAxiIDWidth)
+      else $fatal(1, "ID width of B channel of slave ports does not match parameter!");
+    assert ($unsigned($bits(slv_r_chans_o[0].id)) == SlvAxiIDWidth)
+      else $fatal(1, "ID width of R channel of slave ports does not match parameter!");
+    assert ($unsigned($bits(mst_aw_chan_o.id)) == MstAxiIDWidth)
+      else $fatal(1, "ID width of AW channel of master port is wrong!");
+    assert ($unsigned($bits(mst_ar_chan_o.id)) == MstAxiIDWidth)
+      else $fatal(1, "ID width of AR channel of master port is wrong!");
+    assert ($unsigned($bits(mst_b_chan_i.id)) == MstAxiIDWidth)
+      else $fatal(1, "ID width of B channel of master port is wrong!");
+    assert ($unsigned($bits(mst_r_chan_i.id)) == MstAxiIDWidth)
+      else $fatal(1, "ID width of R channel of master port is wrong!");
   end
 `endif
 // pragma translate_on
