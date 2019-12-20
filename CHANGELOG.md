@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Fixed
+- `src_files.yml`: Add `only_local` flag for `axi_test`.
+- `axi_test`:
+  - Add missing default parameters to `axi_lite_driver`.
+  - Move wildcard import from `axi_test` into package to prevent pollution of compilation unit.
+
 
 ## 0.8.1 - 2019-12-19
 
