@@ -52,7 +52,6 @@ module tb_axi_xbar;
     LatencyMode:        axi_pkg::CUT_ALL_AX,
     AxiIdWidthSlvPorts: AxiIdWidthMasters,
     AxiIdUsedSlvPorts:  AxiIdUsed,
-    AxiIdWidthMstPorts: AxiIdWidthSlaves,
     AxiAddrWidth:       AxiAddrWidth,
     AxiDataWidth:       AxiDataWidth,
     NoAddrRules:        8

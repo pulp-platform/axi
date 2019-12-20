@@ -181,7 +181,6 @@ package axi_pkg;
     xbar_latency_e LatencyMode;
     int unsigned   AxiIdWidthSlvPorts;
     int unsigned   AxiIdUsedSlvPorts;
-    int unsigned   AxiIdWidthMstPorts;
     int unsigned   AxiAddrWidth;
     int unsigned   AxiDataWidth;
     int unsigned   NoAddrRules;
