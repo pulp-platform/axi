@@ -22,8 +22,8 @@ package axi_test;
 
   /// A driver for AXI4-Lite interface.
   class axi_lite_driver #(
-    parameter int  AW       ,
-    parameter int  DW       ,
+    parameter int  AW = 32  ,
+    parameter int  DW = 32  ,
     parameter time TA = 0ns , // stimuli application time
     parameter time TT = 0ns   // stimuli test time
   );
