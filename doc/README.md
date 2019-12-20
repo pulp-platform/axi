@@ -4,6 +4,7 @@ This folder contains the documentation of the following modules:
 
 - [AXI Crossbar (`axi_xbar`)](axi_xbar.md)
 - [AXI Demultiplexer (`axi_demux`)](axi_demux.md)
+- [AXI Last Level Cache (`axi_llc_top`)](axi_llc.md)
 - [AXI Multiplexer (`axi_mux`)](axi_mux.md)
 - [AXI4-Lite Mailbox (`axi_lite_mailbox`)](axi_lite_mailbox.md)
 
