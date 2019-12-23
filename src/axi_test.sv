@@ -1461,7 +1461,7 @@ module axi_chan_logger #(
         // pop the AW if the last flag is set
         no_w_beat++;
         if (w_beat.last) begin
-          aw_queue.pop_front();
+          aw_beat = aw_queue.pop_front();
           no_w_beat = 0;
         end
       end
@@ -1500,7 +1500,7 @@ module axi_chan_logger #(
           no_r_beat[i]++;
           // pop the queue if it is the last flag
           if (r_beat.last) begin
-            ar_queues[i].pop_front();
+            ar_beat = ar_queues[i].pop_front();
             no_r_beat[i] = 0;
           end
         end
