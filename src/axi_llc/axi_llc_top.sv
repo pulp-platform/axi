@@ -146,35 +146,16 @@ module axi_llc_top #(
     logic [Cfg.SetAssociativity-1:0] way_ind;       // way which is locked
   } lock_t;
 
-  // slave requests, that go into the bypass `axi_demux`
-  slv_aw_chan_t slv_aw;
-  logic         slv_aw_valid, slv_aw_ready, slv_aw_bypass;
-  slv_ar_chan_t slv_ar;
-  logic         slv_ar_valid, slv_ar_ready, slv_ar_bypass;
-
-  // bypass channels
+  // slave requests, that go into the bypass `axi_demux` from the config module
   // `index` for the axi_mux and axi_demux: bypass: 1, llc: 0
-  slv_aw_chan_t bypass_aw;
-  logic         bypass_aw_valid, bypass_aw_ready;
-  w_chan_t      bypass_w;
-  logic         bypass_w_valid,  bypass_w_ready;
-  slv_b_chan_t  bypass_b;
-  logic         bypass_b_valid,  bypass_b_ready;
-  slv_ar_chan_t bypass_ar;
-  logic         bypass_ar_valid, bypass_ar_ready;
-  slv_r_chan_t  bypass_r;
-  logic         bypass_r_valid,  bypass_r_ready;
-  // llc channels, master and slave
-  slv_aw_chan_t to_llc_aw,                        from_llc_aw;
-  logic         to_llc_aw_valid, to_llc_aw_ready, from_llc_aw_valid, from_llc_aw_ready;
-  w_chan_t      to_llc_w,                         from_llc_w;
-  logic         to_llc_w_valid,  to_llc_w_ready,  from_llc_w_valid,  from_llc_w_ready;
-  slv_b_chan_t  to_llc_b,                         from_llc_b;
-  logic         to_llc_b_valid,  to_llc_b_ready,  from_llc_b_valid,  from_llc_b_ready;
-  slv_ar_chan_t to_llc_ar,                        from_llc_ar;
-  logic         to_llc_ar_valid, to_llc_ar_ready, from_llc_ar_valid, from_llc_ar_ready;
-  slv_r_chan_t  to_llc_r,                         from_llc_r;
-  logic         to_llc_r_valid,  to_llc_r_ready,  from_llc_r_valid,  from_llc_r_ready;
+  slv_aw_chan_t slv_aw;
+  logic         slv_aw_valid,  slv_aw_ready, slv_aw_bypass, port_aw_ready;
+  slv_ar_chan_t slv_ar;
+  logic         slv_ar_valid,  slv_ar_ready, slv_ar_bypass, port_ar_ready;
+
+  // bypass channels and llc connection to the axi_demux and axi_mux
+  slv_req_t     to_demux_req,  bypass_req,   to_llc_req,   from_llc_req;
+  slv_resp_t    to_demux_resp, bypass_resp,  to_llc_resp,  from_llc_resp;
 
   // signals between channel splitters and rw_arb_tree
   llc_desc_t [2:0]      ax_desc;
@@ -211,9 +192,9 @@ module axi_llc_top #(
   logic                 read_desc_valid,   read_desc_ready;
 
   // signals from the unit to the data_ways
-  way_inp_t[3:0]        to_way;
-  logic    [3:0]        to_way_valid;
-  logic    [3:0]        to_way_ready;
+  way_inp_t [3:0]       to_way;
+  logic     [3:0]       to_way_valid;
+  logic     [3:0]       to_way_ready;
 
   // read signals from the data SRAMs
   way_oup_t             evict_way_out,       read_way_out;
@@ -285,19 +266,19 @@ module axi_llc_top #(
     // slave port for controlling bypass (only AW and AR, rest gets handled per assign outside)
     .slv_aw_chan_i  ( slv_req_i.aw        ),
     .slv_aw_valid_i ( slv_req_i.aw_valid  ),
-    .slv_aw_ready_o ( slv_resp_o.aw_ready ),
+    .slv_aw_ready_o ( port_aw_ready       ),
     .slv_ar_chan_i  ( slv_req_i.ar        ),
     .slv_ar_valid_i ( slv_req_i.ar_valid  ),
-    .slv_ar_ready_o ( slv_resp_o.ar_ready ),
+    .slv_ar_ready_o ( port_ar_ready       ),
     // master port for bypass control
-    .mst_aw_chan_o     ( slv_aw            ),
-    .mst_aw_bypass_o   ( slv_aw_bypass     ),
-    .mst_aw_valid_o    ( slv_aw_valid      ),
-    .mst_aw_ready_i    ( slv_aw_ready      ),
-    .mst_ar_chan_o     ( slv_ar            ),
-    .mst_ar_bypass_o   ( slv_ar_bypass     ),
-    .mst_ar_valid_o    ( slv_ar_valid      ),
-    .mst_ar_ready_i    ( slv_ar_ready      ),
+    .mst_aw_chan_o     ( slv_aw           ),
+    .mst_aw_bypass_o   ( slv_aw_bypass    ),
+    .mst_aw_valid_o    ( slv_aw_valid     ),
+    .mst_aw_ready_i    ( slv_aw_ready     ),
+    .mst_ar_chan_o     ( slv_ar           ),
+    .mst_ar_bypass_o   ( slv_ar_bypass    ),
+    .mst_ar_valid_o    ( slv_ar_valid     ),
+    .mst_ar_ready_i    ( slv_ar_ready     ),
     // flush control signals to prevent new data in ax_cutter loading
     .aw_unit_busy_i    ( aw_unit_busy     ),
     .ar_unit_busy_i    ( ar_unit_busy     ),
@@ -320,7 +301,23 @@ module axi_llc_top #(
   );
 
   // only the AW and AR channel go through the CFG module
-  // AXI demux for bypassing the cache
+  // AXI demux for bypassing the cache, all struct fields are driven in the same process
+  always_comb begin
+    to_demux_req = slv_req_i;
+    slv_resp_o   = to_demux_resp;
+    // overwrite required fields from the config
+    // AW
+    to_demux_req.aw       = slv_aw;
+    to_demux_req.aw_valid = slv_aw_valid;
+    slv_aw_ready          = to_demux_resp.aw_ready;
+    slv_resp_o.aw_ready   = port_aw_ready;
+    // AR
+    to_demux_req.ar       = slv_ar;
+    to_demux_req.ar_valid = slv_ar_valid;
+    slv_ar_ready          = to_demux_resp.ar_ready;
+    slv_resp_o.ar_ready   = port_ar_ready;
+  end
+
   axi_demux #(
     .AxiIdWidth     ( AxiCfg.SlvPortIdWidth  ),
     .aw_chan_t      ( slv_aw_chan_t          ),
@@ -328,6 +325,8 @@ module axi_llc_top #(
     .b_chan_t       ( slv_b_chan_t           ),
     .ar_chan_t      ( slv_ar_chan_t          ),
     .r_chan_t       ( slv_r_chan_t           ),
+    .req_t          ( slv_req_t              ),
+    .resp_t         ( slv_resp_t             ),
     .NoMstPorts     ( 32'd2                  ),
     .MaxTrans       ( axi_llc_pkg::MaxTrans  ),
     .AxiLookBits    ( axi_llc_pkg::UseIdBits ),
@@ -338,42 +337,15 @@ module axi_llc_top #(
     .SpillAr        ( 1'b0                   ),
     .SpillR         ( 1'b0                   )
   ) i_axi_bypass_demux (
-    .clk_i            ( clk_i              ),
-    .rst_ni           ( rst_ni             ),
-    .test_i           ( test_i             ),
-    .slv_aw_chan_i    ( slv_aw             ),
-    .slv_aw_select_i  ( slv_aw_bypass      ),
-    .slv_aw_valid_i   ( slv_aw_valid       ),
-    .slv_aw_ready_o   ( slv_aw_ready       ),
-    .slv_w_chan_i     ( slv_req_i.w        ),
-    .slv_w_valid_i    ( slv_req_i.w_valid  ),
-    .slv_w_ready_o    ( slv_resp_o.w_ready ),
-    .slv_b_chan_o     ( slv_resp_o.b       ),
-    .slv_b_valid_o    ( slv_resp_o.b_valid ),
-    .slv_b_ready_i    ( slv_req_i.b_ready  ),
-    .slv_ar_chan_i    ( slv_ar             ),
-    .slv_ar_select_i  ( slv_ar_bypass      ),
-    .slv_ar_valid_i   ( slv_ar_valid       ),
-    .slv_ar_ready_o   ( slv_ar_ready       ),
-    .slv_r_chan_o     ( slv_resp_o.r       ),
-    .slv_r_valid_o    ( slv_resp_o.r_valid ),
-    .slv_r_ready_i    ( slv_req_i.r_ready  ),
-
-    .mst_aw_chans_o   ({ bypass_aw,       to_llc_aw       }),
-    .mst_aw_valids_o  ({ bypass_aw_valid, to_llc_aw_valid }),
-    .mst_aw_readies_i ({ bypass_aw_ready, to_llc_aw_ready }),
-    .mst_w_chans_o    ({ bypass_w,        to_llc_w        }),
-    .mst_w_valids_o   ({ bypass_w_valid,  to_llc_w_valid  }),
-    .mst_w_readies_i  ({ bypass_w_ready,  to_llc_w_ready  }),
-    .mst_b_chans_i    ({ bypass_b,        to_llc_b        }),
-    .mst_b_valids_i   ({ bypass_b_valid,  to_llc_b_valid  }),
-    .mst_b_readies_o  ({ bypass_b_ready,  to_llc_b_ready  }),
-    .mst_ar_chans_o   ({ bypass_ar,       to_llc_ar       }),
-    .mst_ar_valids_o  ({ bypass_ar_valid, to_llc_ar_valid }),
-    .mst_ar_readies_i ({ bypass_ar_ready, to_llc_ar_ready }),
-    .mst_r_chans_i    ({ bypass_r,        to_llc_r        }),
-    .mst_r_valids_i   ({ bypass_r_valid,  to_llc_r_valid  }),
-    .mst_r_readies_o  ({ bypass_r_ready,  to_llc_r_ready  })
+    .clk_i           ( clk_i                    ),
+    .rst_ni          ( rst_ni                   ),
+    .test_i          ( test_i                   ),
+    .slv_req_i       ( to_demux_req             ),
+    .slv_aw_select_i ( slv_aw_bypass            ),
+    .slv_ar_select_i ( slv_ar_bypass            ),
+    .slv_resp_o      ( to_demux_resp            ),
+    .mst_reqs_o      ({bypass_req,  to_llc_req }),
+    .mst_resps_i     ({bypass_resp, to_llc_resp})
   );
 
   // AW channel burst splitter
@@ -385,17 +357,17 @@ module axi_llc_top #(
     .desc_t ( llc_desc_t    ),
     .rule_t ( rule_full_t   )
   ) i_aw_splitter    (
-    .clk_i           ( clk_i            ),
-    .rst_ni          ( rst_ni           ),
-    .ax_chan_slv_i   ( to_llc_aw        ),
-    .ax_chan_valid_i ( to_llc_aw_valid  ),
-    .ax_chan_ready_o ( to_llc_aw_ready  ),
-    .desc_o          ( ax_desc[1]       ),
-    .desc_valid_o    ( ax_desc_valid[1] ),
-    .desc_ready_i    ( ax_desc_ready[1] ),
-    .unit_busy_o     ( aw_unit_busy     ),
-    .ram_rule_i      ( ram_addr_rule    ),
-    .spm_rule_i      ( spm_addr_rule    )
+    .clk_i           ( clk_i                ),
+    .rst_ni          ( rst_ni               ),
+    .ax_chan_slv_i   ( to_llc_req.aw        ),
+    .ax_chan_valid_i ( to_llc_req.aw_valid  ),
+    .ax_chan_ready_o ( to_llc_resp.aw_ready ),
+    .desc_o          ( ax_desc[1]           ),
+    .desc_valid_o    ( ax_desc_valid[1]     ),
+    .desc_ready_i    ( ax_desc_ready[1]     ),
+    .unit_busy_o     ( aw_unit_busy         ),
+    .ram_rule_i      ( ram_addr_rule        ),
+    .spm_rule_i      ( spm_addr_rule        )
   );
 
 
@@ -408,17 +380,17 @@ module axi_llc_top #(
     .desc_t ( llc_desc_t    ),
     .rule_t ( rule_full_t   )
   ) i_ar_splitter    (
-    .clk_i           ( clk_i            ),
-    .rst_ni          ( rst_ni           ),
-    .ax_chan_slv_i   ( to_llc_ar        ),
-    .ax_chan_valid_i ( to_llc_ar_valid  ),
-    .ax_chan_ready_o ( to_llc_ar_ready  ),
-    .desc_o          ( ax_desc[0]       ),
-    .desc_valid_o    ( ax_desc_valid[0] ),
-    .desc_ready_i    ( ax_desc_ready[0] ),
-    .unit_busy_o     ( ar_unit_busy     ),
-    .ram_rule_i      ( ram_addr_rule    ),
-    .spm_rule_i      ( spm_addr_rule    )
+    .clk_i           ( clk_i                ),
+    .rst_ni          ( rst_ni               ),
+    .ax_chan_slv_i   ( to_llc_req.ar        ),
+    .ax_chan_valid_i ( to_llc_req.ar_valid  ),
+    .ax_chan_ready_o ( to_llc_resp.ar_ready ),
+    .desc_o          ( ax_desc[0]           ),
+    .desc_valid_o    ( ax_desc_valid[0]     ),
+    .desc_ready_i    ( ax_desc_ready[0]     ),
+    .unit_busy_o     ( ar_unit_busy         ),
+    .ram_rule_i      ( ram_addr_rule        ),
+    .spm_rule_i      ( spm_addr_rule        )
   );
 
   // arbitration tree which funnels the flush, read and write descriptors together
@@ -510,15 +482,15 @@ module axi_llc_top #(
     .way_out_i         ( evict_way_out                         ),
     .way_out_valid_i   ( evict_way_out_valid                   ),
     .way_out_ready_o   ( evict_way_out_ready                   ),
-    .aw_chan_mst_o     ( from_llc_aw                           ),
-    .aw_chan_valid_o   ( from_llc_aw_valid                     ),
-    .aw_chan_ready_i   ( from_llc_aw_ready                     ),
-    .w_chan_mst_o      ( from_llc_w                            ),
-    .w_chan_valid_o    ( from_llc_w_valid                      ),
-    .w_chan_ready_i    ( from_llc_w_ready                      ),
-    .b_chan_mst_i      ( from_llc_b                            ),
-    .b_chan_valid_i    ( from_llc_b_valid                      ),
-    .b_chan_ready_o    ( from_llc_b_ready                      ),
+    .aw_chan_mst_o     ( from_llc_req.aw                       ),
+    .aw_chan_valid_o   ( from_llc_req.aw_valid                 ),
+    .aw_chan_ready_i   ( from_llc_resp.aw_ready                ),
+    .w_chan_mst_o      ( from_llc_req.w                        ),
+    .w_chan_valid_o    ( from_llc_req.w_valid                  ),
+    .w_chan_ready_i    ( from_llc_resp.w_ready                 ),
+    .b_chan_mst_i      ( from_llc_resp.b                       ),
+    .b_chan_valid_i    ( from_llc_resp.b_valid                 ),
+    .b_chan_ready_o    ( from_llc_req.b_ready                  ),
     .flush_desc_recv_o ( flush_recv                            )
   );
 
@@ -531,24 +503,24 @@ module axi_llc_top #(
     .ar_chan_t ( slv_ar_chan_t ),
     .r_chan_t  ( slv_r_chan_t  )
   ) i_refill_unit (
-    .clk_i           ( clk_i                                  ),
-    .rst_ni          ( rst_ni                                 ),
-    .test_i          ( test_i                                 ),
-    .desc_i          ( evict_desc                             ),
-    .desc_valid_i    ( evict_desc_valid                       ),
-    .desc_ready_o    ( evict_desc_ready                       ),
-    .desc_o          ( refill_desc                            ),
-    .desc_valid_o    ( refill_desc_valid                      ),
-    .desc_ready_i    ( refill_desc_ready                      ),
-    .way_inp_o       ( to_way       [axi_llc_pkg::RefilUnit]  ),
-    .way_inp_valid_o ( to_way_valid [axi_llc_pkg::RefilUnit]  ),
-    .way_inp_ready_i ( to_way_ready [axi_llc_pkg::RefilUnit]  ),
-    .ar_chan_mst_o   ( from_llc_ar                            ),
-    .ar_chan_valid_o ( from_llc_ar_valid                      ),
-    .ar_chan_ready_i ( from_llc_ar_ready                      ),
-    .r_chan_mst_i    ( from_llc_r                             ),
-    .r_chan_valid_i  ( from_llc_r_valid                       ),
-    .r_chan_ready_o  ( from_llc_r_ready                       )
+    .clk_i           ( clk_i                                 ),
+    .rst_ni          ( rst_ni                                ),
+    .test_i          ( test_i                                ),
+    .desc_i          ( evict_desc                            ),
+    .desc_valid_i    ( evict_desc_valid                      ),
+    .desc_ready_o    ( evict_desc_ready                      ),
+    .desc_o          ( refill_desc                           ),
+    .desc_valid_o    ( refill_desc_valid                     ),
+    .desc_ready_i    ( refill_desc_ready                     ),
+    .way_inp_o       ( to_way       [axi_llc_pkg::RefilUnit] ),
+    .way_inp_valid_o ( to_way_valid [axi_llc_pkg::RefilUnit] ),
+    .way_inp_ready_i ( to_way_ready [axi_llc_pkg::RefilUnit] ),
+    .ar_chan_mst_o   ( from_llc_req.ar                       ),
+    .ar_chan_valid_o ( from_llc_req.ar_valid                 ),
+    .ar_chan_ready_i ( from_llc_resp.ar_ready                ),
+    .r_chan_mst_i    ( from_llc_resp.r                       ),
+    .r_chan_valid_i  ( from_llc_resp.r_valid                 ),
+    .r_chan_ready_o  ( from_llc_req.r_ready                  )
   );
 
   // merge unit
@@ -590,12 +562,12 @@ module axi_llc_top #(
     .desc_i          ( write_desc                            ),
     .desc_valid_i    ( write_desc_valid                      ),
     .desc_ready_o    ( write_desc_ready                      ),
-    .w_chan_slv_i    ( to_llc_w                              ),
-    .w_chan_valid_i  ( to_llc_w_valid                        ),
-    .w_chan_ready_o  ( to_llc_w_ready                        ),
-    .b_chan_slv_o    ( to_llc_b                              ),
-    .b_chan_valid_o  ( to_llc_b_valid                        ),
-    .b_chan_ready_i  ( to_llc_b_ready                        ),
+    .w_chan_slv_i    ( to_llc_req.w                          ),
+    .w_chan_valid_i  ( to_llc_req.w_valid                    ),
+    .w_chan_ready_o  ( to_llc_resp.w_ready                   ),
+    .b_chan_slv_o    ( to_llc_resp.b                         ),
+    .b_chan_valid_o  ( to_llc_resp.b_valid                   ),
+    .b_chan_ready_i  ( to_llc_req.b_ready                    ),
     .way_inp_o       ( to_way       [axi_llc_pkg::WChanUnit] ),
     .way_inp_valid_o ( to_way_valid [axi_llc_pkg::WChanUnit] ),
     .way_inp_ready_i ( to_way_ready [axi_llc_pkg::WChanUnit] ),
@@ -620,9 +592,9 @@ module axi_llc_top #(
     .desc_i          ( read_desc                            ),
     .desc_valid_i    ( read_desc_valid                      ),
     .desc_ready_o    ( read_desc_ready                      ),
-    .r_chan_slv_o    ( to_llc_r                             ),
-    .r_chan_valid_o  ( to_llc_r_valid                       ),
-    .r_chan_ready_i  ( to_llc_r_ready                       ),
+    .r_chan_slv_o    ( to_llc_resp.r                        ),
+    .r_chan_valid_o  ( to_llc_resp.r_valid                  ),
+    .r_chan_ready_i  ( to_llc_req.r_ready                   ),
     .way_inp_o       ( to_way[axi_llc_pkg::RChanUnit]       ),
     .way_inp_valid_o ( to_way_valid[axi_llc_pkg::RChanUnit] ),
     .way_inp_ready_i ( to_way_ready[axi_llc_pkg::RChanUnit] ),
@@ -657,7 +629,6 @@ module axi_llc_top #(
   // this unit widens the AXI ID by one!
   axi_mux #(
     .SlvAxiIDWidth ( AxiCfg.SlvPortIdWidth     ),
-    .MstAxiIDWidth ( AxiCfg.SlvPortIdWidth + 1 ), // fixed as there are two inputs only
     .slv_aw_chan_t ( slv_aw_chan_t             ),
     .mst_aw_chan_t ( mst_aw_chan_t             ),
     .w_chan_t      ( w_chan_t                  ),
@@ -667,6 +638,10 @@ module axi_llc_top #(
     .mst_ar_chan_t ( mst_ar_chan_t             ),
     .slv_r_chan_t  ( slv_r_chan_t              ),
     .mst_r_chan_t  ( mst_r_chan_t              ),
+    .slv_req_t     ( slv_req_t                 ),
+    .slv_resp_t    ( slv_resp_t                ),
+    .mst_req_t     ( mst_req_t                 ),
+    .mst_resp_t    ( mst_resp_t                ),
     .NoSlvPorts    ( 32'd2                     ),
     .MaxWTrans     ( axi_llc_pkg::MaxTrans     ),
     .FallThrough   ( 1'b0                      ), // No registers
@@ -676,39 +651,13 @@ module axi_llc_top #(
     .SpillAr       ( 1'b0                      ), // No registers
     .SpillR        ( 1'b0                      )  // No registers
   ) i_axi_bypass_mux (
-    .clk_i           ( clk_i                                ),
-    .rst_ni          ( rst_ni                               ),
-    .test_i          ( test_i                               ),
-    .slv_aw_chans_i  ({ bypass_aw,       from_llc_aw       }),
-    .slv_aw_valids_i ({ bypass_aw_valid, from_llc_aw_valid }),
-    .slv_aw_readies_o({ bypass_aw_ready, from_llc_aw_ready }),
-    .slv_w_chans_i   ({ bypass_w,        from_llc_w        }),
-    .slv_w_valids_i  ({ bypass_w_valid,  from_llc_w_valid  }),
-    .slv_w_readies_o ({ bypass_w_ready,  from_llc_w_ready  }),
-    .slv_b_chans_o   ({ bypass_b,        from_llc_b        }),
-    .slv_b_valids_o  ({ bypass_b_valid,  from_llc_b_valid  }),
-    .slv_b_readies_i ({ bypass_b_ready,  from_llc_b_ready  }),
-    .slv_ar_chans_i  ({ bypass_ar,       from_llc_ar       }),
-    .slv_ar_valids_i ({ bypass_ar_valid, from_llc_ar_valid }),
-    .slv_ar_readies_o({ bypass_ar_ready, from_llc_ar_ready }),
-    .slv_r_chans_o   ({ bypass_r,        from_llc_r        }),
-    .slv_r_valids_o  ({ bypass_r_valid,  from_llc_r_valid  }),
-    .slv_r_readies_i ({ bypass_r_ready,  from_llc_r_ready  }),
-    .mst_aw_chan_o   ( mst_req_o.aw                         ),
-    .mst_aw_valid_o  ( mst_req_o.aw_valid                   ),
-    .mst_aw_ready_i  ( mst_resp_i.aw_ready                  ),
-    .mst_w_chan_o    ( mst_req_o.w                          ),
-    .mst_w_valid_o   ( mst_req_o.w_valid                    ),
-    .mst_w_ready_i   ( mst_resp_i.w_ready                   ),
-    .mst_b_chan_i    ( mst_resp_i.b                         ),
-    .mst_b_valid_i   ( mst_resp_i.b_valid                   ),
-    .mst_b_ready_o   ( mst_req_o.b_ready                    ),
-    .mst_ar_chan_o   ( mst_req_o.ar                         ),
-    .mst_ar_valid_o  ( mst_req_o.ar_valid                   ),
-    .mst_ar_ready_i  ( mst_resp_i.ar_ready                  ),
-    .mst_r_chan_i    ( mst_resp_i.r                         ),
-    .mst_r_valid_i   ( mst_resp_i.r_valid                   ),
-    .mst_r_ready_o   ( mst_req_o.r_ready                    )
+    .clk_i       ( clk_i                      ),
+    .rst_ni      ( rst_ni                     ),
+    .test_i      ( test_i                     ),
+    .slv_reqs_i  ({bypass_req,  from_llc_req }),
+    .slv_resps_o ({bypass_resp, from_llc_resp}),
+    .mst_req_o   ( mst_req_o                  ),
+    .mst_resp_i  ( mst_resp_i                 )
   );
 
   // pragma translate_off

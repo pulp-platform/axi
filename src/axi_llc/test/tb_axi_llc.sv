@@ -28,7 +28,6 @@ module tb_axi_llc #(
 );
   localparam axi_llc_pkg::llc_axi_cfg_t AxiCfg = '{
     SlvPortIdWidth:    llc_axi::IdWidthSlave,
-    MstPortIdWidth:    llc_axi::IdWidthMaster,
     AddrWidthFull:     llc_axi::AddrWidth,
     DataWidthFull:     llc_axi::DataWidth,
     LitePortAddrWidth: llc_axi::AddrWidth,
