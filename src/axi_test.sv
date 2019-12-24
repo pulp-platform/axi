@@ -600,6 +600,7 @@ package axi_test;
     parameter int   RESP_MAX_WAIT_CYCLES = 20,
     // AXI feature usage
     parameter int   AXI_MAX_BURST_LEN = 0, // maximum number of beats in burst; 0 = AXI max (256)
+    parameter int   TRAFFIC_SHAPING = 0,
     parameter bit   AXI_EXCLS = 1'b0,
     parameter bit   AXI_ATOPS = 1'b0,
     // Dependent parameters, do not override.
@@ -650,6 +651,12 @@ package axi_test;
     } mem_region_t;
     mem_region_t mem_map[$];
 
+    struct packed {
+      int unsigned len  ;
+      int unsigned cprob;
+    } traffic_shape[$];
+    int unsigned max_cprob;
+
     function new(
       virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH(AW),
@@ -682,6 +689,15 @@ package axi_test;
       mem_map.push_back({addr_begin, addr_end, mem_type});
     endfunction
 
+    function void add_traffic_shaping(input int unsigned len, input int unsigned freq);
+      if (traffic_shape.size() == 0)
+        traffic_shape.push_back({len, freq});
+      else
+        traffic_shape.push_back({len, traffic_shape[$].cprob + freq});
+
+      max_cprob = traffic_shape[$].cprob;
+    endfunction : add_traffic_shaping
+
     function ax_beat_t new_rand_burst(input logic is_read);
       automatic logic rand_success;
       automatic ax_beat_t ax_beat = new;
@@ -693,6 +709,7 @@ package axi_test;
       automatic size_t size;
       automatic int unsigned mem_region_idx;
       automatic mem_region_t mem_region;
+      automatic int cprob;
 
       // Randomly pick a memory region
       rand_success = std::randomize(mem_region_idx) with {
@@ -707,32 +724,71 @@ package axi_test;
       // Determine memory type.
       ax_beat.ax_cache = is_read ? axi_pkg::get_arcache(mem_region.mem_type) : axi_pkg::get_awcache(mem_region.mem_type);
       // Randomize beat size.
-      rand_success = std::randomize(size) with {
-        2**size <= AXI_STRB_WIDTH;
-      }; assert(rand_success);
-      ax_beat.ax_size = size;
-      // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
-      forever begin
-        rand_success = std::randomize(addr) with {
-          addr >= mem_region.addr_begin;
-          addr <= mem_region.addr_end;
+      if (TRAFFIC_SHAPING) begin
+        rand_success = std::randomize(cprob) with {
+          cprob >= 0; cprob < max_cprob;
         }; assert(rand_success);
-        // Randomize burst length.
-        rand_success = std::randomize(len) with {
-          len <= this.max_len;
-        }; assert(rand_success);
-        ax_beat.ax_len = len;
 
-        if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-          if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
+        for (int i = 0; i < traffic_shape.size(); i++)
+          if (traffic_shape[i].cprob > cprob) begin
+            len = traffic_shape[i].len;
             break;
           end
-        end else begin // BURST_INCR
-          if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
-            break;
+
+        rand_success = std::randomize(size) with {
+          2**size <= AXI_STRB_WIDTH;
+          2**size <= len;
+        }; assert(rand_success);
+        ax_beat.ax_size = size;
+        ax_beat.ax_len = len / size;
+
+        // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
+        forever begin
+          rand_success = std::randomize(addr) with {
+            addr >= mem_region.addr_begin;
+            addr <= mem_region.addr_end;
+          }; assert(rand_success);
+
+          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
+            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
+              break;
+            end
+          end else begin // BURST_INCR
+            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
+              break;
+            end
+          end
+        end
+      end else begin
+        rand_success = std::randomize(size) with {
+          2**size <= AXI_STRB_WIDTH;
+        }; assert(rand_success);
+        ax_beat.ax_size = size;
+
+        // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
+        forever begin
+          rand_success = std::randomize(addr) with {
+            addr >= mem_region.addr_begin;
+            addr <= mem_region.addr_end;
+          }; assert(rand_success);
+          // Randomize burst length.
+          rand_success = std::randomize(len) with {
+            len <= this.max_len;
+          }; assert(rand_success);
+          ax_beat.ax_len = len;
+
+          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
+            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
+              break;
+            end
+          end else begin // BURST_INCR
+            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
+              break;
+            end
           end
         end
       end
+
       ax_beat.ax_addr = addr;
       rand_success = std::randomize(id); assert(rand_success);
       ax_beat.ax_id = id;
