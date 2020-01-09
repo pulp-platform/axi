@@ -36,7 +36,7 @@ sources:
   - src/axi_decerr_slv.sv
   - src/axi_multicut.sv
   # Level 4
-  # - src/axi_full_xbar.sv
+  - src/axi_xbar.sv
 
   - target: synth_test
     files:
