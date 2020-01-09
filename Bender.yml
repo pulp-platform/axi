@@ -21,9 +21,7 @@ sources:
   - src/axi_pkg.sv
   # Level 1
   - src/axi_address_width_converter.sv
-  - src/axi_demux.sv
   - src/axi_intf.sv
-  - src/axi_mux.sv
   - src/axi_perf_mon.sv
   # Level 2
   - src/axi_address_resolver.sv
@@ -36,17 +34,18 @@ sources:
   - src/axi_data_downsize.sv
   - src/axi_data_upsize.sv
   - src/axi_delayer.sv
+  - src/axi_demux.sv
   - src/axi_id_prepend.sv
   - src/axi_join.sv
   - src/axi_lite_cut.sv
   - src/axi_lite_join.sv
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
+  - src/axi_mux.sv
   - src/axi_read_burst_buffer.sv
   - src/axi_to_axi_lite.sv
   - src/axi_write_burst_packer.sv
   # Level 3
-  - src/axi_atop_filter_wrap.sv
   - src/axi_bypass_wrap.sv
   - src/axi_decerr_slv.sv
   - src/axi_data_width_converter.sv
@@ -55,7 +54,7 @@ sources:
   - src/axi_lite_xbar.sv
   - src/axi_multicut.sv
   # Level 4
-  # - src/axi_full_xbar.sv
+  - src/axi_xbar.sv
 
   - target: synth_test
     files:

@@ -27,4 +27,3 @@ axi:
     - src/axi_data_width_converter.sv
     - src/axi_downscale.sv
     - src/axi_upscale.sv
- 

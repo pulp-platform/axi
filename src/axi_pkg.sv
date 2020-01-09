@@ -108,33 +108,53 @@ package axi_pkg;
   localparam ATOP_UMAX  = 3'b110;
   localparam ATOP_UMIN  = 3'b111;
 
-  // cfg struct for the full xbar
+  // Configuration of axi_xbar
+  // enum for the latency modes
+  // encoding:
+  localparam logic [9:0] DemuxAw = (1 << 9);
+  localparam logic [9:0] DemuxW  = (1 << 8);
+  localparam logic [9:0] DemuxB  = (1 << 7);
+  localparam logic [9:0] DemuxAr = (1 << 6);
+  localparam logic [9:0] DemuxR  = (1 << 5);
+  localparam logic [9:0] MuxAw   = (1 << 4);
+  localparam logic [9:0] MuxW    = (1 << 3);
+  localparam logic [9:0] MuxB    = (1 << 2);
+  localparam logic [9:0] MuxAr   = (1 << 1);
+  localparam logic [9:0] MuxR    = (1 << 0);
+  typedef enum logic [9:0] {
+    NO_LATENCY    = '0,
+    CUT_SLV_AX    = DemuxAw | DemuxAr,
+    CUT_MST_AX    = MuxAw | MuxAr,
+    CUT_ALL_AX    = DemuxAw | DemuxAr | MuxAw | MuxAr,
+    CUT_SLV_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
+    CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
+    CUT_ALL_PORTS = '1
+  } xbar_latency_e;
+
   typedef struct packed {
-    int unsigned NoSlvPorts;         // # of slave ports, this many masters are connected to the xbar
-    int unsigned NoMstPorts;         // # of master ports, this many slaves are connected to the xbar
-    int unsigned MaxMstTrans;        // Maximum number of outstanding transactions per read / write per connected master
-    int unsigned MaxSlvTrans;        // Maximum number of outstanding write transactions per connected slave
-    bit          FallThrough;        // Are the internal Fifo's in Fall through mode? When enabled theoretical one cycle transaction, but long logic paths
-    int unsigned AxiIdWidthSlvPorts; // Axi Id Width of the Slave Ports
-    int unsigned AxiIdWidthMstPorts; // Axi Id Width of the Master Ports, has to be
-    int unsigned AxiAddrWidth;       // Axi Address Width
-    int unsigned AxiDataWidth;       // Axi Data Width
-    int unsigned NoAddrRules;        // # of Address Rules in the memory map
-    logic        GenSpillAwIn;       // Spill register on AW channel between addr decode and demux
-    logic        GenSpillAwOut;      // Spill register on AW channel after mux
-    logic        GenSpillArIn;       // Spill register on AR channel between addr decode and demux
-    logic        GenSpillArOut;      // Spill register on AR channel after mux
+    int unsigned   NoSlvPorts;         // # of slave ports, # masters are connected to the xbar
+    int unsigned   NoMstPorts;         // # of master ports, # slaves are connected to the xbar
+    int unsigned   MaxMstTrans;        // Maxi # of outstanding transactions per r/w per master
+    int unsigned   MaxSlvTrans;        // Maxi # of outstanding write transactions per slave
+    bit            FallThrough;        // AreAW -> W fifo's in Fall through mode (1'b0 = long paths)
+    xbar_latency_e LatencyMode;        // See xbar_latency_t and get_xbarlatmode
+    int unsigned   AxiIdWidthSlvPorts; // AXI ID Width of the Slave Ports
+    int unsigned   AxiIdUsedSlvPorts;  // this many LSB's of the SlvPortAxiId get used in demux
+    int unsigned   AxiIdWidthMstPorts; // ==> $clog2(NoSLVPorts) + AxiIdWidthSlvPorts !!
+    int unsigned   AxiAddrWidth;       // AXI Address Width
+    int unsigned   AxiDataWidth;       // AXI Data Width
+    int unsigned   NoAddrRules;        // # of Address Rules in the memory map
   } xbar_cfg_t;
 
-  // address rule struct for the full xbar
+  // address rules for axi_xbar address decoder from common_cells
   typedef struct packed {
-    int unsigned mst_port_idx;
+    int unsigned idx;
     logic [63:0] start_addr;
     logic [63:0] end_addr;
   } xbar_rule_64_t;
 
   typedef struct packed {
-    int unsigned mst_port_idx;
+    int unsigned idx;
     logic [31:0] start_addr;
     logic [31:0] end_addr;
   } xbar_rule_32_t;
