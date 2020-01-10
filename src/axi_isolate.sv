@@ -70,29 +70,29 @@ module axi_isolate #(
     pending_ar_d  = pending_ar_q;
     update_ar_cnt = 1'b0;
 
-    if (slv_req_i.aw_valid && slv_resp_o.aw_ready) begin
+    if (mst_req_o.aw_valid && (state_aw_q == NORMAL)) begin
       pending_aw_d++;
       update_aw_cnt = 1'b1;
       pending_w_d++;
       update_w_cnt = 1'b1;
-      if (slv_req_i.aw.atop[5]) begin
+      if (mst_req_o.aw.atop[5]) begin
         pending_ar_d++; // handle atomic with read response by injecting a count in AR
         update_ar_cnt = 1'b1;
       end
     end
-    if (slv_req_i.ar_valid && slv_resp_o.ar_ready) begin
+    if (mst_req_o.ar_valid && (state_ar_q == NORMAL)) begin
       pending_ar_d++;
       update_ar_cnt = 1'b1;
     end
-    if (slv_req_i.w_valid  && slv_resp_o.w_ready && slv_req_i.w.last) begin
+    if (mst_req_o.w_valid  && mst_resp_i.w_ready && mst_req_o.w.last) begin
       pending_w_d--;
       update_w_cnt = 1'b1;
     end
-    if (slv_resp_o.b_valid  && slv_req_i.b_ready) begin
+    if (mst_resp_i.b_valid  && mst_req_o.b_ready) begin
       pending_aw_d--;
       update_aw_cnt = 1'b1;
     end
-    if (slv_resp_o.r_valid  && slv_req_i.r_ready && slv_resp_o.r.last) begin
+    if (mst_resp_i.r_valid  && mst_req_o.r_ready && mst_resp_i.r.last) begin
       pending_ar_d--;
       update_ar_cnt = 1'b1;
     end
@@ -154,12 +154,7 @@ module axi_isolate #(
           state_aw_d      = ISOLATE;
           update_aw_state = 1'b1;
         end
-        // cut W channel if all W beats are transferred, prevent deassertion of w_valid
-        if (pending_w_q == '0) begin
-          mst_req_o.w        = '0;
-          mst_req_o.w_valid  = 1'b0;
-          slv_resp_o.w_ready = 1'b0;
-        end
+        // go back to normal operation, if isolate signal is deasserted
         if (!isolate_i) begin
           state_aw_d      = NORMAL;
           update_aw_state = 1'b1;
@@ -169,9 +164,6 @@ module axi_isolate #(
         mst_req_o.aw        = '0;
         mst_req_o.aw_valid  = 1'b0;
         slv_resp_o.aw_ready = 1'b0;
-        mst_req_o.w         = '0;
-        mst_req_o.w_valid   = 1'b0;
-        slv_resp_o.w_ready  = 1'b0;
         slv_resp_o.b        = '0;
         slv_resp_o.b_valid  = 1'b0;
         mst_req_o.b_ready   = 1'b0;
@@ -181,6 +173,14 @@ module axi_isolate #(
         end
       end
     endcase
+
+    // cut the W channel in both directions, if the `pending_w_q` is zero, to prevent undeflow, and
+    // when AW on the master port is not valid
+    if ((pending_w_q == '0) && !mst_req_o.aw_valid) begin
+      mst_req_o.w         = '0;
+      mst_req_o.w_valid   = 1'b0;
+      slv_resp_o.w_ready  = 1'b0;
+    end
 
     /////////////////////////////////////////////////////////////
     // Read transaction
