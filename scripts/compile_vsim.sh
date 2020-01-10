@@ -15,6 +15,6 @@
 
 set -e
 
-bender script vsim -t test > compile.tcl
+bender script vsim -t test --vlog-arg="-svinputport=compat" --vlog-arg="-override_timescale 1ns/1ps" > compile.tcl
 echo 'return 0' >> compile.tcl
 vsim -c -do 'exit -code [source compile.tcl]'
