@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_burst_splitter`: Split AXI4 bursts to single-beat transactions.
 
 ### Changed
 - `axi_lite_to_apb`: The `psel` field of the `apb_req_t` struct is now a single bit.  That is, every
