@@ -13,7 +13,6 @@
 //
 // This file defines the interfaces we support.
 
-import axi_pkg::*;
 
 
 /// An AXI4 interface.
@@ -23,6 +22,8 @@ interface AXI_BUS #(
   parameter AXI_ID_WIDTH   = -1,
   parameter AXI_USER_WIDTH = -1
 );
+  
+  import axi_pkg::*;
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
@@ -110,6 +111,8 @@ interface AXI_BUS_DV #(
 )(
   input logic clk_i
 );
+
+  import axi_pkg::*;
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
@@ -199,6 +202,7 @@ interface AXI_BUS_ASYNC
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
+  import axi_pkg::*;
 
   logic [AXI_ID_WIDTH-1:0]    aw_id;
   logic [AXI_ADDR_WIDTH-1:0]  aw_addr;
@@ -275,6 +279,8 @@ interface AXI_LITE #(
   parameter AXI_DATA_WIDTH = -1
 );
 
+  import axi_pkg::*;
+
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
   typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
@@ -329,6 +335,8 @@ interface AXI_LITE_DV #(
 )(
   input logic clk_i
 );
+
+  import axi_pkg::*;
 
   localparam AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
 
