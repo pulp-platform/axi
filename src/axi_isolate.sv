@@ -32,7 +32,8 @@ module axi_isolate #(
   input  logic  isolate_i,  // isolate master port from slave port
   output logic  isolated_o  // master port is isolated from slave port
 );
-  localparam int unsigned CounterWidth = $clog2(NoPending + 32'd1) + 32'd1; // for atop injection
+  // plus 1 in clog for accouning no open transaction, plus one bit for atomic inhection
+  localparam int unsigned CounterWidth = $clog2(NoPending + 32'd1) + 32'd1;
   typedef logic [CounterWidth-1:0] cnt_t;
 
   enum logic [1:0] {
