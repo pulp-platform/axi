@@ -114,7 +114,7 @@ module axi_isolate #(
     case (state_aw_q)
       NORMAL:  begin // NORMAL operation
         // cut valid handshake if a counter capacity is reached
-        if (pending_aw_q >= cnt_t'(NoPending)) begin
+        if (pending_aw_q >= cnt_t'(NoPending) || pending_ar_q >= cnt_t'(2*NoPending)) begin
           mst_req_o.aw_valid  = 1'b0;
           slv_resp_o.aw_ready = 1'b0;
           if (isolate_i) begin
