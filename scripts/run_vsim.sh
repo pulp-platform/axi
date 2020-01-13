@@ -25,7 +25,6 @@ call_vsim() {
 
 for DW in 8 16 32 64 128 256 512 1024; do
 	call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
-	call_vsim tb_axi_to_axi_lite -GDW=$DW -t 1ps -c
 done
 
 call_vsim tb_axi_delayer
@@ -35,3 +34,4 @@ call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_cdc
 call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"

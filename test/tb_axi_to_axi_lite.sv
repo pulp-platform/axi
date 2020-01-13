@@ -8,8 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-// Andreas Kurth  <akurth@iis.ee.ethz.ch>
+// Fabian Schuiki     <fschuiki@iis.ee.ethz.ch>
+// Andreas Kurth      <akurth@iis.ee.ethz.ch>
+// Wolfgang Ronninger <wroennin@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 
@@ -23,6 +24,10 @@ module tb_axi_to_axi_lite;
   localparam tCK = 1ns;
   localparam TA = tCK * 1/4;
   localparam TT = tCK * 3/4;
+
+  localparam     MAX_READ_TXNS  = 32'd20;
+  localparam     MAX_WRITE_TXNS = 32'd20;
+  localparam bit AXI_ATOPS      = 1'b1;
 
   logic clk = 0;
   logic rst = 1;
@@ -57,24 +62,39 @@ module tb_axi_to_axi_lite;
   `AXI_ASSIGN(axi, axi_dv);
 
   axi_to_axi_lite_intf #(
-    .AXI_ADDR_WIDTH (AW),
-    .AXI_DATA_WIDTH (DW),
-    .AXI_ID_WIDTH   (IW),
-    .AXI_USER_WIDTH (UW),
-    .NUM_PENDING_RD (1),
-    .NUM_PENDING_WR (1)
+    .AxiIdWidth      ( IW    ),
+    .AxiAddrWidth    ( AW    ),
+    .AxiDataWidth    ( DW    ),
+    .AxiUserWidth    ( UW    ),
+    .AxiMaxWriteTxns ( 32'd10 ),
+    .AxiMaxReadTxns  ( 32'd10 ),
+    .FallThrough     ( 1'b1  )
   ) i_dut (
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
     .testmode_i ( 1'b0     ),
-    .in         ( axi      ),
-    .out        ( axi_lite )
+    .slv        ( axi      ),
+    .mst        ( axi_lite )
   );
 
-  typedef axi_test::axi_lite_driver #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) axi_lite_drv_t;
-  typedef axi_test::axi_driver #(.AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)) axi_drv_t;
-  axi_lite_drv_t axi_lite_drv = new(axi_lite_dv);
-  axi_drv_t axi_drv = new(axi_dv);
+  typedef axi_test::rand_axi_master #(
+    // AXI interface parameters
+    .AW ( AW ),
+    .DW ( DW ),
+    .IW ( IW ),
+    .UW ( UW ),
+    // Stimuli application and test time
+    .TA ( TA ),
+    .TT ( TT ),
+    // Maximum number of read and write transactions in flight
+    .MAX_READ_TXNS  ( MAX_READ_TXNS  ),
+    .MAX_WRITE_TXNS ( MAX_WRITE_TXNS ),
+    .AXI_ATOPS      ( AXI_ATOPS      )
+  ) rand_axi_master_t;
+  typedef axi_test::rand_axi_lite_slave #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) rand_axi_lite_slv_t;
+
+  rand_axi_lite_slv_t axi_lite_drv = new(axi_lite_dv, "rand_axi_lite_slave");
+  rand_axi_master_t   axi_drv      = new(axi_dv);
 
   initial begin
     #tCK;
@@ -91,42 +111,66 @@ module tb_axi_to_axi_lite;
   end
 
   initial begin
-    automatic axi_drv_t::ax_beat_t ax = new;
-    automatic axi_drv_t::w_beat_t w = new;
-    automatic axi_drv_t::b_beat_t b = new;
-    automatic axi_drv_t::r_beat_t r = new;
-    axi_drv.reset_master();
-    @(posedge clk);
-
-    ax.randomize();
-    w.randomize();
-    w.last = 1'b1;
-    axi_drv.send_aw(ax);
-    axi_drv.send_w(w);
-    axi_drv.recv_b(b);
-
-    ax.randomize();
-    axi_drv.send_ar(ax);
-    axi_drv.recv_r(r);
+    axi_drv.add_memory_region(32'h0000_0000,
+                                      32'h1000_0000,
+                                      axi_pkg::NORMAL_NONCACHEABLE_NONBUFFERABLE);
+    axi_drv.add_memory_region(32'h1000_0000,
+                                      32'h2000_0000,
+                                      axi_pkg::NORMAL_NONCACHEABLE_BUFFERABLE);
+    axi_drv.add_memory_region(32'h3000_0000,
+                                      32'h4000_0000,
+                                      axi_pkg::WBACK_RWALLOCATE);
+    axi_drv.reset();
+    @(posedge rst);
+    axi_drv.run(1000, 2000);
 
     repeat (4) @(posedge clk);
-    done = 1;
+    done = 1'b1;
+    $info("All AXI4+ATOP Bursts converted to AXI4-Lite");
+    repeat (4) @(posedge clk);
+    $stop();
   end
 
   initial begin
-    automatic logic [AW-1:0] addr;
-    automatic logic [DW-1:0] data;
-    automatic logic [DW/8-1:0] strb;
-
-    axi_lite_drv.reset_slave();
+    axi_lite_drv.reset();
     @(posedge clk);
 
-    axi_lite_drv.recv_aw(addr);
-    axi_lite_drv.recv_w(data, strb);
-    axi_lite_drv.send_b(axi_pkg::RESP_OKAY);
+    axi_lite_drv.run();
+  end
 
-    axi_lite_drv.recv_ar(addr);
-    axi_lite_drv.send_r('0, axi_pkg::RESP_OKAY);
+  initial begin : proc_count_lite_beats
+    automatic longint aw_cnt = 0;
+    automatic longint w_cnt  = 0;
+    automatic longint b_cnt  = 0;
+    automatic longint ar_cnt = 0;
+    automatic longint r_cnt  = 0;
+    @(posedge rst);
+    while (!done) begin
+      @(posedge clk);
+      #TT;
+      if (axi_lite.aw_valid && axi_lite.aw_ready) begin
+        aw_cnt++;
+      end
+      if (axi_lite.w_valid && axi_lite.w_ready) begin
+        w_cnt++;
+      end
+      if (axi_lite.b_valid && axi_lite.b_ready) begin
+        b_cnt++;
+      end
+      if (axi_lite.ar_valid && axi_lite.ar_ready) begin
+        ar_cnt++;
+      end
+      if (axi_lite.r_valid && axi_lite.r_ready) begin
+        r_cnt++;
+      end
+    end
+    assert (aw_cnt == w_cnt && w_cnt == b_cnt);
+    assert (ar_cnt == r_cnt);
+    $display("AXI4-Lite AW count: %0d", aw_cnt );
+    $display("AXI4-Lite  W count: %0d", w_cnt  );
+    $display("AXI4-Lite  B count: %0d", b_cnt  );
+    $display("AXI4-Lite AR count: %0d", ar_cnt );
+    $display("AXI4-Lite  R count: %0d", r_cnt  );
   end
 
 endmodule
