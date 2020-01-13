@@ -128,8 +128,8 @@ module synth_slice #(
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
-    .in         (a_full.Slave),
-    .out        (a_lite.Master)
+    .slv        (a_full.Slave),
+    .mst        (a_lite.Master)
   );
   axi_lite_to_axi_intf b (
     .in   (b_lite.Slave),

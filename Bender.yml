@@ -25,6 +25,7 @@ sources:
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
+  - src/axi_burst_splitter.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
   - src/axi_demux.sv
@@ -38,10 +39,10 @@ sources:
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
-  - src/axi_to_axi_lite.sv
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_multicut.sv
+  - src/axi_to_axi_lite.sv
   # Level 4
   - src/axi_lite_xbar.sv
   - src/axi_xbar.sv
