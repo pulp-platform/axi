@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+
+## 0.9.0 - 2020-01-16
+
+### Added
 - `axi_test`: Constrained randomizing AXI master (`rand_axi_master`) and slave (`rand_axi_slave`).
   - `rand_axi_master` issues a configurable number of read and write transactions to configurable
     memory regions (address ranges with associated memory types) and with random properties within
@@ -15,9 +22,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `rand_axi_slave` responds to transactions with random delays and data.
 - `axi_pkg`: AXI memory types (`mem_type_t`) and functions `get_arcache` and `get_awcache` to
   calculate `AxCACHE` bits for a given memory type.
+- Add `axi_decerr_slv`.
+- Add `axi_id_prepend`.
+- Add fully compliant `axi_xbar`.
+- Add documentation on `axi_mux`, `axi_demux` and `axi_xbar`
+- Module overview to `README.md`
 
 ### Changed
 - `axi_test`: The `reset` tasks in `axi_driver` and `axi_lite_driver` are now functions.
+- Bump `common_cells` to `1.16.0` which contains the address decoding logic used in `axi_xbar`.
+
+### Fixed
+- `axi_intf` move import into interface bodies.
+- `axi_pkg` make functions automatic, fixing a problem with Synopsys.
 
 
 ## 0.8.2 - 2019-12-20
@@ -80,8 +97,6 @@ The individual changes for each module follow.
   `axi_modify_address_intf` module if you prefer interfaces.
 - `axi_lite_to_axi` has been changed from interfaces to struct ports.  Please use the newly added
   `axi_lite_to_axi_intf` module if you prefer interfaces.
-- `axi_intf` move import into interface bodies
-- `axi_pkg` make functions automatic, fixing a problem with Synopsys.
 
 ### Removed
 - `axi_lite_xbar`:  This interconnect module was not a full crossbar and its routing rules interface
