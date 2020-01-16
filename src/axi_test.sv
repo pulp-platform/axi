@@ -1267,6 +1267,271 @@ package axi_test;
 
   endclass
 
+  // AXI4-Lite random master and slave
+  class rand_axi_lite_master #(
+    // AXI interface parameters
+    parameter int   AW,
+    parameter int   DW,
+    // Stimuli application and test time
+    parameter time  TA,
+    parameter time  TT,
+    parameter int unsigned MIN_ADDR = 32'h0000_0000,
+    parameter int unsigned MAX_ADDR = 32'h1000_0000,
+    // Maximum number of open transactions
+    parameter int   MAX_READ_TXNS = 1,
+    parameter int   MAX_WRITE_TXNS = 1,
+    // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
+    parameter int   AX_MIN_WAIT_CYCLES = 0,
+    parameter int   AX_MAX_WAIT_CYCLES = 100,
+    parameter int   W_MIN_WAIT_CYCLES = 0,
+    parameter int   W_MAX_WAIT_CYCLES = 5,
+    parameter int   RESP_MIN_WAIT_CYCLES = 0,
+    parameter int   RESP_MAX_WAIT_CYCLES = 20
+  );
+    typedef axi_test::axi_lite_driver #(
+      .AW(AW), .DW(DW), .TA(TA), .TT(TT)
+    ) axi_driver_t;
+
+    typedef logic [AW-1:0]   addr_t;
+    typedef logic [DW-1:0]   data_t;
+    typedef logic [DW/8-1:0] strb_t;
+
+    string         name;
+    axi_driver_t   drv;
+    addr_t         aw_queue[$],
+                   ar_queue[$];
+    logic          b_queue[$];
+    logic          w_queue[$];
+
+    function new(
+      virtual AXI_LITE_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW)
+      ) axi,
+      input string name
+    );
+      this.drv  = new(axi);
+      this.name = name;
+    endfunction
+
+    function void reset();
+      drv.reset_master();
+    endfunction
+
+    task automatic rand_wait(input int unsigned min, max);
+      int unsigned rand_success, cycles;
+      rand_success = std::randomize(cycles) with {
+        cycles >= min;
+        cycles <= max;
+      };
+      assert (rand_success) else $error("Failed to randomize wait cycles!");
+      repeat (cycles) @(posedge this.drv.axi.clk_i);
+    endtask
+
+    task automatic send_ars(input int unsigned n_reads);
+      automatic addr_t ar_addr;
+      repeat (n_reads) begin
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        ar_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
+        this.ar_queue.push_back(ar_addr);
+        $display("%0t %s> Send AR with ADDR: %h", $time(), this.name, ar_addr);
+        drv.send_ar(ar_addr);
+      end
+    endtask : send_ars
+
+    task automatic recv_rs(input int unsigned n_reads);
+      automatic addr_t          ar_addr;
+      automatic data_t           r_data;
+      automatic axi_pkg::resp_t  r_resp;
+      repeat (n_reads) begin
+        wait (ar_queue.size() > 0);
+        ar_addr = this.ar_queue.pop_front();
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        drv.recv_r(r_data, r_resp);
+        $display("%0t %s> Recv  R with DATA: %h", $time(), this.name, r_data);
+      end
+    endtask : recv_rs
+
+    task automatic send_aws(input int unsigned n_writes);
+      automatic addr_t aw_addr;
+      repeat (n_writes) begin
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        aw_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
+        this.aw_queue.push_back(aw_addr);
+        $display("%0t %s> Send AW with ADDR: %h", $time(), this.name, aw_addr);
+        this.drv.send_aw(aw_addr);
+        this.b_queue.push_back(1'b1);
+      end
+    endtask : send_aws
+
+    task automatic send_ws(input int unsigned n_writes);
+      automatic logic  rand_success;
+      automatic addr_t aw_addr;
+      automatic data_t w_data;
+      automatic strb_t w_strb;
+      repeat (n_writes) begin
+        wait (aw_queue.size() > 0);
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        aw_addr = aw_queue.pop_front();
+        rand_success = std::randomize(w_data); assert(rand_success);
+        rand_success = std::randomize(w_strb); assert(rand_success);
+        $display("%0t %s> Send  W with DATA: %h STRB: %h", $time(), this.name, w_data, w_strb);
+        this.drv.send_w(w_data, w_strb);
+        w_queue.push_back(1'b1);
+      end
+    endtask : send_ws
+
+    task automatic recv_bs(input int unsigned n_writes);
+      automatic logic           go_b;
+      automatic axi_pkg::resp_t b_resp;
+      repeat (n_writes) begin
+        wait (b_queue.size() > 0 && w_queue.size() > 0);
+        go_b = this.b_queue.pop_front();
+        go_b = this.w_queue.pop_front();
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        this.drv.recv_b(b_resp);
+        $display("%0t %s> Recv  B with RESP: %h", $time(), this.name, b_resp);
+      end
+    endtask : recv_bs
+
+    task automatic run(input int unsigned n_reads, input int unsigned n_writes);
+      $display("Run for Reads %0d, Writes %0d", n_reads, n_writes);
+      fork
+        send_ars(n_reads);
+        recv_rs(n_reads);
+        send_aws(n_writes);
+        send_ws(n_writes);
+        recv_bs(n_writes);
+      join
+    endtask
+  endclass
+
+  class rand_axi_lite_slave #(
+    // AXI interface parameters
+    parameter int   AW,
+    parameter int   DW,
+    // Stimuli application and test time
+    parameter time  TA,
+    parameter time  TT,
+    // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
+    parameter int   AX_MIN_WAIT_CYCLES = 0,
+    parameter int   AX_MAX_WAIT_CYCLES = 100,
+    parameter int   R_MIN_WAIT_CYCLES = 0,
+    parameter int   R_MAX_WAIT_CYCLES = 5,
+    parameter int   RESP_MIN_WAIT_CYCLES = 0,
+    parameter int   RESP_MAX_WAIT_CYCLES = 20
+  );
+    typedef axi_test::axi_lite_driver #(
+      .AW(AW), .DW(DW), .TA(TA), .TT(TT)
+    ) axi_driver_t;
+
+    typedef logic [AW-1:0]   addr_t;
+    typedef logic [DW-1:0]   data_t;
+    typedef logic [DW/8-1:0] strb_t;
+
+    string         name;
+    axi_driver_t   drv;
+    addr_t         aw_queue[$],
+                   ar_queue[$];
+    logic          b_queue[$];
+
+    function new(
+      virtual AXI_LITE_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW)
+      ) axi,
+      input string name
+    );
+      this.drv = new(axi);
+      this.name = name;
+    endfunction
+
+    function void reset();
+      this.drv.reset_slave();
+    endfunction
+
+    task automatic rand_wait(input int unsigned min, max);
+      int unsigned rand_success, cycles;
+      rand_success = std::randomize(cycles) with {
+        cycles >= min;
+        cycles <= max;
+      };
+      assert (rand_success) else $error("Failed to randomize wait cycles!");
+      repeat (cycles) @(posedge this.drv.axi.clk_i);
+    endtask
+
+    task automatic recv_ars();
+      forever begin
+        automatic addr_t ar_addr;
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        this.drv.recv_ar(ar_addr);
+        $display("%0t %s> Recv AR with ADDR: %h", $time(), this.name, ar_addr);
+        this.ar_queue.push_back(ar_addr);
+      end
+    endtask : recv_ars
+
+    task automatic send_rs();
+      forever begin
+        automatic logic rand_success;
+        automatic addr_t ar_addr;
+        automatic data_t r_data;
+        wait (ar_queue.size() > 0);
+        ar_addr = this.ar_queue.pop_front();
+        rand_success = std::randomize(r_data); assert(rand_success);
+        rand_wait(R_MIN_WAIT_CYCLES, R_MAX_WAIT_CYCLES);
+        $display("%0t %s> Send  R with DATA: %h", $time(), this.name, r_data);
+        this.drv.send_r(r_data, axi_pkg::RESP_OKAY);
+      end
+    endtask : send_rs
+
+    task automatic recv_aws();
+      forever begin
+        automatic addr_t aw_addr;
+        rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
+        this.drv.recv_aw(aw_addr);
+        $display("%0t %s> Recv AW with ADDR: %h", $time(), this.name, aw_addr);
+        this.aw_queue.push_back(aw_addr);
+      end
+    endtask : recv_aws
+
+    task automatic recv_ws();
+      forever begin
+        automatic data_t w_data;
+        automatic strb_t w_strb;
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        this.drv.recv_w(w_data, w_strb);
+        $display("%0t %s> Recv  W with DATA: %h SRTB: %h", $time(), this.name, w_data, w_strb);
+        this.b_queue.push_back(1'b1);
+      end
+    endtask : recv_ws
+
+    task automatic send_bs();
+      forever begin
+        automatic logic           rand_success;
+        automatic addr_t          go_aw;
+        automatic logic           go_b;
+        automatic axi_pkg::resp_t b_resp;
+        wait (aw_queue.size() > 0 && b_queue.size() > 0);
+        go_aw = this.aw_queue.pop_front();
+        go_b  = this.b_queue.pop_front();
+        rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
+        rand_success = std::randomize(b_resp); assert(rand_success);
+        $display("%0t %s> Send  B with RESP: %h", $time(), this.name, b_resp);
+        this.drv.send_b(b_resp);
+      end
+    endtask : send_bs
+
+    task automatic run();
+      fork
+        recv_ars();
+        send_rs();
+        recv_aws();
+        recv_ws();
+        send_bs();
+      join
+    endtask
+  endclass
+
 endpackage
 
 // non synthesisable axi logger module
