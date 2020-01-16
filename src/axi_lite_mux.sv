@@ -369,7 +369,7 @@ module axi_lite_mux #(
       .ready_o ( mst_req_o.r_ready  ),
       .data_i  ( mst_resp_i.r       ),
       .valid_o ( mst_r_valid        ),
-      .ready_i ( mst_r_valid        ),
+      .ready_i ( mst_r_ready        ),
       .data_o  ( mst_r_chan         )
     );
   end

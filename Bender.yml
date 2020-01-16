@@ -27,6 +27,7 @@ sources:
   - src/axi_demux.sv
   - src/axi_id_prepend.sv
   - src/axi_join.sv
+  - src/axi_lite_demux.sv
   - src/axi_lite_join.sv
   - src/axi_lite_mux.sv
   - src/axi_lite_to_axi.sv
