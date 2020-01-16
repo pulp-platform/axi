@@ -81,6 +81,7 @@ The individual changes for each module follow.
 - `axi_lite_to_axi` has been changed from interfaces to struct ports.  Please use the newly added
   `axi_lite_to_axi_intf` module if you prefer interfaces.
 - `axi_intf` move import into interface bodies
+- `axi_pkg` make functions automatic, fixing a problem with Synopsys.
 
 ### Removed
 - `axi_lite_xbar`:  This interconnect module was not a full crossbar and its routing rules interface

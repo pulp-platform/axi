@@ -40,7 +40,7 @@ package axi_pkg;
   localparam CACHE_WR_ALLOC   = 4'b1000;
 
   // Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
-  function shortint unsigned num_bytes(size_t size);
+  function automatic shortint unsigned num_bytes(size_t size);
     return 1 << size;
   endfunction
 
@@ -49,7 +49,7 @@ package axi_pkg;
   typedef logic [127:0] largest_addr_t;
 
   // Aligned address of burst (see A3-51).
-  function largest_addr_t aligned_addr(largest_addr_t addr, size_t size);
+  function automatic largest_addr_t aligned_addr(largest_addr_t addr, size_t size);
     return (addr >> size) << size;
   endfunction
 
