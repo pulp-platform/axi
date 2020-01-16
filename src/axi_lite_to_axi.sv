@@ -29,13 +29,13 @@ module axi_lite_to_axi #(
   input  resp_t      mst_resp_i
 );
   localparam int unsigned write_size = $unsigned($clog2($bits(mst_req_o.w.data)/8));
-  localparam int unsigned read_size  = $unsigned($clog2($bits(mst_req_o.r.data)/8));
+  localparam int unsigned read_size  = $unsigned($clog2($bits(mst_resp_i.r.data)/8));
 
   // request assign
   assign mst_req_o = '{
     aw: '{
       addr:  slv_req_lite_i.aw.addr,
-      port:  slv_req_lite_i.aw.prot,
+      prot:  slv_req_lite_i.aw.prot,
       size:  axi_pkg::size_t'(write_size),
       burst: axi_pkg::BURST_FIXED,
       default: '0
