@@ -146,9 +146,13 @@ module tb_axi_lite_xbar;
   for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
     initial begin : proc_generate_traffic
       automatic rand_lite_master_t lite_axi_master = new ( master_dv[i], $sformatf("MST_%0d", i));
+      automatic data_t          data = '0;
+      automatic axi_pkg::resp_t resp = '0;
       end_of_sim[i] <= 1'b0;
       lite_axi_master.reset();
       @(posedge rst_n);
+      lite_axi_master.write(32'h0000_1100, 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
+      lite_axi_master.read(32'h0000_e100, data, resp);
       lite_axi_master.run(NoReads, NoWrites);
       end_of_sim[i] <= 1'b1;
     end

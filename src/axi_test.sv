@@ -1404,6 +1404,31 @@ package axi_test;
         recv_bs(n_writes);
       join
     endtask
+
+    // write data to a specific address
+    task automatic write(input addr_t w_addr, input data_t w_data, input strb_t w_strb,
+                         output axi_pkg::resp_t b_resp);
+      $display("%0t %s> Write to ADDR: %h, DATA: %h, STRB: %h",
+          $time(), this.name, w_addr, w_data, w_strb);
+      fork
+        this.drv.send_aw(w_addr);
+        this.drv.send_w(w_data, w_strb);
+      join
+      this.drv.recv_b(b_resp);
+      $display("%0t %s> Recieved write response from ADDR: %h RESP: %h",
+          $time(), this.name, w_addr, b_resp);
+    endtask : write
+
+    // read data from a specific location
+    task automatic read(input addr_t r_addr,
+                        output data_t r_data, output axi_pkg::resp_t r_resp);
+      $display("%0t %s> Read from ADDR: %h",
+          $time(), this.name, r_addr);
+      this.drv.send_ar(r_addr);
+      this.drv.recv_r(r_data, r_resp);
+      $display("%0t %s> Recieved read response from ADDR: %h DATA: %h RESP: %h",
+          $time(), this.name, r_addr, r_data, r_resp);
+    endtask : read
   endclass
 
   class rand_axi_lite_slave #(
