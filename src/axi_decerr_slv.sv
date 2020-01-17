@@ -59,10 +59,10 @@ module axi_decerr_slv #(
   // Atop Filter for atomics support
   //--------------------------------------
   axi_atop_filter #(
-    .AXI_ID_WIDTH       ( AxiIdWidth ),
-    .AXI_MAX_WRITE_TXNS ( MaxTrans   ),
-    .req_t              ( req_t      ),
-    .resp_t             ( resp_t     )
+    .AxiIdWidth      ( AxiIdWidth ),
+    .AxiMaxWriteTxns ( MaxTrans   ),
+    .req_t           ( req_t      ),
+    .resp_t          ( resp_t     )
   ) i_atop_filter (
     .clk_i      ( clk_i       ),
     .rst_ni     ( rst_ni      ),

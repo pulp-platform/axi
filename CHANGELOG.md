@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+### Fixed
+
+## 0.9.1 - 2020-01-18
+
+### Fixed
+- `axi_decerr_slv`: Fix parameter to be UpperCamelCase
 
 ## 0.9.0 - 2020-01-16
 
