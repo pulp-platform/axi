@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_lite_demmux`
+- Add `axi_lite_mux`
+- Add `axi_lite_xbar`
 
 ### Changed
+- `axi_test`: Extended package with random AXI4-Lite master and slave test bench classes.
 
 ### Fixed
 
