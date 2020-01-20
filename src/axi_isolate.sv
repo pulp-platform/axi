@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ETH Zurich, University of Bologna
+// Copyright (c) 2019-2020 ETH Zurich, University of Bologna
 //
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
@@ -13,8 +13,17 @@
 //         Florian Zaruba <zarubaf@iis.ethz.ch>
 //         Wolfgang Roenninger <wroennin@ethz.ch>
 
-// Description: Isolates the AXI4 bus on the master port from the slave port
-
+// Description: This module can isolate the AXI4+ATOPs bus on the master port from the slave port.
+//              When the isolation is not active the two ports are directly connected.
+//              This unit counts how many open transactions are currently in flight
+//              on the read and write channels. It further is capable of tracking the amount of
+//              open atomic transactions with read responses.
+//              The isolation interface has the two signals `isolate_i` and `isolated_o`.
+//              When `isolate_i` is asserted, all open transactions get terminated.
+//              When no longer transactions are in flight the output `isolated_o` gets asserted.
+//              As long as `isolated_o` is asserted all output signals in `mst_req_o` are silenced
+//              to `'0`. When isolated, new transactions initiated on the slave port are
+//              stalled until the isolation is terminated by deasserting `isolate_i`.
 
 `include "common_cells/registers.svh"
 
@@ -61,7 +70,6 @@ module axi_isolate #(
   `FFLARN(state_aw_q,   state_aw_d,   update_aw_state, ISOLATE, clk_i, rst_ni)
   `FFLARN(state_ar_q,   state_ar_d,   update_ar_state, ISOLATE, clk_i, rst_ni)
 
-
   // Update counters.
   always_comb begin
     pending_aw_d  = pending_aw_q;
@@ -76,7 +84,7 @@ module axi_isolate #(
       update_aw_cnt = 1'b1;
       pending_w_d++;
       update_w_cnt = 1'b1;
-      if (mst_req_o.aw.atop[5]) begin
+      if (mst_req_o.aw.atop[axi_pkg::ATOP_R_RESP]) begin
         pending_ar_d++; // handle atomic with read response by injecting a count in AR
         update_ar_cnt = 1'b1;
       end
@@ -114,7 +122,9 @@ module axi_isolate #(
     /////////////////////////////////////////////////////////////
     case (state_aw_q)
       NORMAL:  begin // NORMAL operation
-        // cut valid handshake if a counter capacity is reached
+        // Cut valid handshake if a counter capacity is reached.
+        // It has to check AR counter in case of for atomics. Counters are wide enough
+        // to account for injected count in the read response counter
         if (pending_aw_q >= cnt_t'(NoPending) || pending_ar_q >= cnt_t'(2*NoPending)) begin
           mst_req_o.aw_valid  = 1'b0;
           slv_resp_o.aw_ready = 1'b0;
@@ -140,11 +150,7 @@ module axi_isolate #(
         // aw_ready normal connected
         if (mst_resp_i.aw_ready) begin
           update_aw_state = 1'b1;
-          if (isolate_i) begin
-            state_aw_d = DRAIN;
-          end else begin
-            state_aw_d = NORMAL;
-          end
+          state_aw_d      = isolate_i ? DRAIN : NORMAL;
         end
       end
       DRAIN: begin // cut the AW channel until counter is zero
@@ -214,11 +220,7 @@ module axi_isolate #(
         // ar_ready normal connected
         if (mst_resp_i.ar_ready) begin
           update_ar_state = 1'b1;
-          if (isolate_i) begin
-            state_ar_d = DRAIN;
-          end else begin
-            state_ar_d = NORMAL;
-          end
+          state_ar_d      = isolate_i ? DRAIN : NORMAL;
         end
       end
       DRAIN: begin
@@ -247,9 +249,10 @@ module axi_isolate #(
         end
       end
     endcase
-
-    isolated_o = (state_aw_q == ISOLATE && state_ar_q == ISOLATE);
   end
+
+  // the isolated output signal
+  assign isolated_o = (state_aw_q == ISOLATE && state_ar_q == ISOLATE);
 
 // pragma translate_off
 `ifndef VERILATOR
