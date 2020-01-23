@@ -34,3 +34,4 @@ call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_cdc
 call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"

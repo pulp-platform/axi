@@ -60,6 +60,7 @@ sources:
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
+      - test/tb_axi_lite_mailbox.sv
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar_pkg.sv
