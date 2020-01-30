@@ -63,6 +63,7 @@ sources:
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_dw_downsizer.sv
+      - test/tb_axi_dw_upsizer.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv

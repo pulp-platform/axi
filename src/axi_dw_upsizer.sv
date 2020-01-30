@@ -392,6 +392,7 @@ module axi_dw_upsizer #(
       arb_slv_ar_gnt_tran[t] = 1'b0;
 
       mst_r_ready_tran[t] = 1'b0;
+      slv_r_valid_tran[t] = 1'b0;
 
       // Got a grant on the AR channel
       if (mst_ar_valid_tran[t] && mst_ar_ready_tran[t])
