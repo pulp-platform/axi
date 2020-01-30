@@ -4,6 +4,7 @@ package:
     - "Andreas Kurth <akurth@iis.ee.ethz.ch>" # current maintainer
     - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
+    - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
