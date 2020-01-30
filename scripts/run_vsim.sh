@@ -33,6 +33,12 @@ for DW in 8 16 32 64 128 256 512 1024; do
     done
 done
 
+for DW in 8 16 32 64 128 256 512 1024; do
+    for (( MULT = `echo 1024/$DW | bc`; MULT > 1; MULT /= 2 )); do
+        call_vsim tb_axi_dw_upsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+    done
+done
+
 call_vsim tb_axi_delayer
 call_vsim tb_axi_atop_filter -GN_TXNS=1000
 call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
