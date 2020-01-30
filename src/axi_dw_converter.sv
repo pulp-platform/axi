@@ -56,7 +56,7 @@ module axi_dw_converter #(
       .AxiMaxTrans    (AxiMaxTrans     ),
       .AxiIdWidth     (AxiIdWidth      ),
       .AxiUserWidth   (AxiUserWidth    )
-    ) i_axi_data_upsize (
+    ) i_axi_dw_upsizer (
       .clk_i        (clk_i        ),
       .rst_ni       (rst_ni       ),
       .slv_aw_id    (slv.aw_id    ),
@@ -160,7 +160,7 @@ module axi_dw_converter #(
       .AxiMaxTrans    (AxiMaxTrans     ),
       .AxiIdWidth     (AxiIdWidth      ),
       .AxiUserWidth   (AxiUserWidth    )
-    ) i_axi_data_downsize (
+    ) i_axi_dw_downsizer (
       .clk_i        (clk_i        ),
       .rst_ni       (rst_ni       ),
       .slv_aw_id    (slv.aw_id    ),
