@@ -27,6 +27,12 @@ for DW in 8 16 32 64 128 256 512 1024; do
     call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
 done
 
+for DW in 8 16 32 64 128 256 512 1024; do
+    for (( MULT = 2; MULT <= `echo 1024/$DW`; MULT *= 2 )); do
+        call_vsim tb_axi_dw_downsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+    done
+done
+
 call_vsim tb_axi_delayer
 for MAX_TXNS in 1 3 12; do
     call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
