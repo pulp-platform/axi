@@ -14,6 +14,8 @@
 // Data width upsize conversion.
 // Connects a wide master to a narrower slave.
 
+`include "axi/typedef.svh"
+
 import axi_pkg::*;
 
 module axi_dw_upsizer #(
@@ -168,7 +170,7 @@ module axi_dw_upsizer #(
     .DataType (slv_r_chan_t),
     .ExtPrio  (1'b0        ),
     .AxiVldRdy(1'b1        )
-  ) i_arbiter_slv_r (
+  ) i_slv_r_arb (
     .clk_i  (clk_i           ),
     .rst_ni (rst_ni          ),
     .flush_i(1'b0            ),
@@ -210,8 +212,7 @@ module axi_dw_upsizer #(
     qos   : slv_ar_qos   ,
     region: slv_ar_region,
     atop  : '0           ,
-    user  : slv_ar_user  ,
-    valid : slv_ar_valid
+    user  : slv_ar_user
   };
   assign slv_aw = '{
     id    : slv_aw_id    ,
@@ -225,8 +226,7 @@ module axi_dw_upsizer #(
     qos   : slv_aw_qos   ,
     region: slv_aw_region,
     atop  : slv_aw_atop  ,
-    user  : slv_aw_user  ,
-    valid : slv_aw_valid
+    user  : slv_aw_user
   };
 
   rr_arb_tree #(
@@ -272,7 +272,7 @@ module axi_dw_upsizer #(
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
-  ) i_arbiter_mst_ar (
+  ) i_mst_ar_arb (
     .clk_i  (clk_i            ),
     .rst_ni (rst_ni           ),
     .flush_i(1'b0             ),
@@ -449,8 +449,8 @@ module axi_dw_upsizer #(
           // Request was accepted
           if (!r_req_q.ar_valid)
             if (mst_r_valid && (idqueue_id == t) && idqueue_valid) begin
-              automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(AxiMstStrbWidth)-1:0];
-              automatic addr_t si_offset = r_req_q.ar.addr[$clog2(AxiSlvStrbWidth)-1:0];
+              automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
+              automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
 
               // Valid output
               slv_r_valid_tran[t] = 1'b1                            ;
@@ -458,10 +458,10 @@ module axi_dw_upsizer #(
 
               // Serialization
               for (int b = 0; b < AxiMstStrbWidth; b++)
-                if ((b >= mi_offset) &&
-                    (b - mi_offset < (1 << r_req_q.size)) &&
-                    (b + si_offset - mi_offset < AxiSlvStrbWidth)) begin
-                  slv_r_tran[t].data[8*(b + si_offset - mi_offset) +: 8] = mst_r_data[8 * b +: 8];
+                if ((b >= mst_offset) &&
+                    (b - mst_offset < (1 << r_req_q.size)) &&
+                    (b + slv_offset - mst_offset < AxiSlvStrbWidth)) begin
+                  slv_r_tran[t].data[8*(b + slv_offset - mst_offset) +: 8] = mst_r_data[8 * b +: 8];
                 end
 
               // Acknowledgment
@@ -576,17 +576,17 @@ module axi_dw_upsizer #(
           slv_w_ready = ~mst_w_valid || mst_w_ready;
 
           if (slv_w_valid && slv_w_ready) begin
-            automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(AxiMstStrbWidth)-1:0];
-            automatic addr_t si_offset = w_req_q.aw.addr[$clog2(AxiSlvStrbWidth)-1:0];
-            automatic addr_t size_mask = (1 << w_req_q.size) - 1                     ;
+            automatic addr_t mst_offset = w_req_q.aw.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
+            automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
+            automatic addr_t size_mask  = (1 << w_req_q.size) - 1                                                    ;
 
             // Lane steering
             for (int b = 0; b < AxiMstStrbWidth; b++)
-              if ((b >= mi_offset) &&
-                  (b - mi_offset < (1 << w_req_q.size)) &&
-                  (b + si_offset - mi_offset < AxiSlvStrbWidth)) begin
-                w_req_d.w.data[8 * b +: 8] = slv_w_data[8 * (b + si_offset - mi_offset) +: 8];
-                w_req_d.w.strb[b]          = slv_w_strb[b + si_offset - mi_offset]           ;
+              if ((b >= mst_offset) &&
+                  (b - mst_offset < (1 << w_req_q.size)) &&
+                  (b + slv_offset - mst_offset < AxiSlvStrbWidth)) begin
+                w_req_d.w.data[8 * b +: 8] = slv_w_data[8 * (b + slv_offset - mst_offset) +: 8];
+                w_req_d.w.strb[b]          = slv_w_strb[b + slv_offset - mst_offset]           ;
               end
 
             w_req_d.len     = w_req_q.len - 1                                     ;

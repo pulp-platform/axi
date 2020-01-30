@@ -14,15 +14,17 @@
 // Data width downsize conversion.
 // Connects a narrow master to a wider slave.
 
+`include "axi/typedef.svh"
+
 import axi_pkg::*;
 
 module axi_dw_downsizer #(
-    parameter int AxiAddrWidth    = 64 ,
-    parameter int AxiMstDataWidth = 64 ,
-    parameter int AxiSlvDataWidth = 64 ,
-    parameter int AxiMaxTrans     = 1  ,
-    parameter int AxiIdWidth      = 4  ,
-    parameter int AxiUserWidth    = 1  ,
+    parameter int AxiAddrWidth    = 64,
+    parameter int AxiMstDataWidth = 64,
+    parameter int AxiSlvDataWidth = 64,
+    parameter int AxiMaxTrans     = 1 ,
+    parameter int AxiIdWidth      = 4 ,
+    parameter int AxiUserWidth    = 1 ,
 
     // Dependent parameters, do not change!
     parameter AxiMstStrbWidth = AxiMstDataWidth/8          ,
@@ -174,7 +176,7 @@ module axi_dw_downsizer #(
     .AxiVldRdy(1'b1         ),
     .ExtPrio  (1'b0         ),
     .LockIn   (1'b1         )
-  ) i_arbiter_slv_r (
+  ) i_slv_r_arb (
     .clk_i  (clk_i           ),
     .rst_ni (rst_ni          ),
     .flush_i(1'b0            ),
@@ -216,8 +218,7 @@ module axi_dw_downsizer #(
     qos   : slv_ar_qos   ,
     region: slv_ar_region,
     atop  : '0           ,
-    user  : slv_ar_user  ,
-    valid : slv_ar_valid
+    user  : slv_ar_user
   };
   assign slv_aw = '{
     id    : slv_aw_id    ,
@@ -231,8 +232,7 @@ module axi_dw_downsizer #(
     qos   : slv_aw_qos   ,
     region: slv_aw_region,
     atop  : slv_aw_atop  ,
-    user  : slv_aw_user  ,
-    valid : slv_aw_valid
+    user  : slv_aw_user
   };
 
   rr_arb_tree #(
@@ -278,7 +278,7 @@ module axi_dw_downsizer #(
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
-  ) i_arbiter_mst_ar (
+  ) i_mst_ar_arb (
     .clk_i  (clk_i            ),
     .rst_ni (rst_ni           ),
     .flush_i(1'b0             ),
@@ -462,7 +462,7 @@ module axi_dw_downsizer #(
                       r_req_d.ar.len = 255 - align_adj      ;
                     end
                   end
-                end : BURST_INCR
+                end
               endcase
           end
         end
@@ -481,16 +481,16 @@ module axi_dw_downsizer #(
                 mst_r_ready_tran[t] = 1'b1;
 
                 if (mst_r_valid) begin
-                  automatic addr_t mi_offset = r_req_q.ar.addr[$clog2(AxiMstStrbWidth)-1:0] ;
-                  automatic addr_t si_offset = r_req_q.ar.addr[$clog2(AxiSlvStrbWidth)-1:0] ;
-                  automatic addr_t size_mask = (1 << r_req_q.ar.size) - 1                   ;
+                  automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
+                  automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
+                  automatic addr_t size_mask  = (1 << r_req_q.ar.size) - 1                                                 ;
 
                   // Lane steering
                   for (int b = 0; b < AxiSlvStrbWidth; b++) begin
-                    if ((b >= si_offset) &&
-                        (b - si_offset < (1 << r_req_q.size)) &&
-                        (b + mi_offset - si_offset < AxiMstStrbWidth)) begin
-                      r_req_d.r.data[8*b+:8] = mst_r_data[8 * (b + mi_offset - si_offset) +: 8];
+                    if ((b >= slv_offset) &&
+                        (b - slv_offset < (1 << r_req_q.size)) &&
+                        (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
+                      r_req_d.r.data[8*b+:8] = mst_r_data[8 * (b + mst_offset - slv_offset) +: 8];
                     end
                   end
 
@@ -610,8 +610,8 @@ module axi_dw_downsizer #(
         // Request was accepted
         if (!w_req_q.aw_valid)
           if (slv_w_valid) begin
-            automatic addr_t mi_offset = w_req_q.aw.addr[$clog2(AxiMstStrbWidth)-1:0] ;
-            automatic addr_t si_offset = w_req_q.aw.addr[$clog2(AxiSlvStrbWidth)-1:0] ;
+            automatic addr_t mst_offset = w_req_q.aw.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
+            automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
 
             // Valid output
             mst_w_valid = 1'b1                            ;
@@ -620,11 +620,11 @@ module axi_dw_downsizer #(
 
             // Serialization
             for (int b = 0; b < AxiSlvStrbWidth; b++)
-              if ((b >= si_offset) &&
-                  (b - si_offset < (1 << w_req_q.aw.size)) &&
-                  (b + mi_offset - si_offset < AxiMstStrbWidth)) begin
-                mst_w_data[8 * (b + mi_offset - si_offset) +: 8] = slv_w_data[8 * b +: 8];
-                mst_w_strb[b + mi_offset - si_offset]            = slv_w_strb[b]         ;
+              if ((b >= slv_offset) &&
+                  (b - slv_offset < (1 << w_req_q.aw.size)) &&
+                  (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
+                mst_w_data[8 * (b + mst_offset - slv_offset) +: 8] = slv_w_data[8 * b +: 8];
+                mst_w_strb[b + mst_offset - slv_offset]            = slv_w_strb[b]         ;
               end
           end
 
