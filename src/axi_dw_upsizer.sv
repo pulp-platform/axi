@@ -14,10 +14,6 @@
 // Data width upsize conversion.
 // Connects a wide master to a narrower slave.
 
-`include "axi/typedef.svh"
-
-import axi_pkg::*;
-
 module axi_dw_upsizer #(
     parameter int AxiAddrWidth    = 64,
     parameter int AxiSlvDataWidth = 64,
@@ -132,6 +128,10 @@ module axi_dw_upsizer #(
     input  logic      mst_r_valid,
     output logic      mst_r_ready
   );
+
+  `include "axi/typedef.svh"
+
+  import axi_pkg::*;
 
   /*****************
    *  DEFINITIONS  *
