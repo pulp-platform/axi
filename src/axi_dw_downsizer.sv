@@ -14,10 +14,6 @@
 // Data width downsize conversion.
 // Connects a narrow master to a wider slave.
 
-`include "axi/typedef.svh"
-
-import axi_pkg::*;
-
 module axi_dw_downsizer #(
     parameter int AxiAddrWidth    = 64,
     parameter int AxiMstDataWidth = 64,
@@ -132,6 +128,10 @@ module axi_dw_downsizer #(
     input  logic      mst_r_valid,
     output logic      mst_r_ready
   );
+
+  `include "axi/typedef.svh"
+
+  import axi_pkg::*;
 
   /*****************
    *  DEFINITIONS  *
