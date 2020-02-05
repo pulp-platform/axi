@@ -10,8 +10,6 @@
 
 // Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
-import axi_pkg::*;
-
 module axi_dw_converter #(
     parameter int AxiAddrWidth    = 64,
     parameter int AxiMstDataWidth = 64,
@@ -26,6 +24,8 @@ module axi_dw_converter #(
     AXI_BUS.Slave  slv,
     AXI_BUS.Master mst
   );
+
+  import axi_pkg::*;
 
   `ifndef SYNTHESIS
   initial begin
