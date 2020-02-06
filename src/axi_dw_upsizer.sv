@@ -543,9 +543,8 @@ module axi_dw_upsizer #(
   // Validate parameters.
   `ifndef SYNTHESIS
   `ifndef VERILATOR
-  initial begin
-    assert (2**AxiIdWidth >= AxiMaxTrans) else $fatal(1, "The outstanding transactions could not be indexed with the given ID bits!");
-  end
+  if (2**AxiIdWidth < AxiMaxTrans)
+    $fatal(1, "Cannot index all requested outstanding reads with the given ID bits!");
   `endif
   `endif
 
