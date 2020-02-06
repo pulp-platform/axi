@@ -14,8 +14,6 @@
 // Data width upsize conversion.
 // Connects a wide master to a narrower slave.
 
-`include "axi/typedef.svh"
-
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxTrans = 1    , // Number of outstanding reads
     parameter type aw_chan_t           = logic, // AW Channel Type
@@ -63,6 +61,8 @@ module axi_dw_upsizer #(
   );
 
   import axi_pkg::*;
+
+  `include "axi/typedef.svh"
 
   /*****************
    *  DEFINITIONS  *
