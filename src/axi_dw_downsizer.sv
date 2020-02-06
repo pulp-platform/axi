@@ -589,11 +589,10 @@ module axi_dw_downsizer #(
    ****************/
 
   // Validate parameters.
-  `ifndef VERILATOR
   `ifndef SYNTHESIS
-  initial begin
-    assert (2**AxiIdWidth >= AxiMaxTrans) else $fatal(1, "The outstanding transactions could not be indexed with the given ID bits!");
-  end
+  `ifndef VERILATOR
+  if (2**AxiIdWidth < AxiMaxTrans)
+    $fatal(1, "Cannot index all requested outstanding reads with the given ID bits!");
   `endif
   `endif
 
