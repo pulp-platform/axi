@@ -16,8 +16,12 @@
 // All rights reserved.
 
 `include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 module tb_axi_dw_upsizer;
+
+  timeunit      1ns;
+  timeprecision 10ps;
 
   parameter AW   = 64;
   parameter IW   = 4;
@@ -25,11 +29,29 @@ module tb_axi_dw_upsizer;
   parameter UW   = 8;
   parameter MULT = 8;
 
+  // Clock
+
   localparam tCK = 1ns;
 
   logic clk  = 0;
   logic rst  = 1;
   logic done = 0;
+
+  initial begin
+    #tCK;
+    rst <= 0;
+    #tCK;
+    rst <= 1;
+    #tCK;
+    while (!done) begin
+      clk <= 1;
+      #(tCK/2);
+      clk <= 0;
+      #(tCK/2);
+    end
+  end
+
+  // AXI Buses
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH (AW),
@@ -37,13 +59,6 @@ module tb_axi_dw_upsizer;
     .AXI_ID_WIDTH   (IW),
     .AXI_USER_WIDTH (UW)
   ) axi_master_dv (clk);
-
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH (AW),
-    .AXI_DATA_WIDTH (DW),
-    .AXI_ID_WIDTH   (IW),
-    .AXI_USER_WIDTH (UW)
-  ) axi_master();
 
   axi_test::rand_axi_master #(
     .AW             (AW   ),
@@ -63,13 +78,6 @@ module tb_axi_dw_upsizer;
     .AXI_USER_WIDTH (UW       )
   ) axi_slave_dv ( clk );
 
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH (AW       ),
-    .AXI_DATA_WIDTH (MULT * DW),
-    .AXI_ID_WIDTH   (IW       ),
-    .AXI_USER_WIDTH (UW       )
-  ) axi_slave ();
-
   axi_test::rand_axi_slave #(
     .AW (AW       ),
     .DW (MULT * DW),
@@ -79,35 +87,83 @@ module tb_axi_dw_upsizer;
     .TT (700ps    )
   ) axi_slave_drv = new ( axi_slave_dv );
 
-  `AXI_ASSIGN(axi_master, axi_master_dv);
-  `AXI_ASSIGN(axi_slave_dv, axi_slave)  ;
+  // AXI channel types
+  typedef logic [AW-1:0] addr_t           ;
+  typedef logic [IW-1:0] id_t             ;
+  typedef logic [UW-1:0] user_t           ;
+  typedef logic [DW-1:0] mst_data_t       ;
+  typedef logic [DW/8-1:0] mst_strb_t     ;
+  typedef logic [MULT*DW-1:0] slv_data_t  ;
+  typedef logic [MULT*DW/8-1:0] slv_strb_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)            ;
+  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, mst_data_t, mst_strb_t, user_t);
+  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, slv_data_t, slv_strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)                      ;
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)            ;
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, mst_data_t, id_t, user_t)      ;
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, slv_data_t, id_t, user_t)      ;
+
+  `AXI_TYPEDEF_REQ_T(mst_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, b_chan_t, mst_r_chan_t)          ;
+  `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t);
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_t, slv_r_chan_t)          ;
+
+  mst_req_t  axi_mst_req;
+  mst_resp_t axi_mst_resp;
+  `AXI_ASSIGN_TO_REQ(axi_mst_req, axi_master_dv)    ;
+  `AXI_ASSIGN_FROM_RESP(axi_master_dv, axi_mst_resp);
+
+  slv_req_t  axi_slv_req;
+  slv_resp_t axi_slv_resp;
+  `AXI_ASSIGN_FROM_REQ(axi_slave_dv, axi_slv_req);
+  `AXI_ASSIGN_TO_RESP(axi_slv_resp, axi_slave_dv);
+
+  // DUT
 
   axi_dw_converter #(
-    .AxiMstDataWidth(MULT*DW),
-    .AxiSlvDataWidth(DW     ),
-    .AxiIdWidth     (IW     ),
-    .AxiUserWidth   (UW     ),
-    .AxiMaxTrans    (4      )
+    .AxiMaxTrans (4           ),
+    .aw_chan_t   (aw_chan_t   ),
+    .mst_w_chan_t(slv_w_chan_t),
+    .slv_w_chan_t(mst_w_chan_t),
+    .b_chan_t    (b_chan_t    ),
+    .ar_chan_t   (ar_chan_t   ),
+    .mst_r_chan_t(slv_r_chan_t),
+    .slv_r_chan_t(mst_r_chan_t)
   ) i_dw_converter (
-    .clk_i  (clk       ),
-    .rst_ni (rst       ),
-    .slv    (axi_master),
-    .mst    (axi_slave )
+    .clk_i         (clk                  ),
+    .rst_ni        (rst                  ),
+    .slv_aw_i      (axi_mst_req.aw       ),
+    .slv_aw_valid_i(axi_mst_req.aw_valid ),
+    .slv_aw_ready_o(axi_mst_resp.aw_ready),
+    .slv_w_i       (axi_mst_req.w        ),
+    .slv_w_valid_i (axi_mst_req.w_valid  ),
+    .slv_w_ready_o (axi_mst_resp.w_ready ),
+    .slv_b_o       (axi_mst_resp.b       ),
+    .slv_b_valid_o (axi_mst_resp.b_valid ),
+    .slv_b_ready_i (axi_mst_req.b_ready  ),
+    .slv_ar_i      (axi_mst_req.ar       ),
+    .slv_ar_valid_i(axi_mst_req.ar_valid ),
+    .slv_ar_ready_o(axi_mst_resp.ar_ready),
+    .slv_r_o       (axi_mst_resp.r       ),
+    .slv_r_valid_o (axi_mst_resp.r_valid ),
+    .slv_r_ready_i (axi_mst_req.r_ready  ),
+    .mst_aw_o      (axi_slv_req.aw       ),
+    .mst_aw_valid_o(axi_slv_req.aw_valid ),
+    .mst_aw_ready_i(axi_slv_resp.aw_ready),
+    .mst_w_o       (axi_slv_req.w        ),
+    .mst_w_valid_o (axi_slv_req.w_valid  ),
+    .mst_w_ready_i (axi_slv_resp.w_ready ),
+    .mst_b_i       (axi_slv_resp.b       ),
+    .mst_b_valid_i (axi_slv_resp.b_valid ),
+    .mst_b_ready_o (axi_slv_req.b_ready  ),
+    .mst_ar_o      (axi_slv_req.ar       ),
+    .mst_ar_valid_o(axi_slv_req.ar_valid ),
+    .mst_ar_ready_i(axi_slv_resp.ar_ready),
+    .mst_r_i       (axi_slv_resp.r       ),
+    .mst_r_valid_i (axi_slv_resp.r_valid ),
+    .mst_r_ready_o (axi_slv_req.r_ready  )
   );
-
-  initial begin
-    #tCK;
-    rst <= 0;
-    #tCK;
-    rst <= 1;
-    #tCK;
-    while (!done) begin
-      clk <= 1;
-      #(tCK/2);
-      clk <= 0;
-      #(tCK/2);
-    end
-  end
 
   initial begin
     axi_master_drv.reset()                                                             ;
