@@ -33,3 +33,4 @@ call_vsim tb_axi_atop_filter -GN_TXNS=1000
 call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_cdc
+call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
