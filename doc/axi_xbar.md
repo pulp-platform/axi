@@ -60,6 +60,7 @@ The other parameters are types to define the ports of the crossbar.  The `*_chan
 The `LatencyMode` parameter allows to insert spill registers after each channel (AW, W, B, AR, and R) of each master port (i.e., each multiplexer) and before each channel of each slave port (i.e., each demultiplexer).  Spill registers cut combinatorial paths, so this parameter reduces the length of combinatorial paths through the crossbar.
 
 Some common configurations are given in the `xbar_latency_e` `enum`.  The recommended configuration (`CUT_ALL_AX`) is to have a latency of 2 on the AW and AR channels because these channels have the most combinatorial logic on them.  Additionally, `FallThrough` should be set to `0` to prevent logic on the AW channel from extending combinatorial paths on the W channel.  However, it is possible to run the crossbar in a fully combinatorial configuration by setting `LatencyMode` to `NO_LATENCY` and `FallThrough` to `1`.
+If two crossbars are connected in both directions, meaning both have one of their master_ports connected to a slave_port of the other it is required to have either `CUT_SLV_PORTS`, `CUT_MST_PORTS` or `CUT_ALL_PORTS` as the configuration of the two crossbars. This is to prevent timing loops as the other configurations will lead to timing loops in simulation and synthesis on the not cut channels between the two crossbars.
 
 
 ## Ports
