@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add `axi_isolate`, terminates open transactions.
+- Add `axi_isolate` to isolate downstream slaves from receiving new transactions.
 
 ### Changed
 - `axi_lite_to_axi`: Add mandatory `AxiDataWidth` parameter to enable fix mentioned below.
