@@ -19,6 +19,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_lite_demux.sv`](src/axi_lite_demux.sv)         | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                      | [Doc](doc/axi_lite_demux.md)|
 | [`axi_lite_join.sv`](src/axi_lite_join.sv)           | A connector that joins two AXI-Lite interfaces.                                                   |                             |
 | [`axi_lite_mux.sv`](src/axi_lite_mux.sv)             | Multiplexes AXI4-Lite slave ports down to one master port.                                        | [Doc](doc/axi_lite_mux.md)  |
+| [`axi_lite_to_apb.sv`](src/axi_lite_to_apb.sv)       | An AXI4-Lite to APB4 adapter.                                                                     |                             |
 | [`axi_lite_to_axi.sv`](src/axi_lite_to_axi.sv)       | An AXI4-Lite to AXI4 adapter.                                                                     |                             |
 | [`axi_lite_xbar.sv`](src/axi_lite_xbar.sv)           | Fully-connected AXI4-Lite crossbar with an arbitrary number of slave and master ports.            | [Doc](doc/axi_lite_xbar.md) |
 | [`axi_modify_address.sv`](src/axi_modify_address.sv) | A connector that allows addresses of AXI requests to be changed.                                  |                             |
