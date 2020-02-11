@@ -27,7 +27,8 @@ module axi_lite_xbar #(
   parameter type     req_t          = logic,
   parameter type    resp_t          = logic,
   parameter type    rule_t          = axi_pkg::xbar_rule_64_t,
-  localparam int unsigned MstIdxWidth = (Cfg.NoMstPorts > 32'd1) ? $clog2(Cfg.NoMstPorts) : 32'd1
+  // DEPENDENT PARAMETERS, DO NOT OVERWRITE!
+  parameter int unsigned MstIdxWidth = (Cfg.NoMstPorts > 32'd1) ? $clog2(Cfg.NoMstPorts) : 32'd1
 ) (
   input  logic                                        clk_i,
   input  logic                                        rst_ni,
