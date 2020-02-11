@@ -61,6 +61,20 @@ module synth_bench (
     ) i_lite_xbar (.*);
   end
 
+  // Clock Domain Crossing
+  for (genvar i = 0; i < 6; i++) begin
+    localparam int AW = AXI_ADDR_WIDTH[i];
+    for (genvar j = 0; j < 3; j++) begin
+      localparam IUW = AXI_ID_USER_WIDTH[j];
+      synth_axi_cdc #(
+        .AXI_ADDR_WIDTH (AW),
+        .AXI_DATA_WIDTH (128),
+        .AXI_ID_WIDTH   (IUW),
+        .AXI_USER_WIDTH (IUW)
+      ) i_cdc (.*);
+    end
+  end
+
 endmodule
 
 
@@ -134,6 +148,47 @@ module synth_axi_atop_filter #(
     .rst_ni (rst_ni),
     .slv    (upstream),
     .mst    (downstream)
+  );
+
+endmodule
+
+module synth_axi_cdc #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) upstream ();
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) downstream ();
+
+  axi_cdc_intf #(
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH),
+    .LOG_DEPTH      (2)
+  ) dut (
+    .src_clk_i  (clk_i),
+    .src_rst_ni (rst_ni),
+    .src        (upstream),
+    .dst_clk_i  (clk_i),
+    .dst_rst_ni (rst_ni),
+    .dst        (downstream)
   );
 
 endmodule
