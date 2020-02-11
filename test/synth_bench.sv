@@ -78,7 +78,7 @@ module synth_bench (
   // AXI4-Lite to APB bridge
   for (genvar i_data = 0; i_data < 3; i_data++) begin
     localparam int unsigned DataWidth = (2**i_data) * 8;
-    for (genvar i_slv = 1; i_slv < 3; i_slv++) begin
+    for (genvar i_slv = 0; i_slv < 3; i_slv++) begin
       synth_axi_lite_to_apb #(
         .NoApbSlaves ( NUM_SLAVE_MASTER[i_slv] ),
         .DataWidth   ( DataWidth               )
