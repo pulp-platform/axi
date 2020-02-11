@@ -61,6 +61,8 @@ The `LatencyMode` parameter allows to insert spill registers after each channel 
 
 Some common configurations are given in the `xbar_latency_e` `enum`.  The recommended configuration (`CUT_ALL_AX`) is to have a latency of 2 on the AW and AR channels because these channels have the most combinatorial logic on them.  Additionally, `FallThrough` should be set to `0` to prevent logic on the AW channel from extending combinatorial paths on the W channel.  However, it is possible to run the crossbar in a fully combinatorial configuration by setting `LatencyMode` to `NO_LATENCY` and `FallThrough` to `1`.
 
+If two crossbars are connected in both directions, meaning both have one of their master ports connected to a slave port of the other, the `LatencyMode` of both crossbars must be set to either `CUT_SLV_PORTS`, `CUT_MST_PORTS`, or `CUT_ALL_PORTS`.  Any other latency mode will lead to timing loops on the uncut channels between the two crossbars.  The latency mode of the two crossbars does not have to be identical.
+
 
 ## Ports
 

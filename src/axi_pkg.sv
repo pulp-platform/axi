@@ -164,13 +164,13 @@ package axi_pkg;
   localparam logic [9:0] MuxAr   = (1 << 1);
   localparam logic [9:0] MuxR    = (1 << 0);
   typedef enum logic [9:0] {
-    NO_LATENCY    = '0,
+    NO_LATENCY    = 10'b000_00_000_00,
     CUT_SLV_AX    = DemuxAw | DemuxAr,
     CUT_MST_AX    = MuxAw | MuxAr,
     CUT_ALL_AX    = DemuxAw | DemuxAr | MuxAw | MuxAr,
     CUT_SLV_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
     CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
-    CUT_ALL_PORTS = '1
+    CUT_ALL_PORTS = 10'b111_11_111_11
   } xbar_latency_e;
   typedef struct packed {
     int unsigned   NoSlvPorts;
