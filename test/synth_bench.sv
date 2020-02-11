@@ -54,6 +54,13 @@ module synth_bench (
     end
   end
 
+  // AXI4-Lite crossbar
+  for (genvar i = 0; i < 3; i++) begin
+    synth_axi_lite_xbar #(
+      .NoSlvMst  ( NUM_SLAVE_MASTER[i] )
+    ) i_lite_xbar (.*);
+  end
+
 endmodule
 
 
@@ -129,4 +136,65 @@ module synth_axi_atop_filter #(
     .mst    (downstream)
   );
 
+endmodule
+
+`include "axi/typedef.svh"
+
+module synth_axi_lite_xbar #(
+  parameter int unsigned NoSlvMst
+) (
+  input clk_i,  // Clock
+  input rst_ni  // Asynchronous reset active low
+);
+  typedef logic [32'd32-1:0]   addr_t;
+  typedef logic [32'd32-1:0]   data_t;
+  typedef logic [32'd32/8-1:0] strb_t;
+
+  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t        )
+  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_t                )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t        )
+  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t        )
+  `AXI_LITE_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t)
+  localparam axi_pkg::xbar_cfg_t XbarCfg = '{
+    NoSlvPorts:         NoSlvMst,
+    NoMstPorts:         NoSlvMst,
+    MaxMstTrans:        32'd5,
+    MaxSlvTrans:        32'd5,
+    FallThrough:        1'b1,
+    LatencyMode:        axi_pkg::CUT_ALL_PORTS,
+    AxiAddrWidth:       32'd32,
+    AxiDataWidth:       32'd32,
+    NoAddrRules:        NoSlvMst,
+    default:            '0
+  };
+
+  axi_pkg::xbar_rule_32_t [NoSlvMst-1:0] addr_map;
+  logic                                  test;
+  req_t                   [NoSlvMst-1:0] mst_reqs,  slv_reqs;
+  resp_t                  [NoSlvMst-1:0] mst_resps, slv_resps;
+
+  axi_lite_xbar #(
+    .Cfg       ( XbarCfg                 ),
+    .aw_chan_t ( aw_chan_t               ),
+    .w_chan_t  (  w_chan_t               ),
+    .b_chan_t  (  b_chan_t               ),
+    .ar_chan_t ( ar_chan_t               ),
+    .r_chan_t  (  r_chan_t               ),
+    .req_t     (     req_t               ),
+    .resp_t    (    resp_t               ),
+    .rule_t    ( axi_pkg::xbar_rule_32_t )
+  ) i_xbar_dut (
+    .clk_i                 ( clk_i     ),
+    .rst_ni                ( rst_ni    ),
+    .test_i                ( test      ),
+    .slv_ports_req_i       ( mst_reqs  ),
+    .slv_ports_resp_o      ( mst_resps ),
+    .mst_ports_req_o       ( slv_reqs  ),
+    .mst_ports_resp_i      ( slv_resps ),
+    .addr_map_i            ( addr_map  ),
+    .en_default_mst_port_i ( '0        ),
+    .default_mst_port_i    ( '0        )
+  );
 endmodule
