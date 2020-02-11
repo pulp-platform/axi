@@ -49,6 +49,7 @@ module axi_lite_mailbox #(
   usage_t [1:0] mbox_usage;                 // index is the instantiated mailbox FIFO
   // interrupt request from this slave port, level triggered, active high --> convert
   logic   [1:0] slv_irq;
+  logic   [1:0] clear_irq;
 
   axi_lite_mailbox_slave #(
     .MailboxDepth ( MailboxDepth ),
@@ -79,7 +80,8 @@ module axi_lite_mailbox #(
     .mbox_r_flush_o ( r_mbox_flush[0] ),
     .mbox_r_usage_i ( mbox_usage[1]   ),
     // interrupt output, level triggered, active high, conversion in top
-    .irq_o          ( slv_irq[0]      )
+    .irq_o          ( slv_irq[0]      ),
+    .clear_irq_o    ( clear_irq[0]    )
   );
 
   axi_lite_mailbox_slave #(
@@ -111,7 +113,8 @@ module axi_lite_mailbox #(
     .mbox_r_flush_o ( r_mbox_flush[1] ),
     .mbox_r_usage_i ( mbox_usage[0]   ),
     // interrupt output, level triggered, active high, conversion in top
-    .irq_o          ( slv_irq[1]      )
+    .irq_o          ( slv_irq[1]      ),
+    .clear_irq_o    ( clear_irq[1]    )
   );
 
   fifo_v3 #(
@@ -155,14 +158,20 @@ module axi_lite_mailbox #(
       logic irq_q, irq_d, update_irq;
 
       always_comb begin
+        // default assignments
         irq_d      = irq_q;
         update_irq = 1'b0;
-        if (slv_irq[i] ^ irq_q) begin
-          irq_d      = ~irq_q;
+        // init the irq and pulse only on update
+        irq_o[i]   = ~IrqActHigh;
+        if (clear_irq[i]) begin
+          irq_d      = 1'b0;
           update_irq = 1'b1;
+        end else if (!irq_q && slv_irq[i]) begin
+          irq_d      = 1'b1;
+          update_irq = 1'b1;
+          irq_o[i]   = IrqActHigh; // on update of the register pulse the irq signal
         end
       end
-      assign irq_o[i] = (IrqActHigh) ? (slv_irq[i] && !irq_q) : ~(slv_irq[i] && !irq_q);
 
       `FFLARN( irq_q, irq_d, update_irq, '0, clk_i, rst_ni )
     end else begin : gen_irq_level
@@ -213,7 +222,8 @@ module axi_lite_mailbox_slave #(
   output logic       mbox_r_flush_o,
   input  usage_t     mbox_r_usage_i,
   // interrupt output, level triggered, active high, conversion in top
-  output logic       irq_o
+  output logic       irq_o,
+  output logic       clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
 );
 
   `AXI_LITE_TYPEDEF_B_CHAN_T ( b_chan_lite_t         )
@@ -315,6 +325,8 @@ module axi_lite_mailbox_slave #(
     mbox_w_flush_o = 1'b0;
     mbox_r_pop_o   = 1'b0;
     mbox_r_flush_o = 1'b0;
+    // clear the edge triggered irq register if it is instantiated
+    clear_irq_o    = 1'b0;
 
     // -------------------------------------------
     // Set the read and write interrupt FF (irqs), when the threshold triggers
@@ -437,6 +449,7 @@ module axi_lite_mailbox_slave #(
                 irqs_d[2]   = slv_req_i.w.data[2] ? 1'b0 : irqs_d[2]; // Error irq status
                 irqs_d[1]   = slv_req_i.w.data[1] ? 1'b0 : irqs_d[1]; // Read  irq status
                 irqs_d[0]   = slv_req_i.w.data[0] ? 1'b0 : irqs_d[0]; // Write irq status
+                clear_irq_o = 1'b1;
                 update_regs = 1'b1;
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};

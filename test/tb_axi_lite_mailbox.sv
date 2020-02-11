@@ -272,7 +272,7 @@ module tb_axi_lite_mailbox;
     lite_axi_master.read(ERROR, data, resp);
     assert (data == data_t'(2'b10)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(CTRL, data_t'(2'h01), 8'h01, resp);
+    lite_axi_master.write(CTRL, data_t'(2'b01), 8'h01, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
     lite_axi_master.write(IRQS, data_t'(3'b111), 8'h01, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
