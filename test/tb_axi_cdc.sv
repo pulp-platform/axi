@@ -155,12 +155,12 @@ module tb_axi_cdc #(
     logic  last;
   } r_chan_t;
 
-  axi_cdc_wrap #(
-    .AxiAddrWidth (AXI_AW),
-    .AxiDataWidth (AXI_DW),
-    .AxiIdWidth   (AXI_IW),
-    .AxiUserWidth (AXI_UW),
-    .LogDepth      (2)
+  axi_cdc_intf #(
+    .AXI_ADDR_WIDTH (AXI_AW),
+    .AXI_DATA_WIDTH (AXI_DW),
+    .AXI_ID_WIDTH   (AXI_IW),
+    .AXI_USER_WIDTH (AXI_UW),
+    .LOG_DEPTH      (2)
   ) dut (
     .src_clk_i  (upstream_clk),
     .src_rst_ni (upstream_rst_n),

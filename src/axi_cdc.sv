@@ -131,13 +131,13 @@ endmodule
 `include "axi/typedef.svh"
 
 // interface wrapper
-module axi_cdc_wrap #(
-  parameter int unsigned AxiIdWidth   = 0,
-  parameter int unsigned AxiAddrWidth = 0,
-  parameter int unsigned AxiDataWidth = 0,
-  parameter int unsigned AxiUserWidth = 0,
+module axi_cdc_intf #(
+  parameter int unsigned AXI_ID_WIDTH   = 0,
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LogDepth = 1
+  parameter int unsigned LOG_DEPTH = 1
 ) (
    // slave side - clocked by `src_clk_i`
   input  logic      src_clk_i,
@@ -149,11 +149,11 @@ module axi_cdc_wrap #(
   AXI_BUS.Master    dst
 );
 
-  typedef logic [AxiIdWidth-1:0]     id_t;
-  typedef logic [AxiAddrWidth-1:0]   addr_t;
-  typedef logic [AxiDataWidth-1:0]   data_t;
-  typedef logic [AxiDataWidth/8-1:0] strb_t;
-  typedef logic [AxiUserWidth-1:0]   user_t;
+  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
   `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
   `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
   `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
@@ -179,7 +179,7 @@ module axi_cdc_wrap #(
     .r_chan_t   ( r_chan_t  ),
     .axi_req_t  ( req_t     ),
     .axi_resp_t ( resp_t    ),
-    .LogDepth   ( LogDepth )
+    .LogDepth   ( LOG_DEPTH )
   ) i_axi_cdc (
     .src_clk_i,
     .src_rst_ni,
