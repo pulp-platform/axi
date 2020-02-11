@@ -75,6 +75,17 @@ module synth_bench (
     end
   end
 
+  // AXI4-Lite to APB bridge
+  for (genvar i_data = 0; i_data < 3; i_data++) begin
+    localparam int unsigned DataWidth = (2**i_data) * 8;
+    for (genvar i_slv = 1; i_slv < 3; i_slv++) begin
+      synth_axi_lite_to_apb #(
+        .NoApbSlaves ( NUM_SLAVE_MASTER[i_slv] ),
+        .DataWidth   ( DataWidth               )
+      ) i_axi_lite_to_apb (.*);
+    end
+  end
+
 endmodule
 
 
@@ -148,6 +159,73 @@ module synth_axi_atop_filter #(
     .rst_ni (rst_ni),
     .slv    (upstream),
     .mst    (downstream)
+  );
+endmodule
+
+`include "axi/typedef.svh"
+
+module synth_axi_lite_to_apb #(
+  parameter int unsigned NoApbSlaves = 0,
+  parameter int unsigned DataWidth   = 0
+) (
+  input logic clk_i,  // Clock
+  input logic rst_ni  // Asynchronous reset active low
+);
+
+  typedef logic [31:0]            addr_t;
+  typedef logic [DataWidth-1:0]   data_t;
+  typedef logic [DataWidth/8-1:0] strb_t;
+  typedef logic [NoApbSlaves-1:0] sel_t;
+
+  typedef struct packed {
+    addr_t          paddr;   // same as AXI4-Lite
+    axi_pkg::prot_t pprot;   // same as AXI4-Lite, specification is the same
+    sel_t           psel;    // onehot, one psel line per connected APB4 slave
+    logic           penable; // enable signal shows second APB4 cycle
+    logic           pwrite;  // write enable
+    data_t          pwdata;  // write data, comes from W channel
+    strb_t          pstrb;   // write strb, comes from W channel
+  } apb_req_t;
+
+  typedef struct packed {
+    logic  pready;   // slave signals that it is ready
+    data_t prdata;   // read data, connects to R channel
+    logic  pslverr;  // gets translated into either `axi_pkg::RESP_OK` or `axi_pkg::RESP_SLVERR`
+  } apb_resp_t;
+
+  `AXI_LITE_TYPEDEF_AW_CHAN_T (  aw_chan_t, addr_t         )
+  `AXI_LITE_TYPEDEF_W_CHAN_T  (   w_chan_t, data_t, strb_t )
+  `AXI_LITE_TYPEDEF_B_CHAN_T  (   b_chan_t                 )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T (  ar_chan_t, addr_t         )
+  `AXI_LITE_TYPEDEF_R_CHAN_T  (   r_chan_t, data_t         )
+  `AXI_LITE_TYPEDEF_REQ_T     (  axi_req_t, aw_chan_t, w_chan_t, ar_chan_t )
+  `AXI_LITE_TYPEDEF_RESP_T    ( axi_resp_t,  b_chan_t, r_chan_t )
+
+  axi_req_t                     axi_req;
+  axi_resp_t                    axi_resp;
+  apb_req_t                     apb_req;
+  apb_resp_t  [NoApbSlaves-1:0] apb_resp;
+
+  axi_pkg::xbar_rule_32_t [NoApbSlaves-1:0] addr_map;
+
+  axi_lite_to_apb #(
+    .NoApbSlaves     ( NoApbSlaves             ),
+    .NoRules         ( NoApbSlaves             ),
+    .AddrWidth       ( 32'd32                  ),
+    .DataWidth       ( DataWidth               ),
+    .axi_lite_req_t  ( axi_req_t               ),
+    .axi_lite_resp_t ( axi_resp_t              ),
+    .apb_req_t       ( apb_req_t               ),
+    .apb_resp_t      ( apb_resp_t              ),
+    .rule_t          ( axi_pkg::xbar_rule_32_t )
+  ) i_axi_lite_to_apb_dut (
+    .clk_i           ( clk_i    ),
+    .rst_ni          ( rst_ni   ),
+    .axi_lite_req_i  ( axi_req  ),
+    .axi_lite_resp_o ( axi_resp ),
+    .apb_req_o       ( apb_req  ),
+    .apb_resp_i      ( apb_resp ),
+    .addr_map_i      ( addr_map )
   );
 
 endmodule
