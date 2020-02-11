@@ -86,6 +86,11 @@ module axi_lite_to_apb #(
     data_t          data; // read data from APB
     axi_pkg::resp_t resp; // response bit from APB
   } int_resp_t; // internal
+  typedef enum logic {
+    Setup  = 1'b0, // APB in Idle or Setup
+    Access = 1'b1  // APB in Access
+  } apb_state_e;
+
 
   // Signals from AXI4-Lite slave to arbitration tree
   int_req_t [1:0] axi_req;
@@ -203,7 +208,8 @@ module axi_lite_to_apb #(
   // APB master FSM
   // -----------------------------------------------------------------------------------------------
   // APB access state machine
-  logic apb_busy_q, apb_busy_d, apb_update;
+  apb_state_e apb_state_q, apb_state_d;
+  logic       apb_update;
   // output of address decoder to determine PSELx signal
   logic     apb_dec_valid;
   sel_idx_t apb_sel_idx;
@@ -224,7 +230,7 @@ module axi_lite_to_apb #(
 
   always_comb begin
     // default assignments
-    apb_busy_d  = apb_busy_q;
+    apb_state_d  = apb_state_q;
     apb_update  = 1'b0;
     apb_req_o   = '{
       paddr:   apb_req.addr,
@@ -242,52 +248,55 @@ module axi_lite_to_apb #(
     apb_rresp       = '{data: data_t'(32'hDEA110C8), resp: axi_pkg::RESP_SLVERR};
     apb_rresp_valid = 1'b0;
 
-    if (!apb_busy_q) begin
-      // `Idle` and `Setup` steps
-      // can check here for readyness, because the response goes into spill_registers
-      if (apb_req_valid && apb_wresp_ready && apb_rresp_ready) begin
-        if (apb_dec_valid) begin
-          // `Setup` step
-          apb_req_o.psel[apb_sel_idx] = 1'b1;
-          apb_busy_d                  = 1'b1;
-          apb_update                  = 1'b1;
-        end else begin
-          // decode error, generate error and do not generate APB request, pop it
-          apb_req_ready = 1'b1;
-          if (apb_req.write) begin
-            apb_wresp       = axi_pkg::RESP_DECERR;
-            apb_wresp_valid = 1'b1;
+    unique case (apb_state_q)
+      Setup: begin
+        // `Idle` and `Setup` steps
+        // can check here for readyness, because the response goes into spill_registers
+        if (apb_req_valid && apb_wresp_ready && apb_rresp_ready) begin
+          if (apb_dec_valid) begin
+            // `Setup` step
+            apb_req_o.psel[apb_sel_idx] = 1'b1;
+            apb_state_d                 = Access;
+            apb_update                  = 1'b1;
           end else begin
-            apb_rresp.resp  = axi_pkg::RESP_DECERR;
-            apb_rresp_valid = 1'b1;
+            // decode error, generate error and do not generate APB request, pop it
+            apb_req_ready = 1'b1;
+            if (apb_req.write) begin
+              apb_wresp       = axi_pkg::RESP_DECERR;
+              apb_wresp_valid = 1'b1;
+            end else begin
+              apb_rresp.resp  = axi_pkg::RESP_DECERR;
+              apb_rresp_valid = 1'b1;
+            end
           end
         end
       end
-    end else begin
-      // `Access` step
-      apb_req_o.psel[apb_sel_idx] = 1'b1;
-      apb_req_o.penable           = 1'b1;
-      if (apb_resp_i[apb_sel_idx].pready) begin
-        // transfer, pop the request, genereate response and update state
-        apb_req_ready = 1'b1;
-        // we are only in this state if the response spill registers are ready anyway
-        if (apb_req.write) begin
-          apb_wresp       = apb_resp_i[apb_sel_idx].pslverr ?
-                                axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
-          apb_wresp_valid = 1'b1;
-        end else begin
-          apb_rresp.data  = apb_resp_i[apb_sel_idx].prdata;
-          apb_rresp.resp  = apb_resp_i[apb_sel_idx].pslverr ?
-                                axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
-          apb_rresp_valid = 1'b1;
+      Access: begin
+        // `Access` step
+        apb_req_o.psel[apb_sel_idx] = 1'b1;
+        apb_req_o.penable           = 1'b1;
+        if (apb_resp_i[apb_sel_idx].pready) begin
+          // transfer, pop the request, genereate response and update state
+          apb_req_ready = 1'b1;
+          // we are only in this state if the response spill registers are ready anyway
+          if (apb_req.write) begin
+            apb_wresp       = apb_resp_i[apb_sel_idx].pslverr ?
+                                  axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+            apb_wresp_valid = 1'b1;
+          end else begin
+            apb_rresp.data  = apb_resp_i[apb_sel_idx].prdata;
+            apb_rresp.resp  = apb_resp_i[apb_sel_idx].pslverr ?
+                                  axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+            apb_rresp_valid = 1'b1;
+          end
+          apb_state_d = Setup;
+          apb_update  = 1'b1;
         end
-        apb_busy_d = 1'b0;
-        apb_update = 1'b1;
       end
-    end
+    endcase
   end
 
-  `FFLARN(apb_busy_q, apb_busy_d, apb_update, 1'b0, clk_i, rst_ni)
+  `FFLARN(apb_state_q, apb_state_d, apb_update, Setup, clk_i, rst_ni)
 
   // parameter check
   // pragma translate_off

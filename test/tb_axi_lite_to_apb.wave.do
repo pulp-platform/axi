@@ -7,6 +7,13 @@ add wave -noupdate sim:/tb_axi_lite_to_apb/axi_req
 add wave -noupdate sim:/tb_axi_lite_to_apb/axi_resp
 add wave -noupdate sim:/tb_axi_lite_to_apb/apb_req
 add wave -noupdate sim:/tb_axi_lite_to_apb/apb_resps
+add wave -noupdate -divider Internal
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/apb_req
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/apb_req_valid
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/apb_req_ready
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/apb_state_q
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/i_apb_decode/idx_o
+add wave -noupdate sim:/tb_axi_lite_to_apb/i_axi_lite_to_apb_dut/i_apb_decode/dec_valid_o
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {16 ns} 0}
 quietly wave cursor active 1
