@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.9.2 - 2020-02-11
+
+### Fixed
 - `axi_pkg`: Fix value of `CUT_ALL_PORTS` (in `xbar_latency_e`) in Vivado synthesis.
 
 
