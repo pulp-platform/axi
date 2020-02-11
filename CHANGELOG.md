@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_lite_xbar`: fully-connected AXI4-Lite crossbar.
+- `axi_lite_demux`: AXI4-Lite demultiplexer from one slave port to a configurable number of master
+  ports.
+- `axi_lite_mux`: AXI4-Lite multiplexer from a configurable number of slave ports to one master
+  port.
 
 ### Changed
+- `axi_test`: Extended package with random AXI4-Lite master and slave test bench classes.
 
 ### Fixed
 

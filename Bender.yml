@@ -27,7 +27,9 @@ sources:
   - src/axi_demux.sv
   - src/axi_id_prepend.sv
   - src/axi_join.sv
+  - src/axi_lite_demux.sv
   - src/axi_lite_join.sv
+  - src/axi_lite_mux.sv
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
@@ -36,6 +38,7 @@ sources:
   - src/axi_decerr_slv.sv
   - src/axi_multicut.sv
   # Level 4
+  - src/axi_lite_xbar.sv
   - src/axi_xbar.sv
 
   - target: synth_test
@@ -51,6 +54,7 @@ sources:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_lite_to_axi.sv
+      - test/tb_axi_lite_xbar.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar_pkg.sv
       - test/tb_axi_xbar.sv
