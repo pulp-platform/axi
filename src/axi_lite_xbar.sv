@@ -26,18 +26,19 @@ module axi_lite_xbar #(
   parameter type  r_chan_t          = logic,
   parameter type     req_t          = logic,
   parameter type    resp_t          = logic,
-  parameter type    rule_t          = axi_pkg::xbar_rule_64_t
+  parameter type    rule_t          = axi_pkg::xbar_rule_64_t,
+  localparam int unsigned MstIdxWidth = (Cfg.NoMstPorts > 32'd1) ? $clog2(Cfg.NoMstPorts) : 32'd1
 ) (
-  input  logic                                                   clk_i,
-  input  logic                                                   rst_ni,
-  input  logic                                                   test_i,
-  input  req_t  [Cfg.NoSlvPorts-1:0]                             slv_ports_req_i,
-  output resp_t [Cfg.NoSlvPorts-1:0]                             slv_ports_resp_o,
-  output req_t  [Cfg.NoMstPorts-1:0]                             mst_ports_req_o,
-  input  resp_t [Cfg.NoMstPorts-1:0]                             mst_ports_resp_i,
-  input  rule_t [Cfg.NoAddrRules-1:0]                            addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                             en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
+  input  logic                                        clk_i,
+  input  logic                                        rst_ni,
+  input  logic                                        test_i,
+  input  req_t  [Cfg.NoSlvPorts-1:0]                  slv_ports_req_i,
+  output resp_t [Cfg.NoSlvPorts-1:0]                  slv_ports_resp_o,
+  output req_t  [Cfg.NoMstPorts-1:0]                  mst_ports_req_o,
+  input  resp_t [Cfg.NoMstPorts-1:0]                  mst_ports_resp_i,
+  input  rule_t [Cfg.NoAddrRules-1:0]                 addr_map_i,
+  input  logic  [Cfg.NoSlvPorts-1:0]                  en_default_mst_port_i,
+  input  logic  [Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
 );
 
   typedef logic [Cfg.AxiAddrWidth-1:0]   addr_t;
@@ -64,10 +65,10 @@ module axi_lite_xbar #(
   resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
-    logic [$clog2(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
-    mst_port_idx_t                     slv_aw_select, slv_ar_select;
-    logic                              dec_aw_error;
-    logic                              dec_ar_error;
+    logic [MstIdxWidth-1:0] dec_aw,        dec_ar;
+    mst_port_idx_t          slv_aw_select, slv_ar_select;
+    logic                   dec_aw_error;
+    logic                   dec_ar_error;
 
     full_req_t  decerr_req;
     full_resp_t decerr_resp;
