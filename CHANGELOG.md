@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.10.0 - 2020-02-11
+
+### Added
 - `axi_lite_xbar`: fully-connected AXI4-Lite crossbar.
 - `axi_lite_demux`: AXI4-Lite demultiplexer from one slave port to a configurable number of master
   ports.
@@ -16,8 +25,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - `axi_test`: Extended package with random AXI4-Lite master and slave test bench classes.
-
-### Fixed
 
 
 ## 0.9.2 - 2020-02-11
