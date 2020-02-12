@@ -122,7 +122,7 @@ module tb_axi_dw_upsizer;
   // DUT
 
   axi_dw_converter #(
-    .AxiMaxTrans (4           ),
+    .AxiMaxReads (4           ),
     .aw_chan_t   (aw_chan_t   ),
     .mst_w_chan_t(slv_w_chan_t),
     .slv_w_chan_t(mst_w_chan_t),

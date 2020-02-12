@@ -15,7 +15,7 @@
 // Connects a narrow master to a wider slave.
 
 module axi_dw_downsizer #(
-    parameter int unsigned AxiMaxTrans = 1    , // Number of outstanding reads
+    parameter int unsigned AxiMaxReads = 1    , // Number of outstanding reads
     parameter type aw_chan_t           = logic, // AW Channel Type
     parameter type mst_w_chan_t        = logic, //  W Channel Type for mst port
     parameter type slv_w_chan_t        = logic, //  W Channel Type for slv port
@@ -69,7 +69,7 @@ module axi_dw_downsizer #(
    *****************/
 
   // Type used to index which adapter is handling each outstanding transaction.
-  localparam TranIdWidth = AxiMaxTrans > 1 ? $clog2(AxiMaxTrans) : 1;
+  localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
@@ -97,12 +97,12 @@ module axi_dw_downsizer #(
 
   // R
 
-  slv_r_chan_t [AxiMaxTrans-1:0] slv_r_tran;
-  logic        [AxiMaxTrans-1:0] slv_r_valid_tran;
-  logic        [AxiMaxTrans-1:0] slv_r_ready_tran;
+  slv_r_chan_t [AxiMaxReads-1:0] slv_r_tran;
+  logic        [AxiMaxReads-1:0] slv_r_valid_tran;
+  logic        [AxiMaxReads-1:0] slv_r_ready_tran;
 
   rr_arb_tree #(
-    .NumIn    (AxiMaxTrans ),
+    .NumIn    (AxiMaxReads ),
     .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
@@ -121,7 +121,7 @@ module axi_dw_downsizer #(
     .idx_o  (/* Unused */    )
   );
 
-  logic [AxiMaxTrans-1:0] mst_r_ready_tran;
+  logic [AxiMaxReads-1:0] mst_r_ready_tran;
   assign mst_r_ready_o = |mst_r_ready_tran;
 
   // AR
@@ -129,7 +129,7 @@ module axi_dw_downsizer #(
   logic [AxiIdWidth-1:0]  arb_slv_ar_id;
   logic                   arb_slv_ar_req;
   logic                   arb_slv_ar_gnt;
-  logic [AxiMaxTrans-1:0] arb_slv_ar_gnt_tran;
+  logic [AxiMaxReads-1:0] arb_slv_ar_gnt_tran;
   // Multiplex AR slave between AR and AW for the injection of atomic operations with an R response.
   logic                   inject_aw_into_ar;
   logic                   inject_aw_into_ar_req;
@@ -157,12 +157,12 @@ module axi_dw_downsizer #(
     .idx_o   (inject_aw_into_ar                      )
   );
 
-  ar_chan_t [AxiMaxTrans-1:0] mst_ar_tran;
-  logic     [AxiMaxTrans-1:0] mst_ar_valid_tran;
-  logic     [AxiMaxTrans-1:0] mst_ar_ready_tran;
+  ar_chan_t [AxiMaxReads-1:0] mst_ar_tran;
+  logic     [AxiMaxReads-1:0] mst_ar_valid_tran;
+  logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
 
   rr_arb_tree #(
-    .NumIn    (AxiMaxTrans),
+    .NumIn    (AxiMaxReads),
     .DataType (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
@@ -193,12 +193,12 @@ module axi_dw_downsizer #(
   } r_state_t;
 
   // Decide which downsizer will handle the incoming AXI transaction
-  logic     [AxiMaxTrans-1:0] idle_read_downsizer;
+  logic     [AxiMaxReads-1:0] idle_read_downsizer;
   tran_id_t                   idx_idle_downsizer ;
 
-  if (AxiMaxTrans > 1) begin: gen_read_lzc
+  if (AxiMaxReads > 1) begin: gen_read_lzc
     lzc #(
-      .WIDTH(AxiMaxTrans)
+      .WIDTH(AxiMaxReads)
     ) i_read_lzc (
       .in_i   (idle_read_downsizer),
       .cnt_o  (idx_idle_downsizer ),
@@ -211,14 +211,14 @@ module axi_dw_downsizer #(
   // This ID queue is used to resolve which downsizer is handling
   // each outstanding read transaction.
 
-  logic     [AxiMaxTrans-1:0] idqueue_push;
-  logic     [AxiMaxTrans-1:0] idqueue_pop;
+  logic     [AxiMaxReads-1:0] idqueue_push;
+  logic     [AxiMaxReads-1:0] idqueue_pop;
   tran_id_t                   idqueue_id;
   logic                       idqueue_valid;
 
   id_queue #(
     .ID_WIDTH(AxiIdWidth ),
-    .CAPACITY(AxiMaxTrans),
+    .CAPACITY(AxiMaxReads),
     .data_t  (tran_id_t  )
   ) i_read_id_queue (
     .clk_i           (clk_i             ),
@@ -240,7 +240,7 @@ module axi_dw_downsizer #(
     .exists_gnt_o    (/* Unused  */     )
   );
 
-  for (genvar t = 0; t < AxiMaxTrans; t++) begin: gen_read_downsizer
+  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_read_downsizer
     r_state_t r_state_d;
     r_state_t r_state_q;
 
@@ -583,17 +583,5 @@ module axi_dw_downsizer #(
       w_req_q   <= w_req_d  ;
     end
   end
-
-  /****************
-   *  ASSERTIONS  *
-   ****************/
-
-  // Validate parameters.
-  `ifndef SYNTHESIS
-  `ifndef VERILATOR
-  if (2**AxiIdWidth < AxiMaxTrans)
-    $fatal(1, "Cannot index all requested outstanding reads with the given ID bits!");
-  `endif
-  `endif
 
 endmodule : axi_dw_downsizer
