@@ -11,7 +11,7 @@
 // Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 module axi_dw_converter #(
-    parameter int unsigned AxiMaxTrans = 1    , // Number of outstanding reads
+    parameter int unsigned AxiMaxReads = 1    , // Number of outstanding reads
     parameter type aw_chan_t           = logic, // AW Channel Type
     parameter type mst_w_chan_t        = logic, //  W Channel Type for mst port
     parameter type slv_w_chan_t        = logic, //  W Channel Type for slv port
@@ -76,7 +76,7 @@ module axi_dw_converter #(
 
   if ($bits(slv_r_o.data) < $bits(mst_r_i.data)) begin: gen_dw_upsize
     axi_dw_upsizer #(
-      .AxiMaxTrans (AxiMaxTrans ),
+      .AxiMaxReads (AxiMaxReads ),
       .aw_chan_t   (aw_chan_t   ),
       .mst_w_chan_t(mst_w_chan_t),
       .slv_w_chan_t(slv_w_chan_t),
@@ -124,7 +124,7 @@ module axi_dw_converter #(
 
   if ($bits(slv_r_o.data) > $bits(mst_r_i.data)) begin: gen_dw_downsize
     axi_dw_downsizer #(
-      .AxiMaxTrans (AxiMaxTrans ),
+      .AxiMaxReads (AxiMaxReads ),
       .aw_chan_t   (aw_chan_t   ),
       .mst_w_chan_t(mst_w_chan_t),
       .slv_w_chan_t(slv_w_chan_t),
