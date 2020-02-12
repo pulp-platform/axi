@@ -246,10 +246,6 @@ module axi_atop_filter #(
           end
         end
       end
-
-      default: begin
-        r_state_d = R_FEEDTHROUGH;
-      end
     endcase
   end
   // Feed all signals on AR through.
