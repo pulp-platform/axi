@@ -22,42 +22,20 @@ module axi_dw_downsizer #(
     parameter type b_chan_t            = logic, //  B Channel Type
     parameter type ar_chan_t           = logic, // AR Channel Type
     parameter type mst_r_chan_t        = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t        = logic  //  R Channel Type for slv port
+    parameter type slv_r_chan_t        = logic, //  R Channel Type for slv port
+    parameter type axi_mst_req_t       = logic, // AXI Request Type for mst ports
+    parameter type axi_mst_resp_t      = logic, // AXI Response Type for mst ports
+    parameter type axi_slv_req_t       = logic, // AXI Request Type for mst ports
+    parameter type axi_slv_resp_t      = logic  // AXI Response Type for mst ports
   ) (
-    input  logic        clk_i,
-    input  logic        rst_ni,
+    input  logic          clk_i,
+    input  logic          rst_ni,
     // Slave interface
-    input  aw_chan_t    slv_aw_i,
-    input  logic        slv_aw_valid_i,
-    output logic        slv_aw_ready_o,
-    input  slv_w_chan_t slv_w_i,
-    input  logic        slv_w_valid_i,
-    output logic        slv_w_ready_o,
-    output b_chan_t     slv_b_o,
-    output logic        slv_b_valid_o,
-    input  logic        slv_b_ready_i,
-    input  ar_chan_t    slv_ar_i,
-    input  logic        slv_ar_valid_i,
-    output logic        slv_ar_ready_o,
-    output slv_r_chan_t slv_r_o,
-    output logic        slv_r_valid_o,
-    input  logic        slv_r_ready_i,
+    input  axi_slv_req_t  slv_req_i,
+    output axi_slv_resp_t slv_resp_o,
     // Master interface
-    output aw_chan_t    mst_aw_o,
-    output logic        mst_aw_valid_o,
-    input  logic        mst_aw_ready_i,
-    output mst_w_chan_t mst_w_o,
-    output logic        mst_w_valid_o,
-    input  logic        mst_w_ready_i,
-    input  b_chan_t     mst_b_i,
-    input  logic        mst_b_valid_i,
-    output logic        mst_b_ready_o,
-    output ar_chan_t    mst_ar_o,
-    output logic        mst_ar_valid_o,
-    input  logic        mst_ar_ready_i,
-    input  mst_r_chan_t mst_r_i,
-    input  logic        mst_r_valid_i,
-    output logic        mst_r_ready_o
+    output axi_mst_req_t  mst_req_o,
+    input  axi_mst_resp_t mst_resp_i
   );
 
   import axi_pkg::*;
@@ -73,8 +51,8 @@ module axi_dw_downsizer #(
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
-  localparam AxiMstDataWidth = $bits(mst_r_i.data);
-  localparam AxiSlvDataWidth = $bits(slv_r_o.data);
+  localparam AxiMstDataWidth = $bits(mst_resp_i.r.data);
+  localparam AxiSlvDataWidth = $bits(slv_resp_o.r.data);
 
   localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
   localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
@@ -82,11 +60,11 @@ module axi_dw_downsizer #(
   localparam MstByteMask = AxiMstStrbWidth - 1;
 
   // Address width
-  localparam AxiAddrWidth = $bits(slv_ar_i.addr);
+  localparam AxiAddrWidth = $bits(slv_req_i.ar.addr);
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
   // ID width
-  localparam AxiIdWidth = $bits(slv_ar_i.id);
+  localparam AxiIdWidth = $bits(slv_req_i.ar.id);
 
   // Length of burst after downsizing
   typedef logic [$clog2(AxiSlvStrbWidth/AxiMstStrbWidth) + 7:0] burst_len_t;
@@ -108,21 +86,21 @@ module axi_dw_downsizer #(
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
   ) i_slv_r_arb (
-    .clk_i  (clk_i           ),
-    .rst_ni (rst_ni          ),
-    .flush_i(1'b0            ),
-    .rr_i   ('0              ),
-    .req_i  (slv_r_valid_tran),
-    .gnt_o  (slv_r_ready_tran),
-    .data_i (slv_r_tran      ),
-    .gnt_i  (slv_r_ready_i   ),
-    .req_o  (slv_r_valid_o   ),
-    .data_o (slv_r_o         ),
-    .idx_o  (/* Unused */    )
+    .clk_i  (clk_i             ),
+    .rst_ni (rst_ni            ),
+    .flush_i(1'b0              ),
+    .rr_i   ('0                ),
+    .req_i  (slv_r_valid_tran  ),
+    .gnt_o  (slv_r_ready_tran  ),
+    .data_i (slv_r_tran        ),
+    .gnt_i  (slv_req_i.r_ready ),
+    .req_o  (slv_resp_o.r_valid),
+    .data_o (slv_resp_o.r      ),
+    .idx_o  (/* Unused */      )
   );
 
   logic [AxiMaxReads-1:0] mst_r_ready_tran;
-  assign mst_r_ready_o = |mst_r_ready_tran;
+  assign mst_req_o.r_ready = |mst_r_ready_tran;
 
   // AR
 
@@ -144,17 +122,17 @@ module axi_dw_downsizer #(
     .AxiVldRdy (1'b1      ),
     .LockIn    (1'b0      )
   ) i_slv_ar_arb (
-    .clk_i   (clk_i                                  ),
-    .rst_ni  (rst_ni                                 ),
-    .flush_i (1'b0                                   ),
-    .rr_i    ('0                                     ),
-    .req_i   ({inject_aw_into_ar_req, slv_ar_valid_i}),
-    .gnt_o   ({inject_aw_into_ar_gnt, slv_ar_ready_o}),
-    .data_i  ({slv_aw_i.id, slv_ar_i.id}             ),
-    .req_o   (arb_slv_ar_req                         ),
-    .gnt_i   (arb_slv_ar_gnt                         ),
-    .data_o  (arb_slv_ar_id                          ),
-    .idx_o   (inject_aw_into_ar                      )
+    .clk_i   (clk_i                                       ),
+    .rst_ni  (rst_ni                                      ),
+    .flush_i (1'b0                                        ),
+    .rr_i    ('0                                          ),
+    .req_i   ({inject_aw_into_ar_req, slv_req_i.ar_valid} ),
+    .gnt_o   ({inject_aw_into_ar_gnt, slv_resp_o.ar_ready}),
+    .data_i  ({slv_req_i.aw.id, slv_req_i.ar.id}          ),
+    .req_o   (arb_slv_ar_req                              ),
+    .gnt_i   (arb_slv_ar_gnt                              ),
+    .data_o  (arb_slv_ar_id                               ),
+    .idx_o   (inject_aw_into_ar                           )
   );
 
   ar_chan_t [AxiMaxReads-1:0] mst_ar_tran;
@@ -168,17 +146,17 @@ module axi_dw_downsizer #(
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
   ) i_mst_ar_arb (
-    .clk_i  (clk_i            ),
-    .rst_ni (rst_ni           ),
-    .flush_i(1'b0             ),
-    .rr_i   ('0               ),
-    .req_i  (mst_ar_valid_tran),
-    .gnt_o  (mst_ar_ready_tran),
-    .data_i (mst_ar_tran      ),
-    .gnt_i  (mst_ar_ready_i   ),
-    .req_o  (mst_ar_valid_o   ),
-    .data_o (mst_ar_o         ),
-    .idx_o  (/* Unused */     )
+    .clk_i  (clk_i              ),
+    .rst_ni (rst_ni             ),
+    .flush_i(1'b0               ),
+    .rr_i   ('0                 ),
+    .req_i  (mst_ar_valid_tran  ),
+    .gnt_o  (mst_ar_ready_tran  ),
+    .data_i (mst_ar_tran        ),
+    .gnt_i  (mst_resp_i.ar_ready),
+    .req_o  (mst_req_o.ar_valid ),
+    .data_o (mst_req_o.ar       ),
+    .idx_o  (/* Unused */       )
   );
 
   /**********
@@ -227,7 +205,7 @@ module axi_dw_downsizer #(
     .inp_data_i      (idx_idle_downsizer),
     .inp_req_i       (|idqueue_push     ),
     .inp_gnt_o       (/* Unused  */     ),
-    .oup_id_i        (mst_r_i.id        ),
+    .oup_id_i        (mst_resp_i.r.id   ),
     .oup_pop_i       (|idqueue_pop      ),
     .oup_req_i       (1'b1              ),
     .oup_data_o      (idqueue_id        ),
@@ -298,25 +276,25 @@ module axi_dw_downsizer #(
             r_state_d = R_PASSTHROUGH;
 
             // Save beat
-            r_req_d.ar       = slv_ar_i     ;
-            r_req_d.ar_valid = 1'b1         ;
-            r_req_d.len      = slv_ar_i.len ;
-            r_req_d.size     = slv_ar_i.size;
+            r_req_d.ar       = slv_req_i.ar     ;
+            r_req_d.ar_valid = 1'b1             ;
+            r_req_d.len      = slv_req_i.ar.len ;
+            r_req_d.size     = slv_req_i.ar.size;
             if (inject_aw_into_ar) begin
-              r_req_d.ar.id     = slv_aw_i.id    ;
-              r_req_d.ar.addr   = slv_aw_i.addr  ;
-              r_req_d.ar.size   = slv_aw_i.size  ;
-              r_req_d.ar.burst  = slv_aw_i.burst ;
-              r_req_d.ar.len    = slv_aw_i.len   ;
-              r_req_d.ar.lock   = slv_aw_i.lock  ;
-              r_req_d.ar.cache  = slv_aw_i.cache ;
-              r_req_d.ar.prot   = slv_aw_i.prot  ;
-              r_req_d.ar.qos    = slv_aw_i.qos   ;
-              r_req_d.ar.region = slv_aw_i.region;
-              r_req_d.ar.user   = slv_aw_i.user  ;
-              r_req_d.ar_valid  = 1'b0           ; // Injected "AR"s from AW are not valid.
-              r_req_d.len       = slv_aw_i.len   ;
-              r_req_d.size      = slv_aw_i.size  ;
+              r_req_d.ar.id     = slv_req_i.aw.id    ;
+              r_req_d.ar.addr   = slv_req_i.aw.addr  ;
+              r_req_d.ar.size   = slv_req_i.aw.size  ;
+              r_req_d.ar.burst  = slv_req_i.aw.burst ;
+              r_req_d.ar.len    = slv_req_i.aw.len   ;
+              r_req_d.ar.lock   = slv_req_i.aw.lock  ;
+              r_req_d.ar.cache  = slv_req_i.aw.cache ;
+              r_req_d.ar.prot   = slv_req_i.aw.prot  ;
+              r_req_d.ar.qos    = slv_req_i.aw.qos   ;
+              r_req_d.ar.region = slv_req_i.aw.region;
+              r_req_d.ar.user   = slv_req_i.aw.user  ;
+              r_req_d.ar_valid  = 1'b0               ; // Injected "AR"s from AW are not valid.
+              r_req_d.len       = slv_req_i.aw.len   ;
+              r_req_d.size      = slv_req_i.aw.size  ;
             end
 
             if (|(r_req_d.ar.cache & CACHE_MODIFIABLE))
@@ -359,7 +337,7 @@ module axi_dw_downsizer #(
               if (!slv_r_valid_tran[t] || (slv_r_valid_tran[t] && slv_r_ready_tran[t])) begin
                 mst_r_ready_tran[t] = 1'b1;
 
-                if (mst_r_valid_i) begin
+                if (mst_resp_i.r_valid) begin
                   automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
                   automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
                   automatic addr_t size_mask  = (1 << r_req_q.ar.size) - 1                                                 ;
@@ -369,7 +347,7 @@ module axi_dw_downsizer #(
                     if ((b >= slv_offset) &&
                         (b - slv_offset < (1 << r_req_q.size)) &&
                         (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                      r_req_d.r.data[8*b+:8] = mst_r_i.data[8 * (b + mst_offset - slv_offset) +: 8];
+                      r_req_d.r.data[8*b+:8] = mst_resp_i.r.data[8 * (b + mst_offset - slv_offset) +: 8];
                     end
                   end
 
@@ -377,8 +355,8 @@ module axi_dw_downsizer #(
                   r_req_d.ar.len  = r_req_q.ar.len - 1                                     ;
                   r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
                   r_req_d.r.last  = (r_req_q.len == 0)                                     ;
-                  r_req_d.r.id    = mst_r_i.id                                             ;
-                  r_req_d.r.user  = mst_r_i.user                                           ;
+                  r_req_d.r.id    = mst_resp_i.r.id                                        ;
+                  r_req_d.r.user  = mst_resp_i.r.user                                      ;
 
                   if (r_req_q.len == 0)
                     idqueue_pop[t] = 1'b1;
@@ -449,50 +427,50 @@ module axi_dw_downsizer #(
     w_req_d   = w_req_q  ;
 
     // AW Channel
-    mst_aw_o       = w_req_q.aw      ;
-    mst_aw_valid_o = w_req_q.aw_valid;
-    slv_aw_ready_o = '0              ;
+    mst_req_o.aw        = w_req_q.aw      ;
+    mst_req_o.aw_valid  = w_req_q.aw_valid;
+    slv_resp_o.aw_ready = '0              ;
 
     // W Channel
-    mst_w_o       = '0;
-    mst_w_valid_o = '0;
-    slv_w_ready_o = '0;
+    mst_req_o.w        = '0;
+    mst_req_o.w_valid  = '0;
+    slv_resp_o.w_ready = '0;
 
     // B Channel
     // No latency
-    slv_b_o       = mst_b_i      ;
-    slv_b_valid_o = mst_b_valid_i;
-    mst_b_ready_o = slv_b_ready_i;
+    slv_resp_o.b       = mst_resp_i.b      ;
+    slv_resp_o.b_valid = mst_resp_i.b_valid;
+    mst_req_o.b_ready  = slv_req_i.b_ready ;
 
     // Got a grant on the AW channel
-    if (mst_aw_valid_o & mst_aw_ready_i)
+    if (mst_req_o.aw_valid & mst_resp_i.aw_ready)
       w_req_d.aw_valid = 1'b0;
 
     case (w_state_q)
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
         // Request was accepted
         if (!w_req_q.aw_valid)
-          if (slv_w_valid_i) begin
+          if (slv_req_i.w_valid) begin
             automatic addr_t mst_offset = w_req_q.aw.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
             automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
 
             // Valid output
-            mst_w_valid_o = 1'b1                              ;
-            mst_w_o.last  = slv_w_i.last && (w_req_q.len == 0);
-            mst_w_o.user  = slv_w_i.user                      ;
+            mst_req_o.w_valid = 1'b1                                  ;
+            mst_req_o.w.last  = slv_req_i.w.last && (w_req_q.len == 0);
+            mst_req_o.w.user  = slv_req_i.w.user                      ;
 
             // Serialization
             for (int b = 0; b < AxiSlvStrbWidth; b++)
               if ((b >= slv_offset) &&
                   (b - slv_offset < (1 << w_req_q.aw.size)) &&
                   (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                mst_w_o.data[8 * (b + mst_offset - slv_offset) +: 8] = slv_w_i.data[8 * b +: 8];
-                mst_w_o.strb[b + mst_offset - slv_offset]            = slv_w_i.strb[b]         ;
+                mst_req_o.w.data[8 * (b + mst_offset - slv_offset) +: 8] = slv_req_i.w.data[8 * b +: 8];
+                mst_req_o.w.strb[b + mst_offset - slv_offset]            = slv_req_i.w.strb[b]         ;
               end
           end
 
         // Acknowledgment
-        if (mst_w_ready_i && mst_w_valid_o) begin
+        if (mst_resp_i.w_ready && mst_req_o.w_valid) begin
           automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
 
           w_req_d.len     = w_req_q.len - 1                                        ;
@@ -501,11 +479,11 @@ module axi_dw_downsizer #(
 
           case (w_state_q)
             W_PASSTHROUGH:
-              slv_w_ready_o = 1'b1;
+              slv_resp_o.w_ready = 1'b1;
 
             W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
               if (w_req_q.len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.size) != aligned_addr(w_req_q.aw.addr, w_req_q.size)))
-                slv_w_ready_o = 1'b1;
+                slv_resp_o.w_ready = 1'b1;
           endcase
 
           // Trigger another burst request, if needed
@@ -527,35 +505,35 @@ module axi_dw_downsizer #(
       // Reset channels
       w_req_d.aw = '0;
 
-      if (slv_aw_valid_i && slv_aw_i.atop[5]) begin // ATOP with an R response
+      if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
         inject_aw_into_ar_req = 1'b1                 ;
-        slv_aw_ready_o        = inject_aw_into_ar_gnt;
+        slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
       end else begin // Regular AW
-        slv_aw_ready_o = 1'b1;
+        slv_resp_o.aw_ready = 1'b1;
       end
 
       // New write request
-      if (slv_aw_valid_i && slv_aw_ready_o) begin
+      if (slv_req_i.aw_valid && slv_resp_o.aw_ready) begin
         // Default state
         w_state_d = W_PASSTHROUGH;
 
         // Save beat
-        w_req_d.aw       = slv_aw_i     ;
-        w_req_d.aw_valid = 1'b1         ;
-        w_req_d.len      = slv_aw_i.len ;
-        w_req_d.size     = slv_aw_i.size;
+        w_req_d.aw       = slv_req_i.aw     ;
+        w_req_d.aw_valid = 1'b1             ;
+        w_req_d.len      = slv_req_i.aw.len ;
+        w_req_d.size     = slv_req_i.aw.size;
 
         // Do nothing
-        if (|(slv_aw_i.cache & CACHE_MODIFIABLE))
-          case (slv_aw_i.burst)
+        if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE))
+          case (slv_req_i.aw.burst)
             BURST_INCR: begin
               // Evaluate downsize ratio
-              automatic addr_t size_mask  = (1 << slv_aw_i.size) - 1                                      ;
-              automatic addr_t conv_ratio = ((1 << slv_aw_i.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
+              automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                      ;
+              automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
 
               // Evaluate output burst length
-              automatic addr_t align_adj = (slv_aw_i.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-              w_req_d.len                = (slv_aw_i.len + 1) * conv_ratio - align_adj - 1             ;
+              automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
+              w_req_d.len                = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
 
               if (conv_ratio != 1) begin
                 w_req_d.aw.size = $clog2(AxiMstStrbWidth);
