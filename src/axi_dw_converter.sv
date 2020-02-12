@@ -13,160 +13,81 @@
 module axi_dw_converter #(
     parameter int unsigned AxiMaxReads = 1    , // Number of outstanding reads
     parameter type aw_chan_t           = logic, // AW Channel Type
-    parameter type mst_w_chan_t        = logic, //  W Channel Type for mst port
-    parameter type slv_w_chan_t        = logic, //  W Channel Type for slv port
+    parameter type mst_w_chan_t        = logic, //  W Channel Type for the mst port
+    parameter type slv_w_chan_t        = logic, //  W Channel Type for the slv port
     parameter type b_chan_t            = logic, //  B Channel Type
     parameter type ar_chan_t           = logic, // AR Channel Type
-    parameter type mst_r_chan_t        = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t        = logic  //  R Channel Type for slv port
+    parameter type mst_r_chan_t        = logic, //  R Channel Type for the mst port
+    parameter type slv_r_chan_t        = logic, //  R Channel Type for the slv port
+    parameter type axi_mst_req_t       = logic, // AXI Request Type for mst ports
+    parameter type axi_mst_resp_t      = logic, // AXI Response Type for mst ports
+    parameter type axi_slv_req_t       = logic, // AXI Request Type for mst ports
+    parameter type axi_slv_resp_t      = logic  // AXI Response Type for mst ports
   ) (
-    input  logic        clk_i,
-    input  logic        rst_ni,
+    input  logic          clk_i,
+    input  logic          rst_ni,
     // Slave interface
-    input  aw_chan_t    slv_aw_i,
-    input  logic        slv_aw_valid_i,
-    output logic        slv_aw_ready_o,
-    input  slv_w_chan_t slv_w_i,
-    input  logic        slv_w_valid_i,
-    output logic        slv_w_ready_o,
-    output b_chan_t     slv_b_o,
-    output logic        slv_b_valid_o,
-    input  logic        slv_b_ready_i,
-    input  ar_chan_t    slv_ar_i,
-    input  logic        slv_ar_valid_i,
-    output logic        slv_ar_ready_o,
-    output slv_r_chan_t slv_r_o,
-    output logic        slv_r_valid_o,
-    input  logic        slv_r_ready_i,
+    input  axi_slv_req_t  slv_req_i,
+    output axi_slv_resp_t slv_resp_o,
     // Master interface
-    output aw_chan_t    mst_aw_o,
-    output logic        mst_aw_valid_o,
-    input  logic        mst_aw_ready_i,
-    output mst_w_chan_t mst_w_o,
-    output logic        mst_w_valid_o,
-    input  logic        mst_w_ready_i,
-    input  b_chan_t     mst_b_i,
-    input  logic        mst_b_valid_i,
-    output logic        mst_b_ready_o,
-    output ar_chan_t    mst_ar_o,
-    output logic        mst_ar_valid_o,
-    input  logic        mst_ar_ready_i,
-    input  mst_r_chan_t mst_r_i,
-    input  logic        mst_r_valid_i,
-    output logic        mst_r_ready_o
+    output axi_mst_req_t  mst_req_o,
+    input  axi_mst_resp_t mst_resp_i
   );
 
-  if ($bits(slv_r_o.data) == $bits(mst_r_i.data)) begin: gen_no_dw_conversion
-    assign mst_aw_o       = slv_aw_i      ;
-    assign mst_aw_valid_o = slv_aw_i      ;
-    assign slv_aw_ready_o = mst_aw_ready_i;
-    assign mst_w_o        = slv_w_i       ;
-    assign mst_w_valid_o  = slv_w_i       ;
-    assign slv_w_ready_o  = mst_w_ready_i ;
-    assign slv_b_o        = mst_b_i       ;
-    assign slv_b_valid_o  = mst_b_valid_i ;
-    assign mst_b_ready_o  = slv_b_ready_i ;
-    assign mst_ar_o       = slv_ar_i      ;
-    assign mst_ar_valid_o = slv_ar_i      ;
-    assign slv_ar_ready_o = mst_ar_ready_i;
-    assign slv_r_o        = mst_r_i       ;
-    assign slv_r_valid_o  = mst_r_valid_i ;
-    assign mst_r_ready_o  = slv_r_ready_i ;
+  if ($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data)) begin: gen_no_dw_conversion
+    assign mst_req_o  = slv_req_i ;
+    assign slv_resp_o = mst_resp_i;
   end : gen_no_dw_conversion
 
-  if ($bits(slv_r_o.data) < $bits(mst_r_i.data)) begin: gen_dw_upsize
+  if ($bits(slv_resp_o.r.data) < $bits(mst_resp_i.r.data)) begin: gen_dw_upsize
     axi_dw_upsizer #(
-      .AxiMaxReads (AxiMaxReads ),
-      .aw_chan_t   (aw_chan_t   ),
-      .mst_w_chan_t(mst_w_chan_t),
-      .slv_w_chan_t(slv_w_chan_t),
-      .b_chan_t    (b_chan_t    ),
-      .ar_chan_t   (ar_chan_t   ),
-      .mst_r_chan_t(mst_r_chan_t),
-      .slv_r_chan_t(slv_r_chan_t)
+      .AxiMaxReads   (AxiMaxReads   ),
+      .aw_chan_t     (aw_chan_t     ),
+      .mst_w_chan_t  (mst_w_chan_t  ),
+      .slv_w_chan_t  (slv_w_chan_t  ),
+      .b_chan_t      (b_chan_t      ),
+      .ar_chan_t     (ar_chan_t     ),
+      .mst_r_chan_t  (mst_r_chan_t  ),
+      .slv_r_chan_t  (slv_r_chan_t  ),
+      .axi_mst_req_t (axi_mst_req_t ),
+      .axi_mst_resp_t(axi_mst_resp_t),
+      .axi_slv_req_t (axi_slv_req_t ),
+      .axi_slv_resp_t(axi_slv_resp_t)
     ) i_axi_dw_upsizer (
-      .clk_i         (clk_i         ),
-      .rst_ni        (rst_ni        ),
+      .clk_i     (clk_i     ),
+      .rst_ni    (rst_ni    ),
       // Slave interface
-      .slv_aw_i      (slv_aw_i      ),
-      .slv_aw_valid_i(slv_aw_valid_i),
-      .slv_aw_ready_o(slv_aw_ready_o),
-      .slv_w_i       (slv_w_i       ),
-      .slv_w_valid_i (slv_w_valid_i ),
-      .slv_w_ready_o (slv_w_ready_o ),
-      .slv_b_o       (slv_b_o       ),
-      .slv_b_valid_o (slv_b_valid_o ),
-      .slv_b_ready_i (slv_b_ready_i ),
-      .slv_ar_i      (slv_ar_i      ),
-      .slv_ar_valid_i(slv_ar_valid_i),
-      .slv_ar_ready_o(slv_ar_ready_o),
-      .slv_r_o       (slv_r_o       ),
-      .slv_r_valid_o (slv_r_valid_o ),
-      .slv_r_ready_i (slv_r_ready_i ),
+      .slv_req_i (slv_req_i ),
+      .slv_resp_o(slv_resp_o),
       // Master interface
-      .mst_aw_o      (mst_aw_o      ),
-      .mst_aw_valid_o(mst_aw_valid_o),
-      .mst_aw_ready_i(mst_aw_ready_i),
-      .mst_w_o       (mst_w_o       ),
-      .mst_w_valid_o (mst_w_valid_o ),
-      .mst_w_ready_i (mst_w_ready_i ),
-      .mst_b_i       (mst_b_i       ),
-      .mst_b_valid_i (mst_b_valid_i ),
-      .mst_b_ready_o (mst_b_ready_o ),
-      .mst_ar_o      (mst_ar_o      ),
-      .mst_ar_valid_o(mst_ar_valid_o),
-      .mst_ar_ready_i(mst_ar_ready_i),
-      .mst_r_i       (mst_r_i       ),
-      .mst_r_valid_i (mst_r_valid_i ),
-      .mst_r_ready_o (mst_r_ready_o )
+      .mst_req_o (mst_req_o ),
+      .mst_resp_i(mst_resp_i)
     );
   end : gen_dw_upsize
 
-  if ($bits(slv_r_o.data) > $bits(mst_r_i.data)) begin: gen_dw_downsize
+  if ($bits(slv_resp_o.r.data) > $bits(mst_resp_i.r.data)) begin: gen_dw_downsize
     axi_dw_downsizer #(
-      .AxiMaxReads (AxiMaxReads ),
-      .aw_chan_t   (aw_chan_t   ),
-      .mst_w_chan_t(mst_w_chan_t),
-      .slv_w_chan_t(slv_w_chan_t),
-      .b_chan_t    (b_chan_t    ),
-      .ar_chan_t   (ar_chan_t   ),
-      .mst_r_chan_t(mst_r_chan_t),
-      .slv_r_chan_t(slv_r_chan_t)
+      .AxiMaxReads   (AxiMaxReads   ),
+      .aw_chan_t     (aw_chan_t     ),
+      .mst_w_chan_t  (mst_w_chan_t  ),
+      .slv_w_chan_t  (slv_w_chan_t  ),
+      .b_chan_t      (b_chan_t      ),
+      .ar_chan_t     (ar_chan_t     ),
+      .mst_r_chan_t  (mst_r_chan_t  ),
+      .slv_r_chan_t  (slv_r_chan_t  ),
+      .axi_mst_req_t (axi_mst_req_t ),
+      .axi_mst_resp_t(axi_mst_resp_t),
+      .axi_slv_req_t (axi_slv_req_t ),
+      .axi_slv_resp_t(axi_slv_resp_t)
     ) i_axi_dw_downsizer (
-      .clk_i         (clk_i         ),
-      .rst_ni        (rst_ni        ),
+      .clk_i     (clk_i     ),
+      .rst_ni    (rst_ni    ),
       // Slave interface
-      .slv_aw_i      (slv_aw_i      ),
-      .slv_aw_valid_i(slv_aw_valid_i),
-      .slv_aw_ready_o(slv_aw_ready_o),
-      .slv_w_i       (slv_w_i       ),
-      .slv_w_valid_i (slv_w_valid_i ),
-      .slv_w_ready_o (slv_w_ready_o ),
-      .slv_b_o       (slv_b_o       ),
-      .slv_b_valid_o (slv_b_valid_o ),
-      .slv_b_ready_i (slv_b_ready_i ),
-      .slv_ar_i      (slv_ar_i      ),
-      .slv_ar_valid_i(slv_ar_valid_i),
-      .slv_ar_ready_o(slv_ar_ready_o),
-      .slv_r_o       (slv_r_o       ),
-      .slv_r_valid_o (slv_r_valid_o ),
-      .slv_r_ready_i (slv_r_ready_i ),
+      .slv_req_i (slv_req_i ),
+      .slv_resp_o(slv_resp_o),
       // Master interface
-      .mst_aw_o      (mst_aw_o      ),
-      .mst_aw_valid_o(mst_aw_valid_o),
-      .mst_aw_ready_i(mst_aw_ready_i),
-      .mst_w_o       (mst_w_o       ),
-      .mst_w_valid_o (mst_w_valid_o ),
-      .mst_w_ready_i (mst_w_ready_i ),
-      .mst_b_i       (mst_b_i       ),
-      .mst_b_valid_i (mst_b_valid_i ),
-      .mst_b_ready_o (mst_b_ready_o ),
-      .mst_ar_o      (mst_ar_o      ),
-      .mst_ar_valid_o(mst_ar_valid_o),
-      .mst_ar_ready_i(mst_ar_ready_i),
-      .mst_r_i       (mst_r_i       ),
-      .mst_r_valid_i (mst_r_valid_i ),
-      .mst_r_ready_o (mst_r_ready_o )
+      .mst_req_o (mst_req_o ),
+      .mst_resp_i(mst_resp_i)
     );
   end : gen_dw_downsize
 
