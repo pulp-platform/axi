@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.10.1 - 2020-02-12
+
+### Fixed
 - `axi_lite_xbar`: Fix synthesis for `NoMstPorts == 1`.
 
 
