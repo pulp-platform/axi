@@ -113,7 +113,7 @@ module axi_lite_mux #(
 
     // signals for the FIFO that holds the last switching decision of the AR channel
     logic     r_fifo_full,  r_fifo_empty;
-    logic     /*w_fifo_pop*/r_fifo_pop;
+    logic     r_fifo_push,  r_fifo_pop;
 
     // R channel spill reg
     r_chan_t  mst_r_chan;
