@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.10.2 - 2020-02-13
+
+### Fixed
 - `axi_atop_filter`: Remove unreachable `default` in `unique case` block.
 - `axi_demux_wrap`: Fix signals passed to demux.
 - `axi_lite_demux_intf`: Fix signal passed to demux.
