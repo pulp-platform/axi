@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.11.0 - 2020-02-13
+
+### Added
 - `axi_cdc`: Add a safe AXI clock domain crossing (CDC) implementation.
 
 ### Changed
