@@ -11,8 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_cdc`: Add a safe AXI clock domain crossing (CDC) implementation.
 
 ### Changed
+- The interface variants of `axi_demux` and `axi_mux` have been changed to match the convention for
+  interface variants in this repository:
+  - `axi_demux_wrap`: Change name to `axi_demux_intf` and change parameter names to ALL_CAPS.
+  - `axi_mux_wrap`: Change name to `axi_mux_intf`, and change parameter names to ALL_CAPS.
+- `axi_demux`: Default parameters to `0`.
 
 ### Fixed
+- `axi_demux`: Add parameter case for `NoMstPorts == 1`.
 
 
 ## 0.10.2 - 2020-02-13
