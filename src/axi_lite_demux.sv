@@ -453,7 +453,7 @@ module axi_lite_demux_intf #(
     .rst_ni,
     .test_i,
     // slave Port
-    .slv_req_i       ( slv_req_i       ),
+    .slv_req_i       ( slv_req         ),
     .slv_aw_select_i ( slv_aw_select_i ), // must be stable while slv_aw_valid_i
     .slv_ar_select_i ( slv_ar_select_i ), // must be stable while slv_ar_valid_i
     .slv_resp_o      ( slv_resp        ),

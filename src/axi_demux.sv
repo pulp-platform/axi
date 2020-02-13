@@ -728,7 +728,7 @@ module axi_demux_wrap #(
     .slv_ar_select_i ( slv_ar_select_i ),
     .slv_resp_o      ( slv_resp        ),
     // master port
-    .mst_reqs_o      ( mst_reqs        ),
-    .mst_resps_i     ( mst_resps       )
+    .mst_reqs_o      ( mst_req         ),
+    .mst_resps_i     ( mst_resp        )
   );
 endmodule

@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - `axi_lite_xbar`: Fix synthesis for `NoMstPorts == 1`.
+- `axi_demux_wrap`: Fix signals passed to demux.
+- `axi_lite_demux_intf`: Fix signal passed to demux.
+- `axi_lite_mux`: Add missing declaration of `r_fifo_push`.
 
 
 ## 0.10.0 - 2020-02-11
