@@ -8,6 +8,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | Name                                                 | Description                                                                                       | Doc                         |
 |------------------------------------------------------|---------------------------------------------------------------------------------------------------|-----------------------------|
 | [`axi_atop_filter.sv`](src/axi_atop_filter.sv)       | Filters atomic operations (ATOPs), i.e., write transactions that have a non-zero `aw_atop` value. |                             |
+| [`axi_cdc.sv`](src/axi_cdc.sv)                       | AXI clock domain crossing based on a Gray FIFO implementation.                                    |                             |
 | [`axi_cut.sv`](src/axi_cut.sv)                       | Breaks all combinatorial paths between its input and output.                                      |                             |
 | [`axi_decerr_slv.sv`](src/axi_decerr_slv.sv)         | Always responds with an AXI decode error for transactions which are sent to it.                   |                             |
 | [`axi_delayer.sv`](src/axi_delayer.sv)               | Synthesizable module which can (randomly) delays AXI channels.                                    |                             |
