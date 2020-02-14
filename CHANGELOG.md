@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_lite_to_apb`: AXI4-Lite to APB4 converter.
 
 ### Changed
 
 ### Fixed
+
+
+## 0.12.0 - 2020-02-14
+
+### Added
+- `axi_lite_to_apb`: AXI4-Lite to APB4 converter.
 
 
 ## 0.11.0 - 2020-02-13
