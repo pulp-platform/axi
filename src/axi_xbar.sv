@@ -150,13 +150,14 @@ module axi_xbar #(
       .mst_resps_i     ( slv_resps[i]        )
     );
 
-    axi_decerr_slv #(
+    axi_err_slv #(
       .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts      ), // ID width
       .req_t       ( slv_req_t                   ), // AXI request struct
       .resp_t      ( slv_resp_t                  ), // AXI response struct
       .FallThrough ( 1'b0                        ),
-      .MaxTrans    ( $clog2(Cfg.MaxMstTrans) + 1 )
-    ) i_axi_decerr_slv (
+      .MaxTrans    ( $clog2(Cfg.MaxMstTrans) + 1 ),
+      .Resp        ( axi_pkg::RESP_DECERR        )
+    ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable

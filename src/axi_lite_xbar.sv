@@ -177,13 +177,14 @@ module axi_lite_xbar #(
       .mst_resp_i      ( decerr_resp                  )
     );
 
-    axi_decerr_slv #(
+    axi_err_slv #(
       .AxiIdWidth  ( 32'd1                       ), // ID width is one as defined as logic above
       .req_t       ( full_req_t                  ), // AXI request struct
       .resp_t      ( full_resp_t                 ), // AXI response struct
       .FallThrough ( 1'b0                        ),
+      .Resp        ( axi_pkg::RESP_DECERR        ),
       .MaxTrans    ( $clog2(Cfg.MaxMstTrans) + 1 )
-    ) i_axi_decerr_slv (
+    ) i_axi_err_slv (
       .clk_i      ( clk_i       ),  // Clock
       .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
       .test_i     ( test_i      ),  // Testmode enable
