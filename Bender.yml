@@ -4,6 +4,7 @@ package:
     - "Andreas Kurth <akurth@iis.ee.ethz.ch>" # current maintainer
     - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
+    - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.16.3 }
@@ -31,6 +32,7 @@ sources:
   - src/axi_lite_demux.sv
   - src/axi_lite_join.sv
   - src/axi_lite_mux.sv
+  - src/axi_lite_to_apb.sv
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
@@ -55,6 +57,7 @@ sources:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
+      - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_to_axi_lite.sv
