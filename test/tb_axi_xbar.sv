@@ -37,7 +37,7 @@ module tb_axi_xbar;
   // axi configuration
   localparam int unsigned AxiIdWidthMasters =  4;
   localparam int unsigned AxiIdUsed         =  3; // Has to be <= AxiIdWidthMasters
-  localparam int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoSlaves);
+  localparam int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoMasters);
   localparam int unsigned AxiAddrWidth      =  32;    // Axi Address Width
   localparam int unsigned AxiDataWidth      =  64;    // Axi Data Width
   localparam int unsigned AxiStrbWidth      =  AxiDataWidth / 8;
