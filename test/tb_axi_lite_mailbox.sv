@@ -422,9 +422,13 @@ module tb_axi_lite_mailbox;
   initial begin : proc_stop_sim
     wait (&end_of_sim);
     repeat (50) @(posedge clk);
-    $info("Simulation stopped as all Masters transferred their data, Success.",);
     $display("Slave port 0 failed tests: %0d", test_failed[0]);
     $display("Slave port 1 failed tests: %0d", test_failed[1]);
+    if (test_failed[0] > 0 || test_failed[1] > 0) begin
+        $fatal(1, "Simulation stopped as assertion errors have been encountered, Failure!!!");
+    end else begin
+        $info("Simulation stopped as all Masters transferred their data, Success.",);
+    end
     $stop();
   end
 
