@@ -76,17 +76,22 @@ module axi_id_prepend #(
 );
 
   // prepend the ID
-  always_comb begin
-    for (int unsigned i = 0; i < NoBus; i++) begin : gen_id_prepend
-      mst_aw_chans_o[i]                                   = slv_aw_chans_i[i];
-      mst_aw_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
-      mst_ar_chans_o[i]                                   = slv_ar_chans_i[i];
-      mst_ar_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
-      // The ID is in the highest bits of the struct, so an assignment from a channel with a wide ID
-      // to a channel with a shorter ID correctly cuts the prepended ID.
-      slv_b_chans_o[i] = mst_b_chans_i[i];
-      slv_r_chans_o[i] = mst_r_chans_i[i];
+  for (genvar i = 0; i < NoBus; i++) begin : gen_id_prepend
+    if (PreIdWidth == 0) begin : gen_no_prepend
+      assign mst_aw_chans_o[i] = slv_aw_chans_i[i];
+      assign mst_ar_chans_o[i] = slv_ar_chans_i[i];
+    end else begin : gen_prepend
+      always_comb begin
+        mst_aw_chans_o[i] = slv_aw_chans_i[i];
+        mst_ar_chans_o[i] = slv_ar_chans_i[i];
+        mst_aw_chans_o[i].id = {pre_id_i, slv_aw_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
+        mst_ar_chans_o[i].id = {pre_id_i, slv_ar_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
+      end
     end
+    // The ID is in the highest bits of the struct, so an assignment from a channel with a wide ID
+    // to a channel with a shorter ID correctly cuts the prepended ID.
+    assign slv_b_chans_o[i] = mst_b_chans_i[i];
+    assign slv_r_chans_o[i] = mst_r_chans_i[i];
   end
 
   // assign the handshaking's and w channel
