@@ -11,7 +11,8 @@
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
 // AXI Error Slave: This module always responds with an AXI error for transactions that are sent to
-// it. Depends on `axi_atop_filter` for atomics support.
+// it.  This module does NOT support ATOPs; you must place an `axi_atop_filter` in front of it if
+// you need it to handle ATOPs.
 
 module axi_err_slv #(
   parameter int unsigned    AxiIdWidth  = 0,                    // AXI ID Width
@@ -34,9 +35,6 @@ module axi_err_slv #(
     axi_pkg::len_t len;
   } r_data_t;
 
-  req_t  err_req;
-  resp_t err_resp;
-
   // w fifo
   logic    w_fifo_full, w_fifo_empty;
   logic    w_fifo_push, w_fifo_pop;
@@ -57,28 +55,11 @@ module axi_err_slv #(
   logic    r_busy_d, r_busy_q, r_busy_load;
 
   //--------------------------------------
-  // Atop Filter for atomics support
-  //--------------------------------------
-  axi_atop_filter #(
-    .AxiIdWidth      ( AxiIdWidth ),
-    .AxiMaxWriteTxns ( MaxTrans   ),
-    .req_t           ( req_t      ),
-    .resp_t          ( resp_t     )
-  ) i_atop_filter (
-    .clk_i      ( clk_i       ),
-    .rst_ni     ( rst_ni      ),
-    .slv_req_i  ( slv_req_i   ),
-    .slv_resp_o ( slv_resp_o  ),
-    .mst_req_o  ( err_req     ),
-    .mst_resp_i ( err_resp    )
-  );
-
-  //--------------------------------------
   // Write Transactions
   //--------------------------------------
   // push, when there is room in the fifo
-  assign w_fifo_push       = err_req.aw_valid & ~w_fifo_full;
-  assign err_resp.aw_ready = ~w_fifo_full;
+  assign w_fifo_push          = slv_req_i.aw_valid & ~w_fifo_full;
+  assign slv_resp_o.aw_ready  = ~w_fifo_full;
 
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough ),
@@ -92,21 +73,21 @@ module axi_err_slv #(
     .full_o     ( w_fifo_full       ),
     .empty_o    ( w_fifo_empty      ),
     .usage_o    (                   ),
-    .data_i     ( err_req.aw.id     ),
+    .data_i     ( slv_req_i.aw.id   ),
     .push_i     ( w_fifo_push       ),
     .data_o     ( w_fifo_data       ),
     .pop_i      ( w_fifo_pop        )
   );
 
   always_comb begin : proc_w_channel
-    err_resp.w_ready = 1'b0;
-    w_fifo_pop       = 1'b0;
-    b_fifo_push      = 1'b0;
+    slv_resp_o.w_ready  = 1'b0;
+    w_fifo_pop          = 1'b0;
+    b_fifo_push         = 1'b0;
     if (!w_fifo_empty && !b_fifo_full) begin
       // eat the beats
-      err_resp.w_ready = 1'b1;
+      slv_resp_o.w_ready = 1'b1;
       // on the last w transaction
-      if (err_req.w_valid && err_req.w.last) begin
+      if (slv_req_i.w_valid && slv_req_i.w.last) begin
         w_fifo_pop    = 1'b1;
         b_fifo_push   = 1'b1;
       end
@@ -132,15 +113,15 @@ module axi_err_slv #(
   );
 
   always_comb begin : proc_b_channel
-    b_fifo_pop       = 1'b0;
-    err_resp.b       = '0;
-    err_resp.b.id    = b_fifo_data;
-    err_resp.b.resp  = Resp;
-    err_resp.b_valid = 1'b0;
+    b_fifo_pop          = 1'b0;
+    slv_resp_o.b        = '0;
+    slv_resp_o.b.id     = b_fifo_data;
+    slv_resp_o.b.resp   = Resp;
+    slv_resp_o.b_valid  = 1'b0;
     if (!b_fifo_empty) begin
-      err_resp.b_valid = 1'b1;
+      slv_resp_o.b_valid = 1'b1;
       // b transaction
-      b_fifo_pop = err_req.b_ready;
+      b_fifo_pop = slv_req_i.b_ready;
     end
   end
 
@@ -148,12 +129,12 @@ module axi_err_slv #(
   // Read Transactions
   //--------------------------------------
   // push if there is room in the fifo
-  assign r_fifo_push       = err_req.ar_valid & ~r_fifo_full;
-  assign err_resp.ar_ready = ~r_fifo_full;
+  assign r_fifo_push          = slv_req_i.ar_valid & ~r_fifo_full;
+  assign slv_resp_o.ar_ready  = ~r_fifo_full;
 
   // fifo data assignment
-  assign r_fifo_inp.id  = err_req.ar.id;
-  assign r_fifo_inp.len = err_req.ar.len;
+  assign r_fifo_inp.id  = slv_req_i.ar.id;
+  assign r_fifo_inp.len = slv_req_i.ar.len;
 
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough ),
@@ -184,17 +165,17 @@ module axi_err_slv #(
     r_cnt_en    = 1'b0;
     r_cnt_load  = 1'b0;
     // r_channel
-    err_resp.r       = '0;
-    err_resp.r.id    = r_fifo_data.id;
-    err_resp.r.data  = 32'hBADCAB1E;
-    err_resp.r.resp  = Resp;
-    err_resp.r_valid = 1'b0;
+    slv_resp_o.r        = '0;
+    slv_resp_o.r.id     = r_fifo_data.id;
+    slv_resp_o.r.data   = 32'hBADCAB1E;
+    slv_resp_o.r.resp   = Resp;
+    slv_resp_o.r_valid  = 1'b0;
     // control
     if (r_busy_q) begin
-      err_resp.r_valid = 1'b1;
-      err_resp.r.last = (r_current_beat == '0);
+      slv_resp_o.r_valid = 1'b1;
+      slv_resp_o.r.last = (r_current_beat == '0);
       // r transaction
-      if (err_req.r_ready) begin
+      if (slv_req_i.r_ready) begin
         r_cnt_en = 1'b1;
         if (r_current_beat == '0) begin
           r_busy_d    = 1'b0;

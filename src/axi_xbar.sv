@@ -150,6 +150,21 @@ module axi_xbar #(
       .mst_resps_i     ( slv_resps[i]        )
     );
 
+    slv_req_t   no_atops_req;
+    slv_resp_t  no_atops_resp;
+    axi_atop_filter #(
+      .AxiIdWidth       ( Cfg.AxiIdWidthSlvPorts      ),
+      .AxiMaxWriteTxns  ( $clog2(Cfg.MaxMstTrans) + 1 ),
+      .req_t            ( slv_req_t                   ),
+      .resp_t           ( slv_resp_t                  )
+    ) i_axi_atop_filter_err_slv (
+      .clk_i,
+      .rst_ni,
+      .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
+      .slv_resp_o ( slv_resps[i][Cfg.NoMstPorts]  ),
+      .mst_req_o  ( no_atops_req                  ),
+      .mst_resp_i ( no_atops_resp                 )
+    );
     axi_err_slv #(
       .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts      ), // ID width
       .req_t       ( slv_req_t                   ), // AXI request struct
@@ -162,8 +177,8 @@ module axi_xbar #(
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
       // slave port
-      .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
-      .slv_resp_o ( slv_resps[i][Cfg.NoMstPorts] )
+      .slv_req_i  ( no_atops_req  ),
+      .slv_resp_o ( no_atops_resp )
     );
   end
 
