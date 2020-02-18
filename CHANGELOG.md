@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_xbar_intf`: Add interface variant of crossbar.
 
 ### Changed
+
+### Fixed
+
+
+## 0.13.0 - 2020-02-18
+
+### Added
+- `axi_xbar_intf`: Add interface variant of crossbar.
 
 ### Fixed
 - `axi_atop_filter`: Fix ModelSim warnings by adding `default` statement.  The signal in the `case`
