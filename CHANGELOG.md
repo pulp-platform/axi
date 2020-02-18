@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   has a single bit, and both values were correctly handled in synthesis.  However, when starting
   simulation, the signal has an undefined value, and ModelSim threw warnings that this violated the
   `unique` condition.
+- `axi_demux`: Move `typedef` outside `generate` for compatibility with VCS.
 - `axi_id_prepend`:
   - Fix text of some assertion messages.
   - Fix case of prepending a single-bit ID.
