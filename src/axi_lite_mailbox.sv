@@ -36,10 +36,11 @@ module axi_lite_mailbox #(
   output logic       [1:0] irq_o,       // interrupt output for each port
   input  addr_t      [1:0] base_addr_i  // base address for each port
 );
-
-  typedef logic [AxiDataWidth-1:0]         data_t;
+  localparam int unsigned FifoUsageWidth = $clog2(MailboxDepth);
+  typedef logic [AxiDataWidth-1:0] data_t;
   // usage type of the mailbox FIFO, also the type of the threshold comparison
-  typedef logic [$clog2(MailboxDepth)-1:0] usage_t;
+  // is one bit wider, MSB is the fifo_full flag of the respective fifo
+  typedef logic [FifoUsageWidth:0] usage_t;
 
   // signal declaration for the mailbox FIFO's, signal index is the port
   logic   [1:0] mbox_full,    mbox_empty;   // index is the instantiated mailbox FIFO
@@ -117,6 +118,8 @@ module axi_lite_mailbox #(
     .clear_irq_o    ( clear_irq[1]    )
   );
 
+  // the usage gets concatinated with the full flag to have consistent threshold detection
+  logic [FifoUsageWidth-1:0] mbox_0_to_1_usage, mbox_1_to_0_usage;
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0         ),
     .DEPTH        ( MailboxDepth ),
@@ -128,12 +131,14 @@ module axi_lite_mailbox #(
     .flush_i   ( w_mbox_flush[0] | r_mbox_flush[1] ),
     .full_o    ( mbox_full[0]                      ),
     .empty_o   ( mbox_empty[0]                     ),
-    .usage_o   ( mbox_usage[0]                     ),
+    .usage_o   ( mbox_0_to_1_usage                 ),
     .data_i    ( mbox_w_data[0]                    ),
     .push_i    ( mbox_push[0]                      ),
     .data_o    ( mbox_r_data[1]                    ),
     .pop_i     ( mbox_pop[1]                       )
   );
+  // assign the MSB of the FIFO to the correct usage signal
+  assign mbox_usage[0] = {mbox_full[0], mbox_0_to_1_usage};
 
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0         ),
@@ -146,12 +151,13 @@ module axi_lite_mailbox #(
     .flush_i   ( w_mbox_flush[1] | r_mbox_flush[0] ),
     .full_o    ( mbox_full[1]                      ),
     .empty_o   ( mbox_empty[1]                     ),
-    .usage_o   ( mbox_usage[1]                     ),
+    .usage_o   ( mbox_1_to_0_usage                 ),
     .data_i    ( mbox_w_data[1]                    ),
     .push_i    ( mbox_push[1]                      ),
     .data_o    ( mbox_r_data[0]                    ),
     .pop_i     ( mbox_pop[0]                       )
   );
+  assign mbox_usage[1] = {mbox_full[1], mbox_1_to_0_usage};
 
   for (genvar i = 0; i < 2; i++) begin : gen_irq_conversion
     if (IrqEdgeTrig) begin : gen_irq_edge
@@ -384,6 +390,7 @@ module axi_lite_mailbox_slave #(
           IRQEN: r_chan = '{data: data_t'( irqen_q  ), resp: axi_pkg::RESP_OKAY};
           IRQP:  r_chan = '{data: data_t'( irqp_q   ), resp: axi_pkg::RESP_OKAY};
           CTRL:  r_chan = '{data: data_t'( ctrl_q   ), resp: axi_pkg::RESP_OKAY};
+          default: /*do nothing*/;
         endcase
       end
       r_valid = 1'b1;
@@ -403,7 +410,7 @@ module axi_lite_mailbox_slave #(
       if (b_ready) begin
         // write to the register if required
         if (dec_w_valid) begin
-          case (reg_e'(w_reg_idx))
+          unique case (reg_e'(w_reg_idx))
             MBOXW:  begin
               if (!mbox_w_full_i) begin
                 mbox_w_push_o = 1'b1;
@@ -423,9 +430,8 @@ module axi_lite_mailbox_slave #(
                 wirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (wirqt_d >= data_t'(MailboxDepth)) begin
-                // the `-2` is to prevent interrupt not firing when there is an rollover in the
-                // usage pointer when the FIFO is full and the threshold is set
-                wirqt_d = MailboxDepth - 2; // Threshold to maximal value
+                // the `-1` is to have the interrupt fireing when the FIFO is comletely full
+                wirqt_d = data_t'(MailboxDepth) - data_t'(32'd1); // Threshold to maximal value
               end
               update_regs = 1'b1;
               b_chan      = '{resp: axi_pkg::RESP_OKAY};
@@ -436,7 +442,7 @@ module axi_lite_mailbox_slave #(
               end
               if (rirqt_d >= data_t'(MailboxDepth)) begin
               // Threshold to maximal value, minus two to prevent overflow in usage
-                rirqt_d = MailboxDepth - 2;
+                rirqt_d = data_t'(MailboxDepth) - data_t'(32'd1);
               end
               update_regs = 1'b1;
               b_chan      = '{resp: axi_pkg::RESP_OKAY};
@@ -475,7 +481,7 @@ module axi_lite_mailbox_slave #(
         slv_resp_o.aw_ready = 1'b1;
         slv_resp_o.w_ready  = 1'b1;
       end // if (b_ready): Does not violate AXI spec, because the ready comes from an internal
-          // spill register and does not propagate the ready dependency onto the b channel.
+          // spill register and does not propagate the ready from the b channel.
     end // write register
   end
 

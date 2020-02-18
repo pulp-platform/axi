@@ -88,7 +88,7 @@ Mailbox error register. This read only register contains information if from an 
 ### WIRQT Register
 
 Write interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the usage pointer of the FIFO connected to the W channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 2` to ensure an interrupt request trigger on FIFO usage.
+When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the write FIFO is full.
 
 | Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
 |:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
@@ -99,7 +99,7 @@ When a value larger or equal than the parameter `MailboxDepth` is written to thi
 ### RIRQT Register
 
 Read interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the fill pointer of the FIFO connected to the R channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 2` to ensure an interrupt request trigger on FIFO usage.
+When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the read FIFO is full.
 
 | Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
 |:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|

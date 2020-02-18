@@ -201,6 +201,19 @@ module tb_axi_lite_mailbox;
     // -------------------------------
     repeat (50) @(posedge clk);
     $info("Test sending data from one to the other slave interface");
+    $display("%0t MST_0> Set write threshold to 100, truncates to depth ", $time());
+    lite_axi_master.write(WIRQT, 64'd100, 8'hFF, resp);
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
+
+    $display("%0t MST_0> Read out write threshold ", $time());
+    lite_axi_master.read(WIRQT, data, resp);
+    assert (data == data_t'(MailboxDepth - 1)) else begin test_failed[0]++; $error("Unexpected result"); end
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
+
+    $display("%0t MST_0> Set write threshold to 0", $time());
+    lite_axi_master.write(WIRQT, 64'd0, 8'hFF, resp);
+    assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
+
 
     $display("%0t MST_0> Set Read threshold to 100, truncates to depth ", $time());
     lite_axi_master.write(RIRQT, 64'd100, 8'hFF, resp);
@@ -208,7 +221,7 @@ module tb_axi_lite_mailbox;
 
     $display("%0t MST_0> Read out read threshold ", $time());
     lite_axi_master.read(RIRQT, data, resp);
-    assert (data == data_t'(MailboxDepth - 2)) else begin test_failed[0]++; $error("Unexpected result"); end
+    assert (data == data_t'(MailboxDepth - 1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Set Read threshold to 64'd2 ", $time());
