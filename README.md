@@ -23,7 +23,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_lite_to_axi.sv`](src/axi_lite_to_axi.sv)       | An AXI4-Lite to AXI4 adapter.                                                                     |                             |
 | [`axi_lite_xbar.sv`](src/axi_lite_xbar.sv)           | Fully-connected AXI4-Lite crossbar with an arbitrary number of slave and master ports.            | [Doc](doc/axi_lite_xbar.md) |
 | [`axi_modify_address.sv`](src/axi_modify_address.sv) | A connector that allows addresses of AXI requests to be changed.                                  |                             |
-| [`axi_multicut.sv`](src/axi_multicut.sv)             | AXI register which can be used to relax timing pressure on long AXI busses.                       |                             |
+| [`axi_multicut.sv`](src/axi_multicut.sv)             | AXI register which can be used to relax timing pressure on long AXI buses.                       |                             |
 | [`axi_mux.sv`](src/axi_mux.sv)                       | Multiplexes the AXI4 slave ports down to one master port.                                         | [Doc](doc/axi_mux.md)       |
 | [`axi_pkg.sv`](src/axi_pkg.sv)                       | Contains AXI definitions, common structs, and useful helper functions.                            |                             |
 | [`axi_test.sv`](src/axi_test.sv)                     | A set of testbench utilities for AXI interfaces.                                                  |                             |
