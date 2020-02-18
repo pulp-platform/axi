@@ -76,17 +76,22 @@ module axi_id_prepend #(
 );
 
   // prepend the ID
-  always_comb begin
-    for (int unsigned i = 0; i < NoBus; i++) begin : gen_id_prepend
-      mst_aw_chans_o[i]                                   = slv_aw_chans_i[i];
-      mst_aw_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
-      mst_ar_chans_o[i]                                   = slv_ar_chans_i[i];
-      mst_ar_chans_o[i].id[AxiIdWidthSlvPort+:PreIdWidth] = pre_id_i;
-      // The ID is in the highest bits of the struct, so an assignment from a channel with a wide ID
-      // to a channel with a shorter ID correctly cuts the prepended ID.
-      slv_b_chans_o[i] = mst_b_chans_i[i];
-      slv_r_chans_o[i] = mst_r_chans_i[i];
+  for (genvar i = 0; i < NoBus; i++) begin : gen_id_prepend
+    if (PreIdWidth == 0) begin : gen_no_prepend
+      assign mst_aw_chans_o[i] = slv_aw_chans_i[i];
+      assign mst_ar_chans_o[i] = slv_ar_chans_i[i];
+    end else begin : gen_prepend
+      always_comb begin
+        mst_aw_chans_o[i] = slv_aw_chans_i[i];
+        mst_ar_chans_o[i] = slv_ar_chans_i[i];
+        mst_aw_chans_o[i].id = {pre_id_i, slv_aw_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
+        mst_ar_chans_o[i].id = {pre_id_i, slv_ar_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
+      end
     end
+    // The ID is in the highest bits of the struct, so an assignment from a channel with a wide ID
+    // to a channel with a shorter ID correctly cuts the prepended ID.
+    assign slv_b_chans_o[i] = mst_b_chans_i[i];
+    assign slv_r_chans_o[i] = mst_r_chans_i[i];
   end
 
   // assign the handshaking's and w channel
@@ -133,15 +138,15 @@ module axi_id_prepend #(
 
   ar_id   : assert final(
       mst_ar_chans_o[0].id[$bits(slv_ar_chans_i[0].id)-1:0] === slv_ar_chans_i[0].id)
-        else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+        else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_addr : assert final(mst_ar_chans_o[0].addr === slv_ar_chans_i[0].addr)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_len  : assert final(mst_ar_chans_o[0].len === slv_ar_chans_i[0].len)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_size : assert final(mst_ar_chans_o[0].size === slv_ar_chans_i[0].size)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_qos  : assert final(mst_ar_chans_o[0].qos === slv_ar_chans_i[0].qos)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
 
   r_id    : assert final(mst_r_chans_i[0].id[$bits(slv_r_chans_o[0].id)-1:0] === slv_r_chans_o[0].id)
       else $fatal (1, "Something with the R channel ID stripping went wrong.");

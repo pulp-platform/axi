@@ -8,10 +8,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_xbar_intf`: Add interface variant of crossbar.
 
 ### Changed
 
 ### Fixed
+- `axi_atop_filter`: Fix ModelSim warnings by adding `default` statement.  The signal in the `case`
+  has a single bit, and both values were correctly handled in synthesis.  However, when starting
+  simulation, the signal has an undefined value, and ModelSim threw warnings that this violated the
+  `unique` condition.
+- `axi_demux`: Move `typedef` outside `generate` for compatibility with VCS.
+- `axi_id_prepend`:
+  - Fix text of some assertion messages.
+  - Fix case of prepending a single-bit ID.
 - `tb_axi_xbar`: Fix for localparam `AxiIdWidthSlaves` to be dependent on the number of masters.
 
 
