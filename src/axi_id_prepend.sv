@@ -133,15 +133,15 @@ module axi_id_prepend #(
 
   ar_id   : assert final(
       mst_ar_chans_o[0].id[$bits(slv_ar_chans_i[0].id)-1:0] === slv_ar_chans_i[0].id)
-        else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+        else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_addr : assert final(mst_ar_chans_o[0].addr === slv_ar_chans_i[0].addr)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_len  : assert final(mst_ar_chans_o[0].len === slv_ar_chans_i[0].len)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_size : assert final(mst_ar_chans_o[0].size === slv_ar_chans_i[0].size)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
   ar_qos  : assert final(mst_ar_chans_o[0].qos === slv_ar_chans_i[0].qos)
-      else $fatal (1, "Something with the AW channel ID prepending went wrong.");
+      else $fatal (1, "Something with the AR channel ID prepending went wrong.");
 
   r_id    : assert final(mst_r_chans_i[0].id[$bits(slv_r_chans_o[0].id)-1:0] === slv_r_chans_o[0].id)
       else $fatal (1, "Something with the R channel ID stripping went wrong.");

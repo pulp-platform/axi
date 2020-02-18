@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   has a single bit, and both values were correctly handled in synthesis.  However, when starting
   simulation, the signal has an undefined value, and ModelSim threw warnings that this violated the
   `unique` condition.
+- `axi_id_prepend`: Fix text of some assertion messages.
 - `tb_axi_xbar`: Fix for localparam `AxiIdWidthSlaves` to be dependent on the number of masters.
 
 
