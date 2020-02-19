@@ -15,18 +15,22 @@
 // Connects a wide master to a narrower slave.
 
 module axi_dw_upsizer #(
-    parameter int unsigned AxiMaxReads = 1    , // Number of outstanding reads
-    parameter type aw_chan_t           = logic, // AW Channel Type
-    parameter type mst_w_chan_t        = logic, //  W Channel Type for mst port
-    parameter type slv_w_chan_t        = logic, //  W Channel Type for slv port
-    parameter type b_chan_t            = logic, //  B Channel Type
-    parameter type ar_chan_t           = logic, // AR Channel Type
-    parameter type mst_r_chan_t        = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t        = logic, //  R Channel Type for slv port
-    parameter type axi_mst_req_t       = logic, // AXI Request Type for mst ports
-    parameter type axi_mst_resp_t      = logic, // AXI Response Type for mst ports
-    parameter type axi_slv_req_t       = logic, // AXI Request Type for mst ports
-    parameter type axi_slv_resp_t      = logic  // AXI Response Type for mst ports
+    parameter int unsigned AxiMaxReads     = 1    , // Number of outstanding reads
+    parameter int unsigned AxiMstDataWidth = 8    , // Master data width
+    parameter int unsigned AxiSlvDataWidth = 8    , // Slave data width
+    parameter int unsigned AxiAddrWidth    = 1    , // Address width
+    parameter int unsigned AxiIdWidth      = 1    , // ID width
+    parameter type aw_chan_t               = logic, // AW Channel Type
+    parameter type mst_w_chan_t            = logic, //  W Channel Type for mst port
+    parameter type slv_w_chan_t            = logic, //  W Channel Type for slv port
+    parameter type b_chan_t                = logic, //  B Channel Type
+    parameter type ar_chan_t               = logic, // AR Channel Type
+    parameter type mst_r_chan_t            = logic, //  R Channel Type for mst port
+    parameter type slv_r_chan_t            = logic, //  R Channel Type for slv port
+    parameter type axi_mst_req_t           = logic, // AXI Request Type for mst ports
+    parameter type axi_mst_resp_t          = logic, // AXI Response Type for mst ports
+    parameter type axi_slv_req_t           = logic, // AXI Request Type for mst ports
+    parameter type axi_slv_resp_t          = logic  // AXI Response Type for mst ports
   ) (
     input  logic          clk_i,
     input  logic          rst_ni,
@@ -40,8 +44,6 @@ module axi_dw_upsizer #(
 
   import axi_pkg::*;
 
-  `include "axi/typedef.svh"
-
   /*****************
    *  DEFINITIONS  *
    *****************/
@@ -51,18 +53,11 @@ module axi_dw_upsizer #(
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
-  localparam AxiMstDataWidth = $bits(mst_resp_i.r.data);
-  localparam AxiSlvDataWidth = $bits(slv_resp_o.r.data);
-
   localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
   localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
 
   // Address width
-  localparam AxiAddrWidth = $bits(slv_req_i.ar.addr);
   typedef logic [AxiAddrWidth-1:0] addr_t;
-
-  // ID width
-  localparam AxiIdWidth = $bits(slv_req_i.ar.id);
 
   /**************
    *  ARBITERS  *
@@ -513,5 +508,39 @@ module axi_dw_upsizer #(
       w_req_q   <= w_req_d  ;
     end
   end
+
+ /****************
+   *  ASSERTIONS  *
+   ****************/
+
+  // Data width
+  if ($bits(slv_req_i.w.data) != AxiSlvDataWidth)
+    $error("[axi_dw_downsizer] AxiSlvDataWidth does not correspond to the data width of slv_req_i.w.data.");
+  if ($bits(slv_resp_o.r.data) != AxiSlvDataWidth)
+    $error("[axi_dw_downsizer] AxiSlvDataWidth does not correspond to the data width of slv_resp_o.r.data.");
+  if ($bits(mst_req_o.w.data) != AxiMstDataWidth)
+    $error("[axi_dw_downsizer] AxiMstDataWidth does not correspond to the data width of mst_req_o.w.data.");
+  if ($bits(mst_resp_i.r.data) != AxiMstDataWidth)
+    $error("[axi_dw_downsizer] AxiMstDataWidth does not correspond to the data width of mst_resp_i.r.data.");
+
+  // Address width
+  if ($bits(slv_req_i.ar.addr) != AxiAddrWidth)
+    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of slv_req_i.ar.addr.");
+  if ($bits(slv_req_i.aw.addr) != AxiAddrWidth)
+    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of slv_req_i.aw.addr.");
+  if ($bits(mst_req_o.ar.addr) != AxiAddrWidth)
+    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of mst_req_o.ar.addr.");
+  if ($bits(mst_req_o.aw.addr) != AxiAddrWidth)
+    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of mst_req_o.aw.addr.");
+
+  // ID width
+  if ($bits(slv_req_i.ar.id) != AxiIdWidth)
+    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of slv_req_i.ar.id.");
+  if ($bits(slv_req_i.aw.id) != AxiIdWidth)
+    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of slv_req_i.aw.id.");
+  if ($bits(mst_req_o.ar.id) != AxiIdWidth)
+    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of mst_req_o.ar.id.");
+  if ($bits(mst_req_o.aw.id) != AxiIdWidth)
+    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of mst_req_o.aw.id.");
 
 endmodule : axi_dw_upsizer
