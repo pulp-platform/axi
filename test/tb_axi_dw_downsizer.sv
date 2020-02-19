@@ -126,18 +126,22 @@ module tb_axi_dw_downsizer;
   // DUT
 
   axi_dw_converter #(
-    .AxiMaxReads   (4           ),
-    .aw_chan_t     (aw_chan_t   ),
-    .mst_w_chan_t  (slv_w_chan_t),
-    .slv_w_chan_t  (mst_w_chan_t),
-    .b_chan_t      (b_chan_t    ),
-    .ar_chan_t     (ar_chan_t   ),
-    .mst_r_chan_t  (slv_r_chan_t),
-    .slv_r_chan_t  (mst_r_chan_t),
-    .axi_mst_req_t (slv_req_t   ),
-    .axi_mst_resp_t(slv_resp_t  ),
-    .axi_slv_req_t (mst_req_t   ),
-    .axi_slv_resp_t(mst_resp_t  )
+    .AxiMaxReads    (4           ),
+    .AxiMstDataWidth(DW          ),
+    .AxiSlvDataWidth(MULT * DW   ),
+    .AxiAddrWidth   (AW          ),
+    .AxiIdWidth     (IW          ),
+    .aw_chan_t      (aw_chan_t   ),
+    .mst_w_chan_t   (slv_w_chan_t),
+    .slv_w_chan_t   (mst_w_chan_t),
+    .b_chan_t       (b_chan_t    ),
+    .ar_chan_t      (ar_chan_t   ),
+    .mst_r_chan_t   (slv_r_chan_t),
+    .slv_r_chan_t   (mst_r_chan_t),
+    .axi_mst_req_t  (slv_req_t   ),
+    .axi_mst_resp_t (slv_resp_t  ),
+    .axi_slv_req_t  (mst_req_t   ),
+    .axi_slv_resp_t (mst_resp_t  )
   ) i_dw_converter (
     .clk_i     (clk         ),
     .rst_ni    (rst         ),
