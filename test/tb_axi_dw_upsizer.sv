@@ -159,5 +159,12 @@ module tb_axi_dw_upsizer;
     axi_slave_drv.run()  ;
   end
 
+  // Terminate simulation after all transactions have completed.
+  initial begin
+    wait (done);
+    #(10*tCK)  ;
+    $finish(0) ;
+  end
+
 // vsim -voptargs=+acc work.tb_axi_dw_upsizer
 endmodule : tb_axi_dw_upsizer

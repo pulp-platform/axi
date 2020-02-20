@@ -61,8 +61,15 @@ module axi_dw_downsizer #(
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
+  // ID width
+  typedef logic [AxiIdWidth-1:0] id_t;
+
   // Length of burst after downsizing
   typedef logic [$clog2(AxiSlvStrbWidth/AxiMstStrbWidth) + 7:0] burst_len_t;
+
+  // Internal AXI bus
+  axi_mst_req_t  mst_req;
+  axi_mst_resp_t mst_resp;
 
   /**************
    *  ARBITERS  *
@@ -95,11 +102,11 @@ module axi_dw_downsizer #(
   );
 
   logic [AxiMaxReads-1:0] mst_r_ready_tran;
-  assign mst_req_o.r_ready = |mst_r_ready_tran;
+  assign mst_req.r_ready = |mst_r_ready_tran;
 
   // AR
 
-  logic [AxiIdWidth-1:0]  arb_slv_ar_id;
+  id_t                    arb_slv_ar_id;
   logic                   arb_slv_ar_req;
   logic                   arb_slv_ar_gnt;
   logic [AxiMaxReads-1:0] arb_slv_ar_gnt_tran;
@@ -131,8 +138,10 @@ module axi_dw_downsizer #(
   );
 
   ar_chan_t [AxiMaxReads-1:0] mst_ar_tran;
+  id_t      [AxiMaxReads-1:0] mst_ar_id;
   logic     [AxiMaxReads-1:0] mst_ar_valid_tran;
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
+  tran_id_t                   mst_req_idx;
 
   rr_arb_tree #(
     .NumIn    (AxiMaxReads),
@@ -141,17 +150,71 @@ module axi_dw_downsizer #(
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
   ) i_mst_ar_arb (
-    .clk_i  (clk_i              ),
-    .rst_ni (rst_ni             ),
-    .flush_i(1'b0               ),
-    .rr_i   ('0                 ),
-    .req_i  (mst_ar_valid_tran  ),
-    .gnt_o  (mst_ar_ready_tran  ),
-    .data_i (mst_ar_tran        ),
-    .gnt_i  (mst_resp_i.ar_ready),
-    .req_o  (mst_req_o.ar_valid ),
-    .data_o (mst_req_o.ar       ),
-    .idx_o  (/* Unused */       )
+    .clk_i  (clk_i            ),
+    .rst_ni (rst_ni           ),
+    .flush_i(1'b0             ),
+    .rr_i   ('0               ),
+    .req_i  (mst_ar_valid_tran),
+    .gnt_o  (mst_ar_ready_tran),
+    .data_i (mst_ar_tran      ),
+    .gnt_i  (mst_resp.ar_ready),
+    .req_o  (mst_req.ar_valid ),
+    .data_o (mst_req.ar       ),
+    .idx_o  (mst_req_idx      )
+  );
+
+  /*****************
+   *  ERROR SLAVE  *
+   *****************/
+
+  axi_mst_req_t  axi_err_req;
+  axi_mst_resp_t axi_err_resp;
+
+  axi_err_slv #(
+    .AxiIdWidth(AxiIdWidth          ),
+    .Resp      (axi_pkg::RESP_SLVERR),
+    .req_t     (axi_mst_req_t       ),
+    .resp_t    (axi_mst_resp_t      )
+  ) i_axi_err_slv (
+    .clk_i     (clk_i       ),
+    .rst_ni    (rst_ni      ),
+    .test_i    (1'b0        ),
+    .slv_req_i (axi_err_req ),
+    .slv_resp_o(axi_err_resp)
+  );
+
+  /***********
+   *  DEMUX  *
+   ***********/
+
+  // Requests can be sent either to the error slave,
+  // or to the DWC's master port.
+
+  logic [AxiMaxReads-1:0] mst_req_ar_err;
+  logic                   mst_req_aw_err;
+
+  axi_demux #(
+    .AxiIdWidth (AxiIdWidth    ),
+    .AxiLookBits(AxiIdWidth    ),
+    .aw_chan_t  (aw_chan_t     ),
+    .w_chan_t   (mst_w_chan_t  ),
+    .b_chan_t   (b_chan_t      ),
+    .ar_chan_t  (ar_chan_t     ),
+    .r_chan_t   (mst_r_chan_t  ),
+    .req_t      (axi_mst_req_t ),
+    .resp_t     (axi_mst_resp_t),
+    .NoMstPorts (2             ),
+    .MaxTrans   (AxiMaxReads   )
+  ) i_axi_demux (
+    .clk_i          (clk_i                      ),
+    .rst_ni         (rst_ni                     ),
+    .test_i         (1'b0                       ),
+    .mst_reqs_o     ({axi_err_req, mst_req_o}   ),
+    .mst_resps_i    ({axi_err_resp, mst_resp_i} ),
+    .slv_ar_select_i(mst_req_ar_err[mst_req_idx]),
+    .slv_aw_select_i(mst_req_aw_err             ),
+    .slv_req_i      (mst_req                    ),
+    .slv_resp_o     (mst_resp                   )
   );
 
   /**********
@@ -167,18 +230,38 @@ module axi_dw_downsizer #(
 
   // Decide which downsizer will handle the incoming AXI transaction
   logic     [AxiMaxReads-1:0] idle_read_downsizer;
-  tran_id_t                   idx_idle_downsizer ;
+  tran_id_t                   idx_downsizer;
 
   if (AxiMaxReads > 1) begin: gen_read_lzc
+    // Find an idle downsizer to handle this transactoin
+    tran_id_t idx_idle_downsizer;
     lzc #(
       .WIDTH(AxiMaxReads)
-    ) i_read_lzc (
+    ) i_idle_lzc (
       .in_i   (idle_read_downsizer),
       .cnt_o  (idx_idle_downsizer ),
       .empty_o(/* Unused */       )
     );
+
+    // Is there already another downsizer handling a transaction with the same id
+    logic [AxiMaxReads-1:0] id_clash_downsizer;
+    tran_id_t idx_id_clash_downsizer          ;
+    for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
+      assign id_clash_downsizer[t] = arb_slv_ar_id == mst_ar_id[t];
+    end
+
+    lzc #(
+      .WIDTH(AxiMaxReads)
+    ) i_id_clash_lzc (
+      .in_i   (id_clash_downsizer    ),
+      .cnt_o  (idx_id_clash_downsizer),
+      .empty_o(/* Unused */          )
+    );
+
+    // Choose an idle downsizer, unless there is an id clash
+    assign idx_downsizer = (|id_clash_downsizer) ? idx_id_clash_downsizer : idx_idle_downsizer;
   end else begin: gen_no_read_lzc
-    assign idx_idle_downsizer = 1'b0;
+    assign idx_downsizer = 1'b0;
   end
 
   // This ID queue is used to resolve which downsizer is handling
@@ -194,23 +277,23 @@ module axi_dw_downsizer #(
     .CAPACITY(AxiMaxReads),
     .data_t  (tran_id_t  )
   ) i_read_id_queue (
-    .clk_i           (clk_i             ),
-    .rst_ni          (rst_ni            ),
-    .inp_id_i        (arb_slv_ar_id     ),
-    .inp_data_i      (idx_idle_downsizer),
-    .inp_req_i       (|idqueue_push     ),
-    .inp_gnt_o       (/* Unused  */     ),
-    .oup_id_i        (mst_resp_i.r.id   ),
-    .oup_pop_i       (|idqueue_pop      ),
-    .oup_req_i       (1'b1              ),
-    .oup_data_o      (idqueue_id        ),
-    .oup_data_valid_o(idqueue_valid     ),
-    .oup_gnt_o       (/* Unused  */     ),
-    .exists_data_i   ('0                ),
-    .exists_mask_i   ('0                ),
-    .exists_req_i    ('0                ),
-    .exists_o        (/* Unused  */     ),
-    .exists_gnt_o    (/* Unused  */     )
+    .clk_i           (clk_i        ),
+    .rst_ni          (rst_ni       ),
+    .inp_id_i        (arb_slv_ar_id),
+    .inp_data_i      (idx_downsizer),
+    .inp_req_i       (|idqueue_push),
+    .inp_gnt_o       (/* Unused  */),
+    .oup_id_i        (mst_resp.r.id),
+    .oup_pop_i       (|idqueue_pop ),
+    .oup_req_i       (1'b1         ),
+    .oup_data_o      (idqueue_id   ),
+    .oup_data_valid_o(idqueue_valid),
+    .oup_gnt_o       (/* Unused  */),
+    .exists_data_i   ('0           ),
+    .exists_mask_i   ('0           ),
+    .exists_req_i    ('0           ),
+    .exists_o        (/* Unused  */),
+    .exists_gnt_o    (/* Unused  */)
   );
 
   for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_read_downsizer
@@ -221,14 +304,13 @@ module axi_dw_downsizer #(
     assign idle_read_downsizer[t] = (r_state_q == R_IDLE);
 
     struct packed {
-      ar_chan_t ar  ;
-      logic ar_valid;
-
-      slv_r_chan_t r;
-      logic r_valid ;
-
-      burst_len_t len;
-      size_t size    ;
+      ar_chan_t ar         ;
+      logic ar_valid       ;
+      logic ar_throw_error ;
+      slv_r_chan_t r       ;
+      logic r_valid        ;
+      burst_len_t burst_len;
+      size_t orig_ar_size  ;
     } r_req_d, r_req_q;
 
     always_comb begin
@@ -238,7 +320,11 @@ module axi_dw_downsizer #(
 
       // AR Channel
       mst_ar_tran[t]       = r_req_q.ar      ;
+      mst_ar_id[t]         = r_req_q.ar.id   ;
       mst_ar_valid_tran[t] = r_req_q.ar_valid;
+
+      // Throw an error
+      mst_req_ar_err[t] = r_req_q.ar_throw_error;
 
       // R Channel
       slv_r_tran[t]       = r_req_q.r      ;
@@ -252,8 +338,10 @@ module axi_dw_downsizer #(
       mst_r_ready_tran[t] = 1'b0;
 
       // Got a grant on the AR channel
-      if (mst_ar_valid_tran[t] & mst_ar_ready_tran[t])
-        r_req_d.ar_valid = 1'b0;
+      if (mst_ar_valid_tran[t] & mst_ar_ready_tran[t]) begin
+        r_req_d.ar_valid       = 1'b0;
+        r_req_d.ar_throw_error = 1'b0;
+      end
 
       case (r_state_q)
         R_IDLE : begin
@@ -262,7 +350,7 @@ module axi_dw_downsizer #(
           r_req_d.r  = '0;
 
           // New write request
-          if (arb_slv_ar_req && (idx_idle_downsizer == t)) begin
+          if (arb_slv_ar_req && (idx_downsizer == t)) begin
             arb_slv_ar_gnt_tran[t] = 1'b1;
             // Push to ID queue
             idqueue_push[t]        = 1'b1;
@@ -271,25 +359,25 @@ module axi_dw_downsizer #(
             r_state_d = R_PASSTHROUGH;
 
             // Save beat
-            r_req_d.ar       = slv_req_i.ar     ;
-            r_req_d.ar_valid = 1'b1             ;
-            r_req_d.len      = slv_req_i.ar.len ;
-            r_req_d.size     = slv_req_i.ar.size;
+            r_req_d.ar           = slv_req_i.ar     ;
+            r_req_d.ar_valid     = 1'b1             ;
+            r_req_d.burst_len    = slv_req_i.ar.len ;
+            r_req_d.orig_ar_size = slv_req_i.ar.size;
             if (inject_aw_into_ar) begin
-              r_req_d.ar.id     = slv_req_i.aw.id    ;
-              r_req_d.ar.addr   = slv_req_i.aw.addr  ;
-              r_req_d.ar.size   = slv_req_i.aw.size  ;
-              r_req_d.ar.burst  = slv_req_i.aw.burst ;
-              r_req_d.ar.len    = slv_req_i.aw.len   ;
-              r_req_d.ar.lock   = slv_req_i.aw.lock  ;
-              r_req_d.ar.cache  = slv_req_i.aw.cache ;
-              r_req_d.ar.prot   = slv_req_i.aw.prot  ;
-              r_req_d.ar.qos    = slv_req_i.aw.qos   ;
-              r_req_d.ar.region = slv_req_i.aw.region;
-              r_req_d.ar.user   = slv_req_i.aw.user  ;
-              r_req_d.ar_valid  = 1'b0               ; // Injected "AR"s from AW are not valid.
-              r_req_d.len       = slv_req_i.aw.len   ;
-              r_req_d.size      = slv_req_i.aw.size  ;
+              r_req_d.ar.id        = slv_req_i.aw.id    ;
+              r_req_d.ar.addr      = slv_req_i.aw.addr  ;
+              r_req_d.ar.size      = slv_req_i.aw.size  ;
+              r_req_d.ar.burst     = slv_req_i.aw.burst ;
+              r_req_d.ar.len       = slv_req_i.aw.len   ;
+              r_req_d.ar.lock      = slv_req_i.aw.lock  ;
+              r_req_d.ar.cache     = slv_req_i.aw.cache ;
+              r_req_d.ar.prot      = slv_req_i.aw.prot  ;
+              r_req_d.ar.qos       = slv_req_i.aw.qos   ;
+              r_req_d.ar.region    = slv_req_i.aw.region;
+              r_req_d.ar.user      = slv_req_i.aw.user  ;
+              r_req_d.ar_valid     = 1'b0               ; // Injected "AR"s from AW are not valid.
+              r_req_d.burst_len    = slv_req_i.aw.len   ;
+              r_req_d.orig_ar_size = slv_req_i.aw.size  ;
             end
 
             if (|(r_req_d.ar.cache & CACHE_MODIFIABLE))
@@ -301,14 +389,14 @@ module axi_dw_downsizer #(
 
                   // Evaluate output burst length
                   automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-                  r_req_d.len                = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
+                  r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
 
                   if (conv_ratio != 1) begin
                     r_req_d.ar.size = $clog2(AxiMstStrbWidth);
 
-                    if (r_req_d.len <= 255) begin
-                      r_state_d      = R_INCR_DOWNSIZE;
-                      r_req_d.ar.len = r_req_d.len    ;
+                    if (r_req_d.burst_len <= 255) begin
+                      r_state_d      = R_INCR_DOWNSIZE  ;
+                      r_req_d.ar.len = r_req_d.burst_len;
                     end else begin
                       r_state_d      = R_SPLIT_INCR_DOWNSIZE;
                       r_req_d.ar.len = 255 - align_adj      ;
@@ -316,13 +404,21 @@ module axi_dw_downsizer #(
                   end
                 end
               endcase
+
+            // TODO: The DW converter does not support this kind of request.
+            if (r_req_d.ar.burst inside {BURST_WRAP, BURST_FIXED}) begin
+              r_req_d.ar_throw_error = 1'b1         ;
+              r_state_d              = R_PASSTHROUGH;
+            end
           end
         end
 
         R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
           // Got a grant on the R channel
-          if (slv_r_valid_tran[t] && slv_r_ready_tran[t])
-            r_req_d.r = '0;
+          if (slv_r_valid_tran[t] && slv_r_ready_tran[t]) begin
+            r_req_d.r       = '0  ;
+            r_req_d.r_valid = 1'b0;
+          end
 
           // Request was accepted
           if (!r_req_q.ar_valid)
@@ -332,7 +428,7 @@ module axi_dw_downsizer #(
               if (!slv_r_valid_tran[t] || (slv_r_valid_tran[t] && slv_r_ready_tran[t])) begin
                 mst_r_ready_tran[t] = 1'b1;
 
-                if (mst_resp_i.r_valid) begin
+                if (mst_resp.r_valid) begin
                   automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
                   automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
                   automatic addr_t size_mask  = (1 << r_req_q.ar.size) - 1                                                 ;
@@ -340,20 +436,21 @@ module axi_dw_downsizer #(
                   // Lane steering
                   for (int b = 0; b < AxiSlvStrbWidth; b++) begin
                     if ((b >= slv_offset) &&
-                        (b - slv_offset < (1 << r_req_q.size)) &&
+                        (b - slv_offset < (1 << r_req_q.orig_ar_size)) &&
                         (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                      r_req_d.r.data[8*b+:8] = mst_resp_i.r.data[8 * (b + mst_offset - slv_offset) +: 8];
+                      r_req_d.r.data[8*b+:8] = mst_resp.r.data[8 * (b + mst_offset - slv_offset) +: 8];
                     end
                   end
 
-                  r_req_d.len     = r_req_q.len - 1                                        ;
-                  r_req_d.ar.len  = r_req_q.ar.len - 1                                     ;
-                  r_req_d.ar.addr = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
-                  r_req_d.r.last  = (r_req_q.len == 0)                                     ;
-                  r_req_d.r.id    = mst_resp_i.r.id                                        ;
-                  r_req_d.r.user  = mst_resp_i.r.user                                      ;
+                  r_req_d.burst_len = r_req_q.burst_len - 1                                  ;
+                  r_req_d.ar.len    = r_req_q.ar.len - 1                                     ;
+                  r_req_d.ar.addr   = (r_req_q.ar.addr & ~size_mask) + (1 << r_req_q.ar.size);
+                  r_req_d.r.last    = (r_req_q.burst_len == 0)                               ;
+                  r_req_d.r.id      = mst_resp.r.id                                          ;
+                  r_req_d.r.resp    = mst_resp.r.resp                                        ;
+                  r_req_d.r.user    = mst_resp.r.user                                        ;
 
-                  if (r_req_q.len == 0)
+                  if (r_req_q.burst_len == 0)
                     idqueue_pop[t] = 1'b1;
 
                   case (r_state_q)
@@ -363,22 +460,22 @@ module axi_dw_downsizer #(
 
                     R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
                       // Forward when the burst is finished, or after filling up a word
-                      if (r_req_q.len == 0 || (aligned_addr(r_req_d.ar.addr, r_req_q.size) != aligned_addr(r_req_q.ar.addr, r_req_q.size)))
+                      if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
                         r_req_d.r_valid = 1'b1;
                   endcase
 
                   // Trigger another burst request, if needed
                   if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
                     // Finished current burst, but whole transaction hasn't finished
-                    if (r_req_q.ar.len == '0 && r_req_q.len != '0) begin
+                    if (r_req_q.ar.len == '0 && r_req_q.burst_len != '0) begin
                       r_req_d.ar_valid = 1'b1;
-                      r_req_d.ar.len   = (r_req_d.len <= 255) ? r_req_d.len : 255;
+                      r_req_d.ar.len   = (r_req_d.burst_len <= 255) ? r_req_d.burst_len : 255;
                     end
                 end
               end
 
           if (slv_r_valid_tran[t] && slv_r_ready_tran[t])
-            if (r_req_q.len == '1)
+            if (r_req_q.burst_len == '1)
               r_state_d = R_IDLE;
         end
       endcase
@@ -407,39 +504,101 @@ module axi_dw_downsizer #(
   } w_state_d, w_state_q;
 
   struct packed {
-    aw_chan_t aw  ;
-    logic aw_valid;
-
-    burst_len_t len;
-    size_t size    ;
+    aw_chan_t aw         ;
+    logic aw_valid       ;
+    logic aw_throw_error ;
+    burst_len_t burst_len;
+    size_t orig_aw_size  ;
+    len_t b_cnt          ;
   } w_req_d, w_req_q;
+
+  // This FIFO holds the number of bursts generated by each write transactions handled by this downsizer.
+  // This is used to forward only the correct B beats to the slave.
+  len_t num_b_beats_i;
+  len_t num_b_beats_o;
+  logic num_b_beats_push;
+  logic num_b_beats_pop;
+  logic num_b_beats_empty;
+  logic num_b_beats_full;
+
+  fifo_v3 #(
+    .dtype(len_t      ),
+    .DEPTH(AxiMaxReads)
+  ) i_num_b_beats_queue (
+    .clk_i     (clk_i            ),
+    .rst_ni    (rst_ni           ),
+    .flush_i   (1'b0             ),
+    .testmode_i(1'b0             ),
+    .data_i    (num_b_beats_i    ),
+    .push_i    (num_b_beats_push ),
+    .full_o    (num_b_beats_full ),
+    .data_o    (num_b_beats_o    ),
+    .pop_i     (num_b_beats_pop  ),
+    .empty_o   (num_b_beats_empty),
+    .usage_o   (/* Unused */     )
+  );
 
   always_comb begin
     inject_aw_into_ar_req = 1'b0;
+
+    // i_num_b_beats default state
+    num_b_beats_i    = '0  ;
+    num_b_beats_push = 1'b0;
+    num_b_beats_pop  = 1'b0;
 
     // Maintain state
     w_state_d = w_state_q;
     w_req_d   = w_req_q  ;
 
     // AW Channel
-    mst_req_o.aw        = w_req_q.aw      ;
-    mst_req_o.aw_valid  = w_req_q.aw_valid;
+    mst_req.aw          = w_req_q.aw      ;
+    mst_req.aw_valid    = w_req_q.aw_valid;
     slv_resp_o.aw_ready = '0              ;
 
+    // Throw an error.
+    mst_req_aw_err = w_req_q.aw_throw_error;
+
     // W Channel
-    mst_req_o.w        = '0;
-    mst_req_o.w_valid  = '0;
+    mst_req.w          = '0;
+    mst_req.w_valid    = '0;
     slv_resp_o.w_ready = '0;
 
     // B Channel
-    // No latency
-    slv_resp_o.b       = mst_resp_i.b      ;
-    slv_resp_o.b_valid = mst_resp_i.b_valid;
-    mst_req_o.b_ready  = slv_req_i.b_ready ;
+    begin: b_channel
+      // No latency
+      slv_resp_o.b = mst_resp.b;
+
+      // Each write transaction might trigger several B beats on the master (narrow) side.
+      // Only forward the last B beat.
+
+      // b_cnt counts how many B beats this downsizer received.
+      if (mst_resp.b_valid)
+        w_req_d.b_cnt += 1;
+      // Once this counter reaches the value stored at the i_num_b_beats_queue, forward this beat to the master
+      if (w_req_d.b_cnt == num_b_beats_o && !num_b_beats_empty) begin
+        slv_resp_o.b_valid = mst_resp.b_valid ;
+        mst_req.b_ready    = slv_req_i.b_ready;
+
+        // Got an ack on the B channel. Pop transaction from i_num_b_beats_queue.
+        if (mst_req.b_ready) begin
+          w_req_d.b_cnt   = '0  ;
+          num_b_beats_pop = 1'b1;
+        // Otherwise, do not count this B beat and try again next cycle.
+        end else begin
+          w_req_d.b_cnt -= 1;
+        end
+      end else begin
+        // Otherwise, just acknowlegde the B beats
+        slv_resp_o.b_valid = 1'b0;
+        mst_req.b_ready    = 1'b1;
+      end
+    end: b_channel
 
     // Got a grant on the AW channel
-    if (mst_req_o.aw_valid & mst_resp_i.aw_ready)
-      w_req_d.aw_valid = 1'b0;
+    if (mst_req.aw_valid & mst_resp.aw_ready) begin
+      w_req_d.aw_valid       = 1'b0;
+      w_req_d.aw_throw_error = 1'b0;
+    end
 
     case (w_state_q)
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
@@ -450,46 +609,46 @@ module axi_dw_downsizer #(
             automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
 
             // Valid output
-            mst_req_o.w_valid = 1'b1                                  ;
-            mst_req_o.w.last  = slv_req_i.w.last && (w_req_q.len == 0);
-            mst_req_o.w.user  = slv_req_i.w.user                      ;
+            mst_req.w_valid = 1'b1               ;
+            mst_req.w.last  = w_req_q.aw.len == 0;
+            mst_req.w.user  = slv_req_i.w.user   ;
 
             // Serialization
             for (int b = 0; b < AxiSlvStrbWidth; b++)
               if ((b >= slv_offset) &&
                   (b - slv_offset < (1 << w_req_q.aw.size)) &&
                   (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                mst_req_o.w.data[8 * (b + mst_offset - slv_offset) +: 8] = slv_req_i.w.data[8 * b +: 8];
-                mst_req_o.w.strb[b + mst_offset - slv_offset]            = slv_req_i.w.strb[b]         ;
+                mst_req.w.data[8 * (b + mst_offset - slv_offset) +: 8] = slv_req_i.w.data[8 * b +: 8];
+                mst_req.w.strb[b + mst_offset - slv_offset]            = slv_req_i.w.strb[b]         ;
               end
           end
 
         // Acknowledgment
-        if (mst_resp_i.w_ready && mst_req_o.w_valid) begin
+        if (mst_resp.w_ready && mst_req.w_valid) begin
           automatic addr_t size_mask = (1 << w_req_q.aw.size) - 1;
 
-          w_req_d.len     = w_req_q.len - 1                                        ;
-          w_req_d.aw.len  = w_req_q.aw.len - 1                                     ;
-          w_req_d.aw.addr = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
+          w_req_d.burst_len = w_req_q.burst_len - 1                                  ;
+          w_req_d.aw.len    = w_req_q.aw.len - 1                                     ;
+          w_req_d.aw.addr   = (w_req_q.aw.addr & ~size_mask) + (1 << w_req_q.aw.size);
 
           case (w_state_q)
             W_PASSTHROUGH:
               slv_resp_o.w_ready = 1'b1;
 
             W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
-              if (w_req_q.len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.size) != aligned_addr(w_req_q.aw.addr, w_req_q.size)))
+              if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
                 slv_resp_o.w_ready = 1'b1;
           endcase
 
           // Trigger another burst request, if needed
           if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
             // Finished current burst, but whole transaction hasn't finished
-            if (w_req_q.aw.len == '0 && w_req_q.len != '0) begin
+            if (w_req_q.aw.len == '0 && w_req_q.burst_len != '0) begin
               w_req_d.aw_valid = 1'b1;
-              w_req_d.aw.len   = (w_req_d.len <= 255) ? w_req_d.len : 255;
+              w_req_d.aw.len   = (w_req_d.burst_len <= 255) ? w_req_d.burst_len : 255;
             end
 
-          if (w_req_q.len == 0)
+          if (w_req_q.burst_len == 0)
             w_state_d = W_IDLE;
         end
       end
@@ -508,15 +667,15 @@ module axi_dw_downsizer #(
       end
 
       // New write request
-      if (slv_req_i.aw_valid && slv_resp_o.aw_ready) begin
+      if (slv_req_i.aw_valid && slv_resp_o.aw_ready && !num_b_beats_full) begin
         // Default state
         w_state_d = W_PASSTHROUGH;
 
         // Save beat
-        w_req_d.aw       = slv_req_i.aw     ;
-        w_req_d.aw_valid = 1'b1             ;
-        w_req_d.len      = slv_req_i.aw.len ;
-        w_req_d.size     = slv_req_i.aw.size;
+        w_req_d.aw           = slv_req_i.aw     ;
+        w_req_d.aw_valid     = 1'b1             ;
+        w_req_d.burst_len    = slv_req_i.aw.len ;
+        w_req_d.orig_aw_size = slv_req_i.aw.size;
 
         // Do nothing
         if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE))
@@ -528,14 +687,14 @@ module axi_dw_downsizer #(
 
               // Evaluate output burst length
               automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-              w_req_d.len                = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
+              w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
 
               if (conv_ratio != 1) begin
                 w_req_d.aw.size = $clog2(AxiMstStrbWidth);
 
-                if (w_req_d.len <= 255) begin
-                  w_state_d      = W_INCR_DOWNSIZE;
-                  w_req_d.aw.len = w_req_d.len    ;
+                if (w_req_d.burst_len <= 255) begin
+                  w_state_d      = W_INCR_DOWNSIZE  ;
+                  w_req_d.aw.len = w_req_d.burst_len;
                 end else begin
                   w_state_d      = W_SPLIT_INCR_DOWNSIZE;
                   w_req_d.aw.len = 255 - align_adj      ;
@@ -543,6 +702,16 @@ module axi_dw_downsizer #(
               end
             end
           endcase
+
+        // Push transaction into the AW Queue
+        num_b_beats_push = 1'b1                           ;
+        num_b_beats_i    = (w_req_d.burst_len + 255) / 256;
+
+        // TODO: The DW converter does not support these.
+        if (w_req_d.aw.burst inside {BURST_WRAP, BURST_FIXED}) begin
+          w_state_d              = W_PASSTHROUGH;
+          w_req_d.aw_throw_error = 1'b1         ;
+        end
       end
     end
   end
