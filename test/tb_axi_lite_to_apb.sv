@@ -53,7 +53,7 @@ module tb_axi_lite_to_apb;
   typedef struct packed {
     addr_t          paddr;
     axi_pkg::prot_t pprot;   // same as AXI, this is allowed
-    sel_t           psel;    // onehot
+    logic           psel;    // onehot
     logic           penable;
     logic           pwrite;
     data_t          pwdata;
@@ -112,7 +112,7 @@ module tb_axi_lite_to_apb;
   axi_resp_t axi_resp;
 
   // slave structs
-  apb_req_t                    apb_req;
+  apb_req_t  [NoApbSlaves-1:0] apb_req;
   apb_resp_t [NoApbSlaves-1:0] apb_resps;
 
   // -------------------------------
@@ -169,17 +169,17 @@ module tb_axi_lite_to_apb;
   for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_assertions
     // when psel is not asserted, the bus is in the idle state
     sequence APB_IDLE;
-      !apb_req.psel[i];
+      !apb_req[i].psel;
     endsequence
 
     // when psel is set and penable is not, it is the setup state
     sequence APB_SETUP;
-      apb_req.psel[i] && !apb_req.penable;
+      apb_req[i].psel && !apb_req[i].penable;
     endsequence
 
     // when psel and penable are set it is the access state
     sequence APB_ACCESS;
-      apb_req.psel[i] && apb_req.penable;
+      apb_req[i].psel && apb_req[i].penable;
     endsequence
 
     // APB Transfer is APB state going from setup to access
@@ -191,19 +191,19 @@ module tb_axi_lite_to_apb;
         (APB_SETUP |-> APB_TRANSFER));
 
     apb_penable:    assert property ( @(posedge clk)
-        (apb_req.penable && apb_req.psel[i] && apb_resps[i].pready |=> (!apb_req.penable)));
+        (apb_req[i].penable && apb_req[i].psel && apb_resps[i].pready |=> (!apb_req[i].penable)));
 
     control_stable: assert property ( @(posedge clk)
-        (APB_TRANSFER |-> $stable({apb_req.pwrite, apb_req.paddr})));
+        (APB_TRANSFER |-> $stable({apb_req[i].pwrite, apb_req[i].paddr})));
 
     apb_valid:      assert property ( @(posedge clk)
-        (APB_TRANSFER |-> ((!{apb_req.pwrite, apb_req.pstrb, apb_req.paddr}) !== 1'bx)));
+        (APB_TRANSFER |-> ((!{apb_req[i].pwrite, apb_req[i].pstrb, apb_req[i].paddr}) !== 1'bx)));
 
     write_stable:   assert property ( @(posedge clk)
-        ((apb_req.penable && apb_req.pwrite) |-> $stable(apb_req.pwdata)));
+        ((apb_req[i].penable && apb_req[i].pwrite) |-> $stable(apb_req[i].pwdata)));
 
     strb_stable:    assert property ( @(posedge clk)
-        ((apb_req.penable && apb_req.pwrite) |-> $stable(apb_req.pstrb)));
+        ((apb_req[i].penable && apb_req[i].pwrite) |-> $stable(apb_req[i].pstrb)));
   end
   `endif
   // pragma translate_on

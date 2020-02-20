@@ -175,12 +175,11 @@ module synth_axi_lite_to_apb #(
   typedef logic [31:0]            addr_t;
   typedef logic [DataWidth-1:0]   data_t;
   typedef logic [DataWidth/8-1:0] strb_t;
-  typedef logic [NoApbSlaves-1:0] sel_t;
 
   typedef struct packed {
     addr_t          paddr;   // same as AXI4-Lite
     axi_pkg::prot_t pprot;   // same as AXI4-Lite, specification is the same
-    sel_t           psel;    // onehot, one psel line per connected APB4 slave
+    logic           psel;    // one request line per connected APB4 slave
     logic           penable; // enable signal shows second APB4 cycle
     logic           pwrite;  // write enable
     data_t          pwdata;  // write data, comes from W channel
@@ -201,10 +200,10 @@ module synth_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_REQ_T     (  axi_req_t, aw_chan_t, w_chan_t, ar_chan_t )
   `AXI_LITE_TYPEDEF_RESP_T    ( axi_resp_t,  b_chan_t, r_chan_t )
 
-  axi_req_t                     axi_req;
-  axi_resp_t                    axi_resp;
-  apb_req_t                     apb_req;
-  apb_resp_t  [NoApbSlaves-1:0] apb_resp;
+  axi_req_t                    axi_req;
+  axi_resp_t                   axi_resp;
+  apb_req_t  [NoApbSlaves-1:0] apb_req;
+  apb_resp_t [NoApbSlaves-1:0] apb_resp;
 
   axi_pkg::xbar_rule_32_t [NoApbSlaves-1:0] addr_map;
 
