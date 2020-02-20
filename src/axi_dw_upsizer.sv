@@ -14,6 +14,9 @@
 // Data width upsize conversion.
 // Connects a wide master to a narrower slave.
 
+// NOTE: The upsizer does not support WRAP and FIXED bursts, and
+// will answer with SLVERR upon receiving a burst of such types.
+
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads     = 1    , // Number of outstanding reads
     parameter int unsigned AxiMstDataWidth = 8    , // Master data width
