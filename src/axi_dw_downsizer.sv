@@ -14,6 +14,9 @@
 // Data width downsize conversion.
 // Connects a narrow master to a wider slave.
 
+// NOTE: The downsizer does not support WRAP and FIXED bursts, and
+// will answer with SLVERR upon receiving a burst of such types.
+
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads     = 1    , // Number of outstanding reads
     parameter int unsigned AxiMstDataWidth = 8    , // Master data width
