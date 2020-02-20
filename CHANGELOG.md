@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_lite_to_apb`: The `psel` field of the `apb_req_t` struct is now a single bit.  That is, every
+  APB slave has its own request struct.  Accordingly, `apb_req_o` is now an array with `NoApbSlaves`
+  entries.
 
 ### Fixed
 
