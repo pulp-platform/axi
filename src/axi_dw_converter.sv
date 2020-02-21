@@ -107,3 +107,82 @@ module axi_dw_converter #(
   end : gen_dw_downsize
 
 endmodule : axi_dw_converter
+
+// Interface wrapper
+
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
+module axi_dw_converter_intf #(
+    parameter int unsigned AXI_ID_WIDTH       = 1,
+    parameter int unsigned AXI_ADDR_WIDTH     = 1,
+    parameter int unsigned AXI_MST_DATA_WIDTH = 8,
+    parameter int unsigned AXI_SLV_DATA_WIDTH = 8,
+    parameter int unsigned AXI_USER_WIDTH     = 0,
+    parameter int unsigned AXI_MAX_READS      = 8
+  ) (
+    input          logic clk_i,
+    input          logic rst_ni,
+    AXI_BUS.Slave        slv,
+    AXI_BUS.Master       mst
+  );
+
+  typedef logic [AXI_ID_WIDTH-1:0] id_t                                 ;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t                             ;
+  typedef logic [AXI_MST_DATA_WIDTH-1:0] mst_data_t                     ;
+  typedef logic [AXI_MST_DATA_WIDTH/8-1:0] mst_strb_t                   ;
+  typedef logic [AXI_SLV_DATA_WIDTH-1:0] slv_data_t                     ;
+  typedef logic [AXI_SLV_DATA_WIDTH/8-1:0] slv_strb_t                   ;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t                             ;
+  `AXI_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t, id_t, user_t )             ;
+  `AXI_TYPEDEF_W_CHAN_T ( mst_w_chan_t, mst_data_t, mst_strb_t, user_t );
+  `AXI_TYPEDEF_W_CHAN_T ( slv_w_chan_t, slv_data_t, slv_strb_t, user_t );
+  `AXI_TYPEDEF_B_CHAN_T ( b_chan_t, id_t, user_t )                      ;
+  `AXI_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t, id_t, user_t )             ;
+  `AXI_TYPEDEF_R_CHAN_T ( mst_r_chan_t, mst_data_t, id_t, user_t )      ;
+  `AXI_TYPEDEF_R_CHAN_T ( slv_r_chan_t, slv_data_t, id_t, user_t )      ;
+  `AXI_TYPEDEF_REQ_T ( mst_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t )  ;
+  `AXI_TYPEDEF_RESP_T ( mst_resp_t, b_chan_t, mst_r_chan_t )            ;
+  `AXI_TYPEDEF_REQ_T ( slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t )  ;
+  `AXI_TYPEDEF_RESP_T ( slv_resp_t, b_chan_t, slv_r_chan_t )            ;
+
+  slv_req_t  slv_req;
+  slv_resp_t slv_resp;
+  mst_req_t  mst_req;
+  mst_resp_t mst_resp;
+
+  `AXI_ASSIGN_TO_REQ ( slv_req, slv )
+  `AXI_ASSIGN_FROM_RESP ( slv, slv_resp )
+
+  `AXI_ASSIGN_FROM_REQ ( mst , mst_req )
+  `AXI_ASSIGN_TO_RESP ( mst_resp, mst )
+
+  axi_dw_converter #(
+    .AxiMaxReads    ( AXI_MAX_READS      ),
+    .AxiMstDataWidth( AXI_MST_DATA_WIDTH ),
+    .AxiSlvDataWidth( AXI_SLV_DATA_WIDTH ),
+    .AxiAddrWidth   ( AXI_ADDR_WIDTH     ),
+    .AxiIdWidth     ( AXI_ID_WIDTH       ),
+    .aw_chan_t      ( aw_chan_t          ),
+    .mst_w_chan_t   ( mst_w_chan_t       ),
+    .slv_w_chan_t   ( slv_w_chan_t       ),
+    .b_chan_t       ( b_chan_t           ),
+    .ar_chan_t      ( ar_chan_t          ),
+    .mst_r_chan_t   ( mst_r_chan_t       ),
+    .slv_r_chan_t   ( slv_r_chan_t       ),
+    .axi_mst_req_t  ( mst_req_t          ),
+    .axi_mst_resp_t ( mst_resp_t         ),
+    .axi_slv_req_t  ( slv_req_t          ),
+    .axi_slv_resp_t ( slv_resp_t         )
+  ) i_axi_dw_converter (
+    .clk_i      ( clk_i    ),
+    .rst_ni     ( rst_ni   ),
+    // slave port
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    // master port
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
+  );
+
+endmodule : axi_dw_converter_intf
