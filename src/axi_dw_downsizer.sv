@@ -146,25 +146,32 @@ module axi_dw_downsizer #(
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
   tran_id_t                   mst_req_idx;
 
-  rr_arb_tree #(
-    .NumIn    (AxiMaxReads),
-    .DataType (ar_chan_t  ),
-    .AxiVldRdy(1'b1       ),
-    .ExtPrio  (1'b0       ),
-    .LockIn   (1'b1       )
-  ) i_mst_ar_arb (
-    .clk_i  (clk_i            ),
-    .rst_ni (rst_ni           ),
-    .flush_i(1'b0             ),
-    .rr_i   ('0               ),
-    .req_i  (mst_ar_valid_tran),
-    .gnt_o  (mst_ar_ready_tran),
-    .data_i (mst_ar_tran      ),
-    .gnt_i  (mst_resp.ar_ready),
-    .req_o  (mst_req.ar_valid ),
-    .data_o (mst_req.ar       ),
-    .idx_o  (mst_req_idx      )
-  );
+  if (AxiMaxReads > 1) begin: gen_mst_ar_arb
+    rr_arb_tree #(
+      .NumIn    (AxiMaxReads),
+      .DataType (ar_chan_t  ),
+      .AxiVldRdy(1'b1       ),
+      .ExtPrio  (1'b0       ),
+      .LockIn   (1'b1       )
+    ) i_mst_ar_arb (
+      .clk_i  (clk_i            ),
+      .rst_ni (rst_ni           ),
+      .flush_i(1'b0             ),
+      .rr_i   ('0               ),
+      .req_i  (mst_ar_valid_tran),
+      .gnt_o  (mst_ar_ready_tran),
+      .data_i (mst_ar_tran      ),
+      .gnt_i  (mst_resp.ar_ready),
+      .req_o  (mst_req.ar_valid ),
+      .data_o (mst_req.ar       ),
+      .idx_o  (mst_req_idx      )
+    );
+  end else begin
+    assign mst_req.ar           = mst_ar_tran[0]      ;
+    assign mst_req.ar_valid     = mst_ar_valid_tran[0];
+    assign mst_ar_ready_tran[0] = mst_resp.ar_ready   ;
+    assign mst_req_idx          = '0                  ;
+  end
 
   /*****************
    *  ERROR SLAVE  *
