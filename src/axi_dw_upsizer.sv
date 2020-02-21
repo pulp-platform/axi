@@ -688,38 +688,4 @@ module axi_dw_upsizer #(
     end
   end
 
-  /****************
-   *  ASSERTIONS  *
-   ****************/
-
-  // Data width
-  if ($bits(slv_req_i.w.data) != AxiSlvDataWidth)
-    $error("[axi_dw_downsizer] AxiSlvDataWidth does not correspond to the data width of slv_req_i.w.data.");
-  if ($bits(slv_resp_o.r.data) != AxiSlvDataWidth)
-    $error("[axi_dw_downsizer] AxiSlvDataWidth does not correspond to the data width of slv_resp_o.r.data.");
-  if ($bits(mst_req_o.w.data) != AxiMstDataWidth)
-    $error("[axi_dw_downsizer] AxiMstDataWidth does not correspond to the data width of mst_req_o.w.data.");
-  if ($bits(mst_resp_i.r.data) != AxiMstDataWidth)
-    $error("[axi_dw_downsizer] AxiMstDataWidth does not correspond to the data width of mst_resp_i.r.data.");
-
-  // Address width
-  if ($bits(slv_req_i.ar.addr) != AxiAddrWidth)
-    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of slv_req_i.ar.addr.");
-  if ($bits(slv_req_i.aw.addr) != AxiAddrWidth)
-    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of slv_req_i.aw.addr.");
-  if ($bits(mst_req_o.ar.addr) != AxiAddrWidth)
-    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of mst_req_o.ar.addr.");
-  if ($bits(mst_req_o.aw.addr) != AxiAddrWidth)
-    $error("[axi_dw_downsizer] AxiAddrWidth does not correspond to the data width of mst_req_o.aw.addr.");
-
-  // ID width
-  if ($bits(slv_req_i.ar.id) != AxiIdWidth)
-    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of slv_req_i.ar.id.");
-  if ($bits(slv_req_i.aw.id) != AxiIdWidth)
-    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of slv_req_i.aw.id.");
-  if ($bits(mst_req_o.ar.id) != AxiIdWidth)
-    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of mst_req_o.ar.id.");
-  if ($bits(mst_req_o.aw.id) != AxiIdWidth)
-    $error("[axi_dw_downsizer] AxiIdWidth does not correspond to the data width of mst_req_o.aw.id.");
-
 endmodule : axi_dw_upsizer
