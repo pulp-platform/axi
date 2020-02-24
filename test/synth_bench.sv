@@ -86,6 +86,19 @@ module synth_bench (
     end
   end
 
+  // AXI4-Lite Mailbox
+  for (genvar i_irq_mode = 0; i_irq_mode < 4; i_irq_mode++) begin
+    localparam bit EDGE_TRIG = i_irq_mode[0];
+    localparam bit ACT_HIGH  = i_irq_mode[1];
+    for (genvar i_depth = 2; i_depth < 8; i_depth++) begin
+      localparam int unsigned DEPTH = 2**i_depth;
+      synth_axi_lite_mailbox #(
+        .MAILBOX_DEPTH ( DEPTH     ),
+        .IRQ_EDGE_TRIG ( EDGE_TRIG ),
+        .IRQ_ACT_HIGH  ( ACT_HIGH  )
+      ) i_axi_lite_mailbox (.*);
+    end
+  end
 endmodule
 
 
@@ -274,10 +287,10 @@ endmodule
 `include "axi/typedef.svh"
 
 module synth_axi_lite_xbar #(
-  parameter int unsigned NoSlvMst
+  parameter int unsigned NoSlvMst = 32'd1
 ) (
-  input clk_i,  // Clock
-  input rst_ni  // Asynchronous reset active low
+  input logic clk_i,  // Clock
+  input logic rst_ni  // Asynchronous reset active low
 );
   typedef logic [32'd32-1:0]   addr_t;
   typedef logic [32'd32-1:0]   data_t;
@@ -329,5 +342,41 @@ module synth_axi_lite_xbar #(
     .addr_map_i            ( addr_map  ),
     .en_default_mst_port_i ( '0        ),
     .default_mst_port_i    ( '0        )
+  );
+endmodule
+
+module synth_axi_lite_mailbox #(
+  parameter int unsigned MAILBOX_DEPTH = 32'd1,
+  parameter bit          IRQ_EDGE_TRIG = 1'b0,
+  parameter bit          IRQ_ACT_HIGH  = 1'b0
+) (
+  input logic clk_i,  // Clock
+  input logic rst_ni  // Asynchronous reset active low
+);
+  typedef logic [32'd32-1:0]   addr_t;
+
+  AXI_LITE #(
+    .AXI_ADDR_WIDTH (32'd32),
+    .AXI_DATA_WIDTH (32'd32)
+  ) slv [1:0] ();
+
+  logic        test;
+  logic  [1:0] irq;
+  addr_t [1:0] base_addr;
+
+  axi_lite_mailbox_intf #(
+    .MAILBOX_DEPTH  ( MAILBOX_DEPTH  ),
+    .IRQ_EDGE_TRIG  ( IRQ_EDGE_TRIG  ),
+    .IRQ_ACT_HIGH   ( IRQ_ACT_HIGH   ),
+    .AXI_ADDR_WIDTH ( 32'd32         ),
+    .AXI_DATA_WIDTH ( 32'd32         )
+  ) i_axi_lite_mailbox (
+    .clk_i       ( clk_i     ), // Clock
+    .rst_ni      ( rst_ni    ), // Asynchronous reset active low
+    .test_i      ( test      ), // Testmode enable
+    // slave ports [1:0]
+    .slv         ( slv       ),
+    .irq_o       ( irq       ), // interrupt output for each port
+    .base_addr_i ( base_addr )  // base address for each port
   );
 endmodule
