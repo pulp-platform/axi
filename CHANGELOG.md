@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add `axi_lite_mailbox`: AXI4-Lite mailbox.
 
 ### Changed
 
 ### Fixed
+
+
+## 0.14.0 - 2020-02-24
+
+### Added
+- Add `axi_lite_mailbox`: AXI4-Lite mailbox.
 
 
 ## 0.13.0 - 2020-02-18
