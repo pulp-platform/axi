@@ -150,37 +150,20 @@ module axi_xbar #(
       .mst_resps_i     ( slv_resps[i]        )
     );
 
-    slv_req_t   no_atops_req;
-    slv_resp_t  no_atops_resp;
-    axi_atop_filter #(
-      .AxiIdWidth       ( Cfg.AxiIdWidthSlvPorts  ),
-      .AxiMaxWriteTxns  ( 1                       ),  // Transactions terminate at next slave, so
-                                                      // minimize resource consumption by accepting
-                                                      // only one write transaction at a time.
-      .req_t            ( slv_req_t               ),
-      .resp_t           ( slv_resp_t              )
-    ) i_axi_atop_filter_err_slv (
-      .clk_i,
-      .rst_ni,
-      .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
-      .slv_resp_o ( slv_resps[i][Cfg.NoMstPorts]  ),
-      .mst_req_o  ( no_atops_req                  ),
-      .mst_resp_i ( no_atops_resp                 )
-    );
     axi_err_slv #(
       .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts ),
       .req_t       ( slv_req_t              ),
       .resp_t      ( slv_resp_t             ),
-      .FallThrough ( 1'b0                   ),
       .MaxTrans    ( 1                      ), // Transactions terminate at this slave.
+      .ATOPs       ( 1'b1                   ),
       .Resp        ( axi_pkg::RESP_DECERR   )
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
       // slave port
-      .slv_req_i  ( no_atops_req  ),
-      .slv_resp_o ( no_atops_resp )
+      .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
+      .slv_resp_o ( slv_resps[i][Cfg.NoMstPorts]  )
     );
   end
 

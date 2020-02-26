@@ -17,8 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   as parameter.  This `axi_err_slv` no longer has a `FallThrough` parameter; instead, a response
   (i.e., B or R beat) now always comes one cycle after the AW or AR beat (as required by the AXI
   Spec) but the slave can accept a W beat in the same cycle as the corresponding AW beat.
-  Additionally, `axi_err_slv` no longer supports ATOPs, meaning you must place an `axi_atop_filter`
-  in front of it if you need it to handle ATOPs.
+  Additionally, `axi_err_slv` got a parameter `ATOPs` that defines if it supports atomic operations.
 
 ### Fixed
 
