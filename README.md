@@ -3,7 +3,7 @@
 This is the implementation of the AMBA AXI protocol developed as part of the PULP platform as ETH Zurich. We implement AXI4+ATOPs and AXI4-Lite.
 
 
-## Cell Contents
+## List of Modules
 
 | Name                                                 | Description                                                                                       | Doc                            |
 |------------------------------------------------------|---------------------------------------------------------------------------------------------------|--------------------------------|
