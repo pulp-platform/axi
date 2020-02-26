@@ -19,12 +19,12 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 [ ! -z "$VSIM" ] || VSIM=vsim
 
 call_vsim() {
-	echo "run -all" | $VSIM "$@" | tee vsim.log 2>&1
-	grep "Errors: 0," vsim.log
+    echo "run -all" | $VSIM "$@" | tee vsim.log 2>&1
+    grep "Errors: 0," vsim.log
 }
 
 for DW in 8 16 32 64 128 256 512 1024; do
-	call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
+    call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
 done
 
 call_vsim tb_axi_delayer
