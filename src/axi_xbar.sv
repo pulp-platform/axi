@@ -156,7 +156,9 @@ module axi_xbar #(
       .resp_t      ( slv_resp_t             ),
       .Resp        ( axi_pkg::RESP_DECERR   ),
       .ATOPs       ( 1'b1                   ),
-      .MaxTrans    ( 1                      )  // Transactions terminate at this slave.
+      .MaxTrans    ( 4                      )   // Transactions terminate at this slave, so minimize
+                                                // resource consumption by accepting only a few
+                                                // transactions at a time.
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
