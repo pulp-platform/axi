@@ -183,7 +183,8 @@ module axi_lite_xbar #(
       .resp_t      ( full_resp_t          ), // AXI response struct
       .Resp        ( axi_pkg::RESP_DECERR ),
       .ATOPs       ( 1'b0                 ), // no ATOPs in AXI4-Lite
-      .MaxTrans    ( 1                    )  // Transactions terminate at this slave.
+      .MaxTrans    ( 1                    )  // Transactions terminate at this slave, and AXI4-Lite
+                                             // transactions have only a single beat.
     ) i_axi_err_slv (
       .clk_i      ( clk_i       ),  // Clock
       .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
