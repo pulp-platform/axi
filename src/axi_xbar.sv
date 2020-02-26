@@ -154,9 +154,9 @@ module axi_xbar #(
       .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts ),
       .req_t       ( slv_req_t              ),
       .resp_t      ( slv_resp_t             ),
-      .MaxTrans    ( 1                      ), // Transactions terminate at this slave.
+      .Resp        ( axi_pkg::RESP_DECERR   ),
       .ATOPs       ( 1'b1                   ),
-      .Resp        ( axi_pkg::RESP_DECERR   )
+      .MaxTrans    ( 1                      )  // Transactions terminate at this slave.
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
