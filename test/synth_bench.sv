@@ -124,7 +124,15 @@ module synth_slice #(
     .AXI_DATA_WIDTH(DW)
   ) a_lite(), b_lite();
 
-  axi_to_axi_lite_intf a (
+  axi_to_axi_lite_intf #(
+    .AXI_ID_WIDTH       (IW),
+    .AXI_ADDR_WIDTH     (AW),
+    .AXI_DATA_WIDTH     (DW),
+    .AXI_USER_WIDTH     (UW),
+    .AXI_MAX_WRITE_TXNS (32'd10),
+    .AXI_MAX_READ_TXNS  (32'd10),
+    .FALL_THROUGH       (1'b0)
+  ) a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
