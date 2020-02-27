@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_to_apb`: The `psel` field of the `apb_req_t` struct is now a single bit.  That is, every
   APB slave has its own request struct.  Accordingly, `apb_req_o` is now an array with `NoApbSlaves`
   entries.
+- `axi_decerr_slv` has been replaced by a more generic `axi_err_slv`, which takes the kind of error
+  as parameter.  This `axi_err_slv` no longer has a `FallThrough` parameter; instead, a response
+  (i.e., B or R beat) now always comes one cycle after the AW or AR beat (as required by the AXI
+  Spec) but the slave can accept a W beat in the same cycle as the corresponding AW beat.
+  Additionally, `axi_err_slv` got a parameter `ATOPs` that defines if it supports atomic operations.
 
 ### Fixed
 
