@@ -19,7 +19,6 @@
 //              required before this module if a master upstream is capable of generating
 //              atomic operations.
 
-`include "axi/assign.svh"
 `include "axi/typedef.svh"
 `include "common_cells/registers.svh"
 
