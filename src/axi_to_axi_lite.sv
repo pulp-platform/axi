@@ -16,9 +16,9 @@
 // Description: An AXI4+ATOP to AXI4-Lite adapter with atomic transaction and burst support.
 
 module axi_to_axi_lite #(
-  parameter int unsigned AxiIdWidth      = 32'd0,
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,
+  parameter int unsigned AxiIdWidth      = 32'd0,
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
@@ -247,9 +247,9 @@ endmodule
 `include "axi/typedef.svh"
 module axi_to_axi_lite_intf #(
   /// AXI bus parameters
-  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
   parameter int unsigned AXI_USER_WIDTH     = 32'd0,
   /// Maximum number of outstanding writes.
   parameter int unsigned AXI_MAX_WRITE_TXNS = 32'd1,
@@ -263,9 +263,9 @@ module axi_to_axi_lite_intf #(
   AXI_BUS.Slave   slv,
   AXI_LITE.Master mst
 );
-  typedef logic [AXI_ID_WIDTH-1:0]       id_t;
   typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_ID_WIDTH-1:0]       id_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
   // full channels typedefs
@@ -297,9 +297,9 @@ module axi_to_axi_lite_intf #(
   `AXI_LITE_ASSIGN_TO_RESP   ( lite_resp, mst       )
 
   axi_to_axi_lite #(
-    .AxiIdWidth      ( AXI_ID_WIDTH       ),
     .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),
     .AxiDataWidth    ( AXI_DATA_WIDTH     ),
+    .AxiIdWidth      ( AXI_ID_WIDTH       ),
     .AxiUserWidth    ( AXI_USER_WIDTH     ),
     .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
     .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),
