@@ -62,13 +62,13 @@ module tb_axi_to_axi_lite;
   `AXI_ASSIGN(axi, axi_dv);
 
   axi_to_axi_lite_intf #(
-    .AxiIdWidth      ( IW    ),
-    .AxiAddrWidth    ( AW    ),
-    .AxiDataWidth    ( DW    ),
-    .AxiUserWidth    ( UW    ),
-    .AxiMaxWriteTxns ( 32'd10 ),
-    .AxiMaxReadTxns  ( 32'd10 ),
-    .FallThrough     ( 1'b1  )
+    .AXI_ID_WIDTH       ( IW      ),
+    .AXI_ADDR_WIDTH     ( AW      ),
+    .AXI_DATA_WIDTH     ( DW      ),
+    .AXI_USER_WIDTH     ( UW      ),
+    .AXI_MAX_WRITE_TXNS ( 32'd10  ),
+    .AXI_MAX_READ_TXNS  ( 32'd10  ),
+    .FALL_THROUGH       ( 1'b1    )
   ) i_dut (
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
