@@ -95,6 +95,18 @@ module axi_to_axi_lite #(
     .mst_req_o  ( mst_req_o     ),
     .mst_resp_i ( mst_resp_i    )
   );
+
+  // Assertions, check params
+  // pragma translate_off
+  `ifndef VERILATOR
+  initial begin
+    assume (AxiIdWidth   > 0) else $fatal(1, "AXI ID width has to be > 0");
+    assume (AxiAddrWidth > 0) else $fatal(1, "AXI address width has to be > 0");
+    assume (AxiDataWidth > 0) else $fatal(1, "AXI data width has to be > 0");
+    assume (AxiUserWidth > 0) else $fatal(1, "AXI user width has to be > 0");
+  end
+  `endif
+  // pragma translate_on
 endmodule
 
 // Description: This module does the translation of the full AXI4+ATOP to AXI4-Lite signals.
@@ -308,15 +320,4 @@ module axi_to_axi_lite_intf #(
     .mst_req_o  ( lite_req   ),
     .mst_resp_i ( lite_resp  )
   );
-  // Assertions, check params
-  // pragma translate_off
-  `ifndef VERILATOR
-  initial begin
-    assume (AXI_ID_WIDTH   > 0) else $fatal(1, "AXI ID width has to be > 0");
-    assume (AXI_ADDR_WIDTH > 0) else $fatal(1, "AXI address width has to be > 0");
-    assume (AXI_DATA_WIDTH > 0) else $fatal(1, "AXI data width has to be > 0");
-    assume (AXI_USER_WIDTH > 0) else $fatal(1, "AXI user width has to be > 0");
-  end
-  `endif
-  // pragma translate_on
 endmodule
