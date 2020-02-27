@@ -47,9 +47,87 @@ module axi_burst_splitter #(
   input  resp_t mst_resp_i
 );
 
-  typedef logic [IdWidth-1:0] id_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, logic[AddrWidth-1:0], id_t, logic[UserWidth-1:0]);
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, logic[AddrWidth-1:0], id_t, logic[UserWidth-1:0]);
+  typedef logic [AddrWidth-1:0]   addr_t;
+  typedef logic [DataWidth-1:0]   data_t;
+  typedef logic [IdWidth-1:0]     id_t;
+  typedef logic [DataWidth/8-1:0] strb_t;
+  typedef logic [UserWidth-1:0]   user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t,         id_t,         user_t);
+  `AXI_TYPEDEF_W_CHAN_T ( w_chan_t,         data_t,       strb_t, user_t);
+  `AXI_TYPEDEF_B_CHAN_T ( b_chan_t,                 id_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t,         id_t,         user_t);
+  `AXI_TYPEDEF_R_CHAN_T ( r_chan_t,         data_t, id_t,         user_t);
+
+  // Demultiplex between supported and unsupported transactions.
+  req_t   act_req,  unsupported_req;
+  resp_t  act_resp, unsupported_resp;
+  logic   sel_aw_unsupported, sel_ar_unsupported;
+  localparam int unsigned MaxTxns = (MaxReadTxns > MaxWriteTxns) ? MaxReadTxns : MaxWriteTxns;
+  axi_demux #(
+    .AxiIdWidth   ( IdWidth   ),
+    .aw_chan_t    ( aw_chan_t ),
+    .w_chan_t     ( w_chan_t  ),
+    .b_chan_t     ( b_chan_t  ),
+    .ar_chan_t    ( ar_chan_t ),
+    .r_chan_t     ( r_chan_t  ),
+    .req_t        ( req_t     ),
+    .resp_t       ( resp_t    ),
+    .NoMstPorts   ( 2         ),
+    .MaxTrans     ( MaxTxns   ),
+    .AxiLookBits  ( IdWidth   ),
+    .FallThrough  ( 1'b1      ),
+    .SpillAw      ( 1'b0      ),
+    .SpillW       ( 1'b0      ),
+    .SpillB       ( 1'b0      ),
+    .SpillAr      ( 1'b0      ),
+    .SpillR       ( 1'b0      )
+  ) i_demux_supported_vs_unsupported (
+    .clk_i,
+    .rst_ni,
+    .test_i           ( 1'b0                          ),
+    .slv_req_i,
+    .slv_aw_select_i  ( sel_aw_unsupported            ),
+    .slv_ar_select_i  ( sel_ar_unsupported            ),
+    .slv_resp_o,
+    .mst_reqs_o       ( {unsupported_req,  act_req}   ),
+    .mst_resps_i      ( {unsupported_resp, act_resp}  )
+  );
+  // Define supported transactions.
+  function bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
+      axi_pkg::len_t len);
+    // Single-beat transactions do not need splitting, so all are supported.
+    if (len == '0) return 1'b1;
+    // Wrapping bursts are currently not supported.
+    if (burst == axi_pkg::BURST_WRAP) return 1'b0;
+    // ATOPs are not supported.
+    if (atop != '0) return 1'b0;
+    // The AXI Spec (A3.4.1) only allows splitting non-modifiable transactions ..
+    if (!(|(cache & axi_pkg::CACHE_MODIFIABLE))) begin
+      // .. if they are INCR bursts and longer than 16 beats.
+      return (burst == axi_pkg::BURST_INCR) & (len > 16);
+    end
+    // All other transactions are supported.
+    return 1'b1;
+  endfunction
+  assign sel_aw_unsupported = ~txn_supported(slv_req_i.aw.atop, slv_req_i.aw.burst,
+                                              slv_req_i.aw.cache, slv_req_i.aw.len);
+  assign sel_ar_unsupported = ~txn_supported('0, slv_req_i.ar.burst,
+                                              slv_req_i.ar.cache, slv_req_i.ar.len);
+  // Respond to unsupported transactions with slave errors.
+  axi_err_slv #(
+    .AxiIdWidth ( IdWidth               ),
+    .req_t      ( req_t                 ),
+    .resp_t     ( resp_t                ),
+    .Resp       ( axi_pkg::RESP_SLVERR  ),
+    .ATOPs      ( 1'b0                  ),  // The burst splitter does not support ATOPs.
+    .MaxTrans   ( 1                     )   // Splitting bursts implies a low-performance bus.
+  ) i_err_slv (
+    .clk_i,
+    .rst_ni,
+    .test_i     ( 1'b0              ),
+    .slv_req_i  ( unsupported_req   ),
+    .slv_resp_o ( unsupported_resp  )
+  );
 
   // --------------------------------------------------
   // AW Channel
@@ -63,9 +141,9 @@ module axi_burst_splitter #(
   ) i_axi_burst_splitter_aw_chan (
     .clk_i,
     .rst_ni,
-    .ax_i           ( slv_req_i.aw         ),
-    .ax_valid_i     ( slv_req_i.aw_valid   ),
-    .ax_ready_o     ( slv_resp_o.aw_ready  ),
+    .ax_i           ( act_req.aw           ),
+    .ax_valid_i     ( act_req.aw_valid     ),
+    .ax_ready_o     ( act_resp.aw_ready    ),
     .ax_o           ( mst_req_o.aw         ),
     .ax_valid_o     ( mst_req_o.aw_valid   ),
     .ax_ready_i     ( mst_resp_i.aw_ready  ),
@@ -83,11 +161,11 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // Feed through, except `last`, which is always set.
   always_comb begin
-    mst_req_o.w        = slv_req_i.w;
+    mst_req_o.w        = act_req.w;
     mst_req_o.w.last   = 1'b1;        // overwrite last flag
   end
-  assign mst_req_o.w_valid  = slv_req_i.w_valid;
-  assign slv_resp_o.w_ready = mst_resp_i.w_ready;
+  assign mst_req_o.w_valid  = act_req.w_valid;
+  assign act_resp.w_ready   = mst_resp_i.w_ready;
 
   // --------------------------------------------------
   // B Channel
@@ -96,13 +174,13 @@ module axi_burst_splitter #(
   enum logic {BReady, BWait} b_state_d, b_state_q;
   logic b_err_d, b_err_q;
   always_comb begin
-    mst_req_o.b_ready  = 1'b0;
-    slv_resp_o.b       = '0;
-    slv_resp_o.b_valid = 1'b0;
-    w_cnt_dec          = 1'b0;
-    w_cnt_req          = 1'b0;
-    b_err_d            = b_err_q;
-    b_state_d          = b_state_q;
+    mst_req_o.b_ready = 1'b0;
+    act_resp.b        = '0;
+    act_resp.b_valid  = 1'b0;
+    w_cnt_dec         = 1'b0;
+    w_cnt_req         = 1'b0;
+    b_err_d           = b_err_q;
+    b_state_d         = b_state_q;
 
     unique case (b_state_q)
       BReady: begin
@@ -110,13 +188,13 @@ module axi_burst_splitter #(
           w_cnt_req = 1'b1;
           if (w_cnt_gnt) begin
             if (w_cnt_len == 8'd0) begin
-              slv_resp_o.b = mst_resp_i.b;
+              act_resp.b = mst_resp_i.b;
               if (w_cnt_err) begin
-                slv_resp_o.b.resp = axi_pkg::RESP_SLVERR;
+                act_resp.b.resp = axi_pkg::RESP_SLVERR;
               end
-              slv_resp_o.b_valid = 1'b1;
-              w_cnt_dec          = 1'b1;
-              if (slv_req_i.b_ready) begin
+              act_resp.b_valid  = 1'b1;
+              w_cnt_dec         = 1'b1;
+              if (act_req.b_ready) begin
                 mst_req_o.b_ready = 1'b1;
               end else begin
                 b_state_d = BWait;
@@ -130,12 +208,12 @@ module axi_burst_splitter #(
         end
       end
       BWait: begin
-        slv_resp_o.b = mst_resp_i.b;
+        act_resp.b = mst_resp_i.b;
         if (b_err_q) begin
-          slv_resp_o.b.resp = axi_pkg::RESP_SLVERR;
+          act_resp.b.resp = axi_pkg::RESP_SLVERR;
         end
-        slv_resp_o.b_valid  = 1'b1;
-        if (mst_resp_i.b_valid && slv_req_i.b_ready) begin
+        act_resp.b_valid  = 1'b1;
+        if (mst_resp_i.b_valid && act_req.b_ready) begin
           mst_req_o.b_ready = 1'b1;
           b_state_d         = BReady;
         end
@@ -156,9 +234,9 @@ module axi_burst_splitter #(
   ) i_axi_burst_splitter_ar_chan (
     .clk_i,
     .rst_ni,
-    .ax_i           ( slv_req_i.ar        ),
-    .ax_valid_i     ( slv_req_i.ar_valid  ),
-    .ax_ready_o     ( slv_resp_o.ar_ready ),
+    .ax_i           ( act_req.ar          ),
+    .ax_valid_i     ( act_req.ar_valid    ),
+    .ax_ready_o     ( act_resp.ar_ready   ),
     .ax_o           ( mst_req_o.ar        ),
     .ax_valid_o     ( mst_req_o.ar_valid  ),
     .ax_ready_i     ( mst_resp_i.ar_ready ),
@@ -178,14 +256,14 @@ module axi_burst_splitter #(
   logic r_last_d, r_last_q;
   enum logic {RFeedthrough, RWait} r_state_d, r_state_q;
   always_comb begin
-    r_cnt_dec          = 1'b0;
-    r_cnt_req          = 1'b0;
-    r_last_d           = r_last_q;
-    r_state_d          = r_state_q;
-    mst_req_o.r_ready  = 1'b0;
-    slv_resp_o.r       = mst_resp_i.r;
-    slv_resp_o.r.last  = 1'b0;
-    slv_resp_o.r_valid = 1'b0;
+    r_cnt_dec         = 1'b0;
+    r_cnt_req         = 1'b0;
+    r_last_d          = r_last_q;
+    r_state_d         = r_state_q;
+    mst_req_o.r_ready = 1'b0;
+    act_resp.r        = mst_resp_i.r;
+    act_resp.r.last   = 1'b0;
+    act_resp.r_valid  = 1'b0;
 
     unique case (r_state_q)
       RFeedthrough: begin
@@ -195,12 +273,12 @@ module axi_burst_splitter #(
           r_cnt_req = 1'b1;
           if (r_cnt_gnt) begin
             r_last_d = (r_cnt_len == 8'd0);
-            slv_resp_o.r.last  = r_last_d;
+            act_resp.r.last   = r_last_d;
             // Decrement the counter.
-            r_cnt_dec          = 1'b1;
+            r_cnt_dec         = 1'b1;
             // Try to forward the beat upstream.
-            slv_resp_o.r_valid = 1'b1;
-            if (slv_req_i.r_ready) begin
+            act_resp.r_valid  = 1'b1;
+            if (act_req.r_ready) begin
               // Acknowledge downstream.
               mst_req_o.r_ready = 1'b1;
             end else begin
@@ -211,9 +289,9 @@ module axi_burst_splitter #(
         end
       end
       RWait: begin
-        slv_resp_o.r.last  = r_last_q;
-        slv_resp_o.r_valid = mst_resp_i.r_valid;
-        if (mst_resp_i.r_valid && slv_req_i.r_ready) begin
+        act_resp.r.last   = r_last_q;
+        act_resp.r_valid  = mst_resp_i.r_valid;
+        if (mst_resp_i.r_valid && act_req.r_ready) begin
           mst_req_o.r_ready = 1'b1;
           r_state_d         = RFeedthrough;
         end
@@ -236,16 +314,16 @@ module axi_burst_splitter #(
   // pragma translate_off
   default disable iff (!rst_ni);
   // Inputs
-  assume property (@(posedge clk_i) slv_req_i.aw_valid |-> slv_req_i.aw.burst != axi_pkg::BURST_WRAP)
-    else $fatal(1, "Wrapping burst on AW received, which this module does not support!");
-  assume property (@(posedge clk_i) slv_req_i.ar_valid |-> slv_req_i.ar.burst != axi_pkg::BURST_WRAP)
-    else $fatal(1, "Wrapping burst on AR received, which this module does not support!");
-  assume property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready |->
-      |(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE) || slv_req_i.aw.len > 15)
-    else $warning("Splitting a non-modifiable AW burst with 16 beats or less, which violates the AXI spec.");
-  assume property (@(posedge clk_i) slv_req_i.ar_valid && slv_resp_o.ar_ready |->
-      |(slv_req_i.ar.cache & axi_pkg::CACHE_MODIFIABLE) || slv_req_i.ar.len > 15)
-    else $warning("Splitting a non-modifiable AR burst with 16 beats or less, which violates the AXI spec.");
+  assume property (@(posedge clk_i) slv_req_i.aw_valid |->
+      txn_supported(slv_req_i.aw.atop, slv_req_i.aw.burst, slv_req_i.aw.cache, slv_req_i.aw.len)
+    ) else $warning("Unsupported AW transaction received, returning slave error!");
+  assume property (@(posedge clk_i) slv_req_i.ar_valid |->
+      txn_supported('0, slv_req_i.ar.burst, slv_req_i.ar.cache, slv_req_i.ar.len)
+    ) else $warning("Unsupported AR transaction received, returning slave error!");
+  assume property (@(posedge clk_i) slv_req_i.aw_valid |->
+      slv_req_i.aw.atop == '0 || slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_ATOMICSTORE
+    ) else $fatal(1, "Unsupported ATOP that gives rise to a R response received,\
+                      cannot respond in protocol-compliant manner!");
   // Outputs
   assert property (@(posedge clk_i) mst_req_o.aw_valid |-> mst_req_o.aw.len == '0)
     else $fatal(1, "AW burst longer than a single beat emitted!");
@@ -253,9 +331,6 @@ module axi_burst_splitter #(
     else $fatal(1, "AR burst longer than a single beat emitted!");
   // pragma translate_on
   `endif
-
-  // TODO: Add FORCE parameter to split non-modifiable bursts with 16 beats or less only when that
-  // parameter is set, to have a standard-compliant alternative?
 
 endmodule
 
