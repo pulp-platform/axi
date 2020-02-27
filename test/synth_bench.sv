@@ -35,8 +35,9 @@ module synth_bench (
 
   // AXI_ID_WIDTH and AXI_USER_WIDTH
   for (genvar i = 0; i < 3; i++) begin
-    localparam int IUW = AXI_ID_USER_WIDTH[i];
-    synth_slice #(.AW(32), .DW(32), .IW(IUW), .UW(IUW)) s(.*);
+    localparam int UW = AXI_ID_USER_WIDTH[i];
+    localparam int IW = (UW == 0) ? 1 : UW;
+    synth_slice #(.AW(32), .DW(32), .IW(IW), .UW(UW)) s(.*);
   end
 
   // ATOP Filter
