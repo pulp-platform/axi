@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.15.0 - 2020-02-28
+
+### Added
 - `axi_burst_splitter`: Split AXI4 bursts to single-beat transactions.
 
 ### Changed
