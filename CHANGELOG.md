@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_to_axi_lite`: Rework module to structs and add burst support.
 
 ### Fixed
+- `axi_demux`: The `case` statement controlling the counters had not been specified `unique` even
+  though it qualified for it.  This has been fixed.
 
 
 ## 0.14.0 - 2020-02-24
