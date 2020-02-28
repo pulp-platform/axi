@@ -437,11 +437,11 @@ module axi_lite_mux_intf #(
   `AXI_LITE_ASSIGN_TO_RESP   ( mst_resp, mst      );
 
   axi_lite_mux #(
-    .mst_aw_chan_t ( aw_chan_t     ), // AW Channel Type
+    .aw_chan_t     ( aw_chan_t     ), // AW Channel Type
     .w_chan_t      (  w_chan_t     ), //  W Channel Type
-    .mst_b_chan_t  (  b_chan_t     ), //  B Channel Type
-    .mst_ar_chan_t ( ar_chan_t     ), // AR Channel Type
-    .mst_r_chan_t  (  r_chan_t     ), //  R Channel Type
+    .b_chan_t      (  b_chan_t     ), //  B Channel Type
+    .ar_chan_t     ( ar_chan_t     ), // AR Channel Type
+    .r_chan_t      (  r_chan_t     ), //  R Channel Type
     .NoSlvPorts    ( NoSlvPorts    ), // Number of slave ports
     .MaxTrans      ( MaxTrans      ),
     .FallThrough   ( FallThrough   ),
