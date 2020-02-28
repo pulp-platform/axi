@@ -2,15 +2,6 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /tb_axi_to_axi_lite/i_dut/clk_i
 add wave -noupdate /tb_axi_to_axi_lite/i_dut/rst_ni
-add wave -noupdate /tb_axi_to_axi_lite/i_dut/rd_full
-add wave -noupdate /tb_axi_to_axi_lite/i_dut/wr_full
-add wave -noupdate -expand -group {FIFO (rd)} /tb_axi_to_axi_lite/i_dut/i_fifo_rd/push_i
-add wave -noupdate -expand -group {FIFO (rd)} /tb_axi_to_axi_lite/i_dut/i_fifo_rd/pop_i
-add wave -noupdate -expand -group {FIFO (wr)} /tb_axi_to_axi_lite/i_dut/i_fifo_wr/push_i
-add wave -noupdate -expand -group {FIFO (wr)} /tb_axi_to_axi_lite/i_dut/i_fifo_wr/pop_i
-add wave -noupdate -expand /tb_axi_to_axi_lite/i_dut/meta_rd
-add wave -noupdate -expand /tb_axi_to_axi_lite/i_dut/meta_wr
-add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/clk_i
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_id
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_addr
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/aw_len
@@ -56,7 +47,6 @@ add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/r_last
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/r_user
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/r_valid
 add wave -noupdate -expand -group {in (AXI4)} /tb_axi_to_axi_lite/axi/r_ready
-add wave -noupdate -expand -group {out (AXI4-Lite)} /tb_axi_to_axi_lite/axi_lite/clk_i
 add wave -noupdate -expand -group {out (AXI4-Lite)} /tb_axi_to_axi_lite/axi_lite/aw_addr
 add wave -noupdate -expand -group {out (AXI4-Lite)} /tb_axi_to_axi_lite/axi_lite/aw_valid
 add wave -noupdate -expand -group {out (AXI4-Lite)} /tb_axi_to_axi_lite/axi_lite/aw_ready

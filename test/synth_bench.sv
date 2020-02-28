@@ -35,8 +35,9 @@ module synth_bench (
 
   // AXI_ID_WIDTH and AXI_USER_WIDTH
   for (genvar i = 0; i < 3; i++) begin
-    localparam int IUW = AXI_ID_USER_WIDTH[i];
-    synth_slice #(.AW(32), .DW(32), .IW(IUW), .UW(IUW)) s(.*);
+    localparam int UW = AXI_ID_USER_WIDTH[i];
+    localparam int IW = (UW == 0) ? 1 : UW;
+    synth_slice #(.AW(32), .DW(32), .IW(IW), .UW(UW)) s(.*);
   end
 
   // ATOP Filter
@@ -124,12 +125,20 @@ module synth_slice #(
     .AXI_DATA_WIDTH(DW)
   ) a_lite(), b_lite();
 
-  axi_to_axi_lite_intf a (
+  axi_to_axi_lite_intf #(
+    .AXI_ID_WIDTH       (IW),
+    .AXI_ADDR_WIDTH     (AW),
+    .AXI_DATA_WIDTH     (DW),
+    .AXI_USER_WIDTH     (UW),
+    .AXI_MAX_WRITE_TXNS (32'd10),
+    .AXI_MAX_READ_TXNS  (32'd10),
+    .FALL_THROUGH       (1'b0)
+  ) a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
-    .in         (a_full.Slave),
-    .out        (a_lite.Master)
+    .slv        (a_full.Slave),
+    .mst        (a_lite.Master)
   );
   axi_lite_to_axi_intf b (
     .in   (b_lite.Slave),
