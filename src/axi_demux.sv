@@ -578,7 +578,7 @@ module axi_demux_id_counters #(
     logic cnt_en, cnt_down, overflow;
     cnt_t cnt_delta, in_flight;
     always_comb begin
-      case ({push_en[i], inject_en[i], pop_en[i]})
+      unique case ({push_en[i], inject_en[i], pop_en[i]})
         3'b001  : begin // pop_i = -1
           cnt_en    = 1'b1;
           cnt_down  = 1'b1;
