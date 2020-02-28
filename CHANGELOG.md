@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - `axi_demux`: The `case` statement controlling the counters had not been specified `unique` even
   though it qualified for it.  This has been fixed.
+- `axi_lite_mux_intf`: Fix signal names in internal assignments, names of parameters of
+  `axi_lite_mux` instance, and typos in assertion messages.
 
 
 ## 0.14.0 - 2020-02-24
