@@ -214,7 +214,9 @@ module axi_dw_downsizer #(
     .req_t      (axi_mst_req_t ),
     .resp_t     (axi_mst_resp_t),
     .NoMstPorts (2             ),
-    .MaxTrans   (AxiMaxReads   )
+    .MaxTrans   (AxiMaxReads   ),
+    .SpillAw    (1'b1          ),
+    .SpillAr    (1'b1          )
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),
@@ -243,7 +245,7 @@ module axi_dw_downsizer #(
   tran_id_t                   idx_downsizer;
 
   if (AxiMaxReads > 1) begin: gen_read_lzc
-    // Find an idle downsizer to handle this transactoin
+    // Find an idle downsizer to handle this transaction
     tran_id_t idx_idle_downsizer;
     lzc #(
       .WIDTH(AxiMaxReads)

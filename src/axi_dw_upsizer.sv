@@ -208,7 +208,9 @@ module axi_dw_upsizer #(
     .req_t      (axi_mst_req_t ),
     .resp_t     (axi_mst_resp_t),
     .NoMstPorts (2             ),
-    .MaxTrans   (AxiMaxReads   )
+    .MaxTrans   (AxiMaxReads   ),
+    .SpillAr    (1'b1          ),
+    .SpillAw    (1'b1          )
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),
@@ -236,7 +238,7 @@ module axi_dw_upsizer #(
   tran_id_t                   idx_upsizer ;
 
   if (AxiMaxReads > 1) begin: gen_read_lzc
-    // Find an idle downsizer to handle this transactoin
+    // Find an idle upsizer to handle this transaction
     tran_id_t idx_idle_upsizer;
     lzc #(
       .WIDTH(AxiMaxReads)
@@ -246,7 +248,7 @@ module axi_dw_upsizer #(
       .empty_o(/* Unused */     )
     );
 
-    // Is there already another downsizer handling a transaction with the same id
+    // Is there already another upsizer handling a transaction with the same id
     logic [AxiMaxReads-1:0] id_clash_upsizer;
     tran_id_t idx_id_clash_upsizer          ;
     for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
@@ -261,7 +263,7 @@ module axi_dw_upsizer #(
       .empty_o(/* Unused */        )
     );
 
-    // Choose an idle downsizer, unless there is an id clash
+    // Choose an idle upsizer, unless there is an id clash
     assign idx_upsizer = (|id_clash_upsizer) ? idx_id_clash_upsizer : idx_idle_upsizer;
   end else begin: gen_no_read_lzc
     assign idx_upsizer = 1'b0;
