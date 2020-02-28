@@ -429,8 +429,8 @@ module axi_lite_mux_intf #(
   resp_t                     mst_resp;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
-    `AXI_LITE_ASSIGN_TO_REQ    ( slv_req[i],  slv[i]      );
-    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resp[i] );
+    `AXI_LITE_ASSIGN_TO_REQ    ( slv_reqs[i], slv[i]       );
+    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resps[i] );
   end
 
   `AXI_LITE_ASSIGN_FROM_REQ  ( mst     , mst_req  );
