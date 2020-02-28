@@ -59,7 +59,11 @@ module axi_dw_downsizer #(
   localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
   localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
 
+  localparam AxiMstMaxSize = $clog2(AxiMstStrbWidth);
+  localparam AxiSlvMaxSize = $clog2(AxiSlvStrbWidth);
+
   localparam MstByteMask = AxiMstStrbWidth - 1;
+  localparam SlvByteMask = AxiSlvStrbWidth - 1;
 
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
@@ -404,7 +408,7 @@ module axi_dw_downsizer #(
                   r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
 
                   if (conv_ratio != 1) begin
-                    r_req_d.ar.size = $clog2(AxiMstStrbWidth);
+                    r_req_d.ar.size = AxiMstMaxSize;
 
                     if (r_req_d.burst_len <= 255) begin
                       r_state_d      = R_INCR_DOWNSIZE  ;
@@ -699,7 +703,7 @@ module axi_dw_downsizer #(
               w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
 
               if (conv_ratio != 1) begin
-                w_req_d.aw.size = $clog2(AxiMstStrbWidth);
+                w_req_d.aw.size = AxiMstMaxSize;
 
                 if (w_req_d.burst_len <= 255) begin
                   w_state_d      = W_INCR_DOWNSIZE  ;

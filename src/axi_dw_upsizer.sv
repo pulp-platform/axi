@@ -59,6 +59,9 @@ module axi_dw_upsizer #(
   localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
   localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
 
+  localparam AxiMstMaxSize = $clog2(AxiMstStrbWidth);
+  localparam AxiSlvMaxSize = $clog2(AxiSlvStrbWidth);
+
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
@@ -390,14 +393,12 @@ module axi_dw_upsizer #(
               case (r_req_d.ar.burst)
                 BURST_INCR : begin
                   // Evaluate output burst length
-                  automatic addr_t size_mask = (1 << r_req_d.ar.size) - 1;
+                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
+                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
 
-                  automatic addr_t addr_start = aligned_addr(r_req_d.ar.addr, $clog2(AxiMstStrbWidth))                                                     ;
-                  automatic addr_t addr_end   = aligned_addr((r_req_d.ar.addr & ~size_mask) + (r_req_d.ar.len << r_req_d.ar.size), $clog2(AxiMstStrbWidth));
-
-                  r_req_d.ar.len  = (addr_end - addr_start) >> $clog2(AxiMstStrbWidth);
-                  r_req_d.ar.size = $clog2(AxiMstStrbWidth)                           ;
-                  r_state_d       = R_INCR_UPSIZE                                     ;
+                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
+                  r_req_d.ar.size = AxiMstMaxSize                           ;
+                  r_state_d       = R_INCR_UPSIZE                           ;
                 end
               endcase
 
@@ -440,7 +441,7 @@ module axi_dw_upsizer #(
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_UPSIZE :
-                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, $clog2(AxiMstStrbWidth)) != aligned_addr(r_req_q.ar.addr, $clog2(AxiMstStrbWidth))))
+                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
 
@@ -517,10 +518,6 @@ module axi_dw_upsizer #(
     end
 
     case (w_state_q)
-      W_IDLE: begin
-
-      end
-
       W_PASSTHROUGH, W_INCR_UPSIZE: begin
         // Got a grant on the W channel
         if (mst_req.w_valid && mst_resp.w_ready) begin
@@ -559,7 +556,7 @@ module axi_dw_upsizer #(
 
               W_INCR_UPSIZE:
                 // Forward when the burst is finished, or after filling up a word
-                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, $clog2(AxiMstStrbWidth) != aligned_addr(w_req_q.aw.addr, $clog2(AxiMstStrbWidth)))))
+                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
                   w_req_d.w_valid = 1'b1;
             endcase
           end
@@ -605,14 +602,12 @@ module axi_dw_upsizer #(
           case (slv_req_i.aw.burst)
             BURST_INCR: begin
               // Evaluate output burst length
-              automatic addr_t size_mask = (1 << slv_req_i.aw.size) - 1;
+              automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
+              automatic addr_t end_addr   = aligned_addr(aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
 
-              automatic addr_t addr_start = aligned_addr(slv_req_i.aw.addr, $clog2(AxiMstStrbWidth))                                                         ;
-              automatic addr_t addr_end   = aligned_addr((slv_req_i.aw.addr & ~size_mask) + (slv_req_i.aw.len << slv_req_i.aw.size), $clog2(AxiMstStrbWidth));
-
-              w_req_d.aw.len  = (addr_end - addr_start) >> $clog2(AxiMstStrbWidth);
-              w_req_d.aw.size = $clog2(AxiMstStrbWidth)                           ;
-              w_state_d       = W_INCR_UPSIZE                                     ;
+              w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstMaxSize;
+              w_req_d.aw.size = AxiMstMaxSize                           ;
+              w_state_d       = W_INCR_UPSIZE                           ;
             end
           endcase
 
