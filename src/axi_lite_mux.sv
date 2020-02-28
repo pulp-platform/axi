@@ -429,19 +429,19 @@ module axi_lite_mux_intf #(
   resp_t                     mst_resp;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
-    `AXI_LITE_ASSIGN_TO_REQ    ( slv_req[i],  slv[i]      );
-    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resp[i] );
+    `AXI_LITE_ASSIGN_TO_REQ    ( slv_reqs[i],  slv[i]      );
+    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resps[i] );
   end
 
   `AXI_LITE_ASSIGN_FROM_REQ  ( mst     , mst_req  );
   `AXI_LITE_ASSIGN_TO_RESP   ( mst_resp, mst      );
 
   axi_lite_mux #(
-    .mst_aw_chan_t ( aw_chan_t     ), // AW Channel Type
+    .aw_chan_t     ( aw_chan_t     ), // AW Channel Type
     .w_chan_t      (  w_chan_t     ), //  W Channel Type
-    .mst_b_chan_t  (  b_chan_t     ), //  B Channel Type
-    .mst_ar_chan_t ( ar_chan_t     ), // AR Channel Type
-    .mst_r_chan_t  (  r_chan_t     ), //  R Channel Type
+    .b_chan_t      (  b_chan_t     ), //  B Channel Type
+    .ar_chan_t     ( ar_chan_t     ), // AR Channel Type
+    .r_chan_t      (  r_chan_t     ), //  R Channel Type
     .NoSlvPorts    ( NoSlvPorts    ), // Number of slave ports
     .MaxTrans      ( MaxTrans      ),
     .FallThrough   ( FallThrough   ),
@@ -463,8 +463,8 @@ module axi_lite_mux_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      AddrWidth: assert (AxiAddrWidth > 0) else $fatal("Axi Parmeter has to be > 0!");
-      DataWidth: assert (AxiDataWidth > 0) else $fatal("Axi Parmeter has to be > 0!");
+      AddrWidth: assert (AxiAddrWidth > 0) else $fatal("Axi Parameter has to be > 0!");
+      DataWidth: assert (AxiDataWidth > 0) else $fatal("Axi Parameter has to be > 0!");
     end
   `endif
   // pragma translate_on
