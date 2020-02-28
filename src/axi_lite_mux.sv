@@ -463,8 +463,8 @@ module axi_lite_mux_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      AddrWidth: assert (AxiAddrWidth > 0) else $fatal("Axi Parmeter has to be > 0!");
-      DataWidth: assert (AxiDataWidth > 0) else $fatal("Axi Parmeter has to be > 0!");
+      AddrWidth: assert (AxiAddrWidth > 0) else $fatal("Axi Parameter has to be > 0!");
+      DataWidth: assert (AxiDataWidth > 0) else $fatal("Axi Parameter has to be > 0!");
     end
   `endif
   // pragma translate_on
