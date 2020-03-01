@@ -388,7 +388,8 @@ module axi_dw_downsizer #(
               r_req_d.orig_ar_size = slv_req_i.aw.size  ;
             end
 
-            if (|(r_req_d.ar.cache & CACHE_MODIFIABLE))
+            // Modifiable transaction
+            if (|(r_req_d.ar.cache & CACHE_MODIFIABLE)) begin
               case (r_req_d.ar.burst)
                 BURST_INCR : begin
                   // Evaluate output burst length
@@ -400,8 +401,16 @@ module axi_dw_downsizer #(
                   r_state_d       = R_INCR_DOWNSIZE                         ;
                 end
               endcase
+            // Non-modifiable transaction
+            end else begin
+              // Incoming transaction is wider than the master bus
+              if (r_req_d.ar.size > AxiMstMaxSize) begin
+                r_req_d.ar_throw_error = 1'b1         ;
+                r_state_d              = R_PASSTHROUGH;
+              end
+            end
 
-            // TODO: The DW converter does not support these.
+            // The DW converter does not support this kind of burst.
             if (r_req_d.ar.burst inside {BURST_WRAP, BURST_FIXED}) begin
               r_req_d.ar_throw_error = 1'b1         ;
               r_state_d              = R_PASSTHROUGH;
@@ -597,7 +606,8 @@ module axi_dw_downsizer #(
         w_req_d.burst_len    = slv_req_i.aw.len ;
         w_req_d.orig_aw_size = slv_req_i.aw.size;
 
-        if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE))
+        // Modifiable transaction
+        if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE)) begin
           case (slv_req_i.aw.burst)
             BURST_INCR: begin
               // Evaluate output burst length
@@ -609,8 +619,16 @@ module axi_dw_downsizer #(
               w_state_d       = W_INCR_DOWNSIZE                         ;
             end
           endcase
+        // Non-modifiable transaction.
+        end else begin
+          // Incoming transaction is wider than the master bus.
+          if (slv_req_i.aw.size > AxiMstMaxSize) begin
+            w_state_d              = W_PASSTHROUGH;
+            w_req_d.aw_throw_error = 1'b1         ;
+          end
+        end
 
-        // TODO: The DW converter does not support these.
+        // The DW converter does not support this kind of burst.
         if (w_req_d.aw.burst inside {BURST_WRAP, BURST_FIXED}) begin
           w_state_d              = W_PASSTHROUGH;
           w_req_d.aw_throw_error = 1'b1         ;
