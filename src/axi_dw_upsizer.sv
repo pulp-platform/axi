@@ -420,7 +420,7 @@ module axi_dw_upsizer #(
                 end
               endcase
 
-            // TODO: The DW converter does not support this kind of request.
+            // The DW converter does not support this kind of burst.
             if (r_req_d.ar.burst inside {BURST_WRAP, BURST_FIXED}) begin
               r_req_d.ar_throw_error = 1'b1         ;
               r_state_d              = R_PASSTHROUGH;
@@ -715,7 +715,7 @@ module axi_dw_upsizer #(
             end
           endcase
 
-        // TODO: The DW converter does not support these.
+        // The DW converter does not support this kind of burst.
         if (w_req_d.aw.burst inside {BURST_WRAP, BURST_FIXED}) begin
           w_state_d              = W_PASSTHROUGH;
           w_req_d.aw_throw_error = 1'b1         ;
