@@ -46,7 +46,7 @@ module axi_dw_converter #(
     assign slv_resp_o = mst_resp_i;
   end : gen_no_dw_conversion
 
-  if (AxiSlvDataWidth < AxiMstDataWidth) begin: gen_dw_upsize
+  if (AxiSlvDataWidth > AxiMstDataWidth) begin: gen_dw_upsize
     axi_dw_upsizer #(
       .AxiMaxReads    (AxiMaxReads    ),
       .AxiMstDataWidth(AxiMstDataWidth),
@@ -76,7 +76,7 @@ module axi_dw_converter #(
     );
   end : gen_dw_upsize
 
-  if (AxiSlvDataWidth > AxiMstDataWidth) begin: gen_dw_downsize
+  if (AxiSlvDataWidth < AxiMstDataWidth) begin: gen_dw_downsize
     axi_dw_downsizer #(
       .AxiMaxReads    (AxiMaxReads    ),
       .AxiMstDataWidth(AxiMstDataWidth),

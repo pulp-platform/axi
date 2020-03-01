@@ -97,8 +97,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `axi_burst_splitter`: Split AXI4 bursts to single-beat transactions.
 - `axi_dw_converter`: A data width converter between AXI interfaces of any data width.
-- `axi_dw_downsizer`: A data width converter between a narrow AXI master and a wider AXI slave.
-- `axi_dw_upsizer`: A data width converter between a wide AXI master and a narrower AXI slave.
+- `axi_dw_downsizer`: A data width converter between a wide AXI slave and a narrower AXI master.
+- `axi_dw_upsizer`: A data width converter between a narrow AXI slave and a wider AXI master.
 
 ### Changed
 - `axi_lite_to_apb`: The `psel` field of the `apb_req_t` struct is now a single bit.  That is, every
