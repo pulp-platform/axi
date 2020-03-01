@@ -395,26 +395,30 @@ module axi_dw_upsizer #(
               r_req_d.orig_ar_size = slv_req_i.aw.size  ;
             end
 
+            // Modifiable transaction
             if (|(r_req_d.ar.cache & CACHE_MODIFIABLE))
               case (r_req_d.ar.burst)
                 BURST_INCR : begin
-                  // Evaluate upsize ratio
-                  automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                      ;
-                  automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
+                  // No need to upsize single-beat transactions.
+                  if (r_req_d.ar.len != '0) begin
+                    // Evaluate upsize ratio
+                    automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                      ;
+                    automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
 
-                  // Evaluate output burst length
-                  automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-                  r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
+                    // Evaluate output burst length
+                    automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
+                    r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
 
-                  if (conv_ratio != 1) begin
-                    r_req_d.ar.size = AxiMstMaxSize;
+                    if (conv_ratio != 1) begin
+                      r_req_d.ar.size = AxiMstMaxSize;
 
-                    if (r_req_d.burst_len <= 255) begin
-                      r_state_d      = R_INCR_UPSIZE    ;
-                      r_req_d.ar.len = r_req_d.burst_len;
-                    end else begin
-                      r_state_d      = R_SPLIT_INCR_UPSIZE;
-                      r_req_d.ar.len = 255 - align_adj    ;
+                      if (r_req_d.burst_len <= 255) begin
+                        r_state_d      = R_INCR_UPSIZE    ;
+                        r_req_d.ar.len = r_req_d.burst_len;
+                      end else begin
+                        r_state_d      = R_SPLIT_INCR_UPSIZE;
+                        r_req_d.ar.len = 255 - align_adj    ;
+                      end
                     end
                   end
                 end
@@ -689,27 +693,30 @@ module axi_dw_upsizer #(
         w_req_d.burst_len    = slv_req_i.aw.len ;
         w_req_d.orig_aw_size = slv_req_i.aw.size;
 
-        // Do nothing
+        // Modifiable transaction
         if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE))
           case (slv_req_i.aw.burst)
             BURST_INCR: begin
-              // Evaluate upsize ratio
-              automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                      ;
-              automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
+              // No need to upsize single-beat transactions.
+              if (slv_req_i.aw.len != '0) begin
+                // Evaluate upsize ratio
+                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                      ;
+                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
 
-              // Evaluate output burst length
-              automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-              w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
+                // Evaluate output burst length
+                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
+                w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
 
-              if (conv_ratio != 1) begin
-                w_req_d.aw.size = AxiMstMaxSize;
+                if (conv_ratio != 1) begin
+                  w_req_d.aw.size = AxiMstMaxSize;
 
-                if (w_req_d.burst_len <= 255) begin
-                  w_state_d      = W_INCR_UPSIZE    ;
-                  w_req_d.aw.len = w_req_d.burst_len;
-                end else begin
-                  w_state_d      = W_SPLIT_INCR_UPSIZE;
-                  w_req_d.aw.len = 255 - align_adj    ;
+                  if (w_req_d.burst_len <= 255) begin
+                    w_state_d      = W_INCR_UPSIZE    ;
+                    w_req_d.aw.len = w_req_d.burst_len;
+                  end else begin
+                    w_state_d      = W_SPLIT_INCR_UPSIZE;
+                    w_req_d.aw.len = 255 - align_adj    ;
+                  end
                 end
               end
             end
