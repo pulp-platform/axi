@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_top_filter`: Connect W channel to the master port on non Atop AW requests (`aw_valid == 1`). Fix for when the slave wants AW and W valid before asserting its ready.
 
 
 ## 0.15.0 - 2020-02-28

@@ -49,7 +49,8 @@ module axi_atop_filter #(
   input  resp_t mst_resp_i
 );
 
-  typedef logic [$clog2(AxiMaxWriteTxns+1)-1:0] cnt_t;
+  localparam int unsigned CounterWidth = $clog2(AxiMaxWriteTxns+1);
+  typedef logic [CounterWidth:0] cnt_t;
   cnt_t   w_cnt_d, w_cnt_q;
 
   typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
@@ -98,10 +99,10 @@ module axi_atop_filter #(
           mst_req_o.aw_valid  = slv_req_i.aw_valid;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         end
-        // Feed W channel through if at least one AW request is outstanding.  This does not allow
-        // W beats before the corresponding AW because we need to know the `atop` of an AW to decide
-        // what to do with the W beats.
-        if (w_cnt_q > 0) begin
+        // Feed W channel through if at least one AW request is outstanding or a new non atop AW is
+        // initiated.
+        if (((w_cnt_q > 0) && !w_cnt_q[CounterWidth]) ||
+            (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE)) begin
           mst_req_o.w_valid  = slv_req_i.w_valid;
           slv_resp_o.w_ready = mst_resp_i.w_ready;
         end
