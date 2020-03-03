@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_top_filter`: The master interface of this module in one case depended on `aw_ready` before
+  applying `w_valid`, which is a violation of the AXI specification that can lead to deadlocks.
+  This issue has been fixed by removing that dependency.
 
 
 ## 0.15.0 - 2020-02-28
