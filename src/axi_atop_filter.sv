@@ -50,7 +50,7 @@ module axi_atop_filter #(
 );
 
   localparam int unsigned COUNTER_WIDTH = $clog2(AxiMaxWriteTxns+1);
-  typedef logic [COUNTER_WIDTH:0] cnt_t;
+  typedef logic [COUNTER_WIDTH:0] cnt_t; // one extra bit to capture over/underflow
   cnt_t   w_cnt_d, w_cnt_q;
 
   typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
