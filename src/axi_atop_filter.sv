@@ -264,7 +264,7 @@ module axi_atop_filter #(
     if (mst_req_o.aw_valid && mst_resp_i.aw_ready) begin
       w_cnt_d += 1;
     end
-    if (mst_req_o.w_valid && mst_resp_i.w_ready && mst_req_o.w.last) begin
+    if (mst_resp_i.b_valid && mst_req_o.b_ready) begin
       w_cnt_d -= 1;
     end
   end
