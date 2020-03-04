@@ -185,7 +185,8 @@ module tb_axi_atop_filter #(
     static r_beat_t   r_inject_queue[$],
                       r_xfer_queue[$];
     static w_cmd_t    w_cmd_queue[$];
-    static w_beat_t   w_xfer_queue[$];
+    static w_beat_t   w_act_queue[$],
+                      w_xfer_queue[$];
     forever begin
       @(posedge clk);
       #(TT);
@@ -317,14 +318,29 @@ module tb_axi_atop_filter #(
         assert (downstream.aw_user    == exp_beat.ax_user);
       end
       // Ensure downstream Ws match beats from transfer queue.
+      while (w_act_queue.size() > 0 && w_xfer_queue.size() > 0) begin
+        automatic w_beat_t exp_beat = w_xfer_queue.pop_front();
+        automatic w_beat_t act_beat = w_act_queue.pop_front();
+        assert (act_beat.w_data == exp_beat.w_data);
+        assert (act_beat.w_strb == exp_beat.w_strb);
+        assert (act_beat.w_last == exp_beat.w_last);
+        assert (act_beat.w_user == exp_beat.w_user);
+      end
       if (downstream.w_valid && downstream.w_ready) begin
-        automatic w_beat_t exp_beat;
-        assert (w_xfer_queue.size() > 0) else $fatal(1, "downstream.W: Unknown beat!");
-        exp_beat = w_xfer_queue.pop_front();
-        assert (downstream.w_data == exp_beat.w_data);
-        assert (downstream.w_strb == exp_beat.w_strb);
-        assert (downstream.w_last == exp_beat.w_last);
-        assert (downstream.w_user == exp_beat.w_user);
+        if (w_xfer_queue.size() > 0) begin
+          automatic w_beat_t exp_beat = w_xfer_queue.pop_front();
+          assert (downstream.w_data == exp_beat.w_data);
+          assert (downstream.w_strb == exp_beat.w_strb);
+          assert (downstream.w_last == exp_beat.w_last);
+          assert (downstream.w_user == exp_beat.w_user);
+        end else begin
+          automatic w_beat_t act_beat = new;
+          act_beat.w_data = downstream.w_data;
+          act_beat.w_strb = downstream.w_strb;
+          act_beat.w_last = downstream.w_last;
+          act_beat.w_user = downstream.w_user;
+          w_act_queue.push_back(act_beat);
+        end
       end
       // Ensure upstream Rs match beats from transfer or inject queue.
       if (upstream.r_valid && upstream.r_ready) begin
