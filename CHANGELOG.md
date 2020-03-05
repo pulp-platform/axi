@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   This issue has been fixed by removing that dependency.
 - `axi_lite_to_apb`: Fix the interface version (`axi_lite_to_apb_intf`) to match the changes from
   version `0.15.0`.
+- `axi_demux`: When `MaxTrans` was 1, the `IdCounterWidth` became 0.  This has been fixed.
 
 
 ## 0.15.0 - 2020-02-28
