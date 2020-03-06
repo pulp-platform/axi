@@ -1049,7 +1049,7 @@ package axi_test;
         automatic ax_beat_t aw_beat;
         automatic addr_t addr;
         static logic rand_success;
-        wait (aw_queue.size() > 0);
+        wait (aw_queue.size() > 0 || (aw_done && aw_queue.size() == 0));
         aw_beat = aw_queue.pop_front();
         addr = aw_beat.ax_addr;
         for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
