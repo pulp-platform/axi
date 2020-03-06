@@ -70,8 +70,16 @@ module axi_atop_filter #(
   } r_resp_cmd_t;
   r_resp_cmd_t  r_resp_cmd_push, r_resp_cmd_pop;
 
-  logic r_resp_cmd_push_valid,  r_resp_cmd_push_ready,
+  logic aw_without_complete_w_downstream,
+        complete_w_without_aw_downstream,
+        r_resp_cmd_push_valid,  r_resp_cmd_push_ready,
         r_resp_cmd_pop_valid,   r_resp_cmd_pop_ready;
+
+  // A AW without a complete W burst is in-flight downstream if the W counter is > 0 and not
+  // overflowed.
+  assign aw_without_complete_w_downstream = !w_cnt_q[COUNTER_WIDTH] && (w_cnt_q > 0);
+  // A complete W burst without AW is in-flight downstream if the W counter is -1.
+  assign complete_w_without_aw_downstream = &w_cnt_q;
 
   // Manage AW, W, and B channels.
   always_comb begin
@@ -95,16 +103,17 @@ module axi_atop_filter #(
     unique case (w_state_q)
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
-        if (w_cnt_q < AxiMaxWriteTxns) begin
+        if (complete_w_without_aw_downstream || (w_cnt_q < AxiMaxWriteTxns)) begin
           mst_req_o.aw_valid  = slv_req_i.aw_valid;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         end
         // Feed W channel through if ..
-        if (((w_cnt_q > 0) && !w_cnt_q[COUNTER_WIDTH]) || // at least one AW request is outstanding
-                                                          // and there is no counter underflow, OR
-            (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE))
-                                                          // a new non-ATOP AW is being applied
-        begin
+        if (aw_without_complete_w_downstream // .. downstream is missing W bursts ..
+            // .. or a new non-ATOP AW is being applied and there is not already a complete W burst
+            // downstream (to prevent underflows of w_cnt).
+            || ((slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE)
+                && !complete_w_without_aw_downstream)
+        ) begin
           mst_req_o.w_valid  = slv_req_i.w_valid;
           slv_resp_o.w_ready = mst_resp_i.w_ready;
         end
@@ -120,10 +129,10 @@ module axi_atop_filter #(
             // be emptied before going back to the `W_FEEDTHROUGH` state.
             r_resp_cmd_push_valid = 1'b1;
           end
-          // If there are outstanding W bursts, block the AW channel and let the W bursts complete.
-          if (w_cnt_q > 0) begin
+          // If downstream is missing W beats, block the AW channel and let the W bursts complete.
+          if (aw_without_complete_w_downstream) begin
             w_state_d = BLOCK_AW;
-          // If there are no outstanding W bursts, absorb the W beats for this atomic AW.
+          // If downstream is not missing W beats, absorb the W beats for this atomic AW.
           end else begin
             mst_req_o.w_valid  = 1'b0; // Do not let W beats pass to master port.
             slv_resp_o.w_ready = 1'b1; // Absorb W beats on slave port.
@@ -140,7 +149,7 @@ module axi_atop_filter #(
 
       BLOCK_AW: begin
         // Feed W channel through to let outstanding bursts complete.
-        if (w_cnt_q > 0) begin
+        if (aw_without_complete_w_downstream) begin
           mst_req_o.w_valid  = slv_req_i.w_valid;
           slv_resp_o.w_ready = mst_resp_i.w_ready;
         end else begin
