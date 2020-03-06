@@ -19,7 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_to_apb`: Fix the interface version (`axi_lite_to_apb_intf`) to match the changes from
   version `0.15.0`.
 - `axi_demux`: When `MaxTrans` was 1, the `IdCounterWidth` became 0.  This has been fixed.
-- `rand_axi_master` (in `axi_test`): Fix infinite wait in `send_ws` task.
+- `rand_axi_master` (in `axi_test`):
+  - Fix infinite wait in `send_ws` task.
+  - Decouple generation of AWs from sending them.  This allows to apply W beats before or
+    simultaneous with AW beats.
 
 
 ## 0.15.0 - 2020-02-28
