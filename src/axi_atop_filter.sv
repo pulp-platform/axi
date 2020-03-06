@@ -53,7 +53,9 @@ module axi_atop_filter #(
   typedef logic [COUNTER_WIDTH:0] cnt_t; // one extra bit to capture over/underflow
   cnt_t   w_cnt_d, w_cnt_q;
 
-  typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
+  typedef enum logic [2:0] {
+    W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, HOLD_B, INJECT_B, WAIT_R
+  } w_state_t;
   w_state_t   w_state_d, w_state_q;
 
   typedef enum logic [1:0] { R_FEEDTHROUGH, INJECT_R, R_HOLD } r_state_t;
@@ -138,7 +140,13 @@ module axi_atop_filter #(
             slv_resp_o.w_ready = 1'b1; // Absorb W beats on slave port.
             if (slv_req_i.w_valid && slv_req_i.w.last) begin
               // If the W beat is valid and the last, proceed by injecting the B response.
-              w_state_d = INJECT_B;
+              // However, if there is a non-handshaked B on our response port, we must let that
+              // complete first.
+              if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+                w_state_d = HOLD_B;
+              end else begin
+                w_state_d = INJECT_B;
+              end
             end else begin
               // Otherwise continue with absorbing W beats.
               w_state_d = ABSORB_W;
@@ -157,7 +165,11 @@ module axi_atop_filter #(
           slv_resp_o.w_ready = 1'b1;
           if (slv_req_i.w_valid && slv_req_i.w.last) begin
             // If the W beat is valid and the last, proceed by injecting the B response.
-            w_state_d = INJECT_B;
+            if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+              w_state_d = HOLD_B;
+            end else begin
+              w_state_d = INJECT_B;
+            end
           end else begin
             // Otherwise continue with absorbing W beats.
             w_state_d = ABSORB_W;
@@ -169,6 +181,17 @@ module axi_atop_filter #(
         // Absorb all W beats of the current burst.
         slv_resp_o.w_ready = 1'b1;
         if (slv_req_i.w_valid && slv_req_i.w.last) begin
+          if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+            w_state_d = HOLD_B;
+          end else begin
+            w_state_d = INJECT_B;
+          end
+        end
+      end
+
+      HOLD_B: begin
+        // Proceed with injection of B response upon handshake.
+        if (slv_resp_o.b_valid && slv_req_i.b_ready) begin
           w_state_d = INJECT_B;
         end
       end

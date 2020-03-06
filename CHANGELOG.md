@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - The master interface of this module in one case depended on `aw_ready` before applying
     `w_valid`, which is a violation of the AXI specification that can lead to deadlocks.  This issue
     has been fixed by removing that dependency.
-  - The slave interface of this module could illegally change the value of R beats between valid and
-    handshake.  This has been fixed.
+  - The slave interface of this module could illegally change the value of B and R beats between
+    valid and handshake.  This has been fixed.
 - `rand_axi_master` (in `axi_test`):
   - Fix infinite wait in `send_ws` task.
   - Decouple generation of AWs from sending them.  This allows to apply W beats before or
