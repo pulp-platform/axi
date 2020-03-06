@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Fix infinite wait in `send_ws` task.
   - Decouple generation of AWs from sending them.  This allows to apply W beats before or
     simultaneous with AW beats.
+- `rand_axi_slave` (in `axi_test`):
+  - Decouple receiving of Ws from receiving of AWs.  This allows to receive W beats independent of
+    AW beats.
 
 
 ## 0.15.0 - 2020-02-28
