@@ -215,8 +215,6 @@ module axi_atop_filter #(
   end
   assign mst_req_o.w = slv_req_i.w;
 
-
-
   // Manage R channel.
   always_comb begin
     // Defaults:
