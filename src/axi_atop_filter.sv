@@ -50,7 +50,7 @@ module axi_atop_filter #(
 );
 
   localparam int unsigned COUNTER_WIDTH = $clog2(AxiMaxWriteTxns+1);
-  typedef logic [COUNTER_WIDTH-1:0] cnt_t;
+  typedef logic [COUNTER_WIDTH:0] cnt_t; // one extra bit to capture over/underflow
   cnt_t   w_cnt_d, w_cnt_q;
 
   typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
@@ -99,10 +99,12 @@ module axi_atop_filter #(
           mst_req_o.aw_valid  = slv_req_i.aw_valid;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         end
-        // Feed W channel through if at least one AW request is outstanding or a new non-ATOP AW is
-        // being applied.
-        if ((w_cnt_q > 0) ||
-            (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE)) begin
+        // Feed W channel through if ..
+        if (((w_cnt_q > 0) && !w_cnt_q[COUNTER_WIDTH]) || // at least one AW request is outstanding
+                                                          // and there is no counter underflow, OR
+            (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE))
+                                                          // a new non-ATOP AW is being applied
+        begin
           mst_req_o.w_valid  = slv_req_i.w_valid;
           slv_resp_o.w_ready = mst_resp_i.w_ready;
         end
@@ -262,7 +264,7 @@ module axi_atop_filter #(
     if (mst_req_o.aw_valid && mst_resp_i.aw_ready) begin
       w_cnt_d += 1;
     end
-    if (mst_resp_i.b_valid && mst_req_o.b_ready) begin
+    if (mst_req_o.w_valid && mst_resp_i.w_ready && mst_req_o.w.last) begin
       w_cnt_d -= 1;
     end
   end
