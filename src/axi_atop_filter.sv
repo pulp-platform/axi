@@ -56,7 +56,7 @@ module axi_atop_filter #(
   typedef enum logic [2:0] { W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, INJECT_B, WAIT_R } w_state_t;
   w_state_t   w_state_d, w_state_q;
 
-  typedef enum logic { R_FEEDTHROUGH, INJECT_R } r_state_t;
+  typedef enum logic [1:0] { R_FEEDTHROUGH, INJECT_R, R_HOLD } r_state_t;
   r_state_t   r_state_d, r_state_q;
 
   typedef logic [AxiIdWidth-1:0] id_t;
@@ -233,7 +233,9 @@ module axi_atop_filter #(
 
     unique case (r_state_q)
       R_FEEDTHROUGH: begin
-        if (r_resp_cmd_pop_valid) begin
+        if (mst_resp_i.r_valid && !slv_req_i.r_ready) begin
+          r_state_d = R_HOLD;
+        end else if (r_resp_cmd_pop_valid) begin
           // Upon a command to inject an R response, immediately proceed with doing so because there
           // are no ordering requirements with other bursts that may be ongoing on the R channel at
           // this moment.
@@ -256,6 +258,12 @@ module axi_atop_filter #(
           end else begin
             r_beats_d -= 1;
           end
+        end
+      end
+
+      R_HOLD: begin
+        if (mst_resp_i.r_valid && slv_req_i.r_ready) begin
+          r_state_d = R_FEEDTHROUGH;
         end
       end
 
