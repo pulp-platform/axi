@@ -45,8 +45,6 @@ module axi_dw_upsizer #(
     input  axi_mst_resp_t mst_resp_i
   );
 
-  import axi_pkg::*;
-
   /*****************
    *  DEFINITIONS  *
    *****************/
@@ -237,20 +235,20 @@ module axi_dw_upsizer #(
    **********/
 
   typedef enum logic [1:0] {
-    R_IDLE       ,
+    R_IDLE,
     R_PASSTHROUGH,
     R_INCR_UPSIZE,
     R_SPLIT_INCR_UPSIZE
   } r_state_e;
 
   typedef struct packed {
-    ar_chan_t    ar;
-    logic        ar_valid;
-    logic        ar_throw_error;
-    slv_r_chan_t r;
-    logic        r_valid;
-    burst_len_t  burst_len;
-    size_t       orig_ar_size;
+    ar_chan_t       ar;
+    logic           ar_valid;
+    logic           ar_throw_error;
+    slv_r_chan_t    r;
+    logic           r_valid;
+    burst_len_t     burst_len;
+    axi_pkg::size_t orig_ar_size;
   } r_req_t;
 
   // Decide which upsizer will handle the incoming AXI transaction
@@ -396,9 +394,9 @@ module axi_dw_upsizer #(
             end
 
             // Modifiable transaction
-            if (|(r_req_d.ar.cache & CACHE_MODIFIABLE))
+            if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE))
               case (r_req_d.ar.burst)
-                BURST_INCR : begin
+                axi_pkg::BURST_INCR : begin
                   // No need to upsize single-beat transactions.
                   if (r_req_d.ar.len != '0) begin
                     // Evaluate upsize ratio
@@ -425,7 +423,7 @@ module axi_dw_upsizer #(
               endcase
 
             // The DW converter does not support this kind of burst.
-            if (r_req_d.ar.burst inside {BURST_WRAP, BURST_FIXED}) begin
+            if (r_req_d.ar.burst inside {axi_pkg::BURST_WRAP, axi_pkg::BURST_FIXED}) begin
               r_req_d.ar_throw_error = 1'b1         ;
               r_state_d              = R_PASSTHROUGH;
             end
@@ -479,7 +477,7 @@ module axi_dw_upsizer #(
 
                     R_INCR_UPSIZE, R_SPLIT_INCR_UPSIZE:
                       // Forward when the burst is finished, or after filling up a word
-                      if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
+                      if (r_req_q.burst_len == 0 || (axi_pkg::aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != axi_pkg::aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
                         r_req_d.r_valid = 1'b1;
                   endcase
 
@@ -515,18 +513,18 @@ module axi_dw_upsizer #(
    *  WRITE  *
    ***********/
   typedef enum logic [1:0] {
-    W_IDLE       ,
+    W_IDLE,
     W_PASSTHROUGH,
     W_INCR_UPSIZE,
     W_SPLIT_INCR_UPSIZE
   } w_state_e;
 
   typedef struct packed {
-    aw_chan_t aw         ;
-    logic aw_valid       ;
-    logic aw_throw_error ;
-    burst_len_t burst_len;
-    size_t orig_aw_size  ;
+    aw_chan_t       aw;
+    logic           aw_valid;
+    logic           aw_throw_error;
+    burst_len_t     burst_len;
+    axi_pkg::size_t orig_aw_size;
   } w_req_t;
 
   w_state_e w_state_d, w_state_q;
@@ -644,7 +642,7 @@ module axi_dw_upsizer #(
               slv_resp_o.w_ready = 1'b1;
 
             W_INCR_UPSIZE, W_SPLIT_INCR_UPSIZE:
-              if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
+              if (w_req_q.burst_len == 0 || (axi_pkg::aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != axi_pkg::aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
                 slv_resp_o.w_ready = 1'b1;
           endcase
 
@@ -696,9 +694,9 @@ module axi_dw_upsizer #(
         w_req_d.orig_aw_size = slv_req_i.aw.size;
 
         // Modifiable transaction
-        if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE))
+        if (|(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE))
           case (slv_req_i.aw.burst)
-            BURST_INCR: begin
+            axi_pkg::BURST_INCR: begin
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate upsize ratio
@@ -725,7 +723,7 @@ module axi_dw_upsizer #(
           endcase
 
         // The DW converter does not support this kind of burst.
-        if (w_req_d.aw.burst inside {BURST_WRAP, BURST_FIXED}) begin
+        if (w_req_d.aw.burst inside {axi_pkg::BURST_WRAP, axi_pkg::BURST_FIXED}) begin
           w_state_d              = W_PASSTHROUGH;
           w_req_d.aw_throw_error = 1'b1         ;
         end
