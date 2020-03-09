@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_cut_intf`: Add missing assigns to and from interface ports.
 
 ### Removed
-- Remove unused `AXI_ROUTING_RULES` interface.
+- Remove unused `AXI_ARBITRATION` and `AXI_ROUTING_RULES` interfaces.
 
 
 ## 0.15.1 - 2020-03-09

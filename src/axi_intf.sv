@@ -428,26 +428,3 @@ interface AXI_LITE_DV #(
   );
 
 endinterface
-
-/// An AXI arbitration interface.
-interface AXI_ARBITRATION #(
-  /// The number of requestors.
-  parameter int NUM_REQ = -1
-);
-
-  // Incoming requests.
-  logic [NUM_REQ-1:0] in_req;
-  logic [NUM_REQ-1:0] in_ack;
-
-  // Outgoing request.
-  logic out_req;
-  logic out_ack;
-  logic [$clog2(NUM_REQ)-1:0] out_sel;
-
-  // The arbiter side of the interface.
-  modport arb(input  in_req, out_ack, output out_req, out_sel, in_ack);
-
-  // The requestor side of the interface.
-  modport req(output in_req, out_ack, input  out_req, out_sel, in_ack);
-
-endinterface
