@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_cdc`: Remove unused global `import axi_pkg::*`.
 - `axi_intf`: Remove global `import axi_pkg::*` and explicitly use symbols from `axi_pkg`.
 - `axi_lite_cut_intf`: Add missing assigns to and from interface ports.
+- `tb_axi_cdc`:
+  - Remove global `import axi_pkg::*`.
+  - Define channels with `AXI_TYPEDEF` macros instead of local `typedef`s.
 
 ### Removed
 - Remove unused `AXI_ARBITRATION` and `AXI_ROUTING_RULES` interfaces.

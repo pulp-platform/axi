@@ -10,8 +10,8 @@
 
 // Testbench for axi_cdc
 
+`include "axi/typedef.svh"
 `include "axi/assign.svh"
-import axi_pkg::*;
 
 module tb_axi_cdc #(
   // AXI Parameters
@@ -109,51 +109,12 @@ module tb_axi_cdc #(
   typedef logic [AXI_IW-1:0]    id_t;
   typedef logic [AXI_DW/8-1:0]  strb_t;
   typedef logic [AXI_UW-1:0]    user_t;
-  typedef struct packed {
-    id_t     id;
-    addr_t   addr;
-    len_t    len;
-    size_t   size;
-    burst_t  burst;
-    logic    lock;
-    cache_t  cache;
-    prot_t   prot;
-    qos_t    qos;
-    region_t region;
-    atop_t   atop;
-    user_t   user;
-  } aw_chan_t;
-  typedef struct packed {
-    data_t data;
-    strb_t strb;
-    user_t user;
-    logic  last;
-  } w_chan_t;
-  typedef struct packed {
-    id_t   id;
-    resp_t resp;
-    user_t user;
-  } b_chan_t;
-  typedef struct packed {
-    id_t     id;
-    addr_t   addr;
-    len_t    len;
-    size_t   size;
-    burst_t  burst;
-    logic    lock;
-    cache_t  cache;
-    prot_t   prot;
-    qos_t    qos;
-    region_t region;
-    user_t   user;
-  } ar_chan_t;
-  typedef struct packed {
-    id_t   id;
-    data_t data;
-    resp_t resp;
-    user_t user;
-    logic  last;
-  } r_chan_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
   axi_cdc_intf #(
     .AXI_ADDR_WIDTH (AXI_AW),
