@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_intf`: Add single-channel assertions to `AXI_BUS_DV`.
 
 ### Changed
+
+### Fixed
+
+
+## 0.15.1 - 2020-03-09
+
+### Added
+- `axi_intf`: Add single-channel assertions to `AXI_BUS_DV`.
 
 ### Fixed
 - `axi_lite_to_apb`: Fix the interface version (`axi_lite_to_apb_intf`) to match the changes from
