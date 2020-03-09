@@ -14,7 +14,6 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
-import axi_pkg::*;
 
 /// A clock domain crossing on an AXI interface.
 ///
