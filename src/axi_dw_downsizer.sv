@@ -45,8 +45,6 @@ module axi_dw_downsizer #(
     input  axi_mst_resp_t mst_resp_i
   );
 
-  import axi_pkg::*;
-
   /*****************
    *  DEFINITIONS  *
    *****************/
@@ -306,11 +304,11 @@ module axi_dw_downsizer #(
 
 
   typedef struct packed {
-    ar_chan_t ar        ;
-    logic ar_valid      ;
-    logic ar_throw_error;
-    len_t burst_len     ;
-    size_t orig_ar_size ;
+    ar_chan_t       ar;
+    logic           ar_valid;
+    logic           ar_throw_error;
+    axi_pkg::len_t  burst_len;
+    axi_pkg::size_t orig_ar_size;
   } r_req_t;
 
   for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_read_downsizer
@@ -392,12 +390,12 @@ module axi_dw_downsizer #(
             end
 
             // Modifiable transaction
-            if (|(r_req_d.ar.cache & CACHE_MODIFIABLE)) begin
+            if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
               case (r_req_d.ar.burst)
-                BURST_INCR : begin
+                axi_pkg::BURST_INCR : begin
                   // Evaluate output burst length
-                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
-                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
+                  automatic addr_t start_addr = axi_pkg::aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
+                  automatic addr_t end_addr   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
 
                   r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
                   r_req_d.ar.size = AxiMstMaxSize                           ;
@@ -414,7 +412,7 @@ module axi_dw_downsizer #(
             end
 
             // The DW converter does not support this kind of burst.
-            if (r_req_d.ar.burst inside {BURST_WRAP, BURST_FIXED}) begin
+            if (r_req_d.ar.burst inside {axi_pkg::BURST_WRAP, axi_pkg::BURST_FIXED}) begin
               r_req_d.ar_throw_error = 1'b1         ;
               r_state_d              = R_PASSTHROUGH;
             end
@@ -452,7 +450,7 @@ module axi_dw_downsizer #(
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_DOWNSIZE :
-                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
+                    if (r_req_q.burst_len == 0 || (axi_pkg::aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != axi_pkg::aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
 
@@ -488,13 +486,13 @@ module axi_dw_downsizer #(
   } w_state_e;
 
   typedef struct packed {
-    aw_chan_t aw        ;
-    logic aw_valid      ;
-    logic aw_throw_error;
-    mst_w_chan_t w      ;
-    logic w_valid       ;
-    len_t burst_len     ;
-    size_t orig_aw_size ;
+    aw_chan_t       aw;
+    logic           aw_valid;
+    logic           aw_throw_error;
+    mst_w_chan_t    w;
+    logic           w_valid;
+    axi_pkg::len_t  burst_len;
+    axi_pkg::size_t orig_aw_size ;
   } w_req_t;
 
   w_state_e w_state_d, w_state_q;
@@ -570,7 +568,7 @@ module axi_dw_downsizer #(
 
               W_INCR_DOWNSIZE:
                 // Forward when the burst is finished, or after filling up a word
-                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
+                if (w_req_q.burst_len == 0 || (axi_pkg::aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != axi_pkg::aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
                   w_req_d.w_valid = 1'b1;
             endcase
           end
@@ -613,12 +611,12 @@ module axi_dw_downsizer #(
         w_req_d.orig_aw_size = slv_req_i.aw.size;
 
         // Modifiable transaction
-        if (|(slv_req_i.aw.cache & CACHE_MODIFIABLE)) begin
+        if (|(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE)) begin
           case (slv_req_i.aw.burst)
-            BURST_INCR: begin
+            axi_pkg::BURST_INCR: begin
               // Evaluate output burst length
-              automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
-              automatic addr_t end_addr   = aligned_addr(aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
+              automatic addr_t start_addr = axi_pkg::aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
+              automatic addr_t end_addr   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
 
               w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstMaxSize;
               w_req_d.aw.size = AxiMstMaxSize                           ;
@@ -635,7 +633,7 @@ module axi_dw_downsizer #(
         end
 
         // The DW converter does not support this kind of burst.
-        if (w_req_d.aw.burst inside {BURST_WRAP, BURST_FIXED}) begin
+        if (w_req_d.aw.burst inside {axi_pkg::BURST_WRAP, axi_pkg::BURST_FIXED}) begin
           w_state_d              = W_PASSTHROUGH;
           w_req_d.aw_throw_error = 1'b1         ;
         end
