@@ -233,7 +233,7 @@ module axi_dw_downsizer #(
     R_IDLE       ,
     R_PASSTHROUGH,
     R_INCR_DOWNSIZE
-  } r_state_t;
+  } r_state_e;
 
   // Decide which downsizer will handle the incoming AXI transaction
   logic     [AxiMaxReads-1:0] idle_read_downsizer;
@@ -303,20 +303,23 @@ module axi_dw_downsizer #(
     .exists_gnt_o    (/* Unused  */ )
   );
 
+
+
+  typedef struct packed {
+    ar_chan_t ar        ;
+    logic ar_valid      ;
+    logic ar_throw_error;
+    len_t burst_len     ;
+    size_t orig_ar_size ;
+  } r_req_t;
+
   for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_read_downsizer
-    r_state_t r_state_d;
-    r_state_t r_state_q;
+    r_state_e r_state_d, r_state_q;
+    r_req_t   r_req_d,   r_req_q;
 
     // Are we idle?
     assign idle_read_downsizer[t] = (r_state_q == R_IDLE);
 
-    struct packed {
-      ar_chan_t ar        ;
-      logic ar_valid      ;
-      logic ar_throw_error;
-      len_t burst_len     ;
-      size_t orig_ar_size ;
-    } r_req_d, r_req_q;
 
     always_comb begin
       // Maintain state
@@ -478,13 +481,13 @@ module axi_dw_downsizer #(
    *  WRITE  *
    ***********/
 
-  enum logic [1:0] {
+  typedef enum logic [1:0] {
     W_IDLE       ,
     W_PASSTHROUGH,
     W_INCR_DOWNSIZE
-  } w_state_d, w_state_q;
+  } w_state_e;
 
-  struct packed {
+  typedef struct packed {
     aw_chan_t aw        ;
     logic aw_valid      ;
     logic aw_throw_error;
@@ -492,7 +495,10 @@ module axi_dw_downsizer #(
     logic w_valid       ;
     len_t burst_len     ;
     size_t orig_aw_size ;
-  } w_req_d, w_req_q;
+  } w_req_t;
+
+  w_state_e w_state_d, w_state_q;
+  w_req_t w_req_d, w_req_q;
 
   always_comb begin
     inject_aw_into_ar_req = 1'b0;
