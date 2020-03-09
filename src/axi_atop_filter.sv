@@ -77,7 +77,7 @@ module axi_atop_filter #(
         r_resp_cmd_push_valid,  r_resp_cmd_push_ready,
         r_resp_cmd_pop_valid,   r_resp_cmd_pop_ready;
 
-  // A AW without a complete W burst is in-flight downstream if the W counter is > 0 and not
+  // An AW without a complete W burst is in-flight downstream if the W counter is > 0 and not
   // overflowed.
   assign aw_without_complete_w_downstream = !w_cnt_q[COUNTER_WIDTH] && (w_cnt_q > 0);
   // A complete W burst without AW is in-flight downstream if the W counter is -1.
