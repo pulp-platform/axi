@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `rand_axi_slave` (in `axi_test`):
   - Decouple receiving of Ws from receiving of AWs.  This allows to receive W beats independent of
     AW beats.
+- Update `common_cells` to `1.16.4` to fix synthesis warning in `id_queue`.
 
 
 ## 0.15.0 - 2020-02-28
