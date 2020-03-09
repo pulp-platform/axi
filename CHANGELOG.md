@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_intf`: Remove global `import axi_pkg::*` and explicitly use symbols from `axi_pkg`.
 - `axi_lite_cut_intf`: Add missing assigns to and from interface ports.
 
+### Removed
+- Remove unused `AXI_ROUTING_RULES` interface.
+
 
 ## 0.15.1 - 2020-03-09
 

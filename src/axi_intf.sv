@@ -429,33 +429,6 @@ interface AXI_LITE_DV #(
 
 endinterface
 
-
-/// An AXI routing table.
-///
-/// For each slave, multiple rules can be defined. Each rule consists of an
-/// address mask and a base. Addresses are masked and then compared against the
-/// base to decide where transfers need to go.
-interface AXI_ROUTING_RULES #(
-  /// The address width.
-  parameter int AXI_ADDR_WIDTH = -1,
-  /// The number of slaves in the routing table.
-  parameter int NUM_SLAVE  = -1,
-  /// The number of rules in the routing table.
-  parameter int NUM_RULES  = -1
-);
-
-  struct packed {
-    logic enabled;
-    logic [AXI_ADDR_WIDTH-1:0] mask;
-    logic [AXI_ADDR_WIDTH-1:0] base;
-  } [NUM_RULES-1:0] rules [NUM_SLAVE];
-
-  modport xbar(input rules);
-  modport cfg(output rules);
-
-endinterface
-
-
 /// An AXI arbitration interface.
 interface AXI_ARBITRATION #(
   /// The number of requestors.
