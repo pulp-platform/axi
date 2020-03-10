@@ -48,6 +48,7 @@ module axi_dw_upsizer #(
   /*****************
    *  DEFINITIONS  *
    *****************/
+  import axi_pkg::aligned_addr;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -477,7 +478,7 @@ module axi_dw_upsizer #(
 
                     R_INCR_UPSIZE, R_SPLIT_INCR_UPSIZE:
                       // Forward when the burst is finished, or after filling up a word
-                      if (r_req_q.burst_len == 0 || (axi_pkg::aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != axi_pkg::aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
+                      if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
                         r_req_d.r_valid = 1'b1;
                   endcase
 
@@ -642,7 +643,7 @@ module axi_dw_upsizer #(
               slv_resp_o.w_ready = 1'b1;
 
             W_INCR_UPSIZE, W_SPLIT_INCR_UPSIZE:
-              if (w_req_q.burst_len == 0 || (axi_pkg::aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != axi_pkg::aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
+              if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
                 slv_resp_o.w_ready = 1'b1;
           endcase
 
