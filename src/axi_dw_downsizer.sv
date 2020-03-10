@@ -48,6 +48,7 @@ module axi_dw_downsizer #(
   /*****************
    *  DEFINITIONS  *
    *****************/
+  import axi_pkg::aligned_addr;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -394,8 +395,8 @@ module axi_dw_downsizer #(
               case (r_req_d.ar.burst)
                 axi_pkg::BURST_INCR : begin
                   // Evaluate output burst length
-                  automatic addr_t start_addr = axi_pkg::aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
-                  automatic addr_t end_addr   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
+                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
+                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
 
                   r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
                   r_req_d.ar.size = AxiMstMaxSize                           ;
@@ -450,7 +451,7 @@ module axi_dw_downsizer #(
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_DOWNSIZE :
-                    if (r_req_q.burst_len == 0 || (axi_pkg::aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != axi_pkg::aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
+                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
 
@@ -568,7 +569,7 @@ module axi_dw_downsizer #(
 
               W_INCR_DOWNSIZE:
                 // Forward when the burst is finished, or after filling up a word
-                if (w_req_q.burst_len == 0 || (axi_pkg::aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != axi_pkg::aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
+                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
                   w_req_d.w_valid = 1'b1;
             endcase
           end
@@ -615,8 +616,8 @@ module axi_dw_downsizer #(
           case (slv_req_i.aw.burst)
             axi_pkg::BURST_INCR: begin
               // Evaluate output burst length
-              automatic addr_t start_addr = axi_pkg::aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
-              automatic addr_t end_addr   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
+              automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
+              automatic addr_t end_addr   = aligned_addr(aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
 
               w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstMaxSize;
               w_req_d.aw.size = AxiMstMaxSize                           ;
