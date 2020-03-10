@@ -161,11 +161,6 @@ module axi_isolate #(
           state_aw_d      = ISOLATE;
           update_aw_state = 1'b1;
         end
-        // go back to normal operation, if isolate signal is deasserted
-        if (!isolate_i) begin
-          state_aw_d      = NORMAL;
-          update_aw_state = 1'b1;
-        end
       end
       ISOLATE: begin // Cut the signals to the outputs
         mst_req_o.aw        = '0;
@@ -229,10 +224,6 @@ module axi_isolate #(
         slv_resp_o.ar_ready = 1'b0;
         if (pending_ar_q == '0) begin
           state_ar_d      = ISOLATE;
-          update_ar_state = 1'b1;
-        end
-        if (!isolate_i) begin
-          state_ar_d      = NORMAL;
           update_ar_state = 1'b1;
         end
       end
