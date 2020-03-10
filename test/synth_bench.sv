@@ -140,7 +140,9 @@ module synth_slice #(
     .slv        (a_full.Slave),
     .mst        (a_lite.Master)
   );
-  axi_lite_to_axi_intf b (
+  axi_lite_to_axi_intf #(
+    .AXI_DATA_WIDTH (DW)
+  ) b (
     .in   (b_lite.Slave),
     .out  (b_full.Master)
   );

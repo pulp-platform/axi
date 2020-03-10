@@ -54,7 +54,9 @@ module tb_axi_lite_to_axi;
 
   `AXI_ASSIGN(axi_dv, axi)
 
-  axi_lite_to_axi_intf i_dut (
+  axi_lite_to_axi_intf #(
+    .AXI_DATA_WIDTH (DW)
+  ) i_dut (
     .in   ( axi_lite ),
     .out  ( axi      )
   );
