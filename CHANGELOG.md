@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_cdc_intf`: Add interface variant of AXI clock domain crossing.
 
 ### Changed
 
