@@ -14,7 +14,6 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
-import axi_pkg::*;
 
 /// A clock domain crossing on an AXI interface.
 ///
@@ -191,4 +190,62 @@ module axi_cdc_intf #(
     .dst_resp_i ( dst_resp )
   );
 
-  endmodule
+endmodule
+
+module axi_lite_cdc_intf #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
+  parameter int unsigned LOG_DEPTH = 1
+) (
+   // slave side - clocked by `src_clk_i`
+  input  logic      src_clk_i,
+  input  logic      src_rst_ni,
+  AXI_LITE.Slave    src,
+  // master side - clocked by `dst_clk_i`
+  input  logic      dst_clk_i,
+  input  logic      dst_rst_ni,
+  AXI_LITE.Master   dst
+);
+
+  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+
+  req_t  src_req,  dst_req;
+  resp_t src_resp, dst_resp;
+
+  `AXI_LITE_ASSIGN_TO_REQ(src_req, src)
+  `AXI_LITE_ASSIGN_FROM_RESP(src, src_resp)
+
+  `AXI_LITE_ASSIGN_FROM_REQ(dst, dst_req)
+  `AXI_LITE_ASSIGN_TO_RESP(dst_resp, dst)
+
+  axi_cdc #(
+    .aw_chan_t  ( aw_chan_t ),
+    .w_chan_t   ( w_chan_t  ),
+    .b_chan_t   ( b_chan_t  ),
+    .ar_chan_t  ( ar_chan_t ),
+    .r_chan_t   ( r_chan_t  ),
+    .axi_req_t  ( req_t     ),
+    .axi_resp_t ( resp_t    ),
+    .LogDepth   ( LOG_DEPTH )
+  ) i_axi_cdc (
+    .src_clk_i,
+    .src_rst_ni,
+    .src_req_i  ( src_req  ),
+    .src_resp_o ( src_resp ),
+    .dst_clk_i,
+    .dst_rst_ni,
+    .dst_req_o  ( dst_req  ),
+    .dst_resp_i ( dst_resp )
+  );
+
+endmodule

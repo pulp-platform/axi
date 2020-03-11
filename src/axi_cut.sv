@@ -223,6 +223,12 @@ module axi_lite_cut_intf #(
   req_t   slv_req,  mst_req;
   resp_t  slv_resp, mst_resp;
 
+  `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
+  `AXI_LITE_ASSIGN_FROM_RESP(in, slv_resp)
+
+  `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
+  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, out)
+
   axi_cut #(
     .Bypass    (    BYPASS ),
     .aw_chan_t ( aw_chan_t ),
