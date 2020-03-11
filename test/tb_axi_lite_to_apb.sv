@@ -38,15 +38,15 @@ module tb_axi_lite_to_apb;
   typedef logic [AxiDataWidth-1:0]      data_t;
   typedef logic [AxiStrbWidth-1:0]      strb_t;
 
-  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_t                 )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
 
-  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t )
-  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
 
-  `AXI_LITE_TYPEDEF_REQ_T     (  axi_req_t, aw_chan_t, w_chan_t, ar_chan_t )
-  `AXI_LITE_TYPEDEF_RESP_T    ( axi_resp_t,  b_chan_t,            r_chan_t )
+  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
   typedef logic [NoApbSlaves-1:0] sel_t;
 
@@ -126,9 +126,9 @@ module tb_axi_lite_to_apb;
     .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
     .AXI_DATA_WIDTH ( AxiDataWidth      )
   ) master_dv (clk);
-  `AXI_LITE_ASSIGN           ( master,  master_dv )
-  `AXI_LITE_ASSIGN_TO_REQ    ( axi_req, master    )
-  `AXI_LITE_ASSIGN_FROM_RESP ( master,  axi_resp  )
+  `AXI_LITE_ASSIGN(master, master_dv)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_req, master)
+  `AXI_LITE_ASSIGN_FROM_RESP(master, axi_resp)
 
   // -------------------------------
   // AXI Rand Masters

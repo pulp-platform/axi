@@ -251,19 +251,19 @@ module axi_xbar_intf #(
   typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
   typedef logic [AXI_USER_WIDTH         -1:0] user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( mst_aw_chan_t, addr_t, id_mst_t,         user_t)
-  `AXI_TYPEDEF_AW_CHAN_T ( slv_aw_chan_t, addr_t, id_slv_t,         user_t)
-  `AXI_TYPEDEF_W_CHAN_T  (      w_chan_t, data_t,           strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T  (  mst_b_chan_t,         id_mst_t,         user_t)
-  `AXI_TYPEDEF_B_CHAN_T  (  slv_b_chan_t,         id_slv_t,         user_t)
-  `AXI_TYPEDEF_AR_CHAN_T ( mst_ar_chan_t, addr_t, id_mst_t,         user_t)
-  `AXI_TYPEDEF_AR_CHAN_T ( slv_ar_chan_t, addr_t, id_slv_t,         user_t)
-  `AXI_TYPEDEF_R_CHAN_T  (  mst_r_chan_t, data_t, id_mst_t,         user_t)
-  `AXI_TYPEDEF_R_CHAN_T  (  slv_r_chan_t, data_t, id_slv_t,         user_t)
-  `AXI_TYPEDEF_REQ_T     (     mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_REQ_T     (     slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T    (    mst_resp_t,  mst_b_chan_t, mst_r_chan_t)
-  `AXI_TYPEDEF_RESP_T    (    slv_resp_t,  slv_b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
   mst_req_t   [Cfg.NoMstPorts-1:0]  mst_reqs;
   mst_resp_t  [Cfg.NoMstPorts-1:0]  mst_resps;
@@ -271,13 +271,13 @@ module axi_xbar_intf #(
   slv_resp_t  [Cfg.NoSlvPorts-1:0]  slv_resps;
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
-    `AXI_ASSIGN_FROM_REQ  (mst_ports[i], mst_reqs[i] );
-    `AXI_ASSIGN_TO_RESP   (mst_resps[i], mst_ports[i]);
+    `AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
+    `AXI_ASSIGN_TO_RESP(mst_resps[i], mst_ports[i])
   end
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_assign_slv
-    `AXI_ASSIGN_TO_REQ    (slv_reqs[i],  slv_ports[i]);
-    `AXI_ASSIGN_FROM_RESP (slv_ports[i], slv_resps[i]);
+    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
+    `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
   end
 
   axi_xbar #(

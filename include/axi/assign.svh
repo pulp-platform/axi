@@ -27,9 +27,9 @@
 // `src` was the master of `dst`.
 //
 // Usage Example:
-// `AXI_ASSIGN(slv, mst);
-// `AXI_ASSIGN_AW(dst, src);
-// `AXI_ASSIGN_R(dst, src);
+// `AXI_ASSIGN(slv, mst)
+// `AXI_ASSIGN_AW(dst, src)
+// `AXI_ASSIGN_R(dst, src)
 `define AXI_ASSIGN_AW(dst, src)           \
   assign dst.aw_id      = src.aw_id;      \
   assign dst.aw_addr    = src.aw_addr;    \
@@ -167,7 +167,7 @@
 //
 // Usage Example:
 // always_comb begin
-//   `AXI_SET_FROM_REQ(my_if, my_req_struct);
+//   `AXI_SET_FROM_REQ(my_if, my_req_struct)
 // end
 `define AXI_SET_FROM_AW(axi_if, aw_struct)      `AXI_FROM_AW(, axi_if, aw_struct)
 `define AXI_SET_FROM_W(axi_if, w_struct)        `AXI_FROM_W(, axi_if, w_struct)
@@ -192,7 +192,7 @@
 // `axi_if` interface from the signals in `resp_struct`.
 //
 // Usage Example:
-// `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct);
+// `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct)
 `define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `AXI_FROM_AW(assign, axi_if, aw_struct)
 `define AXI_ASSIGN_FROM_W(axi_if, w_struct)       `AXI_FROM_W(assign, axi_if, w_struct)
 `define AXI_ASSIGN_FROM_B(axi_if, b_struct)       `AXI_FROM_B(assign, axi_if, b_struct)
@@ -292,7 +292,7 @@
 //
 // Usage Example:
 // always_comb begin
-//   `AXI_SET_TO_REQ(my_req_struct, my_if);
+//   `AXI_SET_TO_REQ(my_req_struct, my_if)
 // end
 `define AXI_SET_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(, aw_struct, axi_if)
 `define AXI_SET_TO_W(w_struct, axi_if)       `AXI_TO_W(, w_struct, axi_if)
@@ -318,7 +318,7 @@
 // AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
 // Usage Example:
-// `AXI_ASSIGN_TO_REQ(my_req_struct, my_if);
+// `AXI_ASSIGN_TO_REQ(my_req_struct, my_if)
 `define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(assign, aw_struct, axi_if)
 `define AXI_ASSIGN_TO_W(w_struct, axi_if)       `AXI_TO_W(assign, w_struct, axi_if)
 `define AXI_ASSIGN_TO_B(b_struct, axi_if)       `AXI_TO_B(assign, b_struct, axi_if)
@@ -339,9 +339,9 @@
 // if `src` was the master of `dst`.
 //
 // Usage Example:
-// `AXI_LITE_ASSIGN(slv, mst);
-// `AXI_LITE_ASSIGN_AW(dst, src);
-// `AXI_LITE_ASSIGN_R(dst, src);
+// `AXI_LITE_ASSIGN(slv, mst)
+// `AXI_LITE_ASSIGN_AW(dst, src)
+// `AXI_LITE_ASSIGN_R(dst, src)
 `define AXI_LITE_ASSIGN_AW(dst, src)  \
   assign dst.aw_addr  = src.aw_addr;  \
   assign dst.aw_valid = src.aw_valid; \
@@ -425,7 +425,7 @@
 //
 // Usage Example:
 // always_comb begin
-//   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct);
+//   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct)
 // end
 `define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `AXI_LITE_FROM_AW(, axi_if, aw_struct)
 `define AXI_LITE_SET_FROM_W(axi_if, w_struct)        `AXI_LITE_FROM_W(, axi_if, w_struct)
@@ -450,7 +450,7 @@
 // ready) of the `axi_if` interface from the signals in `resp_struct`.
 //
 // Usage Example:
-// `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct);
+// `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct)
 `define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `AXI_LITE_FROM_AW(assign, axi_if, aw_struct)
 `define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `AXI_LITE_FROM_W(assign, axi_if, w_struct)
 `define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `AXI_LITE_FROM_B(assign, axi_if, b_struct)
@@ -525,7 +525,7 @@
 //
 // Usage Example:
 // always_comb begin
-//   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if);
+//   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if)
 // end
 `define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(, aw_struct, axi_if)
 `define AXI_LITE_SET_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(, w_struct, axi_if)
@@ -551,7 +551,7 @@
 // and R valid and AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
 // Usage Example:
-// `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if);
+// `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if)
 `define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(assign, aw_struct, axi_if)
 `define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(assign, w_struct, axi_if)
 `define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(assign, b_struct, axi_if)

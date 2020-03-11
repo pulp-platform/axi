@@ -14,7 +14,6 @@
 // See `doc/axi_lite_xbar.md` for the documentation,
 // including the definition of parameters and ports.
 
-`include "axi/assign.svh"
 `include "axi/typedef.svh"
 
 module axi_lite_xbar #(
@@ -49,13 +48,13 @@ module axi_lite_xbar #(
   typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
   // full AXI typedef for the decode error slave, id_t and user_t are logic and will be
   // removed during logic optimization as they are stable
-  `AXI_TYPEDEF_AW_CHAN_T ( full_aw_chan_t, addr_t,         logic, logic )
-  `AXI_TYPEDEF_W_CHAN_T  ( full_w_chan_t,  data_t, strb_t,        logic )
-  `AXI_TYPEDEF_B_CHAN_T  ( full_b_chan_t,                  logic, logic )
-  `AXI_TYPEDEF_AR_CHAN_T ( full_ar_chan_t, addr_t,         logic, logic )
-  `AXI_TYPEDEF_R_CHAN_T  ( full_r_chan_t,  data_t,         logic, logic )
-  `AXI_TYPEDEF_REQ_T  ( full_req_t,  full_aw_chan_t, full_w_chan_t, full_ar_chan_t )
-  `AXI_TYPEDEF_RESP_T ( full_resp_t, full_b_chan_t,  full_r_chan_t )
+  `AXI_TYPEDEF_AW_CHAN_T(full_aw_chan_t, addr_t, logic, logic)
+  `AXI_TYPEDEF_W_CHAN_T(full_w_chan_t, data_t, strb_t, logic)
+  `AXI_TYPEDEF_B_CHAN_T(full_b_chan_t, logic, logic)
+  `AXI_TYPEDEF_AR_CHAN_T(full_ar_chan_t, addr_t, logic, logic)
+  `AXI_TYPEDEF_R_CHAN_T(full_r_chan_t, data_t, logic, logic)
+  `AXI_TYPEDEF_REQ_T(full_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(full_resp_t, full_b_chan_t, full_r_chan_t)
 
   // signals from the axi_lite_demuxes, one index more for decode error routing
   req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_reqs;

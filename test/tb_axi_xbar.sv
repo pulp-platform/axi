@@ -64,21 +64,21 @@ module tb_axi_xbar;
   typedef logic [AxiStrbWidth-1:0]      strb_t;
   typedef logic [AxiUserWidth-1:0]      user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_mst_t, addr_t, id_mst_t,         user_t);
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_slv_t, addr_t, id_slv_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t,     data_t,           strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_mst_t,         id_mst_t,         user_t);
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_slv_t,         id_slv_t,         user_t);
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_mst_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_slv_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_mst_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_slv_t, id_slv_t, user_t)
 
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_mst_t, addr_t, id_mst_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_slv_t, addr_t, id_slv_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_mst_t, data_t, id_mst_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_slv_t, data_t, id_slv_t,         user_t);
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_mst_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_slv_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_mst_t, data_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_slv_t, data_t, id_slv_t, user_t)
 
-  `AXI_TYPEDEF_REQ_T     (     mst_req_t, aw_chan_mst_t, w_chan_t, ar_chan_mst_t);
-  `AXI_TYPEDEF_RESP_T    (    mst_resp_t,  b_chan_mst_t,            r_chan_mst_t);
-  `AXI_TYPEDEF_REQ_T     (     slv_req_t, aw_chan_slv_t, w_chan_t, ar_chan_slv_t);
-  `AXI_TYPEDEF_RESP_T    (    slv_resp_t,  b_chan_slv_t,            r_chan_slv_t);
+  `AXI_TYPEDEF_REQ_T(mst_req_t, aw_chan_mst_t, w_chan_t, ar_chan_mst_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, b_chan_mst_t, r_chan_mst_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_slv_t, w_chan_t, ar_chan_slv_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
@@ -154,9 +154,9 @@ module tb_axi_xbar;
     .AXI_USER_WIDTH ( AxiUserWidth      )
   ) master_monitor_dv [NoMasters-1:0] (clk);
   for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
-    `AXI_ASSIGN           ( master[i],      master_dv[i]    );
-    `AXI_ASSIGN_TO_REQ    ( masters_req[i], master[i]       );
-    `AXI_ASSIGN_FROM_RESP ( master[i],      masters_resp[i] );
+    `AXI_ASSIGN (master[i], master_dv[i])
+    `AXI_ASSIGN_TO_REQ(masters_req[i], master[i])
+    `AXI_ASSIGN_FROM_RESP(master[i], masters_resp[i])
   end
 
   AXI_BUS #(
@@ -178,9 +178,9 @@ module tb_axi_xbar;
     .AXI_USER_WIDTH ( AxiUserWidth     )
   ) slave_monitor_dv [NoSlaves-1:0](clk);
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
-    `AXI_ASSIGN          ( slave_dv[i],    slave[i]      );
-    `AXI_ASSIGN_FROM_REQ ( slave[i],       slaves_req[i] );
-    `AXI_ASSIGN_TO_RESP  ( slaves_resp[i], slave[i]      );
+    `AXI_ASSIGN(slave_dv[i], slave[i])
+    `AXI_ASSIGN_FROM_REQ(slave[i], slaves_req[i])
+    `AXI_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
   end
   // -------------------------------
   // AXI Rand Masters and Slaves

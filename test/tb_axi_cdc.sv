@@ -82,7 +82,7 @@ module tb_axi_cdc #(
     .AXI_USER_WIDTH (AXI_UW)
   ) upstream ();
 
-  `AXI_ASSIGN(upstream, upstream_dv);
+  `AXI_ASSIGN(upstream, upstream_dv)
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH (AXI_AW),
@@ -100,7 +100,7 @@ module tb_axi_cdc #(
     .AXI_USER_WIDTH (AXI_UW)
   ) downstream ();
 
-  `AXI_ASSIGN(downstream_dv, downstream);
+  `AXI_ASSIGN(downstream_dv, downstream)
 
   // AXI Channel Structs
 
@@ -182,16 +182,16 @@ module tb_axi_cdc #(
   r_chan_t    mst_r,  slv_r,  r_queue[$];
   w_chan_t    mst_w,  slv_w,  w_queue[$];
 
-  `AXI_ASSIGN_TO_AR(mst_ar, upstream);
-  `AXI_ASSIGN_TO_AR(slv_ar, downstream);
-  `AXI_ASSIGN_TO_AW(mst_aw, upstream);
-  `AXI_ASSIGN_TO_AW(slv_aw, downstream);
-  `AXI_ASSIGN_TO_B(mst_b, upstream);
-  `AXI_ASSIGN_TO_B(slv_b, downstream);
-  `AXI_ASSIGN_TO_R(mst_r, upstream);
-  `AXI_ASSIGN_TO_R(slv_r, downstream);
-  `AXI_ASSIGN_TO_W(mst_w, upstream);
-  `AXI_ASSIGN_TO_W(slv_w, downstream);
+  `AXI_ASSIGN_TO_AR(mst_ar, upstream)
+  `AXI_ASSIGN_TO_AR(slv_ar, downstream)
+  `AXI_ASSIGN_TO_AW(mst_aw, upstream)
+  `AXI_ASSIGN_TO_AW(slv_aw, downstream)
+  `AXI_ASSIGN_TO_B(mst_b, upstream)
+  `AXI_ASSIGN_TO_B(slv_b, downstream)
+  `AXI_ASSIGN_TO_R(mst_r, upstream)
+  `AXI_ASSIGN_TO_R(slv_r, downstream)
+  `AXI_ASSIGN_TO_W(mst_w, upstream)
+  `AXI_ASSIGN_TO_W(slv_w, downstream)
 
   logic mst_done = 1'b0;
   // Monitor and check upstream

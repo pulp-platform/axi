@@ -179,7 +179,7 @@ module axi_lite_mailbox #(
         end
       end
 
-      `FFLARN( irq_q, irq_d, update_irq, '0, clk_i, rst_ni )
+      `FFLARN(irq_q, irq_d, update_irq, '0, clk_i, rst_ni)
     end else begin : gen_irq_level
       assign irq_o[i] = (IrqActHigh) ? slv_irq[i] : ~slv_irq[i];
     end
@@ -232,8 +232,8 @@ module axi_lite_mailbox_slave #(
   output logic       clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
 );
 
-  `AXI_LITE_TYPEDEF_B_CHAN_T ( b_chan_lite_t         )
-  `AXI_LITE_TYPEDEF_R_CHAN_T ( r_chan_lite_t, data_t )
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
 
   localparam int unsigned NoRegs = 32'd10;
   typedef enum logic [3:0] {
@@ -290,11 +290,11 @@ module axi_lite_mailbox_slave #(
   logic       update_regs;        // register enable signal
 
   // register instantiation
-  `FFLARN( error_q, error_d, update_regs, '0, clk_i, rst_ni )
-  `FFLARN( wirqt_q, wirqt_d, update_regs, '0, clk_i, rst_ni )
-  `FFLARN( rirqt_q, rirqt_d, update_regs, '0, clk_i, rst_ni )
-  `FFLARN( irqs_q,  irqs_d,  update_regs, '0, clk_i, rst_ni )
-  `FFLARN( irqen_q, irqen_d, update_regs, '0, clk_i, rst_ni )
+  `FFLARN(error_q, error_d, update_regs, '0, clk_i, rst_ni)
+  `FFLARN(wirqt_q, wirqt_d, update_regs, '0, clk_i, rst_ni)
+  `FFLARN(rirqt_q, rirqt_d, update_regs, '0, clk_i, rst_ni)
+  `FFLARN(irqs_q, irqs_d, update_regs, '0, clk_i, rst_ni)
+  `FFLARN(irqen_q, irqen_d, update_regs, '0, clk_i, rst_ni)
 
   // Mailbox FIFO data assignments
   for (genvar i = 0; i < (AxiDataWidth/8); i++) begin : gen_w_mbox_data
@@ -571,20 +571,20 @@ module axi_lite_mailbox_intf #(
 );
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_lite_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_lite_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_lite_t                 )
-  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_lite_t, addr_t         )
-  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_lite_t, data_t         )
-  `AXI_LITE_TYPEDEF_REQ_T  ( req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t )
-  `AXI_LITE_TYPEDEF_RESP_T ( resp_lite_t, b_chan_lite_t, r_chan_lite_t                 )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_lite_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
 
   req_lite_t  [1:0] slv_reqs;
   resp_lite_t [1:0] slv_resps;
 
   for (genvar i = 0; i < 2; i++) begin : gen_port_assign
-    `AXI_LITE_ASSIGN_TO_REQ    ( slv_reqs[i], slv[i]       )
-    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resps[i] )
+    `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
+    `AXI_LITE_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
   end
 
   axi_lite_mailbox #(

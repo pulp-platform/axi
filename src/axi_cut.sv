@@ -138,22 +138,22 @@ module axi_cut_intf #(
   typedef logic [DATA_WIDTH/8-1:0] strb_t;
   typedef logic [USER_WIDTH-1:0]   user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t);
-  `AXI_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t);
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
   req_t  slv_req,  mst_req;
   resp_t slv_resp, mst_resp;
 
-  `AXI_ASSIGN_TO_REQ    ( slv_req,  in       );
-  `AXI_ASSIGN_FROM_RESP ( in,       slv_resp );
+  `AXI_ASSIGN_TO_REQ(slv_req, in)
+  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
 
-  `AXI_ASSIGN_FROM_REQ  ( out     , mst_req  );
-  `AXI_ASSIGN_TO_RESP   ( mst_resp, out      );
+  `AXI_ASSIGN_FROM_REQ(out, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, out)
 
   axi_cut #(
     .Bypass    (    BYPASS ),
@@ -212,13 +212,13 @@ module axi_lite_cut_intf #(
   typedef logic [DATA_WIDTH-1:0]   data_t;
   typedef logic [DATA_WIDTH/8-1:0] strb_t;
 
-  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t        )
-  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t)
-  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_t                )
-  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t        )
-  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t        )
-  `AXI_LITE_TYPEDEF_REQ_T     (     req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T    (    resp_t,  b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
   req_t   slv_req,  mst_req;
   resp_t  slv_resp, mst_resp;

@@ -97,7 +97,7 @@ module tb_axi_lite_mailbox;
     .AXI_DATA_WIDTH ( AxiDataWidth      )
   ) master_dv [1:0] (clk);
   for (genvar i = 0; i < 2; i++) begin : gen_conn_dv_masters
-    `AXI_LITE_ASSIGN           ( master[i],      master_dv[i]    )
+    `AXI_LITE_ASSIGN(master[i], master_dv[i])
   end
 
   // Masters control simulation run time

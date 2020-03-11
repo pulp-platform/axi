@@ -682,25 +682,25 @@ module axi_demux_intf #(
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
-  `AXI_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T (  w_chan_t, data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T (  b_chan_t,         id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t, id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T (  r_chan_t, data_t, id_t,         user_t);
-  `AXI_TYPEDEF_REQ_T    (     req_t, aw_chan_t, w_chan_t, ar_chan_t);
-  `AXI_TYPEDEF_RESP_T   (    resp_t,  b_chan_t, r_chan_t) ;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
   req_t                     slv_req;
   resp_t                    slv_resp;
   req_t  [NO_MST_PORTS-1:0] mst_req;
   resp_t [NO_MST_PORTS-1:0] mst_resp;
 
-  `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      )
-  `AXI_ASSIGN_FROM_RESP ( slv,      slv_resp )
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
 
   for (genvar i = 0; i < NO_MST_PORTS; i++) begin : gen_assign_mst_ports
-    `AXI_ASSIGN_FROM_REQ  ( mst[i]     , mst_req[i]  )
-    `AXI_ASSIGN_TO_RESP   ( mst_resp[i], mst[i]      )
+    `AXI_ASSIGN_FROM_REQ(mst[i], mst_req[i])
+    `AXI_ASSIGN_TO_RESP(mst_resp[i], mst[i])
   end
 
   axi_demux #(

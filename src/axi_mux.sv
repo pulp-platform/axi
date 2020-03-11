@@ -452,25 +452,25 @@ module axi_mux_intf #(
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
   // channels typedef
-  `AXI_TYPEDEF_AW_CHAN_T( slv_aw_chan_t, addr_t, slv_id_t, user_t )
-  `AXI_TYPEDEF_AW_CHAN_T( mst_aw_chan_t, addr_t, mst_id_t, user_t )
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, mst_id_t, user_t)
 
-  `AXI_TYPEDEF_W_CHAN_T (      w_chan_t, data_t,   strb_t, user_t )
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
 
-  `AXI_TYPEDEF_B_CHAN_T (  slv_b_chan_t,         slv_id_t, user_t )
-  `AXI_TYPEDEF_B_CHAN_T (  mst_b_chan_t,         mst_id_t, user_t )
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, user_t)
 
-  `AXI_TYPEDEF_AR_CHAN_T( slv_ar_chan_t, addr_t, slv_id_t, user_t )
-  `AXI_TYPEDEF_AR_CHAN_T( mst_ar_chan_t, addr_t, mst_id_t, user_t )
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, mst_id_t, user_t)
 
-  `AXI_TYPEDEF_R_CHAN_T (  slv_r_chan_t, data_t, slv_id_t, user_t )
-  `AXI_TYPEDEF_R_CHAN_T (  mst_r_chan_t, data_t, mst_id_t, user_t )
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, mst_id_t, user_t)
 
-  `AXI_TYPEDEF_REQ_T    (     slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t )
-  `AXI_TYPEDEF_RESP_T   (    slv_resp_t,  slv_b_chan_t, slv_r_chan_t )
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
-  `AXI_TYPEDEF_REQ_T    (     mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t )
-  `AXI_TYPEDEF_RESP_T   (    mst_resp_t,  mst_b_chan_t, mst_r_chan_t )
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
 
   slv_req_t  [NO_SLV_PORTS-1:0] slv_reqs;
   slv_resp_t [NO_SLV_PORTS-1:0] slv_resps;
@@ -478,12 +478,12 @@ module axi_mux_intf #(
   mst_resp_t                    mst_resp;
 
   for (genvar i = 0; i < NO_SLV_PORTS; i++) begin : gen_assign_slv_ports
-    `AXI_ASSIGN_TO_REQ    ( slv_reqs[i],  slv[i]       )
-    `AXI_ASSIGN_FROM_RESP ( slv[i],       slv_resps[i] )
+    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
+    `AXI_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
   end
 
-  `AXI_ASSIGN_FROM_REQ  ( mst     , mst_req  )
-  `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      )
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_mux #(
     .SlvAxiIDWidth ( SLV_AXI_ID_WIDTH ),

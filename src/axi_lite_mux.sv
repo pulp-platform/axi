@@ -415,13 +415,13 @@ module axi_lite_mux_intf #(
   typedef logic [AxiDataWidth-1:0]   data_t;
   typedef logic [AxiDataWidth/8-1:0] strb_t;
   // channels typedef
-  `AXI_LITE_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T (  w_chan_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T (  b_chan_t                 )
-  `AXI_LITE_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_R_CHAN_T (  r_chan_t, data_t         )
-  `AXI_LITE_TYPEDEF_REQ_T    (     req_t, aw_chan_t, w_chan_t, ar_chan_t )
-  `AXI_LITE_TYPEDEF_RESP_T   (    resp_t,  b_chan_t, r_chan_t            )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
   req_t     [NoSlvPorts-1:0] slv_reqs;
   resp_t    [NoSlvPorts-1:0] slv_resps;
@@ -429,12 +429,12 @@ module axi_lite_mux_intf #(
   resp_t                     mst_resp;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
-    `AXI_LITE_ASSIGN_TO_REQ    ( slv_reqs[i], slv[i]       );
-    `AXI_LITE_ASSIGN_FROM_RESP ( slv[i],      slv_resps[i] );
+    `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
+    `AXI_LITE_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
   end
 
-  `AXI_LITE_ASSIGN_FROM_REQ  ( mst     , mst_req  );
-  `AXI_LITE_ASSIGN_TO_RESP   ( mst_resp, mst      );
+  `AXI_LITE_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_lite_mux #(
     .aw_chan_t     ( aw_chan_t     ), // AW Channel Type

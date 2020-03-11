@@ -52,11 +52,11 @@ module axi_burst_splitter #(
   typedef logic [IdWidth-1:0]     id_t;
   typedef logic [DataWidth/8-1:0] strb_t;
   typedef logic [UserWidth-1:0]   user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t,         id_t,         user_t);
-  `AXI_TYPEDEF_W_CHAN_T ( w_chan_t,         data_t,       strb_t, user_t);
-  `AXI_TYPEDEF_B_CHAN_T ( b_chan_t,                 id_t,         user_t);
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t,         id_t,         user_t);
-  `AXI_TYPEDEF_R_CHAN_T ( r_chan_t,         data_t, id_t,         user_t);
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
   // Demultiplex between supported and unsupported transactions.
   req_t   act_req,  unsupported_req;
@@ -304,10 +304,10 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // Flip-Flops
   // --------------------------------------------------
-  `FFARN ( b_err_q  , b_err_d,   1'b0,         clk_i, rst_ni )
-  `FFARN ( b_state_q, b_state_d, BReady,       clk_i, rst_ni )
-  `FFARN ( r_last_q , r_last_d,  1'b0,         clk_i, rst_ni )
-  `FFARN ( r_state_q, r_state_d, RFeedthrough, clk_i, rst_ni )
+  `FFARN(b_err_q, b_err_d, 1'b0, clk_i, rst_ni)
+  `FFARN(b_state_q, b_state_d, BReady, clk_i, rst_ni)
+  `FFARN(r_last_q, r_last_d, 1'b0, clk_i, rst_ni)
+  `FFARN(r_state_q, r_state_d, RFeedthrough, clk_i, rst_ni)
 
   // --------------------------------------------------
   // Assumptions and assertions
@@ -448,8 +448,8 @@ module axi_burst_splitter_ax_chan #(
   end
 
   // registers
-  `FFARN ( ax_q,    ax_d,    '0,   clk_i, rst_ni )
-  `FFARN ( state_q, state_d, Idle, clk_i, rst_ni )
+  `FFARN(ax_q, ax_d, '0, clk_i, rst_ni)
+  `FFARN(state_q, state_d, Idle, clk_i, rst_ni)
 endmodule
 
 module axi_burst_splitter_counters #(
@@ -561,7 +561,7 @@ module axi_burst_splitter_counters #(
   end
 
   // registers
-  `FFARN ( err_q, err_d, '0, clk_i, rst_ni )
+  `FFARN(err_q, err_d, '0, clk_i, rst_ni)
 
   `ifndef VERILATOR
   // pragma translate_off
