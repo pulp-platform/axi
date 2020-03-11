@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - `axi_cdc`: Remove unused global `import axi_pkg::*`.
+- `axi_lite_cut_intf`: Add missing assigns to and from interface ports.
 
 
 ## 0.15.1 - 2020-03-09
