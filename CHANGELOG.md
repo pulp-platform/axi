@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_cdc_intf`: Add interface variant of AXI clock domain crossing.
 
 ### Changed
+
+### Fixed
+
+
+## 0.16.0 - 2020-03-11
+
+### Added
+- `axi_cdc_intf`: Add interface variant of AXI clock domain crossing.
 
 ### Fixed
 - `axi_cdc`: Remove unused global `import axi_pkg::*`.
