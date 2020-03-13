@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.16.1 - 2020-03-13
+
+### Fixed
 - Remove whitespace in and semicolon after macro calls.
 - `axi_intf`: Improve Verilator compatibility by disabling unsupported assertions.
 
