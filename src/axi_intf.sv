@@ -184,6 +184,8 @@ interface AXI_BUS_DV #(
     output r_id, r_data, r_resp, r_last, r_user, r_valid, input r_ready
   );
 
+  // pragma translate_off
+  `ifndef VERILATOR
   // Single-Channel Assertions: Signals including valid must not change between valid and handshake.
   // AW
   assert property (@(posedge clk_i) (aw_valid && !aw_ready |=> $stable(aw_id)));
@@ -230,6 +232,8 @@ interface AXI_BUS_DV #(
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_last)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_user)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> r_valid));
+  `endif
+  // pragma translate_on
 
 endinterface
 
