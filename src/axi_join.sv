@@ -20,7 +20,7 @@ module axi_join_intf (
   AXI_BUS.Master out
 );
 
-  `AXI_ASSIGN(out, in);
+  `AXI_ASSIGN(out, in)
 
 // pragma translate_off
 `ifndef VERILATOR

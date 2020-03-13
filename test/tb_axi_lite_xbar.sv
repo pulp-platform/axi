@@ -51,15 +51,15 @@ module tb_axi_lite_xbar;
   typedef logic [AxiDataWidth-1:0]      data_t;
   typedef logic [AxiStrbWidth-1:0]      strb_t;
 
-  `AXI_LITE_TYPEDEF_AW_CHAN_T ( aw_chan_lite_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T  (  w_chan_lite_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T  (  b_chan_lite_t                 )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_lite_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
 
-  `AXI_LITE_TYPEDEF_AR_CHAN_T ( ar_chan_lite_t, addr_t )
-  `AXI_LITE_TYPEDEF_R_CHAN_T  (  r_chan_lite_t, data_t )
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
 
-  `AXI_LITE_TYPEDEF_REQ_T  (  req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t )
-  `AXI_LITE_TYPEDEF_RESP_T ( resp_lite_t,  b_chan_lite_t, r_chan_lite_t                 )
+  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
@@ -121,9 +121,9 @@ module tb_axi_lite_xbar;
     .AXI_DATA_WIDTH ( AxiDataWidth      )
   ) master_dv [NoMasters-1:0] (clk);
   for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
-    `AXI_LITE_ASSIGN           ( master[i],      master_dv[i]    )
-    `AXI_LITE_ASSIGN_TO_REQ    ( masters_req[i], master[i]       )
-    `AXI_LITE_ASSIGN_FROM_RESP ( master[i],      masters_resp[i] )
+    `AXI_LITE_ASSIGN(master[i], master_dv[i])
+    `AXI_LITE_ASSIGN_TO_REQ(masters_req[i], master[i])
+    `AXI_LITE_ASSIGN_FROM_RESP(master[i], masters_resp[i])
   end
 
   AXI_LITE #(
@@ -135,9 +135,9 @@ module tb_axi_lite_xbar;
     .AXI_DATA_WIDTH ( AxiDataWidth     )
   ) slave_dv [NoSlaves-1:0](clk);
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
-    `AXI_LITE_ASSIGN          ( slave_dv[i],    slave[i]      )
-    `AXI_LITE_ASSIGN_FROM_REQ ( slave[i],       slaves_req[i] )
-    `AXI_LITE_ASSIGN_TO_RESP  ( slaves_resp[i], slave[i]      )
+    `AXI_LITE_ASSIGN(slave_dv[i], slave[i])
+    `AXI_LITE_ASSIGN_FROM_REQ(slave[i], slaves_req[i])
+    `AXI_LITE_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
   end
   // -------------------------------
   // AXI Rand Masters and Slaves

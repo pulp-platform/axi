@@ -376,13 +376,13 @@ module axi_lite_to_apb_intf #(
     logic  pslverr;  // gets translated into either `axi_pkg::RESP_OK` or `axi_pkg::RESP_SLVERR`
   } apb_resp_t;
 
-  `AXI_LITE_TYPEDEF_AW_CHAN_T (  aw_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T  (   w_chan_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T  (   b_chan_t                 )
-  `AXI_LITE_TYPEDEF_AR_CHAN_T (  ar_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_R_CHAN_T  (   r_chan_t, data_t         )
-  `AXI_LITE_TYPEDEF_REQ_T     (  axi_req_t, aw_chan_t, w_chan_t, ar_chan_t )
-  `AXI_LITE_TYPEDEF_RESP_T    ( axi_resp_t,  b_chan_t, r_chan_t )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
   axi_req_t                     axi_req;
   axi_resp_t                    axi_resp;
@@ -390,8 +390,8 @@ module axi_lite_to_apb_intf #(
   apb_resp_t  [NoApbSlaves-1:0] apb_resp;
   logic       [SelIdxWidth-1:0] apb_sel;
 
-  `AXI_LITE_ASSIGN_TO_REQ    ( axi_req,  slv       )
-  `AXI_LITE_ASSIGN_FROM_RESP ( slv,       axi_resp )
+  `AXI_LITE_ASSIGN_TO_REQ(axi_req, slv)
+  `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_resp)
 
   onehot_to_bin #(
     .ONEHOT_WIDTH ( NoApbSlaves )

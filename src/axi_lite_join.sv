@@ -20,7 +20,7 @@ module axi_lite_join_intf (
   AXI_LITE.Master out
 );
 
-  `AXI_LITE_ASSIGN(out, in);
+  `AXI_LITE_ASSIGN(out, in)
 
 // pragma translate_off
 `ifndef VERILATOR

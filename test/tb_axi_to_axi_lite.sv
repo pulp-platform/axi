@@ -43,7 +43,7 @@ module tb_axi_to_axi_lite;
     .AXI_DATA_WIDTH(DW)
   ) axi_lite();
 
-  `AXI_LITE_ASSIGN(axi_lite_dv, axi_lite);
+  `AXI_LITE_ASSIGN(axi_lite_dv, axi_lite)
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
@@ -59,7 +59,7 @@ module tb_axi_to_axi_lite;
     .AXI_USER_WIDTH(UW)
   ) axi();
 
-  `AXI_ASSIGN(axi, axi_dv);
+  `AXI_ASSIGN(axi, axi_dv)
 
   axi_to_axi_lite_intf #(
     .AXI_ID_WIDTH       ( IW      ),

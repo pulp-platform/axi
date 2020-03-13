@@ -21,13 +21,13 @@
 // AXI4+ATOP Channel and Request/Response Structs
 //
 // Usage Example:
-// `AXI_TYPEDEF_AW_CHAN_T(axi_aw_t,   axi_addr_t, axi_id_t, axi_user_t);
-// `AXI_TYPEDEF_W_CHAN_T (axi_w_t,    axi_data_t, axi_strb_t, axi_user_t);
-// `AXI_TYPEDEF_B_CHAN_T (axi_b_t,    axi_id_t, axi_user_t);
-// `AXI_TYPEDEF_AR_CHAN_T(axi_ar_t,   axi_addr_t, axi_id_t, axi_user_t);
-// `AXI_TYPEDEF_R_CHAN_T (axi_r_t,    axi_data_t, axi_id_t, axi_user_t);
-// `AXI_TYPEDEF_REQ_T    (axi_req_t,  axi_aw_t, axi_w_t, axi_ar_t);
-// `AXI_TYPEDEF_RESP_T   (axi_resp_t, axi_b_t, axi_r_t);
+// `AXI_TYPEDEF_AW_CHAN_T(axi_aw_t, axi_addr_t, axi_id_t, axi_user_t)
+// `AXI_TYPEDEF_W_CHAN_T(axi_w_t, axi_data_t, axi_strb_t, axi_user_t)
+// `AXI_TYPEDEF_B_CHAN_T(axi_b_t, axi_id_t, axi_user_t)
+// `AXI_TYPEDEF_AR_CHAN_T(axi_ar_t, axi_addr_t, axi_id_t, axi_user_t)
+// `AXI_TYPEDEF_R_CHAN_T(axi_r_t, axi_data_t, axi_id_t, axi_user_t)
+// `AXI_TYPEDEF_REQ_T(axi_req_t, axi_aw_t, axi_w_t, axi_ar_t)
+// `AXI_TYPEDEF_RESP_T(axi_resp_t, axi_b_t, axi_r_t)
 `define AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)  \
   typedef struct packed {                                       \
     id_t              id;                                       \
@@ -106,13 +106,13 @@
 // AXI-Lite (4+Prot) Channel and Request/Response Structs
 //
 // Usage Example:
-// `AXI_LITE_TYPEDEF_AW_CHAN_T(axi_lite_aw_t,   axi_lite_addr_t);
-// `AXI_LITE_TYPEDEF_W_CHAN_T (axi_lite_w_t,    axi_lite_data_t, axi_lite_strb_t);
-// `AXI_LITE_TYPEDEF_B_CHAN_T (axi_lite_b_t);
-// `AXI_LITE_TYPEDEF_AR_CHAN_T(axi_lite_ar_t,   axi_lite_addr_t);
-// `AXI_LITE_TYPEDEF_R_CHAN_T (axi_lite_r_t,    axi_lite_data_t);
-// `AXI_LITE_TYPEDEF_REQ_T    (axi_lite_req_t,  axi_lite_aw_t, axi_lite_w_t, axi_lite_ar_t);
-// `AXI_LITE_TYPEDEF_RESP_T   (axi_lite_resp_t, axi_lite_b_t, axi_lite_r_t);
+// `AXI_LITE_TYPEDEF_AW_CHAN_T(axi_lite_aw_t, axi_lite_addr_t)
+// `AXI_LITE_TYPEDEF_W_CHAN_T(axi_lite_w_t, axi_lite_data_t, axi_lite_strb_t)
+// `AXI_LITE_TYPEDEF_B_CHAN_T(axi_lite_b_t)
+// `AXI_LITE_TYPEDEF_AR_CHAN_T(axi_lite_ar_t, axi_lite_addr_t)
+// `AXI_LITE_TYPEDEF_R_CHAN_T(axi_lite_r_t, axi_lite_data_t)
+// `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, axi_lite_aw_t, axi_lite_w_t, axi_lite_ar_t)
+// `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, axi_lite_b_t, axi_lite_r_t)
 `define AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)  \
   typedef struct packed {                                   \
     addr_t          addr;                                   \

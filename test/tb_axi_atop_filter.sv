@@ -78,7 +78,7 @@ module tb_axi_atop_filter #(
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) upstream ();
 
-  `AXI_ASSIGN(upstream, upstream_dv);
+  `AXI_ASSIGN(upstream, upstream_dv)
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
@@ -96,7 +96,7 @@ module tb_axi_atop_filter #(
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) downstream ();
 
-  `AXI_ASSIGN(downstream_dv, downstream);
+  `AXI_ASSIGN(downstream_dv, downstream)
 
   axi_atop_filter_intf #(
     .AXI_ID_WIDTH       (AXI_ID_WIDTH),

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- Remove whitespace in and semicolon after macro calls.
 
 
 ## 0.16.0 - 2020-03-11

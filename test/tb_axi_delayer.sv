@@ -40,8 +40,8 @@ module tb_axi_delayer;
     .AXI_ID_WIDTH(IW),
     .AXI_USER_WIDTH(UW)
   ) axi_slave(), axi_master();
-  `AXI_ASSIGN(axi_slave_dv, axi_slave);
-  `AXI_ASSIGN(axi_master, axi_master_dv);
+  `AXI_ASSIGN(axi_slave_dv, axi_slave)
+  `AXI_ASSIGN(axi_master, axi_master_dv)
 
   axi_delayer_intf #(
     .AXI_ADDR_WIDTH     ( AW ),

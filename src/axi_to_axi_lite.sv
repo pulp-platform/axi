@@ -269,32 +269,32 @@ module axi_to_axi_lite_intf #(
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
   // full channels typedefs
-  `AXI_TYPEDEF_AW_CHAN_T( full_aw_chan_t, addr_t, id_t,         user_t)
-  `AXI_TYPEDEF_W_CHAN_T (  full_w_chan_t, data_t,       strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T (  full_b_chan_t,         id_t,         user_t)
-  `AXI_TYPEDEF_AR_CHAN_T( full_ar_chan_t, addr_t, id_t,         user_t)
-  `AXI_TYPEDEF_R_CHAN_T (  full_r_chan_t, data_t, id_t,         user_t)
-  `AXI_TYPEDEF_REQ_T    (     full_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T   (    full_resp_t,  full_b_chan_t, full_r_chan_t                )
+  `AXI_TYPEDEF_AW_CHAN_T(full_aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(full_w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(full_b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(full_ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(full_r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(full_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(full_resp_t, full_b_chan_t, full_r_chan_t)
   // LITE channels typedef
-  `AXI_LITE_TYPEDEF_AW_CHAN_T( lite_aw_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_W_CHAN_T (  lite_w_chan_t, data_t, strb_t )
-  `AXI_LITE_TYPEDEF_B_CHAN_T (  lite_b_chan_t                 )
-  `AXI_LITE_TYPEDEF_AR_CHAN_T( lite_ar_chan_t, addr_t         )
-  `AXI_LITE_TYPEDEF_R_CHAN_T (  lite_r_chan_t, data_t         )
-  `AXI_LITE_TYPEDEF_REQ_T    (     lite_req_t, lite_aw_chan_t, lite_w_chan_t, lite_ar_chan_t )
-  `AXI_LITE_TYPEDEF_RESP_T   (    lite_resp_t,  lite_b_chan_t, lite_r_chan_t                 )
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(lite_aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(lite_w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(lite_b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(lite_ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T (lite_r_chan_t, data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(lite_req_t, lite_aw_chan_t, lite_w_chan_t, lite_ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(lite_resp_t, lite_b_chan_t, lite_r_chan_t)
 
   full_req_t  full_req;
   full_resp_t full_resp;
   lite_req_t  lite_req;
   lite_resp_t lite_resp;
 
-  `AXI_ASSIGN_TO_REQ         ( full_req,  slv       )
-  `AXI_ASSIGN_FROM_RESP      ( slv     ,  full_resp )
+  `AXI_ASSIGN_TO_REQ(full_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, full_resp)
 
-  `AXI_LITE_ASSIGN_FROM_REQ  ( mst      , lite_req  )
-  `AXI_LITE_ASSIGN_TO_RESP   ( lite_resp, mst       )
+  `AXI_LITE_ASSIGN_FROM_REQ(mst, lite_req)
+  `AXI_LITE_ASSIGN_TO_RESP(lite_resp, mst)
 
   axi_to_axi_lite #(
     .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),

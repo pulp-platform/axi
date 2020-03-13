@@ -104,26 +104,26 @@ module axi_modify_address_intf #(
   typedef logic [DATA_WIDTH/8-1:0]   strb_t;
   typedef logic [USER_WIDTH-1:0]     user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( slv_aw_chan_t, slv_addr_t, id_t, user_t )
-  `AXI_TYPEDEF_AW_CHAN_T ( mst_aw_chan_t, mst_addr_t, id_t, user_t )
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t,       strb_t, user_t )
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,         id_t,         user_t )
-  `AXI_TYPEDEF_AR_CHAN_T ( slv_ar_chan_t, slv_addr_t, id_t, user_t )
-  `AXI_TYPEDEF_AR_CHAN_T ( mst_ar_chan_t, mst_addr_t, id_t, user_t )
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t, id_t,         user_t )
-  `AXI_TYPEDEF_REQ_T     (  slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t )
-  `AXI_TYPEDEF_REQ_T     (  mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t )
-  `AXI_TYPEDEF_RESP_T    (     resp_t,  b_chan_t, r_chan_t            )
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, slv_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, mst_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, slv_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, mst_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
   slv_req_t  slv_req;
   mst_req_t  mst_req;
   resp_t     slv_resp, mst_resp;
 
-  `AXI_ASSIGN_TO_REQ    ( slv_req, in       )
-  `AXI_ASSIGN_FROM_RESP ( in,      slv_resp )
+  `AXI_ASSIGN_TO_REQ(slv_req, in)
+  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
 
-  `AXI_ASSIGN_FROM_REQ  ( out     , mst_req )
-  `AXI_ASSIGN_TO_RESP   ( mst_resp, out     )
+  `AXI_ASSIGN_FROM_REQ(out, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, out)
 
   axi_modify_address #(
     .slv_addr_t ( slv_req_t  ), // address type of slave port
