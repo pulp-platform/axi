@@ -127,35 +127,35 @@ module axi_dw_converter_intf #(
     AXI_BUS.Master       mst
   );
 
-  typedef logic [AXI_ID_WIDTH-1:0] id_t                                 ;
-  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t                             ;
-  typedef logic [AXI_MST_DATA_WIDTH-1:0] mst_data_t                     ;
-  typedef logic [AXI_MST_DATA_WIDTH/8-1:0] mst_strb_t                   ;
-  typedef logic [AXI_SLV_DATA_WIDTH-1:0] slv_data_t                     ;
-  typedef logic [AXI_SLV_DATA_WIDTH/8-1:0] slv_strb_t                   ;
-  typedef logic [AXI_USER_WIDTH-1:0] user_t                             ;
-  `AXI_TYPEDEF_AW_CHAN_T( aw_chan_t, addr_t, id_t, user_t )             ;
-  `AXI_TYPEDEF_W_CHAN_T ( mst_w_chan_t, mst_data_t, mst_strb_t, user_t );
-  `AXI_TYPEDEF_W_CHAN_T ( slv_w_chan_t, slv_data_t, slv_strb_t, user_t );
-  `AXI_TYPEDEF_B_CHAN_T ( b_chan_t, id_t, user_t )                      ;
-  `AXI_TYPEDEF_AR_CHAN_T( ar_chan_t, addr_t, id_t, user_t )             ;
-  `AXI_TYPEDEF_R_CHAN_T ( mst_r_chan_t, mst_data_t, id_t, user_t )      ;
-  `AXI_TYPEDEF_R_CHAN_T ( slv_r_chan_t, slv_data_t, id_t, user_t )      ;
-  `AXI_TYPEDEF_REQ_T ( mst_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t )  ;
-  `AXI_TYPEDEF_RESP_T ( mst_resp_t, b_chan_t, mst_r_chan_t )            ;
-  `AXI_TYPEDEF_REQ_T ( slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t )  ;
-  `AXI_TYPEDEF_RESP_T ( slv_resp_t, b_chan_t, slv_r_chan_t )            ;
+  typedef logic [AXI_ID_WIDTH-1:0] id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_MST_DATA_WIDTH-1:0] mst_data_t;
+  typedef logic [AXI_MST_DATA_WIDTH/8-1:0] mst_strb_t;
+  typedef logic [AXI_SLV_DATA_WIDTH-1:0] slv_data_t;
+  typedef logic [AXI_SLV_DATA_WIDTH/8-1:0] slv_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, mst_data_t, mst_strb_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, slv_data_t, slv_strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, mst_data_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, slv_data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_t, slv_r_chan_t)
 
   slv_req_t  slv_req;
   slv_resp_t slv_resp;
   mst_req_t  mst_req;
   mst_resp_t mst_resp;
 
-  `AXI_ASSIGN_TO_REQ ( slv_req, slv )
-  `AXI_ASSIGN_FROM_RESP ( slv, slv_resp )
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
 
-  `AXI_ASSIGN_FROM_REQ ( mst , mst_req )
-  `AXI_ASSIGN_TO_RESP ( mst_resp, mst )
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_dw_converter #(
     .AxiMaxReads    ( AXI_MAX_READS      ),
