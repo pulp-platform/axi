@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_atop_filter`: Fix underflow in counter for `AxiMaxWriteTxns = 1`.
 
 
 ## 0.16.1 - 2020-03-13

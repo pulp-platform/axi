@@ -49,7 +49,8 @@ module axi_atop_filter #(
   input  resp_t mst_resp_i
 );
 
-  localparam int unsigned COUNTER_WIDTH = $clog2(AxiMaxWriteTxns+1);
+  // Minimum counter width is 2 to detect underflows.
+  localparam int unsigned COUNTER_WIDTH = (AxiMaxWriteTxns == 1) ? 2 : $clog2(AxiMaxWriteTxns+1);
   typedef struct packed {
     logic                     underflow;
     logic [COUNTER_WIDTH-1:0] cnt;
