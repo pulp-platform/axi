@@ -28,7 +28,9 @@ for DW in 8 16 32 64 128 256 512 1024; do
 done
 
 call_vsim tb_axi_delayer
-call_vsim tb_axi_atop_filter -GN_TXNS=1000
+for MAX_TXNS in 1 3 12; do
+    call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
+done
 call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_cdc
