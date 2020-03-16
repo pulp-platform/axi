@@ -84,8 +84,9 @@ module axi_dw_downsizer #(
   rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
     .DataType (slv_r_chan_t),
+    .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
-    .AxiVldRdy(1'b1        )
+    .LockIn   (1'b1        )
   ) i_slv_r_arb (
     .clk_i  (clk_i             ),
     .rst_ni (rst_ni            ),
@@ -302,8 +303,6 @@ module axi_dw_downsizer #(
     .exists_gnt_o    (/* Unused  */ )
   );
 
-
-
   typedef struct packed {
     ar_chan_t ar                ;
     logic ar_valid              ;
@@ -361,76 +360,84 @@ module axi_dw_downsizer #(
 
           // New read request
           if (arb_slv_ar_req && (idx_downsizer == t)) begin
-            arb_slv_ar_gnt_tran[t] = 1'b1;
-            // Push to ID queue
-            idqueue_push[t]        = 1'b1;
+            // Do not push to the ID Queue if there is currently a beat on the R channel.
+            // It is not possible to push and pop from the id queue at the same cycle,
+            // and pushing to the ID Queue would make the r_valid signal
+            // go down. This is a violation of AXI stability properties.
+            // This hinders the performance of the downsizer, but this is acceptable
+            // since it goes in the direction of the narrow data bus.
+            if (!mst_resp.r_valid) begin
+              arb_slv_ar_gnt_tran[t] = 1'b1;
+              // Push to ID queue
+              idqueue_push[t]        = 1'b1;
 
-            // Default state
-            r_state_d = R_PASSTHROUGH;
+              // Default state
+              r_state_d = R_PASSTHROUGH;
 
-            // Save beat
-            r_req_d.ar           = slv_req_i.ar     ;
-            r_req_d.ar_valid     = 1'b1             ;
-            r_req_d.burst_len    = slv_req_i.ar.len ;
-            r_req_d.orig_ar_size = slv_req_i.ar.size;
-            if (inject_aw_into_ar) begin
-              r_req_d.ar.id        = slv_req_i.aw.id    ;
-              r_req_d.ar.addr      = slv_req_i.aw.addr  ;
-              r_req_d.ar.size      = slv_req_i.aw.size  ;
-              r_req_d.ar.burst     = slv_req_i.aw.burst ;
-              r_req_d.ar.len       = slv_req_i.aw.len   ;
-              r_req_d.ar.lock      = slv_req_i.aw.lock  ;
-              r_req_d.ar.cache     = slv_req_i.aw.cache ;
-              r_req_d.ar.prot      = slv_req_i.aw.prot  ;
-              r_req_d.ar.qos       = slv_req_i.aw.qos   ;
-              r_req_d.ar.region    = slv_req_i.aw.region;
-              r_req_d.ar.user      = slv_req_i.aw.user  ;
-              r_req_d.ar_valid     = 1'b0               ; // Injected "AR"s from AW are not valid.
-              r_req_d.burst_len    = slv_req_i.aw.len   ;
-              r_req_d.orig_ar_size = slv_req_i.aw.size  ;
-            end
+              // Save beat
+              r_req_d.ar           = slv_req_i.ar     ;
+              r_req_d.ar_valid     = 1'b1             ;
+              r_req_d.burst_len    = slv_req_i.ar.len ;
+              r_req_d.orig_ar_size = slv_req_i.ar.size;
+              if (inject_aw_into_ar) begin
+                r_req_d.ar.id        = slv_req_i.aw.id    ;
+                r_req_d.ar.addr      = slv_req_i.aw.addr  ;
+                r_req_d.ar.size      = slv_req_i.aw.size  ;
+                r_req_d.ar.burst     = slv_req_i.aw.burst ;
+                r_req_d.ar.len       = slv_req_i.aw.len   ;
+                r_req_d.ar.lock      = slv_req_i.aw.lock  ;
+                r_req_d.ar.cache     = slv_req_i.aw.cache ;
+                r_req_d.ar.prot      = slv_req_i.aw.prot  ;
+                r_req_d.ar.qos       = slv_req_i.aw.qos   ;
+                r_req_d.ar.region    = slv_req_i.aw.region;
+                r_req_d.ar.user      = slv_req_i.aw.user  ;
+                r_req_d.ar_valid     = 1'b0               ; // Injected "AR"s from AW are not valid.
+                r_req_d.burst_len    = slv_req_i.aw.len   ;
+                r_req_d.orig_ar_size = slv_req_i.aw.size  ;
+              end
 
-            case (r_req_d.ar.burst)
-              axi_pkg::BURST_INCR : begin
-                // Modifiable transaction
-                if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
-                  // Evaluate output burst length
-                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
-                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
+              case (r_req_d.ar.burst)
+                axi_pkg::BURST_INCR : begin
+                  // Modifiable transaction
+                  if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
+                    // Evaluate output burst length
+                    automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
+                    automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
 
-                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
-                  r_req_d.ar.size = AxiMstMaxSize                           ;
-                  r_state_d       = R_INCR_DOWNSIZE                         ;
-                // Non-modifiable transaction
-                end else begin
-                  // Incoming transaction is wider than the master bus
-                  if (r_req_d.ar.size > AxiMstMaxSize) begin
-                    r_req_d.ar_throw_error = 1'b1         ;
-                    r_state_d              = R_PASSTHROUGH;
+                    r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
+                    r_req_d.ar.size = AxiMstMaxSize                           ;
+                    r_state_d       = R_INCR_DOWNSIZE                         ;
+                  // Non-modifiable transaction
+                  end else begin
+                    // Incoming transaction is wider than the master bus
+                    if (r_req_d.ar.size > AxiMstMaxSize) begin
+                      r_req_d.ar_throw_error = 1'b1         ;
+                      r_state_d              = R_PASSTHROUGH;
+                    end
                   end
                 end
-              end
 
-              axi_pkg::BURST_WRAP: begin
-                // The DW converter does not support this kind of burst ...
-                r_state_d              = R_PASSTHROUGH;
-                r_req_d.ar_throw_error = 1'b1         ;
+                axi_pkg::BURST_WRAP: begin
+                  // The DW converter does not support this kind of burst ...
+                  r_state_d              = R_PASSTHROUGH;
+                  r_req_d.ar_throw_error = 1'b1         ;
 
-                // ... but if this is a narrow single beat transaction, it might
-                if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
-                  r_req_d.ar_throw_error = 1'b0;
-              end
+                  // ... but if this is a narrow single beat transaction, it might
+                  if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
+                    r_req_d.ar_throw_error = 1'b0;
+                end
 
-              axi_pkg::BURST_FIXED: begin
-                // The DW converter does not support this kind of burst ...
-                r_state_d              = R_PASSTHROUGH;
-                r_req_d.ar_throw_error = 1'b1         ;
+                axi_pkg::BURST_FIXED: begin
+                  // The DW converter does not support this kind of burst ...
+                  r_state_d              = R_PASSTHROUGH;
+                  r_req_d.ar_throw_error = 1'b1         ;
 
-                // ... but if this is a narrow single beat transaction, it might
-                if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
-                  r_req_d.ar_throw_error = 1'b0;
-              end
-            endcase
+                  // ... but if this is a narrow single beat transaction, it might
+                  if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
+                    r_req_d.ar_throw_error = 1'b0;
+                end
+              endcase
+            end
           end
         end
 
