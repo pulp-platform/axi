@@ -41,7 +41,7 @@ module axi_isolate #(
   input  logic  isolate_i,  // isolate master port from slave port
   output logic  isolated_o  // master port is isolated from slave port
 );
-  // plus 1 in clog for accouning no open transaction, plus one bit for atomic inhection
+  // plus 1 in clog for accouning no open transaction, plus one bit for atomic injection
   localparam int unsigned CounterWidth = $clog2(NoPending + 32'd1) + 32'd1;
   typedef logic [CounterWidth-1:0] cnt_t;
 
@@ -56,34 +56,29 @@ module axi_isolate #(
   cnt_t pending_aw_d,    pending_aw_q;
   logic update_aw_cnt;
 
-  // counter for preventing to valid deassertion in W is allowed to under or overflow,
-  // the reason is that a data transfer can happen before the corresponding AW is transferred
-  cnt_t pending_w_d,     pending_w_q;
-  logic update_w_cnt;
+  // W channel unlocks over a FIFO
+  logic w_push, w_full, w_empty;
 
   cnt_t pending_ar_d,    pending_ar_q;
   logic update_ar_cnt;
 
-  `FFLARN(pending_aw_q, pending_aw_d, update_aw_cnt,   '0,      clk_i, rst_ni)
-  `FFLARN(pending_w_q,  pending_w_d,  update_w_cnt,    '0,      clk_i, rst_ni)
-  `FFLARN(pending_ar_q, pending_ar_d, update_ar_cnt,   '0,      clk_i, rst_ni)
-  `FFLARN(state_aw_q,   state_aw_d,   update_aw_state, ISOLATE, clk_i, rst_ni)
-  `FFLARN(state_ar_q,   state_ar_d,   update_ar_state, ISOLATE, clk_i, rst_ni)
+  `FFLARN(pending_aw_q,pending_aw_d, update_aw_cnt, '0, clk_i, rst_ni)
+  `FFLARN(pending_ar_q, pending_ar_d, update_ar_cnt, '0, clk_i, rst_ni)
+  `FFLARN(state_aw_q, state_aw_d, update_aw_state, ISOLATE, clk_i, rst_ni)
+  `FFLARN(state_ar_q, state_ar_d, update_ar_state, ISOLATE, clk_i, rst_ni)
 
   // Update counters.
   always_comb begin
     pending_aw_d  = pending_aw_q;
     update_aw_cnt = 1'b0;
-    pending_w_d   = pending_w_q;
-    update_w_cnt  = 1'b0;
+    w_push        = 1'b0;
     pending_ar_d  = pending_ar_q;
     update_ar_cnt = 1'b0;
 
     if (mst_req_o.aw_valid && (state_aw_q == NORMAL)) begin
       pending_aw_d++;
       update_aw_cnt = 1'b1;
-      pending_w_d++;
-      update_w_cnt = 1'b1;
+      w_push        = 1'b1;
       if (mst_req_o.aw.atop[axi_pkg::ATOP_R_RESP]) begin
         pending_ar_d++; // handle atomic with read response by injecting a count in AR
         update_ar_cnt = 1'b1;
@@ -92,10 +87,6 @@ module axi_isolate #(
     if (mst_req_o.ar_valid && (state_ar_q == NORMAL)) begin
       pending_ar_d++;
       update_ar_cnt = 1'b1;
-    end
-    if (mst_req_o.w_valid  && mst_resp_i.w_ready && mst_req_o.w.last) begin
-      pending_w_d--;
-      update_w_cnt = 1'b1;
     end
     if (mst_resp_i.b_valid  && mst_req_o.b_ready) begin
       pending_aw_d--;
@@ -109,11 +100,12 @@ module axi_isolate #(
 
   // Perform isolation.
   always_comb begin
+    // Default assignments
     state_aw_d      = state_aw_q;
     update_aw_state = 1'b0;
     state_ar_d      = state_ar_q;
     update_ar_state = 1'b0;
-
+    // Connect channel per default
     mst_req_o       = slv_req_i;
     slv_resp_o      = mst_resp_i;
 
@@ -125,7 +117,7 @@ module axi_isolate #(
         // Cut valid handshake if a counter capacity is reached.
         // It has to check AR counter in case of for atomics. Counters are wide enough
         // to account for injected count in the read response counter
-        if (pending_aw_q >= cnt_t'(NoPending) || pending_ar_q >= cnt_t'(2*NoPending)) begin
+        if (pending_aw_q >= cnt_t'(NoPending) || pending_ar_q >= cnt_t'(2*NoPending) || w_full) begin
           mst_req_o.aw_valid  = 1'b0;
           slv_resp_o.aw_ready = 1'b0;
           if (isolate_i) begin
@@ -176,9 +168,8 @@ module axi_isolate #(
       end
     endcase
 
-    // cut the W channel in both directions, if the `pending_w_q` is zero, to prevent undeflow, and
-    // when AW on the master port is not valid
-    if ((pending_w_q == '0) && !mst_req_o.aw_valid) begin
+    // W channel is cloded as long as nothing is in the unlock FIFO.
+    if (w_empty) begin
       mst_req_o.w         = '0;
       mst_req_o.w_valid   = 1'b0;
       slv_resp_o.w_ready  = 1'b0;
@@ -242,6 +233,25 @@ module axi_isolate #(
     endcase
   end
 
+  // This FIFO holds over the push and pop signals the unlock state for the W channel
+  fifo_v3 #(
+    .FALL_THROUGH ( 1'b1      ),
+    .DATA_WIDTH   ( 32'd1     ),
+    .DEPTH        ( NoPending )
+  ) i_w_fifo (
+    .clk_i     ( clk_i                                                     ),
+    .rst_ni    ( rst_ni                                                    ),
+    .flush_i   ( 1'b0                                                      ),
+    .testmode_i( 1'b0                                                      ),
+    .full_o    ( w_full                                                    ),
+    .empty_o   ( w_empty                                                   ),
+    .usage_o   ( /*not used*/                                              ),
+    .data_i    ( 1'd0                                                      ),
+    .push_i    ( w_push                                                    ),
+    .data_o    ( /*not used*/                                              ),
+    .pop_i     ( mst_req_o.w_valid & mst_resp_i.w_ready & mst_req_o.w.last )
+  );
+
   // the isolated output signal
   assign isolated_o = (state_aw_q == ISOLATE && state_ar_q == ISOLATE);
 
@@ -290,24 +300,24 @@ module axi_isolate_intf #(
   typedef logic [AxiDataWidth/8-1:0] strb_t;
   typedef logic [AxiUserWidth-1:0]   user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T ( aw_chan_t, addr_t,         id_t, user_t )
-  `AXI_TYPEDEF_W_CHAN_T  (  w_chan_t, data_t, strb_t,       user_t )
-  `AXI_TYPEDEF_B_CHAN_T  (  b_chan_t,                 id_t, user_t )
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
 
-  `AXI_TYPEDEF_AR_CHAN_T ( ar_chan_t, addr_t,         id_t, user_t )
-  `AXI_TYPEDEF_R_CHAN_T  (  r_chan_t, data_t,         id_t, user_t )
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
-  `AXI_TYPEDEF_REQ_T     (  req_t, aw_chan_t, w_chan_t, ar_chan_t )
-  `AXI_TYPEDEF_RESP_T    ( resp_t,  b_chan_t,            r_chan_t )
+  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
-  req_t   slv_req,  mst_req;
-  resp_t  slv_resp, mst_resp;
+  req_t  slv_req,  mst_req;
+  resp_t slv_resp, mst_resp;
 
-  `AXI_ASSIGN_TO_REQ    ( slv_req,  slv      )
-  `AXI_ASSIGN_FROM_RESP ( slv,      slv_resp )
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
 
-  `AXI_ASSIGN_FROM_REQ  ( mst,      mst_req  )
-  `AXI_ASSIGN_TO_RESP   ( mst_resp, mst      )
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_isolate #(
     .NoPending ( NoPending ), // Number of pending requests per channel
