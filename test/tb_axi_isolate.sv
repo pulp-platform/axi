@@ -13,10 +13,11 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module tb_axi_isolate;
+module tb_axi_isolate #(
+    parameter int unsigned NoWrites = 50000,  // How many writes per master
+    parameter int unsigned NoReads  = 30000   // How many reads per master
+  );
   // Random master no Transactions
-  localparam int unsigned NoWrites     = 50000;  // How many writes per master
-  localparam int unsigned NoReads      = 30000;  // How many reads per master
   localparam int unsigned NoPendingDut = 16;
   // Random Master Atomics
   localparam int unsigned MaxAW      = 32'd30;
@@ -31,6 +32,9 @@ module tb_axi_isolate;
   localparam int unsigned AxiAddrWidth =  32;    // Axi Address Width
   localparam int unsigned AxiDataWidth =  64;    // Axi Data Width
   localparam int unsigned AxiUserWidth =  5;
+  // Sim print config, how many transactions
+  localparam int unsigned PrintTnx = 1000;
+
 
   typedef axi_test::rand_axi_master #(
     // AXI interface parameters
@@ -110,11 +114,11 @@ module tb_axi_isolate;
   // DUT
   //-----------------------------------
   axi_isolate_intf #(
-    .NoPending    ( NoPendingDut ), // number of pending requests
-    .AxiIdWidth   ( AxiIdWidth   ), // AXI ID width
-    .AxiAddrWidth ( AxiAddrWidth ), // AXI address width
-    .AxiDataWidth ( AxiDataWidth ), // AXI data width
-    .AxiUserWidth ( AxiUserWidth )  // AXI user width
+    .NUM_PENDING    ( NoPendingDut ), // number of pending requests
+    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
+    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
+    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
   ) i_dut (
     .clk_i      ( clk      ), // clock
     .rst_ni     ( rst_n    ), // asynchronous reset active low
@@ -151,6 +155,47 @@ module tb_axi_isolate;
       repeat ($urandom_range(100000,1)) @(posedge clk);
       isolate <= 1'b1;
       repeat ($urandom_range(100000,1)) @(posedge clk);
+    end
+  end
+
+  initial begin : proc_sim_progress
+    automatic int unsigned aw         = 0;
+    automatic int unsigned ar         = 0;
+    automatic bit          aw_printed = 1'b0;
+    automatic bit          ar_printed = 1'b0;
+
+    @(posedge rst_n);
+
+    forever begin
+      @(posedge clk);
+      #TestTime;
+      if (master.aw_valid && master.aw_ready) begin
+        aw++;
+      end
+      if (master.ar_valid && master.ar_ready) begin
+        ar++;
+      end
+
+      if ((aw % PrintTnx == 0) && ! aw_printed) begin
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        aw_printed = 1'b1;
+      end
+      if ((ar % PrintTnx == 0) && !ar_printed) begin
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        ar_printed = 1'b1;
+      end
+
+      if (aw % PrintTnx == 1) begin
+        aw_printed = 1'b0;
+      end
+      if (ar % PrintTnx == 1) begin
+        ar_printed = 1'b0;
+      end
+
+      if (end_of_sim) begin
+        $info("All transactions completed.");
+        break;
+      end
     end
   end
 
