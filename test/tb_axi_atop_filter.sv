@@ -119,7 +119,7 @@ module tb_axi_atop_filter #(
     .AW(AXI_ADDR_WIDTH), .DW(AXI_DATA_WIDTH), .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH),
     .TA(TA), .TT(TT),
     .MAX_READ_TXNS        (AXI_MAX_READ_TXNS),
-    .MAX_WRITE_TXNS       (AXI_MAX_WRITE_TXNS),
+    .MAX_WRITE_TXNS       (AXI_MAX_WRITE_TXNS+2), // master is not required to comply
     .AX_MIN_WAIT_CYCLES   (REQ_MIN_WAIT_CYCLES),
     .AX_MAX_WAIT_CYCLES   (REQ_MAX_WAIT_CYCLES),
     .W_MIN_WAIT_CYCLES    (REQ_MIN_WAIT_CYCLES),
