@@ -165,10 +165,11 @@ module axi_lite_xbar #(
     // connect the decode error module to the last index of the demux master port
     // typedef as the decode error slave uses full axi
     axi_lite_to_axi #(
-      .req_lite_t  ( req_t       ),
-      .resp_lite_t ( resp_t      ),
-      .req_t       ( full_req_t  ),
-      .resp_t      ( full_resp_t )
+      .AxiDataWidth ( Cfg.AxiDataWidth  ),
+      .req_lite_t   ( req_t             ),
+      .resp_lite_t  ( resp_t            ),
+      .req_t        ( full_req_t        ),
+      .resp_t       ( full_resp_t       )
     ) i_dec_err_conv (
       .slv_req_lite_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
       .slv_resp_lite_o ( slv_resps[i][Cfg.NoMstPorts] ),

@@ -14,6 +14,7 @@
 
 /// An AXI4-Lite to AXI4 adapter.
 module axi_lite_to_axi #(
+  parameter int unsigned AxiDataWidth = 32'd0,
   // LITE AXI structs
   parameter type  req_lite_t = logic,
   parameter type resp_lite_t = logic,
@@ -28,15 +29,14 @@ module axi_lite_to_axi #(
   output req_t       mst_req_o,
   input  resp_t      mst_resp_i
 );
-  localparam int unsigned write_size = $unsigned($clog2($bits(mst_req_o.w.data)/8));
-  localparam int unsigned read_size  = $unsigned($clog2($bits(mst_resp_i.r.data)/8));
+  localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AxiDataWidth/8)));
 
   // request assign
   assign mst_req_o = '{
     aw: '{
       addr:  slv_req_lite_i.aw.addr,
       prot:  slv_req_lite_i.aw.prot,
-      size:  axi_pkg::size_t'(write_size),
+      size:  AxiSize,
       burst: axi_pkg::BURST_FIXED,
       default: '0
     },
@@ -52,7 +52,7 @@ module axi_lite_to_axi #(
     ar: '{
       addr:  slv_req_lite_i.ar.addr,
       prot:  slv_req_lite_i.ar.prot,
-      size:  axi_pkg::size_t'(read_size),
+      size:  AxiSize,
       burst: axi_pkg::BURST_FIXED,
       default: '0
     },
@@ -78,24 +78,36 @@ module axi_lite_to_axi #(
     r_valid: mst_resp_i.r_valid,
     default: '0
   };
+
+  // pragma translate_off
+  `ifndef VERILATOR
+  initial begin
+    assert (AxiDataWidth > 0) else $fatal(1, "Data width must be non-zero!");
+  end
+  `endif
+  // pragma translate_on
 endmodule
 
-module axi_lite_to_axi_intf (
+module axi_lite_to_axi_intf #(
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0
+) (
   AXI_LITE.Slave  in,
   AXI_BUS.Master  out
 );
+  localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AXI_DATA_WIDTH/8)));
 
 // pragma translate_off
   initial begin
     assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
     assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
+    assert(AXI_DATA_WIDTH    == out.AXI_DATA_WIDTH);
   end
 // pragma translate_on
 
   assign out.aw_id     = '0;
   assign out.aw_addr   = in.aw_addr;
   assign out.aw_len    = '0;
-  assign out.aw_size   = $unsigned($clog2($bits(out.w_data)/8));
+  assign out.aw_size   = AxiSize;
   assign out.aw_burst  = axi_pkg::BURST_FIXED;
   assign out.aw_lock   = '0;
   assign out.aw_cache  = '0; // non-modifiable and non-bufferable mandated by std
@@ -121,7 +133,7 @@ module axi_lite_to_axi_intf (
   assign out.ar_id     = '0;
   assign out.ar_addr   = in.ar_addr;
   assign out.ar_len    = '0;
-  assign out.ar_size   = $unsigned($clog2($bits(out.r_data)/8));
+  assign out.ar_size   = AxiSize;
   assign out.ar_burst  = axi_pkg::BURST_FIXED;
   assign out.ar_lock   = '0;
   assign out.ar_cache  = '0; // non-modifiable and non-bufferable mandated by std
