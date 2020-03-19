@@ -10,12 +10,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+
+### Fixed
+
+
+## 0.16.3 - 2020-03-19
+
+### Changed
 - `axi_err_slv`: Add optional parameter to define data returned by read response.  The parameter
   defaults to a 64-bit value, so buses with data width larger than or equal to 64 bit see an
   additional 32-bit value in error responses compared to the prior version.  Other than that, this
   change is fully backward compatible.
-
-### Fixed
 
 
 ## 0.16.2 - 2020-03-16
