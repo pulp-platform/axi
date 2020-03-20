@@ -28,6 +28,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
 | [`axi_lite_mailbox`](src/axi_lite_mailbox.sv)        | A AXI4-Lite Mailbox with two slave ports and usage triggered irq.                                 | [Doc](doc/axi_lite_mailbox.md) |
 | [`axi_lite_mux`](src/axi_lite_mux.sv)                | Multiplexes AXI4-Lite slave ports down to one master port.                                        | [Doc](doc/axi_lite_mux.md)     |
+| [`axi_lite_regs`](src/axi_lite_regs.sv)              | AXI4-Lite read and write register array, optional read-only flag for individual registers.        |                                |
 | [`axi_lite_to_apb`](src/axi_lite_to_apb.sv)          | AXI4-Lite to APB4 protocol converter.                                                             |                                |
 | [`axi_lite_to_axi`](src/axi_lite_to_axi.sv)          | AXI4-Lite to AXI4 protocol converter.                                                             |                                |
 | [`axi_lite_xbar`](src/axi_lite_xbar.sv)              | Fully-connected AXI4-Lite crossbar with an arbitrary number of slave and master ports.            | [Doc](doc/axi_lite_xbar.md)    |

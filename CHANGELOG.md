@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_serializer`: serialize transactions with different IDs to the same ID.
+- `axi_lite_regs`: Add read and write registers, with optional read-oly flag.
 
 ### Changed
 - `axi_modify_address`:

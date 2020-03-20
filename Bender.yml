@@ -38,6 +38,7 @@ sources:
   - src/axi_lite_join.sv
   - src/axi_lite_mailbox.sv
   - src/axi_lite_mux.sv
+  - src/axi_lite_regs.sv
   - src/axi_lite_to_apb.sv
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
