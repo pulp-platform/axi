@@ -18,22 +18,22 @@
 // will answer with SLVERR upon receiving a burst of such types.
 
 module axi_dw_downsizer #(
-    parameter int unsigned AxiMaxReads     = 1    , // Number of outstanding reads
-    parameter int unsigned AxiMstDataWidth = 8    , // Master data width
-    parameter int unsigned AxiSlvDataWidth = 8    , // Slave data width
-    parameter int unsigned AxiAddrWidth    = 1    , // Address width
-    parameter int unsigned AxiIdWidth      = 1    , // ID width
-    parameter type aw_chan_t               = logic, // AW Channel Type
-    parameter type mst_w_chan_t            = logic, //  W Channel Type for mst port
-    parameter type slv_w_chan_t            = logic, //  W Channel Type for slv port
-    parameter type b_chan_t                = logic, //  B Channel Type
-    parameter type ar_chan_t               = logic, // AR Channel Type
-    parameter type mst_r_chan_t            = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t            = logic, //  R Channel Type for slv port
-    parameter type axi_mst_req_t           = logic, // AXI Request Type for mst ports
-    parameter type axi_mst_resp_t          = logic, // AXI Response Type for mst ports
-    parameter type axi_slv_req_t           = logic, // AXI Request Type for mst ports
-    parameter type axi_slv_resp_t          = logic  // AXI Response Type for mst ports
+    parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
+    parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
+    parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
+    parameter int unsigned AxiAddrWidth        = 1    , // Address width
+    parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter type aw_chan_t                   = logic, // AW Channel Type
+    parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
+    parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port
+    parameter type b_chan_t                    = logic, //  B Channel Type
+    parameter type ar_chan_t                   = logic, // AR Channel Type
+    parameter type mst_r_chan_t                = logic, //  R Channel Type for mst port
+    parameter type slv_r_chan_t                = logic, //  R Channel Type for slv port
+    parameter type axi_mst_req_t               = logic, // AXI Request Type for mst ports
+    parameter type axi_mst_resp_t              = logic, // AXI Response Type for mst ports
+    parameter type axi_slv_req_t               = logic, // AXI Request Type for slv ports
+    parameter type axi_slv_resp_t              = logic  // AXI Response Type for slv ports
   ) (
     input  logic          clk_i,
     input  logic          rst_ni,
@@ -55,11 +55,11 @@ module axi_dw_downsizer #(
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
-  localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
-  localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
+  localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
+  localparam AxiMstPortStrbWidth = AxiMstPortDataWidth / 8;
 
-  localparam AxiMstMaxSize = $clog2(AxiMstStrbWidth);
-  localparam AxiSlvMaxSize = $clog2(AxiSlvStrbWidth);
+  localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
+  localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
 
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
@@ -384,16 +384,16 @@ module axi_dw_downsizer #(
                 // Modifiable transaction
                 if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
                   // Evaluate output burst length
-                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstMaxSize)                                                                     ;
-                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiMstMaxSize);
+                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiSlvPortMaxSize)                                                                     ;
+                  automatic addr_t end_addr   = aligned_addr(aligned_addr(r_req_d.ar.addr, r_req_d.ar.size) + (r_req_d.ar.len << r_req_d.ar.size), AxiSlvPortMaxSize);
 
-                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstMaxSize;
-                  r_req_d.ar.size = AxiMstMaxSize                           ;
-                  r_state_d       = R_INCR_DOWNSIZE                         ;
+                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiSlvPortMaxSize;
+                  r_req_d.ar.size = AxiSlvPortMaxSize                           ;
+                  r_state_d       = R_INCR_DOWNSIZE                             ;
                 // Non-modifiable transaction
                 end else begin
                   // Incoming transaction is wider than the master bus
-                  if (r_req_d.ar.size > AxiMstMaxSize) begin
+                  if (r_req_d.ar.size > AxiSlvPortMaxSize) begin
                     r_req_d.ar_throw_error = 1'b1         ;
                     r_state_d              = R_PASSTHROUGH;
                   end
@@ -406,7 +406,7 @@ module axi_dw_downsizer #(
                 r_req_d.ar_throw_error = 1'b1         ;
 
                 // ... but if this is a narrow single beat transaction, it might
-                if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
+                if (r_req_d.ar.size <= AxiSlvPortMaxSize && r_req_d.ar.len == '0)
                   r_req_d.ar_throw_error = 1'b0;
               end
 
@@ -416,7 +416,7 @@ module axi_dw_downsizer #(
                 r_req_d.ar_throw_error = 1'b1         ;
 
                 // ... but if this is a narrow single beat transaction, it might
-                if (r_req_d.ar.size <= AxiMstMaxSize && r_req_d.ar.len == '0)
+                if (r_req_d.ar.size <= AxiSlvPortMaxSize && r_req_d.ar.len == '0)
                   r_req_d.ar_throw_error = 1'b0;
               end
             endcase
@@ -427,19 +427,19 @@ module axi_dw_downsizer #(
           // Request was accepted
           if (!r_req_q.ar_valid)
             if (mst_resp.r_valid && (idx_r_downsizer == t) && r_downsizer_valid) begin
-              automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
-              automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
+              automatic addr_t slv_port_offset = r_req_q.ar.addr[(AxiSlvPortStrbWidth == 1 ? 1 : $clog2(AxiSlvPortStrbWidth)) - 1:0];
+              automatic addr_t mst_port_offset = r_req_q.ar.addr[(AxiMstPortStrbWidth == 1 ? 1 : $clog2(AxiMstPortStrbWidth)) - 1:0];
 
               // Valid output
               slv_r_valid_tran[t] = 1'b1                                       ;
               slv_r_tran[t].last  = mst_resp.r.last && (r_req_q.burst_len == 0);
 
               // Serialization
-              for (int b = 0; b < AxiMstStrbWidth; b++)
-                if ((b >= mst_offset) &&
-                    (b - mst_offset < (1 << r_req_q.orig_ar_size)) &&
-                    (b + slv_offset - mst_offset < AxiSlvStrbWidth)) begin
-                  slv_r_tran[t].data[8*(b + slv_offset - mst_offset) +: 8] = mst_resp.r.data[8 * b +: 8];
+              for (int b = 0; b < AxiSlvPortStrbWidth; b++)
+                if ((b >= slv_port_offset) &&
+                    (b - slv_port_offset < (1 << r_req_q.orig_ar_size)) &&
+                    (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
+                  slv_r_tran[t].data[8*(b + mst_port_offset - slv_port_offset) +: 8] = mst_resp.r.data[8 * b +: 8];
                 end
 
               // Acknowledgment
@@ -454,7 +454,7 @@ module axi_dw_downsizer #(
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_DOWNSIZE :
-                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstMaxSize)))
+                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiSlvPortMaxSize) != aligned_addr(r_req_q.ar.addr, AxiSlvPortMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
 
@@ -545,17 +545,17 @@ module axi_dw_downsizer #(
           slv_resp_o.w_ready = ~mst_req.w_valid || mst_resp.w_ready;
 
           if (slv_req_i.w_valid && slv_resp_o.w_ready) begin
-            automatic addr_t mst_offset = w_req_q.aw.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
-            automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
-            automatic addr_t size_mask  = (1 << w_req_q.orig_aw_size) - 1                                            ;
+            automatic addr_t slv_port_offset = w_req_q.aw.addr[(AxiSlvPortStrbWidth == 1 ? 1 : $clog2(AxiSlvPortStrbWidth)) - 1:0];
+            automatic addr_t mst_port_offset = w_req_q.aw.addr[(AxiMstPortStrbWidth == 1 ? 1 : $clog2(AxiMstPortStrbWidth)) - 1:0];
+            automatic addr_t size_mask  = (1 << w_req_q.orig_aw_size) - 1                                                    ;
 
             // Lane steering
-            for (int b = 0; b < AxiMstStrbWidth; b++)
-              if ((b >= mst_offset) &&
-                  (b - mst_offset < (1 << w_req_q.orig_aw_size)) &&
-                  (b + slv_offset - mst_offset < AxiSlvStrbWidth)) begin
-                w_req_d.w.data[8 * b +: 8] = slv_req_i.w.data[8 * (b + slv_offset - mst_offset) +: 8];
-                w_req_d.w.strb[b]          = slv_req_i.w.strb[b + slv_offset - mst_offset]           ;
+            for (int b = 0; b < AxiSlvPortStrbWidth; b++)
+              if ((b >= slv_port_offset) &&
+                  (b - slv_port_offset < (1 << w_req_q.orig_aw_size)) &&
+                  (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
+                w_req_d.w.data[8 * b +: 8] = slv_req_i.w.data[8 * (b + mst_port_offset - slv_port_offset) +: 8];
+                w_req_d.w.strb[b]          = slv_req_i.w.strb[b + mst_port_offset - slv_port_offset]           ;
               end
 
             w_req_d.burst_len = w_req_q.burst_len - 1                                       ;
@@ -570,7 +570,7 @@ module axi_dw_downsizer #(
 
               W_INCR_DOWNSIZE:
                 // Forward when the burst is finished, or after filling up a word
-                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstMaxSize)))
+                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiSlvPortMaxSize) != aligned_addr(w_req_q.aw.addr, AxiSlvPortMaxSize)))
                   w_req_d.w_valid = 1'b1;
             endcase
           end
@@ -617,16 +617,16 @@ module axi_dw_downsizer #(
             // Modifiable transaction
             if (|(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE)) begin
               // Evaluate output burst length
-              automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstMaxSize)                                                                           ;
-              automatic addr_t end_addr   = aligned_addr(aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiMstMaxSize);
+              automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiSlvPortMaxSize)                                                                           ;
+              automatic addr_t end_addr   = aligned_addr(aligned_addr(slv_req_i.aw.addr, slv_req_i.aw.size) + (slv_req_i.aw.len << slv_req_i.aw.size), AxiSlvPortMaxSize);
 
-              w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstMaxSize;
-              w_req_d.aw.size = AxiMstMaxSize                           ;
-              w_state_d       = W_INCR_DOWNSIZE                         ;
+              w_req_d.aw.len  = (end_addr - start_addr) >> AxiSlvPortMaxSize;
+              w_req_d.aw.size = AxiSlvPortMaxSize                           ;
+              w_state_d       = W_INCR_DOWNSIZE                             ;
             // Non-modifiable transaction.
             end else begin
               // Incoming transaction is wider than the master bus.
-              if (slv_req_i.aw.size > AxiMstMaxSize) begin
+              if (slv_req_i.aw.size > AxiSlvPortMaxSize) begin
                 w_state_d              = W_PASSTHROUGH;
                 w_req_d.aw_throw_error = 1'b1         ;
               end
@@ -639,7 +639,7 @@ module axi_dw_downsizer #(
             w_req_d.aw_throw_error = 1'b1         ;
 
             // ... but if this is a narrow single beat transaction, it might
-            if (slv_req_i.aw.size <= AxiMstMaxSize && slv_req_i.aw.len == '0)
+            if (slv_req_i.aw.size <= AxiSlvPortMaxSize && slv_req_i.aw.len == '0)
               w_req_d.aw_throw_error = 1'b0;
           end
 
@@ -649,7 +649,7 @@ module axi_dw_downsizer #(
             w_req_d.aw_throw_error = 1'b1         ;
 
             // ... but if this is a narrow single beat transaction, it might
-            if (slv_req_i.aw.size <= AxiMstMaxSize && slv_req_i.aw.len == '0)
+            if (slv_req_i.aw.size <= AxiSlvPortMaxSize && slv_req_i.aw.len == '0)
               w_req_d.aw_throw_error = 1'b0;
           end
         endcase

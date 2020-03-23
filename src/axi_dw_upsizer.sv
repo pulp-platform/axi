@@ -18,22 +18,22 @@
 // will answer with SLVERR upon receiving a burst of such types.
 
 module axi_dw_upsizer #(
-    parameter int unsigned AxiMaxReads     = 1    , // Number of outstanding reads
-    parameter int unsigned AxiMstDataWidth = 8    , // Master data width
-    parameter int unsigned AxiSlvDataWidth = 8    , // Slave data width
-    parameter int unsigned AxiAddrWidth    = 1    , // Address width
-    parameter int unsigned AxiIdWidth      = 1    , // ID width
-    parameter type aw_chan_t               = logic, // AW Channel Type
-    parameter type mst_w_chan_t            = logic, //  W Channel Type for mst port
-    parameter type slv_w_chan_t            = logic, //  W Channel Type for slv port
-    parameter type b_chan_t                = logic, //  B Channel Type
-    parameter type ar_chan_t               = logic, // AR Channel Type
-    parameter type mst_r_chan_t            = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t            = logic, //  R Channel Type for slv port
-    parameter type axi_mst_req_t           = logic, // AXI Request Type for mst ports
-    parameter type axi_mst_resp_t          = logic, // AXI Response Type for mst ports
-    parameter type axi_slv_req_t           = logic, // AXI Request Type for mst ports
-    parameter type axi_slv_resp_t          = logic  // AXI Response Type for mst ports
+    parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
+    parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
+    parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
+    parameter int unsigned AxiAddrWidth        = 1    , // Address width
+    parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter type aw_chan_t                   = logic, // AW Channel Type
+    parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
+    parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port
+    parameter type b_chan_t                    = logic, //  B Channel Type
+    parameter type ar_chan_t                   = logic, // AR Channel Type
+    parameter type mst_r_chan_t                = logic, //  R Channel Type for mst port
+    parameter type slv_r_chan_t                = logic, //  R Channel Type for slv port
+    parameter type axi_mst_req_t               = logic, // AXI Request Type for mst ports
+    parameter type axi_mst_resp_t              = logic, // AXI Response Type for mst ports
+    parameter type axi_slv_req_t               = logic, // AXI Request Type for slv ports
+    parameter type axi_slv_resp_t              = logic  // AXI Response Type for slv ports
   ) (
     input  logic          clk_i,
     input  logic          rst_ni,
@@ -55,14 +55,14 @@ module axi_dw_upsizer #(
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
-  localparam AxiMstStrbWidth = AxiMstDataWidth / 8;
-  localparam AxiSlvStrbWidth = AxiSlvDataWidth / 8;
+  localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
+  localparam AxiMstPortStrbWidth = AxiMstPortDataWidth / 8;
 
-  localparam AxiMstMaxSize = $clog2(AxiMstStrbWidth);
-  localparam AxiSlvMaxSize = $clog2(AxiSlvStrbWidth);
+  localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
+  localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
 
-  localparam MstByteMask = AxiMstStrbWidth - 1;
-  localparam SlvByteMask = AxiSlvStrbWidth - 1;
+  localparam SlvPortByteMask = AxiSlvPortStrbWidth - 1;
+  localparam MstPortByteMask = AxiMstPortStrbWidth - 1;
 
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
@@ -71,7 +71,7 @@ module axi_dw_upsizer #(
   typedef logic [AxiIdWidth-1:0] id_t;
 
   // Length of burst after upsizing
-  typedef logic [$clog2(AxiSlvStrbWidth/AxiMstStrbWidth) + 7:0] burst_len_t;
+  typedef logic [$clog2(AxiMstPortStrbWidth/AxiSlvPortStrbWidth) + 7:0] burst_len_t;
 
   // Internal AXI bus
   axi_mst_req_t  mst_req;
@@ -401,15 +401,15 @@ module axi_dw_upsizer #(
                   // No need to upsize single-beat transactions.
                   if (r_req_d.ar.len != '0) begin
                     // Evaluate upsize ratio
-                    automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                      ;
-                    automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
+                    automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+                    automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiSlvPortStrbWidth - 1) / AxiSlvPortStrbWidth;
 
                     // Evaluate output burst length
-                    automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-                    r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1             ;
+                    automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~SlvPortByteMask) / AxiSlvPortStrbWidth;
+                    r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1                     ;
 
                     if (conv_ratio != 1) begin
-                      r_req_d.ar.size = AxiMstMaxSize;
+                      r_req_d.ar.size = AxiSlvPortMaxSize;
 
                       if (r_req_d.burst_len <= 255) begin
                         r_state_d      = R_INCR_UPSIZE    ;
@@ -461,16 +461,16 @@ module axi_dw_upsizer #(
                 mst_r_ready_tran[t] = 1'b1;
 
                 if (mst_resp.r_valid) begin
-                  automatic addr_t mst_offset = r_req_q.ar.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
-                  automatic addr_t slv_offset = r_req_q.ar.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
-                  automatic addr_t size_mask  = (1 << r_req_q.ar.size) - 1                                                 ;
+                  automatic addr_t slv_port_offset = r_req_q.ar.addr[(AxiSlvPortStrbWidth == 1 ? 1 : $clog2(AxiSlvPortStrbWidth)) - 1:0];
+                  automatic addr_t mst_port_offset = r_req_q.ar.addr[(AxiMstPortStrbWidth == 1 ? 1 : $clog2(AxiMstPortStrbWidth)) - 1:0];
+                  automatic addr_t size_mask       = (1 << r_req_q.ar.size) - 1                                                         ;
 
                   // Lane steering
-                  for (int b = 0; b < AxiSlvStrbWidth; b++) begin
-                    if ((b >= slv_offset) &&
-                        (b - slv_offset < (1 << r_req_q.orig_ar_size)) &&
-                        (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                      r_req_d.r.data[8*b+:8] = mst_resp.r.data[8 * (b + mst_offset - slv_offset) +: 8];
+                  for (int b = 0; b < AxiMstPortStrbWidth; b++) begin
+                    if ((b >= mst_port_offset) &&
+                        (b - mst_port_offset < (1 << r_req_q.orig_ar_size)) &&
+                        (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
+                      r_req_d.r.data[8*b+:8] = mst_resp.r.data[8 * (b + slv_port_offset - mst_port_offset) +: 8];
                     end
                   end
 
@@ -626,8 +626,8 @@ module axi_dw_upsizer #(
         // Request was accepted
         if (!w_req_q.aw_valid)
           if (slv_req_i.w_valid) begin
-            automatic addr_t mst_offset = w_req_q.aw.addr[(AxiMstStrbWidth == 1 ? 1 : $clog2(AxiMstStrbWidth)) - 1:0];
-            automatic addr_t slv_offset = w_req_q.aw.addr[(AxiSlvStrbWidth == 1 ? 1 : $clog2(AxiSlvStrbWidth)) - 1:0];
+            automatic addr_t slv_port_offset = w_req_q.aw.addr[(AxiSlvPortStrbWidth == 1 ? 1 : $clog2(AxiSlvPortStrbWidth)) - 1:0];
+            automatic addr_t mst_port_offset = w_req_q.aw.addr[(AxiMstPortStrbWidth == 1 ? 1 : $clog2(AxiMstPortStrbWidth)) - 1:0];
 
             // Valid output
             mst_req.w_valid = 1'b1               ;
@@ -635,12 +635,12 @@ module axi_dw_upsizer #(
             mst_req.w.user  = slv_req_i.w.user   ;
 
             // Serialization
-            for (int b = 0; b < AxiSlvStrbWidth; b++)
-              if ((b >= slv_offset) &&
-                  (b - slv_offset < (1 << w_req_q.aw.size)) &&
-                  (b + mst_offset - slv_offset < AxiMstStrbWidth)) begin
-                mst_req.w.data[8 * (b + mst_offset - slv_offset) +: 8] = slv_req_i.w.data[8 * b +: 8];
-                mst_req.w.strb[b + mst_offset - slv_offset]            = slv_req_i.w.strb[b]         ;
+            for (int b = 0; b < AxiMstPortStrbWidth; b++)
+              if ((b >= mst_port_offset) &&
+                  (b - mst_port_offset < (1 << w_req_q.aw.size)) &&
+                  (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
+                mst_req.w.data[8 * (b + slv_port_offset - mst_port_offset) +: 8] = slv_req_i.w.data[8 * b +: 8];
+                mst_req.w.strb[b + slv_port_offset - mst_port_offset]            = slv_req_i.w.strb[b]         ;
               end
           end
 
@@ -715,15 +715,15 @@ module axi_dw_upsizer #(
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate upsize ratio
-                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                      ;
-                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstStrbWidth - 1) / AxiMstStrbWidth;
+                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
+                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiSlvPortStrbWidth - 1) / AxiSlvPortStrbWidth;
 
                 // Evaluate output burst length
-                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstByteMask) / AxiMstStrbWidth;
-                w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1             ;
+                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~SlvPortByteMask) / AxiSlvPortStrbWidth;
+                w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1                     ;
 
                 if (conv_ratio != 1) begin
-                  w_req_d.aw.size = AxiMstMaxSize;
+                  w_req_d.aw.size = AxiSlvPortMaxSize;
 
                   if (w_req_d.burst_len <= 255) begin
                     w_state_d      = W_INCR_UPSIZE    ;

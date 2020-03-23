@@ -91,10 +91,10 @@ module tb_axi_dw_downsizer;
   typedef logic [AW-1:0] addr_t           ;
   typedef logic [IW-1:0] id_t             ;
   typedef logic [UW-1:0] user_t           ;
-  typedef logic [DW-1:0] mst_data_t       ;
-  typedef logic [DW/8-1:0] mst_strb_t     ;
-  typedef logic [MULT*DW-1:0] slv_data_t  ;
-  typedef logic [MULT*DW/8-1:0] slv_strb_t;
+  typedef logic [MULT*DW-1:0] mst_data_t  ;
+  typedef logic [MULT*DW/8-1:0] mst_strb_t;
+  typedef logic [DW-1:0] slv_data_t       ;
+  typedef logic [DW/8-1:0] slv_strb_t     ;
 
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)            ;
   `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, mst_data_t, mst_strb_t, user_t);
@@ -109,42 +109,42 @@ module tb_axi_dw_downsizer;
   `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t);
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_t, slv_r_chan_t)          ;
 
-  mst_req_t  axi_mst_req;
-  mst_resp_t axi_mst_resp;
-  `AXI_ASSIGN_TO_REQ(axi_mst_req, axi_master_dv)    ;
-  `AXI_ASSIGN_FROM_RESP(axi_master_dv, axi_mst_resp);
-
   slv_req_t  axi_slv_req;
   slv_resp_t axi_slv_resp;
-  `AXI_ASSIGN_FROM_REQ(axi_slave_dv, axi_slv_req);
-  `AXI_ASSIGN_TO_RESP(axi_slv_resp, axi_slave_dv);
+  `AXI_ASSIGN_TO_REQ(axi_slv_req, axi_master_dv)    ;
+  `AXI_ASSIGN_FROM_RESP(axi_master_dv, axi_slv_resp);
+
+  mst_req_t  axi_mst_req;
+  mst_resp_t axi_mst_resp;
+  `AXI_ASSIGN_FROM_REQ(axi_slave_dv, axi_mst_req);
+  `AXI_ASSIGN_TO_RESP(axi_mst_resp, axi_slave_dv);
 
   // DUT
 
   axi_dw_converter #(
-    .AxiMaxReads    (4           ),
-    .AxiMstDataWidth(MULT * DW   ),
-    .AxiSlvDataWidth(DW          ),
-    .AxiAddrWidth   (AW          ),
-    .AxiIdWidth     (IW          ),
-    .aw_chan_t      (aw_chan_t   ),
-    .mst_w_chan_t   (slv_w_chan_t),
-    .slv_w_chan_t   (mst_w_chan_t),
-    .b_chan_t       (b_chan_t    ),
-    .ar_chan_t      (ar_chan_t   ),
-    .mst_r_chan_t   (slv_r_chan_t),
-    .slv_r_chan_t   (mst_r_chan_t),
-    .axi_mst_req_t  (slv_req_t   ),
-    .axi_mst_resp_t (slv_resp_t  ),
-    .axi_slv_req_t  (mst_req_t   ),
-    .axi_slv_resp_t (mst_resp_t  )
+    .AxiMaxReads        (4           ),
+    .AxiSlvPortDataWidth(MULT * DW   ),
+    .AxiMstPortDataWidth(DW          ),
+    .AxiAddrWidth       (AW          ),
+    .AxiIdWidth         (IW          ),
+    .aw_chan_t          (aw_chan_t   ),
+    .mst_w_chan_t       (mst_w_chan_t),
+    .slv_w_chan_t       (slv_w_chan_t),
+    .b_chan_t           (b_chan_t    ),
+    .ar_chan_t          (ar_chan_t   ),
+    .mst_r_chan_t       (mst_r_chan_t),
+    .slv_r_chan_t       (slv_r_chan_t),
+    .axi_mst_req_t      (mst_req_t   ),
+    .axi_mst_resp_t     (mst_resp_t  ),
+    .axi_slv_req_t      (slv_req_t   ),
+    .axi_slv_resp_t     (slv_resp_t  )
   ) i_dw_converter (
     .clk_i     (clk         ),
     .rst_ni    (rst         ),
-    .slv_req_i (axi_mst_req ),
-    .slv_resp_o(axi_mst_resp),
-    .mst_req_o (axi_slv_req ),
-    .mst_resp_i(axi_slv_resp)
+    .slv_req_i (axi_slv_req ),
+    .slv_resp_o(axi_slv_resp),
+    .mst_req_o (axi_mst_req ),
+    .mst_resp_i(axi_mst_resp)
   );
 
   initial begin
