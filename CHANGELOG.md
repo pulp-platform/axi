@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.17.0 - 2020-03-23
+
+### Added
 - Add `axi_isolate` to isolate downstream slaves from receiving new transactions.
 
 ### Changed
