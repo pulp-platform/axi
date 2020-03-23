@@ -13,17 +13,20 @@
 //         Florian Zaruba <zarubaf@iis.ethz.ch>
 //         Wolfgang Roenninger <wroennin@ethz.ch>
 
-// Description: This module can isolate the AXI4+ATOPs bus on the master port from the slave port.
-//              When the isolation is not active the two ports are directly connected.
-//              This unit counts how many open transactions are currently in flight
-//              on the read and write channels. It further is capable of tracking the amount of
-//              open atomic transactions with read responses.
-//              The isolation interface has the two signals `isolate_i` and `isolated_o`.
-//              When `isolate_i` is asserted, all open transactions get terminated.
-//              When no longer transactions are in flight the output `isolated_o` gets asserted.
-//              As long as `isolated_o` is asserted all output signals in `mst_req_o` are silenced
-//              to `'0`. When isolated, new transactions initiated on the slave port are
-//              stalled until the isolation is terminated by deasserting `isolate_i`.
+// Description:
+//
+// This module can isolate the AXI4+ATOPs bus on the master port from the slave port.  When the
+// isolation is not active, the two ports are directly connected.
+//
+// This module counts how many open transactions are currently in flight on the read and write
+// channels.  It is further capable of tracking the amount of open atomic transactions with read
+// responses.
+//
+// The isolation interface has two signals: `isolate_i` and `isolated_o`.  When `isolate_i` is
+// asserted, all open transactions are gracefully terminated.  When no transactions are in flight
+// anymore, the `isolated_o` output is asserted.  As long as `isolated_o` is asserted, all output
+// signals in `mst_req_o` are silenced to `'0`. When isolated, new transactions initiated on the
+// slave port are stalled until the isolation is terminated by deasserting `isolate_i`.
 
 `include "common_cells/registers.svh"
 
