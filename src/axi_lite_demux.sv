@@ -121,10 +121,8 @@ module axi_lite_demux #(
     // AW Channel
     //--------------------------------------
     aw_chan_select_t slv_aw_inp;
-    assign slv_aw_inp = '{
-      aw:     slv_req_i.aw,
-      select: slv_aw_select_i
-    };
+    assign slv_aw_inp.aw     = slv_req_i.aw;
+    assign slv_aw_inp.select = slv_aw_select_i;
     spill_register #(
       .T      ( aw_chan_select_t ),
       .Bypass ( ~SpillAw         )
@@ -278,10 +276,8 @@ module axi_lite_demux #(
     // AR Channel
     //--------------------------------------
     ar_chan_select_t slv_ar_inp;
-    assign slv_ar_inp = '{
-      ar:     slv_req_i.ar,
-      select: slv_ar_select_i
-    };
+    assign slv_ar_inp.ar     = slv_req_i.ar;
+    assign slv_ar_inp.select = slv_ar_select_i;
     spill_register #(
       .T      ( ar_chan_select_t ),
       .Bypass ( ~SpillAr         )
