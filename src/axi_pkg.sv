@@ -13,8 +13,7 @@
 // Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
 //! AXI Package
-/// Contains all necessary type definitions, constants and generally
-/// useful functions.
+/// Contains all necessary type definitions, constants, and generally useful functions.
 package axi_pkg;
   /// AXI Transaction Burst Type.
   typedef logic [1:0] burst_t;
@@ -39,56 +38,59 @@ package axi_pkg;
 
   /// In a fixed burst:
   /// - The address is the same for every transfer in the burst.
-  /// - The byte lanes that are valid are constant for all beats in the burst. However, within those byte
-  /// lanes, the actual bytes that have `wstrb` asserted can differ for each beat in the burst.
-  /// This burst type is used for repeated accesses to the same location such as when loading or emptying
-  /// a FIFO.
+  /// - The byte lanes that are valid are constant for all beats in the burst.  However, within
+  ///   those byte lanes, the actual bytes that have `wstrb` asserted can differ for each beat in
+  ///   the burst.
+  /// This burst type is used for repeated accesses to the same location such as when loading or
+  /// emptying a FIFO.
   localparam BURST_FIXED = 2'b00;
-  /// In an incrementing burst, the address for each transfer in the burst is an increment of
-  /// the address for the previous transfer. The increment value depends on the size of the transfer. For
-  /// example, the address for each transfer in a burst with a size of 4 bytes is the previous address plus
-  /// four.
+  /// In an incrementing burst, the address for each transfer in the burst is an increment of the
+  /// address for the previous transfer.  The increment value depends on the size of the transfer.
+  /// For example, the address for each transfer in a burst with a size of 4 bytes is the previous
+  /// address plus four.
   /// This burst type is used for accesses to normal sequential memory.
   localparam BURST_INCR  = 2'b01;
-  /// A wrapping burst is similar to an incrementing burst, except that the address wraps around to a lower
-  /// address if an upper address limit is reached.
+  /// A wrapping burst is similar to an incrementing burst, except that the address wraps around to
+  /// a lower address if an upper address limit is reached.
   /// The following restrictions apply to wrapping bursts:
   /// - The start address must be aligned to the size of each transfer.
   /// - The length of the burst must be 2, 4, 8, or 16 transfers.
   localparam BURST_WRAP  = 2'b10;
 
-  /// Normal access success. Indicates that a normal access has been successful. Can also indicate that an
-  /// exclusive access has failed.
+  /// Normal access success.  Indicates that a normal access has been successful. Can also indicate
+  /// that an exclusive access has failed.
   localparam RESP_OKAY   = 2'b00;
-  /// Exclusive access okay. Indicates that either the read or write portion of an exclusive access has been
-  /// successful.
+  /// Exclusive access okay.  Indicates that either the read or write portion of an exclusive access
+  /// has been successful.
   localparam RESP_EXOKAY = 2'b01;
-  /// Slave error. Used when the access has reached the slave successfully, but the slave wishes to return
-  /// an error condition to the originating master.
+  /// Slave error.  Used when the access has reached the slave successfully, but the slave wishes to
+  /// return an error condition to the originating master.
   localparam RESP_SLVERR = 2'b10;
-  /// Decode error. Generated, typically by an interconnect component, to indicate that there is no slave
-  /// at the transaction address.
+  /// Decode error.  Generated, typically by an interconnect component, to indicate that there is no
+  /// slave at the transaction address.
   localparam RESP_DECERR = 2'b11;
 
-  /// When this bit is asserted, the interconnect, or any component, can delay the transaction reaching its
-  /// final destination for any number of cycles.
+  /// When this bit is asserted, the interconnect, or any component, can delay the transaction
+  /// reaching its final destination for any number of cycles.
   localparam CACHE_BUFFERABLE = 4'b0001;
-  /// When HIGH, Modifiable indicates that the characteristics of
-  /// the transaction can be modified. When Modifiable is LOW, the transaction is Non-modifiable.
+  /// When HIGH, Modifiable indicates that the characteristics of the transaction can be modified.
+  /// When Modifiable is LOW, the transaction is Non-modifiable.
   localparam CACHE_MODIFIABLE = 4'b0010;
-  /// When this bit is asserted, read allocation of the transaction is recommended but is not mandatory.
+  /// When this bit is asserted, read allocation of the transaction is recommended but is not
+  /// mandatory.
   localparam CACHE_RD_ALLOC   = 4'b0100;
-  /// When this bit is asserted, write allocation of the transaction is recommended but is not mandatory.
+  /// When this bit is asserted, write allocation of the transaction is recommended but is not
+  /// mandatory.
   localparam CACHE_WR_ALLOC   = 4'b1000;
 
-  // Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
+  /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
   function automatic shortint unsigned num_bytes(size_t size);
     return 1 << size;
   endfunction
 
   /// An overly long address type.
-  /// It lets us define functions that work generically for shorter
-  /// addresses.  We rely on the synthesizer to optimize the unused bits away.
+  /// It lets us define functions that work generically for shorter addresses.  We rely on the
+  /// synthesizer to optimize the unused bits away.
   typedef logic [127:0] largest_addr_t;
 
   /// Aligned address of burst (see A3-51).
@@ -96,7 +98,7 @@ package axi_pkg;
     return (addr >> size) << size;
   endfunction
 
-  // Address of beat (see A3-51).
+  /// Address of beat (see A3-51).
   function automatic largest_addr_t
   beat_addr(largest_addr_t addr, size_t size, shortint unsigned i_beat);
     if (i_beat == 0) begin
@@ -106,7 +108,7 @@ package axi_pkg;
     end
   endfunction
 
-  // Index of lowest beat in byte (see A3-51).
+  /// Index of lowest beat in byte (see A3-51).
   function automatic shortint unsigned
   beat_lower_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
       shortint unsigned i_beat);
@@ -114,7 +116,7 @@ package axi_pkg;
     return _addr - (_addr / strobe_width) * strobe_width;
   endfunction
 
-  // Index of highest beat in byte (see A3-51).
+  /// Index of highest beat in byte (see A3-51).
   function automatic shortint unsigned
   beat_upper_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
       shortint unsigned i_beat);
@@ -179,46 +181,44 @@ package axi_pkg;
 
   // ATOP[5:0]
   /// - Sends a single data value with an address.
-  /// - The target swaps the value at the addressed location with the data value that is
-  ///   supplied in the transaction.
+  /// - The target swaps the value at the addressed location with the data value that is supplied in
+  ///   the transaction.
   /// - The original data value at the addressed location is returned.
   /// - Outbound data size is 1, 2, 4, or 8 bytes.
-  /// - Inbound data size is the same as the outbound data size
+  /// - Inbound data size is the same as the outbound data size.
   localparam ATOP_ATOMICSWAP  = 6'b110000;
-  /// - Sends two data values, the compare value and the swap value, to the addressed
-  ///   location. The compare and swap values are of equal size.
+  /// - Sends two data values, the compare value and the swap value, to the addressed location.
+  ///   The compare and swap values are of equal size.
   /// - The data value at the addressed location is checked against the compare value:
   ///   - If the values match, the swap value is written to the addressed location.
-  ///   - If the values do not match, the swap value is not written to the addressed
-  ///     location.
+  ///   - If the values do not match, the swap value is not written to the addressed location.
   /// - The original data value at the addressed location is returned.
   /// - Outbound data size is 2, 4, 8, 16, or 32 bytes.
-  /// - Inbound data size is half of the outbound data size because the outbound data
-  ///   contains both compare and swap values, whereas the inbound data has only the
-  ///   original data value.
+  /// - Inbound data size is half of the outbound data size because the outbound data contains both
+  ///   compare and swap values, whereas the inbound data has only the original data value.
   localparam ATOP_ATOMICCMP   = 6'b110001;
   // ATOP[5:4]
   /// Perform no atomic operation.
   localparam ATOP_NONE        = 2'b00;
   /// - Sends a single data value with an address and the atomic operation to be performed.
-  /// - The target performs the operation using the sent data and value at the addressed
-  ///   location as operands.
+  /// - The target performs the operation using the sent data and value at the addressed location as
+  ///   operands.
   /// - The result is stored in the address location.
   /// - A single response is given without data.
   /// - Outbound data size is 1, 2, 4, or 8 bytes.
   localparam ATOP_ATOMICSTORE = 2'b01;
   /// Sends a single data value with an address and the atomic operation to be performed.
   /// - The original data value at the addressed location is returned.
-  /// - The target performs the operation using the sent data and value at the addressed
-  ///   location as operands.
+  /// - The target performs the operation using the sent data and value at the addressed location as
+  ///   operands.
   /// - The result is stored in the address location.
   /// - Outbound data size is 1, 2, 4, or 8 bytes.
   /// - Inbound data size is the same as the outbound data size.
   localparam ATOP_ATOMICLOAD  = 2'b10;
   // ATOP[3]
-  /// For AtomicStore and AtomicLoad transactions `AWATOP[3]` indicates the endianness that is required for the atomic
-  /// operation.
-  /// The value of `AWATOP[3]` applies to arithmetic operations only and is ignored for bitwise logical operations.
+  /// For AtomicStore and AtomicLoad transactions `AWATOP[3]` indicates the endianness that is
+  /// required for the atomic operation.  The value of `AWATOP[3]` applies to arithmetic operations
+  /// only and is ignored for bitwise logical operations.
   /// When deasserted, this bit indicates that the operation is little-endian.
   localparam ATOP_LITTLE_END  = 1'b0;
   /// When asserted, this bit indicates that the operation is big-endian.
@@ -232,17 +232,17 @@ package axi_pkg;
   localparam ATOP_EOR   = 3'b010;
   /// Every set bit in the sent data sets the corresponding bit of the data in memory.
   localparam ATOP_SET   = 3'b011;
-  /// The value stored in memory is the maximum of the existing value and sent data. This
-  /// operation assumes signed data.
+  /// The value stored in memory is the maximum of the existing value and sent data. This operation
+  /// assumes signed data.
   localparam ATOP_SMAX  = 3'b100;
-  /// The value stored in memory is the minimum of the existing value and sent data. This
-  /// operation assumes signed data.
+  /// The value stored in memory is the minimum of the existing value and sent data. This operation
+  /// assumes signed data.
   localparam ATOP_SMIN  = 3'b101;
-  /// The value stored in memory is the maximum of the existing value and sent data. This
-  /// operation assumes unsigned data.
+  /// The value stored in memory is the maximum of the existing value and sent data. This operation
+  /// assumes unsigned data.
   localparam ATOP_UMAX  = 3'b110;
-  /// The value stored in memory is the minimum of the existing value and sent data. This
-  /// operation assumes unsigned data.
+  /// The value stored in memory is the minimum of the existing value and sent data. This operation
+  /// assumes unsigned data.
   localparam ATOP_UMIN  = 3'b111;
 
   // `xbar_latency_e` and `xbar_cfg_t` are documented in `doc/axi_xbar.md`.
