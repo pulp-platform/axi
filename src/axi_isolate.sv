@@ -125,10 +125,11 @@ module axi_isolate #(
     /////////////////////////////////////////////////////////////
     unique case (state_aw_q)
       Normal:  begin // Normal operation
-        // Cut valid handshake if a counter capacity is reached.
-        // It has to check AR counter in case of for atomics. Counters are wide enough
-        // to account for injected count in the read response counter
-        if (pending_aw_q >= cnt_t'(NumPending) || pending_ar_q >= cnt_t'(2*NumPending) || (pending_w_q >= cnt_t'(NumPending))) begin
+        // Cut valid handshake if a counter capacity is reached.  It has to check AR counter in case
+        // of atomics.  Counters are wide enough to account for injected count in the read response
+        // counter.
+        if (pending_aw_q >= cnt_t'(NumPending) || pending_ar_q >= cnt_t'(2*NumPending)
+            || (pending_w_q >= cnt_t'(NumPending))) begin
           mst_req_o.aw_valid  = 1'b0;
           slv_resp_o.aw_ready = 1'b0;
           if (isolate_i) begin
