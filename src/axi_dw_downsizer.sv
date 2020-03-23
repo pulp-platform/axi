@@ -12,7 +12,7 @@
 
 // Description:
 // Data width downsize conversion.
-// Connects a wide slave to a narrower master.
+// Connects a wide master to a narrower slave.
 
 // NOTE: The downsizer does not support WRAP and FIXED bursts, and
 // will answer with SLVERR upon receiving a burst of such types.

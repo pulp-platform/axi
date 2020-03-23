@@ -12,7 +12,7 @@
 
 // Description:
 // Data width upsize conversion.
-// Connects a narrow slave to a wider master.
+// Connects a narrow master to a wider slave.
 
 // NOTE: The upsizer does not support WRAP and FIXED bursts, and
 // will answer with SLVERR upon receiving a burst of such types.
