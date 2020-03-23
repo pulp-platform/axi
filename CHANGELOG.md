@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_to_axi`: Add mandatory `AxiDataWidth` parameter to enable fix mentioned below.
 
 ### Fixed
-- `axi_lite_to_axi`: Improve compatibility with Xcelium by removing unsupported hierarchical
-  argument to `$bits()` function.
+- Improve compatibility with Xcelium:
+  - by removing unsupported hierarchical argument to `$bits()` function in `axi_lite_to_axi`;
+  - by removing unsupported `struct` assignment in `axi_lite_demux`.
 
 
 ## 0.16.3 - 2020-03-19
