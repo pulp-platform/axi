@@ -244,6 +244,9 @@ package axi_pkg;
   /// The value stored in memory is the minimum of the existing value and sent data. This operation
   /// assumes unsigned data.
   localparam ATOP_UMIN  = 3'b111;
+  // ATOP[5] == 1'b1 indicated that an atomic transaction has a read response
+  // Ussage eg: if (req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+  localparam ATOP_R_RESP = 32'd5;
 
   // `xbar_latency_e` and `xbar_cfg_t` are documented in `doc/axi_xbar.md`.
   /// Slice on Demux AW channel.

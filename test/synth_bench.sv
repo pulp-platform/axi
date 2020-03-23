@@ -100,6 +100,17 @@ module synth_bench (
       ) i_axi_lite_mailbox (.*);
     end
   end
+
+  // AXI Isolation module
+  for (genvar i = 0; i < 6; i++) begin
+    synth_axi_isolate #(
+      .NumPending   ( AXI_ADDR_WIDTH[0] ),
+      .AxiIdWidth   ( 32'd10            ),
+      .AxiAddrWidth ( 32'd64            ),
+      .AxiDataWidth ( 32'd512           ),
+      .AxiUserWidth ( 32'd10            )
+    ) i_synth_axi_isolate (.*);
+  end
 endmodule
 
 
@@ -388,5 +399,41 @@ module synth_axi_lite_mailbox #(
     .slv         ( slv       ),
     .irq_o       ( irq       ), // interrupt output for each port
     .base_addr_i ( base_addr )  // base address for each port
+  );
+endmodule
+
+module synth_axi_isolate #(
+  parameter int unsigned NumPending   = 32'd16, // number of pending requests
+  parameter int unsigned AxiIdWidth   = 32'd0,  // AXI ID width
+  parameter int unsigned AxiAddrWidth = 32'd0,  // AXI address width
+  parameter int unsigned AxiDataWidth = 32'd0,  // AXI data width
+  parameter int unsigned AxiUserWidth = 32'd0   // AXI user width
+) (
+  input clk_i,
+  input rst_ni
+);
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
+    .AXI_DATA_WIDTH ( AxiAddrWidth ),
+    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) axi[1:0] ();
+
+  logic isolate, isolated;
+
+  axi_isolate_intf #(
+    .NUM_PENDING    ( NumPending   ), // number of pending requests
+    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
+    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
+    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+  ) i_axi_isolate_dut (
+    .clk_i,
+    .rst_ni,
+    .slv        ( axi[0]   ), // slave port
+    .mst        ( axi[1]   ), // master port
+    .isolate_i  ( isolate  ), // isolate master port from slave port
+    .isolated_o ( isolated )  // master port is isolated from slave port
   );
 endmodule

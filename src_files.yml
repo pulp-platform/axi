@@ -15,6 +15,7 @@ axi:
     - src/axi_delayer.sv
     - src/axi_demux.sv
     - src/axi_id_prepend.sv
+    - src/axi_isolate.sv
     - src/axi_join.sv
     - src/axi_lite_demux.sv
     - src/axi_lite_join.sv

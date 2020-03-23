@@ -29,6 +29,7 @@ sources:
   - src/axi_delayer.sv
   - src/axi_demux.sv
   - src/axi_id_prepend.sv
+  - src/axi_isolate.sv
   - src/axi_join.sv
   - src/axi_lite_demux.sv
   - src/axi_lite_join.sv
@@ -59,6 +60,7 @@ sources:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
+      - test/tb_axi_isolate.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv
