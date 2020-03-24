@@ -72,6 +72,13 @@ exec_test() {
                 done
             done
             ;;
+        axi_id_remap)
+            for IW in 1 2 3 4 7 9 13; do
+                for IWO in 1 2 3 4 7 9 13; do
+                    call_vsim tb_axi_id_remap -GIW=$IW -GIWO=$IWO
+                done
+            done
+            ;;
         axi_lite_regs)
             SEEDS+=(10 42)
             for PRIV in 0 1; do
