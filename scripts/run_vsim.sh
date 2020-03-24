@@ -56,6 +56,13 @@ exec_test() {
                 call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
+        axi_id_remap)
+            for IW in 1 2 3 4 7 9 13; do
+                for IWO in 1 2 3 4 7 9 13; do
+                    call_vsim tb_axi_id_remap -GIW=$IW -GIWO=$IWO
+                done
+            done
+            ;;
         axi_lite_regs)
             for PRIV in 0 1; do
                 for SECU in 0 1; do
