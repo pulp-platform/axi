@@ -45,6 +45,7 @@ sources:
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
+  - src/axi_id_remap.sv # TODO: can be moved to Level 2 once dependency on `axi_join` is removed
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
   # Level 4
@@ -67,6 +68,7 @@ sources:
       - test/tb_axi_dw_downsizer.sv
       - test/tb_axi_dw_upsizer.sv
       - test/tb_axi_isolate.sv
+      - test/tb_axi_id_remap.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv

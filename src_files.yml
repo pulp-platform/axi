@@ -30,6 +30,7 @@ axi:
     # Level 3
     - src/axi_err_slv.sv
     - src/axi_dw_converter.sv
+    - src/axi_id_remap.sv # TODO: can be moved to Level 2 once dependency on `axi_join` is removed
     - src/axi_multicut.sv
     - src/axi_to_axi_lite.sv
     # Level 4

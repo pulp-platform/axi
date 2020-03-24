@@ -50,3 +50,8 @@ call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
 call_vsim tb_axi_isolate -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+for IW in 1 2 3 4 7 9 13; do
+    for IWO in 1 2 3 4 7 9 13; do
+        call_vsim tb_axi_id_remap -GIW=$IW -GIWO=$IWO
+    done
+done
