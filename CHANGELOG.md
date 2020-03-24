@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_dw_converter`: a data width converter between AXI interfaces of any data width.  Depending on
+  its parametrization, this module instantiates one of the following:
+  - `axi_dw_downsizer`: a data width converter between a wide AXI master and a narrower slave.
+  - `axi_dw_upsizer`: a data width converter between a narrow AXI master and a wider slave.
 
 ### Changed
 
