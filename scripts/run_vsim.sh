@@ -72,10 +72,13 @@ exec_test() {
                 done
             done
             ;;
-        axi_id_remap)
-            for IW in 1 2 3 4 7 9 13; do
-                for IWO in 1 2 3 4 7 9 13; do
-                    call_vsim tb_axi_id_remap -GIW=$IW -GIWO=$IWO
+        axi_iw_converter)
+            for IW in 1 2 3 4 13; do
+                for IWO in 1 2 3 4; do
+                    TS=$((2**$IWO))
+                    call_vsim tb_axi_iw_converter -t 1ns -coverage -classdebug \
+                            -voptargs="+acc +cover=bcesfx" -GAxiIdWidthUpstream=$IW \
+                            -GAxiIdWidthDownstream=$IWO -GRemapTableSize=$TS
                 done
             done
             ;;
