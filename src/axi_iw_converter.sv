@@ -26,9 +26,8 @@
 ///
 /// This module instantiates a remapper if the outgoing ID is smaller than the incoming ID.
 /// Feeds through the channel if the ID widths are the same and extends it with zeros, if
-/// the outgoing ID is larrger than the incoming ID.
+/// the outgoing ID is larger than the incoming ID.
 
-`include "axi/assign.svh"
 
 module axi_iw_converter #(
   ///
@@ -169,6 +168,7 @@ module axi_iw_converter #(
 endmodule
 
 `include "axi/typedef.svh"
+`include "axi/assign.svh"
 module axi_iw_converter_intf #(
   ///
   parameter int unsigned REMAP_TABLE_SIZE = 32'd0,
@@ -226,23 +226,23 @@ module axi_iw_converter_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_iw_converter #(
-    .RemapTableSize    ( REMAP_TABLE_SIZE      ),
-    .AxiIdWidthSlvPort ( AXI_ID_WIDTH_SLV_PORT ),
-    .slv_aw_chan_t     ( slv_aw_chan_t         ),
-    .slv_w_chan_t      ( slv_w_chan_t          ),
-    .slv_b_chan_t      ( slv_b_chan_t          ),
-    .slv_ar_chan_t     ( slv_ar_chan_t         ),
-    .slv_r_chan_t      ( slv_r_chan_t          ),
-    .slv_req_t         ( slv_req_t             ),
-    .slv_resp_t        ( slv_resp_t            ),
-    .AxiIdWidthMstPort ( AXI_ID_WIDTH_MST_PORT ),
-    .mst_aw_chan_t     ( mst_aw_chan_t         ),
-    .mst_w_chan_t      ( mst_w_chan_t          ),
-    .mst_b_chan_t      ( mst_b_chan_t          ),
-    .mst_ar_chan_t     ( mst_ar_chan_t         ),
-    .mst_r_chan_t      ( mst_r_chan_t          ),
-    .mst_req_t         ( mst_req_t             ),
-    .mst_resp_t        ( mst_resp_t            )
+    .RemapTableSize ( REMAP_TABLE_SIZE ),
+    .AxiIdWidthSlv  ( AXI_ID_WIDTH_SLV ),
+    .slv_aw_chan_t  ( slv_aw_chan_t    ),
+    .slv_w_chan_t   ( slv_w_chan_t     ),
+    .slv_b_chan_t   ( slv_b_chan_t     ),
+    .slv_ar_chan_t  ( slv_ar_chan_t    ),
+    .slv_r_chan_t   ( slv_r_chan_t     ),
+    .slv_req_t      ( slv_req_t        ),
+    .slv_resp_t     ( slv_resp_t       ),
+    .AxiIdWidthMst  ( AXI_ID_WIDTH_MST ),
+    .mst_aw_chan_t  ( mst_aw_chan_t    ),
+    .mst_w_chan_t   ( mst_w_chan_t     ),
+    .mst_b_chan_t   ( mst_b_chan_t     ),
+    .mst_ar_chan_t  ( mst_ar_chan_t    ),
+    .mst_r_chan_t   ( mst_r_chan_t     ),
+    .mst_req_t      ( mst_req_t        ),
+    .mst_resp_t     ( mst_resp_t       )
   ) i_axi_iw_converter (
     .clk_i,
     .rst_ni,
