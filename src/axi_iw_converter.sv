@@ -32,39 +32,39 @@
 
 module axi_iw_converter #(
   ///
-  parameter int unsigned RemapTableSize    = 32'd0,
+  parameter int unsigned RemapTableSize = 32'd0,
   /// AXI4+ATOP ID width of the slave port
-  parameter int unsigned AxiIdWidthSlvPort = 32'd0,
+  parameter int unsigned AxiIdWidthSlv  = 32'd0,
   /// AXI4+ATOP AW channel struct type of the slave port
-  parameter type         slv_aw_chan_t     = logic,
+  parameter type         slv_aw_chan_t  = logic,
   /// AXI4+ATOP W channel struct type of the slave port
-  parameter type         slv_w_chan_t      = logic,
+  parameter type         slv_w_chan_t   = logic,
   /// AXI4+ATOP B channel struct type of the slave port
-  parameter type         slv_b_chan_t      = logic,
+  parameter type         slv_b_chan_t   = logic,
   /// AXI4+ATOP AR channel struct type of the slave port
-  parameter type         slv_ar_chan_t     = logic,
+  parameter type         slv_ar_chan_t  = logic,
   /// AXI4+ATOP R channel struct type of the slave port
-  parameter type         slv_r_chan_t      = logic,
+  parameter type         slv_r_chan_t   = logic,
   /// AXI4+ATOP request struct type of the slave port
-  parameter type         slv_req_t         = logic,
+  parameter type         slv_req_t      = logic,
   /// AXI4+ATOP response struct type of the slave port
-  parameter type         slv_resp_t        = logic,
+  parameter type         slv_resp_t     = logic,
   /// AXI4+ATOP ID width of the master port
-  parameter int unsigned AxiIdWidthMstPort = 32'd0,
+  parameter int unsigned AxiIdWidthMst  = 32'd0,
   /// AXI4+ATOP AW channel struct type of the master port
-  parameter type         mst_aw_chan_t     = logic,
+  parameter type         mst_aw_chan_t  = logic,
   /// AXI4+ATOP W channel struct type of the master port
-  parameter type         mst_w_chan_t      = logic,
+  parameter type         mst_w_chan_t   = logic,
   /// AXI4+ATOP B channel struct type of the master port
-  parameter type         mst_b_chan_t      = logic,
+  parameter type         mst_b_chan_t   = logic,
   /// AXI4+ATOP AR channel struct type of the master port
-  parameter type         mst_ar_chan_t     = logic,
+  parameter type         mst_ar_chan_t  = logic,
   /// AXI4+ATOP R channel struct type of the master port
-  parameter type         mst_r_chan_t      = logic,
+  parameter type         mst_r_chan_t   = logic,
   /// AXI4+ATOP request struct type of the master port
-  parameter type         mst_req_t         = logic,
+  parameter type         mst_req_t      = logic,
   /// AXI4+ATOP response struct type of the master port
-  parameter type         mst_resp_t        = logic
+  parameter type         mst_resp_t     = logic
 ) (
   /// Clock Input
   input  logic      clk_i,
@@ -79,22 +79,22 @@ module axi_iw_converter #(
   /// Master port response
   input  mst_resp_t mst_resp_i
 );
-  if (AxiIdWidthSlvPort > AxiIdWidthMstPort) begin : gen_id_decrease
+  if (AxiIdWidthSlv > AxiIdWidthMst) begin : gen_id_downsize
     localparam int unsigned AXI_ADDR_WIDTH = $bits(slv_req_i.aw.addr);
     localparam int unsigned AXI_DATA_WIDTH = $bits(slv_req_i.w.data);
     localparam int unsigned AXI_USER_WIDTH = $bits(slv_req_i.aw.user);
 
     AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH    ),
-      .AXI_ID_WIDTH   ( AxiIdWidthSlvPort ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+      .AXI_ID_WIDTH   ( AxiIdWidthSlv  ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) in ();
     AXI_BUS #(
-      .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH    ),
-      .AXI_DATA_WIDTH( AXI_DATA_WIDTH    ),
-      .AXI_ID_WIDTH  ( AxiIdWidthMstPort ),
-      .AXI_USER_WIDTH( AXI_USER_WIDTH    )
+      .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH  ),
+      .AXI_DATA_WIDTH( AXI_DATA_WIDTH  ),
+      .AXI_ID_WIDTH  ( AxiIdWidthMst   ),
+      .AXI_USER_WIDTH( AXI_USER_WIDTH  )
     ) out ();
 
     `AXI_ASSIGN_FROM_REQ(in, slv_req_i)
@@ -115,21 +115,21 @@ module axi_iw_converter #(
       .in     ( in     ),
       .out    ( out    )
     );
-  end else if (AxiIdWidthSlvPort < AxiIdWidthMstPort) begin : gen_id_increase
+  end else if (AxiIdWidthSlv < AxiIdWidthMst) begin : gen_id_upsize
     axi_id_prepend #(
-      .NoBus             ( 32'd1             ),
-      .AxiIdWidthSlvPort ( AxiIdWidthSlvPort ),
-      .AxiIdWidthMstPort ( AxiIdWidthMstPort ),
-      .slv_aw_chan_t     ( slv_aw_chan_t     ),
-      .slv_w_chan_t      ( slv_w_chan_t      ),
-      .slv_b_chan_t      ( slv_b_chan_t      ),
-      .slv_ar_chan_t     ( slv_ar_chan_t     ),
-      .slv_r_chan_t      ( slv_t_chan_t      ),
-      .mst_aw_chan_t     ( mst_aw_chan_t     ),
-      .mst_w_chan_t      ( mst_w_chan_t      ),
-      .mst_b_chan_t      ( mst_b_chan_t      ),
-      .mst_ar_chan_t     ( mst_ar_chan_t     ),
-      .mst_r_chan_t      ( mst_r_chan_t      ),
+      .NoBus             ( 32'd1         ),
+      .AxiIdWidthSlvPort ( AxiIdWidthSlv ),
+      .AxiIdWidthMstPort ( AxiIdWidthMst ),
+      .slv_aw_chan_t     ( slv_aw_chan_t ),
+      .slv_w_chan_t      ( slv_w_chan_t  ),
+      .slv_b_chan_t      ( slv_b_chan_t  ),
+      .slv_ar_chan_t     ( slv_ar_chan_t ),
+      .slv_r_chan_t      ( slv_t_chan_t  ),
+      .mst_aw_chan_t     ( mst_aw_chan_t ),
+      .mst_w_chan_t      ( mst_w_chan_t  ),
+      .mst_b_chan_t      ( mst_b_chan_t  ),
+      .mst_ar_chan_t     ( mst_ar_chan_t ),
+      .mst_r_chan_t      ( mst_r_chan_t  ),
     ) i_axi_id_prepend (
       .pre_id_i         ( '0                  ),
       .slv_aw_chans_i   ( slv_req_i.aw        ),
@@ -170,10 +170,10 @@ module axi_iw_converter #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
-    assert(AxiIdWidthSlvPort > 32'd0)
-      else $fatal(1, "Parameter AxiIdWidthSlvPort has to be larger than 0!");
-    assert(AxiIdWidthMstPort > 32'd0)
-      else $fatal(1, "Parameter AxiIdWidthMstPort has to be larger than 0!");
+    assert(AxiIdWidthSlv > 32'd0)
+      else $fatal(1, "Parameter AxiIdWidthSlv has to be larger than 0!");
+    assert(AxiIdWidthMst > 32'd0)
+      else $fatal(1, "Parameter AxiIdWidthMst has to be larger than 0!");
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
@@ -190,17 +190,17 @@ endmodule
 `include "axi/typedef.svh"
 module axi_iw_converter_intf #(
   ///
-  parameter int unsigned REMAP_TABLE_SIZE      = 32'd0,
+  parameter int unsigned REMAP_TABLE_SIZE = 32'd0,
   /// AXI4+ATOP ID width of the slave port
-  parameter int unsigned AXI_ID_WIDTH_SLV_PORT = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH_SLV = 32'd0,
   /// AXI4+ATOP ID width of the master port
-  parameter int unsigned AXI_ID_WIDTH_MST_PORT = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH_MST = 32'd0,
   /// AXI4+ATOP address width of both ports
-  parameter int unsigned AXI_ADDR_WIDTH        = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
   /// AXI4+ATOP data width of both ports
-  parameter int unsigned AXI_DATA_WIDTH        = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
   /// AXI4+ATOP user width of both ports
-  parameter int unsigned AXI_USER_WIDTH        = 32'd0
+  parameter int unsigned AXI_USER_WIDTH   = 32'd0
 ) (
   /// Clock Input
   input  logic   clk_i,
@@ -211,12 +211,12 @@ module axi_iw_converter_intf #(
   /// Master port
   AXI_BUS.Master mst
 );
-  typedef logic [AXI_ID_WIDTH_SLV_PORT-1:0] slv_id_t;
-  typedef logic [AXI_ID_WIDTH_SLV_PORT-1:0] mst_id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
+  typedef logic [AXI_ID_WIDTH_SLV-1:0] slv_id_t;
+  typedef logic [AXI_ID_WIDTH_MST-1:0] mst_id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   axi_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   axi_data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] axi_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   axi_user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
@@ -270,4 +270,18 @@ module axi_iw_converter_intf #(
     .mst_req_o  ( mst_req  ),
     .mst_resp_i ( mst_resp )
   );
+  // pragma translate_off
+  `ifndef VERILATOR
+    initial begin
+      assert (slv.AXI_ID_WIDTH   == AXI_ID_WIDTH_SLV);
+      assert (slv.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (slv.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (slv.AXI_USER_WIDTH == AXI_USER_WIDTH);
+      assert (mst.AXI_ID_WIDTH   == AXI_ID_WIDTH_MST);
+      assert (mst.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (mst.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (mst.AXI_USER_WIDTH == AXI_USER_WIDTH);
+    end
+  `endif
+  // pragma translate_on
 endmodule
