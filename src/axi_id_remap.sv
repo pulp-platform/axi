@@ -13,69 +13,82 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
-/// Remap AXI IDs.
 module axi_id_remap #(
-  parameter int unsigned ADDR_WIDTH   = 0,
-  parameter int unsigned DATA_WIDTH   = 0,
-  parameter int unsigned USER_WIDTH   = 0,
-  parameter int unsigned ID_WIDTH_IN  = 0,
-  parameter int unsigned ID_WIDTH_OUT = 0,
-  parameter int unsigned TABLE_SIZE   = 0
+  /// Size of the remap table per channel
+  parameter int unsigned TableSize     = 32'd0,
+  /// AXI4+ATOP ID width of the slave port
+  parameter int unsigned AxiIdWidthSlv = 32'd0,
+  /// AXI4+ATOP request struct type of the slave port
+  parameter type         slv_req_t     = logic,
+  /// AXI4+ATOP response struct type of the slave port
+  parameter type         slv_resp_t    = logic,
+  /// AXI4+ATOP ID width of the master port
+  parameter int unsigned AxiIdWidthMst = 32'd0,
+  /// AXI4+ATOP request struct type of the master port
+  parameter type         mst_req_t     = logic,
+  /// AXI4+ATOP response struct type of the master port
+  parameter type         mst_resp_t    = logic
 ) (
-  input logic     clk_i,
-  input logic     rst_ni,
-  AXI_BUS.Slave   in,
-  AXI_BUS.Master  out
+  /// Clock Input
+  input  logic      clk_i,
+  /// Asynchronous reset active low
+  input  logic      rst_ni,
+  /// Slave port request
+  input  slv_req_t  slv_req_i,
+  /// Slave port response
+  output slv_resp_t slv_resp_o,
+  /// Master port request
+  output mst_req_t  mst_req_o,
+  /// Master port response
+  input  mst_resp_t mst_resp_i
 );
 
   // Feed all signals that are not ID or flow control of AW and AR through.
-  assign out.aw_addr    = in.aw_addr;
-  assign out.aw_len     = in.aw_len;
-  assign out.aw_size    = in.aw_size;
-  assign out.aw_burst   = in.aw_burst;
-  assign out.aw_lock    = in.aw_lock;
-  assign out.aw_cache   = in.aw_cache;
-  assign out.aw_prot    = in.aw_prot;
-  assign out.aw_qos     = in.aw_qos;
-  assign out.aw_region  = in.aw_region;
-  assign out.aw_atop    = in.aw_atop;
-  assign out.aw_user    = in.aw_user;
+  assign mst_req_o.aw.addr   = slv_req_i.aw.addr;
+  assign mst_req_o.aw.len    = slv_req_i.aw.len;
+  assign mst_req_o.aw.size   = slv_req_i.aw.size;
+  assign mst_req_o.aw.burst  = slv_req_i.aw.burst;
+  assign mst_req_o.aw.lock   = slv_req_i.aw.lock;
+  assign mst_req_o.aw.cache  = slv_req_i.aw.cache;
+  assign mst_req_o.aw.prot   = slv_req_i.aw.prot;
+  assign mst_req_o.aw.qos    = slv_req_i.aw.qos;
+  assign mst_req_o.aw.region = slv_req_i.aw.region;
+  assign mst_req_o.aw.atop   = slv_req_i.aw.atop;
+  assign mst_req_o.aw.user   = slv_req_i.aw.user;
 
-  assign out.ar_addr    = in.ar_addr;
-  assign out.ar_len     = in.ar_len;
-  assign out.ar_size    = in.ar_size;
-  assign out.ar_burst   = in.ar_burst;
-  assign out.ar_lock    = in.ar_lock;
-  assign out.ar_cache   = in.ar_cache;
-  assign out.ar_prot    = in.ar_prot;
-  assign out.ar_qos     = in.ar_qos;
-  assign out.ar_region  = in.ar_region;
-  assign out.ar_user    = in.ar_user;
+  assign mst_req_o.w         = slv_req_i.w;
+  assign mst_req_o.w_valid   = slv_req_i.w_valid;
+  assign slv_resp_o.w_ready  = mst_resp_i.w_ready;
 
-  assign out.w_data     = in.w_data;
-  assign out.w_strb     = in.w_strb;
-  assign out.w_last     = in.w_last;
-  assign out.w_user     = in.w_user;
-  assign out.w_valid    = in.w_valid;
-  assign in.w_ready     = out.w_ready;
+  assign slv_resp_o.b.resp   = mst_resp_i.b.resp;
+  assign slv_resp_o.b.user   = mst_resp_i.b.user;
+  assign slv_resp_o.b_valid  = mst_resp_i.b_valid;
+  assign mst_req_o.b_ready   = slv_req_i.b_ready;
 
-  assign in.r_data      = out.r_data;
-  assign in.r_resp      = out.r_resp;
-  assign in.r_last      = out.r_last;
-  assign in.r_user      = out.r_user;
-  assign in.r_valid     = out.r_valid;
-  assign out.r_ready    = in.r_ready;
+  assign mst_req_o.ar.addr   = slv_req_i.ar.addr;
+  assign mst_req_o.ar.len    = slv_req_i.ar.len;
+  assign mst_req_o.ar.size   = slv_req_i.ar.size;
+  assign mst_req_o.ar.burst  = slv_req_i.ar.burst;
+  assign mst_req_o.ar.lock   = slv_req_i.ar.lock;
+  assign mst_req_o.ar.cache  = slv_req_i.ar.cache;
+  assign mst_req_o.ar.prot   = slv_req_i.ar.prot;
+  assign mst_req_o.ar.qos    = slv_req_i.ar.qos;
+  assign mst_req_o.ar.region = slv_req_i.ar.region;
+  assign mst_req_o.ar.user   = slv_req_i.ar.user;
 
-  assign in.b_resp      = out.b_resp;
-  assign in.b_user      = out.b_user;
-  assign in.b_valid     = out.b_valid;
-  assign out.b_ready    = in.b_ready;
+  assign slv_resp_o.r.data   = mst_resp_i.r.data;
+  assign slv_resp_o.r.resp   = mst_resp_i.r.resp;
+  assign slv_resp_o.r.last   = mst_resp_i.r.last;
+  assign slv_resp_o.r.user   = mst_resp_i.r.user;
+  assign slv_resp_o.r_valid  = mst_resp_i.r_valid;
+  assign mst_req_o.r_ready   = slv_req_i.r_ready;
+
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  typedef logic [TABLE_SIZE-1:0] field_t;
-  typedef logic [ID_WIDTH_IN-1:0] id_inp_t;
-  localparam int unsigned IDX_WIDTH = $clog2(TABLE_SIZE) > 0 ? $clog2(TABLE_SIZE) : 1;
-  typedef logic [IDX_WIDTH-1:0] idx_t;
+  localparam int unsigned IdxWidth = $clog2(TableSize) > 0 ? $clog2(TableSize) : 1;
+  typedef logic [TableSize-1:0]     field_t;
+  typedef logic [AxiIdWidthSlv-1:0] id_inp_t;
+  typedef logic [IdxWidth-1:0]      idx_t;
   field_t   wr_free,          rd_free,          both_free;
   id_inp_t                    rd_push_inp_id;
   idx_t     wr_free_oup_id,   rd_free_oup_id,   both_free_oup_id,
@@ -87,142 +100,143 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .ID_WIDTH_INP ( ID_WIDTH_IN ),
-    .MAX_TXNS     ( TABLE_SIZE  )
+    .IdWidthInp ( AxiIdWidthSlv ),
+    .MaxTxns    ( TableSize     )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
-    .free_o           (wr_free),
-    .free_oup_id_o    (wr_free_oup_id),
-    .full_o           (wr_full),
-    .push_inp_id_i    (in.aw_id),
-    .push_oup_id_i    (wr_push_oup_id),
-    .push_i           (wr_push),
-    .exists_inp_id_i  (in.aw_id),
-    .exists_oup_id_o  (wr_exists_id),
-    .exists_full_o    (wr_exists_full),
-    .exists_o         (wr_exists),
-    .pop_oup_id_i     (out.b_id[IDX_WIDTH-1:0]),
-    .pop_inp_id_o     (in.b_id),
-    .pop_i            (in.b_valid && in.b_ready)
+    .free_o          ( wr_free                                 ),
+    .free_oup_id_o   ( wr_free_oup_id                          ),
+    .full_o          ( wr_full                                 ),
+    .push_inp_id_i   ( slv_req_i.aw.id                         ),
+    .push_oup_id_i   ( wr_push_oup_id                          ),
+    .push_i          ( wr_push                                 ),
+    .exists_inp_id_i ( slv_req_i.aw.id                         ),
+    .exists_oup_id_o ( wr_exists_id                            ),
+    .exists_full_o   ( wr_exists_full                          ),
+    .exists_o        ( wr_exists                               ),
+    .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ), // TODO, check!!
+    .pop_inp_id_o    ( slv_resp_o.b.id                         ),
+    .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready )
   );
   axi_id_remap_table #(
-    .ID_WIDTH_INP ( ID_WIDTH_IN ),
-    .MAX_TXNS     ( TABLE_SIZE  )
+    .IdWidthInp ( AxiIdWidthSlv ),
+    .MaxTxns    ( TableSize     )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
-    .free_o           (rd_free),
-    .free_oup_id_o    (rd_free_oup_id),
-    .full_o           (rd_full),
-    .push_inp_id_i    (rd_push_inp_id),
-    .push_oup_id_i    (rd_push_oup_id),
-    .push_i           (rd_push),
-    .exists_inp_id_i  (in.ar_id),
-    .exists_oup_id_o  (rd_exists_id),
-    .exists_full_o    (rd_exists_full),
-    .exists_o         (rd_exists),
-    .pop_oup_id_i     (out.r_id[IDX_WIDTH-1:0]),
-    .pop_inp_id_o     (in.r_id),
-    .pop_i            (in.r_valid && in.r_ready && in.r_last)
+    .free_o           ( rd_free                                                      ),
+    .free_oup_id_o    ( rd_free_oup_id                                               ),
+    .full_o           ( rd_full                                                      ),
+    .push_inp_id_i    ( rd_push_inp_id                                               ),
+    .push_oup_id_i    ( rd_push_oup_id                                               ),
+    .push_i           ( rd_push                                                      ),
+    .exists_inp_id_i  ( slv_req_i.ar.id                                              ),
+    .exists_oup_id_o  ( rd_exists_id                                                 ),
+    .exists_full_o    ( rd_exists_full                                               ),
+    .exists_o         ( rd_exists                                                    ),
+    .pop_oup_id_i     ( mst_resp_i.r.id[IdxWidth-1:0]                                ), // TODO, check!!
+    .pop_inp_id_o     ( slv_resp_o.r.id                                              ),
+    .pop_i            ( slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last )
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  (TABLE_SIZE),
-    .MODE   (1'b0)
+    .WIDTH  ( TableSize ),
+    .MODE   ( 1'b0      )
   ) i_lzc (
-    .in_i     (both_free),
-    .cnt_o    (both_free_oup_id),
-    .empty_o  (/* unused */)
+    .in_i     ( both_free        ),
+    .cnt_o    ( both_free_oup_id ),
+    .empty_o  ( /* unused */     )
   );
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
-  localparam ZERO_WIDTH = ID_WIDTH_OUT - IDX_WIDTH;
-  assign out.ar_id = {{ZERO_WIDTH{1'b0}}, rd_push_oup_id};
-  assign out.aw_id = {{ZERO_WIDTH{1'b0}}, wr_push_oup_id};
+  localparam ZeroWidth = AxiIdWidthMst - IdxWidth;
+  assign mst_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
+  assign mst_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
 
   // Handle requests.
   enum logic [1:0] {Ready, HoldAR, HoldAW, HoldAx} state_d, state_q;
   idx_t ar_id_d, ar_id_q,
         aw_id_d, aw_id_q;
   always_comb begin
-    out.aw_valid    = 1'b0;
-    in.aw_ready     = 1'b0;
-    wr_push         = 1'b0;
-    wr_push_oup_id  =   'x;
-    out.ar_valid    = 1'b0;
-    in.ar_ready     = 1'b0;
-    rd_push         = 1'b0;
-    rd_push_inp_id  =   'x;
-    rd_push_oup_id  =   'x;
-    ar_id_d         = ar_id_q;
-    aw_id_d         = aw_id_q;
-    state_d         = state_q;
+    mst_req_o.aw_valid  = 1'b0;
+    slv_resp_o.aw_ready = 1'b0;
+    wr_push             = 1'b0;
+    wr_push_oup_id      =   'x;
+    mst_req_o.ar_valid  = 1'b0;
+    slv_resp_o.ar_ready = 1'b0;
+    rd_push             = 1'b0;
+    rd_push_inp_id      =   'x;
+    rd_push_oup_id      =   'x;
+    ar_id_d             = ar_id_q;
+    aw_id_d             = aw_id_q;
+    state_d             = state_q;
 
     unique case (state_q)
       Ready: begin
         // Reads
-        if (in.ar_valid) begin
+        if (slv_req_i.ar_valid) begin
           // If a burst with the same input ID is already in flight or there are free output IDs:
           if ((rd_exists && !rd_exists_full) || (!rd_exists && !rd_full)) begin
             // Determine the output ID: if another in-flight burst had the same input ID, we must
             // reuse its output ID to maintain ordering; else, we assign the next free ID.
-            rd_push_inp_id = in.ar_id;
-            rd_push_oup_id = rd_exists ? rd_exists_id : rd_free_oup_id;
+            rd_push_inp_id     = slv_req_i.ar.id;
+            rd_push_oup_id     = rd_exists ? rd_exists_id : rd_free_oup_id;
             // Forward the AR and push a new entry to the read table.
-            out.ar_valid = 1'b1;
-            rd_push = 1'b1;
+            mst_req_o.ar_valid = 1'b1;
+            rd_push            = 1'b1;
           end
         end
 
         // Writes
-        if (in.aw_valid) begin
+        if (slv_req_i.aw_valid) begin
           // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
           // on the write direction.
-          if (!in.aw_atop[5]) begin
+          if (!slv_req_i.aw.atop[5]) begin
             // If a burst with the same input ID is already in flight or there are free output IDs:
             if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
               // Determine the output ID: if another in-flight burst had the same input ID, we must
               // reuse its output ID to maintain ordering; else, we assign the next free ID.
-              wr_push_oup_id = wr_exists ? wr_exists_id : wr_free_oup_id;
+              wr_push_oup_id     = wr_exists ? wr_exists_id : wr_free_oup_id;
               // Forward the AW and push a new entry to the write table.
-              out.aw_valid = 1'b1;
-              wr_push = 1'b1;
+              mst_req_o.aw_valid = 1'b1;
+              wr_push            = 1'b1;
             end
           // If this is an ATOP that gives rise to an R response, we must remap to an ID that is
           // free on both read and write direction and push also to the read table.
           end else begin
             // Nullify a potential AR at our output.  This is legal in this state.
-            out.ar_valid = 1'b0;
-            in.ar_ready = 1'b0;
-            rd_push = 1'b0;
+            mst_req_o.ar_valid  = 1'b0;
+            slv_resp_o.ar_ready = 1'b0;
+            rd_push             = 1'b0;
             if ((|both_free)) begin
               // Use an output ID that is free in both directions.
               wr_push_oup_id = both_free_oup_id;
-              rd_push_inp_id = in.aw_id;
+              rd_push_inp_id = slv_req_i.aw.id;
               rd_push_oup_id = both_free_oup_id;
               // Forward the AW and push a new entry to both tables.
-              out.aw_valid = 1'b1;
-              rd_push = 1'b1;
-              wr_push = 1'b1;
+              mst_req_o.aw_valid = 1'b1;
+              rd_push            = 1'b1;
+              wr_push            = 1'b1;
             end
           end
         end
 
         // Hold AR, AW, or both if they are valid but not yet ready.
-        if (out.ar_valid) begin
-          in.ar_ready = out.ar_ready;
-          if (!out.ar_ready) begin
+        if (mst_req_o.ar_valid) begin
+          slv_resp_o.ar_ready = mst_resp_i.ar_ready;
+          if (!mst_resp_i.ar_ready) begin
             ar_id_d = rd_push_oup_id;
           end
         end
-        if (out.aw_valid) begin
-          in.aw_ready = out.aw_ready;
-          if (!out.aw_ready) begin
+        if (mst_req_o.aw_valid) begin
+          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+          if (!mst_resp_i.aw_ready) begin
             aw_id_d = wr_push_oup_id;
           end
         end
-        priority casez ({out.ar_valid, out.ar_ready, out.aw_valid, out.aw_ready})
+        priority casez ({mst_req_o.ar_valid, mst_resp_i.ar_ready,
+                         mst_req_o.aw_valid, mst_resp_i.aw_ready})
           4'b1010: state_d = HoldAx;
           4'b10??: state_d = HoldAR;
           4'b??10: state_d = HoldAW;
@@ -231,33 +245,33 @@ module axi_id_remap #(
       end
 
       HoldAR: begin
-        // Drive out.ar_id through rd_push_oup_id.
-        rd_push_oup_id = ar_id_q;
-        out.ar_valid = 1'b1;
-        in.ar_ready = out.ar_ready;
-        if (out.ar_ready) begin
+        // Drive `mst_req_o.ar.id` through rd_push_oup_id.
+        rd_push_oup_id      = ar_id_q;
+        mst_req_o.ar_valid  = 1'b1;
+        slv_resp_o.ar_ready = mst_resp_i.ar_ready;
+        if (mst_resp_i.ar_ready) begin
           state_d = Ready;
         end
       end
 
       HoldAW: begin
-        // Drive out.aw_id through wr_push_oup_id.
-        wr_push_oup_id = aw_id_q;
-        out.aw_valid = 1'b1;
-        in.aw_ready = out.aw_ready;
-        if (out.aw_ready) begin
+        // Drive mst_req_o.aw.id through wr_push_oup_id.
+        wr_push_oup_id      = aw_id_q;
+        mst_req_o.aw_valid  = 1'b1;
+        slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+        if (mst_resp_i.aw_ready) begin
           state_d = Ready;
         end
       end
 
       HoldAx: begin
-        rd_push_oup_id = ar_id_q;
-        out.ar_valid = 1'b1;
-        in.ar_ready = out.ar_ready;
-        wr_push_oup_id = aw_id_q;
-        out.aw_valid = 1'b1;
-        in.aw_ready = out.aw_ready;
-        unique0 case ({out.ar_ready, out.aw_ready})
+        rd_push_oup_id      = ar_id_q;
+        mst_req_o.ar_valid  = 1'b1;
+        slv_resp_o.ar_ready = mst_resp_i.ar_ready;
+        wr_push_oup_id      = aw_id_q;
+        mst_req_o.aw_valid  = 1'b1;
+        slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+        unique0 case ({mst_resp_i.ar_ready, mst_resp_i.aw_ready})
           2'b01: state_d = HoldAR;
           2'b10: state_d = HoldAW;
           2'b11: state_d = Ready;
@@ -281,54 +295,72 @@ module axi_id_remap #(
     end
   end
 
-  // Assertions
+  // pragma translate_off
+  `ifndef VERILATOR
+  initial begin : p_assert
+    assert(AxiIdWidthSlv > 32'd0)
+      else $fatal(1, "Parameter AxiIdWidthSlv has to be larger than 0!");
+    assert(AxiIdWidthMst > 32'd0)
+      else $fatal(1, "Parameter AxiIdWidthMst has to be larger than 0!");
+    assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
+      else $fatal(1, "AXI AW address widths are not equal!");
+    assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
+      else $fatal(1, "AXI W data widths are not equal!");
+    assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
+      else $fatal(1, "AXI AR address widths are not equal!");
+    assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
+      else $fatal(1, "AXI R data widths are not equal!");
+  end
+  `endif
   `ifndef TARGET_SYNTHESIS
     default disable iff (!rst_ni);
-    assert property (@(posedge clk_i) in.aw_valid && in.aw_ready |-> out.aw_valid && out.aw_ready);
-    assert property (@(posedge clk_i) out.b_valid && out.b_ready |-> in.b_valid && in.b_ready);
-    assert property (@(posedge clk_i) in.ar_valid && in.ar_ready |-> out.ar_valid && out.ar_ready);
-    assert property (@(posedge clk_i) out.r_valid && out.r_ready |-> in.r_valid && in.r_ready);
-    assert property (@(posedge clk_i) in.r_valid |-> in.r_last == out.r_last);
-    assert property (@(posedge clk_i)
-        out.ar_valid && !out.ar_ready |=> out.ar_valid && $stable(out.ar_id));
-    assert property (@(posedge clk_i)
-        out.aw_valid && !out.aw_ready |=> out.aw_valid && $stable(out.aw_id));
+    assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready
+        |-> mst_req_o.aw_valid && mst_resp_i.aw_ready);
+    assert property (@(posedge clk_i) mst_resp_i.b_valid && mst_req_o.b_ready
+        |-> slv_resp_o.b_valid && slv_req_i.b_ready);
+    assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_resp_o.ar_ready
+        |-> mst_req_o.ar_valid && mst_resp_i.ar_ready);
+    assert property (@(posedge clk_i) mst_resp_i.r_valid && mst_req_o.r_ready
+        |-> slv_resp_o.r_valid && slv_req_i.r_ready);
+    assert property (@(posedge clk_i) slv_resp_o.r_valid
+        |-> slv_resp_o.r.last == mst_resp_i.r.last);
+    assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_resp_i.ar_ready
+        |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
+    assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
+        |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
     initial begin
-      assert (ADDR_WIDTH > 0);
-      assert (DATA_WIDTH > 0);
-      assert (USER_WIDTH >= 0);
-      assert (ID_WIDTH_IN > 0);
-      assert (ID_WIDTH_OUT > 0);
-      assert (ID_WIDTH_OUT < ID_WIDTH_IN);
-      assert (TABLE_SIZE > 0);
-      assert (ID_WIDTH_OUT >= IDX_WIDTH);
-      // TODO: Allow ID_WIDTH_OUT to be smaller than IDX_WIDTH, i.e., to have multiple outstanding
-      // transactions (limited by TABLE_SIZE) remapped to a few (extreme case: one) ID.  This is
+      assert (AxiIdWidthSlv > 0);
+      assert (AxiIdWidthMst > 0);
+      assert (AxiIdWidthMst < AxiIdWidthSlv);
+      assert (TableSize > 0);
+      assert (AxiIdWidthMst >= IdxWidth);
+      // TODO: Allow AxiIdWidthMst to be smaller than IdxWidth, i.e., to have multiple outstanding
+      // transactions (limited by TableSize) remapped to a few (extreme case: one) ID.  This is
       // possible because the restriction from unordered input transactions to ordered output
       // transactions is legal.
-      assert (in.AXI_ADDR_WIDTH == ADDR_WIDTH);
-      assert (in.AXI_DATA_WIDTH == DATA_WIDTH);
-      assert (in.AXI_ID_WIDTH == ID_WIDTH_IN);
-      assert (in.AXI_USER_WIDTH == USER_WIDTH);
-      assert (out.AXI_ADDR_WIDTH == ADDR_WIDTH);
-      assert (out.AXI_DATA_WIDTH == DATA_WIDTH);
-      assert (out.AXI_ID_WIDTH == ID_WIDTH_OUT);
-      assert (out.AXI_USER_WIDTH == USER_WIDTH);
+      assert ($bits(slv_req_i.aw.id) == AxiIdWidthSlv);
+      assert ($bits(slv_resp_o.b.id) == AxiIdWidthSlv);
+      assert ($bits(slv_req_i.ar.id) == AxiIdWidthSlv);
+      assert ($bits(slv_resp_o.r.id) == AxiIdWidthSlv);
+      assert ($bits(mst_req_o.aw.id) == AxiIdWidthMst);
+      assert ($bits(mst_resp_i.b.id) == AxiIdWidthMst);
+      assert ($bits(mst_req_o.ar.id) == AxiIdWidthMst);
+      assert ($bits(mst_resp_i.r.id) == AxiIdWidthMst);
     end
   `endif
-
+  // pragma translate_on
 endmodule
 
-
+/// Implements ID remap tables
 module axi_id_remap_table #(
-  parameter int unsigned ID_WIDTH_INP = 0,
+  parameter int unsigned IdWidthInp = 32'd0,
   // Maximum number of AXI read and write bursts outstanding at the same time
-  parameter int unsigned MAX_TXNS = 0,
+  parameter int unsigned MaxTxns    = 32'd0,
   // Derived Parameters (do NOT change manually!)
-  localparam type field_t = logic [MAX_TXNS-1:0],
-  localparam type id_inp_t = logic [ID_WIDTH_INP-1:0],
-  localparam int unsigned IDX_WIDTH = $clog2(MAX_TXNS) > 0 ? $clog2(MAX_TXNS) : 1,
-  localparam type idx_t = logic [IDX_WIDTH-1:0]
+  localparam type field_t           = logic [MaxTxns-1:0],
+  localparam type id_inp_t          = logic [IdWidthInp-1:0],
+  localparam int unsigned IdxWidth  = $clog2(MaxTxns) > 0 ? $clog2(MaxTxns) : 1,
+  localparam type idx_t             = logic [IdxWidth-1:0]
 ) (
   input  logic    clk_i,
   input  logic    rst_ni,
@@ -351,8 +383,8 @@ module axi_id_remap_table #(
   input  logic    pop_i
 );
 
-  localparam int unsigned CNT_WIDTH = $clog2(MAX_TXNS+1);
-  typedef logic [CNT_WIDTH-1:0] cnt_t;
+  localparam int unsigned CntWidth = $clog2(MaxTxns+1);
+  typedef logic [CntWidth-1:0] cnt_t;
 
   typedef struct packed {
     id_inp_t  inp_id;
@@ -360,19 +392,19 @@ module axi_id_remap_table #(
   } entry_t;
 
   // Table indexed by output IDs that contains the corresponding input IDs
-  entry_t [MAX_TXNS-1:0] table_d, table_q;
+  entry_t [MaxTxns-1:0] table_d, table_q;
 
   // Determine lowest free output ID.
-  for (genvar i = 0; i < MAX_TXNS; i++) begin : gen_free_o
+  for (genvar i = 0; i < MaxTxns; i++) begin : gen_free_o
     assign free_o[i] = table_q[i].cnt == '0;
   end
   lzc #(
-    .WIDTH    (MAX_TXNS),
-    .MODE     (1'b0)
+    .WIDTH ( MaxTxns ),
+    .MODE  ( 1'b0    )
   ) i_lzc_free (
-    .in_i     (free_o),
-    .cnt_o    (free_oup_id_o),
-    .empty_o  (full_o)
+    .in_i    ( free_o        ),
+    .cnt_o   ( free_oup_id_o ),
+    .empty_o ( full_o        )
   );
 
   // Determine the input ID for a given output ID.
@@ -380,27 +412,27 @@ module axi_id_remap_table #(
 
   // Determine if given output ID is already used and, if it is, by which input ID.
   field_t match;
-  for (genvar i = 0; i < MAX_TXNS; i++) begin : gen_match
+  for (genvar i = 0; i < MaxTxns; i++) begin : gen_match
     assign match[i] = table_q[i].cnt > 0 && table_q[i].inp_id == exists_inp_id_i;
   end
   logic no_match;
   lzc #(
-      .WIDTH    (MAX_TXNS),
-      .MODE     (1'b0)
+      .WIDTH ( MaxTxns ),
+      .MODE  ( 1'b0    )
   ) i_lzc_match (
-      .in_i     (match),
-      .cnt_o    (exists_oup_id_o),
-      .empty_o  (no_match)
+      .in_i     ( match           ),
+      .cnt_o    ( exists_oup_id_o ),
+      .empty_o  ( no_match        )
   );
-  assign exists_o = ~no_match;
-  assign exists_full_o = table_q[exists_oup_id_o].cnt == MAX_TXNS;
+  assign exists_o      = ~no_match;
+  assign exists_full_o = table_q[exists_oup_id_o].cnt == MaxTxns;
 
   // Push and pop table entries.
   always_comb begin
     table_d = table_q;
     if (push_i) begin
-      table_d[push_oup_id_i].inp_id = push_inp_id_i;
-      table_d[push_oup_id_i].cnt += 1;
+      table_d[push_oup_id_i].inp_id  = push_inp_id_i;
+      table_d[push_oup_id_i].cnt    += 1;
     end
     if (pop_i) begin
       table_d[pop_oup_id_i].cnt -= 1;
@@ -422,17 +454,103 @@ module axi_id_remap_table #(
     assume property (@(posedge clk_i) push_i |->
         table_q[push_oup_id_i].cnt == '0 || table_q[push_oup_id_i].inp_id == push_inp_id_i)
       else $error("Push must be to empty output ID or match existing input ID!");
-    assume property (@(posedge clk_i) push_i |-> table_q[push_oup_id_i].cnt < MAX_TXNS)
+    assume property (@(posedge clk_i) push_i |-> table_q[push_oup_id_i].cnt < MaxTxns)
       else $error("Maximum number of in-flight bursts must not be exceeded!");
     assume property (@(posedge clk_i) pop_i |-> table_q[pop_oup_id_i].cnt > 0)
       else $error("Pop must target output ID with non-zero counter!");
     assume property (@(posedge clk_i) $onehot0(match))
       else $error("Input ID in table must be unique!");
     initial begin
-      assert (ID_WIDTH_INP > 0);
-      assert (MAX_TXNS > 0);
-      assert (IDX_WIDTH >= 1);
+      assert (IdWidthInp > 0);
+      assert (MaxTxns > 0);
+      assert (IdxWidth >= 1);
     end
   `endif
 
+endmodule
+
+`include "axi/typedef.svh"
+`include "axi/assign.svh"
+module axi_id_remap_intf #(
+  /// Size of the remap table per channel
+  parameter int unsigned TABLE_SIZE       = 32'd0,
+  /// ID width of the AXI4+ATOP slave port
+  parameter int unsigned AXI_ID_WIDTH_SLV = 32'd0,
+  /// ID width of the AXI4+ATOP master port
+  parameter int unsigned AXI_ID_WIDTH_MST = 32'd0,
+  /// Address width of both AXI4+ATOP ports
+  parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
+  /// Data width of both AXI4+ATOP ports
+  parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
+  /// User width of both AXI4+ATOP ports
+  parameter int unsigned AXI_USER_WIDTH   = 32'd0
+) (
+  input logic     clk_i,
+  input logic     rst_ni,
+  AXI_BUS.Slave   slv,
+  AXI_BUS.Master  mst
+);
+  typedef logic [AXI_ID_WIDTH_SLV-1:0] slv_id_t;
+  typedef logic [AXI_ID_WIDTH_MST-1:0] mst_id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   axi_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   axi_data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] axi_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   axi_user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+
+  slv_req_t  slv_req;
+  slv_resp_t slv_resp;
+  mst_req_t  mst_req;
+  mst_resp_t mst_resp;
+
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+
+  axi_id_remap #(
+    .TableSize     ( TABLE_SIZE       ),
+    .AxiIdWidthSlv ( AXI_ID_WIDTH_SLV ),
+    .slv_req_t     ( slv_req_t        ),
+    .slv_resp_t    ( slv_resp_t       ),
+    .AxiIdWidthMst ( AXI_ID_WIDTH_MST ),
+    .mst_req_t     ( mst_req_t        ),
+    .mst_resp_t    ( mst_resp_t       )
+  ) i_axi_id_remap (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
+  );
+  // pragma translate_off
+  `ifndef VERILATOR
+    initial begin
+      assert (slv.AXI_ID_WIDTH   == AXI_ID_WIDTH_SLV);
+      assert (slv.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (slv.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (slv.AXI_USER_WIDTH == AXI_USER_WIDTH);
+      assert (mst.AXI_ID_WIDTH   == AXI_ID_WIDTH_MST);
+      assert (mst.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (mst.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (mst.AXI_USER_WIDTH == AXI_USER_WIDTH);
+    end
+  `endif
+  // pragma translate_on
 endmodule
