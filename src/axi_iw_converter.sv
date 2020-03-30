@@ -104,12 +104,12 @@ module axi_iw_converter #(
       .slv_w_chan_t      ( slv_w_chan_t  ),
       .slv_b_chan_t      ( slv_b_chan_t  ),
       .slv_ar_chan_t     ( slv_ar_chan_t ),
-      .slv_r_chan_t      ( slv_t_chan_t  ),
+      .slv_r_chan_t      ( slv_r_chan_t  ),
       .mst_aw_chan_t     ( mst_aw_chan_t ),
       .mst_w_chan_t      ( mst_w_chan_t  ),
       .mst_b_chan_t      ( mst_b_chan_t  ),
       .mst_ar_chan_t     ( mst_ar_chan_t ),
-      .mst_r_chan_t      ( mst_r_chan_t  ),
+      .mst_r_chan_t      ( mst_r_chan_t  )
     ) i_axi_id_prepend (
       .pre_id_i         ( '0                  ),
       .slv_aw_chans_i   ( slv_req_i.aw        ),
