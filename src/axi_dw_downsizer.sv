@@ -61,11 +61,17 @@ module axi_dw_downsizer #(
   localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
   localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
 
+  localparam SlvPortByteMask = AxiSlvPortStrbWidth - 1;
+  localparam MstPortByteMask = AxiMstPortStrbWidth - 1;
+
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
   // ID width
   typedef logic [AxiIdWidth-1:0] id_t;
+
+  // Length of burst after upsizing
+  typedef logic [$clog2(AxiMstPortStrbWidth/AxiSlvPortStrbWidth) + 7:0] burst_len_t;
 
   // Internal AXI bus
   axi_mst_req_t  mst_req;
@@ -143,32 +149,25 @@ module axi_dw_downsizer #(
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
   tran_id_t                   mst_req_idx;
 
-  if (AxiMaxReads > 1) begin: gen_mst_ar_arb
-    rr_arb_tree #(
-      .NumIn    (AxiMaxReads),
-      .DataType (ar_chan_t  ),
-      .AxiVldRdy(1'b1       ),
-      .ExtPrio  (1'b0       ),
-      .LockIn   (1'b1       )
-    ) i_mst_ar_arb (
-      .clk_i  (clk_i            ),
-      .rst_ni (rst_ni           ),
-      .flush_i(1'b0             ),
-      .rr_i   ('0               ),
-      .req_i  (mst_ar_valid_tran),
-      .gnt_o  (mst_ar_ready_tran),
-      .data_i (mst_ar_tran      ),
-      .gnt_i  (mst_resp.ar_ready),
-      .req_o  (mst_req.ar_valid ),
-      .data_o (mst_req.ar       ),
-      .idx_o  (mst_req_idx      )
-    );
-  end else begin
-    assign mst_req.ar           = mst_ar_tran[0]      ;
-    assign mst_req.ar_valid     = mst_ar_valid_tran[0];
-    assign mst_ar_ready_tran[0] = mst_resp.ar_ready   ;
-    assign mst_req_idx          = '0                  ;
-  end
+  rr_arb_tree #(
+    .NumIn    (AxiMaxReads),
+    .DataType (ar_chan_t  ),
+    .AxiVldRdy(1'b1       ),
+    .ExtPrio  (1'b0       ),
+    .LockIn   (1'b1       )
+  ) i_mst_ar_arb (
+    .clk_i  (clk_i            ),
+    .rst_ni (rst_ni           ),
+    .flush_i(1'b0             ),
+    .rr_i   ('0               ),
+    .req_i  (mst_ar_valid_tran),
+    .gnt_o  (mst_ar_ready_tran),
+    .data_i (mst_ar_tran      ),
+    .gnt_i  (mst_resp.ar_ready),
+    .req_o  (mst_req.ar_valid ),
+    .data_o (mst_req.ar       ),
+    .idx_o  (mst_req_idx      )
+  );
 
   /*****************
    *  ERROR SLAVE  *
@@ -239,37 +238,32 @@ module axi_dw_downsizer #(
   logic     [AxiMaxReads-1:0] idle_read_downsizer;
   tran_id_t                   idx_ar_downsizer ;
 
-  if (AxiMaxReads > 1) begin: gen_ar_lzc
-    // Find an idle downsizer to handle this transaction
-    tran_id_t idx_idle_downsizer;
-    lzc #(
-      .WIDTH(AxiMaxReads)
-    ) i_idle_lzc (
-      .in_i   (idle_read_downsizer),
-      .cnt_o  (idx_idle_downsizer ),
-      .empty_o(/* Unused */       )
-    );
+  // Find an idle downsizer to handle this transaction
+  tran_id_t idx_idle_downsizer;
+  lzc #(
+    .WIDTH(AxiMaxReads)
+  ) i_idle_lzc (
+    .in_i   (idle_read_downsizer),
+    .cnt_o  (idx_idle_downsizer ),
+    .empty_o(/* Unused */       )
+  );
 
-    // Is there already another downsizer handling a transaction with the same id
-    logic [AxiMaxReads-1:0] id_clash_downsizer;
-    tran_id_t idx_id_clash_downsizer          ;
-    for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
-      assign id_clash_downsizer[t] = arb_slv_ar_id == mst_ar_id[t];
-    end
-
-    lzc #(
-      .WIDTH(AxiMaxReads)
-    ) i_id_clash_lzc (
-      .in_i   (id_clash_downsizer    ),
-      .cnt_o  (idx_id_clash_downsizer),
-      .empty_o(/* Unused */          )
-    );
-
-    // Choose an idle downsizer, unless there is an id clash
-    assign idx_ar_downsizer = (|id_clash_downsizer) ? idx_id_clash_downsizer : idx_idle_downsizer;
-  end else begin: gen_no_ar_lzc
-    assign idx_ar_downsizer = 1'b0;
+  // Is there already another downsizer handling a transaction with the same id
+  logic     [AxiMaxReads-1:0] id_clash_downsizer;
+  tran_id_t                   idx_id_clash_downsizer ;
+  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
+    assign id_clash_downsizer[t] = arb_slv_ar_id == mst_ar_id[t] && !idle_read_downsizer[t];
   end
+
+  onehot_to_bin #(
+    .ONEHOT_WIDTH(AxiMaxReads)
+  ) i_id_clash_onehot_to_bin (
+    .onehot(id_clash_downsizer    ),
+    .bin   (idx_id_clash_downsizer)
+  );
+
+  // Choose an idle downsizer, unless there is an id clash
+  assign idx_ar_downsizer = (|id_clash_downsizer) ? idx_id_clash_downsizer : idx_idle_downsizer;
 
   // This logic is used to resolve which downsizer is handling
   // each outstanding read transaction
@@ -277,27 +271,21 @@ module axi_dw_downsizer #(
   logic     r_downsizer_valid;
   tran_id_t idx_r_downsizer;
 
-  if (AxiMaxReads > 1) begin: gen_r_lzc
-    logic [AxiMaxReads-1:0] rid_downsizer_match;
+  logic [AxiMaxReads-1:0] rid_downsizer_match;
 
-    // Is there a downsizer handling this transaction?
-    assign r_downsizer_valid = |rid_downsizer_match;
+  // Is there a downsizer handling this transaction?
+  assign r_downsizer_valid = |rid_downsizer_match;
 
-    for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_rid_match
-      assign rid_downsizer_match[t] = (mst_resp.r.id == mst_ar_id[t]) && !idle_read_downsizer[t];
-    end
-
-    lzc #(
-      .WIDTH(AxiMaxReads)
-    ) i_rid_downsizer_lzc (
-      .in_i   (rid_downsizer_match),
-      .cnt_o  (idx_r_downsizer    ),
-      .empty_o(/* Unused */       )
-    );
-  end else begin
-    assign idx_r_downsizer   = 1'b0            ;
-    assign r_downsizer_valid = mst_resp.r.valid;
+  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_rid_match
+    assign rid_downsizer_match[t] = (mst_resp.r.id == mst_ar_id[t]) && !idle_read_downsizer[t];
   end
+
+  onehot_to_bin #(
+    .ONEHOT_WIDTH(AxiMaxReads)
+  ) i_rid_downsizer_lzc (
+    .onehot(rid_downsizer_match),
+    .bin   (idx_r_downsizer    )
+  );
 
   typedef struct packed {
     ar_chan_t ar                ;
@@ -547,7 +535,7 @@ module axi_dw_downsizer #(
           if (slv_req_i.w_valid && slv_resp_o.w_ready) begin
             automatic addr_t slv_port_offset = w_req_q.aw.addr[(AxiSlvPortStrbWidth == 1 ? 1 : $clog2(AxiSlvPortStrbWidth)) - 1:0];
             automatic addr_t mst_port_offset = w_req_q.aw.addr[(AxiMstPortStrbWidth == 1 ? 1 : $clog2(AxiMstPortStrbWidth)) - 1:0];
-            automatic addr_t size_mask  = (1 << w_req_q.orig_aw_size) - 1                                                    ;
+            automatic addr_t size_mask       = (1 << w_req_q.orig_aw_size) - 1                                                    ;
 
             // Lane steering
             for (int b = 0; b < AxiSlvPortStrbWidth; b++)

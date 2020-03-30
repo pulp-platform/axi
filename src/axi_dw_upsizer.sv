@@ -149,32 +149,25 @@ module axi_dw_upsizer #(
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
   tran_id_t                   mst_req_idx;
 
-  if (AxiMaxReads > 1) begin: gen_mst_ar_arb
-    rr_arb_tree #(
-      .NumIn    (AxiMaxReads),
-      .DataType (ar_chan_t  ),
-      .AxiVldRdy(1'b1       ),
-      .ExtPrio  (1'b0       ),
-      .LockIn   (1'b1       )
-    ) i_mst_ar_arb (
-      .clk_i  (clk_i            ),
-      .rst_ni (rst_ni           ),
-      .flush_i(1'b0             ),
-      .rr_i   ('0               ),
-      .req_i  (mst_ar_valid_tran),
-      .gnt_o  (mst_ar_ready_tran),
-      .data_i (mst_ar_tran      ),
-      .gnt_i  (mst_resp.ar_ready),
-      .req_o  (mst_req.ar_valid ),
-      .data_o (mst_req.ar       ),
-      .idx_o  (mst_req_idx      )
-    );
-  end else begin
-    assign mst_req.ar           = mst_ar_tran[0]      ;
-    assign mst_req.ar_valid     = mst_ar_valid_tran[0];
-    assign mst_ar_ready_tran[0] = mst_resp.ar_ready   ;
-    assign mst_req_idx          = '0                  ;
-  end
+  rr_arb_tree #(
+    .NumIn    (AxiMaxReads),
+    .DataType (ar_chan_t  ),
+    .AxiVldRdy(1'b1       ),
+    .ExtPrio  (1'b0       ),
+    .LockIn   (1'b1       )
+  ) i_mst_ar_arb (
+    .clk_i  (clk_i            ),
+    .rst_ni (rst_ni           ),
+    .flush_i(1'b0             ),
+    .rr_i   ('0               ),
+    .req_i  (mst_ar_valid_tran),
+    .gnt_o  (mst_ar_ready_tran),
+    .data_i (mst_ar_tran      ),
+    .gnt_i  (mst_resp.ar_ready),
+    .req_o  (mst_req.ar_valid ),
+    .data_o (mst_req.ar       ),
+    .idx_o  (mst_req_idx      )
+  );
 
   /*****************
    *  ERROR SLAVE  *
@@ -256,37 +249,32 @@ module axi_dw_upsizer #(
   logic     [AxiMaxReads-1:0] idle_read_upsizer;
   tran_id_t                   idx_upsizer;
 
-  if (AxiMaxReads > 1) begin: gen_read_lzc
-    // Find an idle upsizer to handle this transaction
-    tran_id_t idx_idle_upsizer;
-    lzc #(
-      .WIDTH(AxiMaxReads)
-    ) i_idle_lzc (
-      .in_i   (idle_read_upsizer),
-      .cnt_o  (idx_idle_upsizer ),
-      .empty_o(/* Unused */     )
-    );
+  // Find an idle upsizer to handle this transaction
+  tran_id_t idx_idle_upsizer;
+  lzc #(
+    .WIDTH(AxiMaxReads)
+  ) i_idle_lzc (
+    .in_i   (idle_read_upsizer),
+    .cnt_o  (idx_idle_upsizer ),
+    .empty_o(/* Unused */     )
+  );
 
-    // Is there already another upsizer handling a transaction with the same id
-    logic [AxiMaxReads-1:0] id_clash_upsizer;
-    tran_id_t idx_id_clash_upsizer          ;
-    for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
-      assign id_clash_upsizer[t] = arb_slv_ar_id == mst_ar_id[t];
-    end
-
-    lzc #(
-      .WIDTH(AxiMaxReads)
-    ) i_id_clash_lzc (
-      .in_i   (id_clash_upsizer    ),
-      .cnt_o  (idx_id_clash_upsizer),
-      .empty_o(/* Unused */        )
-    );
-
-    // Choose an idle upsizer, unless there is an id clash
-    assign idx_upsizer = (|id_clash_upsizer) ? idx_id_clash_upsizer : idx_idle_upsizer;
-  end else begin: gen_no_read_lzc
-    assign idx_upsizer = 1'b0;
+  // Is there already another upsizer handling a transaction with the same id
+  logic     [AxiMaxReads-1:0] id_clash_upsizer;
+  tran_id_t                   idx_id_clash_upsizer;
+  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
+    assign id_clash_upsizer[t] = arb_slv_ar_id == mst_ar_id[t] && !idle_read_upsizer[t];
   end
+
+  onehot_to_bin #(
+    .ONEHOT_WIDTH(AxiMaxReads)
+  ) i_id_clash_onehot_to_bin (
+    .onehot(id_clash_upsizer    ),
+    .bin   (idx_id_clash_upsizer)
+  );
+
+  // Choose an idle upsizer, unless there is an id clash
+  assign idx_upsizer = (|id_clash_upsizer) ? idx_id_clash_upsizer : idx_idle_upsizer;
 
   // This ID queue is used to resolve which upsizer is handling
   // each outstanding read transaction.
