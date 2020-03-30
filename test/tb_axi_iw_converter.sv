@@ -13,7 +13,7 @@
 
 `include "axi/assign.svh"
 
-module tb_axi_iw_converter (
+module tb_axi_iw_converter #(
   /// AXI4+ATOP ID width upstream, connected to the slave port of the DUT
   parameter int unsigned AxiIdWidthUpstream   = 32'd6,
   /// AXI4+ATOP ID width downstream, connected to the master port of the DUT
@@ -30,7 +30,7 @@ module tb_axi_iw_converter (
   // AXI4+ATOP channel parameter
   parameter int unsigned AxiAddrWidth = 32'd32;
   parameter int unsigned AxiDataWidth = 32'd32;
-  parameter int unsigned AxiUserWidth = 32'd4;;
+  parameter int unsigned AxiUserWidth = 32'd4;
 
   // TB timing parameter
   localparam time CyclTime = 10ns;
@@ -96,7 +96,7 @@ module tb_axi_iw_converter (
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH (  AxiAddrWidth         ),
     .AXI_DATA_WIDTH (  AxiDataWidth         ),
-    .AXI_ID_WIDTH   (  AxiIdWidthSownstream ),
+    .AXI_ID_WIDTH   (  AxiIdWidthDownstream ),
     .AXI_USER_WIDTH (  AxiUserWidth         )
   ) axi_downstream_dv (clk);
 
@@ -110,7 +110,7 @@ module tb_axi_iw_converter (
   `AXI_ASSIGN(axi_downstream_dv, axi_downstream);
 
   initial begin : proc_rand_master
-    automatic rand_axi_master axi_master = new(axi_upstream_dv);
+    automatic rand_axi_master_t axi_master = new(axi_upstream_dv);
     sim_done = 1'b0;
     @(posedge rst_n);
     axi_master.reset();
@@ -145,10 +145,10 @@ module tb_axi_iw_converter (
     .AXI_DATA_WIDTH   ( AxiDataWidth         ),
     .AXI_USER_WIDTH   ( AxiUserWidth         )
   ) i_axi_iw_converter_dut (
-    .clk_i  ( clk        ),
-    .rst_ni ( rst_ni     ),
-    .in     ( axi_master ),
-    .out    ( axi_slave  )
+    .clk_i  ( clk            ),
+    .rst_ni ( rst_n          ),
+    .slv    ( axi_upstream   ),
+    .mst    ( axi_downstream )
   );
 // vsim -voptargs=+acc work.tb_axi_id_remap
 endmodule
