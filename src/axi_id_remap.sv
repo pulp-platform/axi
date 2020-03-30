@@ -101,7 +101,7 @@ module axi_id_remap #(
 
   axi_id_remap_table #(
     .IdWidthInp ( AxiIdWidthSlv ),
-    .MaxTxns     ( TableSize     )
+    .MaxTxns    ( TableSize     )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -121,7 +121,7 @@ module axi_id_remap #(
   );
   axi_id_remap_table #(
     .IdWidthInp ( AxiIdWidthSlv ),
-    .MaxTxns     ( TableSize     )
+    .MaxTxns    ( TableSize     )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -141,12 +141,12 @@ module axi_id_remap #(
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  (TableSize),
-    .MODE   (1'b0)
+    .WIDTH  ( TableSize ),
+    .MODE   ( 1'b0      )
   ) i_lzc (
-    .in_i     (both_free),
-    .cnt_o    (both_free_oup_id),
-    .empty_o  (/* unused */)
+    .in_i     ( both_free        ),
+    .cnt_o    ( both_free_oup_id ),
+    .empty_o  ( /* unused */     )
   );
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
