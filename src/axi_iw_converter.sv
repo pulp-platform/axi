@@ -80,40 +80,21 @@ module axi_iw_converter #(
   input  mst_resp_t mst_resp_i
 );
   if (AxiIdWidthSlv > AxiIdWidthMst) begin : gen_id_downsize
-    localparam int unsigned AXI_ADDR_WIDTH = $bits(slv_req_i.aw.addr);
-    localparam int unsigned AXI_DATA_WIDTH = $bits(slv_req_i.w.data);
-    localparam int unsigned AXI_USER_WIDTH = $bits(slv_req_i.aw.user);
-
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-      .AXI_ID_WIDTH   ( AxiIdWidthSlv  ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) in ();
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH  ),
-      .AXI_DATA_WIDTH( AXI_DATA_WIDTH  ),
-      .AXI_ID_WIDTH  ( AxiIdWidthMst   ),
-      .AXI_USER_WIDTH( AXI_USER_WIDTH  )
-    ) out ();
-
-    `AXI_ASSIGN_FROM_REQ(in, slv_req_i)
-    `AXI_ASSIGN_TO_RESP(slv_resp_o, in)
-    `AXI_ASSIGN_TO_REQ(mst_req_o, out)
-    `AXI_ASSIGN_FROM_RESP(out, mst_resp_i)
-
     axi_id_remap #(
-      .ADDR_WIDTH   ( ADDR_WIDTH   ),
-      .DATA_WIDTH   ( DATA_WIDTH   ),
-      .USER_WIDTH   ( USER_WIDTH   ),
-      .ID_WIDTH_IN  ( ID_WIDTH_IN  ),
-      .ID_WIDTH_OUT ( ID_WIDTH_OUT ),
-      .TABLE_SIZE   ( TABLE_SIZE   )
+      .TableSize     ( RemapTableSize ),
+      .AxiIdWidthSlv ( AxiIdWidthSlv  ),
+      .slv_req_t     ( slv_req_t      ),
+      .slv_resp_t    ( slv_resp_t     ),
+      .AxiIdWidthMst ( AxiIdWidthMst  ),
+      .mst_req_t     ( mst_req_t      ),
+      .mst_resp_t    ( mst_resp_t     )
     ) i_remap (
-      .clk_i  ( clk_i  ),
-      .rst_ni ( rst_ni ),
-      .in     ( in     ),
-      .out    ( out    )
+      .clk_i,
+      .rst_ni,
+      .slv_req_i  ( slv_req_i  ),
+      .slv_resp_o ( slv_resp_o ),
+      .mst_req_o  ( mst_req_o  ),
+      .mst_resp_i ( mst_resp_i )
     );
   end else if (AxiIdWidthSlv < AxiIdWidthMst) begin : gen_id_upsize
     axi_id_prepend #(
