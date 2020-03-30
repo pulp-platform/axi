@@ -23,6 +23,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                             |                                |
 | [`axi_intf`](src/axi_intf.sv)                        | This file defines the interfaces we support.                                                      |                                |
 | [`axi_isolate.sv`](src/axi_isolate.sv)               | A module that can isolate downstream slaves from receiving new AXI4 transactions.                 |                                |
+| [`axi_iw_converter`](src/axi_iw_converter.sv)        | This module converts between different AXI ID widths.                                             |                                |
 | [`axi_join`](src/axi_join.sv)                        | A connector that joins two AXI interfaces.                                                        |                                |
 | [`axi_lite_demux`](src/axi_lite_demux.sv)            | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                      | [Doc](doc/axi_lite_demux.md)   |
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
