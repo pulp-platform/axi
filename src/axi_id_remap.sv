@@ -162,12 +162,12 @@ module axi_id_remap #(
     mst_req_o.aw_valid  = 1'b0;
     slv_resp_o.aw_ready = 1'b0;
     wr_push             = 1'b0;
-    wr_push_oup_id      =   'x;
+    wr_push_oup_id      =   '0;
     mst_req_o.ar_valid  = 1'b0;
     slv_resp_o.ar_ready = 1'b0;
     rd_push             = 1'b0;
-    rd_push_inp_id      =   'x;
-    rd_push_oup_id      =   'x;
+    rd_push_inp_id      =   '0;
+    rd_push_oup_id      =   '0;
     ar_id_d             = ar_id_q;
     aw_id_d             = aw_id_q;
     state_d             = state_q;
