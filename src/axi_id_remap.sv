@@ -115,7 +115,7 @@ module axi_id_remap #(
     .exists_oup_id_o ( wr_exists_id                            ),
     .exists_full_o   ( wr_exists_full                          ),
     .exists_o        ( wr_exists                               ),
-    .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ), // TODO, check!!
+    .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ),
     .pop_inp_id_o    ( slv_resp_o.b.id                         ),
     .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready )
   );
@@ -135,7 +135,7 @@ module axi_id_remap #(
     .exists_oup_id_o  ( rd_exists_id                                                 ),
     .exists_full_o    ( rd_exists_full                                               ),
     .exists_o         ( rd_exists                                                    ),
-    .pop_oup_id_i     ( mst_resp_i.r.id[IdxWidth-1:0]                                ), // TODO, check!!
+    .pop_oup_id_i     ( mst_resp_i.r.id[IdxWidth-1:0]                                ),
     .pop_inp_id_o     ( slv_resp_o.r.id                                              ),
     .pop_i            ( slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last )
   );
@@ -162,12 +162,12 @@ module axi_id_remap #(
     mst_req_o.aw_valid  = 1'b0;
     slv_resp_o.aw_ready = 1'b0;
     wr_push             = 1'b0;
-    wr_push_oup_id      =   'x;
+    wr_push_oup_id      =   '0;
     mst_req_o.ar_valid  = 1'b0;
     slv_resp_o.ar_ready = 1'b0;
     rd_push             = 1'b0;
-    rd_push_inp_id      =   'x;
-    rd_push_oup_id      =   'x;
+    rd_push_inp_id      =   '0;
+    rd_push_oup_id      =   '0;
     ar_id_d             = ar_id_q;
     aw_id_d             = aw_id_q;
     state_d             = state_q;
