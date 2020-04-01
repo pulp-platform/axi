@@ -117,17 +117,15 @@ module synth_bench (
     localparam int unsigned AxiIdWidthUs = AXI_ID_USER_WIDTH[i_iwus] + 1;
     for (genvar i_iwds = 0; i_iwds < 3; i_iwds++) begin : gen_iw_downstream
       localparam int unsigned AxiIdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
-      for (genvar i_tbl = 0; i_tbl < 3; i_tbl++) begin : gen_table_size
-        localparam int unsigned TableSize = AXI_ADDR_WIDTH[i_tbl];
-        synth_axi_iw_converter # (
-          .TableSize    ( TableSize    ),
-          .AxiIdWidthUs ( AxiIdWidthUs ),
-          .AxiIdWidthDs ( AxiIdWidthDs ),
-          .AxiAddrWidth ( 32'd64       ),
-          .AxiDataWidth ( 32'd512      ),
-          .AxiUserWidth ( 32'd10       )
-        ) i_synth_axi_iw_converter (.*);
-      end
+      localparam int unsigned TableSize    = 2**AxiIdWidthDs;
+      synth_axi_iw_converter # (
+        .TableSize    ( TableSize    ),
+        .AxiIdWidthUs ( AxiIdWidthUs ),
+        .AxiIdWidthDs ( AxiIdWidthDs ),
+        .AxiAddrWidth ( 32'd64       ),
+        .AxiDataWidth ( 32'd512      ),
+        .AxiUserWidth ( 32'd10       )
+      ) i_synth_axi_iw_converter (.*);
     end
   end
 endmodule
