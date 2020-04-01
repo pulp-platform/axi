@@ -18,6 +18,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)            | A data width converter between a narrow AXI master and a wider AXI slave.                         |                                |
 | [`axi_err_slv`](src/axi_err_slv.sv)                  | Always responds with an AXI decode/slave error for transactions which are sent to it.             |                                |
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                             |                                |
+| [`axi_id_remap`](src/axi_id_remap.sv)                | This module remaps AXI IDs.                                                                       |                                |
 | [`axi_intf`](src/axi_intf.sv)                        | This file defines the interfaces we support.                                                      |                                |
 | [`axi_isolate.sv`](src/axi_isolate.sv)               | A module that can isolate downstream slaves from receiving new AXI4 transactions.                 |                                |
 | [`axi_iw_converter`](src/axi_iw_converter.sv)        | This module converts between different AXI ID widths.                                             |                                |
