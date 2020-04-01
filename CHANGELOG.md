@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_modify_address`: Fix unconnected `w_valid`.
 - `axi_dw_converter`: Fix internal inversion of up- and downconversion, which led to incorrect lane
   steering and serialization.
+- `rand_axi_master` (in `axi_test`): In ATOP mode, this module could get stuck receiving an R beat
+  when only writes (without ATOP read responses) were left to complete.  This has been fixed.
 
 
 ## 0.18.0 - 2020-03-24
