@@ -991,16 +991,18 @@ package axi_test;
       )) begin
         automatic r_beat_t r_beat;
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
-        drv.recv_r(r_beat);
-        if (r_beat.r_last) begin
-          cnt_sem.get();
-          if (atop_resp_r[r_beat.r_id]) begin
-            atop_resp_r[r_beat.r_id] = 1'b0;
-          end else begin
-            r_flight_cnt[r_beat.r_id]--;
-            tot_r_flight_cnt--;
+        if (tot_r_flight_cnt > 0 || atop_resp_r > 0) begin
+          drv.recv_r(r_beat);
+          if (r_beat.r_last) begin
+            cnt_sem.get();
+            if (atop_resp_r[r_beat.r_id]) begin
+              atop_resp_r[r_beat.r_id] = 1'b0;
+            end else begin
+              r_flight_cnt[r_beat.r_id]--;
+              tot_r_flight_cnt--;
+            end
+            cnt_sem.put();
           end
-          cnt_sem.put();
         end
       end
     endtask
