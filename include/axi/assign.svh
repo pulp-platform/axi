@@ -90,6 +90,63 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning one AXI4+ATOP interface to another, as if you would do `assign slv = mst;`
+//
+// The channel assignment `AXI_ASSIGN_MONITOR(mon_dv, axi_if)` assigns all signals from `axi_if`
+// to the `mon_dv` interface.
+//
+// Usage Example:
+// `AXI_ASSIGN_MONITOR(mon_dv, axi_if)
+`define AXI_ASSIGN_MONITOR(mon_dv, axi_if)    \
+  assign mon_dv.aw_id     = axi_if.aw_id;     \
+  assign mon_dv.aw_addr   = axi_if.aw_addr;   \
+  assign mon_dv.aw_len    = axi_if.aw_len;    \
+  assign mon_dv.aw_size   = axi_if.aw_size;   \
+  assign mon_dv.aw_burst  = axi_if.aw_burst;  \
+  assign mon_dv.aw_lock   = axi_if.aw_lock;   \
+  assign mon_dv.aw_cache  = axi_if.aw_cache;  \
+  assign mon_dv.aw_prot   = axi_if.aw_prot;   \
+  assign mon_dv.aw_qos    = axi_if.aw_qos;    \
+  assign mon_dv.aw_region = axi_if.aw_region; \
+  assign mon_dv.aw_atop   = axi_if.aw_atop;   \
+  assign mon_dv.aw_user   = axi_if.aw_user;   \
+  assign mon_dv.aw_valid  = axi_if.aw_valid;  \
+  assign mon_dv.aw_ready  = axi_if.aw_ready;  \
+  assign mon_dv.w_data    = axi_if.w_data;    \
+  assign mon_dv.w_strb    = axi_if.w_strb;    \
+  assign mon_dv.w_last    = axi_if.w_last;    \
+  assign mon_dv.w_user    = axi_if.w_user;    \
+  assign mon_dv.w_valid   = axi_if.w_valid;   \
+  assign mon_dv.w_ready   = axi_if.w_ready;   \
+  assign mon_dv.b_id      = axi_if.b_id;      \
+  assign mon_dv.b_resp    = axi_if.b_resp;    \
+  assign mon_dv.b_user    = axi_if.b_user;    \
+  assign mon_dv.b_valid   = axi_if.b_valid;   \
+  assign mon_dv.b_ready   = axi_if.b_ready;   \
+  assign mon_dv.ar_id     = axi_if.ar_id;     \
+  assign mon_dv.ar_addr   = axi_if.ar_addr;   \
+  assign mon_dv.ar_len    = axi_if.ar_len;    \
+  assign mon_dv.ar_size   = axi_if.ar_size;   \
+  assign mon_dv.ar_burst  = axi_if.ar_burst;  \
+  assign mon_dv.ar_lock   = axi_if.ar_lock;   \
+  assign mon_dv.ar_cache  = axi_if.ar_cache;  \
+  assign mon_dv.ar_prot   = axi_if.ar_prot;   \
+  assign mon_dv.ar_qos    = axi_if.ar_qos;    \
+  assign mon_dv.ar_region = axi_if.ar_region; \
+  assign mon_dv.ar_user   = axi_if.ar_user;   \
+  assign mon_dv.ar_valid  = axi_if.ar_valid;  \
+  assign mon_dv.ar_ready  = axi_if.ar_ready;  \
+  assign mon_dv.r_id      = axi_if.r_id;      \
+  assign mon_dv.r_data    = axi_if.r_data;    \
+  assign mon_dv.r_resp    = axi_if.r_resp;    \
+  assign mon_dv.r_last    = axi_if.r_last;    \
+  assign mon_dv.r_user    = axi_if.r_user;    \
+  assign mon_dv.r_valid   = axi_if.r_valid;   \
+  assign mon_dv.r_ready   = axi_if.r_ready;
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Internal implementation for assigning interfaces from structs, allows for standalone assignments
 // (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with the same
 // code.

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_test`: The random AXI master `rand_axi_master` can now emit wrapping bursts (but does not do
   so by default).  Three new parameters control the burst types of the emitted transactions; not
   setting those parameters means the random master behaves as it did before this change.
+- `axi_intf`: `AXI_BUS_DV`: Add all inputs `Monitor` modport.
+- `assign`: Add `AXI_ASSIGN_MONITOR` macro which assigns an `AXI_BUS` to an `AXI_BUS_DV.Monitor`.
 
 ### Changed
 - `axi_pkg:`
