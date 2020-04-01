@@ -151,6 +151,23 @@ module synth_bench (
     ) i_axi_lite_regs (.*);
   end
 
+  // AXI ID width converter
+  for (genvar i_iwus = 0; i_iwus < 3; i_iwus++) begin : gen_iw_upstream
+    localparam int unsigned AxiIdWidthUs = AXI_ID_USER_WIDTH[i_iwus] + 1;
+    for (genvar i_iwds = 0; i_iwds < 3; i_iwds++) begin : gen_iw_downstream
+      localparam int unsigned AxiIdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
+      localparam int unsigned TableSize    = 2**AxiIdWidthDs;
+      synth_axi_iw_converter # (
+        .TableSize    ( TableSize    ),
+        .AxiIdWidthUs ( AxiIdWidthUs ),
+        .AxiIdWidthDs ( AxiIdWidthDs ),
+        .AxiAddrWidth ( 32'd64       ),
+        .AxiDataWidth ( 32'd512      ),
+        .AxiUserWidth ( 32'd10       )
+      ) i_synth_axi_iw_converter (.*);
+    end
+  end
+
 endmodule
 
 
@@ -587,5 +604,44 @@ module synth_axi_lite_regs #(
     .reg_d_i     ( reg_d       ),
     .reg_load_i  ( reg_load    ),
     .reg_q_o     ( reg_q       )
+  );
+endmodule
+
+module synth_axi_iw_converter # (
+  parameter int unsigned TableSize    = 32'd0,  // Remap table size
+  parameter int unsigned AxiIdWidthUs = 32'd0,  // AXI ID width upstream
+  parameter int unsigned AxiIdWidthDs = 32'd0,  // AXI ID width downstream
+  parameter int unsigned AxiAddrWidth = 32'd0,  // AXI address width
+  parameter int unsigned AxiDataWidth = 32'd0,  // AXI data width
+  parameter int unsigned AxiUserWidth = 32'd0   // AXI user width
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidthUs ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) upstream ();
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidthDs ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) downstream ();
+
+  axi_iw_converter_intf #(
+    .REMAP_TABLE_SIZE ( TableSize    ),
+    .AXI_ID_WIDTH_SLV ( AxiIdWidthUs ),
+    .AXI_ID_WIDTH_MST ( AxiIdWidthDs ),
+    .AXI_ADDR_WIDTH   ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH   ( AxiDataWidth ),
+    .AXI_USER_WIDTH   ( AxiUserWidth )
+  ) i_axi_iw_converter_dut (
+    .clk_i,
+    .rst_ni,
+    .slv     ( upstream   ),
+    .mst     ( downstream )
   );
 endmodule
