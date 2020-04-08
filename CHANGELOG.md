@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_serializer`, to serialize multiple transactions with different IDs to the same ID.
 
 ### Changed
 
