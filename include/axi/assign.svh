@@ -134,12 +134,12 @@
   opt_as axi_if.r_last  = r_struct.last;      \
   opt_as axi_if.r_user  = r_struct.user;
 `define AXI_FROM_REQ(opt_as, axi_if, req_struct)  \
-  `AXI_FROM_AW(opt_as, axi_if, req_struct.aw)    \
+  `AXI_FROM_AW(opt_as, axi_if, req_struct.aw)     \
   opt_as axi_if.aw_valid = req_struct.aw_valid;   \
-  `AXI_FROM_W(opt_as, axi_if, req_struct.w)      \
+  `AXI_FROM_W(opt_as, axi_if, req_struct.w)       \
   opt_as axi_if.w_valid = req_struct.w_valid;     \
   opt_as axi_if.b_ready = req_struct.b_ready;     \
-  `AXI_FROM_AR(opt_as, axi_if, req_struct.ar)    \
+  `AXI_FROM_AR(opt_as, axi_if, req_struct.ar)     \
   opt_as axi_if.ar_valid = req_struct.ar_valid;   \
   opt_as axi_if.r_ready = req_struct.r_ready;
 `define AXI_FROM_RESP(opt_as, axi_if, resp_struct)  \
@@ -147,7 +147,7 @@
   opt_as axi_if.ar_ready = resp_struct.ar_ready;    \
   opt_as axi_if.w_ready = resp_struct.w_ready;      \
   opt_as axi_if.b_valid = resp_struct.b_valid;      \
-  `AXI_FROM_B(opt_as, axi_if, resp_struct.b)       \
+  `AXI_FROM_B(opt_as, axi_if, resp_struct.b)        \
   opt_as axi_if.r_valid = resp_struct.r_valid;      \
   `AXI_FROM_R(opt_as, axi_if, resp_struct.r)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
