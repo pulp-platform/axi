@@ -54,41 +54,41 @@ module tb_axi_dw_upsizer;
   // AXI Buses
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AW     ),
-    .AXI_DATA_WIDTH (MULT*DW),
-    .AXI_ID_WIDTH   (IW     ),
-    .AXI_USER_WIDTH (UW     )
+    .AXI_ADDR_WIDTH(AW),
+    .AXI_DATA_WIDTH(DW),
+    .AXI_ID_WIDTH  (IW),
+    .AXI_USER_WIDTH(UW)
   ) axi_master_dv (
     .clk_i(clk)
   );
 
   axi_test::rand_axi_master #(
-    .AW             (AW     ),
-    .DW             (MULT*DW),
-    .IW             (IW     ),
-    .UW             (UW     ),
-    .MAX_READ_TXNS  (8      ),
-    .MAX_WRITE_TXNS (8      ),
-    .TA             (200ps  ),
-    .TT             (700ps  )
+    .AW            (AW   ),
+    .DW            (DW   ),
+    .IW            (IW   ),
+    .UW            (UW   ),
+    .MAX_READ_TXNS (8    ),
+    .MAX_WRITE_TXNS(8    ),
+    .TA            (200ps),
+    .TT            (700ps)
   ) axi_master_drv = new (axi_master_dv);
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AW),
-    .AXI_DATA_WIDTH (DW),
-    .AXI_ID_WIDTH   (IW),
-    .AXI_USER_WIDTH (UW)
+    .AXI_ADDR_WIDTH(AW     ),
+    .AXI_DATA_WIDTH(MULT*DW),
+    .AXI_ID_WIDTH  (IW     ),
+    .AXI_USER_WIDTH(UW     )
   ) axi_slave_dv (
     .clk_i(clk)
   );
 
   axi_test::rand_axi_slave #(
-    .AW (AW   ),
-    .DW (DW   ),
-    .IW (IW   ),
-    .UW (UW   ),
-    .TA (200ps),
-    .TT (700ps)
+    .AW(AW     ),
+    .DW(MULT*DW),
+    .IW(IW     ),
+    .UW(UW     ),
+    .TA(200ps  ),
+    .TT(700ps  )
   ) axi_slave_drv = new (axi_slave_dv);
 
   // AXI channel types
@@ -113,15 +113,15 @@ module tb_axi_dw_upsizer;
   `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t);
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_t, slv_r_chan_t)          ;
 
-  slv_req_t  axi_slv_req;
-  slv_resp_t axi_slv_resp;
-  `AXI_ASSIGN_TO_REQ(axi_slv_req, axi_master_dv)    ;
-  `AXI_ASSIGN_FROM_RESP(axi_master_dv, axi_slv_resp);
-
   mst_req_t  axi_mst_req;
   mst_resp_t axi_mst_resp;
-  `AXI_ASSIGN_FROM_REQ(axi_slave_dv, axi_mst_req);
-  `AXI_ASSIGN_TO_RESP(axi_mst_resp, axi_slave_dv);
+  `AXI_ASSIGN_TO_REQ(axi_mst_req, axi_master_dv)    ;
+  `AXI_ASSIGN_FROM_RESP(axi_master_dv, axi_mst_resp);
+
+  slv_req_t  axi_slv_req;
+  slv_resp_t axi_slv_resp;
+  `AXI_ASSIGN_FROM_REQ(axi_slave_dv, axi_slv_req);
+  `AXI_ASSIGN_TO_RESP(axi_slv_resp, axi_slave_dv);
 
   // DUT
 
@@ -132,23 +132,23 @@ module tb_axi_dw_upsizer;
     .AxiAddrWidth       (AW          ),
     .AxiIdWidth         (IW          ),
     .aw_chan_t          (aw_chan_t   ),
-    .mst_w_chan_t       (mst_w_chan_t),
-    .slv_w_chan_t       (slv_w_chan_t),
+    .mst_w_chan_t       (slv_w_chan_t),
+    .slv_w_chan_t       (mst_w_chan_t),
     .b_chan_t           (b_chan_t    ),
     .ar_chan_t          (ar_chan_t   ),
-    .mst_r_chan_t       (mst_r_chan_t),
-    .slv_r_chan_t       (slv_r_chan_t),
-    .axi_mst_req_t      (mst_req_t   ),
-    .axi_mst_resp_t     (mst_resp_t  ),
-    .axi_slv_req_t      (slv_req_t   ),
-    .axi_slv_resp_t     (slv_resp_t  )
+    .mst_r_chan_t       (slv_r_chan_t),
+    .slv_r_chan_t       (mst_r_chan_t),
+    .axi_mst_req_t      (slv_req_t   ),
+    .axi_mst_resp_t     (slv_resp_t  ),
+    .axi_slv_req_t      (mst_req_t   ),
+    .axi_slv_resp_t     (mst_resp_t  )
   ) i_dw_converter (
     .clk_i     (clk         ),
     .rst_ni    (rst         ),
-    .slv_req_i (axi_slv_req ),
-    .slv_resp_o(axi_slv_resp),
-    .mst_req_o (axi_mst_req ),
-    .mst_resp_i(axi_mst_resp)
+    .slv_req_i (axi_mst_req ),
+    .slv_resp_o(axi_mst_resp),
+    .mst_req_o (axi_slv_req ),
+    .mst_resp_i(axi_slv_resp)
   );
 
   initial begin
