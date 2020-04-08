@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.18.1 - 2020-04-08
+
+### Fixed
 - `axi_modify_address`: Fix unconnected `w_valid`.
 - `axi_dw_converter`: Fix internal inversion of up- and downconversion, which led to incorrect lane
   steering and serialization.
