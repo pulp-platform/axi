@@ -58,6 +58,8 @@ module tb_axi_lite_to_axi;
     .AXI_DATA_WIDTH (DW)
   ) i_dut (
     .in   ( axi_lite ),
+    .slv_aw_cache_i ('0),
+    .slv_ar_cache_i ('0),
     .out  ( axi      )
   );
 

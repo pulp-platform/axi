@@ -25,6 +25,8 @@ module axi_lite_to_axi #(
   // Slave AXI LITE port
   input  req_lite_t  slv_req_lite_i,
   output resp_lite_t slv_resp_lite_o,
+  input  axi_pkg::cache_t slv_aw_cache_i,
+  input  axi_pkg::cache_t slv_ar_cache_i,
   // Master AXI port
   output req_t       mst_req_o,
   input  resp_t      mst_resp_i
@@ -38,6 +40,7 @@ module axi_lite_to_axi #(
       prot:  slv_req_lite_i.aw.prot,
       size:  AxiSize,
       burst: axi_pkg::BURST_FIXED,
+      cache: slv_aw_cache_i,
       default: '0
     },
     aw_valid: slv_req_lite_i.aw_valid,
@@ -54,6 +57,7 @@ module axi_lite_to_axi #(
       prot:  slv_req_lite_i.ar.prot,
       size:  AxiSize,
       burst: axi_pkg::BURST_FIXED,
+      cache: slv_ar_cache_i,
       default: '0
     },
     ar_valid: slv_req_lite_i.ar_valid,
@@ -92,6 +96,8 @@ module axi_lite_to_axi_intf #(
   parameter int unsigned AXI_DATA_WIDTH = 32'd0
 ) (
   AXI_LITE.Slave  in,
+  input axi_pkg::cache_t slv_aw_cache_i,
+  input axi_pkg::cache_t slv_ar_cache_i,
   AXI_BUS.Master  out
 );
   localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AXI_DATA_WIDTH/8)));
@@ -110,7 +116,7 @@ module axi_lite_to_axi_intf #(
   assign out.aw_size   = AxiSize;
   assign out.aw_burst  = axi_pkg::BURST_FIXED;
   assign out.aw_lock   = '0;
-  assign out.aw_cache  = '0; // non-modifiable and non-bufferable mandated by std
+  assign out.aw_cache  = slv_aw_cache_i;
   assign out.aw_prot   = '0;
   assign out.aw_qos    = '0;
   assign out.aw_region = '0;
@@ -136,7 +142,7 @@ module axi_lite_to_axi_intf #(
   assign out.ar_size   = AxiSize;
   assign out.ar_burst  = axi_pkg::BURST_FIXED;
   assign out.ar_lock   = '0;
-  assign out.ar_cache  = '0; // non-modifiable and non-bufferable mandated by std
+  assign out.ar_cache  = slv_ar_cache_i;
   assign out.ar_prot   = '0;
   assign out.ar_qos    = '0;
   assign out.ar_region = '0;
