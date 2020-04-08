@@ -54,6 +54,7 @@ module axi_modify_address #(
     },
     aw_valid: slv_req_i.aw_valid,
     w:        slv_req_i.w,
+    w_valid:  slv_req_i.w_valid,
     b_ready:  slv_req_i.b_ready,
     ar: '{
       id:     slv_req_i.ar.id,
