@@ -315,7 +315,7 @@ module axi_lite_to_apb #(
     wdata_width: assert ($bits(axi_lite_req_i.w.data ) == $bits(apb_req_o[0].pwdata)) else
       $fatal(1, $sformatf("AXI4-Lite and APB write data width not equal"));
     strb_width:  assert ($bits(axi_lite_req_i.w.strb ) == $bits(apb_req_o[0].pstrb)) else
-      $fatal(1, $sformatf("AXI4-Lite and APB address width not equal"));
+      $fatal(1, $sformatf("AXI4-Lite and APB strobe width not equal"));
     rdata_width: assert ($bits(axi_lite_resp_o.r.data ) == $bits(apb_resp_i[0].prdata)) else
       $fatal(1, $sformatf("AXI4-Lite and APB read data width not equal"));
     sel_width:   assert ($bits(apb_req_o[0].psel) == 32'd1) else
