@@ -14,7 +14,7 @@
 // Data width upsize conversion.
 // Connects a narrow master to a wider slave.
 
-// NOTE: The upsizer does not support WRAP and FIXED bursts, and
+// NOTE: The upsizer does not support WRAP bursts, and
 // will answer with SLVERR upon receiving a burst of such types.
 
 module axi_dw_upsizer #(
@@ -367,7 +367,7 @@ module axi_dw_upsizer #(
             end
 
             case (r_req_d.ar.burst)
-              axi_pkg::BURST_INCR : begin
+              axi_pkg::BURST_INCR: begin
                 // Modifiable transaction
                 if (modifiable(r_req_d.ar.cache)) begin
                   // No need to upsize single-beat transactions.
@@ -384,17 +384,12 @@ module axi_dw_upsizer #(
                 end
               end
 
-              axi_pkg::BURST_WRAP: begin
-                // The DW converter does not support this kind of burst ...
-                r_state_d              = R_PASSTHROUGH;
-                r_req_d.ar_throw_error = 1'b1         ;
-
-                // ... but might if this is a single-beat transaction
-                if (r_req_d.ar.len == '0)
-                  r_req_d.ar_throw_error = 1'b0;
+              axi_pkg::BURST_FIXED: begin
+                // Passes through the upsizer without any changes
+                r_state_d = R_PASSTHROUGH;
               end
 
-              axi_pkg::BURST_FIXED: begin
+              axi_pkg::BURST_WRAP: begin
                 // The DW converter does not support this kind of burst ...
                 r_state_d              = R_PASSTHROUGH;
                 r_req_d.ar_throw_error = 1'b1         ;
@@ -429,14 +424,22 @@ module axi_dw_upsizer #(
 
               // Acknowledgment
               if (slv_r_ready_tran[t]) begin
-                r_req_d.burst_len = r_req_q.burst_len - 1                                                            ;
-                r_req_d.ar.addr   = aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size) + (1 << r_req_q.orig_ar_size);
+                r_req_d.burst_len = r_req_q.burst_len - 1;
+
+                case (r_req_q.ar.burst)
+                  axi_pkg::BURST_INCR: begin
+                    r_req_d.ar.addr = aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size) + (1 << r_req_q.orig_ar_size);
+                  end
+                  axi_pkg::BURST_FIXED: begin
+                    r_req_d.ar.addr = r_req_q.ar.addr;
+                  end
+                endcase
 
                 case (r_state_q)
-                  R_PASSTHROUGH :
+                  R_PASSTHROUGH:
                     mst_r_ready_tran[t] = 1'b1;
 
-                  R_INCR_UPSIZE :
+                  R_INCR_UPSIZE:
                     if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstPortMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
@@ -540,10 +543,18 @@ module axi_dw_upsizer #(
                 w_req_d.w.strb[b]        = slv_req_i.w.strb[b + slv_port_offset - mst_port_offset]         ;
               end
 
-            w_req_d.burst_len = w_req_q.burst_len - 1                                                            ;
-            w_req_d.aw.addr   = aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size) + (1 << w_req_q.orig_aw_size);
-            w_req_d.w.last    = (w_req_q.burst_len == 0)                                                         ;
-            w_req_d.w.user    = slv_req_i.w.user                                                                 ;
+            w_req_d.burst_len = w_req_q.burst_len - 1    ;
+            w_req_d.w.last    = (w_req_q.burst_len == 0) ;
+            w_req_d.w.user    = slv_req_i.w.user         ;
+
+            case (w_req_q.aw.burst)
+              axi_pkg::BURST_INCR: begin
+                w_req_d.aw.addr = aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size) + (1 << w_req_q.orig_aw_size);
+              end
+              axi_pkg::BURST_FIXED: begin
+                w_req_d.aw.addr = w_req_q.aw.addr;
+              end
+            endcase
 
             case (w_state_q)
               W_PASSTHROUGH:
@@ -612,17 +623,12 @@ module axi_dw_upsizer #(
               end
           end
 
-          axi_pkg::BURST_WRAP: begin
-            // The DW converter does not support this kind of burst ...
-            w_state_d              = W_PASSTHROUGH;
-            w_req_d.aw_throw_error = 1'b1         ;
-
-            // ... but might if this is a single-beat transaction
-            if (slv_req_i.aw.len == '0)
-              w_req_d.aw_throw_error = 1'b0;
+          axi_pkg::BURST_FIXED: begin
+            // Passes through the upsizer without any changes
+            w_state_d = W_PASSTHROUGH;
           end
 
-          axi_pkg::BURST_FIXED: begin
+          axi_pkg::BURST_WRAP: begin
             // The DW converter does not support this kind of burst ...
             w_state_d              = W_PASSTHROUGH;
             w_req_d.aw_throw_error = 1'b1         ;
