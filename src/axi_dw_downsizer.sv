@@ -737,7 +737,7 @@ module axi_dw_downsizer #(
             w_req_d.aw_throw_error = 1'b1         ;
 
             // ... but might if this is a narrow single-beat transaction
-            if (slv_req_i.aw.size <= AxiSlvPortMaxSize && slv_req_i.aw.len == '0)
+            if (slv_req_i.aw.size <= AxiMstPortMaxSize && slv_req_i.aw.len == '0)
               w_req_d.aw_throw_error = 1'b0;
           end
 
@@ -747,7 +747,7 @@ module axi_dw_downsizer #(
             w_req_d.aw_throw_error = 1'b1         ;
 
             // ... but might if this is a narrow single-beat transaction
-            if (slv_req_i.aw.size <= AxiSlvPortMaxSize && slv_req_i.aw.len == '0)
+            if (slv_req_i.aw.size <= AxiMstPortMaxSize && slv_req_i.aw.len == '0)
               w_req_d.aw_throw_error = 1'b0;
           end
         endcase
