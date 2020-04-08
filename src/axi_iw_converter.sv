@@ -28,9 +28,11 @@
 /// Feeds through the channel if the ID widths are the same and extends it with zeros, if
 /// the outgoing ID is larger than the incoming ID.
 
-
 module axi_iw_converter #(
-  ///
+  /// Size of the remap table when downconverting the ID size.
+  /// This number of ID's get generated at the master port.
+  /// Maximum value is RemapTabeleSize <= 2**`AxiIdWidthMst` as then one table exists for
+  /// every possible master port ID. The mapping is one to one.
   parameter int unsigned RemapTableSize = 32'd0,
   /// AXI4+ATOP ID width of the slave port
   parameter int unsigned AxiIdWidthSlv  = 32'd0,
