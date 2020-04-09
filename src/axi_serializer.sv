@@ -9,121 +9,238 @@
 // specific language governing permissions and limitations under the License.
 //
 // Author: Andreas Kurth <akurth@iis.ee.ethz.ch>
+//         Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
-`include "axi/assign.svh"
-
+`include "common_cells/registers.svh"
 /// Serialize all AXI transactions to a single ID (zero).
 module axi_serializer #(
-  parameter int unsigned MaxReadTxns = 0,
-  parameter int unsigned MaxWriteTxns = 0,
-  parameter int unsigned AxiIdWidth = 0,
-  parameter type req_t = logic,
-  parameter type resp_t = logic
+  /// Maximum number of in flight read transactions.
+  parameter int unsigned MaxReadTxns  = 32'd0,
+  /// Maximum number of in flight write transactions.
+  parameter int unsigned MaxWriteTxns = 32'd0,
+  /// AXI4+ATOP ID width.
+  parameter int unsigned AxiIdWidth   = 32'd0,
+  /// AXI4+ATOP request struct definition.
+  parameter type         req_t        = logic,
+  /// AXI4+ATOP response struct definition.
+  parameter type         resp_t       = logic
 ) (
+  /// Clock
   input  logic  clk_i,
+  /// Asynchronous reset, active low
   input  logic  rst_ni,
+  /// Slave port request
   input  req_t  slv_req_i,
+  /// Slave port response
   output resp_t slv_resp_o,
+  /// Master port request
   output req_t  mst_req_o,
+  /// Master port response
   input  resp_t mst_resp_i
 );
 
-  // TODO for upstreaming: Add support for ATOPs.
-
+  localparam int unsigned RdUsageWidth = (MaxReadTxns  > 32'd1) ? $clog2(MaxReadTxns)  : 32'd1;
+  localparam int unsigned WrUsageWidth = (MaxWriteTxns > 32'd1) ? $clog2(MaxWriteTxns) : 32'd1;
   typedef logic [AxiIdWidth-1:0] id_t;
+  typedef enum logic [1:0] {
+    AtopIdle    = 2'b00,
+    AtopDrain   = 2'b01,
+    AtopExecute = 2'b10
+  } state_e;
 
-  logic rd_fifo_ready,  rd_fifo_valid,
-        wr_fifo_ready,  wr_fifo_valid;
-  id_t  b_id,
-        r_id;
+  logic                      rd_fifo_full, rd_fifo_empty, rd_fifo_push,
+                             wr_fifo_full, wr_fifo_empty, wr_fifo_push;
+  logic   [RdUsageWidth-1:0] rd_usage;
+  logic   [WrUsageWidth-1:0] wr_usage;
+  id_t                       b_id,         aw_id,
+                             r_id,         ar_id;
+  state_e                    state_q,      state_d;
+  logic                      change_state;
 
   always_comb begin
-    mst_req_o   = slv_req_i;
-    slv_resp_o  = mst_resp_i;
+    // Default assignments
+    state_d      = state_q;
+    rd_fifo_push = 1'b0;
+    wr_fifo_push = 1'b0;
+
+    // Default, connect the channels
+    mst_req_o  = slv_req_i;
+    slv_resp_o = mst_resp_i;
 
     // Serialize transactions -> tie downstream IDs to zero.
     mst_req_o.aw.id = '0;
     mst_req_o.ar.id = '0;
 
     // Reflect upstream ID in response.
+    aw_id           = slv_req_i.aw.id;
+    ar_id           = slv_req_i.ar.id;
     slv_resp_o.b.id = b_id;
     slv_resp_o.r.id = r_id;
 
-    // Gate AW handshake with ready output of Write FIFO.
-    mst_req_o.aw_valid = slv_req_i.aw_valid & wr_fifo_ready;
-    slv_resp_o.aw_ready = mst_resp_i.aw_ready & wr_fifo_ready;
+    // Default, cut the AW/AR handshaking
+    mst_req_o.ar_valid  = 1'b0;
+    slv_resp_o.ar_ready = 1'b0;
+    mst_req_o.aw_valid  = 1'b0;
+    slv_resp_o.aw_ready = 1'b0;
 
-    // Gate B handshake with valid output of Write FIFO.
-    slv_resp_o.b_valid = mst_resp_i.b_valid & wr_fifo_valid;
-    mst_req_o.b_ready = slv_req_i.b_ready & wr_fifo_valid;
+    unique case (state_q)
+      AtopIdle:    begin
+        // Gate AR handshake with ready output of Read FIFO.
+        mst_req_o.ar_valid  = slv_req_i.ar_valid  & ~rd_fifo_full;
+        slv_resp_o.ar_ready = mst_resp_i.ar_ready & ~rd_fifo_full;
+        rd_fifo_push        = mst_req_o.ar_valid  & mst_resp_i.ar_ready;
+        if (slv_req_i.aw_valid) begin
+          if (slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE) begin
+            // Normal operation
+            // Gate AW handshake with ready output of Write FIFO.
+            mst_req_o.aw_valid  = ~wr_fifo_full;
+            slv_resp_o.aw_ready = mst_resp_i.aw_ready & ~wr_fifo_full;
+            wr_fifo_push        = mst_req_o.aw_valid  & mst_resp_i.aw_ready;
+          end else begin
+            // Atomic Operation received, go to drain state, when both channels are ready
+            // Wait for finished or no AR beat
+            if (!mst_req_o.ar_valid || (mst_req_o.ar_valid && mst_resp_i.ar_ready)) begin
+              state_d = AtopDrain;
+            end
+          end
+        end
+      end
+      AtopDrain:   begin
+        if (wr_fifo_empty && rd_fifo_empty) begin
+          mst_req_o.aw_valid  = 1'b1;
+          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+          wr_fifo_push        = mst_resp_i.aw_ready;
+          if (slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+            // overwrite the read ID with the one from AW
+            ar_id        = slv_req_i.aw.id;
+            rd_fifo_push = mst_resp_i.aw_ready;
+          end
+          if (mst_resp_i.aw_ready) begin
+            state_d = AtopExecute;
+          end
+        end
+      end
+      AtopExecute:    begin
+        if (wr_fifo_empty && rd_fifo_empty) begin
+          state_d = AtopIdle;
+        end
+      end
+      default : /* do nothing */;
+    endcase
 
-    // Gate AR handshake with ready output of Read FIFO.
-    mst_req_o.ar_valid = slv_req_i.ar_valid & rd_fifo_ready;
-    slv_resp_o.ar_ready = mst_resp_i.ar_ready & rd_fifo_ready;
+    // Gate B handshake with empty flag output of Write FIFO.
+    slv_resp_o.b_valid = mst_resp_i.b_valid & ~wr_fifo_empty;
+    mst_req_o.b_ready  = slv_req_i.b_ready  & ~wr_fifo_empty;
 
-    // Gate R handshake with valid output of Read FIFO.
-    slv_resp_o.r_valid = mst_resp_i.r_valid & rd_fifo_valid;
-    mst_req_o.r_ready = slv_req_i.r_ready & rd_fifo_valid;
+    // Gate R handshake with empty flag output of Read FIFO.
+    slv_resp_o.r_valid = mst_resp_i.r_valid & ~rd_fifo_empty;
+    mst_req_o.r_ready  = slv_req_i.r_ready  & ~rd_fifo_empty;
   end
+  // State change enable
+  assign change_state = state_d != state_q;
 
-  stream_fifo #(
-    .FALL_THROUGH (1'b1),
-    .DEPTH        (MaxReadTxns),
-    .T            (id_t)
+  fifo_v3 #(
+    .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
+    .DEPTH        ( MaxReadTxns ),
+    .dtype        ( id_t        )
   ) i_rd_id_fifo (
     .clk_i,
     .rst_ni,
-    .flush_i    (1'b0),
-    .testmode_i (1'b0),
-    .data_i     (slv_req_i.ar.id),
-    .valid_i    (slv_req_i.ar_valid & slv_resp_o.ar_ready),
-    .ready_o    (rd_fifo_ready),
-    .data_o     (r_id),
-    .valid_o    (rd_fifo_valid),
-    .ready_i    (slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last),
-    .usage_o    (/* unused */)
+    .flush_i    ( 1'b0                                                       ),
+    .testmode_i ( 1'b0                                                       ),
+    .data_i     ( ar_id                                                      ),
+    .push_i     ( rd_fifo_push                                               ),
+    .full_o     ( rd_fifo_full                                               ),
+    .data_o     ( r_id                                                       ),
+    .empty_o    ( rd_fifo_empty                                              ),
+    .pop_i      ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last ),
+    .usage_o    ( rd_usage                                                   )
   );
 
-  stream_fifo #(
-    .FALL_THROUGH (1'b1),
-    .DEPTH        (MaxWriteTxns),
-    .T            (id_t)
+  fifo_v3 #(
+    .FALL_THROUGH ( 1'b0         ),
+    .DEPTH        ( MaxWriteTxns ),
+    .dtype        ( id_t         )
   ) i_wr_id_fifo (
     .clk_i,
     .rst_ni,
-    .flush_i    (1'b0),
-    .testmode_i (1'b0),
-    .data_i     (slv_req_i.aw.id),
-    .valid_i    (slv_req_i.aw_valid & slv_resp_o.aw_ready),
-    .ready_o    (wr_fifo_ready),
-    .data_o     (b_id),
-    .valid_o    (wr_fifo_valid),
-    .ready_i    (slv_resp_o.b_valid & slv_req_i.b_ready),
-    .usage_o    (/* unused */)
+    .flush_i    ( 1'b0                                      ),
+    .testmode_i ( 1'b0                                      ),
+    .data_i     ( aw_id                                     ),
+    .push_i     ( wr_fifo_push                              ),
+    .full_o     ( wr_fifo_full                              ),
+    .data_o     ( b_id                                      ),
+    .empty_o    ( wr_fifo_empty                             ),
+    .pop_i      ( slv_resp_o.b_valid & slv_req_i.b_ready    ),
+    .usage_o    ( wr_usage                                  )
   );
 
+  `FFLARN(state_q, state_d, change_state, AtopIdle, clk_i, rst_ni)
+
+// pragma translate_off
+`ifndef VERILATOR
+  initial begin: p_assertions
+    assert (AxiIdWidth    >= 1) else $fatal(1, "AXI ID   width must be at least 1!");
+    assert (MaxReadTxns   >= 1)
+      else $fatal(1, "Maximum number of read transactions must be >= 1!");
+    assert (MaxWriteTxns  >= 1)
+      else $fatal(1, "Maximum number of write transactions must be >= 1!");
+  end
+  aw_lost : assert property(
+    @(posedge clk_i) disable iff (~rst_ni)
+        (slv_req_i.aw_valid & slv_resp_o.aw_ready |-> mst_req_o.aw_valid & mst_resp_i.aw_ready))
+    else $fatal (1, "AW beat lost.");
+  w_lost  : assert property(
+    @(posedge clk_i) disable iff (~rst_ni)
+        (slv_req_i.w_valid & slv_resp_o.w_ready |-> mst_req_o.w_valid & mst_resp_i.w_ready))
+    else $fatal (1, "W beat lost.");
+  b_lost  : assert property(
+    @(posedge clk_i) disable iff (~rst_ni)
+        (mst_resp_i.b_valid & mst_req_o.b_ready |-> slv_resp_o.b_valid & slv_req_i.b_ready))
+    else $fatal (1, "B beat lost.");
+  ar_lost : assert property(
+    @(posedge clk_i) disable iff (~rst_ni)
+        (slv_req_i.ar_valid & slv_resp_o.ar_ready |-> mst_req_o.ar_valid & mst_resp_i.ar_ready))
+    else $fatal (1, "AR beat lost.");
+  r_lost :  assert property(
+    @(posedge clk_i) disable iff (~rst_ni)
+        (mst_resp_i.r_valid & mst_req_o.r_ready |-> slv_resp_o.r_valid & slv_req_i.r_ready))
+    else $fatal (1, "R beat lost.");
+`endif
+// pragma translate_on
 endmodule
 
 `include "axi/typedef.svh"
-
+`include "axi/assign.svh"
+/// Serialize all AXI transactions to a single ID (zero), interface version.
 module axi_serializer_intf #(
-  parameter int unsigned AXI_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_DATA_WIDTH = 0,
-  parameter int unsigned AXI_ID_WIDTH = 0,
-  parameter int unsigned AXI_USER_WIDTH = 0,
-  parameter int unsigned MAX_READ_TXNS = 0,
-  parameter int unsigned MAX_WRITE_TXNS = 0
+  /// AXI4+ATOP ID width.
+  parameter int unsigned AXI_ID_WIDTH   = 32'd0,
+  /// AXI4+ATOP address width.
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  /// AXI4+ATOP data width.
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  /// AXI4+ATOP user width.
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  /// Maximum number of in flight read transactions.
+  parameter int unsigned MAX_READ_TXNS  = 32'd0,
+  /// Maximum number of in flight write transactions.
+  parameter int unsigned MAX_WRITE_TXNS = 32'd0
 ) (
+  /// Clock
   input  logic    clk_i,
+  /// Asynchronous reset, active low
   input  logic    rst_ni,
+  /// AXI4+ATOP Slave modport
   AXI_BUS.Slave   slv,
+  /// AXI4+ATOP Master modport
   AXI_BUS.Master  mst
 );
 
+  typedef logic [AXI_ID_WIDTH    -1:0] id_t;
   typedef logic [AXI_ADDR_WIDTH  -1:0] addr_t;
   typedef logic [AXI_DATA_WIDTH  -1:0] data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_ID_WIDTH    -1:0] id_t;
   typedef logic [AXI_USER_WIDTH  -1:0] user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
@@ -140,18 +257,18 @@ module axi_serializer_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_serializer #(
-    .MaxReadTxns  (MAX_READ_TXNS),
-    .MaxWriteTxns (MAX_WRITE_TXNS),
-    .AxiIdWidth   (AXI_ID_WIDTH),
-    .req_t        (req_t),
-    .resp_t       (resp_t)
+    .MaxReadTxns  ( MAX_READ_TXNS  ),
+    .MaxWriteTxns ( MAX_WRITE_TXNS ),
+    .AxiIdWidth   ( AXI_ID_WIDTH   ),
+    .req_t        ( req_t          ),
+    .resp_t       ( resp_t         )
   ) i_axi_serializer (
     .clk_i,
     .rst_ni,
-    .slv_req_i  (slv_req),
-    .slv_resp_o (slv_resp),
-    .mst_req_o  (mst_req),
-    .mst_resp_i (mst_resp)
+    .slv_req_i  ( slv_req  ),
+    .slv_resp_o ( slv_resp ),
+    .mst_req_o  ( mst_req  ),
+    .mst_resp_i ( mst_resp )
   );
 
 // pragma translate_off
@@ -168,5 +285,4 @@ module axi_serializer_intf #(
   end
 `endif
 // pragma translate_on
-
 endmodule
