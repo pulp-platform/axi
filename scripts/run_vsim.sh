@@ -35,16 +35,16 @@ exec_test() {
             done
             ;;
         axi_dw_downsizer)
-            for DW in 8 16 32 64 128 256 512 1024; do
-                for (( MULT = 2; MULT <= `echo 1024/$DW`; MULT *= 2 )); do
-                    call_vsim tb_axi_dw_downsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+            for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
+                for (( AxiMstPortDataWidth = 8; AxiMstPortDataWidth <= $AxiSlvPortDataWidth; AxiMstPortDataWidth *= 2 )); do
+                    call_vsim tb_axi_dw_downsizer -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
                 done
             done
             ;;
         axi_dw_upsizer)
-            for DW in 8 16 32 64 128 256 512 1024; do
-                for (( MULT = `echo 1024/$DW | bc`; MULT > 1; MULT /= 2 )); do
-                    call_vsim tb_axi_dw_upsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+            for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
+                for (( AxiMstPortDataWidth = $AxiSlvPortDataWidth; AxiMstPortDataWidth <= 1024; AxiMstPortDataWidth *= 2 )); do
+                    call_vsim tb_axi_dw_upsizer -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
                 done
             done
             ;;
