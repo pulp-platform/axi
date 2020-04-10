@@ -50,6 +50,7 @@ module axi_dw_upsizer #(
    *****************/
   import axi_pkg::aligned_addr;
   import axi_pkg::beat_addr   ;
+  import axi_pkg::modifiable  ;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -368,7 +369,7 @@ module axi_dw_upsizer #(
             case (r_req_d.ar.burst)
               axi_pkg::BURST_INCR : begin
                 // Modifiable transaction
-                if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
+                if (modifiable(r_req_d.ar.cache)) begin
                   // No need to upsize single-beat transactions.
                   if (r_req_d.ar.len != '0) begin
                     // Evaluate output burst length
@@ -596,7 +597,7 @@ module axi_dw_upsizer #(
         case (slv_req_i.aw.burst)
           axi_pkg::BURST_INCR: begin
             // Modifiable transaction
-            if (|(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE))
+            if (modifiable(slv_req_i.aw.cache))
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate output burst length

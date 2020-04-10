@@ -185,6 +185,16 @@ package axi_pkg;
     end
   endfunction
 
+  /// Is the bufferable bit set?
+  function automatic logic bufferable(cache_t cache);
+    return |(cache & CACHE_BUFFERABLE);
+  endfunction
+
+  /// Is the modifiable bit set?
+  function automatic logic modifiable(cache_t cache);
+    return |(cache & CACHE_MODIFIABLE);
+  endfunction
+
   /// Memory Type.
   typedef enum logic [3:0] {
     DEVICE_NONBUFFERABLE,
