@@ -14,8 +14,8 @@
 // Data width upsize conversion.
 // Connects a narrow master to a wider slave.
 
-// NOTE: The upsizer does not support WRAP bursts, and
-// will answer with SLVERR upon receiving a burst of such types.
+// NOTE: The upsizer does not support WRAP bursts, and will answer with SLVERR
+// upon receiving a burst of such type.
 
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads

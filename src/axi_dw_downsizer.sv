@@ -14,8 +14,8 @@
 // Data width downsize conversion.
 // Connects a wide master to a narrower slave.
 
-// NOTE: The downsizer does not support WRAP and FIXED bursts, and
-// will answer with SLVERR upon receiving a burst of such types.
+// NOTE: The downsizer does not support WRAP bursts, and will answer with SLVERR
+// upon receiving a burst of such type. The downsizer also does not support
 
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
@@ -416,17 +416,40 @@ module axi_dw_downsizer #(
                 end
               end
 
-              axi_pkg::BURST_WRAP: begin
-                // The DW converter does not support this kind of burst ...
-                r_state_d              = R_PASSTHROUGH;
-                r_req_d.ar_throw_error = 1'b1         ;
+              axi_pkg::BURST_FIXED: begin
+                // Modifiable transaction
+                if (modifiable(r_req_d.ar.cache)) begin
+                  // Single transaction
+                  if (r_req_d.ar.len == '0) begin
+                    // Evaluate downsize ratio
+                    automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+                    automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
-                // ... but might if this is a narrow single-beat transaction
-                if (r_req_d.ar.len == '0 && r_req_d.ar.size <= AxiMstPortMaxSize)
-                  r_req_d.ar_throw_error = 1'b0;
+                    // Evaluate output burst length
+                    automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                    r_req_d.burst_len          = conv_ratio - align_adj - 1                                            ;
+
+                    if (conv_ratio != 1) begin
+                      r_state_d        = R_INCR_DOWNSIZE    ;
+                      r_req_d.ar.len   = r_req_d.burst_len  ;
+                      r_req_d.ar.size  = AxiMstPortMaxSize  ;
+                      r_req_d.ar.burst = axi_pkg::BURST_INCR;
+                    end
+                  end else begin
+                    // The downsizer does not support fixed burts
+                    r_req_d.ar_throw_error = 1'b1;
+                  end
+                // Non-modifiable transaction
+                end else begin
+                  // Incoming transaction is wider than the master bus
+                  if (r_req_d.ar.size > AxiMstPortMaxSize) begin
+                    r_req_d.ar_throw_error = 1'b1         ;
+                    r_state_d              = R_PASSTHROUGH;
+                  end
+                end
               end
 
-              axi_pkg::BURST_FIXED: begin
+              axi_pkg::BURST_WRAP: begin
                 // The DW converter does not support this kind of burst ...
                 r_state_d              = R_PASSTHROUGH;
                 r_req_d.ar_throw_error = 1'b1         ;
@@ -466,13 +489,21 @@ module axi_dw_downsizer #(
                       r_req_d.r.data[8*b +: 8] = mst_resp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
                     end
 
-                  r_req_d.burst_len = r_req_q.burst_len - 1                                                  ;
-                  r_req_d.ar.len    = r_req_q.ar.len - 1                                                     ;
-                  r_req_d.ar.addr   = aligned_addr(r_req_q.ar.addr, r_req_q.ar.size) + (1 << r_req_q.ar.size);
-                  r_req_d.r.last    = (r_req_q.burst_len == 0)                                               ;
-                  r_req_d.r.id      = mst_resp.r.id                                                          ;
-                  r_req_d.r.resp    = mst_resp.r.resp                                                        ;
-                  r_req_d.r.user    = mst_resp.r.user                                                        ;
+                  r_req_d.burst_len = r_req_q.burst_len - 1   ;
+                  r_req_d.ar.len    = r_req_q.ar.len - 1      ;
+                  r_req_d.r.last    = (r_req_q.burst_len == 0);
+                  r_req_d.r.id      = mst_resp.r.id           ;
+                  r_req_d.r.resp    = mst_resp.r.resp         ;
+                  r_req_d.r.user    = mst_resp.r.user         ;
+
+                  case (r_req_d.ar.burst)
+                    axi_pkg::BURST_INCR: begin
+                      r_req_d.ar.addr = aligned_addr(r_req_q.ar.addr, r_req_q.ar.size) + (1 << r_req_q.ar.size);
+                    end
+                    axi_pkg::BURST_FIXED: begin
+                      r_req_d.ar.addr = r_req_q.ar.addr;
+                    end
+                  endcase
 
                   if (r_req_q.burst_len == 0)
                     idqueue_pop[t] = 1'b1;
@@ -638,9 +669,17 @@ module axi_dw_downsizer #(
 
         // Acknowledgment
         if (mst_resp.w_ready && mst_req.w_valid) begin
-          w_req_d.burst_len = w_req_q.burst_len - 1                                                  ;
-          w_req_d.aw.len    = w_req_q.aw.len - 1                                                     ;
-          w_req_d.aw.addr   = aligned_addr(w_req_q.aw.addr, w_req_q.aw.size) + (1 << w_req_q.aw.size);
+          w_req_d.burst_len = w_req_q.burst_len - 1;
+          w_req_d.aw.len    = w_req_q.aw.len - 1   ;
+
+          case (w_req_d.aw.burst)
+            axi_pkg::BURST_INCR: begin
+              w_req_d.aw.addr = aligned_addr(w_req_q.aw.addr, w_req_q.aw.size) + (1 << w_req_q.aw.size);
+            end
+            axi_pkg::BURST_FIXED: begin
+              w_req_d.aw.addr = w_req_q.aw.addr;
+            end
+          endcase
 
           case (w_state_q)
             W_PASSTHROUGH:
@@ -731,17 +770,40 @@ module axi_dw_downsizer #(
             end
           end
 
-          axi_pkg::BURST_WRAP: begin
-            // The DW converter does not support this kind of burst ...
-            w_state_d              = W_PASSTHROUGH;
-            w_req_d.aw_throw_error = 1'b1         ;
+          axi_pkg::BURST_FIXED: begin
+            // Modifiable transaction
+            if (modifiable(slv_req_i.aw.cache)) begin
+              // Single transaction
+              if (slv_req_i.aw.len == '0) begin
+                // Evaluate downsize ratio
+                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
+                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
-            // ... but might if this is a narrow single-beat transaction
-            if (slv_req_i.aw.size <= AxiMstPortMaxSize && slv_req_i.aw.len == '0)
-              w_req_d.aw_throw_error = 1'b0;
+                // Evaluate output burst length
+                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                w_req_d.burst_len          = conv_ratio - align_adj - 1                                              ;
+
+                if (conv_ratio != 1) begin
+                  w_state_d        = W_INCR_DOWNSIZE    ;
+                  w_req_d.aw.len   = w_req_d.burst_len  ;
+                  w_req_d.aw.size  = AxiMstPortMaxSize  ;
+                  w_req_d.aw.burst = axi_pkg::BURST_INCR;
+                end
+              end else begin
+                // The downsizer does not support fixed burts
+                w_req_d.aw_throw_error = 1'b1;
+              end
+            // Non-modifiable transaction
+            end else begin
+              // Incoming transaction is wider than the master bus
+              if (w_req_d.aw.size > AxiMstPortMaxSize) begin
+                w_req_d.aw_throw_error = 1'b1         ;
+                w_state_d              = W_PASSTHROUGH;
+              end
+            end
           end
 
-          axi_pkg::BURST_FIXED: begin
+          axi_pkg::BURST_WRAP: begin
             // The DW converter does not support this kind of burst ...
             w_state_d              = W_PASSTHROUGH;
             w_req_d.aw_throw_error = 1'b1         ;
