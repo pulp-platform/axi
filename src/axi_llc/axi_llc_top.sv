@@ -148,10 +148,7 @@ module axi_llc_top #(
 
   // slave requests, that go into the bypass `axi_demux` from the config module
   // `index` for the axi_mux and axi_demux: bypass: 1, llc: 0
-  slv_aw_chan_t slv_aw;
-  logic         slv_aw_valid,  slv_aw_ready, slv_aw_bypass, port_aw_ready;
-  slv_ar_chan_t slv_ar;
-  logic         slv_ar_valid,  slv_ar_ready, slv_ar_bypass, port_ar_ready;
+  logic slv_aw_bypass, slv_ar_bypass;
 
   // bypass channels and llc connection to the axi_demux and axi_mux
   slv_req_t     to_demux_req,  bypass_req,   to_llc_req,   from_llc_req;
@@ -219,8 +216,7 @@ module axi_llc_top #(
   logic                            bist_valid;
 
   // global flush signals
-  logic aw_unit_busy, ar_unit_busy, flush_recv;
-
+  logic llc_isolate, llc_isolated, aw_unit_busy, ar_unit_busy, flush_recv;
 
   // define address rules from the address ports, propagate it throughout the design
   rule_full_t ram_addr_rule;
@@ -236,14 +232,11 @@ module axi_llc_top #(
     default:    '0
   };
 
-  // configuration, also has control over bypass logic, AW and AR channels from the
-  // slave port pass through here, W, B and R channel directly go to the bypass `axi_demux`
+  // configuration, also has control over bypass logic and flush
   axi_llc_config #(
     .Cfg            ( Cfg              ),
     .AxiCfg         ( AxiCfg           ),
     .desc_t         ( llc_desc_t       ),
-    .aw_chan_t      ( slv_aw_chan_t    ),
-    .ar_chan_t      ( slv_ar_chan_t    ),
     .lite_aw_chan_t ( lite_aw_chan_t   ),
     .lite_w_chan_t  ( lite_w_chan_t    ),
     .lite_b_chan_t  ( lite_b_chan_t    ),
@@ -254,69 +247,59 @@ module axi_llc_top #(
     .rule_full_t    ( rule_full_t      ),
     .rule_lite_t    ( rule_lite_t      )
   ) i_llc_config (
-    .clk_i          ( clk_i            ),
-    .rst_ni         ( rst_ni           ),
-    .conf_req_i     ( conf_req_i       ),
-    .conf_resp_o    ( conf_resp_o      ),
-    .spm_lock_o     ( spm_lock         ),
-    .flushed_o      ( flushed          ),
-    .desc_o         ( ax_desc[2]       ),
-    .desc_valid_o   ( ax_desc_valid[2] ),
-    .desc_ready_i   ( ax_desc_ready[2] ),
-    // slave port for controlling bypass (only AW and AR, rest gets handled per assign outside)
-    .slv_aw_chan_i  ( slv_req_i.aw        ),
-    .slv_aw_valid_i ( slv_req_i.aw_valid  ),
-    .slv_aw_ready_o ( port_aw_ready       ),
-    .slv_ar_chan_i  ( slv_req_i.ar        ),
-    .slv_ar_valid_i ( slv_req_i.ar_valid  ),
-    .slv_ar_ready_o ( port_ar_ready       ),
-    // master port for bypass control
-    .mst_aw_chan_o     ( slv_aw           ),
-    .mst_aw_bypass_o   ( slv_aw_bypass    ),
-    .mst_aw_valid_o    ( slv_aw_valid     ),
-    .mst_aw_ready_i    ( slv_aw_ready     ),
-    .mst_ar_chan_o     ( slv_ar           ),
-    .mst_ar_bypass_o   ( slv_ar_bypass    ),
-    .mst_ar_valid_o    ( slv_ar_valid     ),
-    .mst_ar_ready_i    ( slv_ar_ready     ),
+    .clk_i             ( clk_i             ),
+    .rst_ni            ( rst_ni            ),
+    .conf_req_i        ( conf_req_i        ),
+    .conf_resp_o       ( conf_resp_o       ),
+    .spm_lock_o        ( spm_lock          ),
+    .flushed_o         ( flushed           ),
+    .desc_o            ( ax_desc[2]        ),
+    .desc_valid_o      ( ax_desc_valid[2]  ),
+    .desc_ready_i      ( ax_desc_ready[2]  ),
+    // AXI address input from slave port for controlling bypass
+    .slv_aw_addr_i     ( slv_req_i.aw.addr ),
+    .slv_ar_addr_i     ( slv_req_i.ar.addr ),
+    .mst_aw_bypass_o   ( slv_aw_bypass     ),
+    .mst_ar_bypass_o   ( slv_ar_bypass     ),
     // flush control signals to prevent new data in ax_cutter loading
-    .aw_unit_busy_i    ( aw_unit_busy     ),
-    .ar_unit_busy_i    ( ar_unit_busy     ),
-    .flush_desc_recv_i ( flush_recv       ),
+    .llc_isolate_o     ( llc_isolate       ),
+    .llc_isolated_i    ( llc_isolated      ),
+    .aw_unit_busy_i    ( aw_unit_busy      ),
+    .ar_unit_busy_i    ( ar_unit_busy      ),
+    .flush_desc_recv_i ( flush_recv        ),
     // performance register inputs
-    .hit_valid_i       ( hit_valid        ),
-    .hit_ready_i       ( hit_ready        ),
-    .miss_valid_i      ( miss_valid       ),
-    .miss_ready_i      ( miss_ready       ),
-    .evict_flag_i      ( desc.evict       ),
-    .refil_flag_i      ( desc.refill      ),
-    .flush_flag_i      ( desc.flush       ),
+    .hit_valid_i       ( hit_valid         ),
+    .hit_ready_i       ( hit_ready         ),
+    .miss_valid_i      ( miss_valid        ),
+    .miss_ready_i      ( miss_ready        ),
+    .evict_flag_i      ( desc.evict        ),
+    .refil_flag_i      ( desc.refill       ),
+    .flush_flag_i      ( desc.flush        ),
     // BIST input
-    .bist_res_i        ( bist_res         ),
-    .bist_valid_i      ( bist_valid       ),
+    .bist_res_i        ( bist_res          ),
+    .bist_valid_i      ( bist_valid        ),
     // address rules for bypass selection
-    .axi_ram_rule_i    ( ram_addr_rule    ),
-    .axi_spm_rule_i    ( spm_addr_rule    ),
-    .cfg_start_addr_i  ( cfg_start_addr_i )
+    .axi_ram_rule_i    ( ram_addr_rule     ),
+    .axi_spm_rule_i    ( spm_addr_rule     ),
+    .cfg_start_addr_i  ( cfg_start_addr_i  )
   );
 
-  // only the AW and AR channel go through the CFG module
-  // AXI demux for bypassing the cache, all struct fields are driven in the same process
-  always_comb begin
-    to_demux_req = slv_req_i;
-    slv_resp_o   = to_demux_resp;
-    // overwrite required fields from the config
-    // AW
-    to_demux_req.aw       = slv_aw;
-    to_demux_req.aw_valid = slv_aw_valid;
-    slv_aw_ready          = to_demux_resp.aw_ready;
-    slv_resp_o.aw_ready   = port_aw_ready;
-    // AR
-    to_demux_req.ar       = slv_ar;
-    to_demux_req.ar_valid = slv_ar_valid;
-    slv_ar_ready          = to_demux_resp.ar_ready;
-    slv_resp_o.ar_ready   = port_ar_ready;
-  end
+  // Isolation module before demux to easy flushing,
+  // AXI requests get stalled while flush is active
+  axi_isolate #(
+    .NumPending ( axi_llc_pkg::MaxTrans ),
+    .req_t      ( slv_req_t             ),
+    .resp_t     ( slv_resp_t            )
+  ) i_axi_isolate_flush (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i,  // Slave port request
+    .slv_resp_o, // Slave port response
+    .mst_req_o  ( to_demux_req  ),
+    .mst_resp_i ( to_demux_resp ),
+    .isolate_i  ( llc_isolate   ),
+    .isolated_o ( llc_isolated  )
+  );
 
   axi_demux #(
     .AxiIdWidth     ( AxiCfg.SlvPortIdWidth  ),
@@ -660,10 +643,8 @@ module axi_llc_top #(
     .mst_resp_i  ( mst_resp_i                 )
   );
 
-  // pragma translate_off
-  `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
+// pragma translate_off
+`ifndef VERILATOR
   initial begin : proc_assert_axi_params
     // check the structs against the Cfg
     slv_aw_id    : assume ($bits(slv_req_i.aw.id) == AxiCfg.SlvPortIdWidth) else
@@ -725,9 +706,7 @@ module axi_llc_top #(
     lite_r_data  : assume ($bits(conf_resp_o.r.data) == AxiCfg.LitePortDataWidth) else
       $fatal(1, $sformatf("llc> Cfg Lite port, R DATA width not equal to AxiCfg"));
   end
-  `endif
-  `endif
-  `endif
-  // pragma translate_on
+`endif
+// pragma translate_on
 
 endmodule
