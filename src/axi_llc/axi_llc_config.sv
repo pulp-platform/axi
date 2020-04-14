@@ -22,8 +22,6 @@ module axi_llc_config #(
   parameter axi_llc_pkg::llc_cfg_t     Cfg        = -1,
   parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg     = -1,
   parameter type                       desc_t         = logic,
-  parameter type                       aw_chan_t      = logic,
-  parameter type                       ar_chan_t      = logic,
   parameter type                       lite_aw_chan_t = logic,
   parameter type                       lite_w_chan_t  = logic,
   parameter type                       lite_b_chan_t  = logic,
@@ -46,23 +44,14 @@ module axi_llc_config #(
   output desc_t                            desc_o,
   output logic                             desc_valid_o,
   input  logic                             desc_ready_i,
-  // slave port for controlling bypass (only AW and AR, rest gets handled per assign outside)
-  input  aw_chan_t                         slv_aw_chan_i,
-  input  logic                             slv_aw_valid_i,
-  output logic                             slv_aw_ready_o,
-  input  ar_chan_t                         slv_ar_chan_i,
-  input  logic                             slv_ar_valid_i,
-  output logic                             slv_ar_ready_o,
-  // master port for bypass control
-  output aw_chan_t                         mst_aw_chan_o,
+  // AXI address input from slave port for controlling bypass
+  input  logic [AxiCfg.AddrWidthFull-1:0]  slv_aw_addr_i,
+  input  logic [AxiCfg.AddrWidthFull-1:0]  slv_ar_addr_i,
   output logic                             mst_aw_bypass_o,
-  output logic                             mst_aw_valid_o,
-  input  logic                             mst_aw_ready_i,
-  output ar_chan_t                         mst_ar_chan_o,
   output logic                             mst_ar_bypass_o,
-  output logic                             mst_ar_valid_o,
-  input  logic                             mst_ar_ready_i,
   // flush control signals to prevent new data in ax_cutter loading
+  output logic                             llc_isolate_o,
+  input  logic                             llc_isolated_i,
   input  logic                             aw_unit_busy_i,
   input  logic                             ar_unit_busy_i,
   input  logic                             flush_desc_recv_i,
@@ -238,7 +227,7 @@ module axi_llc_config #(
         // AW transaction
         if(conf_req_i.aw_valid) begin
           aw_busy_d = 1'b1;
-          aw_d      = conf_req_i.aw.addr;
+          aw_d      = conf_req_i.aw;
           load_aw   = 1'b1;
         end
       end
@@ -298,7 +287,7 @@ module axi_llc_config #(
       // AR transaction
       if (conf_req_i.ar_valid) begin
         ar_busy_d = 1'b1;
-        ar_d      = conf_req_i.ar.addr;
+        ar_d      = conf_req_i.ar;
         load_ar   = 1'b1;
     end
   end
@@ -322,9 +311,14 @@ module axi_llc_config #(
   // Flush and Bypass Control
   ////////////////////////////////////////////////////////////
   // states for the control FSM
-  typedef enum logic [5:0] {
-    FSM_IDLE, FSM_AW_AR_WAIT, FSM_AW_WAIT, FSM_AR_WAIT, FSM_WAIT_SPLITTER,
-    FSM_INIT_FLUSH, FSM_SEND_FLUSH, FSM_WAIT_FLUSH, FSM_END_FLUSH
+  typedef enum logic [3:0] {
+    FsmIdle,
+    FsmWaitAx,
+    FsmWaitSplitter,
+    FsmInitFlush,
+    FsmSendFlush,
+    FsmWaitFlush,
+    FsmEndFlush
   } flush_fsm_e;
   flush_fsm_e flush_state_d, flush_state_q;
   logic       switch_state;
@@ -346,13 +340,13 @@ module axi_llc_config #(
     .addr_t    ( addr_t      ),
     .rule_t    ( rule_full_t )
   ) i_aw_addr_decode (
-    .addr_i           ( slv_aw_chan_i.addr ),
-    .addr_map_i       ( axi_addr_map       ),
-    .idx_o            ( mst_aw_bypass_o    ),
-    .dec_valid_o      ( /*not used*/       ),
-    .dec_error_o      ( /*not used*/       ),
-    .en_default_idx_i ( 1'b1               ),
-    .default_idx_i    ( '0                 )  // on decerror go to llc
+    .addr_i           ( slv_aw_addr_i   ),
+    .addr_map_i       ( axi_addr_map    ),
+    .idx_o            ( mst_aw_bypass_o ),
+    .dec_valid_o      ( /*not used*/    ),
+    .dec_error_o      ( /*not used*/    ),
+    .en_default_idx_i ( 1'b1            ),
+    .default_idx_i    ( '0              )  // on decerror go to llc
   );
 
   addr_decode #(
@@ -361,34 +355,24 @@ module axi_llc_config #(
     .addr_t    ( addr_t      ),
     .rule_t    ( rule_full_t )
   ) i_ar_addr_decode (
-    .addr_i           ( slv_ar_chan_i.addr ),
-    .addr_map_i       ( axi_addr_map       ),
-    .idx_o            ( mst_ar_bypass_o    ),
-    .dec_valid_o      ( /*not used*/       ),
-    .dec_error_o      ( /*not used*/       ),
-    .en_default_idx_i ( 1'b1               ), // on decerror go to llc
-    .default_idx_i    ( '0                 )
+    .addr_i           ( slv_ar_addr_i   ),
+    .addr_map_i       ( axi_addr_map    ),
+    .idx_o            ( mst_ar_bypass_o ),
+    .dec_valid_o      ( /*not used*/    ),
+    .dec_error_o      ( /*not used*/    ),
+    .en_default_idx_i ( 1'b1            ), // on decerror go to llc
+    .default_idx_i    ( '0              )
   );
-
-  // feed the channels through
-  assign mst_aw_chan_o = slv_aw_chan_i;
-  assign mst_ar_chan_o = slv_ar_chan_i;
 
   always_comb begin : proc_flush_control
     // default assignments
     flush_state_d  = flush_state_q;
-    switch_state   = 1'b0;
-    // default main AXI handshakes are not connected and turned off
-    mst_aw_valid_o = 1'b0;
-    slv_aw_ready_o = 1'b0;
-    mst_ar_valid_o = 1'b0;
-    slv_ar_ready_o = 1'b0;
+    // slave port gets isolated during flush
+    llc_isolate_o  = 1'b1;
     // flushed register
     config_d[REG_FLUSHED] = config_q[REG_FLUSHED];
-    load_flushed   = 1'b0;
     // to flush register
     to_flush_d     = to_flush_q;
-    load_to_flush  = 1'b0;
     // control signals to proc_write
     desc_valid_o   = 1'b0;
     aw_lock        = 1'b1; // prevent that new AWs get accepted during flushing
@@ -399,81 +383,30 @@ module axi_llc_config #(
     en_recv_cnt    = 1'b0;
     load_cnt       = 1'b0;
 
-
     // FSM for controlling the AW AR input to the cache and flush control
-    case (flush_state_q)
-      FSM_IDLE :  begin
-        // this state is normal operation, connect the axi handshakes and otherwise wait
-        // for a flush request
-        aw_lock        = 1'b0; // only in idle allow writing of the cfg registers
-        mst_aw_valid_o = slv_aw_valid_i;
-        slv_aw_ready_o = mst_aw_ready_i;
-        mst_ar_valid_o = slv_ar_valid_i;
-        slv_ar_ready_o = mst_ar_ready_i;
+    unique case (flush_state_q)
+      FsmIdle :  begin
+        // this state is normal operation, allow Cfg editing and do not isolate main AXI
+        aw_lock       = 1'b0;
+        llc_isolate_o = 1'b0;
         // change state, if there is a flush request
         if (req_flush) begin
-          switch_state = 1'b1; // switch state regardless
-          casez ({slv_aw_valid_i , mst_aw_ready_i, slv_ar_valid_i, mst_ar_ready_i})
-            4'b1010 : flush_state_d = FSM_AW_AR_WAIT; // waiting AW and AR transaction (has to be first!)
-            4'b10?? : flush_state_d = FSM_AW_WAIT;    // waiting AW transaction
-            4'b??10 : flush_state_d = FSM_AR_WAIT;    // waiting AR transaction
-            default : flush_state_d = FSM_WAIT_SPLITTER;
-          endcase
+          flush_state_d = FsmWaitAx;
         end
       end
-      FSM_AW_AR_WAIT : begin
-        // we go in this state if something was written into the cfg registers
-        // both channels have still a vector to send, see case statement in `FSM_IDLE`
-        // we want to disable inputs from the main AXI slave as long as we are in flushing the cache
-        mst_aw_valid_o = slv_aw_valid_i;
-        slv_aw_ready_o = mst_aw_ready_i;
-        mst_ar_valid_o = slv_ar_valid_i;
-        slv_ar_ready_o = mst_ar_ready_i;
-        // change the state if there is a transaction
-        case ({mst_aw_ready_i, mst_ar_ready_i})
-          2'b10   : begin // AW transaction
-            flush_state_d = FSM_AR_WAIT;
-            switch_state  = 1'b1;
-          end
-          2'b01   : begin // AR transaction
-            flush_state_d = FSM_AW_WAIT;
-            switch_state  = 1'b1;
-          end
-          2'b11   : begin // Both transactions
-            flush_state_d = FSM_WAIT_SPLITTER;
-            switch_state  = 1'b1;
-          end
-          default : /* do nothing */;
-        endcase
-      end
-      FSM_AW_WAIT : begin
-        // in this state the main slave port of the LLC still has a AW vector to send
-        mst_aw_valid_o = slv_aw_valid_i;
-        slv_aw_ready_o = mst_aw_ready_i;
-        // transaction
-        if (mst_aw_ready_i) begin
-          flush_state_d = FSM_WAIT_SPLITTER;
-          switch_state  = 1'b1;
+      FsmWaitAx : begin
+        // wait until main AXI is free
+        if (llc_isolated_i) begin
+          flush_state_d = FsmWaitSplitter;
         end
       end
-      FSM_AR_WAIT : begin
-        // in this state the main slave port of the LLC still has a AR vector to send
-        mst_ar_valid_o = slv_ar_valid_i;
-        slv_ar_ready_o = mst_ar_ready_i;
-        // transaction
-        if (mst_ar_ready_i) begin
-          flush_state_d = FSM_WAIT_SPLITTER;
-          switch_state  = 1'b1;
-        end
-      end
-      FSM_WAIT_SPLITTER : begin
+      FsmWaitSplitter : begin
         // wait till none of the splitter units still have vectors in them
         if (!aw_unit_busy_i && !ar_unit_busy_i) begin
-          flush_state_d = FSM_INIT_FLUSH;
-          switch_state  = 1'b1;
+          flush_state_d = FsmInitFlush;
         end
       end
-      FSM_INIT_FLUSH : begin
+      FsmInitFlush : begin
         // this state determines which cache way should be flushed
         // it also sets up the counters for state-keeping how along the flush operation is going
         // define if the user requested a flush
@@ -485,77 +418,69 @@ module axi_llc_config #(
                                       ~config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0];
           config_d[REG_FLUSHED] = config_q[REG_SPM_CFG][Cfg.SetAssociativity-1:0] &
                                       config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0];
-          load_flushed          = 1'b1;
         end
         // now determine if we have something to do at all
-        switch_state = 1'b1;
         if (to_flush_d == '0) begin
           // nothing to flush, go to idle
-          flush_state_d = FSM_IDLE;
+          flush_state_d = FsmIdle;
           // reset the flushed register to SPM as new requests can enter the cache
           clear_flush   = 1'b1;
         end else begin
-          flush_state_d = FSM_SEND_FLUSH;
-          load_to_flush = 1'b1;
+          flush_state_d = FsmSendFlush;
           load_cnt      = 1'b1;
         end
       end
-      FSM_SEND_FLUSH : begin
+      FsmSendFlush : begin
         // this state sends all required flush descriptors to the specified way
         desc_valid_o = 1'b1;
         // transaction
         if (desc_ready_i) begin
           // last flush descriptor for this way?
           if (flush_addr == '1) begin
-            flush_state_d = FSM_WAIT_FLUSH;
-            switch_state  = 1'b1;
+            flush_state_d = FsmWaitFlush;
           end else begin
             en_send_cnt = 1'b1;
           end
         end
-        // further enable the recieve counter if the input sig is high
+        // further enable the receive counter if the input signal is high
         if (flush_desc_recv_i) begin
           en_recv_cnt = 1'b1;
         end
       end
-      FSM_WAIT_FLUSH : begin
-        // this state waits till all flush operations have exited the cache, then `FSM_END_FLUSH`
+      FsmWaitFlush : begin
+        // this state waits till all flush operations have exited the cache, then `FsmEndFlush`
         if (flush_desc_recv_i) begin
           if(to_recieve == '0) begin
-            flush_state_d = FSM_END_FLUSH;
-            switch_state  = 1'b1;
+            flush_state_d = FsmEndFlush;
           end else begin
             en_recv_cnt = 1'b1;
           end
         end
       end
-      FSM_END_FLUSH : begin
+      FsmEndFlush : begin
         // this state decides, if we have other ways to flush, or if we can go back to idle
-        switch_state = 1'b1;
-        load_flushed = 1'b1;
         clear_cnt    = 1'b1;
         if (to_flush_q == flush_way_ind) begin
-          flush_state_d = FSM_IDLE;
+          flush_state_d = FsmIdle;
           // reset the flushed register to SPM as new requests can enter the cache
           config_d[REG_FLUSHED][Cfg.SetAssociativity-1:0] =
               config_q[REG_SPM_CFG][Cfg.SetAssociativity-1:0];
           to_flush_d    = '0;
-          load_to_flush = 1'b1;
           clear_flush   = 1'b1;
         end else begin
           // there are still ways to flush
-          flush_state_d = FSM_INIT_FLUSH;
+          flush_state_d = FsmInitFlush;
           config_d[REG_FLUSHED][Cfg.SetAssociativity-1:0] =
               config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0] | flush_way_ind;
         end
       end
-      default : begin
-        // catch unknown state
-        flush_state_d = FSM_IDLE;
-        switch_state  = 1'b1;
-      end
+      default : /*do nothing*/;
     endcase
   end
+
+  assign switch_state  = (flush_state_d         != flush_state_q);
+  assign load_flushed  = (config_d[REG_FLUSHED] != config_q[REG_FLUSHED]);
+  assign load_to_flush = (to_flush_d            != to_flush_q);
 
   ////////////////////////////////////////////////////////////
   // Flush Descriptor generation
@@ -707,15 +632,15 @@ module axi_llc_config #(
   ////////////////////////////////////////////////////////////
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) begin
-      aw_busy_q        <= '0;
-      aw_q             <= '0;
-      b_busy_q         <= '0;
-      ar_busy_q        <= '0;
-      ar_q             <= '0;
-      to_flush_q       <= '0;
-      flush_state_q    <= FSM_IDLE;
-      config_q[REG_BIST_OUT]  <= '0; // read only
-      config_q[REG_FLUSHED]   <= CfgResetValue; // read only has to be the same as SPMCfg default
+      aw_busy_q                                 <= '0;
+      aw_q                                      <= '0;
+      b_busy_q                                  <= '0;
+      ar_busy_q                                 <= '0;
+      ar_q                                      <= '0;
+      to_flush_q                                <= '0;
+      flush_state_q                             <= FsmIdle;
+      config_q[REG_BIST_OUT]                    <= '0; // read only
+      config_q[REG_FLUSHED]                     <= CfgResetValue; // read only has to be the same as SPMCfg default
       config_q[REG_FLUSH_CNT][ActPerfWidth-1:0] <= '0; // only reset the ones that are really
       config_q[REG_REFIL_CNT][ActPerfWidth-1:0] <= '0; // counters, prefent inferring of latches
       config_q[REG_EVICT_CNT][ActPerfWidth-1:0] <= '0;
@@ -723,9 +648,9 @@ module axi_llc_config #(
       config_q[REG_HIT_CNT][ActPerfWidth-1:0]   <= '0;
       config_q[REG_DESC_CNT][ActPerfWidth-1:0]  <= '0;
       config_q[REG_CYCLE_CNT][ActPerfWidth-1:0] <= '0;
-      config_q[REG_PCNT_CFG]  <= '0;
-      config_q[REG_FLUSH]     <= '0;
-      config_q[REG_SPM_CFG]   <= CfgResetValue; // has to be the same as Flushed default
+      config_q[REG_PCNT_CFG]                    <= '0;
+      config_q[REG_FLUSH]                       <= '0;
+      config_q[REG_SPM_CFG]                     <= CfgResetValue; // has to be the same as Flushed default
     end else begin
       aw_busy_q    <= aw_busy_d;
       b_busy_q     <= b_busy_d;
@@ -818,19 +743,19 @@ module axi_llc_config #(
     $display("###############################################################################");
     $display("AXI Port parameters:");
     $display("Slave port (CPU):");
-    $display($sformatf("ID   width (decimal): ", AxiCfg.SlvPortIdWidth ));
-    $display($sformatf("ADDR width (decimal): ", AxiCfg.AddrWidthFull  ));
-    $display($sformatf("DATA width (decimal): ", AxiCfg.DataWidthFull  ));
-    $display($sformatf("STRB width (decimal): ", AxiCfg.DataWidthFull/8));
+    $display($sformatf("ID   width (decimal): %d", AxiCfg.SlvPortIdWidth ));
+    $display($sformatf("ADDR width (decimal): %d", AxiCfg.AddrWidthFull  ));
+    $display($sformatf("DATA width (decimal): %d", AxiCfg.DataWidthFull  ));
+    $display($sformatf("STRB width (decimal): %d", AxiCfg.DataWidthFull/8));
     $display("Master port (memory):");
-    $display($sformatf("ID   width (decimal): ", AxiCfg.SlvPortIdWidth ));
-    $display($sformatf("ADDR width (decimal): ", AxiCfg.AddrWidthFull  ));
-    $display($sformatf("DATA width (decimal): ", AxiCfg.DataWidthFull  ));
-    $display($sformatf("STRB width (decimal): ", AxiCfg.DataWidthFull/8));
+    $display($sformatf("ID   width (decimal): %d", AxiCfg.SlvPortIdWidth + 1));
+    $display($sformatf("ADDR width (decimal): %d", AxiCfg.AddrWidthFull     ));
+    $display($sformatf("DATA width (decimal): %d", AxiCfg.DataWidthFull     ));
+    $display($sformatf("STRB width (decimal): %d", AxiCfg.DataWidthFull/8   ));
     $display("Config LITE port:");
-    $display($sformatf("ADDR width (decimal): ", AxiCfg.LitePortAddrWidth  ));
-    $display($sformatf("DATA width (decimal): ", AxiCfg.LitePortDataWidth  ));
-    $display($sformatf("STRB width (decimal): ", AxiCfg.LitePortDataWidth/8));
+    $display($sformatf("ADDR width (decimal): %d", AxiCfg.LitePortAddrWidth  ));
+    $display($sformatf("DATA width (decimal): %d", AxiCfg.LitePortDataWidth  ));
+    $display($sformatf("STRB width (decimal): %d", AxiCfg.LitePortDataWidth/8));
     $display("###############################################################################");
     $display("Address mapping information:");
     $display($sformatf("Ram Start Address (hex): %h", axi_ram_rule_i.start_addr ));
