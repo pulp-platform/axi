@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_pkg::wrap_boundary`: Add function to calculate the wrap boundary of a burst with type
+  `axi_pkg::BURST_WRAP`. Function inputs are `largest_addr_t addr`, `size_t size` and `len_t len`.
 
 ### Changed
+- `axi_pkg::beat_addr`: Add support for all burst types. Add function inputs `len_t len` and
+  `burst_t burst`. Update all occurrences in other files.
+- `axi_pkg::beat_lower_byte`: Add function inputs `len_t len` and `burst_t burst`.
+- `axi_pkg::beat_upper_byte`: Add function inputs `len_t len` and `burst_t burst`.
 
 ### Fixed
 

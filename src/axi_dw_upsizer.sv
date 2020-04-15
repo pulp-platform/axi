@@ -372,9 +372,10 @@ module axi_dw_upsizer #(
                   // No need to upsize single-beat transactions.
                   if (r_req_d.ar.len != '0) begin
                     // Evaluate output burst length
-                    automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize)                                                    ;
-                    automatic addr_t end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr, r_req_d.orig_ar_size, r_req_d.burst_len), AxiMstPortMaxSize);
-
+                    automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize);
+                    automatic addr_t end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr,
+                        r_req_d.orig_ar_size, r_req_d.burst_len, r_req_d.ar.burst,
+                        r_req_d.burst_len), AxiMstPortMaxSize);
                     r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
                     r_req_d.ar.size = AxiMstPortMaxSize                           ;
                     r_state_d       = R_INCR_UPSIZE                               ;
@@ -599,8 +600,10 @@ module axi_dw_upsizer #(
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate output burst length
-                automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstPortMaxSize)                                                ;
-                automatic addr_t end_addr   = aligned_addr(beat_addr(slv_req_i.aw.addr, slv_req_i.aw.size, slv_req_i.aw.len), AxiMstPortMaxSize);
+                automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstPortMaxSize);
+                automatic addr_t end_addr   = aligned_addr(beat_addr(slv_req_i.aw.addr,
+                    slv_req_i.aw.size, slv_req_i.aw.len, slv_req_i.aw.burst, slv_req_i.aw.len),
+                    AxiMstPortMaxSize);
 
                 w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
                 w_req_d.aw.size = AxiMstPortMaxSize                           ;
