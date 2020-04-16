@@ -271,10 +271,11 @@ module axi_id_remap #(
         wr_push_oup_id      = aw_id_q;
         mst_req_o.aw_valid  = 1'b1;
         slv_resp_o.aw_ready = mst_resp_i.aw_ready;
-        unique0 case ({mst_resp_i.ar_ready, mst_resp_i.aw_ready})
-          2'b01: state_d = HoldAR;
-          2'b10: state_d = HoldAW;
-          2'b11: state_d = Ready;
+        unique case ({mst_resp_i.ar_ready, mst_resp_i.aw_ready})
+          2'b01:   state_d = HoldAR;
+          2'b10:   state_d = HoldAW;
+          2'b11:   state_d = Ready;
+          default: /*do nothing / stay in this state*/;
         endcase
       end
 
