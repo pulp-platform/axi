@@ -1,5 +1,6 @@
 .*
 !.git*
+!.ci/
 /.git/
 /build
 /Bender.lock

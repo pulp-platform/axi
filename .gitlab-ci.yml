@@ -10,10 +10,11 @@ before_script:
 
 modelsim:
   script:
-    - bender vsim
-    - cd build
-    - ../scripts/compile_vsim.sh
-    - ../scripts/run_vsim.sh
+    - >
+      if ! memora lookup vsim; then
+        cd build && ../scripts/compile_vsim.sh
+        memora insert vsim
+      fi
 
 synopsys:
   script:

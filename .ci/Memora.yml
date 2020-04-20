@@ -1,0 +1,11 @@
+cache_root_dir: /home/gitlabci/buildcache/axi
+artifacts:
+  vsim:
+    inputs:
+      - Bender.yml # external dependencies
+      - include
+      - src
+      - scripts/compile_vsim.sh
+      - test
+    outputs:
+      - build/work
