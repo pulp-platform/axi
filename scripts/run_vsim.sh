@@ -56,3 +56,7 @@ for IW in 1 2 3 4 13; do
         call_vsim tb_axi_iw_converter -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" -GAxiIdWidthUpstream=$IW -GAxiIdWidthDownstream=$IWO -GRemapTableSize=$TS
     done
 done
+
+for NUMID in 1 5 16; do
+    call_vsim tb_axi_iw_downsizer -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" -GNumIds=NUMID
+done

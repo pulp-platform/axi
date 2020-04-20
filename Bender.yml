@@ -47,6 +47,7 @@ sources:
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
   - src/axi_iw_converter.sv
+  - src/axi_iw_downsizer.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
   # Level 4
@@ -70,6 +71,7 @@ sources:
       - test/tb_axi_dw_upsizer.sv
       - test/tb_axi_isolate.sv
       - test/tb_axi_iw_converter.sv
+      - test/tb_axi_iw_downsizer.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv

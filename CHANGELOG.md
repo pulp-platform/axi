@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_iw_downsizer`, Downsize the ID width of the AXI channel.
 - Add `axi_iw_converter`, inside is `axi_id_remap` or `axi_id_prepend` depending on the conversion.
 
 ### Changed
