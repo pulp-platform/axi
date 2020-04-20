@@ -22,3 +22,13 @@ synopsys_dc:
   script:
     - cd build
     - ../scripts/synth.sh
+
+axi_to_axi_lite:
+  stage: test
+  script:
+    - >
+      if ! memora lookup axi_to_axi_lite; then
+        memora get vsim
+        cd build && ../scripts/run_vsim.sh axi_to_axi_lite
+        memora insert axi_to_axi_lite
+      fi

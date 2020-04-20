@@ -4,8 +4,23 @@ artifacts:
     inputs:
       - Bender.yml # external dependencies
       - include
-      - src
       - scripts/compile_vsim.sh
+      - src
       - test
     outputs:
       - build/work
+
+  axi_to_axi_lite:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_atop_filter.sv
+      - src/axi_burst_splitter.sv
+      - src/axi_to_axi_lite.sv
+      - test/tb_axi_to_axi_lite.sv
+    outputs:
+      - build/axi_to_axi_lite.tested
