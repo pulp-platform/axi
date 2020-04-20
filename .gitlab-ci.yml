@@ -33,7 +33,62 @@ synopsys_dc:
         memora insert $TEST_MODULE
       fi
 
+axi_atop_filter:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_atop_filter
+
+axi_cdc:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_cdc
+
+axi_delayer:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_delayer
+
+axi_dw_downsizer:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_dw_downsizer
+
+axi_dw_upsizer:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_dw_upsizer
+
+axi_isolate:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_isolate
+
+axi_lite_to_apb:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_lite_to_apb
+
+axi_lite_to_axi:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_lite_to_axi
+
+axi_lite_mailbox:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_lite_mailbox
+
+axi_lite_xbar:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_lite_xbar
+
 axi_to_axi_lite:
   <<: *test_module
   variables:
     TEST_MODULE: axi_to_axi_lite
+
+axi_xbar:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_xbar
