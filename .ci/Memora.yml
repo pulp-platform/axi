@@ -4,6 +4,7 @@ artifacts:
     inputs:
       - Bender.yml # external dependencies
       - include
+      - .gitlab-ci.yml # vsim version
       - scripts/compile_vsim.sh
       - src
       - test
