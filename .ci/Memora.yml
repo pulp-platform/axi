@@ -11,6 +11,17 @@ artifacts:
     outputs:
       - build/work
 
+  synopsys_dc:
+    inputs:
+      - Bender.yml
+      - include
+      - .gitlab-ci.yml # DC version
+      - scripts/synth.sh
+      - src
+      - test
+    outputs:
+      - build/synth.completed
+
   axi_atop_filter:
     inputs:
       - Bender.yml
