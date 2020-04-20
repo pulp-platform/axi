@@ -64,6 +64,11 @@ exec_test() {
                 done
             done
             ;;
+        axi_iw_downsizer)
+            for NUMID in 1 5 16; do
+                call_vsim tb_axi_iw_downsizer -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" -GNumIds=NUMID
+            done
+            ;;
         axi_lite_regs)
             for PRIV in 0 1; do
                 for SECU in 0 1; do
