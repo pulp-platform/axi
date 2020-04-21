@@ -64,20 +64,12 @@ exec_test() {
 }
 
 if [ "$#" -eq 0 ]; then
-    tests=( \
-        axi_lite_to_axi \
-        axi_dw_downsizer \
-        axi_dw_upsizer \
-        axi_delayer \
-        axi_atop_filter \
-        axi_xbar \
-        axi_lite_xbar \
-        axi_cdc \
-        axi_lite_to_apb \
-        axi_lite_mailbox \
-        axi_to_axi_lite \
-        axi_isolate \
-    )
+    tests=()
+    while IFS=  read -r -d $'\0'; do
+        tb_name="$(basename -s .sv $REPLY)"
+        dut_name="${tb_name#tb_}"
+        tests+=("$dut_name")
+    done < <(find "$ROOT/test" -name 'tb_*.sv' -a \( ! -name '*_pkg.sv' \) -print0)
 else
     tests=("$@")
 fi
