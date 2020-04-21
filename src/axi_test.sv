@@ -1586,13 +1586,13 @@ package axi_test;
     endtask
   endclass
 
-  /// `axi_scoreboard` class, intended to model a memory space which only gets changed by the
-  /// AXI4+ATOP bus monitored.
-  /// Only capable of modeling the burst type `axi_pkg::BUSRT_INCR`.
-  /// Not capable of atomic operations.
-  /// Internally the memory gets updated over W beats. This scoreboard does NOT support
-  /// reordering of write beat execution, i.e. reordering of B responses on the same
-  /// accesses memory range.
+  /// `axi_scoreboard` models a memory that only gets changed by the monitored AXI4+ATOP bus.
+  ///
+  /// This class is only capable of modeling `INCR` burst type, and cannot handle atomic operations.
+  /// The internal memory representation is updated by W beats.  This class does not support
+  /// reordering of two B responses to one memory location.  That is, if two write transactions on
+  /// the observed bus target the same address, the B responses must be observed in the order of the
+  /// AW beats; otherwise, the internal memory representation of this class gets corrupted.
   ///
   /// Example usage:
   ///   typedef axi_test::axi_scoreboard #(
@@ -1603,9 +1603,9 @@ package axi_test;
   ///   .TT ( TestTime     )
   /// ) axi_scoreboard_t;
   /// axi_scoreboard_t axi_scoreboard = new(monitor_dv);
-  /// initial begin : proc_scoreboard
+  /// initial begin
   ///   axi_scoreboard.enable_all_checks();
-  ///   @(posedge rst_n);
+  ///   wait (rst_n);
   ///   axi_scoreboard.monitor();
   /// end
   class axi_scoreboard #(
