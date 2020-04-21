@@ -44,34 +44,16 @@ exec_test() {
                 done
             done
             ;;
-        axi_delayer)
-            call_vsim tb_axi_delayer
+        axi_cdc|axi_delayer)
+            call_vsim tb_$1
             ;;
         axi_atop_filter)
             for MAX_TXNS in 1 3 12; do
                 call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
-        axi_xbar)
-            call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_lite_xbar)
-            call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_cdc)
-            call_vsim tb_axi_cdc
-            ;;
-        axi_lite_to_apb)
-            call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_lite_mailbox)
-            call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_to_axi_lite)
-            call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_isolate)
-            call_vsim tb_axi_isolate -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+        axi_isolate|axi_lite_mailbox|axi_lite_to_apb|axi_lite_xbar|axi_to_axi_lite|axi_xbar)
+            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
         *)
             echo "Test for '$1' not found!"
