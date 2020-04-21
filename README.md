@@ -1,4 +1,5 @@
 # AXI
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 
 This is the implementation of the AMBA AXI protocol developed as part of the PULP platform as ETH Zurich. We implement AXI4+ATOPs and AXI4-Lite.
 
