@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_lite_to_axi`: Expose `AxCACHE` signals.
 
 ### Changed
 

@@ -155,6 +155,8 @@ module synth_slice #(
     .AXI_DATA_WIDTH (DW)
   ) b (
     .in   (b_lite.Slave),
+    .slv_aw_cache_i ('0),
+    .slv_ar_cache_i ('0),
     .out  (b_full.Master)
   );
 
