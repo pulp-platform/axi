@@ -90,7 +90,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Assigning one AXI4+ATOP interface to another, as if you would do `assign slv = mst;`
+// Assigning a AXI4+ATOP interface to a monitor modport, as if you would do `assign mon = axi_if;`
 //
 // The channel assignment `AXI_ASSIGN_MONITOR(mon_dv, axi_if)` assigns all signals from `axi_if`
 // to the `mon_dv` interface.
