@@ -10,12 +10,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+
+### Fixed
+
+
+## 0.19.0 - 2020-04-21
+
+### Changed
 - `axi_lite_to_axi`: Expose `AxCACHE` signals.  It is now possible to define the `cache` signal of
   AXI transactions coming out of this module by driving the added `slv_aw_cache_i` and
   `slv_ar_cache_i` inputs.  To retain the behavior prior to this change, tie those two inputs to
   zero.
-
-### Fixed
 
 
 ## 0.18.1 - 2020-04-08
