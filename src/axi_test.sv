@@ -2241,5 +2241,3 @@ module axi_chan_logger #(
     $fclose(fd);
   end
 endmodule
-
-
