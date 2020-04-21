@@ -85,7 +85,7 @@ package axi_pkg;
 
   /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
   function automatic shortint unsigned num_bytes(size_t size);
-    return 16'b1 << size;
+    return 1 << size;
   endfunction
 
   /// An overly long address type.
@@ -124,10 +124,10 @@ package axi_pkg;
     // equivalent with multiplication and division by a power of two, which conveniently are the
     // only allowed values for `len` of a `BURST_WRAP`.
     unique case (len)
-      4'b1    : wrap_addr = aligned_addr(addr, size + 1); // multiply `Number_Bytes` by `2`
-      4'b11   : wrap_addr = aligned_addr(addr, size + 2); // multiply `Number_Bytes` by `4`
-      4'b111  : wrap_addr = aligned_addr(addr, size + 3); // multiply `Number_Bytes` by `8`
-      4'b1111 : wrap_addr = aligned_addr(addr, size + 4); // multiply `Number_Bytes` by `16`
+      4'b1    : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
+      4'b11   : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
+      4'b111  : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
+      4'b1111 : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
       default : wrap_addr = '0;
     endcase
     return wrap_addr;
