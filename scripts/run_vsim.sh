@@ -24,6 +24,10 @@ call_vsim() {
 }
 
 exec_test() {
+    if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
+        echo "Testbench for '$1' not found!"
+        exit 1
+    fi
     case "$1" in
         axi_lite_to_axi)
             for DW in 8 16 32 64 128 256 512 1024; do
@@ -44,58 +48,28 @@ exec_test() {
                 done
             done
             ;;
-        axi_delayer)
-            call_vsim tb_axi_delayer
+        axi_cdc|axi_delayer)
+            call_vsim tb_$1
             ;;
         axi_atop_filter)
             for MAX_TXNS in 1 3 12; do
                 call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
-        axi_xbar)
-            call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_lite_xbar)
-            call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_cdc)
-            call_vsim tb_axi_cdc
-            ;;
-        axi_lite_to_apb)
-            call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_lite_mailbox)
-            call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_to_axi_lite)
-            call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
-        axi_isolate)
-            call_vsim tb_axi_isolate -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
         *)
-            echo "Test for '$1' not found!"
-            exit 1
+            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
     esac
     touch "$1.tested"
 }
 
 if [ "$#" -eq 0 ]; then
-    tests=( \
-        axi_lite_to_axi \
-        axi_dw_downsizer \
-        axi_dw_upsizer \
-        axi_delayer \
-        axi_atop_filter \
-        axi_xbar \
-        axi_lite_xbar \
-        axi_cdc \
-        axi_lite_to_apb \
-        axi_lite_mailbox \
-        axi_to_axi_lite \
-        axi_isolate \
-    )
+    tests=()
+    while IFS=  read -r -d $'\0'; do
+        tb_name="$(basename -s .sv $REPLY)"
+        dut_name="${tb_name#tb_}"
+        tests+=("$dut_name")
+    done < <(find "$ROOT/test" -name 'tb_*.sv' -a \( ! -name '*_pkg.sv' \) -print0)
 else
     tests=("$@")
 fi
