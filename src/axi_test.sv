@@ -600,9 +600,12 @@ package axi_test;
     parameter int   RESP_MAX_WAIT_CYCLES = 20,
     // AXI feature usage
     parameter int   AXI_MAX_BURST_LEN = 0, // maximum number of beats in burst; 0 = AXI max (256)
-    parameter int   TRAFFIC_SHAPING = 0,
-    parameter bit   AXI_EXCLS = 1'b0,
-    parameter bit   AXI_ATOPS = 1'b0,
+    parameter int   TRAFFIC_SHAPING   = 0,
+    parameter bit   AXI_EXCLS         = 1'b0,
+    parameter bit   AXI_ATOPS         = 1'b0,
+    parameter bit   AXI_BURST_FIXED   = 1'b1,
+    parameter bit   AXI_BURST_INCR    = 1'b1,
+    parameter bit   AXI_BURST_WRAP    = 1'b0,
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW
@@ -638,6 +641,7 @@ package axi_test;
                           atop_resp_r;
 
     len_t                 max_len;
+    burst_t               allowed_bursts[$];
 
     semaphore cnt_sem;
 
@@ -674,6 +678,16 @@ package axi_test;
       this.drv = new(axi);
       this.cnt_sem = new(1);
       this.reset();
+      if (AXI_BURST_FIXED) begin
+        this.allowed_bursts.push_back(BURST_FIXED);
+      end
+      if (AXI_BURST_INCR) begin
+        this.allowed_bursts.push_back(BURST_INCR);
+      end
+      if (AXI_BURST_WRAP) begin
+        this.allowed_bursts.push_back(BURST_WRAP);
+      end
+      assert(allowed_bursts.size()) else $fatal(1, "At least one burst type has to be specified!");
     endfunction
 
     function void reset();
@@ -728,9 +742,9 @@ package axi_test;
         mem_region = mem_map[mem_region_idx];
       end
 
-      // Randomly pick FIXED or INCR burst.  WRAP is currently not supported.
+      // Randomly pick burst type.
       rand_success = std::randomize(burst) with {
-        burst <= axi_pkg::BURST_INCR;
+        burst inside {this.allowed_bursts};
       }; assert(rand_success);
       ax_beat.ax_burst = burst;
       // Determine memory type.
@@ -744,6 +758,7 @@ package axi_test;
         for (int i = 0; i < traffic_shape.size(); i++)
           if (traffic_shape[i].cprob > cprob) begin
             len = traffic_shape[i].len;
+            assert (ax_beat.ax_burst == BURST_WRAP -> len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
             break;
           end
 
@@ -778,6 +793,8 @@ package axi_test;
           // Randomize burst length.
           rand_success = std::randomize(len) with {
             len <= this.max_len;
+            (ax_beat.ax_burst == BURST_WRAP) ->
+                len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)};
           }; assert(rand_success);
           rand_success = std::randomize(size) with {
             2**size <= AXI_STRB_WIDTH;
@@ -796,7 +813,7 @@ package axi_test;
             if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
               break;
             end
-          end else begin // BURST_INCR
+          end else begin // BURST_INCR, BURST_WRAP
             if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
               break;
             end

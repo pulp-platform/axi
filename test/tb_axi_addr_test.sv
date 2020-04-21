@@ -13,16 +13,27 @@
 // Description: Simple test for showing address wrapping behavior of the function
 // `axi_pkg::beat_addr`
 
-`include "axi/typedef.svh"
+`include "axi/assign.svh"
 /// Test bench for address generation
 module tb_axi_addr_test #(
   /// Number of calculated AX transfers
-  int unsigned NumTests = 32'd100,
+  int unsigned NumTests = 32'd10000,
   /// Print each calculated address
   bit          PrintDbg = 1'b0
 );
 
-  typedef logic [15:0] addr_t;
+  localparam int unsigned AxiIdWidth   = 32'd1;
+  localparam int unsigned AxiAddrWidth = 32'd16;
+  localparam int unsigned AxiDataWidth = 32'd1024;
+  localparam int unsigned AxiUserWidth = 32'd1;
+
+  // Sim print config, how many transactions
+  localparam int unsigned PrintTnx = 1000;
+  localparam int unsigned NoReads  = 0;
+  localparam int unsigned NoWrites = NumTests;
+
+
+  typedef logic [AxiAddrWidth:0] addr_t;
 
   /// The data transferred on a beat on the AW/AR channels.
   class ax_transfer;
@@ -32,6 +43,132 @@ module tb_axi_addr_test #(
     rand axi_pkg::burst_t burst = '0;
   endclass
 
+  // Random master no Transactions
+  localparam int unsigned NoPendingDut = 16;
+
+  // timing parameters
+  localparam time CyclTime = 10ns;
+  localparam time ApplTime =  2ns;
+  localparam time TestTime =  8ns;
+
+  typedef axi_test::rand_axi_master #(
+    // AXI interface parameters
+    .AW ( AxiAddrWidth ),
+    .DW ( AxiDataWidth ),
+    .IW ( AxiIdWidth   ),
+    .UW ( AxiUserWidth ),
+    // Stimuli application and test time
+    .TA ( ApplTime ),
+    .TT ( TestTime ),
+    // Enable burst types
+    .AXI_BURST_FIXED ( 1'b1 ),
+    .AXI_BURST_INCR  ( 1'b1 ),
+    .AXI_BURST_WRAP  ( 1'b1 )
+  ) rand_axi_master_t;
+  typedef axi_test::rand_axi_slave #(
+    // AXI interface parameters
+    .AW ( AxiAddrWidth ),
+    .DW ( AxiDataWidth ),
+    .IW ( AxiIdWidth   ),
+    .UW ( AxiUserWidth ),
+    // Stimuli application and test time
+    .TA ( ApplTime ),
+    .TT ( TestTime )
+  ) rand_axi_slave_t;
+  // -------------
+  // DUT signals
+  // -------------
+  logic clk;
+  logic rst_n;
+  logic end_of_sim;
+
+  AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) master_dv (clk);
+  AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) slave_dv (clk);
+
+  `AXI_ASSIGN(slave_dv, master_dv)
+
+  //-----------------------------------
+  // Clock generator
+  //-----------------------------------
+  clk_rst_gen #(
+    .CLK_PERIOD    ( CyclTime ),
+    .RST_CLK_CYCLES( 5        )
+  ) i_clk_gen (
+    .clk_o (clk),
+    .rst_no(rst_n)
+  );
+
+  initial begin : proc_axi_master
+    automatic rand_axi_master_t rand_axi_master = new(master_dv);
+    end_of_sim <= 1'b0;
+    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::DEVICE_NONBUFFERABLE);
+    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WTHRU_NOALLOCATE);
+    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WBACK_RWALLOCATE);
+    rand_axi_master.reset();
+    @(posedge rst_n);
+    rand_axi_master.run(0, NumTests);
+    end_of_sim <= 1'b1;
+    repeat (10000) @(posedge clk);
+    $stop();
+  end
+
+  initial begin : proc_axi_slave
+    automatic rand_axi_slave_t  rand_axi_slave  = new(slave_dv);
+    rand_axi_slave.reset();
+    @(posedge rst_n);
+    rand_axi_slave.run();
+  end
+
+  initial begin : proc_sim_progress
+    automatic int unsigned aw         = 0;
+    automatic int unsigned ar         = 0;
+    automatic bit          aw_printed = 1'b0;
+    automatic bit          ar_printed = 1'b0;
+
+    @(posedge rst_n);
+
+    forever begin
+      @(posedge clk);
+      #TestTime;
+      if (master_dv.aw_valid && master_dv.aw_ready) begin
+        aw++;
+      end
+      if (master_dv.ar_valid && master_dv.ar_ready) begin
+        ar++;
+      end
+
+      if ((aw % PrintTnx == 0) && ! aw_printed) begin
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        aw_printed = 1'b1;
+      end
+      if ((ar % PrintTnx == 0) && !ar_printed) begin
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        ar_printed = 1'b1;
+      end
+
+      if (aw % PrintTnx == 1) begin
+        aw_printed = 1'b0;
+      end
+      if (ar % PrintTnx == 1) begin
+        ar_printed = 1'b0;
+      end
+
+      if (end_of_sim) begin
+        $info("All transactions completed.");
+        break;
+      end
+    end
+  end
 
   // Test Address queue
   ax_transfer ax_queue[$];
@@ -41,22 +178,18 @@ module tb_axi_addr_test #(
     automatic logic       rand_success;
     automatic ax_transfer ax_beat;
 
-    for (int unsigned i = 0; i < NumTests; i++) begin
-      ax_beat = new;
-      rand_success = std::randomize(ax_beat) with {
-        solve ax_beat.burst before ax_beat.addr, ax_beat.len, ax_beat.size;
-        // Randomize one of three burst types
-        ax_beat.burst inside {axi_pkg::BURST_FIXED, axi_pkg::BURST_INCR, axi_pkg::BURST_WRAP};
-        // Fix lengths if burst type is wrap
-        ax_beat.burst == axi_pkg::BURST_WRAP ->
-            ax_beat.len inside {axi_pkg::len_t'(1), axi_pkg::len_t'(3),
-                                axi_pkg::len_t'(7), axi_pkg::len_t'(15)};
-        // Do not cross a 4 KiB boundary with a burst
-        //ax_beat.burst == axi_pkg::BURST_INCR ->
-        //    ((ax_beat.addr >> 12) << 12) >= ax_beat.addr + 2**ax_beat.size * (ax_beat.len + 1);
+    forever begin
+      @(posedge clk);
+      #TestTime;
+      if (master_dv.aw_valid && master_dv.aw_ready) begin
+        ax_beat = new;
+        ax_beat.addr  = master_dv.aw_addr;
+        ax_beat.len   = master_dv.aw_len;
+        ax_beat.size  = master_dv.aw_size;
+        ax_beat.burst = master_dv.aw_burst;
 
-      }; assert(rand_success);
-      ax_queue.push_back(ax_beat);
+        ax_queue.push_back(ax_beat);
+      end
     end
   end
 
