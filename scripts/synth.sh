@@ -25,3 +25,5 @@ echo 'elaborate synth_bench' >> ./synth.tcl
 cat ./synth.tcl | $SYNOPSYS_DC | tee synth.log 2>&1
 grep -i "warning:" synth.log || true
 ! grep -i "error:" synth.log
+
+touch synth.completed

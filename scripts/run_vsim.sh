@@ -23,30 +23,83 @@ call_vsim() {
     grep "Errors: 0," vsim.log
 }
 
-for DW in 8 16 32 64 128 256 512 1024; do
-    call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
-done
+exec_test() {
+    case "$1" in
+        axi_lite_to_axi)
+            for DW in 8 16 32 64 128 256 512 1024; do
+                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
+            done
+            ;;
+        axi_dw_downsizer)
+            for DW in 8 16 32 64 128 256 512 1024; do
+                for (( MULT = 2; MULT <= `echo 1024/$DW`; MULT *= 2 )); do
+                    call_vsim tb_axi_dw_downsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+                done
+            done
+            ;;
+        axi_dw_upsizer)
+            for DW in 8 16 32 64 128 256 512 1024; do
+                for (( MULT = `echo 1024/$DW | bc`; MULT > 1; MULT /= 2 )); do
+                    call_vsim tb_axi_dw_upsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
+                done
+            done
+            ;;
+        axi_delayer)
+            call_vsim tb_axi_delayer
+            ;;
+        axi_atop_filter)
+            for MAX_TXNS in 1 3 12; do
+                call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
+            done
+            ;;
+        axi_xbar)
+            call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        axi_lite_xbar)
+            call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        axi_cdc)
+            call_vsim tb_axi_cdc
+            ;;
+        axi_lite_to_apb)
+            call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        axi_lite_mailbox)
+            call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        axi_to_axi_lite)
+            call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        axi_isolate)
+            call_vsim tb_axi_isolate -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            ;;
+        *)
+            echo "Test for '$1' not found!"
+            exit 1
+            ;;
+    esac
+    touch "$1.tested"
+}
 
-for DW in 8 16 32 64 128 256 512 1024; do
-    for (( MULT = 2; MULT <= `echo 1024/$DW`; MULT *= 2 )); do
-        call_vsim tb_axi_dw_downsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
-    done
-done
+if [ "$#" -eq 0 ]; then
+    tests=( \
+        axi_lite_to_axi \
+        axi_dw_downsizer \
+        axi_dw_upsizer \
+        axi_delayer \
+        axi_atop_filter \
+        axi_xbar \
+        axi_lite_xbar \
+        axi_cdc \
+        axi_lite_to_apb \
+        axi_lite_mailbox \
+        axi_to_axi_lite \
+        axi_isolate \
+    )
+else
+    tests=("$@")
+fi
 
-for DW in 8 16 32 64 128 256 512 1024; do
-    for (( MULT = `echo 1024/$DW | bc`; MULT > 1; MULT /= 2 )); do
-        call_vsim tb_axi_dw_upsizer -GDW=$DW -GMULT=$MULT -t 1ps -c
-    done
+for t in "${tests[@]}"; do
+    exec_test $t
 done
-
-call_vsim tb_axi_delayer
-for MAX_TXNS in 1 3 12; do
-    call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
-done
-call_vsim tb_axi_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-call_vsim tb_axi_lite_xbar -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-call_vsim tb_axi_cdc
-call_vsim tb_axi_lite_to_apb -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-call_vsim tb_axi_lite_mailbox -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-call_vsim tb_axi_to_axi_lite -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-call_vsim tb_axi_isolate -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
