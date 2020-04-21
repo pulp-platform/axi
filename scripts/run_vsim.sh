@@ -24,6 +24,10 @@ call_vsim() {
 }
 
 exec_test() {
+    if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
+        echo "Testbench for '$1' not found!"
+        exit 1
+    fi
     case "$1" in
         axi_lite_to_axi)
             for DW in 8 16 32 64 128 256 512 1024; do
@@ -52,12 +56,8 @@ exec_test() {
                 call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
-        axi_isolate|axi_lite_mailbox|axi_lite_to_apb|axi_lite_xbar|axi_to_axi_lite|axi_xbar)
-            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
-            ;;
         *)
-            echo "Test for '$1' not found!"
-            exit 1
+            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
     esac
     touch "$1.tested"
