@@ -109,7 +109,7 @@ package axi_pkg;
     `ifndef VERILATOR
       assume (len == len_t'(4'b1) || len == len_t'(4'b11) || len == len_t'(4'b111) ||
           len == len_t'(4'b1111)) else
-        $warning("AXI BURST_WRAP with not allowed len of: %0h", len);
+        $error("AXI BURST_WRAP with not allowed len of: %0h", len);
     `endif
     // pragma translate_on
 
