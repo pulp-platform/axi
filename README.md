@@ -1,5 +1,5 @@
 # AXI
-[![CI status](https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&url=https%3A%2F%2Fimg.shields.io%2Fendpoint%3Furl%3Dhttps%3A%2F%2Fakurth.net%2Fusrv%2Fig%2Fshields%2Fpipeline%2Fakurth%2Faxi%2Fmaster)](https://iis-git.ee.ethz.ch/akurth/axi/commits/master)
+[![CI status](https://akurth.net/usrv/ig/shields/pipeline/akurth/axi/master.svg)](https://iis-git.ee.ethz.ch/akurth/axi/commits/master)
 [![GitHub tag (latest SemVer)](https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&url=https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Ftag%2Fpulp-platform%2Faxi%3Fcolor%3Dblue%26label%3Dcurrent%26sort%3Dsemver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
