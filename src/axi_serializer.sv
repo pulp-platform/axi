@@ -39,8 +39,6 @@ module axi_serializer #(
   input  resp_t mst_resp_i
 );
 
-  localparam int unsigned RdUsageWidth = (MaxReadTxns  > 32'd1) ? $clog2(MaxReadTxns)  : 32'd1;
-  localparam int unsigned WrUsageWidth = (MaxWriteTxns > 32'd1) ? $clog2(MaxWriteTxns) : 32'd1;
   typedef logic [AxiIdWidth-1:0] id_t;
   typedef enum logic [1:0] {
     AtopIdle    = 2'b00,
@@ -50,8 +48,6 @@ module axi_serializer #(
 
   logic                      rd_fifo_full, rd_fifo_empty, rd_fifo_push,
                              wr_fifo_full, wr_fifo_empty, wr_fifo_push;
-  logic   [RdUsageWidth-1:0] rd_usage;
-  logic   [WrUsageWidth-1:0] wr_usage;
   id_t                       b_id,         aw_id,
                              r_id,         ar_id;
   state_e                    state_q,      state_d;
@@ -154,7 +150,7 @@ module axi_serializer #(
     .data_o     ( r_id                                                       ),
     .empty_o    ( rd_fifo_empty                                              ),
     .pop_i      ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last ),
-    .usage_o    ( rd_usage                                                   )
+    .usage_o    ( /*not used*/                                               )
   );
 
   fifo_v3 #(
@@ -172,7 +168,7 @@ module axi_serializer #(
     .data_o     ( b_id                                      ),
     .empty_o    ( wr_fifo_empty                             ),
     .pop_i      ( slv_resp_o.b_valid & slv_req_i.b_ready    ),
-    .usage_o    ( wr_usage                                  )
+    .usage_o    ( /*not used*/                              )
   );
 
   `FFLARN(state_q, state_d, change_state, AtopIdle, clk_i, rst_ni)
@@ -180,32 +176,28 @@ module axi_serializer #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AxiIdWidth    >= 1) else $fatal(1, "AXI ID   width must be at least 1!");
+    assert (AxiIdWidth    >= 1) else $fatal(1, "AXI ID width must be at least 1!");
     assert (MaxReadTxns   >= 1)
       else $fatal(1, "Maximum number of read transactions must be >= 1!");
     assert (MaxWriteTxns  >= 1)
       else $fatal(1, "Maximum number of write transactions must be >= 1!");
   end
-  aw_lost : assert property(
-    @(posedge clk_i) disable iff (~rst_ni)
-        (slv_req_i.aw_valid & slv_resp_o.aw_ready |-> mst_req_o.aw_valid & mst_resp_i.aw_ready))
-    else $fatal (1, "AW beat lost.");
-  w_lost  : assert property(
-    @(posedge clk_i) disable iff (~rst_ni)
-        (slv_req_i.w_valid & slv_resp_o.w_ready |-> mst_req_o.w_valid & mst_resp_i.w_ready))
-    else $fatal (1, "W beat lost.");
-  b_lost  : assert property(
-    @(posedge clk_i) disable iff (~rst_ni)
-        (mst_resp_i.b_valid & mst_req_o.b_ready |-> slv_resp_o.b_valid & slv_req_i.b_ready))
-    else $fatal (1, "B beat lost.");
-  ar_lost : assert property(
-    @(posedge clk_i) disable iff (~rst_ni)
-        (slv_req_i.ar_valid & slv_resp_o.ar_ready |-> mst_req_o.ar_valid & mst_resp_i.ar_ready))
-    else $fatal (1, "AR beat lost.");
-  r_lost :  assert property(
-    @(posedge clk_i) disable iff (~rst_ni)
-        (mst_resp_i.r_valid & mst_req_o.r_ready |-> slv_resp_o.r_valid & slv_req_i.r_ready))
-    else $fatal (1, "R beat lost.");
+  default disable iff (~rst_ni);
+  aw_lost : assert property( @(posedge clk_i)
+      (slv_req_i.aw_valid & slv_resp_o.aw_ready |-> mst_req_o.aw_valid & mst_resp_i.aw_ready))
+    else $error (1, "AW beat lost.");
+  w_lost  : assert property( @(posedge clk_i)
+      (slv_req_i.w_valid & slv_resp_o.w_ready |-> mst_req_o.w_valid & mst_resp_i.w_ready))
+    else $error (1, "W beat lost.");
+  b_lost  : assert property( @(posedge clk_i)
+      (mst_resp_i.b_valid & mst_req_o.b_ready |-> slv_resp_o.b_valid & slv_req_i.b_ready))
+    else $error (1, "B beat lost.");
+  ar_lost : assert property( @(posedge clk_i)
+      (slv_req_i.ar_valid & slv_resp_o.ar_ready |-> mst_req_o.ar_valid & mst_resp_i.ar_ready))
+    else $error (1, "AR beat lost.");
+  r_lost :  assert property( @(posedge clk_i)
+      (mst_resp_i.r_valid & mst_req_o.r_ready |-> slv_resp_o.r_valid & slv_req_i.r_ready))
+    else $error (1, "R beat lost.");
 `endif
 // pragma translate_on
 endmodule

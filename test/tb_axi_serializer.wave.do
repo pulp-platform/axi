@@ -12,8 +12,6 @@ add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/rd_fifo_push
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/wr_fifo_full
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/wr_fifo_empty
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/wr_fifo_push
-add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/rd_usage
-add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/wr_usage
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/b_id
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/r_id
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/state_q
