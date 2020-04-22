@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.20.0 - 2020-04-22
+
+### Added
 - `axi_pkg`: Add `wrap_boundary` function to calculate the boundary of a wrapping burst.
 - `axi_test`: The random AXI master `rand_axi_master` can now emit wrapping bursts (but does not do
   so by default).  Three new parameters control the burst types of the emitted transactions; not
@@ -26,8 +35,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     two new arguments as well.
 - `axi_test::rand_axi_master`: Add parameter `AXI_BURST_FIXED`, `AXI_BURST_FIXED` and
   `AXI_BURST_FIXED`. When enabled master will emit bursts of this type.
-
-### Fixed
 
 
 ## 0.19.0 - 2020-04-21
