@@ -33,8 +33,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     arguments (the length and type of the burst).
   - The `beat_upper_byte` and `beat_lower_byte` functions internally call `beat_addr`, so they have
     two new arguments as well.
-- `axi_test::rand_axi_master`: Add parameter `AXI_BURST_FIXED`, `AXI_BURST_FIXED` and
-  `AXI_BURST_FIXED`. When enabled master will emit bursts of this type.
 
 
 ## 0.19.0 - 2020-04-21
