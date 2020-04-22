@@ -1,4 +1,5 @@
 # AXI
+[![CI status](https://img.shields.io/endpoint?url=https%3A%2F%2Fakurth.net%2Fusrv%2Fig%2Fshields%2Fpipeline%2Fakurth%2Faxi%2Fmaster)](https://iis-git.ee.ethz.ch/akurth/axi/commits/master)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
