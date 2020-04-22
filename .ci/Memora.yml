@@ -22,6 +22,18 @@ artifacts:
     outputs:
       - build/synth.completed
 
+  axi_addr_test:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - test/tb_axi_addr_test.sv
+    outputs:
+      - build/axi_addr_test.tested
+
   axi_atop_filter:
     inputs:
       - Bender.yml
