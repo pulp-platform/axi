@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   matches data written to that address.
 
 ### Changed
-- `axi_pkg:`
+- `axi_pkg`:
   - The `beat_addr` function now supports all burst types.  Due to this, the function has two new
     arguments (the length and type of the burst).
   - The `beat_upper_byte` and `beat_lower_byte` functions internally call `beat_addr`, so they have
