@@ -8,8 +8,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_pkg`: Add `wrap_boundary` function to calculate the boundary of a wrapping burst.
+- `axi_test`: The random AXI master `rand_axi_master` can now emit wrapping bursts (but does not do
+  so by default).  Three new parameters control the burst types of the emitted transactions; not
+  setting those parameters means the random master behaves as it did before this change.
 
 ### Changed
+- `axi_pkg:`
+  - The `beat_addr` function now supports all burst types.  Due to this, the function has two new
+    arguments (the length and type of the burst).
+  - The `beat_upper_byte` and `beat_lower_byte` functions internally call `beat_addr`, so they have
+    two new arguments as well.
+- `axi_test::rand_axi_master`: Add parameter `AXI_BURST_FIXED`, `AXI_BURST_FIXED` and
+  `AXI_BURST_FIXED`. When enabled master will emit bursts of this type.
 
 ### Fixed
 

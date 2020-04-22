@@ -98,32 +98,90 @@ package axi_pkg;
     return (addr >> size) << size;
   endfunction
 
+  /// Warp boundary of a `BURST_WRAP` transfer (see A3-51).
+  /// This is the lowest address accessed within a wrapping burst.
+  /// This address is aligned to the size and length of the burst.
+  /// The length of a `BURST_WRAP` has to be 2, 4, 8, or 16 transfers.
+  function automatic largest_addr_t wrap_boundary (largest_addr_t addr, size_t size, len_t len);
+    largest_addr_t wrap_addr;
+
+    // pragma translate_off
+    `ifndef VERILATOR
+      assume (len == len_t'(4'b1) || len == len_t'(4'b11) || len == len_t'(4'b111) ||
+          len == len_t'(4'b1111)) else
+        $error("AXI BURST_WRAP with not allowed len of: %0h", len);
+    `endif
+    // pragma translate_on
+
+    // In A3-51 the wrap boundary is defined as:
+    // `Wrap_Boundary = (INT(Start_Address / (Number_Bytes × Burst_Length))) ×
+    //    (Number_Bytes × Burst_Length)`
+    // Whereas the aligned address is defined as:
+    // `Aligned_Address = (INT(Start_Address / Number_Bytes)) × Number_Bytes`
+    // This leads to the wrap boundary using the same calculation as the aligned address, difference
+    // being the additional dependency on the burst length. The addition in the case statement
+    // is equal to the multiplication with `Burst_Length` as a shift (used by `aligned_addr`) is
+    // equivalent with multiplication and division by a power of two, which conveniently are the
+    // only allowed values for `len` of a `BURST_WRAP`.
+    unique case (len)
+      4'b1    : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
+      4'b11   : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
+      4'b111  : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
+      4'b1111 : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
+      default : wrap_addr = '0;
+    endcase
+    return wrap_addr;
+  endfunction
+
   /// Address of beat (see A3-51).
   function automatic largest_addr_t
-  beat_addr(largest_addr_t addr, size_t size, shortint unsigned i_beat);
-    if (i_beat == 0) begin
-      return addr;
-    end else begin
-      return aligned_addr(addr, size) + i_beat * num_bytes(size);
+  beat_addr(largest_addr_t addr, size_t size, len_t len, burst_t burst, shortint unsigned i_beat);
+    largest_addr_t ret_addr = addr;
+    largest_addr_t wrp_bond = '0;
+    if (burst == BURST_WRAP) begin
+      // do not trigger the function if there is no wrapping burst, to prevent assumptions firing
+      wrp_bond = wrap_boundary(addr, size, len);
     end
+    if (i_beat != 0 && burst != BURST_FIXED) begin
+      // From A3-51:
+      // For an INCR burst, and for a WRAP burst for which the address has not wrapped, this
+      // equation determines the address of any transfer after the first transfer in a burst:
+      // `Address_N = Aligned_Address + (N – 1) × Number_Bytes` (N counts from 1 to len!)
+      ret_addr = aligned_addr(addr, size) + i_beat * num_bytes(size);
+      // From A3-51:
+      // For a WRAP burst, if Address_N = Wrap_Boundary + (Number_Bytes × Burst_Length), then:
+      // * Use this equation for the current transfer:
+      //     `Address_N = Wrap_Boundary`
+      // * Use this equation for any subsequent transfers:
+      //     `Address_N = Start_Address + ((N – 1) × Number_Bytes) – (Number_Bytes × Burst_Length)`
+      // This means that the address calculation of a `BURST_WRAP` fundamentally works the same
+      // as for a `BURST_INC`, the difference is when the calculated address increments
+      // over the wrap threshold, the address wraps around by subtracting the accessed address
+      // space from the normal `BURST_INCR` address. The lower wrap boundary is equivalent to
+      // The wrap trigger condition minus the container size (`num_bytes(size) * (len + 1)`).
+      if (burst == BURST_WRAP && ret_addr >= wrp_bond + (num_bytes(size) * (len + 1))) begin
+        ret_addr = ret_addr - (num_bytes(size) * (len + 1));
+      end
+    end
+    return ret_addr;
   endfunction
 
   /// Index of lowest beat in byte (see A3-51).
   function automatic shortint unsigned
-  beat_lower_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
-      shortint unsigned i_beat);
-    largest_addr_t _addr = beat_addr(addr, size, i_beat);
+  beat_lower_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
+      shortint unsigned strobe_width, shortint unsigned i_beat);
+    largest_addr_t _addr = beat_addr(addr, size, len, burst, i_beat);
     return _addr - (_addr / strobe_width) * strobe_width;
   endfunction
 
   /// Index of highest beat in byte (see A3-51).
   function automatic shortint unsigned
-  beat_upper_byte(largest_addr_t addr, size_t size, shortint unsigned strobe_width,
-      shortint unsigned i_beat);
+  beat_upper_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
+      shortint unsigned strobe_width, shortint unsigned i_beat);
     if (i_beat == 0) begin
       return aligned_addr(addr, size) + (num_bytes(size) - 1) - (addr / strobe_width) * strobe_width;
     end else begin
-      return beat_lower_byte(addr, size, strobe_width, i_beat) + num_bytes(size) - 1;
+      return beat_lower_byte(addr, size, len, burst, strobe_width, i_beat) + num_bytes(size) - 1;
     end
   endfunction
 
