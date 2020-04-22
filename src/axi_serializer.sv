@@ -48,7 +48,7 @@ module axi_serializer #(
 
   logic                      rd_fifo_full, rd_fifo_empty, rd_fifo_push,
                              wr_fifo_full, wr_fifo_empty, wr_fifo_push;
-  id_t                       b_id,         aw_id,
+  id_t                       b_id,
                              r_id,         ar_id;
   state_e                    state_q,      state_d;
   logic                      change_state;
@@ -68,7 +68,6 @@ module axi_serializer #(
     mst_req_o.ar.id = '0;
 
     // Reflect upstream ID in response.
-    aw_id           = slv_req_i.aw.id;
     ar_id           = slv_req_i.ar.id;
     slv_resp_o.b.id = b_id;
     slv_resp_o.r.id = r_id;
@@ -80,7 +79,7 @@ module axi_serializer #(
     slv_resp_o.aw_ready = 1'b0;
 
     unique case (state_q)
-      AtopIdle:    begin
+      AtopIdle: begin
         // Gate AR handshake with ready output of Read FIFO.
         mst_req_o.ar_valid  = slv_req_i.ar_valid  & ~rd_fifo_full;
         slv_resp_o.ar_ready = mst_resp_i.ar_ready & ~rd_fifo_full;
@@ -101,7 +100,7 @@ module axi_serializer #(
           end
         end
       end
-      AtopDrain:   begin
+      AtopDrain: begin
         if (wr_fifo_empty && rd_fifo_empty) begin
           mst_req_o.aw_valid  = 1'b1;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
@@ -116,7 +115,7 @@ module axi_serializer #(
           end
         end
       end
-      AtopExecute:    begin
+      AtopExecute: begin
         if (wr_fifo_empty && rd_fifo_empty) begin
           state_d = AtopIdle;
         end
@@ -162,7 +161,7 @@ module axi_serializer #(
     .rst_ni,
     .flush_i    ( 1'b0                                      ),
     .testmode_i ( 1'b0                                      ),
-    .data_i     ( aw_id                                     ),
+    .data_i     ( slv_req_i.aw.id                           ),
     .push_i     ( wr_fifo_push                              ),
     .full_o     ( wr_fifo_full                              ),
     .data_o     ( b_id                                      ),
