@@ -43,8 +43,10 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 
 AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as defined in Section E2.1 of the AMBA5 specification. This has the following implications for modules that do not implement ATOPs and systems that include such modules:
 
-- Masters that do not issue ATOPs can simply permanently set `aw_atop` to `0`.
+- Masters that do not issue ATOPs must set `aw_atop` to `'0`.
 - Slaves that do not support ATOPs must specify this in their interface documentation and can ignore the `aw_atop` signal.
-- System designers are responsible for ensuring that slaves that do not support ATOPs are behind an [`axi_atop_filter`](src/axi_atop_filter.sv) if any master could issue an ATOP to such slaves.
+- System designers are responsible for ensuring that
+  1. slaves that do not support ATOPs are behind an [`axi_atop_filter`](src/axi_atop_filter.sv) if any master could issue an ATOP to such slaves and
+  2. the `aw_atop` signal is well-defined at the input of any (non-AXI4-Lite) module in this repository.
 
 Masters and slaves that do support ATOPs must adhere to Section E2.1 of the AMBA5 specification.
