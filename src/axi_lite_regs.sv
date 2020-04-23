@@ -38,8 +38,10 @@ module axi_lite_regs #(
   /// ignored.
   parameter int unsigned           RegDataWidth = 32'd0,
   /// This flag can specify a read-only register at the given register index of the array.
-  /// When in the array the corresponding bit is set, the `reg_init_i` signal at given index can be
-  /// read out. Writes are ignored on flag set.
+  /// When in the array the corresponding bit is set (ReadOnly[reg_index]==1'b1), the
+  /// `reg_d_i[reg_index]` is directly forwarded to `reg_q_o[reg_index]`. AXI-Lite writes
+  /// a given onto register are ignored when `ReadOnly[reg_index]==1'b1` and respond with
+  /// `axi_pkg::RESP_SLVERR`.
   parameter logic [NumAxiRegs-1:0] ReadOnly     = {NumAxiRegs{1'b0}},
   /// AXI4-Lite request struct. See macro definition in `include/typedef.svh`
   parameter type                   req_lite_t   = logic,
@@ -55,6 +57,8 @@ module axi_lite_regs #(
   /// Asynchronous active low reset signal (1-bit).
   input  logic                       rst_ni,
   /// AXI4-Lite slave port request struct, bundles all AXI4-Lite signals from the master.
+  /// This module will perform the write transaction when `axi_req_i.aw_valid` and
+  /// `axi_req_i.w_valid` are both asserted.
   input  req_lite_t                  axi_req_i,
   /// AXI4-Lite slave port response struct, bundles all AXI4-Lite signals to the master.
   output resp_lite_t                 axi_resp_o,
@@ -62,12 +66,25 @@ module axi_lite_regs #(
   /// The base address of each individual register can be calculated with:
   /// `reg_address` = `base_addr_i` + `reg_index` * `AxiDataWidth/8`
   input  axi_addr_t                  base_addr_i,
-  /// Initialization value for each register, when the register index is configured as
-  /// `ReadOnly[reg_index] == 1'b1` this value is passed through directly to the AXI4-Lite bus.
+  /// Load value for each register. When the register index is configured as
+  /// `ReadOnly[reg_index] == 1'b1` this value is passed through directly to the AXI4-Lite bus read
+  /// and to `reg_q_o` at the corresponding index.
+  /// In the first cycle after reset this value gets latched into all non read-only registers
+  /// regardless of the value of `reg_load_i`!
   /// (Array size: `NumAxiRegs` * RegDataWidth-bit)
-  input  reg_data_t [NumAxiRegs-1:0] reg_init_i,
-  /// The current value of the register. If the register at the array index is read only, the
-  /// `reg_init_i` value is passed through to the respective index.
+  input  reg_data_t [NumAxiRegs-1:0] reg_d_i,
+  /// Load enable for each register.
+  /// This signal is ignored for each register configured as read-only!
+  /// The bit index of this signal is the index of the corresponding register array entry.
+  /// When asserted (`reg_load_i[reg_index] == 1'b1`) the value of `reg_d_i[reg_index]` is latched
+  /// and available on `reg_q_o[reg_index]` in the next cycle.
+  /// When an AXI4-Lite write transaction is active onto the same register index
+  /// (`aw_valid && aw_ready && w_valid && w_ready`) where a load is active, the AXI4-Lite write
+  /// will be ignored, load is performed from `reg_d_i[reg_index]` and the AXI4-Lite response will
+  /// be `axi_pkg::RESP_SLVERR`!
+  input  logic      [NumAxiRegs-1:0] reg_load_i,
+  /// The current value of the register. If the register at the array index is read-only, the
+  /// `reg_init_i[reg_index]` value is passed through to the respective index.
   /// (Array size: `NumAxiRegs` * RegDataWidth-bit)
   output reg_data_t [NumAxiRegs-1:0] reg_q_o
 );
@@ -81,7 +98,7 @@ module axi_lite_regs #(
   typedef logic [IdxWidth-1:0]   reg_idx_t;
   axi_rule_t    [NumAxiRegs-1:0] addr_map;
   for (genvar i = 0; i < NumAxiRegs; i++) begin : gen_addr_map
-    assign addr_map[i] = '{
+    assign addr_map[i] = rule_t'{
       idx:        i,
       start_addr: base_addr_i +  i   * (AxiDataWidth / 8),
       end_addr:   base_addr_i + (i+1)* (AxiDataWidth / 8)
@@ -93,7 +110,7 @@ module axi_lite_regs #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, axi_data_t)
 
-  // Register declarations
+  // Register array declarations
   reg_data_t [NumAxiRegs-1:0] reg_q,      reg_d;
   logic      [NumAxiRegs-1:0] reg_update;
 
@@ -114,11 +131,28 @@ module axi_lite_regs #(
     axi_resp_o.aw_ready = 1'b0;
     axi_resp_o.w_ready  = 1'b0;
     // Response
-    b_chan              = '0;
+    b_chan              = b_chan_lite_t'{resp: axi_pkg::RESP_SLVERR, default: '0};
     b_valid             = 1'b0;
+
     // Control
-    if (axi_req_i.aw_valid && axi_req_i.w_valid) begin
-      if (aw_dec_valid && aw_prot_ok && !ReadOnly[aw_idx]) begin
+    // Handle all non AXI register loads.
+    // External from load signal and initialization load after reset.
+    for (int unsigned i = 0; i < NumAxiRegs; i++) begin
+      if ((reg_load_i[i] || !has_reset_q) && !ReadOnly[i]) begin
+        reg_d[i]      = reg_d_i[i];
+        reg_update[i] = 1'b1;
+      end
+    end
+
+    // Handle load from AXI write.
+    // `b_ready` is allowed to be a condition as it comes from a spill register.
+    if (axi_req_i.aw_valid && axi_req_i.w_valid && b_ready) begin
+      // The write is successfull when all conditions are true:
+      // - AW decode is valid.
+      // - `axi_req_i.aw.prot` has the right value.
+      // - AW decode index points to a non read-only register.
+      // - No direct load is active, given by `eg_update[aw_idx]`.
+      if (aw_dec_valid && aw_prot_ok && !ReadOnly[aw_idx] && !reg_update[aw_idx]) begin
         b_chan.resp = axi_pkg::RESP_OKAY;
         for (int unsigned i = 0; i < RegDataWidth; i++) begin
           if (axi_req_i.w.strb[i/8]) begin
@@ -126,14 +160,11 @@ module axi_lite_regs #(
           end
         end
         reg_update[aw_idx] = 1'b1;
-      end else begin
-        b_chan.resp = axi_pkg::RESP_SLVERR;
       end
-      // send response if channel is ready, if stalled and write is ok, register gets
-      // written multiple times with the same data
-      b_valid = 1'b1;
-      axi_resp_o.aw_ready = b_ready; // comes from spill register
-      axi_resp_o.w_ready  = b_ready; // comes from spill register
+      // Send B response on each write transaction.
+      b_valid             = 1'b1;
+      axi_resp_o.aw_ready = 1'b1;
+      axi_resp_o.w_ready  = 1'b1;
     end
   end
 
@@ -145,25 +176,24 @@ module axi_lite_regs #(
   logic         ar_prot_ok;
   assign ar_prot_ok = (PrivProtOnly ? axi_req_i.ar.prot[0] : 1'b1) &
                       (SecuProtOnly ? axi_req_i.ar.prot[1] : 1'b1);
-  assign r_chan = '{
-    data: (ar_dec_valid && ar_prot_ok) ?
-              ( ReadOnly[ar_idx] ?
-                  axi_data_t'(reg_init_i[ar_idx]) :
-                  axi_data_t'(reg_q[ar_idx])
-              ) :
-              axi_data_t'(32'hDEADBEEF),
-    resp: (ar_dec_valid && ar_prot_ok) ?
-              axi_pkg::RESP_OKAY :
-              axi_pkg::RESP_SLVERR,
+  assign r_chan = r_chan_lite_t'{
+    data: (ar_dec_valid && ar_prot_ok) ? axi_data_t'(reg_q_o[ar_idx]) : axi_data_t'(32'hBA5E1E55),
+    resp: (ar_dec_valid && ar_prot_ok) ? axi_pkg::RESP_OKAY           : axi_pkg::RESP_SLVERR,
     default : '0
   };
   assign r_valid             = axi_req_i.ar_valid; // to spill register
   assign axi_resp_o.ar_ready = r_ready;            // from spill register
 
+  // Register array output, read-only directly passed through from `reg_d_i`.
+  // Nothing will touch
   for (genvar i = 0; i < NumAxiRegs; i++) begin : gen_rw_regs
-    assign reg_q_o[i] = ReadOnly[i] ? reg_init_i[i] : reg_q[i];
+    assign reg_q_o[i] = ReadOnly[i] ? reg_d_i[i] : reg_q[i];
   end
-  `FFLARN(reg_q, reg_d, reg_update, reg_init_i, clk_i, rst_ni)
+  `FFLARN(reg_q, reg_d, reg_update, '0, clk_i, rst_ni)
+  // Reset FF flag for initialization of the reg array, to break timing constraints on reset.
+  logic has_reset_d, has_reset_q;
+  `FFARN(has_reset_q, has_reset_d, 1'b0, clk_i, rst_ni)
+  assign has_reset_d = 1'b1;
 
   addr_decode #(
     .NoIndices ( NumAxiRegs ),
@@ -285,7 +315,9 @@ module axi_lite_regs_intf #(
   /// See `axi_lite_reg`: `base_addr_i`.
   input  axi_addr_t                    base_addr_i,
   /// See `axi_lite_reg`: `reg_init_i`.
-  input  reg_data_t [NUM_AXI_REGS-1:0] reg_init_i,
+  input  reg_data_t [NUM_AXI_REGS-1:0] reg_d_i,
+  /// See `axi_lite_reg`: `reg_load_i`.
+  input  logic      [NUM_AXI_REGS-1:0] reg_load_i,
   /// See `axi_lite_reg`: `reg_q_o`.
   output reg_data_t [NUM_AXI_REGS-1:0] reg_q_o
 );
@@ -322,17 +354,18 @@ module axi_lite_regs_intf #(
     .axi_req_i   ( axi_lite_req  ), // AXI4-Lite request struct
     .axi_resp_o  ( axi_lite_resp ), // AXI4-Lite response struct
     .base_addr_i,                   // Base address of the registers
-    .reg_init_i,                    // Register
-    .reg_q_o
+    .reg_d_i,                       // Register load values
+    .reg_load_i,                    // Register load enable
+    .reg_q_o                        // Register state
   );
   // Validate parameters.
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
       assert (AXI_ADDR_WIDTH == $bits(slv.aw_addr))
-          else $fatal(1, "APB_ADDR_WIDTH does not match slv interface!");
+          else $fatal(1, "AXI_ADDR_WIDTH does not match slv interface!");
       assert (AXI_DATA_WIDTH == $bits(slv.w_data))
-          else $fatal(1, "APB_DATA_WIDTH does not match slv interface!");
+          else $fatal(1, "AXI_DATA_WIDTH does not match slv interface!");
     end
   `endif
   // pragma translate_on
