@@ -144,8 +144,9 @@ module synth_bench (
   // AXI4-Lite Registers
   for (genvar i = 0; i < 6; i++) begin
     for (genvar j = 0; j < 6; j++) begin
-      localparam int unsigned RegDataWidth =
-          (AXI_ADDR_WIDTH[j] <= 32'd32) ? AXI_ADDR_WIDTH[j] : 32'd32;
+      localparam int unsigned RegDataWidth = (AXI_ADDR_WIDTH[j] <= 32'd32) ?
+          AXI_ADDR_WIDTH[j] : 32'd32;
+
       synth_axi_lite_regs #(
         .NUM_REGS       ( AXI_ADDR_WIDTH[i] ),
         .AXI_ADDR_WIDTH ( 32'd32            ),

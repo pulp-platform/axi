@@ -90,13 +90,9 @@ module tb_axi_lite_regs #(
     lite_axi_master.reset();
     @(posedge rst_n);
     repeat (5) @(posedge clk);
-    lite_axi_master.write(axi_addr_t'(32'h0000_0000),
-                          axi_data_t'(64'hDEADBEEFDEADBEEF),
-                          axi_strb_t'(8'hFF),
-                          resp);
-    lite_axi_master.read(axi_addr_t'(32'h0000_0000),
-                         data,
-                         resp);
+    lite_axi_master.write(axi_addr_t'(32'h0000_0000), axi_data_t'(64'hDEADBEEFDEADBEEF),
+        axi_strb_t'(8'hFF), resp);
+    lite_axi_master.read(axi_addr_t'(32'h0000_0000), data, resp);
     lite_axi_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
   end
@@ -128,7 +124,7 @@ module tb_axi_lite_regs #(
         automatic axi_data_t r_data = exp_rdata.pop_front();
         if (master.r_resp == axi_pkg::RESP_OKAY) begin
           assert (master.r_data == r_data) else
-              $warning("Unexpected read data: exp: %0h observes %0h", r_data, master.r_data);
+              $error("Unexpected read data: exp: %0h observes %0h", r_data, master.r_data);
         end
       end
     end
