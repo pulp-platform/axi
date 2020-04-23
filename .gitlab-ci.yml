@@ -91,6 +91,11 @@ axi_lite_xbar:
   variables:
     TEST_MODULE: axi_lite_xbar
 
+axi_serializer:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_serializer
+
 axi_to_axi_lite:
   <<: *test_module
   variables:

@@ -42,6 +42,7 @@ sources:
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
+  - src/axi_serializer.sv
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
@@ -72,6 +73,7 @@ sources:
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv
       - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_serializer.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar_pkg.sv
       - test/tb_axi_xbar.sv

@@ -170,6 +170,19 @@ artifacts:
     outputs:
       - build/axi_lite_xbar.tested
 
+  axi_serializer:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_serializer.sv
+      - test/tb_axi_serializer.sv
+    outputs:
+      - build/axi_serializer.tested
+
   axi_to_axi_lite:
     inputs:
       - Bender.yml
