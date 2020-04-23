@@ -267,7 +267,7 @@ module axi_serializer_intf #(
   initial begin: p_assertions
     assert (AXI_ADDR_WIDTH  >= 1) else $fatal(1, "AXI address width must be at least 1!");
     assert (AXI_DATA_WIDTH  >= 1) else $fatal(1, "AXI data width must be at least 1!");
-    assert (AXI_ID_WIDTH    >= 1) else $fatal(1, "AXI ID   width must be at least 1!");
+    assert (AXI_ID_WIDTH    >= 1) else $fatal(1, "AXI ID width must be at least 1!");
     assert (AXI_USER_WIDTH  >= 1) else $fatal(1, "AXI user width must be at least 1!");
     assert (MAX_READ_TXNS   >= 1)
       else $fatal(1, "Maximum number of read transactions must be >= 1!");
