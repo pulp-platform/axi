@@ -10,77 +10,66 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-// APB Read-Write Registers
-// Description: This module exposes a number of registers on an AXI4-Lite interface.
-//              It responds to not mapped accesses with a slave error.
-//              Some of the registers can be configured to be read only.
-// Parameters:
-// - `NumAxiRegs`:      Number of registers.
-// - `AxiAddrWidth`:    Address width of `axi_req_i.aw.addr` and `axi_req_i.ar.addr`, is used to
-//                      generate internal address map.
-// - `AxiDataWidth`:    The data width of the AXI4-Lite bus. Register address map is generated with
-//                      this value.
-// - `RegDataWidth`:    The data width of the registers, this value has to be less or equal to
-//                      `AxiDataWidth`. If it is less, the register gets zero extended for reads and
-//                      higher bits on writes get ignored.
-// - `PrivProtOnly`:    Privileged accesses only. The slave only executes AXI4-Lite transactions if
-//                      the `AxProt[0]` bit in the `AW` or `AR` vector is set, otherwise
-//                      ignores writes and answers with `axi_pkg::RESP_SLVERR` to transactions.
-// - `SecuProtOnly`:    Secure accesses only. The slave only executes AXI4-Lite transactions if
-//                      the `AxProt[1]` bit in the `AW` or `AR` vector is set, otherwise
-//                      ignores writes and answers with `axi_pkg::RESP_SLVERR` to transactions.
-// - `ReadOnly`:        This flag can specify a read only register at the given register index of
-//                      the array. When in the array the corresponding bit is set, the `reg_init_i`
-//                      signal at given index can be read out. Writes are ignored on flag set.
-// - `axi_lite_req_t`:  APB4 request struct. See macro definition in `include/typedef.svh`
-// - `axi_lite_resp_t`: APB4 response struct. See macro definition in `include/typedef.svh`
-//
-// Ports:
-//
-// - `clk_i`:        Clock input signal (1-bit).
-// - `rst_ni`:       Asynchronous active low reset signal (1-bit).
-// - `axi_req_i`:    AXI4-Lite request struct, bundles all AXI4-Lite signals from the master.
-// - `axi_resp_o`:   AXI4-Lite response struct, bundles all AXI4-Lite signals to the master.
-// - `base_addr_i`:  Base address of this module, from here the registers `0` are mapped, starting
-//                   with index `0`. All subsequent register with higher indices have their bases
-//                   mapped with TODO reg_index * `AddrOffset` from this value (ApbAddrWidth-bit).
-// - `reg_init_i:    Initialization value for each register, when the register index is configured
-//                   as `ReadOnly[reg_index] == 1'b1` this value is passed through directly to
-//                   the APB4 bus (Array size `NumAxiRegs` * RegDataWidth-bit).
-// - `reg_q_o:       The current value of the register. If the register at the array index is
-//                   read only, the `reg_init_i` value is passed through to the respective index
-//                   (Array size `NumAxiRegs` * RegDataWidth-bit).
-//
-// This file also features the module `axi_lite_regs_intf`. The difference is that instead of the
-// request and response structs it uses an `AXI_LITE.Salve` interface. The parameters have the same
-// function, however are defined in `ALL_CAPS`.
-
 `include "axi/typedef.svh"
 `include "common_cells/registers.svh"
-
+/// AXI4-Lite Registers with option to make individual registers read-only.
+/// This module exposes a number of registers on an AXI4-Lite bus modeled with structs.
+/// It responds to accesses outside the instantiated registers with a slave error.
+/// Some of the registers can be configured to be read-only.
 module axi_lite_regs #(
+  /// Number of registers which are mapped to the AXI channel. Each register has a size of
+  /// `RegDataWidth` bit and is is aligned to the AXI4-Lite bus data width (AxiDataWidth).
   parameter int unsigned           NumAxiRegs   = 32'd0,
+  /// Address width of `axi_req_i.aw.addr` and `axi_req_i.ar.addr`, is used to generate internal
+  /// address map.
   parameter int unsigned           AxiAddrWidth = 32'd0,
+  /// Data width of the AXI4-Lite bus. Register address map is generated with this value.
   parameter int unsigned           AxiDataWidth = 32'd0,
+  /// Privileged accesses only. The slave only executes AXI4-Lite transactions if the `AxProt[0]`
+  /// bit in the `AW` or `AR` vector is set, otherwise ignores writes and answers with
+  /// `axi_pkg::RESP_SLVERR` to transactions.
   parameter bit                    PrivProtOnly = 1'b0,
+  /// Secure accesses only. The slave only executes AXI4-Lite transactions if the `AxProt[1]` bit
+  /// in the `AW` or `AR` vector is set, otherwise ignores writes and answers with
+  /// `axi_pkg::RESP_SLVERR` to transactions.
   parameter bit                    SecuProtOnly = 1'b0,
+  /// The data width of the registers, this value has to be less or equal to `AxiDataWidth`.
+  /// If it is less, the register gets zero extended for reads and higher bits on writes are
+  /// ignored.
   parameter int unsigned           RegDataWidth = 32'd0,
+  /// This flag can specify a read-only register at the given register index of the array.
+  /// When in the array the corresponding bit is set, the `reg_init_i` signal at given index can be
+  /// read out. Writes are ignored on flag set.
   parameter logic [NumAxiRegs-1:0] ReadOnly     = {NumAxiRegs{1'b0}},
+  /// AXI4-Lite request struct. See macro definition in `include/typedef.svh`
   parameter type                   req_lite_t   = logic,
+  /// AXI4-Lite response struct. See macro definition in `include/typedef.svh`
   parameter type                   resp_lite_t  = logic,
-  // DEPENDENT PARAMETERS, DO NOT OVERRIDE!
+  /// DEPENDENT PARAMETER, DO NOT OVERRIDE! Address type of the AXI4-Lite channel.
   parameter type axi_addr_t = logic[AxiAddrWidth-1:0],
+  /// DEPENDENT PARAMETER, DO NOT OVERRIDE! Data type of an individual register.
   parameter type reg_data_t = logic[RegDataWidth-1:0]
 ) (
-  input  logic                       clk_i,       // Clock
-  input  logic                       rst_ni,      // Asynchronous reset active low
-  // AXI4-Lite slave port
-  input  req_lite_t                  axi_req_i,   // AXI4-Lite request struct
-  output resp_lite_t                 axi_resp_o,  // AXI4-Lite response struct
-  input  axi_addr_t                  base_addr_i, // Base address of the registers
-  // Register interface
-  input  reg_data_t [NumAxiRegs-1:0] reg_init_i,  // Register initialization
-  output reg_data_t [NumAxiRegs-1:0] reg_q_o      // Register state
+  /// Clock input signal (1-bit).
+  input  logic                       clk_i,
+  /// Asynchronous active low reset signal (1-bit).
+  input  logic                       rst_ni,
+  /// AXI4-Lite slave port request struct, bundles all AXI4-Lite signals from the master.
+  input  req_lite_t                  axi_req_i,
+  /// AXI4-Lite slave port response struct, bundles all AXI4-Lite signals to the master.
+  output resp_lite_t                 axi_resp_o,
+  /// Base address of this module, from here the registers `0` are mapped, starting with index `0`.
+  /// The base address of each individual register can be calculated with:
+  /// `reg_address` = `base_addr_i` + `reg_index` * `AxiDataWidth/8`
+  input  axi_addr_t                  base_addr_i,
+  /// Initialization value for each register, when the register index is configured as
+  /// `ReadOnly[reg_index] == 1'b1` this value is passed through directly to the AXI4-Lite bus.
+  /// (Array size: `NumAxiRegs` * RegDataWidth-bit)
+  input  reg_data_t [NumAxiRegs-1:0] reg_init_i,
+  /// The current value of the register. If the register at the array index is read only, the
+  /// `reg_init_i` value is passed through to the respective index.
+  /// (Array size: `NumAxiRegs` * RegDataWidth-bit)
+  output reg_data_t [NumAxiRegs-1:0] reg_q_o
 );
   // definition and generation of the address rule and register indices
   localparam int unsigned IdxWidth = (NumAxiRegs > 32'd1) ? $clog2(NumAxiRegs) : 32'd1;
@@ -206,7 +195,7 @@ module axi_lite_regs #(
     .default_idx_i    ( '0                )
   );
 
-  // output spill register
+  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
   spill_register #(
     .T      ( b_chan_lite_t ),
     .Bypass ( 1'b0          )
@@ -221,6 +210,7 @@ module axi_lite_regs #(
     .data_o  ( axi_resp_o.b       )
   );
 
+  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
   spill_register #(
     .T      ( r_chan_lite_t ),
     .Bypass ( 1'b0          )
@@ -263,26 +253,41 @@ module axi_lite_regs #(
 endmodule
 
 `include "axi/assign.svh"
-
+/// AXI4-Lite Registers with option to make individual registers read-only.
+/// This module is an interface wrapper for `axi_lite_regs`. The parameters have the same
+/// function as the ones in `axi_lite_regs`, however are defined in `ALL_CAPS`.
 module axi_lite_regs_intf #(
+  /// See `axi_lite_reg`: `NumAxiRegs`.
   parameter int unsigned NUM_AXI_REGS      = 32'd0,
+  /// See `axi_lite_reg`: `AxiAddrWidth`.
   parameter int unsigned AXI_ADDR_WIDTH    = 32'd0,
+  /// See `axi_lite_reg`: `AxiDataWidth`.
   parameter int unsigned AXI_DATA_WIDTH    = 32'd0,
+  /// See `axi_lite_reg`: `PrivProtOnly`.
   parameter bit          PRIV_PROT_ONLY    = 1'd0,
+  /// See `axi_lite_reg`: `SecuProtOnly`.
   parameter bit          SECU_PROT_ONLY    = 1'd0,
+  /// See `axi_lite_reg`: `RegDataWidth`.
   parameter int unsigned REG_DATA_WIDTH    = 32'd0,
+  /// See `axi_lite_reg`: `ReadOnly`.
   parameter int unsigned READ_ONLY         = {NUM_AXI_REGS{1'b0}},
-  // DEPENDENT PARAMETERS, DO NOT OVERRIDE!
+  /// DEPENDENT PARAMETER, DO NOT OVERRIDE! See `axi_lite_reg`: `axi_addr_t`.
   parameter type axi_addr_t = logic[AXI_ADDR_WIDTH-1:0],
+  /// DEPENDENT PARAMETER, DO NOT OVERRIDE! See `axi_lite_reg`: `reg_data_t`.
   parameter type reg_data_t = logic[REG_DATA_WIDTH-1:0]
 ) (
-  input  logic                         clk_i,       // Clock
-  input  logic                         rst_ni,      // Asynchronous reset active low
-  AXI_LITE.Slave                       slv,         // AXI4-Lite slave interface
-  input  axi_addr_t                    base_addr_i, // Base address of the registers
-  // Register interface
-  input  reg_data_t [NUM_AXI_REGS-1:0] reg_init_i,  // Register initialization
-  output reg_data_t [NUM_AXI_REGS-1:0] reg_q_o      // Register state
+  /// Clock input signal (1-bit).
+  input  logic                         clk_i,
+  /// Asynchronous active low reset signal (1-bit).
+  input  logic                         rst_ni,
+  /// AXI4-Lite slave port interface.
+  AXI_LITE.Slave                       slv,
+  /// See `axi_lite_reg`: `base_addr_i`.
+  input  axi_addr_t                    base_addr_i,
+  /// See `axi_lite_reg`: `reg_init_i`.
+  input  reg_data_t [NUM_AXI_REGS-1:0] reg_init_i,
+  /// See `axi_lite_reg`: `reg_q_o`.
+  output reg_data_t [NUM_AXI_REGS-1:0] reg_q_o
 );
   typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
