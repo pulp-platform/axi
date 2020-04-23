@@ -184,19 +184,19 @@ module axi_serializer #(
   default disable iff (~rst_ni);
   aw_lost : assert property( @(posedge clk_i)
       (slv_req_i.aw_valid & slv_resp_o.aw_ready |-> mst_req_o.aw_valid & mst_resp_i.aw_ready))
-    else $error ("AW beat lost.");
+    else $error("AW beat lost.");
   w_lost  : assert property( @(posedge clk_i)
       (slv_req_i.w_valid & slv_resp_o.w_ready |-> mst_req_o.w_valid & mst_resp_i.w_ready))
-    else $error ("W beat lost.");
+    else $error("W beat lost.");
   b_lost  : assert property( @(posedge clk_i)
       (mst_resp_i.b_valid & mst_req_o.b_ready |-> slv_resp_o.b_valid & slv_req_i.b_ready))
-    else $error ("B beat lost.");
+    else $error("B beat lost.");
   ar_lost : assert property( @(posedge clk_i)
       (slv_req_i.ar_valid & slv_resp_o.ar_ready |-> mst_req_o.ar_valid & mst_resp_i.ar_ready))
-    else $error ("AR beat lost.");
+    else $error("AR beat lost.");
   r_lost :  assert property( @(posedge clk_i)
       (mst_resp_i.r_valid & mst_req_o.r_ready |-> slv_resp_o.r_valid & slv_req_i.r_ready))
-    else $error ("R beat lost.");
+    else $error("R beat lost.");
 `endif
 // pragma translate_on
 endmodule
