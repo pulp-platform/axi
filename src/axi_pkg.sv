@@ -166,7 +166,7 @@ package axi_pkg;
     return ret_addr;
   endfunction
 
-  /// Index of lowest beat in byte (see A3-51).
+  /// Index of lowest byte in beat (see A3-51).
   function automatic shortint unsigned
   beat_lower_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
       shortint unsigned strobe_width, shortint unsigned i_beat);
@@ -174,7 +174,7 @@ package axi_pkg;
     return _addr - (_addr / strobe_width) * strobe_width;
   endfunction
 
-  /// Index of highest beat in byte (see A3-51).
+  /// Index of highest byte in beat (see A3-51).
   function automatic shortint unsigned
   beat_upper_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
       shortint unsigned strobe_width, shortint unsigned i_beat);
