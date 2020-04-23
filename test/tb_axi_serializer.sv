@@ -93,8 +93,8 @@ module tb_axi_serializer #(
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) slave_dv (clk);
 
-  `AXI_ASSIGN           ( master,  master_dv )
-  `AXI_ASSIGN           ( slave_dv, slave    )
+  `AXI_ASSIGN(master, master_dv)
+  `AXI_ASSIGN(slave_dv, slave)
 
   //-----------------------------------
   // Clock generator
@@ -165,83 +165,83 @@ module tb_axi_serializer #(
   r_chan_t   r_chan[$];
 
   initial begin : proc_checker
-    automatic axi_id_t  id_tmp;
-    automatic aw_chan_t aw_tmp;
-    automatic aw_chan_t aw_test;
-    automatic w_chan_t   w_tmp;
-    automatic w_chan_t   w_test;
-    automatic b_chan_t   b_tmp;
-    automatic b_chan_t   b_test;
-    automatic ar_chan_t ar_tmp;
-    automatic ar_chan_t ar_test;
-    automatic r_chan_t   r_tmp;
-    automatic r_chan_t   r_test;
+    automatic axi_id_t  id_exp; // expected ID
+    automatic aw_chan_t aw_exp; // expected AW
+    automatic aw_chan_t aw_act; // actual AW
+    automatic w_chan_t   w_exp; // expected W
+    automatic w_chan_t   w_act; // actual W
+    automatic b_chan_t   b_exp; // expected B
+    automatic b_chan_t   b_act; // actual B
+    automatic ar_chan_t ar_exp; // expected AR
+    automatic ar_chan_t ar_act; // actual AR
+    automatic r_chan_t   r_exp; // expected R
+    automatic r_chan_t   r_act; // actual R
     forever begin
       @(posedge clk);
       #TestTime;
       // All FIFOs get populated if there is something to put in
       if (master.aw_valid && master.aw_ready) begin
-        `AXI_TO_AW(, aw_tmp, master)
-        aw_tmp.id = '0;
-        id_tmp    = master.aw_id;
-        aw_chan.push_back(aw_tmp);
-        aw_queue.push_back(id_tmp);
+        `AXI_TO_AW(, aw_exp, master)
+        aw_exp.id = '0;
+        id_exp    = master.aw_id;
+        aw_chan.push_back(aw_exp);
+        aw_queue.push_back(id_exp);
         if (master.aw_atop[axi_pkg::ATOP_R_RESP]) begin
-          ar_queue.push_back(id_tmp);
+          ar_queue.push_back(id_exp);
         end
       end
       if (master.w_valid && master.w_ready) begin
-        `AXI_TO_W(, w_tmp, master)
-        w_chan.push_back(w_tmp);
+        `AXI_TO_W(, w_exp, master)
+        w_chan.push_back(w_exp);
       end
       if (slave.b_valid && slave.b_ready) begin
-        id_tmp = aw_queue.pop_front();
-        `AXI_TO_B(, b_tmp, slave)
-        b_tmp.id = id_tmp;
-        b_chan.push_back(b_tmp);
+        id_exp = aw_queue.pop_front();
+        `AXI_TO_B(, b_exp, slave)
+        b_exp.id = id_exp;
+        b_chan.push_back(b_exp);
       end
       if (master.ar_valid && master.ar_ready) begin
-        `AXI_TO_AR(, ar_tmp, master)
-        ar_tmp.id = '0;
-        id_tmp    = master.ar_id;
-        ar_chan.push_back(ar_tmp);
-        ar_queue.push_back(id_tmp);
+        `AXI_TO_AR(, ar_exp, master)
+        ar_exp.id = '0;
+        id_exp    = master.ar_id;
+        ar_chan.push_back(ar_exp);
+        ar_queue.push_back(id_exp);
       end
       if (slave.r_valid && slave.r_ready) begin
-        `AXI_TO_R(, r_tmp, slave)
+        `AXI_TO_R(, r_exp, slave)
         if (slave.r_last) begin
-          id_tmp = ar_queue.pop_front();
+          id_exp = ar_queue.pop_front();
         end else begin
-          id_tmp = ar_queue[0];
+          id_exp = ar_queue[0];
         end
-        r_tmp.id = id_tmp;
-        r_chan.push_back(r_tmp);
+        r_exp.id = id_exp;
+        r_chan.push_back(r_exp);
       end
       // Check that all channels match the expected response
       if (slave.aw_valid && slave.aw_ready) begin
-        aw_test = aw_chan.pop_front();
-        `AXI_TO_AW(, aw_tmp, slave)
-        assert(aw_test == aw_tmp) else $error("AW Measured: %h Expected: %h", aw_tmp, aw_test);
+        aw_exp = aw_chan.pop_front();
+        `AXI_TO_AW(, aw_act, slave)
+        assert(aw_act == aw_exp) else $error("AW Measured: %h Expected: %h", aw_act, aw_exp);
       end
       if (slave.w_valid && slave.w_ready) begin
-        w_test = w_chan.pop_front();
-        `AXI_TO_W(, w_tmp, slave)
-        assert(w_test == w_tmp) else $error("AW Measured: %h Expected: %h", w_tmp, w_test);
+        w_exp = w_chan.pop_front();
+        `AXI_TO_W(, w_act, slave)
+        assert(w_act == w_exp) else $error("W Measured: %h Expected: %h", w_act, w_exp);
       end
       if (master.b_valid && master.b_ready) begin
-        b_test = b_chan.pop_front();
-        `AXI_TO_B(, b_tmp, master)
-        assert(b_test == b_tmp) else $error("AW Measured: %h Expected: %h", b_tmp, b_test);
+        b_exp = b_chan.pop_front();
+        `AXI_TO_B(, b_act, master)
+        assert(b_act == b_exp) else $error("B Measured: %h Expected: %h", b_act, b_exp);
       end
       if (slave.ar_valid && slave.ar_ready) begin
-        ar_test = ar_chan.pop_front();
-        `AXI_TO_AR(, ar_tmp, slave)
-        assert(ar_test == ar_tmp) else $error("AW Measured: %h Expected: %h", ar_tmp, ar_test);
+        ar_exp = ar_chan.pop_front();
+        `AXI_TO_AR(, ar_act, slave)
+        assert(ar_act == ar_exp) else $error("AR Measured: %h Expected: %h", ar_act, ar_exp);
       end
       if (master.r_valid && master.r_ready) begin
-        r_test = r_chan.pop_front();
-        `AXI_TO_R(, r_tmp, master)
-        assert(r_test == r_tmp) else $error("AW Measured: %h Expected: %h", r_tmp, r_test);
+        r_exp = r_chan.pop_front();
+        `AXI_TO_R(, r_act, master)
+        assert(r_act == r_exp) else $error("R Measured: %h Expected: %h", r_act, r_exp);
       end
     end
   end
