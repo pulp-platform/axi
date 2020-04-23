@@ -46,12 +46,12 @@ module axi_serializer #(
     AtopExecute = 2'b10
   } state_e;
 
-  logic                      rd_fifo_full, rd_fifo_empty, rd_fifo_push,
-                             wr_fifo_full, wr_fifo_empty, wr_fifo_push;
-  id_t                       b_id,
-                             r_id,         ar_id;
-  state_e                    state_q,      state_d;
-  logic                      change_state;
+  logic   rd_fifo_full, rd_fifo_empty, rd_fifo_push, rd_fifo_pop,
+          wr_fifo_full, wr_fifo_empty, wr_fifo_push, wr_fifo_pop;
+  id_t    b_id,
+          r_id,         ar_id;
+  state_e state_q,      state_d;
+  logic   change_state;
 
   always_comb begin
     // Default assignments
@@ -79,45 +79,54 @@ module axi_serializer #(
     slv_resp_o.aw_ready = 1'b0;
 
     unique case (state_q)
-      AtopIdle: begin
-        // Gate AR handshake with ready output of Read FIFO.
-        mst_req_o.ar_valid  = slv_req_i.ar_valid  & ~rd_fifo_full;
-        slv_resp_o.ar_ready = mst_resp_i.ar_ready & ~rd_fifo_full;
-        rd_fifo_push        = mst_req_o.ar_valid  & mst_resp_i.ar_ready;
-        if (slv_req_i.aw_valid) begin
-          if (slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE) begin
-            // Normal operation
-            // Gate AW handshake with ready output of Write FIFO.
-            mst_req_o.aw_valid  = ~wr_fifo_full;
-            slv_resp_o.aw_ready = mst_resp_i.aw_ready & ~wr_fifo_full;
-            wr_fifo_push        = mst_req_o.aw_valid  & mst_resp_i.aw_ready;
-          end else begin
-            // Atomic Operation received, go to drain state, when both channels are ready
-            // Wait for finished or no AR beat
-            if (!mst_req_o.ar_valid || (mst_req_o.ar_valid && mst_resp_i.ar_ready)) begin
-              state_d = AtopDrain;
+      AtopIdle, AtopExecute: begin
+
+        // Wait until the ATOP response(s) have been sent back upstream.
+        if (state_q == AtopExecute) begin
+          if ((wr_fifo_empty && rd_fifo_empty) || (wr_fifo_pop && rd_fifo_pop) ||
+              (wr_fifo_empty && rd_fifo_pop)   || (wr_fifo_pop && rd_fifo_empty)) begin
+            state_d = AtopIdle;
+          end
+        end
+
+        // This part lets new Transactions through, if no ATOP is underway or the last ATOP
+        // response has been transmitted.
+        if ((state_q == AtopIdle) || (state_d == AtopIdle)) begin
+          // Gate AR handshake with ready output of Read FIFO.
+          mst_req_o.ar_valid  = slv_req_i.ar_valid  & ~rd_fifo_full;
+          slv_resp_o.ar_ready = mst_resp_i.ar_ready & ~rd_fifo_full;
+          rd_fifo_push        = mst_req_o.ar_valid  & mst_resp_i.ar_ready;
+          if (slv_req_i.aw_valid) begin
+            if (slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE) begin
+              // Normal operation
+              // Gate AW handshake with ready output of Write FIFO.
+              mst_req_o.aw_valid  = ~wr_fifo_full;
+              slv_resp_o.aw_ready = mst_resp_i.aw_ready & ~wr_fifo_full;
+              wr_fifo_push        = mst_req_o.aw_valid  & mst_resp_i.aw_ready;
+            end else begin
+              // Atomic Operation received, go to drain state, when both channels are ready
+              // Wait for finished or no AR beat
+              if (!mst_req_o.ar_valid || (mst_req_o.ar_valid && mst_resp_i.ar_ready)) begin
+                state_d = AtopDrain;
+              end
             end
           end
         end
       end
       AtopDrain: begin
+        // Send the ATOP AW when the last open transaction terminates
         if (wr_fifo_empty && rd_fifo_empty) begin
           mst_req_o.aw_valid  = 1'b1;
           slv_resp_o.aw_ready = mst_resp_i.aw_ready;
           wr_fifo_push        = mst_resp_i.aw_ready;
           if (slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
-            // overwrite the read ID with the one from AW
+            // Overwrite the read ID with the one from AW
             ar_id        = slv_req_i.aw.id;
             rd_fifo_push = mst_resp_i.aw_ready;
           end
           if (mst_resp_i.aw_ready) begin
             state_d = AtopExecute;
           end
-        end
-      end
-      AtopExecute: begin
-        if (wr_fifo_empty && rd_fifo_empty) begin
-          state_d = AtopIdle;
         end
       end
       default : /* do nothing */;
@@ -141,16 +150,18 @@ module axi_serializer #(
   ) i_rd_id_fifo (
     .clk_i,
     .rst_ni,
-    .flush_i    ( 1'b0                                                       ),
-    .testmode_i ( 1'b0                                                       ),
-    .data_i     ( ar_id                                                      ),
-    .push_i     ( rd_fifo_push                                               ),
-    .full_o     ( rd_fifo_full                                               ),
-    .data_o     ( r_id                                                       ),
-    .empty_o    ( rd_fifo_empty                                              ),
-    .pop_i      ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last ),
-    .usage_o    ( /*not used*/                                               )
+    .flush_i    ( 1'b0          ),
+    .testmode_i ( 1'b0          ),
+    .data_i     ( ar_id         ),
+    .push_i     ( rd_fifo_push  ),
+    .full_o     ( rd_fifo_full  ),
+    .data_o     ( r_id          ),
+    .empty_o    ( rd_fifo_empty ),
+    .pop_i      ( rd_fifo_pop   ),
+    .usage_o    ( /*not used*/  )
   );
+  // Assign as this condition is needed in FSM
+  assign rd_fifo_pop = slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last;
 
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0         ),
@@ -159,16 +170,18 @@ module axi_serializer #(
   ) i_wr_id_fifo (
     .clk_i,
     .rst_ni,
-    .flush_i    ( 1'b0                                      ),
-    .testmode_i ( 1'b0                                      ),
-    .data_i     ( slv_req_i.aw.id                           ),
-    .push_i     ( wr_fifo_push                              ),
-    .full_o     ( wr_fifo_full                              ),
-    .data_o     ( b_id                                      ),
-    .empty_o    ( wr_fifo_empty                             ),
-    .pop_i      ( slv_resp_o.b_valid & slv_req_i.b_ready    ),
-    .usage_o    ( /*not used*/                              )
+    .flush_i    ( 1'b0            ),
+    .testmode_i ( 1'b0            ),
+    .data_i     ( slv_req_i.aw.id ),
+    .push_i     ( wr_fifo_push    ),
+    .full_o     ( wr_fifo_full    ),
+    .data_o     ( b_id            ),
+    .empty_o    ( wr_fifo_empty   ),
+    .pop_i      ( wr_fifo_pop     ),
+    .usage_o    ( /*not used*/    )
   );
+  // Assign as this condition is needed in FSM
+  assign wr_fifo_pop = slv_resp_o.b_valid & slv_req_i.b_ready;
 
   `FFLARN(state_q, state_d, change_state, AtopIdle, clk_i, rst_ni)
 
