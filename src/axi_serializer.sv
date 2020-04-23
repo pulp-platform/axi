@@ -51,7 +51,6 @@ module axi_serializer #(
   id_t    b_id,
           r_id,         ar_id;
   state_e state_q,      state_d;
-  logic   change_state;
 
   always_comb begin
     // Default assignments
@@ -140,8 +139,6 @@ module axi_serializer #(
     slv_resp_o.r_valid = mst_resp_i.r_valid & ~rd_fifo_empty;
     mst_req_o.r_ready  = slv_req_i.r_ready  & ~rd_fifo_empty;
   end
-  // State change enable
-  assign change_state = state_d != state_q;
 
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
@@ -183,7 +180,7 @@ module axi_serializer #(
   // Assign as this condition is needed in FSM
   assign wr_fifo_pop = slv_resp_o.b_valid & slv_req_i.b_ready;
 
-  `FFLARN(state_q, state_d, change_state, AtopIdle, clk_i, rst_ni)
+  `FFARN(state_q, state_d, AtopIdle, clk_i, rst_ni)
 
 // pragma translate_off
 `ifndef VERILATOR
