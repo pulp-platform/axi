@@ -37,7 +37,7 @@ jobs:
             cargo install bender --version 0.18.0
           fi
           if ! $(which morty); then
-            cargo install morty --version 0.5.0
+            cargo install --git https://github.com/zarubaf/morty --rev 0b40def5963a093dca75f445d99bf91c11bb0f66
           fi
         shell: bash
 
