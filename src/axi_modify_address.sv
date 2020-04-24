@@ -84,7 +84,10 @@ endmodule
 // interface wrapper
 module axi_modify_address_intf #(
   parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH
+  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0
 ) (
   AXI_BUS.Slave   slv,
   AXI_BUS.Master  mst,
@@ -94,16 +97,12 @@ module axi_modify_address_intf #(
   input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] ar_addr_mst
 );
 
-  localparam int unsigned ID_WIDTH   = $bits(slv.aw_id);
-  localparam int unsigned DATA_WIDTH = $bits(slv.w_data);
-  localparam int unsigned USER_WIDTH = $bits(slv.aw_user);
-
-  typedef logic [ID_WIDTH-1:0]                id_t;
+  typedef logic [AXI_ID_WIDTH-1:0]            id_t;
   typedef logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_addr_t;
   typedef logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_addr_t;
-  typedef logic [DATA_WIDTH-1:0]              data_t;
-  typedef logic [DATA_WIDTH/8-1:0]            strb_t;
-  typedef logic [USER_WIDTH-1:0]              user_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]          data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]        strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]          user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, slv_addr_t, id_t, user_t)
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, mst_addr_t, id_t, user_t)
@@ -151,6 +150,8 @@ module axi_modify_address_intf #(
   initial begin
     assert(AXI_SLV_PORT_ADDR_WIDTH > 0);
     assert(AXI_MST_PORT_ADDR_WIDTH > 0);
+    assert(AXI_DATA_WIDTH > 0);
+    assert(AXI_ID_WIDTH > 0);
   end
 `endif
 // pragma translate_on

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Change name of slave port to `slv` and master port to `mst` and change name of associated
     parameters to align them with repository conventions.
   - Change type of parameters to `int unsigned` because their values are unsigned.
+  - Add parameters for data, ID, and user width to avoid derivation from interface, which is
+    incompatible with many tools.
 
 ### Fixed
 
