@@ -126,12 +126,12 @@ module axi_modify_address_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_modify_address #(
-    .slv_addr_t ( slv_req_t  ), // address type of slave port
-    .slv_req_t  ( resp_t     ), // request type slave port
-    .slv_resp_t ( slv_addr_t ), // response type slave port
-    .mst_addr_t ( mst_req_t  ), // address type of master port
-    .mst_req_t  ( resp_t     ), // request type master port
-    .mst_resp_t ( mst_addr_t )  // response type master port
+    .slv_addr_t ( slv_addr_t ), // address type of slave port
+    .slv_req_t  ( slv_req_t  ), // request type slave port
+    .slv_resp_t ( resp_t     ), // response type slave port
+    .mst_addr_t ( mst_addr_t ), // address type of master port
+    .mst_req_t  ( mst_req_t  ), // request type master port
+    .mst_resp_t ( resp_t     )  // response type master port
   ) i_axi_modify_address (
   // slave port
     .slv_req_i     ( slv_req  ),
