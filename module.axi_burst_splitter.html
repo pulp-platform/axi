@@ -4,6 +4,15 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_burst_splitter</a></h1>
 <div class="docblock">
+<p>Split AXI4 bursts into single-beat transactions.</p>
+<h2>Limitations</h2>
+<ul>
+<li>This module does not support wrapping (<a href="package.axi_pkg"><code>axi_pkg::BURST_WRAP</code></a>) bursts and
+responds to such bursts with slave error(s).</li>
+<li>This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave
+error.  Place an <a href="module.axi_atop_filter"><code>axi_atop_filter</code></a> before this module if upstream
+modules can generate ATOPs.</li>
+</ul>
 </div>
 <h2>Parameters</h2>
 <h3 id="impl" class="impl"><code class="in-band">MaxReadTxns</code></h3><div class="docblock"
