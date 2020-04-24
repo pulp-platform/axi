@@ -15,8 +15,8 @@ jobs:
       - name: Install Bender and Morty
         run: |
           rustup update stable --no-self-update && rustup default stable
-          cargo install bender
-          cargo install morty
+          cargo install bender --version 0.18.0
+          cargo install morty --version 0.5.0
         shell: bash
 
       - name: Build documentation
