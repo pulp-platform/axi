@@ -565,13 +565,20 @@ module synth_axi_lite_regs #(
   input logic clk_i,
   input logic rst_ni
 );
+  localparam int unsigned IDX_WIDTH = (NUM_REGS > 32'd1) ? $clog2(NUM_REGS) : 32'd1;
+  localparam logic [NUM_REGS-1:0][REG_DATA_WIDTH-1:0] RST_VAL = (REG_DATA_WIDTH > 1) ?
+     {NUM_REGS{{REG_DATA_WIDTH-1{1'b0}}, 1'b1}} : {NUM_REGS{1'b0}};
+
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH )
   ) slv ();
 
-  logic [AXI_ADDR_WIDTH-1:0]               base_addr;
-  logic [NUM_REGS-1:0][REG_DATA_WIDTH-1:0] reg_init,  reg_q;
+  logic [AXI_ADDR_WIDTH-1:0]               axi_base_addr;
+  logic [IDX_WIDTH-1:0]                    axi_wr_idx,    axi_rd_idx;
+  logic                                    axi_wr_active, axi_rd_active;
+  logic [NUM_REGS-1:0][REG_DATA_WIDTH-1:0] reg_d,         reg_q;
+  logic [NUM_REGS-1:0]                     reg_load;
 
   axi_lite_regs_intf #(
     .NUM_AXI_REGS   ( NUM_REGS         ),
@@ -580,13 +587,19 @@ module synth_axi_lite_regs #(
     .PRIV_PROT_ONLY ( 1'd0             ),
     .SECU_PROT_ONLY ( 1'd0             ),
     .REG_DATA_WIDTH ( REG_DATA_WIDTH   ),
-    .READ_ONLY      ( {NUM_REGS{1'b0}} )
+    .AXI_READ_ONLY  ( {NUM_REGS{1'b0}} ),
+    .REG_RST_VAL    ( RST_VAL          )
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,
-    .slv         ( slv         ),
-    .base_addr_i ( base_addr   ),
-    .reg_init_i  ( reg_init    ),
-    .reg_q_o     ( reg_q       )
+    .slv             ( slv             ),
+    .axi_base_addr_i ( axi_base_addr   ),
+    .axi_wr_idx_o    ( axi_wr_idx      ),
+    .axi_wr_active_o ( axi_wr_active   ),
+    .axi_rd_idx_o    ( axi_rd_idx      ),
+    .axi_rd_active_o ( axi_rd_active   ),
+    .reg_d_i         ( reg_d           ),
+    .reg_load_i      ( reg_load        ),
+    .reg_q_o         ( reg_q           )
   );
 endmodule
