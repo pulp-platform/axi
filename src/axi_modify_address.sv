@@ -91,10 +91,10 @@ module axi_modify_address_intf #(
 ) (
   AXI_BUS.Slave   slv,
   AXI_BUS.Master  mst,
-  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0]  aw_addr_slv,
-  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0]  ar_addr_slv,
-  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] aw_addr_mst,
-  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] ar_addr_mst
+  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_aw_addr_o,
+  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_ar_addr_o,
+  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr_i,
+  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_ar_addr_i
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]            id_t;
@@ -134,15 +134,15 @@ module axi_modify_address_intf #(
     .mst_resp_t ( mst_addr_t )  // response type master port
   ) i_axi_modify_address (
   // slave port
-    .slv_req_i     ( slv_req     ),
-    .slv_resp_o    ( slv_resp    ),
-    .slv_aw_addr_o ( aw_addr_slv ),
-    .slv_ar_addr_o ( ar_addr_slv ),
+    .slv_req_i     ( slv_req  ),
+    .slv_resp_o    ( slv_resp ),
+    .slv_aw_addr_o,
+    .slv_ar_addr_o,
   // master port
-    .mst_req_o     ( mst_req     ),
-    .mst_resp_i    ( mst_resp    ),
-    .mst_aw_addr_i ( aw_addr_mst ),
-    .mst_ar_addr_i ( ar_addr_mst )
+    .mst_req_o     ( mst_req  ),
+    .mst_resp_i    ( mst_resp ),
+    .mst_aw_addr_i,
+    .mst_ar_addr_i
   );
 
 // pragma translate_off

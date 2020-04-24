@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Change type of parameters to `int unsigned` because their values are unsigned.
   - Add parameters for data, ID, and user width to avoid derivation from interface, which is
     incompatible with many tools.
+  - Add missing I/O suffixes to port names and align them with `axi_modify_address`.
 
 ### Fixed
 
