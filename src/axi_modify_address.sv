@@ -118,15 +118,13 @@ module axi_modify_address_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_modify_address #(
-    .slv_req_t  ( slv_req_t  ), // request type slave port
-    .mst_addr_t ( mst_addr_t ), // address type of master port
-    .mst_req_t  ( mst_req_t  ), // request type master port
-    .resp_t     ( resp_t     )  // response type of both ports
+    .slv_req_t  ( slv_req_t  ),
+    .mst_addr_t ( mst_addr_t ),
+    .mst_req_t  ( mst_req_t  ),
+    .resp_t     ( resp_t     )
   ) i_axi_modify_address (
-  // slave port
     .slv_req_i     ( slv_req  ),
     .slv_resp_o    ( slv_resp ),
-  // master port
     .mst_req_o     ( mst_req  ),
     .mst_resp_i    ( mst_resp ),
     .mst_aw_addr_i,
