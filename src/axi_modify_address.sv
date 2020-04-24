@@ -15,7 +15,6 @@
 
 // A connector that allows addresses of AXI requests to be changed.
 module axi_modify_address #(
-  parameter type slv_addr_t = logic, // address type of slave port
   parameter type  slv_req_t = logic, // request type slave port
   parameter type mst_addr_t = logic, // address type of master port
   parameter type  mst_req_t = logic, // request type master port
@@ -24,16 +23,12 @@ module axi_modify_address #(
   // slave port
   input  slv_req_t  slv_req_i,
   output resp_t     slv_resp_o,
-  output slv_addr_t slv_aw_addr_o,
-  output slv_addr_t slv_ar_addr_o,
   // master port
   output mst_req_t  mst_req_o,
   input  resp_t     mst_resp_i,
   input  mst_addr_t mst_aw_addr_i,
   input  mst_addr_t mst_ar_addr_i
 );
-  assign slv_aw_addr_o = slv_req_i.aw.addr;
-  assign slv_ar_addr_o = slv_req_i.ar.addr;
 
   assign mst_req_o = '{
     aw: '{
@@ -90,8 +85,6 @@ module axi_modify_address_intf #(
 ) (
   AXI_BUS.Slave   slv,
   AXI_BUS.Master  mst,
-  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_aw_addr_o,
-  output logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_ar_addr_o,
   input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr_i,
   input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_ar_addr_i
 );
@@ -125,7 +118,6 @@ module axi_modify_address_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_modify_address #(
-    .slv_addr_t ( slv_addr_t ), // address type of slave port
     .slv_req_t  ( slv_req_t  ), // request type slave port
     .mst_addr_t ( mst_addr_t ), // address type of master port
     .mst_req_t  ( mst_req_t  ), // request type master port
@@ -134,8 +126,6 @@ module axi_modify_address_intf #(
   // slave port
     .slv_req_i     ( slv_req  ),
     .slv_resp_o    ( slv_resp ),
-    .slv_aw_addr_o,
-    .slv_ar_addr_o,
   // master port
     .mst_req_o     ( mst_req  ),
     .mst_resp_i    ( mst_resp ),
