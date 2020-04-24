@@ -2,24 +2,28 @@ name: Build and deploy documentation
 on:
   push:
     branches: gh-pages-doc # TODO: change to master
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        uses: actions/checkout@v2
         with:
           persist-credentials: false
+
       - name: Install Bender and Morty
         run: |
           rustup update stable --no-self-update && rustup default stable
           cargo install bender
           cargo install morty
         shell: bash
+
       - name: Build documentation
         run: |
           morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
         shell: bash
+
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
