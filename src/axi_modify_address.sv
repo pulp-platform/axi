@@ -83,8 +83,8 @@ endmodule
 
 // interface wrapper
 module axi_modify_address_intf #(
-  parameter int AXI_SLV_PORT_ADDR_WIDTH = -1,
-  parameter int AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH
+  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH
 ) (
   AXI_BUS.Slave   slv,
   AXI_BUS.Master  mst,
