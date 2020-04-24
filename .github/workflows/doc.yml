@@ -12,11 +12,33 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ubuntu-latest-cargo-registry-${{ hashFiles('.github/workflows/doc.yml') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ubuntu-latest-cargo-index-${{ hashFiles('.github/workflows/doc.yml') }}
+
+      - name: Cache cargo binaries
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/bin
+          key: ubuntu-latest-cargo-binaries-${{ hashFiles('.github/workflows/doc.yml') }}
+
       - name: Install Bender and Morty
         run: |
           rustup update stable --no-self-update && rustup default stable
-          cargo install bender --version 0.18.0
-          cargo install morty --version 0.5.0
+          if ! $(which bender); then
+            cargo install bender --version 0.18.0
+          fi
+          if ! $(which morty); then
+            cargo install morty --version 0.5.0
+          fi
         shell: bash
 
       - name: Build documentation
