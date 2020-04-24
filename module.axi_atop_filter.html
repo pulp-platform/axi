@@ -4,8 +4,9 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_atop_filter</a></h1>
 <div class="docblock">
-<p>AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
-have a non-zero <code>aw_atop</code> value, from its <code>slv</code> to its <code>mst</code> port. This module guarantees that:</p>
+<p>AXI ATOP Filter: Filter atomic operations (ATOPs) in a protocol-compliant manner.</p>
+<p>This module filters atomic operations (ATOPs), i.e., write transactions that have a non-zero
+<code>aw_atop</code> value, from its <code>slv</code> to its <code>mst</code> port. This module guarantees that:</p>
 <ol>
 <li>
 <p><code>aw_atop</code> is always zero on the <code>mst</code> port;</p>
@@ -17,14 +18,15 @@ The response code on atomic operations that reach this module is always SLVERR
 (implementation-specific, not defined in the AXI standard).</p>
 </li>
 </ol>
+<h2>Intended usage</h2>
 <p>This module is intended to be placed between masters that may issue ATOPs and slaves that do not
 support ATOPs. That way, this module ensures that the AXI protocol remains in a defined state on
 systems with mixed ATOP capabilities.</p>
-<p>Interface note:
-The AXI standard specifies that there may be no ordering requirements between different atomic
+<h2>Specification reminder</h2>
+<p>The AXI standard specifies that there may be no ordering requirements between different atomic
 bursts (i.e., a burst started by an AW with ATOP other than 0) and none between atomic bursts
-and non-atomic bursts [E2.1.4]. That is, an atomic burst may never have the same ID as any other
-write or read burst that is ongoing at the same time.</p>
+and non-atomic bursts [E2.1.4]. That is, <strong>an atomic burst may never have the same ID as any
+other write or read burst that is in-flight at the same time</strong>.</p>
 </div>
 <h2>Parameters</h2>
 <h3 id="impl" class="impl"><code class="in-band">AxiIdWidth</code></h3><div class="docblock"
