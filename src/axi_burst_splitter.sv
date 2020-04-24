@@ -12,16 +12,19 @@
 // Authors: Andreas Kurth       <akurth@iis.ee.ethz.ch>
 //          Florian Zaruba      <zarubaf@iis.ee.ethz.ch>
 //          Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-//
-// Description: This module splits bursted AXI4 transfers into single
-//              beat transactions. It is not capable of handling atomic operations and
-//              `axi_pkg::BURST_WRAP` transfers. Use of the `axi_atop_filter` is
-//              required before this module if a master upstream is capable of generating
-//              atomic operations.
 
 `include "axi/typedef.svh"
 `include "common_cells/registers.svh"
 
+/// Split AXI4 bursts into single-beat transactions.
+///
+/// ## Limitations
+///
+/// - This module does not support wrapping ([`axi_pkg::BURST_WRAP`](package.axi_pkg)) bursts and
+///   responds to such bursts with slave error(s).
+/// - This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave
+///   error.  Place an [`axi_atop_filter`](module.axi_atop_filter) before this module if upstream
+///   modules can generate ATOPs.
 module axi_burst_splitter #(
   // Maximum number of AXI read bursts outstanding at the same time
   parameter int unsigned MaxReadTxns  = 32'd0,
