@@ -94,21 +94,22 @@ module axi_modify_address_intf #(
   /// ID width of slave and master port
   parameter int unsigned AXI_ID_WIDTH = 0,
   /// User signal width of slave and master port
-  parameter int unsigned AXI_USER_WIDTH = 0
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  /// Derived (=DO NOT OVERRIDE) type of master port addresses
+  type mst_addr_t = logic [AXI_MST_PORT_ADDR_WIDTH-1:0]
 ) (
   /// Slave port
-  AXI_BUS.Slave   slv,
+  AXI_BUS.Slave     slv,
   /// AW address on master port
-  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr_i,
+  input  mst_addr_t mst_aw_addr_i,
   /// AR address on master port
-  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_ar_addr_i,
+  input  mst_addr_t mst_ar_addr_i,
   /// Master port
-  AXI_BUS.Master  mst
+  AXI_BUS.Master    mst
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]            id_t;
   typedef logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_addr_t;
-  typedef logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]          data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]        strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]          user_t;
