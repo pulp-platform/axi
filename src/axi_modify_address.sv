@@ -12,22 +12,29 @@
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
-
-// A connector that allows addresses of AXI requests to be changed.
+/// Modify addresses on an AXI4 bus
 module axi_modify_address #(
-  parameter type  slv_req_t = logic, // request type slave port
-  parameter type mst_addr_t = logic, // address type of master port
-  parameter type  mst_req_t = logic, // request type master port
-  parameter type     resp_t = logic  // response type of both ports
+  /// Request type of the slave port
+  parameter type  slv_req_t = logic,
+  /// Address type of the master port
+  parameter type mst_addr_t = logic,
+  /// Request type of the master port
+  parameter type  mst_req_t = logic,
+  /// Response type of slave and master port
+  parameter type     resp_t = logic
 ) (
-  // slave port
+  /// Slave port request
   input  slv_req_t  slv_req_i,
+  /// Slave port response
   output resp_t     slv_resp_o,
-  // master port
-  output mst_req_t  mst_req_o,
-  input  resp_t     mst_resp_i,
+  /// AW address on master port
   input  mst_addr_t mst_aw_addr_i,
-  input  mst_addr_t mst_ar_addr_i
+  /// AR address on master port
+  input  mst_addr_t mst_ar_addr_i,
+  /// Master port request
+  output mst_req_t  mst_req_o,
+  /// Master port response
+  input  resp_t     mst_resp_i
 );
 
   assign mst_req_o = '{
@@ -72,21 +79,31 @@ module axi_modify_address #(
   assign slv_resp_o = mst_resp_i;
 endmodule
 
+
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-// interface wrapper
+/// Interface variant of [`axi_modify_address`](module.axi_modify_address)
 module axi_modify_address_intf #(
+  /// Address width of slave port
   parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
+  /// Address width of master port
   parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH,
+  /// Data width of slave and master port
   parameter int unsigned AXI_DATA_WIDTH = 0,
+  /// ID width of slave and master port
   parameter int unsigned AXI_ID_WIDTH = 0,
+  /// User signal width of slave and master port
   parameter int unsigned AXI_USER_WIDTH = 0
 ) (
+  /// Slave port
   AXI_BUS.Slave   slv,
-  AXI_BUS.Master  mst,
+  /// AW address on master port
   input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr_i,
-  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_ar_addr_i
+  /// AR address on master port
+  input  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_ar_addr_i,
+  /// Master port
+  AXI_BUS.Master  mst
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]            id_t;
