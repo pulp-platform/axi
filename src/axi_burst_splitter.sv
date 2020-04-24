@@ -339,8 +339,10 @@ module axi_burst_splitter #(
 
 endmodule
 
-// Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
-// reordering of responses w.r.t. requests).
+/// Internal module of [`axi_burst_splitter`](module.axi_burst_splitter) to control Ax channels.
+///
+/// Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
+/// reordering of responses w.r.t. requests).
 module axi_burst_splitter_ax_chan #(
   parameter type         chan_t  = logic,
   parameter int unsigned IdWidth = 0,
@@ -455,6 +457,7 @@ module axi_burst_splitter_ax_chan #(
   `FFARN(state_q, state_d, Idle, clk_i, rst_ni)
 endmodule
 
+/// Internal module of [`axi_burst_splitter`](module.axi_burst_splitter) to order transactions.
 module axi_burst_splitter_counters #(
   parameter int unsigned MaxTxns = 0,
   parameter int unsigned IdWidth = 0,
