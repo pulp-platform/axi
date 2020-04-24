@@ -17,19 +17,18 @@
 module axi_modify_address #(
   parameter type slv_addr_t = logic, // address type of slave port
   parameter type  slv_req_t = logic, // request type slave port
-  parameter type slv_resp_t = logic, // response type slave port
   parameter type mst_addr_t = logic, // address type of master port
   parameter type  mst_req_t = logic, // request type master port
-  parameter type mst_resp_t = logic  // response type master port
+  parameter type     resp_t = logic  // response type of both ports
 ) (
   // slave port
   input  slv_req_t  slv_req_i,
-  output slv_resp_t slv_resp_o,
+  output resp_t     slv_resp_o,
   output slv_addr_t slv_aw_addr_o,
   output slv_addr_t slv_ar_addr_o,
   // master port
   output mst_req_t  mst_req_o,
-  input  mst_resp_t mst_resp_i,
+  input  resp_t     mst_resp_i,
   input  mst_addr_t mst_aw_addr_i,
   input  mst_addr_t mst_ar_addr_i
 );
@@ -128,10 +127,9 @@ module axi_modify_address_intf #(
   axi_modify_address #(
     .slv_addr_t ( slv_addr_t ), // address type of slave port
     .slv_req_t  ( slv_req_t  ), // request type slave port
-    .slv_resp_t ( resp_t     ), // response type slave port
     .mst_addr_t ( mst_addr_t ), // address type of master port
     .mst_req_t  ( mst_req_t  ), // request type master port
-    .mst_resp_t ( resp_t     )  // response type master port
+    .resp_t     ( resp_t     )  // response type of both ports
   ) i_axi_modify_address (
   // slave port
     .slv_req_i     ( slv_req  ),
