@@ -11,41 +11,49 @@
 // Author:
 // Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
-// AXI ATOP Filter: This module filters atomic operations (ATOPs), i.e., write transactions that
-// have a non-zero `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
-//
-// 1) `aw_atop` is always zero on the `mst` port;
-//
-// 2) write transactions with non-zero `aw_atop` on the `slv` port are handled in conformance with
-//    the AXI standard by replying to such write transactions with the proper B and R responses. The
-//    response code on atomic operations that reach this module is always SLVERR
-//    (implementation-specific, not defined in the AXI standard).
-//
-// This module is intended to be placed between masters that may issue ATOPs and slaves that do not
-// support ATOPs. That way, this module ensures that the AXI protocol remains in a defined state on
-// systems with mixed ATOP capabilities.
-//
-// Interface note:
-// The AXI standard specifies that there may be no ordering requirements between different atomic
-// bursts (i.e., a burst started by an AW with ATOP other than 0) and none between atomic bursts and
-// non-atomic bursts [E2.1.4]. That is, an atomic burst may never have the same ID as any other
-// write or read burst that is ongoing at the same time.
-
+/// Filter atomic operations (ATOPs) in a protocol-compliant manner.
+///
+/// This module filters atomic operations (ATOPs), i.e., write transactions that have a non-zero
+/// `aw_atop` value, from its `slv` to its `mst` port. This module guarantees that:
+///
+/// 1) `aw_atop` is always zero on the `mst` port;
+///
+/// 2) write transactions with non-zero `aw_atop` on the `slv` port are handled in conformance with
+///    the AXI standard by replying to such write transactions with the proper B and R responses.
+///    The response code on atomic operations that reach this module is always SLVERR
+///    (implementation-specific, not defined in the AXI standard).
+///
+/// ## Intended usage
+/// This module is intended to be placed between masters that may issue ATOPs and slaves that do not
+/// support ATOPs. That way, this module ensures that the AXI protocol remains in a defined state on
+/// systems with mixed ATOP capabilities.
+///
+/// ## Specification reminder
+/// The AXI standard specifies that there may be no ordering requirements between different atomic
+/// bursts (i.e., a burst started by an AW with ATOP other than 0) and none between atomic bursts
+/// and non-atomic bursts [E2.1.4]. That is, **an atomic burst may never have the same ID as any
+/// other write or read burst that is in-flight at the same time**.
 module axi_atop_filter #(
-  parameter int unsigned AxiIdWidth = 0,  // Synopsys DC requires a default value for parameters.
-  // Maximum number of AXI write bursts outstanding at the same time
+  /// AXI ID width
+  parameter int unsigned AxiIdWidth = 0,
+  /// Maximum number of in-flight AXI write transactions
   parameter int unsigned AxiMaxWriteTxns = 0,
-  // AXI request & response type
+  /// AXI request type
   parameter type req_t  = logic,
+  /// AXI response type
   parameter type resp_t = logic
 ) (
+  /// Rising-edge clock of both ports
   input  logic  clk_i,
+  /// Asynchronous reset, active low
   input  logic  rst_ni,
-  // slave port
+  /// Slave port request
   input  req_t  slv_req_i,
+  /// Slave port response
   output resp_t slv_resp_o,
-  // master port
+  /// Master port request
   output req_t  mst_req_o,
+  /// Master port response
   input  resp_t mst_resp_i
 );
 
@@ -362,18 +370,26 @@ endmodule
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-// interface wrapper
+/// Interface variant of [`axi_atop_filter`](module.axi_atop_filter).
 module axi_atop_filter_intf #(
-  parameter int unsigned AXI_ID_WIDTH   = 0, // Synopsys DC requires a default value for parameters.
+  /// AXI ID width
+  parameter int unsigned AXI_ID_WIDTH   = 0,
+  /// AXI address width
   parameter int unsigned AXI_ADDR_WIDTH = 0,
+  /// AXI data width
   parameter int unsigned AXI_DATA_WIDTH = 0,
+  /// AXI user signal width
   parameter int unsigned AXI_USER_WIDTH = 0,
-  // Maximum number of AXI write bursts outstanding at the same time
+  /// Maximum number of in-flight AXI write transactions
   parameter int unsigned AXI_MAX_WRITE_TXNS = 0
 ) (
+  /// Rising-edge clock of both ports
   input  logic    clk_i,
+  /// Asynchronous reset, active low
   input  logic    rst_ni,
+  /// Slave interface port
   AXI_BUS.Slave   slv,
+  /// Master interface port
   AXI_BUS.Master  mst
 );
 
