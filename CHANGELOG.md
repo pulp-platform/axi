@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.21.0 - 2020-04-27
+
+### Added
 - `axi_serializer`: serialize transactions with different IDs to the same ID.
 
 ### Changed
