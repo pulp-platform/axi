@@ -41,7 +41,7 @@ module axi_tlb #(
   /// Request type of main AXI4+ATOP master port
   parameter type mst_req_t = logic,
   /// Response type of main AXI4+ATOP slave and master ports
-  parameter type resp_t = logic,
+  parameter type axi_resp_t = logic,
   /// Request type of configuration AXI4-Lite slave port
   parameter type lite_req_t = logic,
   /// Response type of configuration AXI4-Lite slave port
@@ -56,11 +56,11 @@ module axi_tlb #(
   /// Main slave port request
   input  slv_req_t    slv_req_i,
   /// Main slave port response
-  output resp_t       slv_resp_o,
+  output axi_resp_t   slv_resp_o,
   /// Main master port request
   output mst_req_t    mst_req_o,
   /// Main master port response
-  output resp_t       mst_resp_i,
+  output axi_resp_t   mst_resp_i,
   /// Configuration port request
   input  lite_req_t   cfg_req_i,
   /// Configuration port response
@@ -146,8 +146,8 @@ module axi_tlb #(
   );
 
   // Join L1 TLB responses with Ax requests into demultiplexer.
-  slv_req_t demux_req;
-  resp_t    demux_resp;
+  slv_req_t   demux_req;
+  axi_resp_t  demux_resp;
   stream_join #(
     .N_INP  ( 2 )
   ) i_aw_join (
@@ -179,8 +179,8 @@ module axi_tlb #(
   assign demux_req.r_ready = slv_req_i.r_ready;
 
   // Demultiplex between address modifier for TLB hits and error slave for TLB misses.
-  slv_req_t mod_addr_req,   err_slv_req;
-  resp_t    mod_addr_resp,  err_slv_resp;
+  slv_req_t   mod_addr_req,   err_slv_req;
+  axi_resp_t  mod_addr_resp,  err_slv_resp;
   axi_demux #(
     .AxiIdWidth   ( AxiIdWidth        ),
     .aw_chan_t    ( slv_aw_t          ),
@@ -189,7 +189,7 @@ module axi_tlb #(
     .ar_chan_t    ( slv_ar_t          ),
     .r_chan_t     ( r_t               ),
     .req_t        ( slv_req_t         ),
-    .resp_t       ( resp_t            ),
+    .resp_t       ( axi_resp_t        ),
     .NoMstPorts   ( 2                 ),
     .MaxTrans     ( AxiSlvPortMaxTxns ),
     .AxiLookBits  ( AxiIdWidth        ),
@@ -226,10 +226,10 @@ module axi_tlb #(
   axi_modify_address #(
     .slv_addr_t ( slv_addr_t  ),
     .slv_req_t  ( slv_req_t   ),
-    .slv_resp_t ( resp_t      ),
+    .slv_resp_t ( axi_resp_t  ),
     .mst_addr_t ( mst_addr_t  ),
     .mst_req_t  ( mst_req_t   ),
-    .mst_resp_t ( resp_t      )
+    .mst_resp_t ( axi_resp_t  )
   ) i_mod_addr (
     .slv_req_i      ( mod_addr_req            ),
     .slv_resp_o     ( mod_addr_resp           ),
@@ -245,7 +245,7 @@ module axi_tlb #(
   axi_err_slv #(
     .AxiIdWidth   ( AxiIdWidth            ),
     .req_t        ( slv_req_t             ),
-    .resp_t       ( resp_t                ),
+    .resp_t       ( axi_resp_t            ),
     .Resp         ( axi_pkg::RESP_SLVERR  ),
     .RespWidth    ( 32'd32                ),
     .RespData     ( 32'hDEC0FFEE          ),
