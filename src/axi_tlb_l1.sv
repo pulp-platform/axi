@@ -74,14 +74,22 @@ module axi_tlb_l1 #(
   localparam int unsigned InpPageNumWidth = InpAddrWidth - 12;
   localparam int unsigned OupPageNumWidth = OupAddrWidth - 12;
 
+  /// Page number in input address space
   typedef logic [InpPageNumWidth-1:0] inp_page_t;
+  /// Page number in output address space
   typedef logic [OupPageNumWidth-1:0] oup_page_t;
+  /// Translation table entry with 4 KiB page granularity
   typedef struct packed {
-    inp_addr_t  first;
+    /// Number of first page in input address segment
     inp_page_t  first;
+    /// Number of last page (inclusive) in input address segment
     inp_page_t  last;
+    /// Number of first page in output address segment; that is, the output address segment starts
+    /// at this `base` page.
     oup_page_t  base;
+    /// Defines whether this entry is valid.
     logic       valid;
+    /// Defines whether this entry can only be used for read accesses.
     logic       read_only;
   } entry_t;
 
