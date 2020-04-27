@@ -12,29 +12,30 @@
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
-
-// A connector that allows addresses of AXI requests to be changed.
+/// Modify addresses on an AXI4 bus
 module axi_modify_address #(
-  parameter type slv_addr_t = logic, // address type of slave port
-  parameter type  slv_req_t = logic, // request type slave port
-  parameter type slv_resp_t = logic, // response type slave port
-  parameter type mst_addr_t = logic, // address type of master port
-  parameter type  mst_req_t = logic, // request type master port
-  parameter type mst_resp_t = logic  // response type master port
+  /// Request type of the slave port
+  parameter type  slv_req_t = logic,
+  /// Address type of the master port
+  parameter type mst_addr_t = logic,
+  /// Request type of the master port
+  parameter type  mst_req_t = logic,
+  /// Response type of slave and master port
+  parameter type axi_resp_t = logic
 ) (
-  // slave port
+  /// Slave port request
   input  slv_req_t  slv_req_i,
-  output slv_resp_t slv_resp_o,
-  output slv_addr_t slv_aw_addr_o,
-  output slv_addr_t slv_ar_addr_o,
-  // master port
-  output mst_req_t  mst_req_o,
-  input  mst_resp_t mst_resp_i,
+  /// Slave port response
+  output axi_resp_t slv_resp_o,
+  /// AW address on master port; must remain stable while an AW handshake is pending.
   input  mst_addr_t mst_aw_addr_i,
-  input  mst_addr_t mst_ar_addr_i
+  /// AR address on master port; must remain stable while an AR handshake is pending.
+  input  mst_addr_t mst_ar_addr_i,
+  /// Master port request
+  output mst_req_t  mst_req_o,
+  /// Master port response
+  input  axi_resp_t mst_resp_i
 );
-  assign slv_aw_addr_o = slv_req_i.aw.addr;
-  assign slv_ar_addr_o = slv_req_i.ar.addr;
 
   assign mst_req_o = '{
     aw: '{
@@ -78,32 +79,40 @@ module axi_modify_address #(
   assign slv_resp_o = mst_resp_i;
 endmodule
 
+
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-// interface wrapper
+/// Interface variant of [`axi_modify_address`](module.axi_modify_address)
 module axi_modify_address_intf #(
-  parameter int ADDR_WIDTH_IN  = -1,
-  parameter int ADDR_WIDTH_OUT = ADDR_WIDTH_IN
+  /// Address width of slave port
+  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
+  /// Address width of master port
+  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = AXI_SLV_PORT_ADDR_WIDTH,
+  /// Data width of slave and master port
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  /// ID width of slave and master port
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  /// User signal width of slave and master port
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  /// Derived (=DO NOT OVERRIDE) type of master port addresses
+  type mst_addr_t = logic [AXI_MST_PORT_ADDR_WIDTH-1:0]
 ) (
-  AXI_BUS.Slave   in,
-  AXI_BUS.Master  out,
-  output logic [ADDR_WIDTH_IN-1:0]  aw_addr_in,
-  output logic [ADDR_WIDTH_IN-1:0]  ar_addr_in,
-  input  logic [ADDR_WIDTH_OUT-1:0] aw_addr_out,
-  input  logic [ADDR_WIDTH_OUT-1:0] ar_addr_out
+  /// Slave port
+  AXI_BUS.Slave     slv,
+  /// AW address on master port; must remain stable while an AW handshake is pending.
+  input  mst_addr_t mst_aw_addr_i,
+  /// AR address on master port; must remain stable while an AR handshake is pending.
+  input  mst_addr_t mst_ar_addr_i,
+  /// Master port
+  AXI_BUS.Master    mst
 );
 
-  localparam int unsigned ID_WIDTH   = $bits(in.aw_id);
-  localparam int unsigned DATA_WIDTH = $bits(in.w_data);
-  localparam int unsigned USER_WIDTH = $bits(in.aw_user);
-
-  typedef logic [ID_WIDTH-1:0]       id_t;
-  typedef logic [ADDR_WIDTH_IN-1:0]  slv_addr_t;
-  typedef logic [ADDR_WIDTH_OUT-1:0] mst_addr_t;
-  typedef logic [DATA_WIDTH-1:0]     data_t;
-  typedef logic [DATA_WIDTH/8-1:0]   strb_t;
-  typedef logic [USER_WIDTH-1:0]     user_t;
+  typedef logic [AXI_ID_WIDTH-1:0]            id_t;
+  typedef logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]          data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]        strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]          user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, slv_addr_t, id_t, user_t)
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, mst_addr_t, id_t, user_t)
@@ -114,43 +123,39 @@ module axi_modify_address_intf #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
   slv_req_t  slv_req;
   mst_req_t  mst_req;
-  resp_t     slv_resp, mst_resp;
+  axi_resp_t slv_resp, mst_resp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
 
-  `AXI_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, out)
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_modify_address #(
-    .slv_addr_t ( slv_req_t  ), // address type of slave port
-    .slv_req_t  ( resp_t     ), // request type slave port
-    .slv_resp_t ( slv_addr_t ), // response type slave port
-    .mst_addr_t ( mst_req_t  ), // address type of master port
-    .mst_req_t  ( resp_t     ), // request type master port
-    .mst_resp_t ( mst_addr_t )  // response type master port
+    .slv_req_t  ( slv_req_t  ),
+    .mst_addr_t ( mst_addr_t ),
+    .mst_req_t  ( mst_req_t  ),
+    .axi_resp_t ( axi_resp_t )
   ) i_axi_modify_address (
-  // slave port
-    .slv_req_i     ( slv_req     ),
-    .slv_resp_o    ( slv_resp    ),
-    .slv_aw_addr_o ( aw_addr_in  ),
-    .slv_ar_addr_o ( ar_addr_in  ),
-  // master port
-    .mst_req_o     ( mst_req     ),
-    .mst_resp_i    ( mst_resp    ),
-    .mst_aw_addr_i ( aw_addr_out ),
-    .mst_ar_addr_i ( ar_addr_out )
+    .slv_req_i     ( slv_req  ),
+    .slv_resp_o    ( slv_resp ),
+    .mst_req_o     ( mst_req  ),
+    .mst_resp_i    ( mst_resp ),
+    .mst_aw_addr_i,
+    .mst_ar_addr_i
   );
 
 // pragma translate_off
 `ifndef VERILATOR
   initial begin
-    assert(ADDR_WIDTH_IN > 0);
-    assert(ADDR_WIDTH_OUT > 0);
+    assert(AXI_SLV_PORT_ADDR_WIDTH > 0);
+    assert(AXI_MST_PORT_ADDR_WIDTH > 0);
+    assert(AXI_DATA_WIDTH > 0);
+    assert(AXI_ID_WIDTH > 0);
   end
 `endif
 // pragma translate_on

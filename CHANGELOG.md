@@ -11,8 +11,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_serializer`: serialize transactions with different IDs to the same ID.
 
 ### Changed
+- `axi_modify_address`:
+  - Simplify redundant `slv_resp_t` and `mst_resp_t` parameters to single `axi_resp_t` parameter.
+  - Remove unnecessary `slv_a{r,w}_addr_o` outputs, which were fed back from the `slv_req_i` inputs.
+    Those signals can instead be derived outside `axi_modify_address`.
+- `axi_modify_address_intf`:
+  - Change name of slave port to `slv` and master port to `mst` and change name of associated
+    parameters to align them with repository conventions.
+  - Change type of parameters to `int unsigned` because their values are unsigned.
+  - Add parameters for data, ID, and user width to avoid derivation from interface, which is
+    incompatible with many tools.
+  - Add missing I/O suffixes to port names and align them with `axi_modify_address`.
 
 ### Fixed
+- `axi_modify_address_intf`: Fix type parameters passed to actual implementation.
 
 
 ## 0.20.0 - 2020-04-22

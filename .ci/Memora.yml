@@ -170,6 +170,19 @@ artifacts:
     outputs:
       - build/axi_lite_xbar.tested
 
+  axi_modify_address:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_modify_address.sv
+      - test/tb_axi_modify_address.sv
+    outputs:
+      - build/axi_modify_address.tested
+
   axi_serializer:
     inputs:
       - Bender.yml

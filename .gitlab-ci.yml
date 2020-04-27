@@ -91,6 +91,11 @@ axi_lite_xbar:
   variables:
     TEST_MODULE: axi_lite_xbar
 
+axi_modify_address:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_modify_address
+
 axi_serializer:
   <<: *test_module
   variables:
