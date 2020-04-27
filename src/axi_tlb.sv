@@ -224,21 +224,17 @@ module axi_tlb #(
 
   // Handle TLB hits: Replace address and forward to master port.
   axi_modify_address #(
-    .slv_addr_t ( slv_addr_t  ),
     .slv_req_t  ( slv_req_t   ),
-    .slv_resp_t ( axi_resp_t  ),
     .mst_addr_t ( mst_addr_t  ),
     .mst_req_t  ( mst_req_t   ),
-    .mst_resp_t ( axi_resp_t  )
+    .axi_resp_t ( axi_resp_t  )
   ) i_mod_addr (
     .slv_req_i      ( mod_addr_req            ),
     .slv_resp_o     ( mod_addr_resp           ),
-    .slv_aw_addr_o  ( /* unused */            ),
-    .slv_ar_addr_o  ( /* unused */            ),
-    .mst_req_o,
-    .mst_resp_i,
     .mst_aw_addr_i  ( l1_tlb_wr_res_addr_buf  ),
-    .mst_ar_addr_i  ( l1_tlb_rd_res_addr_buf  )
+    .mst_ar_addr_i  ( l1_tlb_rd_res_addr_buf  ),
+    .mst_req_o,
+    .mst_resp_i
   );
 
   // Handle TLB misses: Absorb burst and respond with slave error.
