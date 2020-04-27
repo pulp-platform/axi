@@ -27,9 +27,9 @@ module axi_modify_address #(
   input  slv_req_t  slv_req_i,
   /// Slave port response
   output resp_t     slv_resp_o,
-  /// AW address on master port
+  /// AW address on master port; must remain stable while an AW handshake is pending.
   input  mst_addr_t mst_aw_addr_i,
-  /// AR address on master port
+  /// AR address on master port; must remain stable while an AR handshake is pending.
   input  mst_addr_t mst_ar_addr_i,
   /// Master port request
   output mst_req_t  mst_req_o,
@@ -100,9 +100,9 @@ module axi_modify_address_intf #(
 ) (
   /// Slave port
   AXI_BUS.Slave     slv,
-  /// AW address on master port
+  /// AW address on master port; must remain stable while an AW handshake is pending.
   input  mst_addr_t mst_aw_addr_i,
-  /// AR address on master port
+  /// AR address on master port; must remain stable while an AR handshake is pending.
   input  mst_addr_t mst_ar_addr_i,
   /// Master port
   AXI_BUS.Master    mst
