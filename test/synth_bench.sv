@@ -112,6 +112,24 @@ module synth_bench (
     ) i_synth_axi_isolate (.*);
   end
 
+  for (genvar i = 0; i < 6; i++) begin
+    localparam int unsigned SLV_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[i];
+    if (SLV_PORT_ADDR_WIDTH > 12) begin
+      for (genvar j = 0; j < 6; j++) begin
+        localparam int unsigned MST_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[j];
+        if (MST_PORT_ADDR_WIDTH > 12) begin
+          synth_axi_modify_address #(
+            .AXI_SLV_PORT_ADDR_WIDTH  (SLV_PORT_ADDR_WIDTH),
+            .AXI_MST_PORT_ADDR_WIDTH  (MST_PORT_ADDR_WIDTH),
+            .AXI_DATA_WIDTH           (128),
+            .AXI_ID_WIDTH             (5),
+            .AXI_USER_WIDTH           (2)
+          ) i_synth_axi_modify_address ();
+        end
+      end
+    end
+  end
+
   // AXI4+ATOP serializer
   for (genvar i = 0; i < 6; i++) begin
     synth_axi_serializer #(
@@ -449,6 +467,44 @@ module synth_axi_isolate #(
     .mst        ( axi[1]   ), // master port
     .isolate_i  ( isolate  ), // isolate master port from slave port
     .isolated_o ( isolated )  // master port is isolated from slave port
+  );
+endmodule
+
+module synth_axi_modify_address #(
+  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0
+) ();
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_SLV_PORT_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) upstream ();
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+  ) downstream ();
+
+  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr,
+                                      mst_ar_addr;
+  axi_modify_address_intf #(
+    .AXI_SLV_PORT_ADDR_WIDTH  (AXI_SLV_PORT_ADDR_WIDTH),
+    .AXI_MST_PORT_ADDR_WIDTH  (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_DATA_WIDTH           (AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH             (AXI_ID_WIDTH),
+    .AXI_USER_WIDTH           (AXI_USER_WIDTH)
+  ) dut (
+    .slv            (upstream),
+    .mst_aw_addr_i  (mst_aw_addr),
+    .mst_ar_addr_i  (mst_ar_addr),
+    .mst            (downstream)
   );
 endmodule
 
