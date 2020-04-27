@@ -258,4 +258,101 @@ module axi_tlb #(
   // TODO: many parameter and type assertions
 endmodule
 
-// TODO: interface variant `axi_tlb_intf`
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
+/// Interface variant of [`axi_tlb`](module.axi_tlb)
+module axi_tlb_intf #(
+  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned AXI_SLV_PORT_MAX_TXNS = 0,
+  parameter int unsigned CFG_AXI_ADDR_WIDTH = 0,
+  parameter int unsigned CFG_AXI_DATA_WIDTH = 0,
+  parameter int unsigned L1_NUM_ENTRIES = 0,
+  parameter bit L1_CUT_AX = 1'b1
+) (
+  input  logic    clk_i,
+  input  logic    rst_ni,
+  input  logic    test_en_i,
+  AXI_BUS.Slave   slv,
+  AXI_BUS.Master  mst,
+  AXI_LITE.Slave  cfg
+);
+
+  typedef logic [AXI_SLV_PORT_ADDR_WIDTH-1:0] slv_addr_t;
+  typedef logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]          data_t;
+  typedef logic [AXI_ID_WIDTH-1:0]            id_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]        strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]          user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, slv_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, mst_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, slv_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, mst_addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_t, w_t, slv_ar_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_t, w_t, mst_ar_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_t, r_t)
+
+  slv_req_t   slv_req;
+  mst_req_t   mst_req;
+  axi_resp_t  slv_resp,
+              mst_resp;
+
+  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+
+  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+
+  typedef logic [CFG_AXI_ADDR_WIDTH-1:0]    lite_addr_t;
+  typedef logic [CFG_AXI_DATA_WIDTH-1:0]    lite_data_t;
+  typedef logic [CFG_AXI_DATA_WIDTH/8-1:0]  lite_strb_t;
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(lite_aw_t, lite_addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(lite_w_t, lite_data_t, lite_strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(lite_b_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(lite_ar_t, lite_addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(lite_r_t, lite_data_t)
+  `AXI_LITE_TYPEDEF_REQ_T(lite_req_t, lite_aw_t, lite_w_t, lite_ar_t)
+  `AXI_LITE_TYPEDEF_RESP_T(lite_resp_t, lite_b_t, lite_r_t)
+
+  lite_req_t  cfg_req;
+  lite_resp_t cfg_resp;
+
+  `AXI_LITE_ASSIGN_TO_REQ(cfg_req, cfg)
+  `AXI_LITE_ASSIGN_FROM_RESP(cfg, cfg_resp)
+
+  axi_tlb #(
+    .AxiSlvPortAddrWidth  ( AXI_SLV_PORT_ADDR_WIDTH ),
+    .AxiMstPortAddrWidth  ( AXI_MST_PORT_ADDR_WIDTH ),
+    .AxiDataWidth         ( AXI_DATA_WIDTH          ),
+    .AxiIdWidth           ( AXI_ID_WIDTH            ),
+    .AxiUserWidth         ( AXI_USER_WIDTH          ),
+    .AxiSlvPortMaxTxns    ( AXI_SLV_PORT_MAX_TXNS   ),
+    .CfgAxiAddrWidth      ( CFG_AXI_ADDR_WIDTH      ),
+    .CfgAxiDataWidth      ( CFG_AXI_DATA_WIDTH      ),
+    .L1NumEntries         ( L1_NUM_ENTRIES          ),
+    .L1CutAx              ( L1_CUT_AX               ),
+    .slv_req_t            ( slv_req_t               ),
+    .mst_req_t            ( mst_req_t               ),
+    .axi_resp_t           ( axi_resp_t              ),
+    .lite_req_t           ( lite_req_t              ),
+    .lite_resp_t          ( lite_resp_t             )
+  ) i_axi_tlb (
+    .clk_i,
+    .rst_ni,
+    .test_en_i,
+    .slv_req_i  ( slv_req   ),
+    .slv_resp_o ( slv_resp  ),
+    .mst_req_o  ( mst_req   ),
+    .mst_resp_i ( mst_resp  ),
+    .cfg_req_i  ( cfg_req   ),
+    .cfg_resp_o ( cfg_resp  )
+  );
+
+endmodule
