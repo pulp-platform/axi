@@ -71,21 +71,30 @@ module axi_tlb_l1 #(
   output lite_resp_t  cfg_resp_o
 );
 
+  localparam int unsigned InpPageNumWidth = InpAddrWidth - 12;
+  localparam int unsigned OupPageNumWidth = OupAddrWidth - 12;
+
+  typedef logic [InpPageNumWidth-1:0] inp_page_t;
+  typedef logic [OupPageNumWidth-1:0] oup_page_t;
   typedef struct packed {
     inp_addr_t  first;
-    inp_addr_t  last;
-    oup_addr_t  base;
+    inp_page_t  first;
+    inp_page_t  last;
+    oup_page_t  base;
     logic       valid;
     logic       read_only;
   } entry_t;
 
   entry_t [NumEntries-1:0]  entries;
+  inp_page_t                wr_req_page,
+                            rd_req_page;
 
   // Write channel
+  assign wr_req_page = wr_req_addr_i >> 12;
   axi_tlb_l1_chan #(
     .NumEntries     ( NumEntries  ),
     .IsWriteChannel ( 1'b1        ),
-    .inp_addr_t     ( inp_addr_t  ),
+    .req_page_t     ( inp_page_t  ),
     .entry_t        ( entry_t     ),
     .res_t          ( res_t       )
   ) i_wr_chan (
@@ -93,7 +102,7 @@ module axi_tlb_l1 #(
     .rst_ni,
     .test_en_i,
     .entries_i    ( entries         ),
-    .req_addr_i   ( wr_req_addr_i   ),
+    .req_page_i   ( wr_req_page     ),
     .req_valid_i  ( wr_req_valid_i  ),
     .req_ready_o  ( wr_req_ready_o  ),
     .res_o        ( wr_res_o        ),
@@ -102,10 +111,11 @@ module axi_tlb_l1 #(
   );
 
   // Read channel
+  assign rd_req_page = rd_req_addr_i >> 12;
   axi_tlb_l1_chan #(
     .NumEntries     ( NumEntries  ),
     .IsWriteChannel ( 1'b0        ),
-    .inp_addr_t     ( inp_addr_t  ),
+    .req_page_t     ( inp_page_t  ),
     .entry_t        ( entry_t     ),
     .res_t          ( res_t       )
   ) i_rd_chan (
@@ -113,7 +123,7 @@ module axi_tlb_l1 #(
     .rst_ni,
     .test_en_i,
     .entries_i    ( entries         ),
-    .req_addr_i   ( rd_req_addr_i   ),
+    .req_page_i   ( rd_req_page     ),
     .req_valid_i  ( rd_req_valid_i  ),
     .req_ready_o  ( rd_req_ready_o  ),
     .res_o        ( rd_res_o        ),
@@ -149,6 +159,17 @@ module axi_tlb_l1 #(
     .reg_q_o          ( /* TODO */                            )
   );
 
+  `ifndef VERILATOR
+  // pragma translate_off
+  initial begin
+    assert (InpAddrWidth > 12)
+      else $fatal(1, "Input address space must be larger than one 4 KiB page!");
+    assert (OupAddrWidth > 12)
+      else $fatal(1, "Output address space must be larger than one 4 KiB page!");
+  end
+  // pragma translate_on
+  `endif
+
 endmodule
 
 
@@ -158,8 +179,8 @@ module axi_tlb_l1_chan #(
   parameter int unsigned NumEntries = 0,
   /// Is this channel is used for writes?
   parameter logic IsWriteChannel = 1'b0,
-  /// Type of input address
-  parameter type inp_addr_t = logic,
+  /// Type of request page number
+  parameter type req_page_t = logic,
   /// Type of a translation table entry
   parameter type entry_t = logic,
   /// Type of translation result
@@ -173,8 +194,8 @@ module axi_tlb_l1_chan #(
   input  logic                    test_en_i,
   /// Translation table entries
   input  entry_t [NumEntries-1:0] entries_i,
-  /// Request input address
-  input  inp_addr_t               req_addr_i,
+  /// Request page number
+  input  req_page_t               req_page_i,
   /// Request valid
   input  logic                    req_valid_i,
   /// Request ready
@@ -195,8 +216,8 @@ module axi_tlb_l1_chan #(
   logic [NumEntries-1:0] entry_matches;
   for (genvar i = 0; i < NumEntries; i++) begin : gen_matches
     assign entry_matches[i] = entries[i].valid & req_valid_i
-        & (req_addr_i >= entries[i].first)
-        & (req_addr_i <= entries[i].last)
+        & (req_page_i >= entries[i].first)
+        & (req_page_i <= entries[i].last)
         & (~IsWriteChannel | ~entries[i].read_only);
   end
 
@@ -221,7 +242,7 @@ module axi_tlb_l1_chan #(
     res = '{default: '0};
     if (req_valid_i) begin
       res_o.hit = ~no_match;
-      res_o.addr = entries[match_idx].base + (req_addr_i - entries[match_idx].first);
+      res_o.addr = (entries[match_idx].base + (req_page_i - entries[match_idx].first)) << 12;
       res_valid = 1'b1;
       req_ready_o = res_ready;
     end
