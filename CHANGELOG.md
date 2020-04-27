@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - `axi_modify_address`:
-  - Simplify redundant `slv_resp_t` and `mst_resp_t` parameters to single `resp_t` parameter.
+  - Simplify redundant `slv_resp_t` and `mst_resp_t` parameters to single `axi_resp_t` parameter.
   - Remove unnecessary `slv_a{r,w}_addr_o` outputs, which were fed back from the `slv_req_i` inputs.
     Those signals can instead be derived outside `axi_modify_address`.
 - `axi_modify_address_intf`:

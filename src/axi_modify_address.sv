@@ -21,12 +21,12 @@ module axi_modify_address #(
   /// Request type of the master port
   parameter type  mst_req_t = logic,
   /// Response type of slave and master port
-  parameter type     resp_t = logic
+  parameter type axi_resp_t = logic
 ) (
   /// Slave port request
   input  slv_req_t  slv_req_i,
   /// Slave port response
-  output resp_t     slv_resp_o,
+  output axi_resp_t slv_resp_o,
   /// AW address on master port; must remain stable while an AW handshake is pending.
   input  mst_addr_t mst_aw_addr_i,
   /// AR address on master port; must remain stable while an AR handshake is pending.
@@ -34,7 +34,7 @@ module axi_modify_address #(
   /// Master port request
   output mst_req_t  mst_req_o,
   /// Master port response
-  input  resp_t     mst_resp_i
+  input  axi_resp_t mst_resp_i
 );
 
   assign mst_req_o = '{
@@ -123,11 +123,11 @@ module axi_modify_address_intf #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
   slv_req_t  slv_req;
   mst_req_t  mst_req;
-  resp_t     slv_resp, mst_resp;
+  axi_resp_t slv_resp, mst_resp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
   `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
@@ -139,7 +139,7 @@ module axi_modify_address_intf #(
     .slv_req_t  ( slv_req_t  ),
     .mst_addr_t ( mst_addr_t ),
     .mst_req_t  ( mst_req_t  ),
-    .resp_t     ( resp_t     )
+    .axi_resp_t ( axi_resp_t )
   ) i_axi_modify_address (
     .slv_req_i     ( slv_req  ),
     .slv_resp_o    ( slv_resp ),
