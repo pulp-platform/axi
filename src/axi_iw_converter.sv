@@ -11,15 +11,6 @@
 //
 // Andreas Kurth <akurth@iis.ee.ethz.ch>
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
-
-/// Change the AXI ID width.
-///
-/// This module instantiates a remapper if the outgoing ID is smaller than the incoming ID.
-/// Feeds through the channel if the ID widths are the same and extends it with zeros, if
-/// the outgoing ID is larrger than the incoming ID.
-
-// Andreas Kurth <akurth@iis.ee.ethz.ch>
-// Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
 /// Change the AXI ID width.
@@ -27,8 +18,6 @@
 /// This module instantiates a remapper if the outgoing ID is smaller than the incoming ID.
 /// Feeds through the channel if the ID widths are the same and extends it with zeros, if
 /// the outgoing ID is larger than the incoming ID.
-
-
 module axi_iw_converter #(
   /// Size of the remap table when downconverting the ID size.
   /// This number of ID's get generated at the master port.
