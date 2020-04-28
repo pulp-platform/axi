@@ -102,7 +102,7 @@ module axi_id_remap #(
   axi_id_remap_table #(
     .MaxUniqueInpIds  ( TableSize     ),
     .InpIdWidth       ( AxiIdWidthSlv ),
-    .MaxTxns          ( TableSize     )
+    .MaxTxnsPerId     ( TableSize     )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -123,7 +123,7 @@ module axi_id_remap #(
   axi_id_remap_table #(
     .MaxUniqueInpIds  ( TableSize     ),
     .InpIdWidth       ( AxiIdWidthSlv ),
-    .MaxTxns          ( TableSize     )
+    .MaxTxnsPerId     ( TableSize     )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -369,8 +369,8 @@ module axi_id_remap_table #(
   /// table entries.
   parameter int unsigned MaxUniqueInpIds = 32'd0,
   parameter int unsigned InpIdWidth = 32'd0,
-  // Maximum number of AXI read and write bursts outstanding at the same time
-  parameter int unsigned MaxTxns    = 32'd0,
+  /// Maximum number of in-flight transactions with the same ID.
+  parameter int unsigned MaxTxnsPerId = 32'd0,
   // Derived Parameters (do NOT change manually!)
   localparam type field_t           = logic [MaxUniqueInpIds-1:0],
   localparam type id_inp_t          = logic [InpIdWidth-1:0],
@@ -398,7 +398,7 @@ module axi_id_remap_table #(
   input  logic    pop_i
 );
 
-  localparam int unsigned CntWidth = $clog2(MaxTxns+1);
+  localparam int unsigned CntWidth = $clog2(MaxTxnsPerId+1);
   typedef logic [CntWidth-1:0] cnt_t;
 
   typedef struct packed {
@@ -440,7 +440,7 @@ module axi_id_remap_table #(
       .empty_o  ( no_match        )
   );
   assign exists_o      = ~no_match;
-  assign exists_full_o = table_q[exists_oup_id_o].cnt == MaxTxns;
+  assign exists_full_o = table_q[exists_oup_id_o].cnt == MaxTxnsPerId;
 
   // Push and pop table entries.
   always_comb begin
@@ -469,7 +469,7 @@ module axi_id_remap_table #(
     assume property (@(posedge clk_i) push_i |->
         table_q[push_oup_id_i].cnt == '0 || table_q[push_oup_id_i].inp_id == push_inp_id_i)
       else $error("Push must be to empty output ID or match existing input ID!");
-    assume property (@(posedge clk_i) push_i |-> table_q[push_oup_id_i].cnt < MaxTxns)
+    assume property (@(posedge clk_i) push_i |-> table_q[push_oup_id_i].cnt < MaxTxnsPerId)
       else $error("Maximum number of in-flight bursts must not be exceeded!");
     assume property (@(posedge clk_i) pop_i |-> table_q[pop_oup_id_i].cnt > 0)
       else $error("Pop must target output ID with non-zero counter!");
@@ -478,7 +478,7 @@ module axi_id_remap_table #(
     initial begin
       assert (InpIdWidth > 0);
       assert (MaxUniqueInpIds > 0);
-      assert (MaxTxns > 0);
+      assert (MaxTxnsPerId > 0);
       assert (IdxWidth >= 1);
     end
   `endif
