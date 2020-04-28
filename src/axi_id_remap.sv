@@ -368,46 +368,72 @@ endmodule
 /// ## Relation of types and table layout
 /// ![diagram of table](axi_id_remap_table.svg)
 module axi_id_remap_table #(
-  /// Width of input IDs.
+  /// Width of input IDs, therefore width of `id_inp_t`.
   parameter int unsigned InpIdWidth = 32'd0,
   /// Maximum number of different input IDs that can be in-flight. This defines the number of remap
   /// table entries.
   parameter int unsigned MaxUniqueInpIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   parameter int unsigned MaxTxnsPerId = 32'd0,
-  // Derived Parameters (do NOT change manually!)
-  localparam type field_t           = logic [MaxUniqueInpIds-1:0],
-  localparam type id_inp_t          = logic [InpIdWidth-1:0],
-  localparam int unsigned IdxWidth  = $clog2(MaxUniqueInpIds) > 0 ? $clog2(MaxUniqueInpIds) : 1,
-  localparam type idx_t             = logic [IdxWidth-1:0]
+  /// Derived (**=do not override**) type of input IDs.
+  localparam type id_inp_t = logic [InpIdWidth-1:0],
+  /// Derived (**=do not override**) width of table index (ceiled binary logarithm of
+  /// `MaxUniqueInpIds`).
+  localparam int unsigned IdxWidth = $clog2(MaxUniqueInpIds) > 0 ? $clog2(MaxUniqueInpIds) : 1,
+  /// Derived (**=do not override**) type of table index (width = `IdxWidth`).
+  localparam type idx_t = logic [IdxWidth-1:0],
+  /// Derived (**=do not override**) type with one bit per table entry (thus also output ID).
+  localparam type field_t = logic [MaxUniqueInpIds-1:0]
 ) (
+  /// Rising-edge clock of all ports
   input  logic    clk_i,
+  /// Asynchronous reset, active low
   input  logic    rst_ni,
 
+  /// One bit per table entry / output ID that indicates whether the entry is free.
   output field_t  free_o,
+  /// Lowest free output ID.  Only valid if the table is not full (i.e., `!full_o`).
   output idx_t    free_oup_id_o,
+  /// Indicates whether the table is full.
   output logic    full_o,
 
-  input  id_inp_t push_inp_id_i,
-  input  idx_t    push_oup_id_i,
+  /// Push an input/output ID pair to the table.
   input  logic    push_i,
+  /// Input ID to be pushed. If the table already contains this ID, its counter must be smaller than
+  /// `MaxTxnsPerId`.
+  input  id_inp_t push_inp_id_i,
+  /// Output ID to be pushed.  If the table already contains the input ID to be pushed, the output
+  /// ID **must** match the output ID of the existing entry with the same input ID.
+  input  idx_t    push_oup_id_i,
 
+  /// Input ID to look up in the table.
   input  id_inp_t exists_inp_id_i,
-  output idx_t    exists_oup_id_o,
-  output logic    exists_full_o,
+  /// Indicates whether the given input ID exists in the table.
   output logic    exists_o,
+  /// The output ID of the given input ID.  Only valid if the input ID exists (i.e., `exists_o`).
+  output idx_t    exists_oup_id_o,
+  /// Indicates whether the maximum number of transactions for the given input ID is reached.  Only
+  /// valid if the input ID exists (i.e., `exists_o`).
+  output logic    exists_full_o,
 
+  /// Pop an output ID from the table.  This reduces the counter for the table index given in
+  /// `pop_oup_id_i` by one.
+  input  logic    pop_i,
+  /// Output ID to be popped.  The counter for this ID must be larger than `0`.
   input  idx_t    pop_oup_id_i,
-  output id_inp_t pop_inp_id_o,
-  input  logic    pop_i
+  /// Input ID corresponding to the popped output ID.
+  output id_inp_t pop_inp_id_o
 );
 
+  /// Counter width, derived to hold numbers up to `MaxTxnsPerId`.
   localparam int unsigned CntWidth = $clog2(MaxTxnsPerId+1);
+  /// Counter that tracks the number of in-flight transactions with an ID.
   typedef logic [CntWidth-1:0] cnt_t;
 
+  /// Type of a table entry.
   typedef struct packed {
     id_inp_t  inp_id;
-    cnt_t     cnt;    // number of in-flight bursts with that ID
+    cnt_t     cnt;
   } entry_t;
 
   // Table indexed by output IDs that contains the corresponding input IDs
