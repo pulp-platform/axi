@@ -364,6 +364,9 @@ endmodule
 /// The mapping between input and output IDs is bijective. Therefore, when the table contains an
 /// entry for an input ID with non-zero counter value, subsequent input IDs must use the same entry
 /// and thus the same output ID.
+///
+/// ## Relation of types and table layout
+/// ![diagram of table](axi_id_remap_table.svg)
 module axi_id_remap_table #(
   /// Width of input IDs.
   parameter int unsigned InpIdWidth = 32'd0,
