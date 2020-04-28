@@ -81,13 +81,13 @@ module axi_iw_converter #(
 
   if ((AxiIdWidthSlv > AxiIdWidthMst) && (RemapTableSize <= MaxMstIds)) begin : gen_id_downsize_table
     axi_id_remap #(
-      .TableSize     ( RemapTableSize ),
-      .AxiIdWidthSlv ( AxiIdWidthSlv  ),
-      .slv_req_t     ( slv_req_t      ),
-      .slv_resp_t    ( slv_resp_t     ),
-      .AxiIdWidthMst ( AxiIdWidthMst  ),
-      .mst_req_t     ( mst_req_t      ),
-      .mst_resp_t    ( mst_resp_t     )
+      .TableSize          ( RemapTableSize ),
+      .AxiSlvPortIdWidth  ( AxiIdWidthSlv  ),
+      .slv_req_t          ( slv_req_t      ),
+      .slv_resp_t         ( slv_resp_t     ),
+      .AxiMstPortIdWidth  ( AxiIdWidthMst  ),
+      .mst_req_t          ( mst_req_t      ),
+      .mst_resp_t         ( mst_resp_t     )
     ) i_remap (
       .clk_i,
       .rst_ni,

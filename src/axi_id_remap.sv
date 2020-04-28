@@ -16,14 +16,14 @@
 module axi_id_remap #(
   /// Size of the remap table per channel
   parameter int unsigned TableSize     = 32'd0,
-  /// AXI4+ATOP ID width of the slave port
-  parameter int unsigned AxiIdWidthSlv = 32'd0,
+  /// ID width of the AXI4+ATOP slave port
+  parameter int unsigned AxiSlvPortIdWidth = 32'd0,
   /// AXI4+ATOP request struct type of the slave port
   parameter type         slv_req_t     = logic,
   /// AXI4+ATOP response struct type of the slave port
   parameter type         slv_resp_t    = logic,
-  /// AXI4+ATOP ID width of the master port
-  parameter int unsigned AxiIdWidthMst = 32'd0,
+  /// ID width of the AXI4+ATOP master port
+  parameter int unsigned AxiMstPortIdWidth = 32'd0,
   /// AXI4+ATOP request struct type of the master port
   parameter type         mst_req_t     = logic,
   /// AXI4+ATOP response struct type of the master port
@@ -87,7 +87,7 @@ module axi_id_remap #(
   // Remap tables keep track of in-flight bursts and their input and output IDs.
   localparam int unsigned IdxWidth = $clog2(TableSize) > 0 ? $clog2(TableSize) : 1;
   typedef logic [TableSize-1:0]     field_t;
-  typedef logic [AxiIdWidthSlv-1:0] id_inp_t;
+  typedef logic [AxiSlvPortIdWidth-1:0] id_inp_t;
   typedef logic [IdxWidth-1:0]      idx_t;
   field_t   wr_free,          rd_free,          both_free;
   id_inp_t                    rd_push_inp_id;
@@ -100,9 +100,9 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiIdWidthSlv ),
-    .MaxUniqueInpIds  ( TableSize     ),
-    .MaxTxnsPerId     ( TableSize     )
+    .InpIdWidth       ( AxiSlvPortIdWidth ),
+    .MaxUniqueInpIds  ( TableSize         ),
+    .MaxTxnsPerId     ( TableSize         )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -121,9 +121,9 @@ module axi_id_remap #(
     .pop_inp_id_o    ( slv_resp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiIdWidthSlv ),
-    .MaxUniqueInpIds  ( TableSize     ),
-    .MaxTxnsPerId     ( TableSize     )
+    .InpIdWidth       ( AxiSlvPortIdWidth ),
+    .MaxUniqueInpIds  ( TableSize         ),
+    .MaxTxnsPerId     ( TableSize         )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -152,7 +152,7 @@ module axi_id_remap #(
   );
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
-  localparam ZeroWidth = AxiIdWidthMst - IdxWidth;
+  localparam ZeroWidth = AxiMstPortIdWidth - IdxWidth;
   assign mst_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
   assign mst_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
 
@@ -301,10 +301,10 @@ module axi_id_remap #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
-    assert(AxiIdWidthSlv > 32'd0)
-      else $fatal(1, "Parameter AxiIdWidthSlv has to be larger than 0!");
-    assert(AxiIdWidthMst > 32'd0)
-      else $fatal(1, "Parameter AxiIdWidthMst has to be larger than 0!");
+    assert(AxiSlvPortIdWidth > 32'd0)
+      else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
+    assert(AxiMstPortIdWidth > 32'd0)
+      else $fatal(1, "Parameter AxiMstPortIdWidth has to be larger than 0!");
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
@@ -332,23 +332,23 @@ module axi_id_remap #(
     assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
         |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
     initial begin
-      assert (AxiIdWidthSlv > 0);
-      assert (AxiIdWidthMst > 0);
-      assert (AxiIdWidthMst < AxiIdWidthSlv);
+      assert (AxiSlvPortIdWidth > 0);
+      assert (AxiMstPortIdWidth > 0);
+      assert (AxiMstPortIdWidth < AxiSlvPortIdWidth);
       assert (TableSize > 0);
-      assert (AxiIdWidthMst >= IdxWidth);
-      // TODO: Allow AxiIdWidthMst to be smaller than IdxWidth, i.e., to have multiple outstanding
+      assert (AxiMstPortIdWidth >= IdxWidth);
+      // TODO: Allow AxiMstPortIdWidth to be smaller than IdxWidth, i.e., to have multiple outstanding
       // transactions (limited by TableSize) remapped to a few (extreme case: one) ID.  This is
       // possible because the restriction from unordered input transactions to ordered output
       // transactions is legal.
-      assert ($bits(slv_req_i.aw.id) == AxiIdWidthSlv);
-      assert ($bits(slv_resp_o.b.id) == AxiIdWidthSlv);
-      assert ($bits(slv_req_i.ar.id) == AxiIdWidthSlv);
-      assert ($bits(slv_resp_o.r.id) == AxiIdWidthSlv);
-      assert ($bits(mst_req_o.aw.id) == AxiIdWidthMst);
-      assert ($bits(mst_resp_i.b.id) == AxiIdWidthMst);
-      assert ($bits(mst_req_o.ar.id) == AxiIdWidthMst);
-      assert ($bits(mst_resp_i.r.id) == AxiIdWidthMst);
+      assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
+      assert ($bits(slv_resp_o.b.id) == AxiSlvPortIdWidth);
+      assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
+      assert ($bits(slv_resp_o.r.id) == AxiSlvPortIdWidth);
+      assert ($bits(mst_req_o.aw.id) == AxiMstPortIdWidth);
+      assert ($bits(mst_resp_i.b.id) == AxiMstPortIdWidth);
+      assert ($bits(mst_req_o.ar.id) == AxiMstPortIdWidth);
+      assert ($bits(mst_resp_i.r.id) == AxiMstPortIdWidth);
     end
   `endif
   // pragma translate_on
@@ -523,8 +523,8 @@ endmodule
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
   parameter int unsigned TABLE_SIZE       = 32'd0,
-  parameter int unsigned AXI_ID_WIDTH_SLV = 32'd0,
-  parameter int unsigned AXI_ID_WIDTH_MST = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
   parameter int unsigned AXI_USER_WIDTH   = 32'd0
@@ -534,12 +534,12 @@ module axi_id_remap_intf #(
   AXI_BUS.Slave   slv,
   AXI_BUS.Master  mst
 );
-  typedef logic [AXI_ID_WIDTH_SLV-1:0] slv_id_t;
-  typedef logic [AXI_ID_WIDTH_MST-1:0] mst_id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   axi_addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   axi_data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] axi_strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   axi_user_t;
+  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] slv_id_t;
+  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] mst_id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
@@ -568,13 +568,13 @@ module axi_id_remap_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_id_remap #(
-    .TableSize     ( TABLE_SIZE       ),
-    .AxiIdWidthSlv ( AXI_ID_WIDTH_SLV ),
-    .slv_req_t     ( slv_req_t        ),
-    .slv_resp_t    ( slv_resp_t       ),
-    .AxiIdWidthMst ( AXI_ID_WIDTH_MST ),
-    .mst_req_t     ( mst_req_t        ),
-    .mst_resp_t    ( mst_resp_t       )
+    .TableSize          ( TABLE_SIZE            ),
+    .AxiSlvPortIdWidth  ( AXI_SLV_PORT_ID_WIDTH ),
+    .slv_req_t          ( slv_req_t             ),
+    .slv_resp_t         ( slv_resp_t            ),
+    .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH ),
+    .mst_req_t          ( mst_req_t             ),
+    .mst_resp_t         ( mst_resp_t            )
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,
@@ -586,11 +586,11 @@ module axi_id_remap_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin
-      assert (slv.AXI_ID_WIDTH   == AXI_ID_WIDTH_SLV);
+      assert (slv.AXI_ID_WIDTH   == AXI_SLV_PORT_ID_WIDTH);
       assert (slv.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
       assert (slv.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
       assert (slv.AXI_USER_WIDTH == AXI_USER_WIDTH);
-      assert (mst.AXI_ID_WIDTH   == AXI_ID_WIDTH_MST);
+      assert (mst.AXI_ID_WIDTH   == AXI_MST_PORT_ID_WIDTH);
       assert (mst.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
       assert (mst.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
       assert (mst.AXI_USER_WIDTH == AXI_USER_WIDTH);
