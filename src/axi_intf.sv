@@ -249,6 +249,16 @@ interface AXI_BUS_DV #(
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_last)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_user)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> r_valid));
+  // Address-Channel Assertions: The address of the  last beat of a burst must be on the same 4 KiB
+  // page as the address of the first beat of a burst. Bus is always word-aligned, word < page.
+  assert property (@(posedge clk_i) aw_valid |-> (aw_burst != axi_pkg::BURST_INCR) || (
+    axi_pkg::beat_addr(aw_addr, aw_size, aw_len, aw_burst, 0) >> 12 ==    // lowest beat address
+    axi_pkg::beat_addr(aw_addr, aw_size, aw_len, aw_burst, aw_len) >> 12  // highest beat address
+  )) else $error("AW burst crossing 4 KiB page boundary detected, which is illegal!");
+  assert property (@(posedge clk_i) ar_valid |-> (aw_burst != axi_pkg::BURST_INCR) || (
+    axi_pkg::beat_addr(ar_addr, ar_size, ar_len, ar_burst, 0) >> 12 ==    // lowest beat address
+    axi_pkg::beat_addr(ar_addr, ar_size, ar_len, ar_burst, ar_len) >> 12  // highest beat address
+  )) else $error("AR burst crossing 4 KiB page boundary detected, which is illegal!");
   `endif
   // pragma translate_on
 
