@@ -100,8 +100,9 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .IdWidthInp ( AxiIdWidthSlv ),
-    .MaxTxns    ( TableSize     )
+    .MaxUniqueInpIds  ( TableSize     ),
+    .IdWidthInp       ( AxiIdWidthSlv ),
+    .MaxTxns          ( TableSize     )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -120,8 +121,9 @@ module axi_id_remap #(
     .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready )
   );
   axi_id_remap_table #(
-    .IdWidthInp ( AxiIdWidthSlv ),
-    .MaxTxns    ( TableSize     )
+    .MaxUniqueInpIds  ( TableSize     ),
+    .IdWidthInp       ( AxiIdWidthSlv ),
+    .MaxTxns          ( TableSize     )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -363,13 +365,16 @@ endmodule
 /// entry for an input ID with non-zero counter value, subsequent input IDs must use the same entry
 /// and thus the same output ID.
 module axi_id_remap_table #(
+  /// Maximum number of different input IDs that can be in-flight. This defines the number of remap
+  /// table entries.
+  parameter int unsigned MaxUniqueInpIds = 32'd0,
   parameter int unsigned IdWidthInp = 32'd0,
   // Maximum number of AXI read and write bursts outstanding at the same time
   parameter int unsigned MaxTxns    = 32'd0,
   // Derived Parameters (do NOT change manually!)
-  localparam type field_t           = logic [MaxTxns-1:0],
+  localparam type field_t           = logic [MaxUniqueInpIds-1:0],
   localparam type id_inp_t          = logic [IdWidthInp-1:0],
-  localparam int unsigned IdxWidth  = $clog2(MaxTxns) > 0 ? $clog2(MaxTxns) : 1,
+  localparam int unsigned IdxWidth  = $clog2(MaxUniqueInpIds) > 0 ? $clog2(MaxUniqueInpIds) : 1,
   localparam type idx_t             = logic [IdxWidth-1:0]
 ) (
   input  logic    clk_i,
@@ -402,15 +407,15 @@ module axi_id_remap_table #(
   } entry_t;
 
   // Table indexed by output IDs that contains the corresponding input IDs
-  entry_t [MaxTxns-1:0] table_d, table_q;
+  entry_t [MaxUniqueInpIds-1:0] table_d, table_q;
 
   // Determine lowest free output ID.
-  for (genvar i = 0; i < MaxTxns; i++) begin : gen_free_o
+  for (genvar i = 0; i < MaxUniqueInpIds; i++) begin : gen_free_o
     assign free_o[i] = table_q[i].cnt == '0;
   end
   lzc #(
-    .WIDTH ( MaxTxns ),
-    .MODE  ( 1'b0    )
+    .WIDTH ( MaxUniqueInpIds  ),
+    .MODE  ( 1'b0             )
   ) i_lzc_free (
     .in_i    ( free_o        ),
     .cnt_o   ( free_oup_id_o ),
@@ -422,13 +427,13 @@ module axi_id_remap_table #(
 
   // Determine if given output ID is already used and, if it is, by which input ID.
   field_t match;
-  for (genvar i = 0; i < MaxTxns; i++) begin : gen_match
+  for (genvar i = 0; i < MaxUniqueInpIds; i++) begin : gen_match
     assign match[i] = table_q[i].cnt > 0 && table_q[i].inp_id == exists_inp_id_i;
   end
   logic no_match;
   lzc #(
-      .WIDTH ( MaxTxns ),
-      .MODE  ( 1'b0    )
+      .WIDTH ( MaxUniqueInpIds  ),
+      .MODE  ( 1'b0             )
   ) i_lzc_match (
       .in_i     ( match           ),
       .cnt_o    ( exists_oup_id_o ),
@@ -472,6 +477,7 @@ module axi_id_remap_table #(
       else $error("Input ID in table must be unique!");
     initial begin
       assert (IdWidthInp > 0);
+      assert (MaxUniqueInpIds > 0);
       assert (MaxTxns > 0);
       assert (IdxWidth >= 1);
     end
