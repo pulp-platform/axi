@@ -240,6 +240,20 @@ interface AXI_BUS_DV #(
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_last)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> $stable(r_user)));
   assert property (@(posedge clk_i) ( r_valid && ! r_ready |=> r_valid));
+  // Address-Channel Assertions: The address of the highest byte in the last beat of a burst must be
+  // on the same 4 KiB page as the address of the lowest byte in the first beat of a burst.
+  assert property (@(posedge clk_i) aw_valid |->
+    axi_pkg::beat_addr(aw_addr, aw_size, aw_len, aw_burst, 0) >> 12 == (
+      axi_pkg::beat_addr(aw_addr, aw_size, aw_len, aw_burst, aw_len)
+      + axi_pkg::beat_upper_byte(aw_addr, aw_size, aw_len, aw_burst, AXI_STRB_WIDTH, aw_len)
+    ) >> 12
+  ) else $error("AW burst crossing 4 KiB page boundary detected, which is illegal!");
+  assert property (@(posedge clk_i) ar_valid |->
+    axi_pkg::beat_addr(ar_addr, ar_size, ar_len, ar_burst, 0) >> 12 == (
+      axi_pkg::beat_addr(ar_addr, ar_size, ar_len, ar_burst, ar_len)
+      + axi_pkg::beat_upper_byte(ar_addr, ar_size, ar_len, ar_burst, AXI_STRB_WIDTH, ar_len)
+    ) >> 12
+  ) else $error("AR burst crossing 4 KiB page boundary detected, which is illegal!");
   `endif
   // pragma translate_on
 
