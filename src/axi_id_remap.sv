@@ -515,20 +515,18 @@ module axi_id_remap_table #(
 
 endmodule
 
+
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
+/// Interface variant of [`axi_id_remap`](module.axi_id_remap).
+///
+/// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
-  /// Size of the remap table per channel
   parameter int unsigned TABLE_SIZE       = 32'd0,
-  /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AXI_ID_WIDTH_SLV = 32'd0,
-  /// ID width of the AXI4+ATOP master port
   parameter int unsigned AXI_ID_WIDTH_MST = 32'd0,
-  /// Address width of both AXI4+ATOP ports
   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
-  /// Data width of both AXI4+ATOP ports
   parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
-  /// User width of both AXI4+ATOP ports
   parameter int unsigned AXI_USER_WIDTH   = 32'd0
 ) (
   input logic     clk_i,
