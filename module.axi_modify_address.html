@@ -4,23 +4,30 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_modify_address</a></h1>
 <div class="docblock">
+<p>Modify addresses on an AXI4 bus</p>
 </div>
 <h2>Parameters</h2>
-<h3 id="impl" class="impl"><code class="in-band">slv_addr_t</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">slv_req_t</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">slv_resp_t</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_addr_t</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_req_t</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_resp_t</code></h3><div class="docblock"
-></div><h2>Ports</h2>
+<h3 id="impl" class="impl"><code class="in-band">slv_req_t</code></h3><div class="docblock"
+><p>Request type of the slave port</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_addr_t</code></h3><div class="docblock"
+><p>Address type of the master port</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_req_t</code></h3><div class="docblock"
+><p>Request type of the master port</p>
+</div><h3 id="impl" class="impl"><code class="in-band">axi_resp_t</code></h3><div class="docblock"
+><p>Response type of slave and master port</p>
+</div><h2>Ports</h2>
 <h3 id="impl" class="impl"><code class="in-band">slv_req_i</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">slv_resp_o</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">slv_aw_addr_o</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">slv_ar_addr_o</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_req_o</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_resp_i</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_aw_addr_i</code></h3><div class="docblock"
-></div><h3 id="impl" class="impl"><code class="in-band">mst_ar_addr_i</code></h3><div class="docblock"
-></div></section>
+><p>Slave port request</p>
+</div><h3 id="impl" class="impl"><code class="in-band">slv_resp_o</code></h3><div class="docblock"
+><p>Slave port response</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_aw_addr_i</code></h3><div class="docblock"
+><p>AW address on master port; must remain stable while an AW handshake is pending.</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_ar_addr_i</code></h3><div class="docblock"
+><p>AR address on master port; must remain stable while an AR handshake is pending.</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_req_o</code></h3><div class="docblock"
+><p>Master port request</p>
+</div><h3 id="impl" class="impl"><code class="in-band">mst_resp_i</code></h3><div class="docblock"
+><p>Master port response</p>
+</div></section>
 </body>
 </html>
