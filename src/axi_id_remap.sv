@@ -352,7 +352,16 @@ module axi_id_remap #(
   // pragma translate_on
 endmodule
 
-/// Implements ID remap tables
+
+/// Internal module of [`axi_id_remap`](module.axi_id_remap): Table to remap input to output IDs.
+///
+/// This module contains a table indexed by the output ID (type `idx_t`). Each table entry has two
+/// fields: the input ID and a counter that records how many transactions with the input and output
+/// ID of the entry are in-flight.
+///
+/// The mapping between input and output IDs is bijective. Therefore, when the table contains an
+/// entry for an input ID with non-zero counter value, subsequent input IDs must use the same entry
+/// and thus the same output ID.
 module axi_id_remap_table #(
   parameter int unsigned IdWidthInp = 32'd0,
   // Maximum number of AXI read and write bursts outstanding at the same time
