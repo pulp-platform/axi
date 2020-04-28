@@ -100,8 +100,8 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .MaxUniqueInpIds  ( TableSize     ),
     .InpIdWidth       ( AxiIdWidthSlv ),
+    .MaxUniqueInpIds  ( TableSize     ),
     .MaxTxnsPerId     ( TableSize     )
   ) i_wr_table (
     .clk_i,
@@ -109,20 +109,20 @@ module axi_id_remap #(
     .free_o          ( wr_free                                 ),
     .free_oup_id_o   ( wr_free_oup_id                          ),
     .full_o          ( wr_full                                 ),
+    .push_i          ( wr_push                                 ),
     .push_inp_id_i   ( slv_req_i.aw.id                         ),
     .push_oup_id_i   ( wr_push_oup_id                          ),
-    .push_i          ( wr_push                                 ),
     .exists_inp_id_i ( slv_req_i.aw.id                         ),
+    .exists_o        ( wr_exists                               ),
     .exists_oup_id_o ( wr_exists_id                            ),
     .exists_full_o   ( wr_exists_full                          ),
-    .exists_o        ( wr_exists                               ),
+    .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready ),
     .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ),
-    .pop_inp_id_o    ( slv_resp_o.b.id                         ),
-    .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready )
+    .pop_inp_id_o    ( slv_resp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .MaxUniqueInpIds  ( TableSize     ),
     .InpIdWidth       ( AxiIdWidthSlv ),
+    .MaxUniqueInpIds  ( TableSize     ),
     .MaxTxnsPerId     ( TableSize     )
   ) i_rd_table (
     .clk_i,
@@ -130,16 +130,16 @@ module axi_id_remap #(
     .free_o           ( rd_free                                                      ),
     .free_oup_id_o    ( rd_free_oup_id                                               ),
     .full_o           ( rd_full                                                      ),
+    .push_i           ( rd_push                                                      ),
     .push_inp_id_i    ( rd_push_inp_id                                               ),
     .push_oup_id_i    ( rd_push_oup_id                                               ),
-    .push_i           ( rd_push                                                      ),
     .exists_inp_id_i  ( slv_req_i.ar.id                                              ),
+    .exists_o         ( rd_exists                                                    ),
     .exists_oup_id_o  ( rd_exists_id                                                 ),
     .exists_full_o    ( rd_exists_full                                               ),
-    .exists_o         ( rd_exists                                                    ),
+    .pop_i            ( slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last ),
     .pop_oup_id_i     ( mst_resp_i.r.id[IdxWidth-1:0]                                ),
-    .pop_inp_id_o     ( slv_resp_o.r.id                                              ),
-    .pop_i            ( slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last )
+    .pop_inp_id_o     ( slv_resp_o.r.id                                              )
   );
   assign both_free = wr_free & rd_free;
   lzc #(
