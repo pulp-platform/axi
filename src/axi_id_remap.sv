@@ -29,9 +29,9 @@ module axi_id_remap #(
   /// Response struct type of the AXI4+ATOP master port
   parameter type mst_resp_t = logic
 ) (
-  /// Clock Input
+  /// Rising-edge clock of all ports
   input  logic      clk_i,
-  /// Asynchronous reset active low
+  /// Asynchronous reset, active low
   input  logic      rst_ni,
   /// Slave port request
   input  slv_req_t  slv_req_i,
