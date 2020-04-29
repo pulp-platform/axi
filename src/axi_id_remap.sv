@@ -410,6 +410,8 @@ module axi_id_remap_table #(
   parameter int unsigned InpIdWidth = 32'd0,
   /// Maximum number of different input IDs that can be in-flight. This defines the number of remap
   /// table entries.
+  ///
+  /// The maximum value of this parameter is `2**InpIdWidth`.
   parameter int unsigned MaxUniqueInpIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   parameter int unsigned MaxTxnsPerId = 32'd0,
@@ -546,6 +548,7 @@ module axi_id_remap_table #(
     initial begin
       assert (InpIdWidth > 0);
       assert (MaxUniqueInpIds > 0);
+      assert (MaxUniqueInpIds <= (1 << InpIdWidth));
       assert (MaxTxnsPerId > 0);
       assert (IdxWidth >= 1);
     end
