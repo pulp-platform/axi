@@ -13,6 +13,16 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
+/// Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.
+///
+/// This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely
+/// used ID space.  This scenario occurs, for example, when an AXI master has wide ID ports but
+/// effectively only uses a (not necessarily contiguous) subset of IDs.
+///
+/// This module retains the independence of IDs.  That is, if two transactions have different IDs at
+/// the slave port of this module, they are guaranteed to have different IDs at the master port of
+/// this module.  This implies a lower bound on the [width of IDs on the master
+/// port](#parameter.AxiMstPortIdWidth).
 module axi_id_remap #(
   /// ID width of the AXI4+ATOP slave port.
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
