@@ -16,17 +16,25 @@
 module axi_id_remap #(
   /// Size of the remap table per channel
   parameter int unsigned TableSize     = 32'd0,
-  /// ID width of the AXI4+ATOP slave port
+  /// ID width of the AXI4+ATOP slave port.
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
-  /// Request struct type of the AXI4+ATOP slave port
-  parameter type slv_req_t = logic,
-  /// Response struct type of the AXI4+ATOP slave port
-  parameter type slv_resp_t = logic,
-  /// ID width of the AXI4+ATOP master port
+  /// ID width of the AXI4+ATOP master port.
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
+  /// Request struct type of the AXI4+ATOP slave port.
+  ///
+  /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
+  parameter type slv_req_t = logic,
+  /// Response struct type of the AXI4+ATOP slave port.
+  ///
+  /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
+  parameter type slv_resp_t = logic,
   /// Request struct type of the AXI4+ATOP master port
+  ///
+  /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
   parameter type mst_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
+  ///
+  /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
   parameter type mst_resp_t = logic
 ) (
   /// Rising-edge clock of all ports
@@ -570,9 +578,9 @@ module axi_id_remap_intf #(
   axi_id_remap #(
     .TableSize          ( TABLE_SIZE            ),
     .AxiSlvPortIdWidth  ( AXI_SLV_PORT_ID_WIDTH ),
+    .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH ),
     .slv_req_t          ( slv_req_t             ),
     .slv_resp_t         ( slv_resp_t            ),
-    .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH ),
     .mst_req_t          ( mst_req_t             ),
     .mst_resp_t         ( mst_resp_t            )
   ) i_axi_id_remap (

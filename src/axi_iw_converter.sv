@@ -83,9 +83,9 @@ module axi_iw_converter #(
     axi_id_remap #(
       .TableSize          ( RemapTableSize ),
       .AxiSlvPortIdWidth  ( AxiIdWidthSlv  ),
+      .AxiMstPortIdWidth  ( AxiIdWidthMst  ),
       .slv_req_t          ( slv_req_t      ),
       .slv_resp_t         ( slv_resp_t     ),
-      .AxiMstPortIdWidth  ( AxiIdWidthMst  ),
       .mst_req_t          ( mst_req_t      ),
       .mst_resp_t         ( mst_resp_t     )
     ) i_remap (
