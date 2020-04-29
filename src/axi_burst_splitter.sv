@@ -105,7 +105,7 @@ module axi_burst_splitter #(
     // ATOPs are not supported.
     if (atop != '0) return 1'b0;
     // The AXI Spec (A3.4.1) only allows splitting non-modifiable transactions ..
-    if (!(|(cache & axi_pkg::CACHE_MODIFIABLE))) begin
+    if (!axi_pkg::modifiable(cache)) begin
       // .. if they are INCR bursts and longer than 16 beats.
       return (burst == axi_pkg::BURST_INCR) & (len > 16);
     end

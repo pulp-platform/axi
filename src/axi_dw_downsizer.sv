@@ -49,6 +49,7 @@ module axi_dw_downsizer #(
    *  DEFINITIONS  *
    *****************/
   import axi_pkg::aligned_addr;
+  import axi_pkg::modifiable  ;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -385,7 +386,7 @@ module axi_dw_downsizer #(
             case (r_req_d.ar.burst)
               axi_pkg::BURST_INCR : begin
                 // Modifiable transaction
-                if (|(r_req_d.ar.cache & axi_pkg::CACHE_MODIFIABLE)) begin
+                if (modifiable(r_req_d.ar.cache)) begin
                   // Evaluate downsize ratio
                   automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
                   automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
@@ -700,7 +701,7 @@ module axi_dw_downsizer #(
         case (slv_req_i.aw.burst)
           axi_pkg::BURST_INCR: begin
             // Modifiable transaction
-            if (|(slv_req_i.aw.cache & axi_pkg::CACHE_MODIFIABLE)) begin
+            if (modifiable(slv_req_i.aw.cache)) begin
               // Evaluate downsize ratio
               automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
               automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
