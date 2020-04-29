@@ -399,9 +399,9 @@ endmodule
 /// fields: the input ID and a counter that records how many transactions with the input and output
 /// ID of the entry are in-flight.
 ///
-/// The mapping between input and output IDs is bijective. Therefore, when the table contains an
-/// entry for an input ID with non-zero counter value, subsequent input IDs must use the same entry
-/// and thus the same output ID.
+/// The mapping from input and output IDs is injective.  Therefore, when the table contains an entry
+/// for an input ID with non-zero counter value, subsequent input IDs must use the same entry and
+/// thus the same output ID.
 ///
 /// ## Relation of types and table layout
 /// ![diagram of table](axi_id_remap_table.svg)
