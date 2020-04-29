@@ -67,6 +67,7 @@ sources:
       - test/tb_axi_addr_test.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
+      - test/tb_axi_dw_pkg.sv
       - test/tb_axi_dw_downsizer.sv
       - test/tb_axi_dw_upsizer.sv
       - test/tb_axi_isolate.sv
