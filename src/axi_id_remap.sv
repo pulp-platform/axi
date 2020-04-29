@@ -405,6 +405,12 @@ endmodule
 ///
 /// ## Relation of types and table layout
 /// ![diagram of table](axi_id_remap_table.svg)
+///
+/// ## Complexity
+/// This module has:
+/// - `MaxUniqueInpIds * InpIdWidth * clog2(MaxTxnsPerId)` flip flops;
+/// - `MaxUniqueInpIds` comparators of width `InpIdWidth`;
+/// - 2 leading-zero counters of width `MaxUniqueInpIds`.
 module axi_id_remap_table #(
   /// Width of input IDs, therefore width of `id_inp_t`.
   parameter int unsigned InpIdWidth = 32'd0,
