@@ -27,8 +27,8 @@ module tb_axi_dw_downsizer #(
     parameter int unsigned AxiUserWidth        = 8   ,
     // TB Parameters
     parameter time CyclTime                    = 10ns,
-    parameter time ApplTime                    = 2ns ,
-    parameter time TestTime                    = 8ns
+    parameter time ApplTime                    = 0ns ,
+    parameter time TestTime                    = 5ns
   );
 
   /****************
@@ -38,18 +38,13 @@ module tb_axi_dw_downsizer #(
   `include "axi/assign.svh"
   `include "axi/typedef.svh"
 
-  localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
-  localparam AxiMstPortStrbWidth = AxiMstPortDataWidth / 8;
-
-  localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
-  localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
-
   /*********************
    *  CLOCK GENERATOR  *
    *********************/
 
   logic clk;
   logic rst_n;
+  logic eos;
 
   clk_rst_gen #(
     .CLK_PERIOD    (CyclTime),
@@ -58,7 +53,6 @@ module tb_axi_dw_downsizer #(
     .clk_o (clk  ),
     .rst_no(rst_n)
   );
-
 
   /*********
    *  AXI  *
@@ -85,12 +79,13 @@ module tb_axi_dw_downsizer #(
   `AXI_ASSIGN(master, master_dv)
 
   axi_test::rand_axi_master #(
-    .AW(AxiAddrWidth       ),
-    .DW(AxiSlvPortDataWidth),
-    .IW(AxiIdWidth         ),
-    .UW(AxiUserWidth       ),
-    .TA(ApplTime           ),
-    .TT(TestTime           )
+    .AW             (AxiAddrWidth       ),
+    .DW             (AxiSlvPortDataWidth),
+    .IW             (AxiIdWidth         ),
+    .UW             (AxiUserWidth       ),
+    .TA             (ApplTime           ),
+    .TT             (TestTime           ),
+    .AXI_BURST_FIXED(1'b0               )
   ) master_drv = new (master_dv);
 
   // Slave port
@@ -140,11 +135,13 @@ module tb_axi_dw_downsizer #(
     .mst   (slave )
   );
 
-  /********
-   *  TB  *
-   ********/
+  /*************
+   *  DRIVERS  *
+   *************/
 
   initial begin
+    eos = 1'b0;
+
     // Configuration
     slave_drv.reset()                                                                                  ;
     master_drv.reset()                                                                                 ;
@@ -152,13 +149,39 @@ module tb_axi_dw_downsizer #(
 
     fork
       // Act as a sink
-      slave_drv.run()       ;
-      master_drv.run(50, 50);
+      slave_drv.run()         ;
+      master_drv.run(200, 200);
     join_any
 
     // Done
     #(10*CyclTime);
-    $finish(0)    ;
+    eos = 1'b1;
+  end
+
+  /*************
+   *  MONITOR  *
+   *************/
+
+  initial begin : proc_monitor
+    static tb_axi_dw_pkg::axi_dw_downsizer_monitor #(
+      .AxiAddrWidth       (AxiAddrWidth       ),
+      .AxiMstPortDataWidth(AxiMstPortDataWidth),
+      .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
+      .AxiIdWidth         (AxiIdWidth         ),
+      .AxiUserWidth       (AxiUserWidth       ),
+      .TimeTest           (TestTime           )
+    ) monitor = new (master_dv, slave_dv);
+    fork
+      monitor.run();
+      forever begin
+        #TestTime;
+        if(eos) begin
+          monitor.print_result();
+          $stop()               ;
+        end
+        @(posedge clk);
+      end
+    join
   end
 
 // vsim -voptargs=+acc work.tb_axi_dw_downsizer
