@@ -32,6 +32,8 @@ module axi_id_remap #(
   /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
+  ///
+  /// The maximum value of this parameter is `2**AxiSlvPortIdWidth`.
   parameter int unsigned AxiMaxUniqueSlvIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   ///
@@ -370,6 +372,7 @@ module axi_id_remap #(
       assert (AxiSlvPortIdWidth > 0);
       assert (AxiMstPortIdWidth > 0);
       assert (AxiMaxUniqueSlvIds > 0);
+      assert (AxiMaxUniqueSlvIds <= 2**AxiSlvPortIdWidth);
       assert (AxiMaxTxnsPerId > 0);
       assert (AxiMstPortIdWidth >= IdxWidth);
       // TODO: Allow AxiMstPortIdWidth to be smaller than IdxWidth, i.e., to have multiple outstanding
