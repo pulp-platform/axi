@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 ETH Zurich, University of Bologna
+// Copyright (c) 2014-2020 ETH Zurich, University of Bologna
 //
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
@@ -13,11 +13,32 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
-/// Change the AXI ID width.
+/// Convert between two AXI ID widths.
 ///
-/// This module instantiates a remapper if the outgoing ID is smaller than the incoming ID.
-/// Feeds through the channel if the ID widths are the same and extends it with zeros, if
-/// the outgoing ID is larger than the incoming ID.
+/// Any combination of slave and master port ID width is valid.  When the master port ID width is
+/// larger than or equal to the slave port ID width, slave port IDs are simply prepended with zeros
+/// to the width of master port IDs.  For *reducing* the ID width, i.e., when the master port ID
+/// width is smaller than the slave port ID width, there are two options.
+///
+/// ## Options for reducing the ID width
+///
+/// The two options for reducing ID widths differ in the maximum number of transactions that can be
+/// in flight at the slave port of this module, given in the `AxiMaxUniqSlvPortIds` parameter.
+///
+/// ### Fewer unique slave port IDs than master port IDs
+///
+/// If `AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth`, there are fewer unique slave port IDs than
+/// master port IDs.  Therefore, IDs that are different at the slave port of this module can remain
+/// different at the reduced-ID-width master port and thus remain *independently reorderable*.
+/// Since the IDs are master port are nonetheless shorter than at the slave port, they need to be
+/// *remapped*.  An instance of [`axi_id_remap`](module.axi_id_remap) handles this case.
+///
+/// ### More unique slave port IDs than master port IDs
+///
+/// If `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`, there are more unique slave port IDs than
+/// master port IDs.  Therefore, some IDs that are different at the slave port need to be assigned
+/// to the same master port ID and thus become ordered with respect to each other.  An instance of
+/// [`axi_id_serializer`](module.axi_id_serializer) handles this case.
 module axi_iw_converter #(
   /// Size of the remap table when downconverting the ID size.
   /// This number of ID's get generated at the master port.
