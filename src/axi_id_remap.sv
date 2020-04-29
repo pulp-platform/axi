@@ -18,16 +18,16 @@ module axi_id_remap #(
   parameter int unsigned TableSize     = 32'd0,
   /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
-  /// AXI4+ATOP request struct type of the slave port
-  parameter type         slv_req_t     = logic,
-  /// AXI4+ATOP response struct type of the slave port
-  parameter type         slv_resp_t    = logic,
+  /// Request struct type of the AXI4+ATOP slave port
+  parameter type slv_req_t = logic,
+  /// Response struct type of the AXI4+ATOP slave port
+  parameter type slv_resp_t = logic,
   /// ID width of the AXI4+ATOP master port
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
-  /// AXI4+ATOP request struct type of the master port
-  parameter type         mst_req_t     = logic,
-  /// AXI4+ATOP response struct type of the master port
-  parameter type         mst_resp_t    = logic
+  /// Request struct type of the AXI4+ATOP master port
+  parameter type mst_req_t = logic,
+  /// Response struct type of the AXI4+ATOP master port
+  parameter type mst_resp_t = logic
 ) (
   /// Clock Input
   input  logic      clk_i,
