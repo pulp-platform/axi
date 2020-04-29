@@ -359,7 +359,6 @@ module axi_id_remap #(
     initial begin
       assert (AxiSlvPortIdWidth > 0);
       assert (AxiMstPortIdWidth > 0);
-      assert (AxiMstPortIdWidth < AxiSlvPortIdWidth);
       assert (AxiMaxUniqueSlvIds > 0);
       assert (AxiMaxTxnsPerId > 0);
       assert (AxiMstPortIdWidth >= IdxWidth);
