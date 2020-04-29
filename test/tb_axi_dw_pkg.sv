@@ -150,8 +150,6 @@ package tb_axi_dw_pkg;
       exp_ax_t exp_aw;
       exp_t    exp_b;
 
-      logic exp_slverr;
-
       if (master_axi.aw_valid && master_axi.aw_ready) begin
         // Non-modifiable transaction
         if (!axi_pkg::modifiable(master_axi.aw_cache)) begin
@@ -171,18 +169,23 @@ package tb_axi_dw_pkg;
                 slv_axi_id  : master_axi.aw_id  ,
                 slv_axi_addr: master_axi.aw_addr,
                 slv_axi_len : master_axi.aw_len
-              } ;
+              };
             end
             // INCR upsize
             axi_pkg::BURST_INCR: begin
-              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(master_axi.aw_addr, AxiMstPortMaxSize)                                                                                       ;
-              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(master_axi.aw_addr, master_axi.aw_size) + (master_axi.aw_len << master_axi.aw_size), AxiMstPortMaxSize);
+              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(master_axi.aw_addr, AxiMstPortMaxSize)                                                                                                  ;
+              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(master_axi.aw_addr, master_axi.aw_size) + (unsigned'(master_axi.aw_len) << master_axi.aw_size), AxiMstPortMaxSize);
 
               exp_aw = '{
                 slv_axi_id  : master_axi.aw_id  ,
                 slv_axi_addr: master_axi.aw_addr,
                 slv_axi_len : (aligned_end - aligned_start) >> AxiMstPortMaxSize
-              } ;
+              };
+            end
+            // WRAP upsize
+            axi_pkg::BURST_WRAP: begin
+              exp_aw = '0;
+              $warning("WRAP bursts are not supported.");
             end
           endcase
           this.exp_aw_queue.push(master_axi.aw_id, exp_aw);
@@ -211,7 +214,7 @@ package tb_axi_dw_pkg;
       end
     endtask : monitor_mst_aw
 
-    // This task monitors the slave port of the crossbar. Every time there is an AW vector it
+    // This task monitors the slave port of the upsizer. Every time there is an AW vector it
     // gets checked for its contents and if it was expected. The task then pushes an expected
     // amount of W beats in the respective fifo. Emphasis of the last flag.
     task automatic monitor_slv_aw ();
@@ -237,11 +240,11 @@ package tb_axi_dw_pkg;
         incr_conducted_tests(3);
 
         // Push the required W beats into the right fifo
-        incr_expected_tests(slave_axi.aw_len + 1);
         for (int unsigned j = 0; j <= slave_axi.aw_len; j++) begin
           exp_slv_w.axi_id = slave_axi.aw_id;
           exp_slv_w.last   = (j == slave_axi.aw_len) ? 1'b1 : 1'b0;
-          this.exp_w_fifo.push_back(exp_slv_w) ;
+          this.exp_w_fifo.push_back(exp_slv_w);
+          incr_expected_tests(1)              ;
         end
       end
     endtask : monitor_slv_aw
@@ -297,10 +300,9 @@ package tb_axi_dw_pkg;
       end
     endtask : monitor_mst_b
 
-    // This task monitors the AR channel of a slave port of the crossbar. For each AR it populates
+    // This task monitors the AR channel of a slave port of the upsizer. For each AR it populates
     // the corresponding ID queue with the number of r beats indicated on the `ar_len` field.
-    // Emphasis on the last flag. We will detect reordering, if the last flags do not match,
-    // as each `random` burst tend to have a different length.
+    // Emphasis on the last flag.
     task automatic monitor_mst_ar ();
       exp_ax_t exp_slv_ar;
       exp_t    exp_mst_r;
@@ -326,14 +328,19 @@ package tb_axi_dw_pkg;
             end
             // INCR upsize
             axi_pkg::BURST_INCR: begin
-              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(master_axi.ar_addr, AxiMstPortMaxSize)                                                                                       ;
-              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(master_axi.ar_addr, master_axi.ar_size) + (master_axi.ar_len << master_axi.ar_size), AxiMstPortMaxSize);
+              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(master_axi.ar_addr, AxiMstPortMaxSize)                                                                                                  ;
+              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(master_axi.ar_addr, master_axi.ar_size) + (unsigned'(master_axi.ar_len) << master_axi.ar_size), AxiMstPortMaxSize);
 
               exp_slv_ar = '{
                 slv_axi_id  : master_axi.ar_id  ,
                 slv_axi_addr: master_axi.ar_addr,
                 slv_axi_len : (aligned_end - aligned_start) >> AxiMstPortMaxSize
-              } ;
+              };
+            end
+            // WRAP upsize
+            axi_pkg::BURST_WRAP: begin
+              exp_slv_ar = '0;
+              $warning("WRAP bursts are not supported.");
             end
           endcase
           this.exp_ar_queue.push(master_axi.ar_id, exp_slv_ar);

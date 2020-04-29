@@ -24,8 +24,8 @@ module tb_axi_dw_upsizer #(
     parameter int unsigned AxiUserWidth        = 8   ,
     // TB Parameters
     parameter time CyclTime                    = 10ns,
-    parameter time ApplTime                    = 2ns ,
-    parameter time TestTime                    = 8ns
+    parameter time ApplTime                    = 0ns ,
+    parameter time TestTime                    = 5ns
   );
 
   /****************
@@ -76,13 +76,12 @@ module tb_axi_dw_upsizer #(
   `AXI_ASSIGN(master, master_dv)
 
   axi_test::rand_axi_master #(
-    .AW       (AxiAddrWidth       ),
-    .DW       (AxiSlvPortDataWidth),
-    .IW       (AxiIdWidth         ),
-    .UW       (AxiUserWidth       ),
-    .TA       (ApplTime           ),
-    .TT       (TestTime           ),
-    .AXI_ATOPS(1'b1               )
+    .AW(AxiAddrWidth       ),
+    .DW(AxiSlvPortDataWidth),
+    .IW(AxiIdWidth         ),
+    .UW(AxiUserWidth       ),
+    .TA(ApplTime           ),
+    .TT(TestTime           )
   ) master_drv = new (master_dv);
 
   // Slave port
