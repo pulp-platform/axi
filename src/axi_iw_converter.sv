@@ -24,48 +24,48 @@ module axi_iw_converter #(
   /// Maximum value is RemapTableSize <= 2**`AxiIdWidthMst` as then one table exists for
   /// every possible master port ID. The mapping is one to one.
   parameter int unsigned RemapTableSize = 32'd0,
-  /// AXI4+ATOP address width of both ports
-  parameter int unsigned AxiAddrWidth   = 32'd0,
-  /// AXI4+ATOP data width of both ports
-  parameter int unsigned AxiDataWidth   = 32'd0,
-  /// AXI4+ATOP user width of both ports
-  parameter int unsigned AxiUserWidth   = 32'd0,
-  /// AXI4+ATOP ID width of the slave port
-  parameter int unsigned AxiIdWidthSlv  = 32'd0,
-  /// AXI4+ATOP AW channel struct type of the slave port
-  parameter type         slv_aw_chan_t  = logic,
-  /// AXI4+ATOP W channel struct type of the slave port
-  parameter type         slv_w_chan_t   = logic,
-  /// AXI4+ATOP B channel struct type of the slave port
-  parameter type         slv_b_chan_t   = logic,
-  /// AXI4+ATOP AR channel struct type of the slave port
-  parameter type         slv_ar_chan_t  = logic,
-  /// AXI4+ATOP R channel struct type of the slave port
-  parameter type         slv_r_chan_t   = logic,
-  /// AXI4+ATOP request struct type of the slave port
-  parameter type         slv_req_t      = logic,
-  /// AXI4+ATOP response struct type of the slave port
-  parameter type         slv_resp_t     = logic,
-  /// AXI4+ATOP ID width of the master port
-  parameter int unsigned AxiIdWidthMst  = 32'd0,
-  /// AXI4+ATOP AW channel struct type of the master port
-  parameter type         mst_aw_chan_t  = logic,
-  /// AXI4+ATOP W channel struct type of the master port
-  parameter type         mst_w_chan_t   = logic,
-  /// AXI4+ATOP B channel struct type of the master port
-  parameter type         mst_b_chan_t   = logic,
-  /// AXI4+ATOP AR channel struct type of the master port
-  parameter type         mst_ar_chan_t  = logic,
-  /// AXI4+ATOP R channel struct type of the master port
-  parameter type         mst_r_chan_t   = logic,
-  /// AXI4+ATOP request struct type of the master port
-  parameter type         mst_req_t      = logic,
-  /// AXI4+ATOP response struct type of the master port
-  parameter type         mst_resp_t     = logic
+  /// ID width of the AXI4+ATOP slave port
+  parameter int unsigned AxiIdWidthSlv = 32'd0,
+  /// ID width of the AXI4+ATOP master port
+  parameter int unsigned AxiIdWidthMst = 32'd0,
+  /// Address width of both AXI4+ATOP ports
+  parameter int unsigned AxiAddrWidth = 32'd0,
+  /// Data width of both AXI4+ATOP ports
+  parameter int unsigned AxiDataWidth = 32'd0,
+  /// User signal width of both AXI4+ATOP ports
+  parameter int unsigned AxiUserWidth = 32'd0,
+  /// AW channel struct type of the AXI4+ATOP slave port
+  parameter type slv_aw_chan_t = logic,
+  /// W channel struct type of the AXI4+ATOP slave port
+  parameter type slv_w_chan_t = logic,
+  /// B channel struct type of the AXI4+ATOP slave port
+  parameter type slv_b_chan_t = logic,
+  /// AR channel struct type of the AXI4+ATOP slave port
+  parameter type slv_ar_chan_t = logic,
+  /// R channel struct type of the AXI4+ATOP slave port
+  parameter type slv_r_chan_t = logic,
+  /// Request struct type of the AXI4+ATOP slave port
+  parameter type slv_req_t = logic,
+  /// Response struct type of the AXI4+ATOP slave port
+  parameter type slv_resp_t = logic,
+  /// AW channel struct type of the AXI4+ATOP master port
+  parameter type mst_aw_chan_t = logic,
+  /// W channel struct type of the AXI4+ATOP master port
+  parameter type mst_w_chan_t = logic,
+  /// B channel struct type of the AXI4+ATOP master port
+  parameter type mst_b_chan_t = logic,
+  /// AR channel struct type of the AXI4+ATOP master port
+  parameter type mst_ar_chan_t = logic,
+  /// R channel struct type of the AXI4+ATOP master port
+  parameter type mst_r_chan_t = logic,
+  /// Request struct type of the AXI4+ATOP master port
+  parameter type mst_req_t = logic,
+  /// Response struct type of the AXI4+ATOP master port
+  parameter type mst_resp_t = logic
 ) (
-  /// Clock Input
+  /// Rising-edge clock of both ports
   input  logic      clk_i,
-  /// Asynchronous reset active low
+  /// Asynchronous reset, active low
   input  logic      rst_ni,
   /// Slave port request
   input  slv_req_t  slv_req_i,
@@ -209,27 +209,20 @@ endmodule
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
+/// Interface variant of [`axi_iw_converter`](module.axi_iw_converter).
+///
+/// See the documentation of the main module for the definition of ports and parameters.
 module axi_iw_converter_intf #(
-  ///
   parameter int unsigned REMAP_TABLE_SIZE = 32'd0,
-  /// AXI4+ATOP ID width of the slave port
   parameter int unsigned AXI_ID_WIDTH_SLV = 32'd0,
-  /// AXI4+ATOP ID width of the master port
   parameter int unsigned AXI_ID_WIDTH_MST = 32'd0,
-  /// AXI4+ATOP address width of both ports
-  parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
-  /// AXI4+ATOP data width of both ports
-  parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
-  /// AXI4+ATOP user width of both ports
-  parameter int unsigned AXI_USER_WIDTH   = 32'd0
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH = 32'd0
 ) (
-  /// Clock Input
   input  logic   clk_i,
-  /// Asynchronous reset active low
   input  logic   rst_ni,
-  /// Slave port
   AXI_BUS.Slave  slv,
-  /// Master port
   AXI_BUS.Master mst
 );
   typedef logic [AXI_ID_WIDTH_SLV-1:0] slv_id_t;
