@@ -1,7 +1,11 @@
 name: Build and deploy documentation
 on:
   push:
-    branches: gh-pages-doc # TODO: change to master
+    branches-ignore:
+      - static  # this branch name conflicts with the `static` folder
+      - v**     # such branch names conflict with tags
+    tags:
+      - v**
 
 jobs:
   build-and-deploy:
@@ -46,9 +50,20 @@ jobs:
           morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
         shell: bash
 
+      - name: Determine documentation target folder
+        run: |
+          if echo $GITHUB_REF | grep -qE '^refs/(heads|tags)'; then
+            DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+          else
+            echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
+            exit 1
+          fi
+          echo "::set-env name=DOC_TARGET::$DOC_TARGET"
+
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: docs # The folder the action should deploy.
+          TARGET_FOLDER: ${{ env.DOC_TARGET }}
