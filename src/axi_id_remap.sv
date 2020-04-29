@@ -138,9 +138,9 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiSlvPortIdWidth     ),
-    .MaxUniqueInpIds  ( AxiMaxUniqSlvPortIds  ),
-    .MaxTxnsPerId     ( AxiMaxTxnsPerId       )
+    .InpIdWidth     ( AxiSlvPortIdWidth     ),
+    .MaxUniqInpIds  ( AxiMaxUniqSlvPortIds  ),
+    .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -159,9 +159,9 @@ module axi_id_remap #(
     .pop_inp_id_o    ( slv_resp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiSlvPortIdWidth     ),
-    .MaxUniqueInpIds  ( AxiMaxUniqSlvPortIds  ),
-    .MaxTxnsPerId     ( AxiMaxTxnsPerId       )
+    .InpIdWidth     ( AxiSlvPortIdWidth     ),
+    .MaxUniqInpIds  ( AxiMaxUniqSlvPortIds  ),
+    .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -409,9 +409,9 @@ endmodule
 ///
 /// ## Complexity
 /// This module has:
-/// - `MaxUniqueInpIds * InpIdWidth * clog2(MaxTxnsPerId)` flip flops;
-/// - `MaxUniqueInpIds` comparators of width `InpIdWidth`;
-/// - 2 leading-zero counters of width `MaxUniqueInpIds`.
+/// - `MaxUniqInpIds * InpIdWidth * clog2(MaxTxnsPerId)` flip flops;
+/// - `MaxUniqInpIds` comparators of width `InpIdWidth`;
+/// - 2 leading-zero counters of width `MaxUniqInpIds`.
 module axi_id_remap_table #(
   /// Width of input IDs, therefore width of `id_inp_t`.
   parameter int unsigned InpIdWidth = 32'd0,
@@ -419,18 +419,18 @@ module axi_id_remap_table #(
   /// table entries.
   ///
   /// The maximum value of this parameter is `2**InpIdWidth`.
-  parameter int unsigned MaxUniqueInpIds = 32'd0,
+  parameter int unsigned MaxUniqInpIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   parameter int unsigned MaxTxnsPerId = 32'd0,
   /// Derived (**=do not override**) type of input IDs.
   localparam type id_inp_t = logic [InpIdWidth-1:0],
   /// Derived (**=do not override**) width of table index (ceiled binary logarithm of
-  /// `MaxUniqueInpIds`).
-  localparam int unsigned IdxWidth = $clog2(MaxUniqueInpIds) > 0 ? $clog2(MaxUniqueInpIds) : 1,
+  /// `MaxUniqInpIds`).
+  localparam int unsigned IdxWidth = $clog2(MaxUniqInpIds) > 0 ? $clog2(MaxUniqInpIds) : 1,
   /// Derived (**=do not override**) type of table index (width = `IdxWidth`).
   localparam type idx_t = logic [IdxWidth-1:0],
   /// Derived (**=do not override**) type with one bit per table entry (thus also output ID).
-  localparam type field_t = logic [MaxUniqueInpIds-1:0]
+  localparam type field_t = logic [MaxUniqInpIds-1:0]
 ) (
   /// Rising-edge clock of all ports
   input  logic    clk_i,
@@ -484,15 +484,15 @@ module axi_id_remap_table #(
   } entry_t;
 
   // Table indexed by output IDs that contains the corresponding input IDs
-  entry_t [MaxUniqueInpIds-1:0] table_d, table_q;
+  entry_t [MaxUniqInpIds-1:0] table_d, table_q;
 
   // Determine lowest free output ID.
-  for (genvar i = 0; i < MaxUniqueInpIds; i++) begin : gen_free_o
+  for (genvar i = 0; i < MaxUniqInpIds; i++) begin : gen_free_o
     assign free_o[i] = table_q[i].cnt == '0;
   end
   lzc #(
-    .WIDTH ( MaxUniqueInpIds  ),
-    .MODE  ( 1'b0             )
+    .WIDTH ( MaxUniqInpIds  ),
+    .MODE  ( 1'b0           )
   ) i_lzc_free (
     .in_i    ( free_o        ),
     .cnt_o   ( free_oup_id_o ),
@@ -504,13 +504,13 @@ module axi_id_remap_table #(
 
   // Determine if given output ID is already used and, if it is, by which input ID.
   field_t match;
-  for (genvar i = 0; i < MaxUniqueInpIds; i++) begin : gen_match
+  for (genvar i = 0; i < MaxUniqInpIds; i++) begin : gen_match
     assign match[i] = table_q[i].cnt > 0 && table_q[i].inp_id == exists_inp_id_i;
   end
   logic no_match;
   lzc #(
-      .WIDTH ( MaxUniqueInpIds  ),
-      .MODE  ( 1'b0             )
+      .WIDTH ( MaxUniqInpIds  ),
+      .MODE  ( 1'b0           )
   ) i_lzc_match (
       .in_i     ( match           ),
       .cnt_o    ( exists_oup_id_o ),
@@ -554,8 +554,8 @@ module axi_id_remap_table #(
       else $error("Input ID in table must be unique!");
     initial begin
       assert (InpIdWidth > 0);
-      assert (MaxUniqueInpIds > 0);
-      assert (MaxUniqueInpIds <= (1 << InpIdWidth));
+      assert (MaxUniqInpIds > 0);
+      assert (MaxUniqInpIds <= (1 << InpIdWidth));
       assert (MaxTxnsPerId > 0);
       assert (IdxWidth >= 1);
     end
