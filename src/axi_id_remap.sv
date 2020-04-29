@@ -14,11 +14,28 @@
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
 module axi_id_remap #(
-  /// Size of the remap table per channel
-  parameter int unsigned TableSize     = 32'd0,
   /// ID width of the AXI4+ATOP slave port.
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+  /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
+  /// counted separately (except for ATOPs, which count as both read and write).
+  ///
+  /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
+  /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
+  /// transactions of another ID complete.
+  parameter int unsigned AxiMaxUniqueSlvIds = 32'd0,
+  /// Maximum number of in-flight transactions with the same ID.
+  ///
+  /// It is legal for upstream to have more transactions than the maximum given by this parameter in
+  /// flight for any ID, but a transaction exceeding the maximum will be stalled until another
+  /// transaction with the same ID completes.
+  parameter int unsigned AxiMaxTxnsPerId = 32'd0,
   /// ID width of the AXI4+ATOP master port.
+  ///
+  /// The minimum value of this parameter is the ceiled binary logarithm of `AxiMaxUniqueSlvIds`,
+  /// because IDs at the master port must be wide enough to represent IDs up to
+  /// `AxiMaxUniqueSlvIds-1`.
+  ///
+  /// If master IDs are wider than the minimum, they are extended by prepending zeros.
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
   /// Request struct type of the AXI4+ATOP slave port.
   ///
@@ -93,10 +110,10 @@ module axi_id_remap #(
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  localparam int unsigned IdxWidth = $clog2(TableSize) > 0 ? $clog2(TableSize) : 1;
-  typedef logic [TableSize-1:0]     field_t;
-  typedef logic [AxiSlvPortIdWidth-1:0] id_inp_t;
-  typedef logic [IdxWidth-1:0]      idx_t;
+  localparam int unsigned IdxWidth = $clog2(AxiMaxUniqueSlvIds) > 0 ? $clog2(AxiMaxUniqueSlvIds) : 1;
+  typedef logic [AxiMaxUniqueSlvIds-1:0]  field_t;
+  typedef logic [AxiSlvPortIdWidth-1:0]   id_inp_t;
+  typedef logic [IdxWidth-1:0]            idx_t;
   field_t   wr_free,          rd_free,          both_free;
   id_inp_t                    rd_push_inp_id;
   idx_t     wr_free_oup_id,   rd_free_oup_id,   both_free_oup_id,
@@ -108,9 +125,9 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiSlvPortIdWidth ),
-    .MaxUniqueInpIds  ( TableSize         ),
-    .MaxTxnsPerId     ( TableSize         )
+    .InpIdWidth       ( AxiSlvPortIdWidth   ),
+    .MaxUniqueInpIds  ( AxiMaxUniqueSlvIds  ),
+    .MaxTxnsPerId     ( AxiMaxTxnsPerId     )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -129,9 +146,9 @@ module axi_id_remap #(
     .pop_inp_id_o    ( slv_resp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .InpIdWidth       ( AxiSlvPortIdWidth ),
-    .MaxUniqueInpIds  ( TableSize         ),
-    .MaxTxnsPerId     ( TableSize         )
+    .InpIdWidth       ( AxiSlvPortIdWidth   ),
+    .MaxUniqueInpIds  ( AxiMaxUniqueSlvIds  ),
+    .MaxTxnsPerId     ( AxiMaxTxnsPerId     )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -151,8 +168,8 @@ module axi_id_remap #(
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  ( TableSize ),
-    .MODE   ( 1'b0      )
+    .WIDTH  ( AxiMaxUniqueSlvIds  ),
+    .MODE   ( 1'b0                )
   ) i_lzc (
     .in_i     ( both_free        ),
     .cnt_o    ( both_free_oup_id ),
@@ -343,7 +360,8 @@ module axi_id_remap #(
       assert (AxiSlvPortIdWidth > 0);
       assert (AxiMstPortIdWidth > 0);
       assert (AxiMstPortIdWidth < AxiSlvPortIdWidth);
-      assert (TableSize > 0);
+      assert (AxiMaxUniqueSlvIds > 0);
+      assert (AxiMaxTxnsPerId > 0);
       assert (AxiMstPortIdWidth >= IdxWidth);
       // TODO: Allow AxiMstPortIdWidth to be smaller than IdxWidth, i.e., to have multiple outstanding
       // transactions (limited by TableSize) remapped to a few (extreme case: one) ID.  This is
@@ -530,8 +548,9 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
-  parameter int unsigned TABLE_SIZE = 32'd0,
   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_MAX_UNIQUE_SLV_IDS = 32'd0,
+  parameter int unsigned AXI_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
@@ -576,13 +595,14 @@ module axi_id_remap_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_id_remap #(
-    .TableSize          ( TABLE_SIZE            ),
-    .AxiSlvPortIdWidth  ( AXI_SLV_PORT_ID_WIDTH ),
-    .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH ),
-    .slv_req_t          ( slv_req_t             ),
-    .slv_resp_t         ( slv_resp_t            ),
-    .mst_req_t          ( mst_req_t             ),
-    .mst_resp_t         ( mst_resp_t            )
+    .AxiSlvPortIdWidth  ( AXI_SLV_PORT_ID_WIDTH   ),
+    .AxiMaxUniqueSlvIds ( AXI_MAX_UNIQUE_SLV_IDS  ),
+    .AxiMaxTxnsPerId    ( AXI_MAX_TXNS_PER_ID     ),
+    .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH   ),
+    .slv_req_t          ( slv_req_t               ),
+    .slv_resp_t         ( slv_resp_t              ),
+    .mst_req_t          ( mst_req_t               ),
+    .mst_resp_t         ( mst_resp_t              )
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,
