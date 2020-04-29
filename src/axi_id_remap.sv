@@ -530,12 +530,12 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
-  parameter int unsigned TABLE_SIZE       = 32'd0,
+  parameter int unsigned TABLE_SIZE = 32'd0,
   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH   = 32'd0
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH = 32'd0
 ) (
   input logic     clk_i,
   input logic     rst_ni,
