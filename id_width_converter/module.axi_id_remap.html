@@ -13,6 +13,7 @@ effectively only uses a (not necessarily contiguous) subset of IDs.</p>
 the slave port of this module, they are guaranteed to have different IDs at the master port of
 this module.  This implies a lower bound on the <a href="#parameter.AxiMstPortIdWidth">width of IDs on the master
 port</a>.</p>
+<p>Internally, a <a href="module.axi_id_remap_table">table is used for remapping IDs</a>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.AxiSlvPortIdWidth" class="impl"><code class="in-band">AxiSlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
