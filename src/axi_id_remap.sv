@@ -23,6 +23,8 @@
 /// the slave port of this module, they are guaranteed to have different IDs at the master port of
 /// this module.  This implies a lower bound on the [width of IDs on the master
 /// port](#parameter.AxiMstPortIdWidth).
+///
+/// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
 module axi_id_remap #(
   /// ID width of the AXI4+ATOP slave port.
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
