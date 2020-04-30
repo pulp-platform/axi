@@ -3,7 +3,6 @@ on:
   push:
     branches-ignore:
       - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
-      - static    # this branch name conflicts with the `static` folder
       - v**       # such branch names conflict with tags
     tags:
       - v**
