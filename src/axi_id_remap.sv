@@ -341,8 +341,14 @@ module axi_id_remap #(
   initial begin : p_assert
     assert(AxiSlvPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
-    assert(AxiMstPortIdWidth > 32'd0)
-      else $fatal(1, "Parameter AxiMstPortIdWidth has to be larger than 0!");
+    assert(AxiMstPortIdWidth >= IdxWidth)
+      else $fatal(1, "Parameter AxiMstPortIdWidth has to be at least IdxWidth!");
+    assert (AxiMaxUniqSlvPortIds > 0)
+      else $fatal(1, "Parameter AxiMaxUniqSlvPortIds has to be larger than 0!");
+    assert (AxiMaxUniqSlvPortIds <= 2**AxiSlvPortIdWidth)
+      else $fatal(1, "Parameter AxiMaxUniqSlvPortIds may be at most 2**AxiSlvPortIdWidth!");
+    assert (AxiMaxTxnsPerId > 0)
+      else $fatal(1, "Parameter AxiMaxTxnsPerId has to be larger than 0!");
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
@@ -351,41 +357,31 @@ module axi_id_remap #(
       else $fatal(1, "AXI AR address widths are not equal!");
     assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
+    assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
+    assert ($bits(slv_resp_o.b.id) == AxiSlvPortIdWidth);
+    assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
+    assert ($bits(slv_resp_o.r.id) == AxiSlvPortIdWidth);
+    assert ($bits(mst_req_o.aw.id) == AxiMstPortIdWidth);
+    assert ($bits(mst_resp_i.b.id) == AxiMstPortIdWidth);
+    assert ($bits(mst_req_o.ar.id) == AxiMstPortIdWidth);
+    assert ($bits(mst_resp_i.r.id) == AxiMstPortIdWidth);
   end
   `endif
-  `ifndef TARGET_SYNTHESIS
-    default disable iff (!rst_ni);
-    assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready
-        |-> mst_req_o.aw_valid && mst_resp_i.aw_ready);
-    assert property (@(posedge clk_i) mst_resp_i.b_valid && mst_req_o.b_ready
-        |-> slv_resp_o.b_valid && slv_req_i.b_ready);
-    assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_resp_o.ar_ready
-        |-> mst_req_o.ar_valid && mst_resp_i.ar_ready);
-    assert property (@(posedge clk_i) mst_resp_i.r_valid && mst_req_o.r_ready
-        |-> slv_resp_o.r_valid && slv_req_i.r_ready);
-    assert property (@(posedge clk_i) slv_resp_o.r_valid
-        |-> slv_resp_o.r.last == mst_resp_i.r.last);
-    assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_resp_i.ar_ready
-        |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
-    assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
-        |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
-    initial begin
-      assert (AxiSlvPortIdWidth > 0);
-      assert (AxiMstPortIdWidth > 0);
-      assert (AxiMaxUniqSlvPortIds > 0);
-      assert (AxiMaxUniqSlvPortIds <= 2**AxiSlvPortIdWidth);
-      assert (AxiMaxTxnsPerId > 0);
-      assert (AxiMstPortIdWidth >= IdxWidth);
-      assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
-      assert ($bits(slv_resp_o.b.id) == AxiSlvPortIdWidth);
-      assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
-      assert ($bits(slv_resp_o.r.id) == AxiSlvPortIdWidth);
-      assert ($bits(mst_req_o.aw.id) == AxiMstPortIdWidth);
-      assert ($bits(mst_resp_i.b.id) == AxiMstPortIdWidth);
-      assert ($bits(mst_req_o.ar.id) == AxiMstPortIdWidth);
-      assert ($bits(mst_resp_i.r.id) == AxiMstPortIdWidth);
-    end
-  `endif
+  default disable iff (!rst_ni);
+  assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready
+      |-> mst_req_o.aw_valid && mst_resp_i.aw_ready);
+  assert property (@(posedge clk_i) mst_resp_i.b_valid && mst_req_o.b_ready
+      |-> slv_resp_o.b_valid && slv_req_i.b_ready);
+  assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_resp_o.ar_ready
+      |-> mst_req_o.ar_valid && mst_resp_i.ar_ready);
+  assert property (@(posedge clk_i) mst_resp_i.r_valid && mst_req_o.r_ready
+      |-> slv_resp_o.r_valid && slv_req_i.r_ready);
+  assert property (@(posedge clk_i) slv_resp_o.r_valid
+      |-> slv_resp_o.r.last == mst_resp_i.r.last);
+  assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_resp_i.ar_ready
+      |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
+  assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
+      |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
   // pragma translate_on
 endmodule
 
