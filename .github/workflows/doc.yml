@@ -47,6 +47,7 @@ jobs:
 
       - name: Build documentation
         run: |
+          mkdir -p docs
           morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
         shell: bash
 
