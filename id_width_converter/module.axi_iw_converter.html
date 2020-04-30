@@ -11,7 +11,7 @@ larger than or equal to the slave port ID width, slave port IDs are simply prepe
 to the width of master port IDs.  For <em>reducing</em> the ID width, i.e., when the master port ID
 width is smaller than the slave port ID width, there are two options.</p>
 <h2>Options for reducing the ID width</h2>
-<p>The two options for reducing ID widths differ in the maximum number of transactions that can be
+<p>The two options for reducing ID widths differ in the maximum number of different IDs that can be
 in flight at the slave port of this module, given in the <code>AxiMaxUniqSlvPortIds</code> parameter.</p>
 <h3>Fewer unique slave port IDs than master port IDs</h3>
 <p>If <code>AxiMaxUniqSlvPortIds &lt;= 2**AxiMstPortIdWidth</code>, there are fewer unique slave port IDs than
