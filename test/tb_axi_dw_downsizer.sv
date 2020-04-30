@@ -27,8 +27,8 @@ module tb_axi_dw_downsizer #(
     parameter int unsigned AxiUserWidth        = 8   ,
     // TB Parameters
     parameter time CyclTime                    = 10ns,
-    parameter time ApplTime                    = 0ns ,
-    parameter time TestTime                    = 5ns
+    parameter time ApplTime                    = 2ns ,
+    parameter time TestTime                    = 8ns
   );
 
   /****************
@@ -147,6 +147,9 @@ module tb_axi_dw_downsizer #(
     master_drv.reset()                                                                                 ;
     master_drv.add_memory_region({AxiAddrWidth{1'b0}}, {AxiAddrWidth{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
 
+    // Wait for the reset before sending requests
+    @(posedge rst_n);
+
     fork
       // Act as a sink
       slave_drv.run()         ;
@@ -154,7 +157,7 @@ module tb_axi_dw_downsizer #(
     join_any
 
     // Done
-    #(10*CyclTime);
+    repeat (10) @(posedge clk);
     eos = 1'b1;
   end
 
