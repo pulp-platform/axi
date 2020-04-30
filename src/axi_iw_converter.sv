@@ -13,6 +13,8 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
+`include "axi/typedef.svh"
+
 /// Convert between two AXI ID widths.
 ///
 /// Any combination of slave and master port ID width is valid.  When the master port ID width is
@@ -55,30 +57,10 @@ module axi_iw_converter #(
   parameter int unsigned AxiDataWidth = 32'd0,
   /// User signal width of both AXI4+ATOP ports
   parameter int unsigned AxiUserWidth = 32'd0,
-  /// AW channel struct type of the AXI4+ATOP slave port
-  parameter type slv_aw_chan_t = logic,
-  /// W channel struct type of the AXI4+ATOP slave port
-  parameter type slv_w_chan_t = logic,
-  /// B channel struct type of the AXI4+ATOP slave port
-  parameter type slv_b_chan_t = logic,
-  /// AR channel struct type of the AXI4+ATOP slave port
-  parameter type slv_ar_chan_t = logic,
-  /// R channel struct type of the AXI4+ATOP slave port
-  parameter type slv_r_chan_t = logic,
   /// Request struct type of the AXI4+ATOP slave port
   parameter type slv_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
   parameter type slv_resp_t = logic,
-  /// AW channel struct type of the AXI4+ATOP master port
-  parameter type mst_aw_chan_t = logic,
-  /// W channel struct type of the AXI4+ATOP master port
-  parameter type mst_w_chan_t = logic,
-  /// B channel struct type of the AXI4+ATOP master port
-  parameter type mst_b_chan_t = logic,
-  /// AR channel struct type of the AXI4+ATOP master port
-  parameter type mst_ar_chan_t = logic,
-  /// R channel struct type of the AXI4+ATOP master port
-  parameter type mst_r_chan_t = logic,
   /// Request struct type of the AXI4+ATOP master port
   parameter type mst_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
@@ -99,6 +81,21 @@ module axi_iw_converter #(
 );
 
   localparam int unsigned MaxMstIds = 2**AxiMstPortIdWidth;
+  typedef logic [AxiAddrWidth-1:0]      addr_t;
+  typedef logic [AxiDataWidth-1:0]      data_t;
+  typedef logic [AxiSlvPortIdWidth-1:0] slv_id_t;
+  typedef logic [AxiMstPortIdWidth-1:0] mst_id_t;
+  typedef logic [AxiDataWidth/8-1:0]    strb_t;
+  typedef logic [AxiUserWidth-1:0]      user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
 
   if ((AxiSlvPortIdWidth > AxiMstPortIdWidth) && (RemapTableSize <= MaxMstIds)) begin : gen_id_downsize_table
     axi_id_remap #(
@@ -127,19 +124,19 @@ module axi_iw_converter #(
       .AxiDataWidth  ( AxiDataWidth       ),
       .AxiUserWidth  ( AxiUserWidth       ),
       .AxiIdWidthSlv ( AxiSlvPortIdWidth  ),
-      .slv_aw_chan_t ( slv_aw_chan_t      ),
-      .slv_w_chan_t  ( slv_w_chan_t       ),
-      .slv_b_chan_t  ( slv_b_chan_t       ),
-      .slv_ar_chan_t ( slv_ar_chan_t      ),
-      .slv_r_chan_t  ( slv_r_chan_t       ),
+      .slv_aw_chan_t ( slv_aw_t           ),
+      .slv_w_chan_t  ( w_t                ),
+      .slv_b_chan_t  ( slv_b_t            ),
+      .slv_ar_chan_t ( slv_ar_t           ),
+      .slv_r_chan_t  ( slv_r_t            ),
       .slv_req_t     ( slv_req_t          ),
       .slv_resp_t    ( slv_resp_t         ),
       .AxiIdWidthMst ( AxiMstPortIdWidth  ),
-      .mst_aw_chan_t ( mst_aw_chan_t      ),
-      .mst_w_chan_t  ( mst_w_chan_t       ),
-      .mst_b_chan_t  ( mst_b_chan_t       ),
-      .mst_ar_chan_t ( mst_ar_chan_t      ),
-      .mst_r_chan_t  ( mst_r_chan_t       ),
+      .mst_aw_chan_t ( mst_aw_t           ),
+      .mst_w_chan_t  ( w_t                ),
+      .mst_b_chan_t  ( mst_b_t            ),
+      .mst_ar_chan_t ( mst_ar_t           ),
+      .mst_r_chan_t  ( mst_r_t            ),
       .mst_req_t     ( mst_req_t          ),
       .mst_resp_t    ( mst_resp_t         )
     ) i_axi_iw_downsizer (
@@ -155,16 +152,16 @@ module axi_iw_converter #(
       .NoBus             ( 32'd1              ),
       .AxiIdWidthSlvPort ( AxiSlvPortIdWidth  ),
       .AxiIdWidthMstPort ( AxiMstPortIdWidth  ),
-      .slv_aw_chan_t     ( slv_aw_chan_t      ),
-      .slv_w_chan_t      ( slv_w_chan_t       ),
-      .slv_b_chan_t      ( slv_b_chan_t       ),
-      .slv_ar_chan_t     ( slv_ar_chan_t      ),
-      .slv_r_chan_t      ( slv_r_chan_t       ),
-      .mst_aw_chan_t     ( mst_aw_chan_t      ),
-      .mst_w_chan_t      ( mst_w_chan_t       ),
-      .mst_b_chan_t      ( mst_b_chan_t       ),
-      .mst_ar_chan_t     ( mst_ar_chan_t      ),
-      .mst_r_chan_t      ( mst_r_chan_t       )
+      .slv_aw_chan_t     ( slv_aw_t           ),
+      .slv_w_chan_t      ( w_t                ),
+      .slv_b_chan_t      ( slv_b_t            ),
+      .slv_ar_chan_t     ( slv_ar_t           ),
+      .slv_r_chan_t      ( slv_r_t            ),
+      .mst_aw_chan_t     ( mst_aw_t           ),
+      .mst_w_chan_t      ( w_t                ),
+      .mst_b_chan_t      ( mst_b_t            ),
+      .mst_ar_chan_t     ( mst_ar_t           ),
+      .mst_r_chan_t      ( mst_r_t            )
     ) i_axi_id_prepend (
       .pre_id_i         ( '0                  ),
       .slv_aw_chans_i   ( slv_req_i.aw        ),
@@ -228,8 +225,9 @@ module axi_iw_converter #(
   // pragma translate_on
 endmodule
 
-`include "axi/typedef.svh"
+
 `include "axi/assign.svh"
+
 /// Interface variant of [`axi_iw_converter`](module.axi_iw_converter).
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
@@ -285,19 +283,9 @@ module axi_iw_converter_intf #(
     .AxiDataWidth       ( AXI_DATA_WIDTH        ),
     .AxiUserWidth       ( AXI_USER_WIDTH        ),
     .AxiSlvPortIdWidth  ( AXI_SLV_PORT_ID_WIDTH ),
-    .slv_aw_chan_t      ( slv_aw_chan_t         ),
-    .slv_w_chan_t       ( slv_w_chan_t          ),
-    .slv_b_chan_t       ( slv_b_chan_t          ),
-    .slv_ar_chan_t      ( slv_ar_chan_t         ),
-    .slv_r_chan_t       ( slv_r_chan_t          ),
     .slv_req_t          ( slv_req_t             ),
     .slv_resp_t         ( slv_resp_t            ),
     .AxiMstPortIdWidth  ( AXI_MST_PORT_ID_WIDTH ),
-    .mst_aw_chan_t      ( mst_aw_chan_t         ),
-    .mst_w_chan_t       ( mst_w_chan_t          ),
-    .mst_b_chan_t       ( mst_b_chan_t          ),
-    .mst_ar_chan_t      ( mst_ar_chan_t         ),
-    .mst_r_chan_t       ( mst_r_chan_t          ),
     .mst_req_t          ( mst_req_t             ),
     .mst_resp_t         ( mst_resp_t            )
   ) i_axi_iw_converter (
