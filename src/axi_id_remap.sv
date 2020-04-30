@@ -376,10 +376,6 @@ module axi_id_remap #(
       assert (AxiMaxUniqSlvPortIds <= 2**AxiSlvPortIdWidth);
       assert (AxiMaxTxnsPerId > 0);
       assert (AxiMstPortIdWidth >= IdxWidth);
-      // TODO: Allow AxiMstPortIdWidth to be smaller than IdxWidth, i.e., to have multiple outstanding
-      // transactions (limited by TableSize) remapped to a few (extreme case: one) ID.  This is
-      // possible because the restriction from unordered input transactions to ordered output
-      // transactions is legal.
       assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
       assert ($bits(slv_resp_o.b.id) == AxiSlvPortIdWidth);
       assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
