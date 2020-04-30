@@ -57,10 +57,44 @@ exec_test() {
             done
             ;;
         axi_iw_converter)
-            for IW in 1 2 3 4 13; do
-                for IWO in 1 2 3 4; do
-                    TS=$((2**$IWO))
-                    call_vsim tb_axi_iw_converter -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" -GAxiIdWidthUpstream=$IW -GAxiIdWidthDownstream=$IWO -GRemapTableSize=$TS
+            for SLV_PORT_IW in 1 2 3 4 8; do
+                MAX_SLV_PORT_IDS=$((2**SLV_PORT_IW))
+                MAX_UNIQ_SLV_PORT_IDS_OPTS=(1 2)
+                if [ $MAX_SLV_PORT_IDS -gt 2 ]; then
+                    MAX_UNIQ_SLV_PORT_IDS_OPTS+=(3 4)
+                fi
+                if [ $(($MAX_SLV_PORT_IDS/2)) -ge 4 ]; then
+                    MAX_UNIQ_SLV_PORT_IDS_OPTS+=($((MAX_SLV_PORT_IDS/2-1)))
+                fi
+                MAX_UNIQ_SLV_PORT_IDS_OPTS+=($MAX_SLV_PORT_IDS)
+                for MST_PORT_IW in 1 2 3 4; do
+                    if [ $MST_PORT_IW -lt $SLV_PORT_IW ]; then # downsize
+                        for MAX_UNIQ_SLV_PORT_IDS in "${MAX_UNIQ_SLV_PORT_IDS_OPTS[@]}"; do
+                            MAX_MST_PORT_IDS=$((2**MST_PORT_IW))
+                            if [ $MAX_UNIQ_SLV_PORT_IDS -le $MAX_MST_PORT_IDS ]; then
+                                call_vsim tb_axi_iw_converter \
+                                    -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" \
+                                    -GAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                    -GAxiMstPortIdWidth=$MST_PORT_IW \
+                                    -GAxiMaxUniqSlvPortIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                    -GAxiMaxTxnsPerSlvPortId=5
+                            else
+                                call_vsim tb_axi_iw_converter \
+                                    -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" \
+                                    -GAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                    -GAxiMstPortIdWidth=$MST_PORT_IW \
+                                    -GAxiMaxUniqSlvPortIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                    -GAxiMaxUniqMstPortIds=$((2**MST_PORT_IW)) \
+                                    -GAxiMaxTxnsPerMstPortId=7
+                            fi
+                        done
+                    else
+                        call_vsim tb_axi_iw_converter \
+                            -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" \
+                            -GAxiSlvPortIdWidth=$SLV_PORT_IW \
+                            -GAxiMstPortIdWidth=$MST_PORT_IW \
+                            -GAxiMaxTxnsPerSlvPortId=3
+                    fi
                 done
             done
             ;;
