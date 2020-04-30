@@ -314,36 +314,32 @@ package tb_axi_dw_pkg;
     // For the tasks every clock cycle all processes that only push something in the fifo's and
     // Queues get run. When they are finished the processes that pop something get run.
     task run();
-      Continous: fork
-        begin
-          do begin
-            // At every cycle, spawn some monitoring processes.
-            cycle_start();
+      forever begin
+        // At every cycle, spawn some monitoring processes.
+        cycle_start();
 
-            // Execute all processes that push something into the queues
-            PushMon: fork
-              proc_mst_aw: monitor_mst_aw();
-              proc_mst_ar: monitor_mst_ar();
-            join: PushMon
+        // Execute all processes that push something into the queues
+        PushMon: fork
+          proc_mst_aw: monitor_mst_aw();
+          proc_mst_ar: monitor_mst_ar();
+        join: PushMon
 
-            // These pop and push something
-            proc_slv_aw: monitor_slv_aw();
-            proc_slv_w : monitor_slv_w() ;
+        // These pop and push something
+        proc_slv_aw: monitor_slv_aw();
+        proc_slv_w : monitor_slv_w() ;
 
-            // These only pop something from the queues
-            PopMon: fork
-              proc_mst_b : monitor_mst_b() ;
-              proc_slv_ar: monitor_slv_ar();
-              proc_mst_r : monitor_mst_r() ;
-            join : PopMon
+        // These only pop something from the queues
+        PopMon: fork
+          proc_mst_b : monitor_mst_b() ;
+          proc_slv_ar: monitor_slv_ar();
+          proc_mst_r : monitor_mst_r() ;
+        join : PopMon
 
-            // Check the slave W FIFOs last
-            proc_check_slv_w: check_slv_w();
+        // Check the slave W FIFOs last
+        proc_check_slv_w: check_slv_w();
 
-            cycle_end();
-          end while (1'b1);
-        end
-      join: Continous
+        cycle_end();
+      end
     endtask : run
 
     task print_result()                                    ;
@@ -465,7 +461,7 @@ package tb_axi_dw_pkg;
         $display("        Expect B response.")        ;
 
         // Inject expected R beats on this id, if it is an atop
-        if(master_axi.aw_atop[5]) begin
+        if(master_axi.aw_atop[axi_pkg::ATOP_R_RESP]) begin
           // Push the required R beats into the right fifo (reuse the exp_b variable)
           $display("        Expect R response, len: %0d.", master_axi.aw_len);
           for (int unsigned j = 0; j <= master_axi.aw_len; j++) begin
@@ -709,7 +705,7 @@ package tb_axi_dw_pkg;
         $display("        Expect B response.")        ;
 
         // Inject expected R beats on this id, if it is an atop
-        if(master_axi.aw_atop[5]) begin
+        if(master_axi.aw_atop[axi_pkg::ATOP_R_RESP]) begin
           // Push the required R beats into the right fifo (reuse the exp_b variable)
           $display("        Expect R response, len: %0d.", master_axi.aw_len);
           for (int unsigned j = 0; j <= master_axi.aw_len; j++) begin
