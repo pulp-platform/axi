@@ -677,11 +677,14 @@ package tb_axi_dw_pkg;
             end
             // Split into master_axi.aw_len + 1 INCR bursts
             else begin
+              automatic axi_addr_t size_mask          = (1'b1 << master_axi.aw_size) - 1                                            ;
+              automatic axi_addr_t aligned_adjustment = (master_axi.aw_addr & size_mask & ~AxiMstPortByteMask) / AxiMstPortStrbWidth;
+
               for (int unsigned j = 0; j <= master_axi.aw_len; j++) begin
                 exp_aw = '{
                   slv_axi_id  : master_axi.aw_id  ,
                   slv_axi_addr: master_axi.aw_addr,
-                  slv_axi_len : master_axi.aw_len
+                  slv_axi_len : (downsize_ratio >= aligned_adjustment + 1) ? (downsize_ratio - aligned_adjustment - 1) : 0
                 };
 
                 this.exp_aw_queue.push(master_axi.aw_id, exp_aw);
@@ -809,11 +812,14 @@ package tb_axi_dw_pkg;
             end
             // Split into master_axi.ar_len + 1 INCR bursts
             else begin
+              automatic axi_addr_t size_mask          = (1'b1 << master_axi.ar_size) - 1                                            ;
+              automatic axi_addr_t aligned_adjustment = (master_axi.ar_addr & size_mask & ~AxiMstPortByteMask) / AxiMstPortStrbWidth;
+
               for (int unsigned j = 0; j <= master_axi.ar_len; j++) begin
                 exp_slv_ar = '{
                   slv_axi_id  : master_axi.ar_id  ,
                   slv_axi_addr: master_axi.ar_addr,
-                  slv_axi_len : master_axi.ar_len
+                  slv_axi_len : (downsize_ratio >= aligned_adjustment + 1) ? (downsize_ratio - aligned_adjustment - 1) : 0
                 };
 
                 this.exp_ar_queue.push(master_axi.ar_id, exp_slv_ar);
