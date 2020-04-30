@@ -10,21 +10,21 @@
 //
 // Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 //         Wolfgang Roennigner <wroennin@iis.ee.ethz.ch>
+//         Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 
 module tb_axi_iw_converter #(
-  /// AXI4+ATOP ID width upstream, connected to the slave port of the DUT
-  parameter int unsigned AxiIdWidthUpstream   = 32'd6,
-  /// AXI4+ATOP ID width downstream, connected to the master port of the DUT
-  parameter int unsigned AxiIdWidthDownstream = 32'd4,
-  /// Size of the remap table
-  parameter int unsigned RemapTableSize       = 32'd8,
-  /// Number of Read Transactions
-  parameter int unsigned NumReadTxns          = 32'd1000,
-  /// Number of Write Transactions
-  parameter int unsigned NumWriteTxns         = 32'd2000,
-  /// Enable Atomics
+  // DUT Parameters
+  parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+  parameter int unsigned AxiMstPortIdWidth = 32'd0,
+  parameter int unsigned AxiMaxUniqSlvPortIds = 32'd0,
+  parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
+  parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
+  parameter int unsigned AxiMaxTxnsPerMstPortId = 32'd0,
+  // TB Parameters
+  parameter int unsigned NumReadTxns          = 32'd100,
+  parameter int unsigned NumWriteTxns         = 32'd200,
   parameter bit          EnAtop               = 1'b1
 );
   // AXI4+ATOP channel parameter
@@ -42,7 +42,7 @@ module tb_axi_iw_converter #(
     // AXI interface parameters
     .AW ( AxiAddrWidth       ),
     .DW ( AxiDataWidth       ),
-    .IW ( AxiIdWidthUpstream ),
+    .IW ( AxiSlvPortIdWidth  ),
     .UW ( AxiUserWidth       ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
@@ -54,10 +54,10 @@ module tb_axi_iw_converter #(
   ) rand_axi_master_t;
   typedef axi_test::rand_axi_slave #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth         ),
-    .DW ( AxiDataWidth         ),
-    .IW ( AxiIdWidthDownstream ),
-    .UW ( AxiUserWidth         ),
+    .AW ( AxiAddrWidth      ),
+    .DW ( AxiDataWidth      ),
+    .IW ( AxiMstPortIdWidth ),
+    .UW ( AxiUserWidth      ),
     // Stimuli application and test time
     .TA ( ApplTime         ),
     .TT ( TestTime         )
@@ -80,31 +80,31 @@ module tb_axi_iw_converter #(
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth       ),
     .AXI_DATA_WIDTH ( AxiDataWidth       ),
-    .AXI_ID_WIDTH   ( AxiIdWidthUpstream ),
+    .AXI_ID_WIDTH   ( AxiSlvPortIdWidth  ),
     .AXI_USER_WIDTH ( AxiUserWidth       )
   ) axi_upstream_dv (clk);
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth       ),
     .AXI_DATA_WIDTH ( AxiDataWidth       ),
-    .AXI_ID_WIDTH   ( AxiIdWidthUpstream ),
+    .AXI_ID_WIDTH   ( AxiSlvPortIdWidth  ),
     .AXI_USER_WIDTH ( AxiUserWidth       )
   ) axi_upstream();
 
   `AXI_ASSIGN(axi_upstream, axi_upstream_dv);
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (  AxiAddrWidth         ),
-    .AXI_DATA_WIDTH (  AxiDataWidth         ),
-    .AXI_ID_WIDTH   (  AxiIdWidthDownstream ),
-    .AXI_USER_WIDTH (  AxiUserWidth         )
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      ),
+    .AXI_ID_WIDTH   ( AxiMstPortIdWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth      )
   ) axi_downstream_dv (clk);
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth         ),
-    .AXI_DATA_WIDTH ( AxiDataWidth         ),
-    .AXI_ID_WIDTH   ( AxiIdWidthDownstream ),
-    .AXI_USER_WIDTH ( AxiUserWidth         )
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      ),
+    .AXI_ID_WIDTH   ( AxiMstPortIdWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth      )
   ) axi_downstream();
 
   `AXI_ASSIGN(axi_downstream_dv, axi_downstream);
@@ -132,23 +132,24 @@ module tb_axi_iw_converter #(
     @(posedge rst_n);
     wait(|sim_done);
     repeat (10) @(posedge clk);
-    $info("Simulation stopped.");
-    $stop();
+    $finish();
   end
 
-
   axi_iw_converter_intf #(
-    .REMAP_TABLE_SIZE ( RemapTableSize       ),
-    .AXI_ID_WIDTH_SLV ( AxiIdWidthUpstream   ),
-    .AXI_ID_WIDTH_MST ( AxiIdWidthDownstream ),
-    .AXI_ADDR_WIDTH   ( AxiAddrWidth         ),
-    .AXI_DATA_WIDTH   ( AxiDataWidth         ),
-    .AXI_USER_WIDTH   ( AxiUserWidth         )
-  ) i_axi_iw_converter_dut (
+    .AXI_SLV_PORT_ID_WIDTH        ( AxiSlvPortIdWidth       ),
+    .AXI_MST_PORT_ID_WIDTH        ( AxiMstPortIdWidth       ),
+    .AXI_MAX_UNIQ_SLV_PORT_IDS    ( AxiMaxUniqSlvPortIds    ),
+    .AXI_MAX_TXNS_PER_SLV_PORT_ID ( AxiMaxTxnsPerSlvPortId  ),
+    .AXI_MAX_UNIQ_MST_PORT_IDS    ( AxiMaxUniqMstPortIds    ),
+    .AXI_MAX_TXNS_PER_MST_PORT_ID ( AxiMaxTxnsPerMstPortId  ),
+    .AXI_ADDR_WIDTH               ( AxiAddrWidth            ),
+    .AXI_DATA_WIDTH               ( AxiDataWidth            ),
+    .AXI_USER_WIDTH               ( AxiUserWidth            )
+  ) i_dut (
     .clk_i  ( clk            ),
     .rst_ni ( rst_n          ),
     .slv    ( axi_upstream   ),
     .mst    ( axi_downstream )
   );
-// vsim -voptargs=+acc work.tb_axi_id_remap
+
 endmodule
