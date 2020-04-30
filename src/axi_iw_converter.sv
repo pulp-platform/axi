@@ -40,15 +40,32 @@
 /// to the same master port ID and thus become ordered with respect to each other.  An instance of
 /// [`axi_id_serializer`](module.axi_id_serializer) handles this case.
 module axi_iw_converter #(
-  /// Size of the remap table when downconverting the ID size.
-  /// This number of ID's get generated at the master port.
-  /// Maximum value is RemapTableSize <= 2**`AxiMstPortIdWidth` as then one table exists for
-  /// every possible master port ID. The mapping is one to one.
-  parameter int unsigned RemapTableSize = 32'd0,
   /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
   /// ID width of the AXI4+ATOP master port
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
+  /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
+  /// counted separately (except for ATOPs, which count as both read and write).
+  ///
+  /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
+  /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
+  /// transactions of another ID complete.
+  parameter int unsigned AxiMaxUniqSlvPortIds = 32'd0,
+  /// Maximum number of in-flight transactions with the same ID at the slave port.
+  ///
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
+  /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
+  parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
+  /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
+  /// counted separately (except for ATOPs, which count as both read and write).
+  ///
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.
+  parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
+  /// Maximum number of in-flight transactions with the same ID at the master port.
+  ///
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.
+  parameter int unsigned AxiMaxTxnsPerMstPortId = 32'd0,
   /// Address width of both AXI4+ATOP ports
   parameter int unsigned AxiAddrWidth = 32'd0,
   /// Data width of both AXI4+ATOP ports
@@ -78,7 +95,6 @@ module axi_iw_converter #(
   input  mst_resp_t mst_resp_i
 );
 
-  localparam int unsigned MaxMstIds = 2**AxiMstPortIdWidth;
   typedef logic [AxiAddrWidth-1:0]      addr_t;
   typedef logic [AxiDataWidth-1:0]      data_t;
   typedef logic [AxiIdWidthSlvPort-1:0] slv_id_t;
@@ -94,57 +110,58 @@ module axi_iw_converter #(
   `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
 
-  if ((AxiSlvPortIdWidth > AxiMstPortIdWidth) && (RemapTableSize <= MaxMstIds)) begin : gen_id_downsize_table
-    axi_id_remap #(
-      .AxiSlvPortIdWidth    ( AxiSlvPortIdWidth ),
-      .AxiMstPortIdWidth    ( AxiMstPortIdWidth ),
-      .AxiMaxUniqSlvPortIds ( RemapTableSize    ),
-      .AxiMaxTxnsPerId      ( RemapTableSize    ),
-      .slv_req_t            ( slv_req_t         ),
-      .slv_resp_t           ( slv_resp_t        ),
-      .mst_req_t            ( mst_req_t         ),
-      .mst_resp_t           ( mst_resp_t        )
-    ) i_remap (
-      .clk_i,
-      .rst_ni,
-      .slv_req_i  ( slv_req_i  ),
-      .slv_resp_o ( slv_resp_o ),
-      .mst_req_o  ( mst_req_o  ),
-      .mst_resp_i ( mst_resp_i )
-    );
-  end else if (AxiSlvPortIdWidth > AxiMstPortIdWidth) begin : gen_id_downsize_serializer
-    localparam int unsigned MaxTrans = cf_math_pkg::ceil_div(RemapTableSize, MaxMstIds);
-    axi_iw_downsizer #(
-      .NumIds        ( MaxMstIds          ),
-      .MaxTrans      ( MaxTrans           ),
-      .AxiAddrWidth  ( AxiAddrWidth       ),
-      .AxiDataWidth  ( AxiDataWidth       ),
-      .AxiUserWidth  ( AxiUserWidth       ),
-      .AxiIdWidthSlv ( AxiSlvPortIdWidth  ),
-      .slv_aw_chan_t ( slv_aw_t           ),
-      .slv_w_chan_t  ( w_t                ),
-      .slv_b_chan_t  ( slv_b_t            ),
-      .slv_ar_chan_t ( slv_ar_t           ),
-      .slv_r_chan_t  ( slv_r_t            ),
-      .slv_req_t     ( slv_req_t          ),
-      .slv_resp_t    ( slv_resp_t         ),
-      .AxiIdWidthMst ( AxiMstPortIdWidth  ),
-      .mst_aw_chan_t ( mst_aw_t           ),
-      .mst_w_chan_t  ( w_t                ),
-      .mst_b_chan_t  ( mst_b_t            ),
-      .mst_ar_chan_t ( mst_ar_t           ),
-      .mst_r_chan_t  ( mst_r_t            ),
-      .mst_req_t     ( mst_req_t          ),
-      .mst_resp_t    ( mst_resp_t         )
-    ) i_axi_iw_downsizer (
-      .clk_i,
-      .rst_ni,
-      .slv_req_i  ( slv_req_i  ),
-      .slv_resp_o ( slv_resp_o ),
-      .mst_req_o  ( mst_req_o  ),
-      .mst_resp_i ( mst_resp_i )
-    );
-  end else if (AxiSlvPortIdWidth < AxiMstPortIdWidth) begin : gen_id_upsize
+  if (AxiMstPortIdWidth < AxiSlvPortIdWidth) begin : gen_downsize
+    if (AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth) begin : gen_remap
+      axi_id_remap #(
+        .AxiSlvPortIdWidth    ( AxiSlvPortIdWidth       ),
+        .AxiMstPortIdWidth    ( AxiMstPortIdWidth       ),
+        .AxiMaxUniqSlvPortIds ( AxiMaxUniqSlvPortIds    ),
+        .AxiMaxTxnsPerId      ( AxiMaxTxnsPerSlvPortId  ),
+        .slv_req_t            ( slv_req_t               ),
+        .slv_resp_t           ( slv_resp_t              ),
+        .mst_req_t            ( mst_req_t               ),
+        .mst_resp_t           ( mst_resp_t              )
+      ) i_remap (
+        .clk_i,
+        .rst_ni,
+        .slv_req_i  ( slv_req_i  ),
+        .slv_resp_o ( slv_resp_o ),
+        .mst_req_o  ( mst_req_o  ),
+        .mst_resp_i ( mst_resp_i )
+      );
+    end else begin : gen_serialize
+      axi_iw_downsizer #(
+        .NumIds        ( AxiMaxUniqMstPortIds   ),
+        .MaxTrans      ( AxiMaxTxnsPerMstPortId ),
+        .AxiAddrWidth  ( AxiAddrWidth           ),
+        .AxiDataWidth  ( AxiDataWidth           ),
+        .AxiUserWidth  ( AxiUserWidth           ),
+        .AxiIdWidthSlv ( AxiSlvPortIdWidth      ),
+        .slv_aw_chan_t ( slv_aw_t               ),
+        .slv_w_chan_t  ( w_t                    ),
+        .slv_b_chan_t  ( slv_b_t                ),
+        .slv_ar_chan_t ( slv_ar_t               ),
+        .slv_r_chan_t  ( slv_r_t                ),
+        .slv_req_t     ( slv_req_t              ),
+        .slv_resp_t    ( slv_resp_t             ),
+        .AxiIdWidthMst ( AxiMstPortIdWidth      ),
+        .mst_aw_chan_t ( mst_aw_t               ),
+        .mst_w_chan_t  ( w_t                    ),
+        .mst_b_chan_t  ( mst_b_t                ),
+        .mst_ar_chan_t ( mst_ar_t               ),
+        .mst_r_chan_t  ( mst_r_t                ),
+        .mst_req_t     ( mst_req_t              ),
+        .mst_resp_t    ( mst_resp_t             )
+      ) i_axi_iw_downsizer (
+        .clk_i,
+        .rst_ni,
+        .slv_req_i  ( slv_req_i  ),
+        .slv_resp_o ( slv_resp_o ),
+        .mst_req_o  ( mst_req_o  ),
+        .mst_resp_i ( mst_resp_i )
+      );
+      end
+  end else if (AxiMstPortIdWidth > AxiSlvPortIdWidth) begin : gen_upsize
     axi_id_prepend #(
       .NoBus             ( 32'd1              ),
       .AxiIdWidthSlvPort ( AxiSlvPortIdWidth  ),
@@ -192,10 +209,11 @@ module axi_iw_converter #(
       .mst_r_valids_i   ( mst_resp_i.r_valid  ),
       .mst_r_readies_o  ( mst_req_o.r_ready   )
     );
-  end else begin : gen_id_passthrough
+  end else begin : gen_passthrough
     assign mst_req_o  = slv_req_i;
     assign slv_resp_o = mst_resp_i;
   end
+
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
@@ -209,6 +227,15 @@ module axi_iw_converter #(
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
     assert(AxiMstPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiMstPortIdWidth has to be larger than 0!");
+    if (AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth) begin
+      assert(AxiMaxTxnsPerSlvPortId > 32'd0)
+        else $fatal(1, "Parameter AxiMaxTxnsPerSlvPortId has to be larger than 0!");
+    end else begin
+      assert(AxiMaxUniqMstPortIds > 32'd0)
+        else $fatal(1, "Parameter AxiMaxUniqMstPortIds has to be larger than 0!");
+      assert(AxiMaxTxnsPerMstPortId > 32'd0)
+        else $fatal(1, "Parameter AxiMaxTxnsPerMstPortId has to be larger than 0!");
+    end
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
@@ -221,6 +248,7 @@ module axi_iw_converter #(
   `endif
   // pragma translate_on
 endmodule
+
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
