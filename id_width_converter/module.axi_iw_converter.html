@@ -42,8 +42,8 @@ transactions of another ID complete.</p>
 case, this parameter is passed to <a href="module.axi_id_remap#parameter.AxiMaxTxnsPerId"><code>axi_id_remap</code> as <code>AxiMaxTxnsPerId</code>
 parameter</a>.</p>
 </div><h3 id="parameter.AxiMaxUniqMstPortIds" class="impl"><code class="in-band">AxiMaxUniqMstPortIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
-counted separately (except for ATOPs, which count as both read and write).</p>
+><p>Maximum number of different IDs that can be in flight at the master port.  Reads and writes
+are counted separately (except for ATOPs, which count as both read and write).</p>
 <p>This parameter is only relevant if <code>AxiMaxUniqSlvPortIds &gt; 2**AxiMstPortIdWidth</code>.</p>
 </div><h3 id="parameter.AxiMaxTxnsPerMstPortId" class="impl"><code class="in-band">AxiMaxTxnsPerMstPortId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Maximum number of in-flight transactions with the same ID at the master port.</p>
