@@ -9,10 +9,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_pkg`: Add `bufferable` and `modifiable` helper functions.
+- `axi_dw_converter`: Add support for single-beat *fixed* bursts in the downsizer and for *fixed*
+  bursts of any length in the upsizer.
 
 ### Changed
+- `axi_dw_downsizer` (part of `axi_dw_converter`): Downsize regardless of the *modifiable* bit of
+  incoming transactions.  Previously, non-*modifiable* transactions whose attributes would have to
+  be modified for downsizing were rejected with a slave error.  As of this change, transactions are
+  downsized and their attributes modified even if their *modifiable* bit is not set.  This is
+  permitted by a note in the AXI specification (page A4-65 of IHI0022H).
 
 ### Fixed
+- `axi_dw_downsizer` (part of `axi_dw_converter`): Fix condition for keeping transactions that have
+  a smaller `size` than the master/downstream port unmodified.
 
 
 ## 0.21.0 - 2020-04-27
