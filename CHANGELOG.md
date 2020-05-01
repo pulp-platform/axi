@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.22.0 - 2020-05-01
+
+### Added
 - `axi_pkg`: Add `bufferable` and `modifiable` helper functions.
 - `axi_dw_converter`: Add support for single-beat *fixed* bursts in the downsizer and for *fixed*
   bursts of any length in the upsizer.
