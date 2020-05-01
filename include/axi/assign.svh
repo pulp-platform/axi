@@ -401,6 +401,7 @@
 // `AXI_LITE_ASSIGN_R(dst, src)
 `define AXI_LITE_ASSIGN_AW(dst, src)  \
   assign dst.aw_addr  = src.aw_addr;  \
+  assign dst.aw_prot  = src.aw_prot;  \
   assign dst.aw_valid = src.aw_valid; \
   assign src.aw_ready = dst.aw_ready;
 `define AXI_LITE_ASSIGN_W(dst, src)   \
@@ -414,6 +415,7 @@
   assign src.b_ready  = dst.b_ready;
 `define AXI_LITE_ASSIGN_AR(dst, src)  \
   assign dst.ar_addr  = src.ar_addr;  \
+  assign dst.ar_prot  = src.ar_prot;  \
   assign dst.ar_valid = src.ar_valid; \
   assign src.ar_ready = dst.ar_ready;
 `define AXI_LITE_ASSIGN_R(dst, src)   \
@@ -435,16 +437,16 @@
 // assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
 // the same code.
 `define AXI_LITE_FROM_AW(opt_as, axi_lite_if, aw_lite_struct) \
-  opt_as axi_lite_if.aw_addr = aw_lite_struct.addr;
-  // prot not in interface!
+  opt_as axi_lite_if.aw_addr = aw_lite_struct.addr;           \
+  opt_as axi_lite_if.aw_prot = aw_lite_struct.prot;
 `define AXI_LITE_FROM_W(opt_as, axi_lite_if, w_lite_struct)  \
   opt_as axi_lite_if.w_data = w_lite_struct.data;            \
   opt_as axi_lite_if.w_strb = w_lite_struct.strb;
 `define AXI_LITE_FROM_B(opt_as, axi_lite_if, b_lite_struct) \
   opt_as axi_lite_if.b_resp = b_lite_struct.resp;
 `define AXI_LITE_FROM_AR(opt_as, axi_lite_if, ar_lite_struct) \
-  opt_as axi_lite_if.ar_addr = ar_lite_struct.addr;
-  // prot not in interface!
+  opt_as axi_lite_if.ar_addr = ar_lite_struct.addr;           \
+  opt_as axi_lite_if.ar_prot = ar_lite_struct.prot;
 `define AXI_LITE_FROM_R(opt_as, axi_lite_if, r_lite_struct) \
   opt_as axi_lite_if.r_data  = r_lite_struct.data;          \
   opt_as axi_lite_if.r_resp  = r_lite_struct.resp;
@@ -525,7 +527,7 @@
 `define AXI_LITE_TO_AW(opt_as, aw_lite_struct, axi_lite_if) \
   opt_as aw_lite_struct = '{                                \
     addr: axi_lite_if.aw_addr,                              \
-    prot: '0                                                \
+    prot: axi_lite_if.aw_prot                               \
   };
   // prot not in interface!
 `define AXI_LITE_TO_W(opt_as, w_lite_struct, axi_lite_if) \
@@ -540,7 +542,7 @@
 `define AXI_LITE_TO_AR(opt_as, ar_lite_struct, axi_lite_if) \
   opt_as ar_lite_struct = '{                                \
     addr: axi_lite_if.ar_addr,                              \
-    prot: '0                                                \
+    prot: axi_lite_if.ar_prot                               \
   };
 `define AXI_LITE_TO_R(opt_as, r_lite_struct, axi_lite_if) \
   opt_as r_lite_struct = '{                               \

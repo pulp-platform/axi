@@ -151,8 +151,8 @@ module tb_axi_lite_xbar;
       end_of_sim[i] <= 1'b0;
       lite_axi_master.reset();
       @(posedge rst_n);
-      lite_axi_master.write(32'h0000_1100, 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
-      lite_axi_master.read(32'h0000_e100, data, resp);
+      lite_axi_master.write(32'h0000_1100, axi_pkg::prot_t'('0), 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
+      lite_axi_master.read(32'h0000_e100, axi_pkg::prot_t'('0), data, resp);
       lite_axi_master.run(NoReads, NoWrites);
       end_of_sim[i] <= 1'b1;
     end

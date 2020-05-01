@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_intf`: Add in `AXI_LITE` and `AXI_LITE_DV` the modports `aw_prot` and `ar_prot`.
+- `include/axi/assign`: Adapt ASSIGN macros of AXI_LITE for modports `aw_prot` and `ar_prot`.
+- `axi_test::axi_lite_driver`: Adapt for new modports `aw_prot` and `ar_prot`.
+  - `send_aw()`: Add input `axi_pkg::prot_t prot`.
+  - `send_ar()`: Add input `axi_pkg::prot_t prot`.
+  - `recv_aw()`: Add output `axi_pkg::prot_t prot`.
+  - `recv_ar()`: Add output `axi_pkg::prot_t prot`.
+- `axi_test::rand_axi_lite_master`: Adapt for new modports `aw_prot` and `ar_prot`.
+  - `send_aws()`: Add random `aw_prot` on each AW.
+  - `send_ars()`: Add random `ar_prot` on each AR.
+  - `write()`: Add input `axi_pkg::prot_t w_prot`.
+  - `read()`: Add input `axi_pkg::prot_t r_prot`.
+- `axi_test::rand_axi_lite_slave`: Adapt for new modports `aw_prot` and `ar_prot`, display prot.
+- Update usage of `axi_test::*axi_lite*` in tbs: `tb_axi_lite_mailbox`, `tb_axi_lite_to_axi` and
+  `tb_axi_lite_xbar` to the changes in `axi_test`.
 
 ### Fixed
 

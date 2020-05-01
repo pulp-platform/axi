@@ -43,12 +43,14 @@ package axi_test;
 
     function void reset_master();
       axi.aw_addr  <= '0;
+      axi.aw_prot  <= '0;
       axi.aw_valid <= '0;
       axi.w_valid  <= '0;
       axi.w_data   <= '0;
       axi.w_strb   <= '0;
       axi.b_ready  <= '0;
       axi.ar_valid <= '0;
+      axi.ar_prot  <= '0;
       axi.ar_addr  <= '0;
       axi.r_ready  <= '0;
     endfunction
@@ -74,14 +76,17 @@ package axi_test;
 
     /// Issue a beat on the AW channel.
     task send_aw (
-      input logic [AW-1:0] addr
+      input logic [AW-1:0] addr,
+      input prot_t         prot
     );
       axi.aw_addr  <= #TA addr;
+      axi.aw_prot  <= #TA prot;
       axi.aw_valid <= #TA 1;
       cycle_start();
       while (axi.aw_ready != 1) begin cycle_end(); cycle_start(); end
       cycle_end();
       axi.aw_addr  <= #TA '0;
+      axi.aw_prot  <= #TA '0;
       axi.aw_valid <= #TA 0;
     endtask
 
@@ -116,14 +121,17 @@ package axi_test;
 
     /// Issue a beat on the AR channel.
     task send_ar (
-      input logic [AW-1:0] addr
+      input logic [AW-1:0] addr,
+      input prot_t         prot
     );
       axi.ar_addr  <= #TA addr;
+      axi.ar_prot  <= #TA prot;
       axi.ar_valid <= #TA 1;
       cycle_start();
       while (axi.ar_ready != 1) begin cycle_end(); cycle_start(); end
       cycle_end();
       axi.ar_addr  <= #TA '0;
+      axi.ar_prot  <= #TA '0;
       axi.ar_valid <= #TA 0;
     endtask
 
@@ -145,12 +153,14 @@ package axi_test;
 
     /// Wait for a beat on the AW channel.
     task recv_aw (
-      output [AW-1:0] addr
+      output [AW-1:0] addr,
+      output prot_t   prot
     );
       axi.aw_ready <= #TA 1;
       cycle_start();
       while (axi.aw_valid != 1) begin cycle_end(); cycle_start(); end
       addr = axi.aw_addr;
+      prot = axi.aw_prot;
       cycle_end();
       axi.aw_ready <= #TA 0;
     endtask
@@ -183,12 +193,14 @@ package axi_test;
 
     /// Wait for a beat on the AR channel.
     task recv_ar (
-      output [AW-1:0] addr
+      output [AW-1:0] addr,
+      output prot_t   prot
     );
       axi.ar_ready <= #TA 1;
       cycle_start();
       while (axi.ar_valid != 1) begin cycle_end(); cycle_start(); end
       addr = axi.ar_addr;
+      prot = axi.ar_prot;
       cycle_end();
       axi.ar_ready <= #TA 0;
     endtask
@@ -1359,12 +1371,14 @@ package axi_test;
 
     task automatic send_ars(input int unsigned n_reads);
       automatic addr_t ar_addr;
+      automatic prot_t ar_prot;
       repeat (n_reads) begin
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
         ar_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
+        ar_prot = prot_t'($urandom());
         this.ar_queue.push_back(ar_addr);
-        $display("%0t %s> Send AR with ADDR: %h", $time(), this.name, ar_addr);
-        drv.send_ar(ar_addr);
+        $display("%0t %s> Send AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
+        drv.send_ar(ar_addr, ar_prot);
       end
     endtask : send_ars
 
@@ -1377,18 +1391,20 @@ package axi_test;
         ar_addr = this.ar_queue.pop_front();
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
         drv.recv_r(r_data, r_resp);
-        $display("%0t %s> Recv  R with DATA: %h", $time(), this.name, r_data);
+        $display("%0t %s> Recv  R with DATA: %h RESP: %0h", $time(), this.name, r_data, r_resp);
       end
     endtask : recv_rs
 
     task automatic send_aws(input int unsigned n_writes);
       automatic addr_t aw_addr;
+      automatic prot_t aw_prot;
       repeat (n_writes) begin
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
         aw_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
+        aw_prot = prot_t'($urandom());
         this.aw_queue.push_back(aw_addr);
-        $display("%0t %s> Send AW with ADDR: %h", $time(), this.name, aw_addr);
-        this.drv.send_aw(aw_addr);
+        $display("%0t %s> Send AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
+        this.drv.send_aw(aw_addr, aw_prot);
         this.b_queue.push_back(1'b1);
       end
     endtask : send_aws
@@ -1435,25 +1451,25 @@ package axi_test;
     endtask
 
     // write data to a specific address
-    task automatic write(input addr_t w_addr, input data_t w_data, input strb_t w_strb,
-                         output axi_pkg::resp_t b_resp);
-      $display("%0t %s> Write to ADDR: %h, DATA: %h, STRB: %h",
-          $time(), this.name, w_addr, w_data, w_strb);
+    task automatic write(input addr_t w_addr, input prot_t w_prot, input data_t w_data,
+                         input strb_t w_strb, output axi_pkg::resp_t b_resp);
+      $display("%0t %s> Write to ADDR: %h, PROT: %b DATA: %h, STRB: %h",
+          $time(), this.name, w_addr, w_prot, w_data, w_strb);
       fork
-        this.drv.send_aw(w_addr);
+        this.drv.send_aw(w_addr, w_prot);
         this.drv.send_w(w_data, w_strb);
       join
       this.drv.recv_b(b_resp);
-      $display("%0t %s> Recieved write response from ADDR: %h RESP: %h",
+      $display("%0t %s> Received write response from ADDR: %h RESP: %h",
           $time(), this.name, w_addr, b_resp);
     endtask : write
 
     // read data from a specific location
-    task automatic read(input addr_t r_addr,
+    task automatic read(input addr_t r_addr, input prot_t r_prot,
                         output data_t r_data, output axi_pkg::resp_t r_resp);
-      $display("%0t %s> Read from ADDR: %h",
-          $time(), this.name, r_addr);
-      this.drv.send_ar(r_addr);
+      $display("%0t %s> Read from ADDR: %h PROT: %b",
+          $time(), this.name, r_addr, r_prot);
+      this.drv.send_ar(r_addr, r_prot);
       this.drv.recv_r(r_data, r_resp);
       $display("%0t %s> Recieved read response from ADDR: %h DATA: %h RESP: %h",
           $time(), this.name, r_addr, r_data, r_resp);
@@ -1517,9 +1533,10 @@ package axi_test;
     task automatic recv_ars();
       forever begin
         automatic addr_t ar_addr;
+        automatic prot_t ar_prot;
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
-        this.drv.recv_ar(ar_addr);
-        $display("%0t %s> Recv AR with ADDR: %h", $time(), this.name, ar_addr);
+        this.drv.recv_ar(ar_addr, ar_prot);
+        $display("%0t %s> Recv AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
         this.ar_queue.push_back(ar_addr);
       end
     endtask : recv_ars
@@ -1541,9 +1558,10 @@ package axi_test;
     task automatic recv_aws();
       forever begin
         automatic addr_t aw_addr;
+        automatic prot_t aw_prot;
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
-        this.drv.recv_aw(aw_addr);
-        $display("%0t %s> Recv AW with ADDR: %h", $time(), this.name, aw_addr);
+        this.drv.recv_aw(aw_addr, aw_prot);
+        $display("%0t %s> Recv AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
         this.aw_queue.push_back(aw_addr);
       end
     endtask : recv_aws
