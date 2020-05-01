@@ -59,8 +59,8 @@ module axi_iw_converter #(
   /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
   /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
   parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
-  /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
-  /// counted separately (except for ATOPs, which count as both read and write).
+  /// Maximum number of different IDs that can be in flight at the master port.  Reads and writes
+  /// are counted separately (except for ATOPs, which count as both read and write).
   ///
   /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.
   parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
