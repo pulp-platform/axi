@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_lite_regs`: Memory-mapped registers with AXI4-Lite slave port and the option to make
+  individual registers read-only.
 
 ### Changed
 - `axi_intf`: Add in `AXI_LITE` and `AXI_LITE_DV` the modports `aw_prot` and `ar_prot`.
@@ -52,8 +54,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_serializer`: serialize transactions with different IDs to the same ID.
-- `axi_lite_regs`: Memory-mapped registers with AXI4-Lite slave port and the option to make
-  individual registers read-only.
 
 ### Changed
 - `axi_modify_address`:

@@ -17,16 +17,16 @@
 module tb_axi_lite_regs #(
   // register configuration
   parameter int unsigned            RegNumBytes  = 32'd200,
-  parameter logic [RegNumBytes-1:0] AxiReadOnly  = {RegNumBytes{1'b0}},
+  parameter logic [RegNumBytes-1:0] AxiReadOnly  = {{RegNumBytes-18{1'b0}}, 18'b101110111111000000},
   parameter bit                     PrivProtOnly = 1'b0,
   parameter bit                     SecuProtOnly = 1'b0,
-  // AXI configuration
-  parameter int unsigned            AxiAddrWidth = 32'd32,    // Axi Address Width
-  parameter int unsigned            AxiDataWidth = 32'd32,    // Axi Data Width
   // Random master no Transactions
   parameter int unsigned            NoWrites     = 32'd1000,  // How many writes of master
   parameter int unsigned            NoReads      = 32'd1500   // How many reads of master
 );
+  // AXI configuration
+  localparam int unsigned AxiAddrWidth = 32'd32;    // Axi Address Width
+  localparam int unsigned AxiDataWidth = 32'd32;    // Axi Data Width
   localparam int unsigned AxiStrbWidth = AxiDataWidth / 32'd8;
   // timing parameters
   localparam time CyclTime = 10ns;
@@ -41,6 +41,8 @@ module tb_axi_lite_regs #(
   localparam axi_addr_t StartAddr = axi_addr_t'(0);
   localparam axi_addr_t EndAddr   =
       axi_addr_t'(StartAddr + RegNumBytes + RegNumBytes/5);
+
+  localparam byte_t [RegNumBytes-1:0] RegRstVal = '0;
 
   typedef axi_test::rand_axi_lite_master #(
     // AXI interface parameters
@@ -64,7 +66,7 @@ module tb_axi_lite_regs #(
   logic end_of_sim;
   // Register signals
   byte_t [RegNumBytes-1:0] reg_d,     reg_q;
-  logic  [RegNumBytes-1:0] wr_active, rd_active;
+  logic  [RegNumBytes-1:0] wr_active, rd_active, reg_load;
 
   // -------------------------------
   // AXI Interfaces
@@ -83,7 +85,7 @@ module tb_axi_lite_regs #(
   // AXI Rand Masters and Slaves
   // -------------------------------
   // Masters control simulation run time
-  initial begin : proc_generate_traffic
+  initial begin : proc_generate_axi_traffic
     automatic rand_lite_master_t lite_axi_master = new ( master_dv, "Lite Master");
     automatic axi_data_t      data = '0;
     automatic axi_pkg::resp_t resp = '0;
@@ -91,45 +93,207 @@ module tb_axi_lite_regs #(
     lite_axi_master.reset();
     @(posedge rst_n);
     repeat (5) @(posedge clk);
-    lite_axi_master.write(axi_addr_t'(32'h0000_0000), axi_data_t'(64'hDEADBEEFDEADBEEF),
-        axi_strb_t'(8'hFF), resp);
-    lite_axi_master.read(axi_addr_t'(32'h0000_0000), data, resp);
+    lite_axi_master.write(axi_addr_t'(32'h0000_0000), axi_pkg::prot_t'('0),
+        axi_data_t'(64'hDEADBEEFDEADBEEF), axi_strb_t'(8'hFF), resp);
+    lite_axi_master.read(axi_addr_t'(32'h0000_0000), axi_pkg::prot_t'('0), data, resp);
     lite_axi_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
   end
 
-  initial begin : proc_check
-    automatic bit init;
-    automatic axi_data_t exp_rdata[$];
-
+  initial begin : proc_generate_direct_load
     for (int unsigned i = 0; i < RegNumBytes; i++) begin
-      for (int unsigned j = 0; j < 8; j++) begin
-        init = $urandom();
-        reg_d [i][j] = init;
+      automatic int unsigned j = i;
+      fork
+        begin
+          toggle_load(j);
+        end
+      join_none
+    end
+  end
+
+  task automatic toggle_load(int unsigned byte_i);
+    byte_t       rand_val;
+    int unsigned rand_wait;
+    @(posedge rst_n);
+    reg_load[byte_i] = 1'b0;
+    reg_d[byte_i]    = 8'h00;
+    @(posedge clk);
+    forever begin
+      rand_wait = $urandom_range(0, 20);
+      repeat (rand_wait) @(posedge clk);
+      rand_val          = byte_t'($urandom());
+      reg_d[byte_i]    <= #ApplTime rand_val;
+      reg_load[byte_i] <= #ApplTime 1'b1;
+      @(posedge clk);
+      reg_d[byte_i]    <= #ApplTime '0;
+      reg_load[byte_i] <= #ApplTime 1'b0;
+    end
+  endtask : toggle_load
+
+  initial begin : proc_check_read_data
+    automatic axi_data_t      exp_rdata[$];
+    automatic axi_pkg::resp_t exp_resp[$];
+
+    @(posedge rst_n);
+    forever begin
+      @(posedge clk);
+      #(TestTime);
+
+      // Push the expected data back.
+      if (master.ar_valid && master.ar_ready) begin
+        automatic int unsigned ar_idx = ((master.ar_addr - StartAddr)
+            >> $clog2(AxiStrbWidth) << $clog2(AxiStrbWidth));
+        automatic axi_data_t      r_data = axi_data_t'(0);
+        automatic axi_pkg::resp_t r_resp = axi_pkg::RESP_SLVERR;
+        for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+          if ((ar_idx+i) < RegNumBytes) begin
+            r_data[8*i+:8] = reg_q[ar_idx+i];
+            r_resp         = axi_pkg::RESP_OKAY;
+          end else begin
+            r_data[8*i+:8] = 8'hxx;
+          end
+        end
+        // check the right protection access
+        if (PrivProtOnly && !master.ar_prot[0]) begin
+          r_resp = axi_pkg::RESP_SLVERR;
+        end
+        if (SecuProtOnly && !master.ar_prot[1]) begin
+          r_resp = axi_pkg::RESP_SLVERR;
+        end
+        exp_resp.push_back(r_resp);
+        exp_rdata.push_back(r_data);
+      end
+
+      // compare data if there is a value expected
+      if (master.r_valid && master.r_ready) begin
+        automatic axi_data_t r_data = exp_rdata.pop_front();
+        if (master.r_resp == axi_pkg::RESP_OKAY) begin
+          for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+            automatic byte_t exp_byte = r_data[8*i+:8];
+            if (exp_byte !== 8'hxx) begin
+              assert (master.r_data[8*i+:8] == exp_byte) else
+                  $error("Unexpected read data: exp: %0h observed: %0h", r_data, master.r_data);
+              assert (master.r_resp == axi_pkg::RESP_OKAY);
+            end
+          end
+        end else if (master.r_resp == axi_pkg::RESP_SLVERR) begin
+          assert (master.r_data == axi_data_t'(32'hBA5E1E55));
+        end else begin
+          $error("Slave responded with false response: %0h", master.r_resp);
+        end
       end
     end
-    @(posedge rst_n);
-//    forever begin
-//      @(posedge clk);
-//      #(TestTime);
-//
-//      if (master.ar_valid && master.ar_ready) begin
-//        automatic int unsigned ar_idx = (master.ar_addr - StartAddr) >> $clog2(AxiStrbWidth);
-//        automatic axi_data_t   r_data = axi_data_t'(0);
-//        if (ar_idx < NumAxiRegs) begin
-//          r_data = reg_q[ar_idx];
-//        end
-//        exp_rdata.push_back(r_data);
-//      end
-//      if (master.r_valid && master.r_ready) begin
-//        automatic axi_data_t r_data = exp_rdata.pop_front();
-//        if (master.r_resp == axi_pkg::RESP_OKAY) begin
-//          assert (master.r_data == r_data) else
-//              $error("Unexpected read data: exp: %0h observes %0h", r_data, master.r_data);
-//        end
-//      end
-//    end
   end
+
+  axi_pkg::resp_t b_resp_queue[$];
+
+  // Only works as module expects both AW & W valid before it does something
+  initial begin : proc_check_write_data
+    @(posedge rst_n);
+    forever begin
+      #TestTime;
+      // AW and W is launched, setup the test tasks
+      if (master.aw_valid && master.aw_ready && master.w_valid && master.w_ready) begin
+        automatic int unsigned aw_idx = ((master.aw_addr - StartAddr)
+            >> $clog2(AxiStrbWidth) << $clog2(AxiStrbWidth));
+        automatic axi_pkg::resp_t b_okay = (aw_idx < RegNumBytes) ?
+            axi_pkg::RESP_OKAY : axi_pkg::RESP_SLVERR;
+        automatic bit all_ro = 1'b1;
+        // check for errors from wrong access protection
+        if (PrivProtOnly && !master.aw_prot[0]) begin
+          b_okay = axi_pkg::RESP_SLVERR;
+        end
+        if (SecuProtOnly && !master.aw_prot[1]) begin
+          b_okay = axi_pkg::RESP_SLVERR;
+        end
+        // Check if all accesses bytes are read only
+        for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+          if (!AxiReadOnly[aw_idx+i]) begin
+            all_ro = 1'b0;
+          end
+        end
+        if (all_ro) begin
+          b_okay = axi_pkg::RESP_SLVERR;
+        end
+
+        // do the actual write checking
+        if (b_okay == axi_pkg::RESP_OKAY) begin
+          // go through every byte
+          for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+            if ((aw_idx+i) < RegNumBytes) begin
+              if (master.w_strb[i]) begin
+                automatic int unsigned        j = aw_idx + i;
+                automatic byte_t       exp_byte = master.w_data[8*i+:8];
+                fork
+                  check_q(j, exp_byte);
+                join_none
+              end
+              assert (master.w_strb[i] == wr_active[aw_idx+i]);
+            end
+          end
+        end
+        b_resp_queue.push_back(b_okay);
+      end
+      @(posedge clk);
+    end
+  end
+
+  initial begin : proc_check_b
+    automatic axi_pkg::resp_t exp_b_resp;
+    @(posedge rst_n);
+    forever begin
+      #TestTime;
+      if (master.b_valid && master.b_ready) begin
+        if (b_resp_queue.size()) begin
+          exp_b_resp = b_resp_queue.pop_front();
+          assert (exp_b_resp == master.b_resp) else
+              $error("Unexpected B response: EXP: %b ACT: %b", exp_b_resp, master.b_resp);
+        end else begin
+          $error("B response even no AW was sent.");
+        end
+      end
+      @(posedge clk);
+    end
+  end
+
+  // check that the expected register byte has been written
+  task automatic check_q(int unsigned byte_i, byte_t exp_byte);
+    automatic byte_t save_byte = reg_q[byte_i];
+    @(posedge clk);
+    #TestTime;
+    if (!AxiReadOnly[byte_i]) begin
+      assert(exp_byte == reg_q[byte_i]) else
+          $error("AXI write was not registered at byte: %0d", byte_i);
+    end else begin
+      assert (reg_q[byte_i] == save_byte) else
+          $error("AXI write onto read only byte: %0d SAVE: %h EXP: %h ACT %h",
+              byte_i, save_byte, exp_byte, reg_q[byte_i]);
+    end
+  endtask : check_q
+
+
+  // Some assertions
+  // pragma translate_off
+  `ifndef VERILATOR
+  default disable iff (~rst_n);
+  for (genvar i = 0; i < RegNumBytes; i++) begin : gen_check_ro
+    if (AxiReadOnly[i]) begin
+      ro_assert: assert property (@(posedge clk) (wr_active[i] |=> $stable(reg_q[i]))) else
+          $fatal(1, "ReadOnly byte %0d changed from AXI write.", i);
+    end
+    load_assert_no_axi: assert property (@(posedge clk) (reg_load[i] |-> !wr_active[i])) else
+      $fatal(1, "Byte %0d, AXI write and direct load are both active!", i);
+    load_assert_data:   assert property (@(posedge clk)
+        (reg_load[i] |=> reg_q[i] === $past(reg_d[i]))) else
+        $fatal(1, "Byte %0d, direct load was executed falsely.", i);
+    stable_assert:      assert property (@(posedge clk)
+        (!reg_load[i] && !wr_active[i]) |=> $stable(reg_q[i])) else
+        $fatal(1, "Byte %0d is unstable, when no AXI write or direct load.", i);
+  end
+  `endif
+  // pragma translate_on
+
+
 
   initial begin : proc_stop_sim
     wait (end_of_sim);
@@ -159,7 +323,7 @@ module tb_axi_lite_regs #(
     .PRIV_PROT_ONLY ( PrivProtOnly ),
     .SECU_PROT_ONLY ( SecuProtOnly ),
     .AXI_READ_ONLY  ( AxiReadOnly  ),
-    .REG_RST_VAL    ( {RegNumBytes{8'h00}})
+    .REG_RST_VAL    ( RegRstVal    )
   ) i_axi_lite_regs (
     .clk_i       ( clk       ),
     .rst_ni      ( rst_n     ),
@@ -167,7 +331,7 @@ module tb_axi_lite_regs #(
     .wr_active_o ( wr_active ),
     .rd_active_o ( rd_active ),
     .reg_d_i     ( reg_d     ),
-    .reg_load_i  ( '0        ),
+    .reg_load_i  ( reg_load  ),
     .reg_q_o     ( reg_q     )
   );
 endmodule
