@@ -1,0 +1,54 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_lite_regs_intf</a></h1>
+<div class="docblock">
+<p>AXI4-Lite Registers with option to make individual registers read-only.
+This module is an interface wrapper for <code>axi_lite_regs</code>. The parameters have the same
+function as the ones in <code>axi_lite_regs</code>, however are defined in <code>ALL_CAPS</code>.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.byte_t" class="impl"><code class="in-band">byte_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>DEPENDENT PARAMETER, DO NOT OVERWRITE!</p>
+</div><h3 id="parameter.REG_NUM_BYTES" class="impl"><code class="in-band">REG_NUM_BYTES<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>RegNumBytes</code>.</p>
+</div><h3 id="parameter.AXI_ADDR_WIDTH" class="impl"><code class="in-band">AXI_ADDR_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>AxiAddrWidth</code>.</p>
+</div><h3 id="parameter.AXI_DATA_WIDTH" class="impl"><code class="in-band">AXI_DATA_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>AxiDataWidth</code>.</p>
+</div><h3 id="parameter.PRIV_PROT_ONLY" class="impl"><code class="in-band">PRIV_PROT_ONLY<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>PrivProtOnly</code>.</p>
+</div><h3 id="parameter.SECU_PROT_ONLY" class="impl"><code class="in-band">SECU_PROT_ONLY<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>SecuProtOnly</code>.</p>
+</div><h3 id="parameter.AXI_READ_ONLY" class="impl"><code class="in-band">AXI_READ_ONLY<span class="type-annotation">: logic  [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>AxiReadOnly</code>.</p>
+</div><h3 id="parameter.REG_RST_VAL" class="impl"><code class="in-band">REG_RST_VAL<span class="type-annotation">: byte_t [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>RegRstVal</code></p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock input signal (1-bit).</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous active low reset signal (1-bit).</p>
+</div><h3 id="port.slv" class="impl"><code class="in-band">slv<span class="type-annotation">: AXI_LITE.Slave</span></code></h3><div class="docblock"
+><p>AXI4-Lite slave port interface.</p>
+</div><h3 id="port.wr_active_o" class="impl"><code class="in-band">wr_active_o<span class="type-annotation">: output logic  [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>wr_active_o</code>.</p>
+</div><h3 id="port.rd_active_o" class="impl"><code class="in-band">rd_active_o<span class="type-annotation">: output logic  [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>rd_active_o</code>.</p>
+</div><h3 id="port.reg_d_i" class="impl"><code class="in-band">reg_d_i<span class="type-annotation">: input  byte_t [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>reg_d_i</code>.</p>
+</div><h3 id="port.reg_load_i" class="impl"><code class="in-band">reg_load_i<span class="type-annotation">: input  logic  [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>reg_load_i</code>.</p>
+</div><h3 id="port.reg_q_o" class="impl"><code class="in-band">reg_q_o<span class="type-annotation">: output byte_t [REG_NUM_BYTES-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_lite_reg</code>: <code>reg_q_o</code>.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_chan_lite_t.html">aw_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_chan_lite_t.html">w_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_chan_lite_t.html">b_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_chan_lite_t.html">ar_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_chan_lite_t.html">r_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.req_lite_t.html">req_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.resp_lite_t.html">resp_lite_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.axi_lite_req" class="impl"><code class="in-band">axi_lite_req<span class="type-annotation">: req_lite_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.axi_lite_resp" class="impl"><code class="in-band">axi_lite_resp<span class="type-annotation">: resp_lite_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>
