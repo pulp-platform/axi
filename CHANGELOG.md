@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_xbar`: Add parameter to disable support for atomic operations (`ATOPs`).
+- `axi_to_mem`: AXI4+ATOP slave to control on chip memory.
 
 ### Changed
 - `AXI_BUS`, `AXI_BUS_ASYNC`, `AXI_BUS_DV`, `AXI_LITE`, and `AXI_LITE_DV`: Change type of every
@@ -49,9 +50,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
   AWs from being issued to one master port while Ws from another burst are ongoing to another
   master port.  This is required to prevents deadlocks due to circular waits downstream.
-- `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
-  in the crossed connections in the xbar between the demuxes and muxes.
-- `axi_pkg`: Add documentation to `xbar_cfg_t`.
+- `axi_xbar`:
+  - Add parameter `PipelineStages`.  This adds `axi_multicuts` in the crossed connections in the
+    xbar between the demuxes and muxes.
+  - `axi_pkg`: Add documentation to `xbar_cfg_t`.
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
