@@ -20,14 +20,37 @@ module axi_lite_regs #(
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Type of a byte is 8 bits (constant).
   parameter type byte_t = logic [7:0],
   /// The size of the register field in bytes mapped on the AXI4-Lite port.
+  ///
   /// The field starts at a `0x0` aligned address on the AXI and is continuous up to
-  /// address `0xNumbytes-1`. If a designer wants holes in the addresses, or reserved bits on the
-  /// AXI, the TODO
+  /// address `0xNumbytes-1`. The module will only consider the LSBs of the address which fall into
+  /// the range `axi_req_i.ax.addr[$clog2(RegNumBytes)-1:0`. The other address bits are ignored.
+  ///
+  /// The register indices `byte_index` of the register array are used to describe the functionality
+  /// of the other parameters and ports in regards to an individual byte mapped at `byte_index`.
+  /// A `chunk` is used to define the grouping of multiple registers onto the byte lanes of the
+  /// AXI4-Lite data channels.
+  ///
+  /// The register bytes are mapped to the data lanes of the AXI channel as follows:
+  /// Eg: `RegNumBytes == 32'd11`, `AxiDataWidth == 32'd32`
+  ///
+  /// AXI strb:                           3 2 1 0 (AXI)
+  ///                                     | | | |
+  ///                           *---------* | | |
+  ///                   *-------|-*-------|-* | |
+  ///                   | *-----|-|-*-----|-|-* |
+  ///                   | | *---|-|-|-*---|-|-|-*
+  ///                   | | |   | | | |   | | | |
+  /// `byte_index`:     A 9 8   7 6 5 4   3 2 1 0 (reg)
+  ///               | chunk_2 | chunk_1 | chunk_0 |
+  ///
+  /// If one wants to have holes in the address map/reserved bits the parameters/signals on the
+  /// ports `AxiReadOnly`, `ref_d_i`, `reg_q_o`, have to be defined accordingly.
   parameter int unsigned             RegNumBytes  = 32'd0,
-  /// Address width of `axi_req_i.aw.addr` and `axi_req_i.ar.addr`, is used to generate internal
-  /// address map.
+  /// Address width of `axi_req_i.aw.addr` and `axi_req_i.ar.addr`. Is used to generate internal
+  /// address map of the AXI4-Lite data lanes onto register bytes.
   parameter int unsigned             AxiAddrWidth = 32'd0,
   /// Data width of the AXI4-Lite bus. Register address map is generated with this value.
+  /// The mapping of the register bytes into chunks depends on this value.
   parameter int unsigned             AxiDataWidth = 32'd0,
   /// Privileged accesses only. The slave only executes AXI4-Lite transactions if the `AxProt[0]`
   /// bit in the `AW` or `AR` vector is set, otherwise ignores writes and answers with
@@ -38,16 +61,20 @@ module axi_lite_regs #(
   /// `axi_pkg::RESP_SLVERR` to transactions.
   parameter bit                      SecuProtOnly = 1'b0,
   /// This flag can specify a AXI4 read-only register at given `byte_index` of the register array.
-  /// This flag only applies for AXI4-Lite write transactions the register byte can be loaded
-  /// directly by asserting `reg_load_i[byte_index]`. When `AxiReadOnly[reg_index] == 1'b1` this
-  /// flag prevents the corresponding `axi_req_i.w.strb` signal to assert at the load signal of the
+  ///
+  /// This flag only applies for AXI4-Lite write transactions. The register byte can be loaded
+  /// directly by asserting `reg_load_i[byte_index]`. When `AxiReadOnly[reg_index] is set to 1'b1`,
+  /// the corresponding `axi_req_i.w.strb` signal is prevented to assert at the load signal of the
   /// corresponding register byte address.
+  ///
   /// The B response will be `axi_pkg::RESP_OKAY` as long as at least one byte has been written,
-  /// even when partial byte write have been prevented by this flag. When no byte has been
-  /// written the module will answer with `axi_pkg::RESP_SLVERR`.
+  /// even when partial byte write have been prevented by this flag! This is to allow the usage
+  /// of the full AXI bus width to write on read-only segmented fields.
+  /// When no byte has been written the module will answer with `axi_pkg::RESP_SLVERR`.
+  ///
   /// If one wants to constant propagate a byte in the register array:
   /// - Set `AxiReadOnly[byte_index]` to 1'b1.
-  /// - Set `reg_load_p[byte_index] constant to 1'b0.
+  /// - Set `reg_load_i[byte_index] constant to 1'b0.
   /// Then the byte at `reg_q_o[byte_index]` will be equal to `RegRstVal[byte_index]` and constant.
   parameter logic  [RegNumBytes-1:0] AxiReadOnly  = {RegNumBytes{1'b0}},
   /// Reset value for the whole register array.
@@ -70,19 +97,35 @@ module axi_lite_regs #(
   input  req_lite_t               axi_req_i,
   /// AXI4-Lite slave port response struct, bundles all AXI4-Lite signals to the master.
   output resp_lite_t              axi_resp_o,
-  /// Flag to tell logic that the AXI is writing these bytes this cycle, the new data
-  /// at
-  output logic  [RegNumBytes-1:0] wr_active_o,
-
-  /// Flag to tell logic that the AXI is reading these bytes this cycle.
-  output logic  [RegNumBytes-1:0] rd_active_o,
-  /// Load value for each register.
+  /// Flag to tell logic that the AXI is writing these bytes this cycle. The new data
+  /// where `wr_active[byte_index] && AxiReadOnly[byte_index] == 1'b0` is available in the
+  /// next cycle at `reg_q_o[byte_index]`. This signal is directly generated from the signal
+  /// axi_req_i.w.strb and is asserted regardless of the value of `AxiReadOnly`.
   ///
+  /// Is only active when the AXI prot flag from the channel has the right access permission.
+  output logic  [RegNumBytes-1:0] wr_active_o,
+  /// Flag to tell logic that the AXI is reading the value of the bytes at `reg_q_o[byte_index]`
+  /// this cycle.
+  ///
+  /// Is only active when the AXI prot flag from the channel has the right access permission.
+  output logic  [RegNumBytes-1:0] rd_active_o,
+  /// Load value for each register. Can be used to directly load a new value into the registers
+  /// from logic.
+  ///
+  /// If not used set to `'0`.
   input  byte_t [RegNumBytes-1:0] reg_d_i,
   /// Load enable for each register.
+  /// Each byte can be loaded directly by asserting `reg_load_i[byte_index]` to `1'b1`.
+  /// The load value from `reg_d_i[byte_index]` is then available in the next cycle at
+  /// `reg_q_o[byte_index]`.
   ///
+  /// If the load signal is active, an AXI4-Lite write transactions is stalled, when it writes onto
+  /// the same register chunk where at least one `reg_load_i[byte_index]` is asserted! It is
+  /// stalled until all `reg_load_i` mapped onto the same chunk are `'0`!
+  ///
+  /// If not used set to `'0`;
   input  logic  [RegNumBytes-1:0] reg_load_i,
-  ///
+  /// Register state output.
   output byte_t [RegNumBytes-1:0] reg_q_o
 );
   // Define the number of register chunks needed to map all `RegNumBytes` to the AXI channel.
@@ -107,6 +150,7 @@ module axi_lite_regs #(
   localparam int unsigned AddrWidth = (RegNumBytes > 32'd1) ? $clog2(RegNumBytes) : 32'd1;
   typedef logic [AddrWidth-1:0] addr_t;
 
+  // Define the address map which maps each register chunk onto an AXI address.
   typedef struct packed {
     int unsigned idx;
     addr_t       start_addr;
@@ -119,11 +163,6 @@ module axi_lite_regs #(
       start_addr: addr_t'( i   * AxiStrbWidth),
       end_addr:   addr_t'((i+1)* AxiStrbWidth)
     };
-    // debug print
-    initial begin : print_addr_map
-      $display("Reg Chunk: %0d StartAddr: %0h, EndAddr: %0h",
-          i, addr_map[i].start_addr, addr_map[i].end_addr);
-    end
   end
 
   // Channel definitions for spill register
@@ -343,8 +382,8 @@ module axi_lite_regs #(
     end
     default disable iff (~rst_ni);
     for (genvar i = 0; i < RegNumBytes; i++) begin
-      assert property (@(posedge clk_i) (reg_load_i[i] |=> (reg_q_o[i] === $past(reg_d_i[i])))) else
-          $fatal(1, "Read-only register at index: %0d", i);
+      assert property (@(posedge clk_i) (!reg_load_i[i] && AxiReadOnly[i] |=> $stable(reg_q_o[i])))
+          else $fatal(1, "Read-only register at `byte_index: %0d` was changed by AXI!", i);
     end
   `endif
   // pragma translate_on
