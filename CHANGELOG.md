@@ -8,25 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_lite_regs`: Memory-mapped registers with AXI4-Lite slave port and the option to make
-  individual registers read-only.
+- `axi_lite_regs`: Add memory-mapped registers with AXI4-Lite slave port and the option to make
+  individual bytes read-only.
 
 ### Changed
-- `axi_intf`: Add in `AXI_LITE` and `AXI_LITE_DV` the modports `aw_prot` and `ar_prot`.
-- `include/axi/assign`: Adapt ASSIGN macros of AXI_LITE for modports `aw_prot` and `ar_prot`.
-- `axi_test::axi_lite_driver`: Adapt for new modports `aw_prot` and `ar_prot`.
-  - `send_aw()`: Add input `axi_pkg::prot_t prot`.
-  - `send_ar()`: Add input `axi_pkg::prot_t prot`.
-  - `recv_aw()`: Add output `axi_pkg::prot_t prot`.
-  - `recv_ar()`: Add output `axi_pkg::prot_t prot`.
-- `axi_test::rand_axi_lite_master`: Adapt for new modports `aw_prot` and `ar_prot`.
-  - `send_aws()`: Add random `aw_prot` on each AW.
-  - `send_ars()`: Add random `ar_prot` on each AR.
-  - `write()`: Add input `axi_pkg::prot_t w_prot`.
-  - `read()`: Add input `axi_pkg::prot_t r_prot`.
-- `axi_test::rand_axi_lite_slave`: Adapt for new modports `aw_prot` and `ar_prot`, display prot.
-- Update usage of `axi_test::*axi_lite*` in tbs: `tb_axi_lite_mailbox`, `tb_axi_lite_to_axi` and
-  `tb_axi_lite_xbar` to the changes in `axi_test`.
+- Interfaces `AXI_LITE` and `AXI_LITE_DV`: add `aw_prot` and `ar_prot` signals.
+  - The `AXI_LITE_ASSIGN*` and `AXI_LITE_SET*` macros (in `include/axi/assign.svh`) have been
+    updated to include the two new interface signals.
+  - `axi_test::axi_lite_driver`: A new `prot` function argument has been added to the `send_aw`,
+    `send_ar`, `recv_aw`, and `recv_ar` functions.
+  - `axi_test::rand_axi_lite_master`:
+    - A new `w_prot` and `r_prot` function argument has been added to the `write` and `read`
+      function, respectively.
+    - The `send_aws` and the `send_ars` function now randomizes the `prot` signal of each AW and AR,
+      respectively.
+  - `axi_test::rand_axi_slave`: Display `prot` signal (but otherwise still ignore it).
 
 ### Fixed
 
