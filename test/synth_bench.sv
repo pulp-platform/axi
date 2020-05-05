@@ -143,17 +143,12 @@ module synth_bench (
 
   // AXI4-Lite Registers
   for (genvar i = 0; i < 6; i++) begin
-    for (genvar j = 0; j < 6; j++) begin
-      localparam int unsigned RegDataWidth = (AXI_ADDR_WIDTH[j] <= 32'd32) ?
-          AXI_ADDR_WIDTH[j] : 32'd32;
-
-      synth_axi_lite_regs #(
-        .NUM_REGS       ( AXI_ADDR_WIDTH[i] ),
-        .AXI_ADDR_WIDTH ( 32'd32            ),
-        .AXI_DATA_WIDTH ( 32'd32            ),
-        .REG_DATA_WIDTH ( RegDataWidth      )
-      ) i_axi_lite_regs (.*);
-    end
+    localparam int unsigned NUM_BYTES[6] = {1, 4, 42, 64, 129, 512};
+    synth_axi_lite_regs #(
+      .REG_NUM_BYTES  ( NUM_BYTES[i]      ),
+      .AXI_ADDR_WIDTH ( 32'd32            ),
+      .AXI_DATA_WIDTH ( 32'd32            )
+    ) i_axi_lite_regs (.*);
   end
 
 endmodule
@@ -557,49 +552,40 @@ module synth_axi_serializer #(
 endmodule
 
 module synth_axi_lite_regs #(
-  parameter int unsigned NUM_REGS       = 32'd0,
+  parameter int unsigned REG_NUM_BYTES  = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned REG_DATA_WIDTH = 32'd0
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0
 ) (
   input logic clk_i,
   input logic rst_ni
 );
-  localparam int unsigned IDX_WIDTH = (NUM_REGS > 32'd1) ? $clog2(NUM_REGS) : 32'd1;
-  localparam logic [NUM_REGS-1:0][REG_DATA_WIDTH-1:0] RST_VAL = (REG_DATA_WIDTH > 1) ?
-     {NUM_REGS{{REG_DATA_WIDTH-1{1'b0}}, 1'b1}} : {NUM_REGS{1'b0}};
+  typedef logic [7:0] byte_t;
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH )
   ) slv ();
 
-  logic [AXI_ADDR_WIDTH-1:0]               axi_base_addr;
-  logic [IDX_WIDTH-1:0]                    axi_wr_idx,    axi_rd_idx;
-  logic                                    axi_wr_active, axi_rd_active;
-  logic [NUM_REGS-1:0][REG_DATA_WIDTH-1:0] reg_d,         reg_q;
-  logic [NUM_REGS-1:0]                     reg_load;
+  logic  [REG_NUM_BYTES-1:0] wr_active, rd_active;
+  byte_t [REG_NUM_BYTES-1:0] reg_d,     reg_q;
+  logic  [REG_NUM_BYTES-1:0] reg_load;
 
   axi_lite_regs_intf #(
-    .NUM_AXI_REGS   ( NUM_REGS         ),
-    .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH   ),
-    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH   ),
-    .PRIV_PROT_ONLY ( 1'd0             ),
-    .SECU_PROT_ONLY ( 1'd0             ),
-    .REG_DATA_WIDTH ( REG_DATA_WIDTH   ),
-    .AXI_READ_ONLY  ( {NUM_REGS{1'b0}} ),
-    .REG_RST_VAL    ( RST_VAL          )
+    .REG_NUM_BYTES  ( REG_NUM_BYTES          ),
+    .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH         ),
+    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH         ),
+    .PRIV_PROT_ONLY ( 1'd0                   ),
+    .SECU_PROT_ONLY ( 1'd0                   ),
+    .AXI_READ_ONLY  ( {REG_NUM_BYTES{1'b0}}  ),
+    .REG_RST_VAL    ( {REG_NUM_BYTES{8'h00}} )
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,
-    .slv             ( slv             ),
-    .axi_base_addr_i ( axi_base_addr   ),
-    .axi_wr_idx_o    ( axi_wr_idx      ),
-    .axi_wr_active_o ( axi_wr_active   ),
-    .axi_rd_idx_o    ( axi_rd_idx      ),
-    .axi_rd_active_o ( axi_rd_active   ),
-    .reg_d_i         ( reg_d           ),
-    .reg_load_i      ( reg_load        ),
-    .reg_q_o         ( reg_q           )
+    .slv         ( slv         ),
+    .wr_active_o ( wr_active   ),
+    .rd_active_o ( rd_active   ),
+    .reg_d_i     ( reg_d       ),
+    .reg_load_i  ( reg_load    ),
+    .reg_q_o     ( reg_q       )
   );
 endmodule
