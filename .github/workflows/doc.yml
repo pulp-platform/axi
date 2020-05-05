@@ -9,7 +9,8 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    if: github.repository == 'pulp-platform/axi'  # do not run this job on forks (because deployment
+    runs-on: ubuntu-latest                        # will fail)
     steps:
       - name: Checkout
         uses: actions/checkout@v2
