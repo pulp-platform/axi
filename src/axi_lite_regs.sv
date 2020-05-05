@@ -177,31 +177,37 @@ module axi_lite_regs #(
   b_chan_lite_t            b_chan;
   logic                    b_valid,      b_ready;
   logic                    aw_prot_ok;
-  logic  [NumChunks-1:0]   chunk_loaded, chunk_ro;
+  logic                    chunk_loaded, chunk_ro;
 
   // Flag for telling that the protection level is the right one.
   assign aw_prot_ok = (PrivProtOnly ? axi_req_i.aw.prot[0] : 1'b1) &
                       (SecuProtOnly ? axi_req_i.aw.prot[1] : 1'b1);
   // Have a flag which is true if any of the bytes inside a chunk are directly loaded.
-  for (genvar i = 0; i < NumChunks; i++) begin : gen_chunk_load
-    logic [AxiStrbWidth-1:0] load;
-    logic [AxiStrbWidth-1:0] read_only;
-    for (genvar j = 0; j < AxiStrbWidth; j++) begin : gen_load_assign
-      localparam int unsigned RegByteIdx = i*AxiStrbWidth + j;
-      // Only assert load flag for non read only bytes.
-      assign load[j]      = (RegByteIdx < RegNumBytes) ?
-          (reg_load_i[RegByteIdx] && !AxiReadOnly[RegByteIdx]) : 1'b0;
-      assign read_only[j] = (RegByteIdx < RegNumBytes) ? AxiReadOnly[RegByteIdx] : 1'b1;
-    end
-    // Only assert the loaded flag if there could be a load conflict between a strobe and load
-    // signal.
-    assign chunk_loaded[i] = |(load & axi_req_i.w.strb);
-    assign chunk_ro[i]     = &read_only;
+  logic [AxiStrbWidth-1:0] load;
+  logic [AxiStrbWidth-1:0] read_only;
+  // Address of the lowest byte byte of a chunk accessed by an AXI write transaction.
+  addr_t byte_w_addr;
+  assign byte_w_addr = addr_t'(aw_chunk_idx * AxiStrbWidth);
+
+  for (genvar i = 0; i < AxiStrbWidth; i++) begin : gen_load_assign
+    // Indexed byte address
+    addr_t reg_w_idx;
+    assign reg_w_idx = byte_w_addr + addr_t'(i);
+    // Only assert load flag for non read only bytes.
+    assign load[i]      = (reg_w_idx < RegNumBytes) ?
+        (reg_load_i[reg_w_idx] && !AxiReadOnly[reg_w_idx]) : 1'b0;
+    // Flag to find out that all bytes of the chunk are read only.
+    assign read_only[i] = (reg_w_idx < RegNumBytes) ? AxiReadOnly[reg_w_idx] : 1'b1;
   end
+  // Only assert the loaded flag if there could be a load conflict between a strobe and load
+  // signal.
+  assign chunk_loaded = |(load & axi_req_i.w.strb);
+  assign chunk_ro     = &read_only;
+
 
   // Register write logic.
   always_comb begin
-    automatic int unsigned reg_byte_idx = '0;
+    automatic addr_t reg_byte_idx = '0;
     // default assignments
     reg_d               = reg_q;
     reg_update          = '0;
@@ -232,10 +238,10 @@ module axi_lite_regs #(
       if (aw_dec_valid && aw_prot_ok) begin
         // Stall write as long as any direct load is going on in the current chunk.
         // Read-only bytes within a chunk have no influence on stalling.
-        if (!chunk_loaded[aw_chunk_idx]) begin
+        if (!chunk_loaded) begin
           // Go through all bytes on the W channel.
           for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
-            reg_byte_idx = unsigned'(aw_chunk_idx) * AxiStrbWidth + i;
+            reg_byte_idx = byte_w_addr + addr_t'(i);
             // Only execute if the byte is mapped onto the register array.
             if (reg_byte_idx < RegNumBytes) begin
               // Only update the reg from an AXI write if it is not `ReadOnly`.
@@ -248,7 +254,7 @@ module axi_lite_regs #(
               wr_active_o[reg_byte_idx] = axi_req_i.w.strb[i];
             end
           end
-          b_chan.resp         = chunk_ro[aw_chunk_idx] ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+          b_chan.resp         = chunk_ro ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
           b_valid             = 1'b1;
           axi_resp_o.aw_ready = 1'b1;
           axi_resp_o.w_ready  = 1'b1;
