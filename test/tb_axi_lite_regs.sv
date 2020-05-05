@@ -263,7 +263,7 @@ module tb_axi_lite_regs #(
 
   // check that the expected register byte has been written
   task automatic check_q(int unsigned byte_i, byte_t exp_byte);
-    automatic byte_t save_byte = reg_q[byte_i];
+    automatic byte_t save_byte = (reg_load[byte_i]) ? reg_d[byte_i] : reg_q[byte_i];
     @(posedge clk);
     #TestTime;
     if (!AxiReadOnly[byte_i]) begin
@@ -282,11 +282,16 @@ module tb_axi_lite_regs #(
   default disable iff (~rst_n);
   for (genvar i = 0; i < RegNumBytes; i++) begin : gen_check_ro
     if (AxiReadOnly[i]) begin
-      ro_assert: assert property (@(posedge clk) (wr_active[i] |=> $stable(reg_q[i]))) else
-          $fatal(1, "ReadOnly byte %0d changed from AXI write.", i);
+      ro_assert_no_load: assert property (@(posedge clk)
+          ((wr_active[i] && !reg_load[i]) |=> $stable(reg_q[i]))) else
+          $fatal(1, "ReadOnly byte %0d changed from AXI write, while not direct loaded.", i);
+      ro_assert_load: assert property (@(posedge clk)
+          ((wr_active[i] && reg_load[i]) |=> (reg_q[i] === $past(reg_d[i])))) else
+          $fatal(1, "ReadOnly byte %0d changed from AXI write, while direct loaded.", i);
     end
-    load_assert_no_axi: assert property (@(posedge clk) (reg_load[i] |-> !wr_active[i])) else
-      $fatal(1, "Byte %0d, AXI write and direct load are both active!", i);
+    load_assert_no_axi: assert property (@(posedge clk)
+        (reg_load[i] && !AxiReadOnly[i] |-> !wr_active[i])) else
+        $fatal(1, "Byte %0d, AXI write onto non read-only and direct load are both active!", i);
     load_assert_data:   assert property (@(posedge clk)
         (reg_load[i] |=> reg_q[i] === $past(reg_d[i]))) else
         $fatal(1, "Byte %0d, direct load was executed falsely.", i);

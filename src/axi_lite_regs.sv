@@ -112,9 +112,12 @@ module axi_lite_regs #(
   input  byte_t [RegNumBytes-1:0] reg_d_i,
   /// Load enable of each byte.
   ///
-  /// If the load signal is active, an AXI4-Lite write transactions is stalled, when it writes onto
-  /// the same register chunk where at least one `reg_load_i[byte_index]` is asserted! It is
-  /// stalled until all `reg_load_i` mapped onto the same chunk are `'0`!
+  /// If `reg_load_i` is `1` for a byte defined as non read-only in the current clock cycle,
+  /// an AXI4-Lite write transaction is stalled when it tries to write onto the same byte.
+  /// The stall occurs if the following conditions are true:
+  /// - `axi_req_i.w.strb` is `1` and maps onto the byte where `reg_load_i` is `1`.
+  /// - `AxiReadOnly` is `0` at the byte where `reg_load_i` is `1`.
+  /// The transaction is stalled until all conflicting `reg_load_i` are `0`.
   ///
   /// If unused, set to `'0`.
   input  logic  [RegNumBytes-1:0] reg_load_i,
@@ -185,10 +188,14 @@ module axi_lite_regs #(
     logic [AxiStrbWidth-1:0] read_only;
     for (genvar j = 0; j < AxiStrbWidth; j++) begin : gen_load_assign
       localparam int unsigned RegByteIdx = i*AxiStrbWidth + j;
-      assign load[j]      = (RegByteIdx < RegNumBytes) ? reg_load_i[RegByteIdx]  : 1'b0;
+      // Only assert load flag for non read only bytes.
+      assign load[j]      = (RegByteIdx < RegNumBytes) ?
+          (reg_load_i[RegByteIdx] && !AxiReadOnly[RegByteIdx]) : 1'b0;
       assign read_only[j] = (RegByteIdx < RegNumBytes) ? AxiReadOnly[RegByteIdx] : 1'b1;
     end
-    assign chunk_loaded[i] = |load;
+    // Only assert the loaded flag if there could be a load conflict between a strobe and load
+    // signal.
+    assign chunk_loaded[i] = |(load & axi_req_i.w.strb);
     assign chunk_ro[i]     = &read_only;
   end
 
@@ -224,15 +231,20 @@ module axi_lite_regs #(
       // - `axi_req_i.aw.prot` has the right value.
       if (aw_dec_valid && aw_prot_ok) begin
         // Stall write as long as any direct load is going on in the current chunk.
+        // Read-only bytes within a chunk have no influence on stalling.
         if (!chunk_loaded[aw_chunk_idx]) begin
           // Go through all bytes on the W channel.
           for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
             reg_byte_idx = unsigned'(aw_chunk_idx) * AxiStrbWidth + i;
             // Only execute if the byte is mapped onto the register array.
             if (reg_byte_idx < RegNumBytes) begin
-              reg_d[reg_byte_idx]       = axi_req_i.w.data[8*i+:8];
-              // Only update the reg From an AXI write if it is not `ReadOnly`.
-              reg_update[reg_byte_idx]  = axi_req_i.w.strb[i] & !AxiReadOnly[reg_byte_idx];
+              // Only update the reg from an AXI write if it is not `ReadOnly`.
+              // Only connect the data and load to the reg, if the byte is written from AXI.
+              // This allows for simultaneous direct load onto unwritten bytes.
+              if (!AxiReadOnly[reg_byte_idx] && axi_req_i.w.strb[i]) begin
+                reg_d[reg_byte_idx]      = axi_req_i.w.data[8*i+:8];
+                reg_update[reg_byte_idx] = 1'b1;
+              end
               wr_active_o[reg_byte_idx] = axi_req_i.w.strb[i];
             end
           end
