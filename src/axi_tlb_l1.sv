@@ -80,17 +80,17 @@ module axi_tlb_l1 #(
   typedef logic [OupPageNumWidth-1:0] oup_page_t;
   /// Translation table entry with 4 KiB page granularity
   typedef struct packed {
-    /// Number of first page in input address segment
-    inp_page_t  first;
-    /// Number of last page (inclusive) in input address segment
-    inp_page_t  last;
+    /// Defines whether this entry can only be used for read accesses.
+    logic       read_only;
+    /// Defines whether this entry is valid.
+    logic       valid;
     /// Number of first page in output address segment; that is, the output address segment starts
     /// at this `base` page.
     oup_page_t  base;
-    /// Defines whether this entry is valid.
-    logic       valid;
-    /// Defines whether this entry can only be used for read accesses.
-    logic       read_only;
+    /// Number of last page (inclusive) in input address segment
+    inp_page_t  last;
+    /// Number of first page in input address segment
+    inp_page_t  first;
   } entry_t;
 
   entry_t [NumEntries-1:0]  entries;
