@@ -60,7 +60,7 @@ module axi_tlb #(
   /// Main master port request
   output mst_req_t    mst_req_o,
   /// Main master port response
-  output axi_resp_t   mst_resp_i,
+  input  axi_resp_t   mst_resp_i,
   /// Configuration port request
   input  lite_req_t   cfg_req_i,
   /// Configuration port response
