@@ -144,7 +144,7 @@ module axi_lite_regs #(
 
   // Find out how many bits of the address are applicable for this module.
   // Look at the `AddrWidth` number of LSBs to calculate the multiplexer index of the AXI.
-  localparam int unsigned AddrWidth = (RegNumBytes > 32'd1) ? $clog2(RegNumBytes) : 32'd1;
+  localparam int unsigned AddrWidth = (RegNumBytes > 32'd1) ? ($clog2(RegNumBytes)+1) : 32'd2;
   typedef logic [AddrWidth-1:0] addr_t;
 
   // Define the address map which maps each register chunk onto an AXI address.
