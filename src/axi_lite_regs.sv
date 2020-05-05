@@ -100,8 +100,9 @@ module axi_lite_regs #(
   input  req_lite_t axi_req_i,
   /// AXI4-Lite slave response
   output resp_lite_t axi_resp_o,
-  /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.
-  /// This signal is asserted regardless of the value of `AxiReadOnly`.
+  /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
+  /// signal is asserted regardless of the value of `AxiReadOnly` and can therefore be used by
+  /// surrounding logic to react to write-on-read-only-byte errors.
   output logic [RegNumBytes-1:0] wr_active_o,
   /// Signals that a byte is being read from the AXI4-Lite port in the current clock cycle.
   output logic [RegNumBytes-1:0] rd_active_o,
