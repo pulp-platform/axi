@@ -97,7 +97,7 @@ module axi_tlb #(
     .clk_i,
     .rst_ni,
     .valid_i  ( slv_req_i.aw_valid              ),
-    .ready_o  ( slv_req_i.aw_ready              ),
+    .ready_o  ( slv_resp_o.aw_ready             ),
     .valid_o  ( {l1_tlb_wr_req_valid, aw_valid} ),
     .ready_i  ( {l1_tlb_wr_req_ready, aw_ready} )
   );
@@ -107,7 +107,7 @@ module axi_tlb #(
     .clk_i,
     .rst_ni,
     .valid_i  ( slv_req_i.ar_valid              ),
-    .ready_o  ( slv_req_i.ar_ready              ),
+    .ready_o  ( slv_resp_o.ar_ready             ),
     .valid_o  ( {l1_tlb_rd_req_valid, ar_valid} ),
     .ready_i  ( {l1_tlb_rd_req_ready, ar_ready} )
   );
