@@ -88,8 +88,9 @@ assigned its value from this array.</p>
 </div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output resp_lite_t</span></code></h3><div class="docblock"
 ><p>AXI4-Lite slave response</p>
 </div><h3 id="port.wr_active_o" class="impl"><code class="in-band">wr_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.
-This signal is asserted regardless of the value of <code>AxiReadOnly</code>.</p>
+><p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
+signal is asserted regardless of the value of <code>AxiReadOnly</code> and can therefore be used by
+surrounding logic to react to write-on-read-only-byte errors.</p>
 </div><h3 id="port.rd_active_o" class="impl"><code class="in-band">rd_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>Signals that a byte is being read from the AXI4-Lite port in the current clock cycle.</p>
 </div><h3 id="port.reg_d_i" class="impl"><code class="in-band">reg_d_i<span class="type-annotation">: input  byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
