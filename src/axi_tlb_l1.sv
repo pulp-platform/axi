@@ -139,33 +139,53 @@ module axi_tlb_l1 #(
     .res_ready_i  ( rd_res_ready_i  )
   );
 
-  // Table entries from AXI4-Lite registers
-  localparam NumAxiRegs = 13; // TODO
-  localparam RegDataWidth = 42; // TODO
+  // Table entries from AXI4-Lite registers, aligned to 32-bit words
+  localparam int unsigned InpPageNumBytes = cf_math_pkg::ceil_div(InpPageNumWidth, 8);
+  localparam int unsigned InpPageNumBytesAligned = cf_math_pkg::ceil_div(InpPageNumBytes, 4) * 4;
+  localparam int unsigned OupPageNumBytes = cf_math_pkg::ceil_div(OupPageNumWidth, 8);
+  localparam int unsigned OupPageNumBytesAligned = cf_math_pkg::ceil_div(OupPageNumBytes, 4) * 4;
+  localparam int unsigned FlagBytes = cf_math_pkg::ceil_div(2, 8);
+  localparam int unsigned FlagBytesAligned = cf_math_pkg::ceil_div(FlagBytes, 4) * 4;
+  localparam int unsigned EntryBytesAligned =
+      2 * InpPageNumBytesAligned + OupPageNumBytesAligned + FlagBytesAligned;
+  localparam int unsigned RegNumBytes = NumEntries * EntryBytesAligned;
+  // FIXME: generalize
+  localparam bit [RegNumBytes-1:0] AxiReadOnly = 64'b1110100010001000111010001000100011101000100010001110100010001000;
+  typedef logic [7:0] byte_t;
+  byte_t [RegNumBytes-1:0] reg_q;
   axi_lite_regs #(
-    .NumAxiRegs     ( NumAxiRegs      ),
-    .AxiAddrWidth   ( CfgAxiAddrWidth ),
-    .AxiDataWidth   ( CfgAxiDataWidth ),
-    .PrivProtOnly   ( 1'b0            ),
-    .SecuProtOnly   ( 1'b0            ),
-    .RegDataWidth   ( RegDataWidth    ),
-    .AxiReadOnly    ( 1'b0            ),
-    .req_lite_t     ( lite_req_t      ),
-    .resp_lite_t    ( lite_resp_t     )
+    .RegNumBytes    ( RegNumBytes           ),
+    .AxiAddrWidth   ( CfgAxiAddrWidth       ),
+    .AxiDataWidth   ( CfgAxiDataWidth       ),
+    .PrivProtOnly   ( 1'b0                  ),
+    .SecuProtOnly   ( 1'b0                  ),
+    .AxiReadOnly    ( AxiReadOnly           ),
+    .RegRstVal      ( '{RegNumBytes{8'h00}} ),
+    .req_lite_t     ( lite_req_t            ),
+    .resp_lite_t    ( lite_resp_t           )
   ) i_regs (
     .clk_i,
     .rst_ni,
-    .axi_req_i        ( cfg_req_i                             ),
-    .axi_resp_o       ( cfg_resp_o                            ),
-    .axi_base_addr_i  ( /* TODO */                            ),
-    .axi_wr_idx_o     ( /* unused */                          ),
-    .axi_wr_active_o  ( /* unused */                          ),
-    .axi_rd_idx_o     ( /* unused */                          ),
-    .axi_rd_active_o  ( /* unused */                          ),
-    .reg_d_i          ( '{NumAxiRegs{'{RegDataWidth{1'b0}}}}  ),
-    .reg_load_i       ( '{NumAxiRegs{1'b0}}                   ),
-    .reg_q_o          ( /* TODO */                            )
+    .axi_req_i    ( cfg_req_i             ),
+    .axi_resp_o   ( cfg_resp_o            ),
+    .wr_active_o  ( /* unused */          ),
+    .rd_active_o  ( /* unused */          ),
+    .reg_d_i      ( '{RegNumBytes{8'h00}} ),
+    .reg_load_i   ( '{RegNumBytes{1'b0}}  ),
+    .reg_q_o      ( reg_q                 )
   );
+  for (genvar i = 0; i < NumEntries; i++) begin : gen_unpack_entry
+    localparam int unsigned Offset = i * EntryBytesAligned;
+    // FIXME: generalize
+    assign entries[i].first[15:0] = reg_q[Offset+0+:1];
+    assign entries[i].first[19:16] = reg_q[Offset+2][3:0];
+    assign entries[i].last[15:0] = reg_q[Offset+4+:1];
+    assign entries[i].last[19:16] = reg_q[Offset+6][3:0];
+    assign entries[i].base[15:0] = reg_q[Offset+8+:1];
+    assign entries[i].base[19:16] = reg_q[Offset+10][3:0];
+    assign entries[i].valid = reg_q[Offset+12][0];
+    assign entries[i].read_only = reg_q[Offset+12][1];
+  end
 
   `ifndef VERILATOR
   // pragma translate_off
