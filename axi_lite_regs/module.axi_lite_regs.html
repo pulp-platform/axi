@@ -99,9 +99,14 @@ byte register in this module is set to the value of the byte in <code>reg_d_i</c
 edge.</p>
 </div><h3 id="port.reg_load_i" class="impl"><code class="in-band">reg_load_i<span class="type-annotation">: input  logic  [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>Load enable of each byte.</p>
-<p>If the load signal is active, an AXI4-Lite write transactions is stalled, when it writes onto
-the same register chunk where at least one <code>reg_load_i[byte_index]</code> is asserted! It is
-stalled until all <code>reg_load_i</code> mapped onto the same chunk are <code>'0</code>!</p>
+<p>If <code>reg_load_i</code> is <code>1</code> for a byte defined as non read-only in the current clock cycle,
+an AXI4-Lite write transaction is stalled when it tries to write onto the same byte.
+The stall occurs if the following conditions are true:</p>
+<ul>
+<li><code>axi_req_i.w.strb</code> is <code>1</code> and maps onto the byte where <code>reg_load_i</code> is <code>1</code>.</li>
+<li><code>AxiReadOnly</code> is <code>0</code> at the byte where <code>reg_load_i</code> is <code>1</code>.
+The transaction is stalled until all conflicting <code>reg_load_i</code> are <code>0</code>.</li>
+</ul>
 <p>If unused, set to <code>'0</code>.</p>
 </div><h3 id="port.reg_q_o" class="impl"><code class="in-band">reg_q_o<span class="type-annotation">: output byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>The registered value of each byte.</p>
