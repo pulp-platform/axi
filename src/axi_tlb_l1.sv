@@ -223,10 +223,10 @@ module axi_tlb_l1_chan #(
   // Determine all entries matching a request.
   logic [NumEntries-1:0] entry_matches;
   for (genvar i = 0; i < NumEntries; i++) begin : gen_matches
-    assign entry_matches[i] = entries[i].valid & req_valid_i
-        & (req_page_i >= entries[i].first)
-        & (req_page_i <= entries[i].last)
-        & (~IsWriteChannel | ~entries[i].read_only);
+    assign entry_matches[i] = entries_i[i].valid & req_valid_i
+        & (req_page_i >= entries_i[i].first)
+        & (req_page_i <= entries_i[i].last)
+        & (~IsWriteChannel | ~entries_i[i].read_only);
   end
 
   // Determine entry with lowest index that matches the request.
@@ -249,14 +249,14 @@ module axi_tlb_l1_chan #(
     req_ready_o = 1'b0;
     res = '{default: '0};
     if (req_valid_i) begin
-      res_o.hit = ~no_match;
-      res_o.addr = (entries[match_idx].base + (req_page_i - entries[match_idx].first)) << 12;
+      res.hit = ~no_match;
+      res.addr = (entries_i[match_idx].base + (req_page_i - entries_i[match_idx].first)) << 12;
       res_valid = 1'b1;
       req_ready_o = res_ready;
     end
   end
   // Store translation in fall-through register.  This prevents changes in the translated address
-  // due to changes in `entries` while downstream handshake is outstanding.
+  // due to changes in `entries_i` while downstream handshake is outstanding.
   fall_through_register #(
     .T  ( res_t )
   ) i_res_ft_reg (
