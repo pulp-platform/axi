@@ -870,7 +870,7 @@ package axi_test;
           beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
         end
         // Determine `ax_addr`.
-        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP && AXI_BURST_FIXED) begin
           // The address must be aligned to half the outbound data size. [E2-337]
           beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
         end else begin
@@ -1050,7 +1050,12 @@ package axi_test;
             w_flight_cnt[aw_beat.ax_id]++;
             cnt_sem.put();
           end else begin
-            rand_atop_burst(aw_beat);
+            if (AXI_BURST_INCR) begin
+              // We can emit ATOPs only if INCR bursts are allowed.
+              rand_atop_burst(aw_beat);
+            end else begin
+              $warning("ATOP suppressed because INCR bursts are disabled!");
+            end
           end
         end else begin
           cnt_sem.get();
