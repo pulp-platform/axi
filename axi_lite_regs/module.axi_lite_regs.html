@@ -77,7 +77,6 @@ assigned its value from this array.</p>
 ></div><h3 id="parameter.NumChunks" class="impl"><code class="in-band">NumChunks<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.ChunkIdxWidth" class="impl"><code class="in-band">ChunkIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.RegByteIdx" class="impl"><code class="in-band">RegByteIdx<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Rising-edge clock of all ports</p>
@@ -99,15 +98,15 @@ byte register in this module is set to the value of the byte in <code>reg_d_i</c
 edge.</p>
 </div><h3 id="port.reg_load_i" class="impl"><code class="in-band">reg_load_i<span class="type-annotation">: input  logic  [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>Load enable of each byte.</p>
-<p>If <code>reg_load_i</code> is <code>1</code> for a byte defined as non read-only in the current clock cycle,
-an AXI4-Lite write transaction is stalled when it tries to write onto the same byte.
-The stall occurs if the following conditions are true:</p>
+<p>If <code>reg_load_i</code> is <code>1</code> for a byte defined as non-read-only in a clock cycle, an AXI4-Lite
+write transaction is stalled when it tries to write the same byte.  That is, a write
+transaction is stalled if all of the following conditions are true for the byte at index <code>i</code>:</p>
 <ul>
-<li><code>axi_req_i.w.strb</code> is <code>1</code> and maps onto the byte where <code>reg_load_i</code> is <code>1</code>.</li>
-<li><code>AxiReadOnly</code> is <code>0</code> at the byte where <code>reg_load_i</code> is <code>1</code>.
-The transaction is stalled until all conflicting <code>reg_load_i</code> are <code>0</code>.</li>
+<li><code>AxiReadOnly[i]</code> is <code>0</code>,</li>
+<li><code>reg_load_i[i]</code> is <code>1</code>,</li>
+<li>the bit in <code>axi_req_i.w.strb</code> that affects the byte is <code>1</code>.</li>
 </ul>
-<p>If unused, set to <code>'0</code>.</p>
+<p>If unused, set this input to <code>'0</code>.</p>
 </div><h3 id="port.reg_q_o" class="impl"><code class="in-band">reg_q_o<span class="type-annotation">: output byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>The registered value of each byte.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
@@ -116,6 +115,8 @@ The transaction is stalled until all conflicting <code>reg_load_i</code> are <co
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
 <h3 id="signal.aw_chunk_idx" class="impl"><code class="in-band">aw_chunk_idx<span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.b_chan" class="impl"><code class="in-band">b_chan<span class="type-annotation">: b_chan_lite_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.byte_w_addr" class="impl"><code class="in-band">byte_w_addr<span class="type-annotation">: addr_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.reg_w_idx" class="impl"><code class="in-band">reg_w_idx<span class="type-annotation">: addr_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.ar_chunk_idx" class="impl"><code class="in-band">ar_chunk_idx<span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.r_chan" class="impl"><code class="in-band">r_chan<span class="type-annotation">: r_chan_lite_t</span></code></h3><div class="docblock"
 ></div></section>
