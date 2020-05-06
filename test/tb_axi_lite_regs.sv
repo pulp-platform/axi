@@ -280,8 +280,8 @@ module tb_axi_lite_regs #(
   // pragma translate_off
   `ifndef VERILATOR
   default disable iff (~rst_n);
-  for (genvar i = 0; i < RegNumBytes; i++) begin : gen_check_ro
-    if (AxiReadOnly[i]) begin
+  for (genvar i = 0; i < RegNumBytes; i++) begin : gen_check_ro_bytes
+    if (AxiReadOnly[i]) begin : gen_check_ro
       ro_assert_no_load: assert property (@(posedge clk)
           ((wr_active[i] && !reg_load[i]) |=> $stable(reg_q[i]))) else
           $fatal(1, "ReadOnly byte %0d changed from AXI write, while not direct loaded.", i);
