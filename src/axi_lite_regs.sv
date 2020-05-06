@@ -112,14 +112,14 @@ module axi_lite_regs #(
   input  byte_t [RegNumBytes-1:0] reg_d_i,
   /// Load enable of each byte.
   ///
-  /// If `reg_load_i` is `1` for a byte defined as non read-only in the current clock cycle,
-  /// an AXI4-Lite write transaction is stalled when it tries to write onto the same byte.
-  /// The stall occurs if the following conditions are true:
-  /// - `axi_req_i.w.strb` is `1` and maps onto the byte where `reg_load_i` is `1`.
-  /// - `AxiReadOnly` is `0` at the byte where `reg_load_i` is `1`.
-  /// The transaction is stalled until all conflicting `reg_load_i` are `0`.
+  /// If `reg_load_i` is `1` for a byte defined as non-read-only in a clock cycle, an AXI4-Lite
+  /// write transaction is stalled when it tries to write the same byte.  That is, a write
+  /// transaction is stalled if all of the following conditions are true for the byte at index `i`:
+  /// - `AxiReadOnly[i]` is `0`,
+  /// - `reg_load_i[i]` is `1`,
+  /// - the bit in `axi_req_i.w.strb` that affects the byte is `1`.
   ///
-  /// If unused, set to `'0`.
+  /// If unused, set this input to `'0`.
   input  logic  [RegNumBytes-1:0] reg_load_i,
   /// The registered value of each byte.
   output byte_t [RegNumBytes-1:0] reg_q_o
