@@ -201,15 +201,15 @@ module tb_axi_lite_regs #(
       if (master.aw_valid && master.aw_ready && master.w_valid && master.w_ready) begin
         automatic int unsigned aw_idx = ((master.aw_addr - StartAddr)
             >> $clog2(AxiStrbWidth) << $clog2(AxiStrbWidth));
-        automatic axi_pkg::resp_t b_okay = (aw_idx < RegNumBytes) ?
+        automatic axi_pkg::resp_t exp_b_resp = (aw_idx < RegNumBytes) ?
             axi_pkg::RESP_OKAY : axi_pkg::RESP_SLVERR;
         automatic bit all_ro = 1'b1;
         // check for errors from wrong access protection
         if (PrivProtOnly && !master.aw_prot[0]) begin
-          b_okay = axi_pkg::RESP_SLVERR;
+          exp_b_resp = axi_pkg::RESP_SLVERR;
         end
         if (SecuProtOnly && !master.aw_prot[1]) begin
-          b_okay = axi_pkg::RESP_SLVERR;
+          exp_b_resp = axi_pkg::RESP_SLVERR;
         end
         // Check if all accesses bytes are read only
         for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
@@ -218,11 +218,11 @@ module tb_axi_lite_regs #(
           end
         end
         if (all_ro) begin
-          b_okay = axi_pkg::RESP_SLVERR;
+          exp_b_resp = axi_pkg::RESP_SLVERR;
         end
 
         // do the actual write checking
-        if (b_okay == axi_pkg::RESP_OKAY) begin
+        if (exp_b_resp == axi_pkg::RESP_OKAY) begin
           // go through every byte
           for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
             if ((aw_idx+i) < RegNumBytes) begin
@@ -237,7 +237,7 @@ module tb_axi_lite_regs #(
             end
           end
         end
-        b_resp_queue.push_back(b_okay);
+        b_resp_queue.push_back(exp_b_resp);
       end
       @(posedge clk);
     end
