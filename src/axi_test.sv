@@ -1451,7 +1451,7 @@ package axi_test;
     endtask
 
     // write data to a specific address
-    task automatic write(input addr_t w_addr, input prot_t w_prot, input data_t w_data,
+    task automatic write(input addr_t w_addr, input prot_t w_prot = prot_t'(0), input data_t w_data,
                          input strb_t w_strb, output axi_pkg::resp_t b_resp);
       $display("%0t %s> Write to ADDR: %h, PROT: %b DATA: %h, STRB: %h",
           $time(), this.name, w_addr, w_prot, w_data, w_strb);
@@ -1465,7 +1465,7 @@ package axi_test;
     endtask : write
 
     // read data from a specific location
-    task automatic read(input addr_t r_addr, input prot_t r_prot,
+    task automatic read(input addr_t r_addr, input prot_t r_prot = prot_t'(0),
                         output data_t r_data, output axi_pkg::resp_t r_resp);
       $display("%0t %s> Read from ADDR: %h PROT: %b",
           $time(), this.name, r_addr, r_prot);
