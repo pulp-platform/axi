@@ -51,8 +51,10 @@
 /// - Define the value of the byte by setting its `RegRstVal` entry.
 ///
 /// ## Protection
-/// This module can be configured to only allow *privileged* and/or *secure* accesses by setting the
-/// `PrivProtOnly` and/or `SecuProtOnly` parameter, respectively.
+///
+/// This module can be configured to only allow *privileged* and/or *secure* accesses (see A4.7
+/// of the AXI4 specification) by setting the `PrivProtOnly` and/or `SecuProtOnly` parameter,
+/// respectively.
 module axi_lite_regs #(
   /// The size of the register field in bytes.
   parameter int unsigned RegNumBytes = 32'd0,
