@@ -109,9 +109,7 @@ module tb_axi_lite_regs #(
     for (int unsigned i = 0; i < RegNumBytes; i++) begin
       automatic int unsigned j = i;
       fork
-        begin
-          toggle_load(j);
-        end
+        toggle_load(j);
       join_none
     end
   end
@@ -277,8 +275,6 @@ module tb_axi_lite_regs #(
   endtask : check_q
 
   // Some assertions for additional checking.
-  // pragma translate_off
-  `ifndef VERILATOR
   default disable iff (~rst_n);
   for (genvar i = 0; i < RegNumBytes; i++) begin : gen_check_ro_bytes
     if (AxiReadOnly[i]) begin : gen_check_ro
@@ -299,8 +295,6 @@ module tb_axi_lite_regs #(
         (!reg_load[i] && !wr_active[i]) |=> $stable(reg_q[i])) else
         $fatal(1, "Byte %0d is unstable, when no AXI write or direct load.", i);
   end
-  `endif
-  // pragma translate_on
 
   initial begin : proc_stop_sim
     wait (end_of_sim);
