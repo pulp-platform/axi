@@ -43,10 +43,21 @@ package tb_axi_dw_pkg    ;
     typedef logic [AxiIdWidth-1:0] axi_id_t    ;
     typedef logic [AxiAddrWidth-1:0] axi_addr_t;
 
+    typedef logic [AxiSlvPortDataWidth-1:0] slv_port_data_t;
+    typedef logic [AxiSlvPortStrbWidth-1:0] slv_port_strb_t;
+    typedef logic [AxiMstPortDataWidth-1:0] mst_port_data_t;
+    typedef logic [AxiMstPortStrbWidth-1:0] mst_port_strb_t;
+
     typedef struct packed {
       axi_id_t axi_id;
-      logic last     ;
-    } exp_t;
+      logic axi_last ;
+    } exp_b_t;
+    typedef struct packed {
+      axi_id_t axi_id         ;
+      slv_port_data_t axi_data;
+      slv_port_strb_t axi_strb;
+      logic axi_last          ;
+    } exp_rw_t;
     typedef struct packed {
       axi_id_t axi_id    ;
       axi_addr_t axi_addr;
@@ -56,13 +67,17 @@ package tb_axi_dw_pkg    ;
     } exp_ax_t;
 
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_t     ),
-      .ID_WIDTH(AxiIdWidth)
-    ) exp_queue_t;
-    typedef rand_id_queue_pkg::rand_id_queue #(
       .data_t  (exp_ax_t  ),
       .ID_WIDTH(AxiIdWidth)
     ) ax_queue_t;
+    typedef rand_id_queue_pkg::rand_id_queue #(
+      .data_t  (exp_b_t   ),
+      .ID_WIDTH(AxiIdWidth)
+    ) b_queue_t;
+    typedef rand_id_queue_pkg::rand_id_queue #(
+      .data_t  (exp_rw_t  ),
+      .ID_WIDTH(AxiIdWidth)
+    ) r_queue_t;
 
     /**********************
      *  Helper functions  *
@@ -102,14 +117,19 @@ package tb_axi_dw_pkg    ;
     // Queues and FIFOs to hold the expected AXIDs
 
     // Write transactions
-    ax_queue_t  exp_aw_queue;
-    exp_t       exp_w_fifo [$];
-    exp_t       act_w_fifo [$];
-    exp_queue_t exp_b_queue;
+    ax_queue_t exp_mst_port_aw_queue;
+    exp_ax_t   act_mst_port_aw_queue [$];
+    exp_ax_t   act_slv_port_aw_queue [$];
+    exp_rw_t   exp_mst_port_w_queue [$];
+    exp_rw_t   act_mst_port_w_queue [$];
+    exp_rw_t   act_slv_port_w_queue [$];
+    b_queue_t  exp_slv_port_b_queue;
 
     // Read transactions
-    ax_queue_t  exp_ar_queue;
-    exp_queue_t exp_r_queue;
+    ax_queue_t exp_mst_port_ar_queue;
+    ax_queue_t act_mst_port_ar_queue;
+    ax_queue_t act_slv_port_ar_queue;
+    r_queue_t  exp_slv_port_r_queue;
 
     /*****************
      *  Constructor  *
@@ -130,16 +150,18 @@ package tb_axi_dw_pkg    ;
         ) mst_port_vif
       );
       begin
-        this.slv_port_axi    = slv_port_vif;
-        this.mst_port_axi    = mst_port_vif;
-        this.tests_expected  = 0           ;
-        this.tests_conducted = 0           ;
-        this.tests_failed    = 0           ;
-        this.exp_b_queue     = new         ;
-        this.exp_r_queue     = new         ;
-        this.exp_aw_queue    = new         ;
-        this.exp_ar_queue    = new         ;
-        this.cnt_sem         = new(1)      ;
+        this.slv_port_axi          = slv_port_vif;
+        this.mst_port_axi          = mst_port_vif;
+        this.tests_expected        = 0           ;
+        this.tests_conducted       = 0           ;
+        this.tests_failed          = 0           ;
+        this.exp_slv_port_b_queue  = new         ;
+        this.exp_slv_port_r_queue  = new         ;
+        this.exp_mst_port_aw_queue = new         ;
+        this.exp_mst_port_ar_queue = new         ;
+        this.act_mst_port_ar_queue = new         ;
+        this.act_slv_port_ar_queue = new         ;
+        this.cnt_sem               = new(1)      ;
       end
     endfunction
 
@@ -156,34 +178,101 @@ package tb_axi_dw_pkg    ;
      **************/
 
     /*
-     * You need to override this task. Use it to push the expected beats on the
-     * master B and R channels to the respective queues, together with the expected
-     * AW requests on the slave side.
+     * You need to override this task. Use it to push the expected AW requests on
+     * the slave side, and the B and R responses expected on the master side.
      */
     virtual task automatic mon_slv_port_aw ()    ;
       $error("This task needs to be overridden.");
     endtask : mon_slv_port_aw
 
     /*
-     * You need to override this task. Use it to push the expected beats on the
-     * master R channels to the respective queues, together with the expected
-     * AR requests on the slave side.
+     * You need to override this task. Use it to push the expected W requests on
+     * the slave side.
+     *
+     * The `act_mst_port_aw_queue` and `act_slv_port_aw_queue` contain the AW
+     * requests on the Master and Slave port.
+     */
+    virtual task automatic mon_slv_port_w ()     ;
+      $error("This task needs to be overridden.");
+    endtask : mon_slv_port_w
+
+    /*
+     * You need to override this task. Use it to push the expected AR requests on
+     * the slave side, and the R responses expected on the master side.
      */
     virtual task automatic mon_slv_port_ar ()    ;
       $error("This task needs to be overridden.");
     endtask : mon_slv_port_ar
 
     /*
+     * This tasks stores the beats seen by the AR, AW and W channels
+     * into the respective queues.
+     */
+    virtual task automatic store_channels ();
+      if (slv_port_axi.ar_valid && slv_port_axi.ar_ready)
+        act_slv_port_ar_queue.push(slv_port_axi.ar_id,
+          '{
+            axi_id   : slv_port_axi.ar_id   ,
+            axi_burst: slv_port_axi.ar_burst,
+            axi_size : slv_port_axi.ar_size ,
+            axi_addr : slv_port_axi.ar_addr ,
+            axi_len  : slv_port_axi.ar_len
+          });
+
+      if (slv_port_axi.aw_valid && slv_port_axi.aw_ready)
+        act_slv_port_aw_queue.push_back('{
+            axi_id   : slv_port_axi.aw_id   ,
+            axi_burst: slv_port_axi.aw_burst,
+            axi_size : slv_port_axi.aw_size ,
+            axi_addr : slv_port_axi.aw_addr ,
+            axi_len  : slv_port_axi.aw_len
+          });
+
+      if (slv_port_axi.w_valid && slv_port_axi.w_ready)
+        this.act_slv_port_w_queue.push_back('{
+            axi_id  : {AxiIdWidth{1'b?}} ,
+            axi_data: slv_port_axi.w_data,
+            axi_strb: slv_port_axi.w_strb,
+            axi_last: slv_port_axi.w_last
+          });
+
+      if (mst_port_axi.ar_valid && mst_port_axi.ar_ready)
+        act_mst_port_ar_queue.push(mst_port_axi.ar_id,
+          '{
+            axi_id   : mst_port_axi.ar_id   ,
+            axi_burst: mst_port_axi.ar_burst,
+            axi_size : mst_port_axi.ar_size ,
+            axi_addr : mst_port_axi.ar_addr ,
+            axi_len  : mst_port_axi.ar_len
+          });
+
+      if (mst_port_axi.aw_valid && mst_port_axi.aw_ready)
+        act_mst_port_aw_queue.push_back('{
+            axi_id   : mst_port_axi.aw_id   ,
+            axi_burst: mst_port_axi.aw_burst,
+            axi_size : mst_port_axi.aw_size ,
+            axi_addr : mst_port_axi.aw_addr ,
+            axi_len  : mst_port_axi.aw_len
+          });
+
+      if (mst_port_axi.w_valid && mst_port_axi.w_ready)
+        this.act_mst_port_w_queue.push_back('{
+            axi_id  : {AxiIdWidth{1'b?}} ,
+            axi_data: mst_port_axi.w_data,
+            axi_strb: mst_port_axi.w_strb,
+            axi_last: mst_port_axi.w_last
+          });
+    endtask
+
+    /*
      * This task monitors the master port of the DW converter. Every time it gets an AW transaction,
-     * it gets checked for its contents against the expected beat on the `exp_aw_queue`. The task then
-     * pushes an expected amount of W beats in the respective fifo. Emphasis of the last flag.
+     * it gets checked for its contents against the expected beat on the `exp_aw_queue`.
      */
     task automatic mon_mst_port_aw ();
       exp_ax_t exp_aw;
-      exp_t    exp_mst_port_w;
       if (mst_port_axi.aw_valid && mst_port_axi.aw_ready) begin
         // Test if the AW beat was expected
-        exp_aw = this.exp_aw_queue.pop_id(mst_port_axi.aw_id);
+        exp_aw = this.exp_mst_port_aw_queue.pop_id(mst_port_axi.aw_id);
         if (exp_aw.axi_id != mst_port_axi.aw_id) begin
           incr_failed_tests(1)                                            ;
           $warning("Slave: Unexpected AW with ID: %b", mst_port_axi.aw_id);
@@ -209,66 +298,53 @@ package tb_axi_dw_pkg    ;
             mst_port_axi.aw_id, mst_port_axi.aw_size, exp_aw.axi_size);
         end
         incr_conducted_tests(5);
-
-        // Push the required W beats into `exp_w_fifo`
-        for (int unsigned j = 0; j <= mst_port_axi.aw_len; j++) begin
-          exp_mst_port_w.axi_id = mst_port_axi.aw_id;
-          exp_mst_port_w.last   = (j == mst_port_axi.aw_len) ? 1'b1 : 1'b0;
-          this.exp_w_fifo.push_back(exp_mst_port_w);
-          incr_expected_tests(1)                   ;
-        end
       end
     endtask : mon_mst_port_aw
 
     /*
-     * This task pushes every W beat that gets received on the master port in the respective FIFO.
+     * This task compares the expected and actual W beats on the master port.
      */
     task automatic mon_mst_port_w ();
-      exp_t act_mst_port_w;
-      if (mst_port_axi.w_valid && mst_port_axi.w_ready) begin
-        act_mst_port_w.last   = mst_port_axi.w_last ;
-        act_mst_port_w.axi_id = 'x                  ;
-        this.act_w_fifo.push_back(act_mst_port_w);
+      exp_rw_t exp_w, act_w;
+      while (this.exp_mst_port_w_queue.size() != 0 && this.act_mst_port_w_queue.size() != 0) begin
+        exp_w = this.exp_mst_port_w_queue.pop_front();
+        act_w = this.act_mst_port_w_queue.pop_front();
+        // Do the checks
+        if (exp_w.axi_data != act_w.axi_data) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected W with DATA: %h, exp: %h",
+            act_w.axi_data, exp_w.axi_data);
+        end
+        if (exp_w.axi_strb != act_w.axi_strb) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected W with STRB: %h, exp: %h",
+            act_w.axi_strb, exp_w.axi_strb);
+        end
+        if (exp_w.axi_last != act_w.axi_last) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected W with LAST: %b, exp: %b",
+            act_w.axi_last, exp_w.axi_last);
+        end
+        incr_conducted_tests(3);
       end
     endtask : mon_mst_port_w
-
-    /*
-     * This task compares the expected and actual W beats on the master port. The reason that
-     * this is not done in mon_mst_port_w` is that there can be per protocol W beats on the
-     * channel, before AW is sent to the slave.
-     */
-    task automatic check_mst_port_w ();
-      exp_t exp_w, act_w;
-      while (this.exp_w_fifo.size() != 0 && this.act_w_fifo.size() != 0) begin
-
-        exp_w = this.exp_w_fifo.pop_front();
-        act_w = this.act_w_fifo.pop_front();
-        // do the check
-        incr_conducted_tests(1);
-        if(exp_w.last != act_w.last) begin
-          incr_failed_tests(1);
-          $warning("Slave: unexpected W beat last flag %b, expected: %b.",
-            act_w.last, exp_w.last);
-        end
-      end
-    endtask : check_mst_port_w
 
     /*
      * This task checks if a B response is allowed on a slave port of the DW converter.
      */
     task automatic mon_slv_port_b ();
-      exp_t    exp_b;
+      exp_b_t  exp_b;
       axi_id_t axi_b_id;
       if (slv_port_axi.b_valid && slv_port_axi.b_ready) begin
         incr_conducted_tests(1);
         axi_b_id = slv_port_axi.b_id;
         $display("%0tns > Master: Got last B with ID: %b",
           $time, axi_b_id);
-        if (this.exp_b_queue.empty()) begin
+        if (this.exp_slv_port_b_queue.empty()) begin
           incr_failed_tests(1)                                                 ;
           $warning("Master: unexpected B beat with ID: %b detected!", axi_b_id);
         end else begin
-          exp_b = this.exp_b_queue.pop_id(axi_b_id);
+          exp_b = this.exp_slv_port_b_queue.pop_id(axi_b_id);
           if (axi_b_id != exp_b.axi_id) begin
             incr_failed_tests(1)                                      ;
             $warning("Master: got unexpected B with ID: %b", axi_b_id);
@@ -285,7 +361,7 @@ package tb_axi_dw_pkg    ;
       exp_ax_t exp_ar;
       if (mst_port_axi.ar_valid && mst_port_axi.ar_ready) begin
         // Test if the AR beat was expected
-        exp_ar = this.exp_ar_queue.pop_id(mst_port_axi.ar_id);
+        exp_ar = this.exp_mst_port_ar_queue.pop_id(mst_port_axi.ar_id);
         if (exp_ar.axi_id != mst_port_axi.ar_id) begin
           incr_failed_tests(1)                                            ;
           $warning("Slave: Unexpected AR with ID: %b", mst_port_axi.ar_id);
@@ -319,32 +395,26 @@ package tb_axi_dw_pkg    ;
      * which are determined by the sequence of previously sent AR vectors.
      */
     task automatic mon_slv_port_r ();
-      exp_t    exp_slv_port_r;
-      axi_id_t slv_port_r_id;
-      logic    slv_port_r_last;
+      exp_rw_t exp_r;
       if (slv_port_axi.r_valid && slv_port_axi.r_ready) begin
-        incr_conducted_tests(1);
-        slv_port_r_id   = slv_port_axi.r_id  ;
-        slv_port_r_last = slv_port_axi.r_last;
-        if (slv_port_r_last) begin
-          $display("%0tns > Master: Got last R with ID: %b",
-            $time, slv_port_r_id);
+        exp_r = this.exp_slv_port_r_queue.pop_id(slv_port_axi.r_id);
+        // Do the checks
+        if (exp_r.axi_id != slv_port_axi.r_id) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected R with ID: %b",
+            slv_port_axi.r_id);
         end
-        if (this.exp_r_queue.empty()) begin
-          incr_failed_tests(1)                                                      ;
-          $warning("Master: unexpected R beat with ID: %b detected!", slv_port_r_id);
-        end else begin
-          exp_slv_port_r = this.exp_r_queue.pop_id(slv_port_r_id);
-          if (slv_port_r_id != exp_slv_port_r.axi_id) begin
-            incr_failed_tests(1)                                           ;
-            $warning("Master: got unexpected R with ID: %b", slv_port_r_id);
-          end
-          if (slv_port_r_last != exp_slv_port_r.last) begin
-            incr_failed_tests(1);
-            $warning("Master: got unexpected R with ID: %b and last flag: %b",
-              slv_port_r_id, slv_port_r_last);
-          end
+        if (exp_r.axi_last != slv_port_axi.r_last) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected R with ID: %b and LAST: %b, exp: %b",
+            slv_port_axi.r_id, slv_port_axi.r_last, exp_r.axi_last);
         end
+        if (exp_r.axi_data != slv_port_axi.r_data) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected R with ID: %b and DATA: %h, exp: %h",
+            slv_port_axi.r_id, slv_port_axi.r_data, exp_r.axi_data);
+        end
+        incr_conducted_tests(3);
       end
     endtask : mon_slv_port_r
 
@@ -379,23 +449,22 @@ package tb_axi_dw_pkg    ;
 
         // Execute all processes that push something into the queues
         PushMon: fork
-          proc_mst_aw: mon_slv_port_aw();
-          proc_mst_ar: mon_slv_port_ar();
+          proc_mst_aw       : mon_slv_port_aw();
+          proc_mst_ar       : mon_slv_port_ar();
+          proc_mst_w        : mon_slv_port_w() ;
+          proc_store_channel: store_channels() ;
         join: PushMon
-
-        // These pop and push something
-        proc_slv_aw: mon_mst_port_aw();
-        proc_slv_w : mon_mst_port_w() ;
 
         // These only pop something from the queues
         PopMon: fork
+          proc_slv_aw: mon_mst_port_aw();
           proc_mst_b : mon_slv_port_b() ;
           proc_slv_ar: mon_mst_port_ar();
           proc_mst_r : mon_slv_port_r() ;
         join : PopMon
 
         // Check the slave W FIFOs last
-        proc_check_slv_w: check_mst_port_w();
+        proc_check_slv_w: mon_mst_port_w();
 
         cycle_end();
       end
@@ -406,7 +475,7 @@ package tb_axi_dw_pkg    ;
       $display("Tests Expected:  %d", this.tests_expected) ;
       $display("Tests Conducted: %d", this.tests_conducted);
       $display("Tests Failed:    %d", this.tests_failed)   ;
-      if(tests_failed > 0) begin
+      if (tests_failed > 0) begin
         $error("Simulation encountered unexpected transactions!");
       end
     endtask : print_result
@@ -461,14 +530,8 @@ package tb_axi_dw_pkg    ;
      *  Monitors  *
      **************/
 
-    /*
-     * This task monitors the slave AW channel of the upsizer. Every time an AW beat is seen, it
-     * populates the ID queue of master port, populates the expected B response in its own id_queue,
-     * and if a response in the R channel is expected (axi_pkg::ATOP_R_RESP), populates the R queue.
-     */
     task automatic mon_slv_port_aw ();
       exp_ax_t exp_aw;
-      exp_t    exp_b;
 
       if (slv_port_axi.aw_valid && slv_port_axi.aw_ready) begin
         // Non-modifiable transaction
@@ -514,40 +577,25 @@ package tb_axi_dw_pkg    ;
               $warning("WRAP bursts are not supported.");
             end
           endcase
-          this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-          incr_expected_tests(5)                            ;
+          this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+          incr_expected_tests(5)                                     ;
           $display("%0tns > Master: AW with ID: %b",
             $time, slv_port_axi.aw_id);
         end
 
-        // Populate the expected B queue
-        exp_b = '{axi_id: slv_port_axi.aw_id, last: 1'b1};
-        this.exp_b_queue.push(slv_port_axi.aw_id, exp_b);
-        incr_expected_tests(1)                          ;
-        $display("        Expect B response.")          ;
-
-        // Inject expected R beats on this id, if it is an atop
-        if(slv_port_axi.aw_atop[axi_pkg::ATOP_R_RESP]) begin
-          // Push the required R beats into their FIFO (reuse the exp_b variable)
-          $display("        Expect R response, len: %0d.", slv_port_axi.aw_len);
-          for (int unsigned j = 0; j <= slv_port_axi.aw_len; j++) begin
-            exp_b.axi_id = slv_port_axi.aw_id;
-            exp_b.last   = (j == slv_port_axi.aw_len) ? 1'b1 : 1'b0;
-            this.exp_r_queue.push(slv_port_axi.aw_id, exp_b);
-            incr_expected_tests(1)                          ;
-          end
-        end
+        // Populate the expected B responses
+        this.exp_slv_port_b_queue.push(slv_port_axi.aw_id, '{
+            axi_id  : slv_port_axi.aw_id,
+            axi_last: 1'b1
+          })                                   ;
+        incr_expected_tests(1)                 ;
+        $display("        Expect B response.") ;
       end
     endtask : mon_slv_port_aw
 
-    /*
-     * This task monitors the slave AR channel of the upsizer. Every time an AR beat is seen, it
-     * populates the corresponding ID queue with the number of R beats indicated on the `ar_len` field.
-     * Emphasis on the last flag.
-     */
     task automatic mon_slv_port_ar ();
       exp_ax_t exp_slv_ar;
-      exp_t    exp_mst_r;
+      exp_b_t  exp_mst_r;
 
       if (slv_port_axi.ar_valid && slv_port_axi.ar_ready) begin
         // Non-modifiable transaction
@@ -593,19 +641,10 @@ package tb_axi_dw_pkg    ;
               $warning("WRAP bursts are not supported.");
             end
           endcase
-          this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-          incr_expected_tests(5)                                ;
+          this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+          incr_expected_tests(5)                                         ;
           $display("%0tns > Master: AR with ID: %b",
             $time, slv_port_axi.ar_id);
-        end
-
-        // Push the required R beats into the right fifo
-        $display("        Expect R response, len: %0d.", slv_port_axi.ar_len);
-        for (int unsigned j = 0; j <= slv_port_axi.ar_len; j++) begin
-          exp_mst_r.axi_id = slv_port_axi.ar_id;
-          exp_mst_r.last   = (j == slv_port_axi.ar_len) ? 1'b1 : 1'b0;
-          this.exp_r_queue.push(slv_port_axi.ar_id, exp_mst_r);
-          incr_expected_tests(1)                              ;
         end
       end
     endtask : mon_slv_port_ar
@@ -631,6 +670,9 @@ package tb_axi_dw_pkg    ;
       .AxiUserWidth       (AxiUserWidth       ),
       .TimeTest           (TimeTest           )
     );
+
+    local static shortint unsigned slv_port_w_cnt;
+    local static shortint unsigned mst_port_w_cnt;
 
     /**********************
      *  Helper functions  *
@@ -673,6 +715,9 @@ package tb_axi_dw_pkg    ;
       );
       begin
         super.new(slv_port_vif, mst_port_vif);
+
+        slv_port_w_cnt = 0;
+        mst_port_w_cnt = 0;
       end
     endfunction
 
@@ -680,14 +725,8 @@ package tb_axi_dw_pkg    ;
      *  Monitors  *
      **************/
 
-    /*
-     * This task monitors the slave AW channel of the downsizer. Every time an AW beat is seen, it
-     * populates the ID queue of master port, populates the expected B response in its own id_queue,
-     * and if a response in the R channel is expected (axi_pkg::ATOP_R_RESP), populates the R queue.
-     */
     task automatic mon_slv_port_aw ();
       exp_ax_t exp_aw;
-      exp_t    exp_b;
 
       if (slv_port_axi.aw_valid && slv_port_axi.aw_ready) begin
         case (slv_port_axi.aw_burst)
@@ -702,8 +741,8 @@ package tb_axi_dw_pkg    ;
                 axi_size : slv_port_axi.aw_size
               };
 
-              this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-              incr_expected_tests(5)                            ;
+              this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+              incr_expected_tests(5)                                     ;
             end
             // INCR downsize
             else begin
@@ -718,8 +757,8 @@ package tb_axi_dw_pkg    ;
                   axi_size : AxiMstPortMaxSize
                 };
 
-                this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                            ;
+                this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+                incr_expected_tests(5)                                     ;
               end
               // Need to split the incoming burst into several INCR bursts
               else begin
@@ -734,9 +773,9 @@ package tb_axi_dw_pkg    ;
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.aw_burst,
                   axi_size : AxiMstPortMaxSize
-                }                                                 ;
-                this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                            ;
+                }                                                          ;
+                this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+                incr_expected_tests(5)                                     ;
 
                 // Push the other bursts in a loop
                 num_beats  = num_beats - burst_len - 1                                                                   ;
@@ -749,9 +788,9 @@ package tb_axi_dw_pkg    ;
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.aw_burst,
                     axi_size : AxiMstPortMaxSize
-                  }                                                 ;
-                  this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                  incr_expected_tests(5)                            ;
+                  }                                                          ;
+                  this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+                  incr_expected_tests(5)                                     ;
 
                   num_beats  = num_beats - burst_len - 1                                                                   ;
                   burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
@@ -771,8 +810,8 @@ package tb_axi_dw_pkg    ;
                 axi_size : slv_port_axi.aw_size
               };
 
-              this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-              incr_expected_tests(5)                            ;
+              this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+              incr_expected_tests(5)                                     ;
             end
             // Split into master_axi.aw_len + 1 INCR bursts
             else begin
@@ -786,8 +825,8 @@ package tb_axi_dw_pkg    ;
                 else
                   exp_aw.axi_len = 0;
 
-                this.exp_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                            ;
+                this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
+                incr_expected_tests(5)                                     ;
               end
             end
           end
@@ -802,33 +841,86 @@ package tb_axi_dw_pkg    ;
           $time, slv_port_axi.aw_id);
 
         // Populate the expected B queue
-        exp_b = '{axi_id: slv_port_axi.aw_id, last: 1'b1};
-        this.exp_b_queue.push(slv_port_axi.aw_id, exp_b);
-        incr_expected_tests(1)                          ;
-        $display("        Expect B response.")          ;
-
-        // Inject expected R beats on this id, if it is an atop
-        if(slv_port_axi.aw_atop[axi_pkg::ATOP_R_RESP]) begin
-          // Push the required R beats into the right fifo (reuse the exp_b variable)
-          $display("        Expect R response, len: %0d.", slv_port_axi.aw_len);
-          for (int unsigned j = 0; j <= slv_port_axi.aw_len; j++) begin
-            exp_b.axi_id = slv_port_axi.aw_id;
-            exp_b.last   = (j == slv_port_axi.aw_len) ? 1'b1 : 1'b0;
-            this.exp_r_queue.push(slv_port_axi.aw_id, exp_b);
-            incr_expected_tests(1)                          ;
-          end
-        end
+        this.exp_slv_port_b_queue.push(slv_port_axi.aw_id, '{
+            axi_id  : slv_port_axi.aw_id,
+            axi_last: 1'b1
+          })                                  ;
+        incr_expected_tests(1)                ;
+        $display("        Expect B response.");
       end
     endtask : mon_slv_port_aw
 
-    /*
-     * This task monitors the slave AR channel of the downsizer. Every time an AR beat is seen, it
-     * populates the corresponding ID queue with the number of R beats indicated on the `ar_len` field.
-     * Emphasis on the last flag.
-     */
+    task automatic mon_slv_port_w ();
+      if (act_slv_port_w_queue.size() != 0) begin
+        exp_rw_t act_slv_w = act_slv_port_w_queue[0];
+
+        if (act_mst_port_aw_queue.size() != 0 && act_slv_port_aw_queue.size() != 0) begin
+          // Retrieve the AW requests related to this W beat
+          exp_ax_t act_mst_aw = act_mst_port_aw_queue[0];
+          exp_ax_t act_slv_aw = act_slv_port_aw_queue[0];
+
+          // Calculate the offsets inside the incoming word
+          shortint unsigned slv_port_lower_byte =
+          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+          // Pointer inside the incoming word
+          shortint unsigned slv_port_data_pointer = slv_port_lower_byte;
+
+          // Several W beats generated from this incoming W beat
+          for (int unsigned beat = 0; beat < downsize_ratio(act_slv_aw.axi_size); beat++) begin
+            exp_rw_t act_mst_w = '0;
+
+            // Calculate the offsets inside the outcoming word
+            shortint unsigned mst_port_lower_byte =
+            axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+            shortint unsigned mst_port_upper_byte =
+            axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+
+            shortint unsigned bytes_copied = 0;
+
+            act_mst_w.axi_id   = act_mst_aw.axi_id                   ;
+            act_mst_w.axi_last = mst_port_w_cnt == act_mst_aw.axi_len;
+            act_mst_w.axi_data = {AxiMstPortDataWidth{1'b?}}         ;
+            for (shortint unsigned b = slv_port_data_pointer; b < AxiSlvPortStrbWidth; b++) begin
+              if (b + mst_port_lower_byte - slv_port_data_pointer == AxiMstPortStrbWidth)
+                break;
+              act_mst_w.axi_data[8*(b + mst_port_lower_byte - slv_port_data_pointer) +: 8] = act_slv_w.axi_strb[b] ? act_slv_w.axi_data[8*b +: 8] : {8{1'b?}};
+              act_mst_w.axi_strb[b + mst_port_lower_byte - slv_port_data_pointer]          = act_slv_w.axi_strb[b];
+              bytes_copied++ ;
+            end
+            this.exp_mst_port_w_queue.push_back(act_mst_w);
+            incr_expected_tests(3)                        ;
+
+            // Increment the len counters
+            mst_port_w_cnt++                                   ;
+            slv_port_data_pointer += bytes_copied              ;
+
+            // Used the whole W beat
+            if (slv_port_data_pointer == AxiSlvPortStrbWidth)
+              break;
+          end
+
+          // Increment the len counter
+          slv_port_w_cnt++;
+
+          // Pop the AW request from the queues
+          if (slv_port_w_cnt == act_slv_aw.axi_len + 1) begin
+            void'(act_slv_port_aw_queue.pop_front());
+            slv_port_w_cnt = 0;
+          end
+          if (mst_port_w_cnt == act_mst_aw.axi_len + 1) begin
+            void'(act_mst_port_aw_queue.pop_front());
+            mst_port_w_cnt = 0;
+          end
+
+          // Pop the W request
+          void'(act_slv_port_w_queue.pop_front());
+        end
+      end
+    endtask: mon_slv_port_w
+
     task automatic mon_slv_port_ar ();
       exp_ax_t exp_slv_ar;
-      exp_t    exp_mst_r;
+      exp_b_t  exp_mst_r;
 
       if (slv_port_axi.ar_valid && slv_port_axi.ar_ready) begin
         case (slv_port_axi.ar_burst)
@@ -843,8 +935,8 @@ package tb_axi_dw_pkg    ;
                 axi_size : slv_port_axi.ar_size
               };
 
-              this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-              incr_expected_tests(5)                                ;
+              this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+              incr_expected_tests(5)                                         ;
             end
             // INCR downsize
             else begin
@@ -859,8 +951,8 @@ package tb_axi_dw_pkg    ;
                   axi_size : AxiMstPortMaxSize
                 };
 
-                this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                ;
+                this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+                incr_expected_tests(5)                                         ;
               end
               // Need to split the incoming burst into several INCR bursts
               else begin
@@ -875,9 +967,9 @@ package tb_axi_dw_pkg    ;
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.ar_burst,
                   axi_size : AxiMstPortMaxSize
-                }                                                     ;
-                this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                ;
+                }                                                              ;
+                this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+                incr_expected_tests(5)                                         ;
 
                 // Push the other bursts in a loop
                 num_beats  = num_beats - burst_len - 1                                                                   ;
@@ -890,9 +982,9 @@ package tb_axi_dw_pkg    ;
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.ar_burst,
                     axi_size : AxiMstPortMaxSize
-                  }                                                     ;
-                  this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                  incr_expected_tests(5)                                ;
+                  }                                                              ;
+                  this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+                  incr_expected_tests(5)                                         ;
 
                   num_beats  = num_beats - burst_len - 1                                                                   ;
                   burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
@@ -912,8 +1004,8 @@ package tb_axi_dw_pkg    ;
                 axi_size : slv_port_axi.ar_size
               };
 
-              this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-              incr_expected_tests(5)                                ;
+              this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+              incr_expected_tests(5)                                         ;
             end
             // Split into master_axi.ar_len + 1 INCR bursts
             else begin
@@ -927,8 +1019,8 @@ package tb_axi_dw_pkg    ;
                 else
                   exp_slv_ar.axi_len = 0;
 
-                this.exp_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                ;
+                this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
+                incr_expected_tests(5)                                         ;
               end
             end
           end
@@ -941,15 +1033,6 @@ package tb_axi_dw_pkg    ;
 
         $display("%0tns > Master: AR with ID: %b",
           $time, slv_port_axi.ar_id);
-
-        // Push the required R beats into the right fifo
-        $display("        Expect R response, len: %0d.", slv_port_axi.ar_len);
-        for (int unsigned j = 0; j <= slv_port_axi.ar_len; j++) begin
-          exp_mst_r.axi_id = slv_port_axi.ar_id;
-          exp_mst_r.last   = (j == slv_port_axi.ar_len) ? 1'b1 : 1'b0;
-          this.exp_r_queue.push(slv_port_axi.ar_id, exp_mst_r);
-          incr_expected_tests(1)                              ;
-        end
       end
     endtask : mon_slv_port_ar
   endclass : axi_dw_downsizer_monitor
