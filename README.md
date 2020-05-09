@@ -28,7 +28,7 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
 | [`axi_lite_mailbox`](src/axi_lite_mailbox.sv)        | A AXI4-Lite Mailbox with two slave ports and usage triggered irq.                                 | [Doc](doc/axi_lite_mailbox.md) |
 | [`axi_lite_mux`](src/axi_lite_mux.sv)                | Multiplexes AXI4-Lite slave ports down to one master port.                                        | [Doc](doc/axi_lite_mux.md)     |
-| [`axi_lite_regs`](src/axi_lite_regs.sv)              | AXI4-Lite registers with optional read-only and protection features.                              |                                |
+| [`axi_lite_regs`](src/axi_lite_regs.sv)              | AXI4-Lite registers with optional read-only and protection features.                              | [Doc][doc.axi_lite_regs]       |
 | [`axi_lite_to_apb`](src/axi_lite_to_apb.sv)          | AXI4-Lite to APB4 protocol converter.                                                             |                                |
 | [`axi_lite_to_axi`](src/axi_lite_to_axi.sv)          | AXI4-Lite to AXI4 protocol converter.                                                             |                                |
 | [`axi_lite_xbar`](src/axi_lite_xbar.sv)              | Fully-connected AXI4-Lite crossbar with an arbitrary number of slave and master ports.            | [Doc](doc/axi_lite_xbar.md)    |
@@ -52,3 +52,6 @@ AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as d
   2. the `aw_atop` signal is well-defined at the input of any (non-AXI4-Lite) module in this repository.
 
 Masters and slaves that do support ATOPs must adhere to Section E2.1 of the AMBA5 specification.
+
+
+[doc.axi_lite_regs]: https://pulp-platform.github.io/axi/master/module.axi_lite_regs
