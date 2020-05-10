@@ -85,6 +85,8 @@ module tb_axi_dw_downsizer #(
     .UW             (AxiUserWidth       ),
     .TA             (ApplTime           ),
     .TT             (TestTime           ),
+    .MAX_READ_TXNS  (8                  ),
+    .MAX_WRITE_TXNS (8                  ),
     .AXI_BURST_FIXED(1'b0               )
   ) master_drv = new (master_dv);
 

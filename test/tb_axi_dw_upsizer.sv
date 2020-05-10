@@ -76,12 +76,14 @@ module tb_axi_dw_upsizer #(
   `AXI_ASSIGN(master, master_dv)
 
   axi_test::rand_axi_master #(
-    .AW(AxiAddrWidth       ),
-    .DW(AxiSlvPortDataWidth),
-    .IW(AxiIdWidth         ),
-    .UW(AxiUserWidth       ),
-    .TA(ApplTime           ),
-    .TT(TestTime           )
+    .AW            (AxiAddrWidth       ),
+    .DW            (AxiSlvPortDataWidth),
+    .IW            (AxiIdWidth         ),
+    .UW            (AxiUserWidth       ),
+    .TA            (ApplTime           ),
+    .TT            (TestTime           ),
+    .MAX_READ_TXNS (8                  ),
+    .MAX_WRITE_TXNS(8                  )
   ) master_drv = new (master_dv);
 
   // Slave port

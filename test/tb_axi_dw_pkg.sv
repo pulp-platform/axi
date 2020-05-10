@@ -15,10 +15,12 @@
 // of the DWCs and populates FIFOs and ID queues to validate that no
 // AXI beats get lost.
 
-package tb_axi_dw_pkg    ;
-  import axi_pkg::len_t  ;
-  import axi_pkg::burst_t;
-  import axi_pkg::size_t ;
+package tb_axi_dw_pkg       ;
+  import axi_pkg::len_t     ;
+  import axi_pkg::burst_t   ;
+  import axi_pkg::size_t    ;
+  import axi_pkg::cache_t   ;
+  import axi_pkg::modifiable;
 
   /****************
    *  BASE CLASS  *
@@ -64,6 +66,7 @@ package tb_axi_dw_pkg    ;
       len_t axi_len      ;
       burst_t axi_burst  ;
       size_t axi_size    ;
+      cache_t axi_cache  ;
     } exp_ax_t;
 
     typedef rand_id_queue_pkg::rand_id_queue #(
@@ -87,6 +90,14 @@ package tb_axi_dw_pkg    ;
     function automatic axi_addr_t size_mask(axi_pkg::size_t size);
       return (axi_addr_t'(1) << size) - 1;
     endfunction
+
+    /**
+     * Returns the conversion rate between tgt_size and src_size.
+     * @return ceil(num_bytes(tgt_size)/num_bytes(src_size))
+     */
+    function automatic int unsigned conv_ratio(axi_pkg::size_t tgt_size, axi_pkg::size_t src_size)         ;
+      return (axi_pkg::num_bytes(tgt_size) + axi_pkg::num_bytes(src_size) - 1)/axi_pkg::num_bytes(src_size);
+    endfunction: conv_ratio
 
     /************************
      *  Virtual Interfaces  *
@@ -129,6 +140,7 @@ package tb_axi_dw_pkg    ;
     ax_queue_t exp_mst_port_ar_queue;
     ax_queue_t act_mst_port_ar_queue;
     ax_queue_t act_slv_port_ar_queue;
+    exp_rw_t   act_slv_port_r_queue [$];
     r_queue_t  exp_slv_port_r_queue;
 
     /*****************
@@ -188,13 +200,18 @@ package tb_axi_dw_pkg    ;
     /*
      * You need to override this task. Use it to push the expected W requests on
      * the slave side.
-     *
-     * The `act_mst_port_aw_queue` and `act_slv_port_aw_queue` contain the AW
-     * requests on the Master and Slave port.
      */
     virtual task automatic mon_slv_port_w ()     ;
       $error("This task needs to be overridden.");
     endtask : mon_slv_port_w
+
+    /*
+     * You need to override this task. Use it to push the expected R responses on
+     * the master side.
+     */
+    virtual task automatic mon_mst_port_r ()     ;
+      $error("This task needs to be overridden.");
+    endtask : mon_mst_port_r
 
     /*
      * You need to override this task. Use it to push the expected AR requests on
@@ -216,7 +233,8 @@ package tb_axi_dw_pkg    ;
             axi_burst: slv_port_axi.ar_burst,
             axi_size : slv_port_axi.ar_size ,
             axi_addr : slv_port_axi.ar_addr ,
-            axi_len  : slv_port_axi.ar_len
+            axi_len  : slv_port_axi.ar_len  ,
+            axi_cache: slv_port_axi.ar_cache
           });
 
       if (slv_port_axi.aw_valid && slv_port_axi.aw_ready)
@@ -225,7 +243,8 @@ package tb_axi_dw_pkg    ;
             axi_burst: slv_port_axi.aw_burst,
             axi_size : slv_port_axi.aw_size ,
             axi_addr : slv_port_axi.aw_addr ,
-            axi_len  : slv_port_axi.aw_len
+            axi_len  : slv_port_axi.aw_len  ,
+            axi_cache: slv_port_axi.aw_cache
           });
 
       if (slv_port_axi.w_valid && slv_port_axi.w_ready)
@@ -236,6 +255,14 @@ package tb_axi_dw_pkg    ;
             axi_last: slv_port_axi.w_last
           });
 
+      if (slv_port_axi.r_valid && slv_port_axi.r_ready)
+        this.act_slv_port_r_queue.push_back('{
+            axi_id  : slv_port_axi.r_id          ,
+            axi_data: slv_port_axi.r_data        ,
+            axi_strb: {AxiSlvPortStrbWidth{1'b?}},
+            axi_last: slv_port_axi.r_last
+          });
+
       if (mst_port_axi.ar_valid && mst_port_axi.ar_ready)
         act_mst_port_ar_queue.push(mst_port_axi.ar_id,
           '{
@@ -243,7 +270,8 @@ package tb_axi_dw_pkg    ;
             axi_burst: mst_port_axi.ar_burst,
             axi_size : mst_port_axi.ar_size ,
             axi_addr : mst_port_axi.ar_addr ,
-            axi_len  : mst_port_axi.ar_len
+            axi_len  : mst_port_axi.ar_len  ,
+            axi_cache: mst_port_axi.ar_cache
           });
 
       if (mst_port_axi.aw_valid && mst_port_axi.aw_ready)
@@ -252,7 +280,8 @@ package tb_axi_dw_pkg    ;
             axi_burst: mst_port_axi.aw_burst,
             axi_size : mst_port_axi.aw_size ,
             axi_addr : mst_port_axi.aw_addr ,
-            axi_len  : mst_port_axi.aw_len
+            axi_len  : mst_port_axi.aw_len  ,
+            axi_cache: mst_port_axi.aw_cache
           });
 
       if (mst_port_axi.w_valid && mst_port_axi.w_ready)
@@ -297,7 +326,12 @@ package tb_axi_dw_pkg    ;
           $warning("Slave: Unexpected AW with ID: %b and SIZE: %h, exp: %h",
             mst_port_axi.aw_id, mst_port_axi.aw_size, exp_aw.axi_size);
         end
-        incr_conducted_tests(5);
+        if (exp_aw.axi_cache != mst_port_axi.aw_cache) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected AW with ID: %b and CACHE: %b, exp: %b",
+            mst_port_axi.aw_id, mst_port_axi.aw_cache, exp_aw.axi_cache);
+        end
+        incr_conducted_tests(6);
       end
     endtask : mon_mst_port_aw
 
@@ -386,7 +420,12 @@ package tb_axi_dw_pkg    ;
           $warning("Slave: Unexpected AR with ID: %b and SIZE: %h, exp: %h",
             mst_port_axi.ar_id, mst_port_axi.ar_size, exp_ar.axi_size);
         end
-        incr_conducted_tests(5);
+        if (exp_ar.axi_cache != mst_port_axi.ar_cache) begin
+          incr_failed_tests(1);
+          $warning("Slave: Unexpected AR with ID: %b and CACHE: %b, exp: %b",
+            mst_port_axi.ar_id, mst_port_axi.ar_cache, exp_ar.axi_cache);
+        end
+        incr_conducted_tests(6);
       end
     endtask : mon_mst_port_ar
 
@@ -396,25 +435,30 @@ package tb_axi_dw_pkg    ;
      */
     task automatic mon_slv_port_r ();
       exp_rw_t exp_r;
-      if (slv_port_axi.r_valid && slv_port_axi.r_ready) begin
-        exp_r = this.exp_slv_port_r_queue.pop_id(slv_port_axi.r_id);
-        // Do the checks
-        if (exp_r.axi_id != slv_port_axi.r_id) begin
-          incr_failed_tests(1);
-          $warning("Slave: Unexpected R with ID: %b",
-            slv_port_axi.r_id);
+      if (act_slv_port_r_queue.size() != 0) begin
+        exp_rw_t act_r = act_slv_port_r_queue[0] ;
+        if (exp_slv_port_r_queue.queues[act_r.axi_id].size() != 0) begin
+          exp_r = exp_slv_port_r_queue.pop_id(act_r.axi_id);
+          void'(act_slv_port_r_queue.pop_front());
+
+          // Do the checks
+          if (exp_r.axi_id != act_r.axi_id) begin
+            incr_failed_tests(1);
+            $warning("Slave: Unexpected R with ID: %b",
+              act_r.axi_id);
+          end
+          if (exp_r.axi_last != act_r.axi_last) begin
+            incr_failed_tests(1);
+            $warning("Slave: Unexpected R with ID: %b and LAST: %b, exp: %b",
+              act_r.axi_id, act_r.axi_last, exp_r.axi_last);
+          end
+          if (exp_r.axi_data != act_r.axi_data) begin
+            incr_failed_tests(1);
+            $warning("Slave: Unexpected R with ID: %b and DATA: %h, exp: %h",
+              act_r.axi_id, act_r.axi_data, exp_r.axi_data);
+          end
+          incr_conducted_tests(3);
         end
-        if (exp_r.axi_last != slv_port_axi.r_last) begin
-          incr_failed_tests(1);
-          $warning("Slave: Unexpected R with ID: %b and LAST: %b, exp: %b",
-            slv_port_axi.r_id, slv_port_axi.r_last, exp_r.axi_last);
-        end
-        if (exp_r.axi_data != slv_port_axi.r_data) begin
-          incr_failed_tests(1);
-          $warning("Slave: Unexpected R with ID: %b and DATA: %h, exp: %h",
-            slv_port_axi.r_id, slv_port_axi.r_data, exp_r.axi_data);
-        end
-        incr_conducted_tests(3);
       end
     endtask : mon_slv_port_r
 
@@ -452,6 +496,7 @@ package tb_axi_dw_pkg    ;
           proc_mst_aw       : mon_slv_port_aw();
           proc_mst_ar       : mon_slv_port_ar();
           proc_mst_w        : mon_slv_port_w() ;
+          proc_slv_r        : mon_mst_port_r() ;
           proc_store_channel: store_channels() ;
         join: PushMon
 
@@ -503,6 +548,10 @@ package tb_axi_dw_pkg    ;
       .TimeTest           (TimeTest           )
     );
 
+    local static shortint unsigned slv_port_r_cnt[axi_id_t];
+    local static shortint unsigned mst_port_r_cnt[axi_id_t];
+
+
     /*****************
      *  Constructor  *
      *****************/
@@ -523,6 +572,10 @@ package tb_axi_dw_pkg    ;
       );
       begin
         super.new(slv_port_vif, mst_port_vif);
+        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+          slv_port_r_cnt[id] = 0;
+          mst_port_r_cnt[id] = 0;
+        end
       end
     endfunction
 
@@ -542,7 +595,8 @@ package tb_axi_dw_pkg    ;
             axi_addr : slv_port_axi.aw_addr ,
             axi_len  : slv_port_axi.aw_len  ,
             axi_burst: slv_port_axi.aw_burst,
-            axi_size : slv_port_axi.aw_size
+            axi_size : slv_port_axi.aw_size ,
+            axi_cache: slv_port_axi.aw_cache
           } ;
         end
         // Modifiable transaction
@@ -555,7 +609,8 @@ package tb_axi_dw_pkg    ;
                 axi_addr : slv_port_axi.aw_addr ,
                 axi_len  : slv_port_axi.aw_len  ,
                 axi_burst: slv_port_axi.aw_burst,
-                axi_size : slv_port_axi.aw_size
+                axi_size : slv_port_axi.aw_size ,
+                axi_cache: slv_port_axi.aw_cache
               };
             end
             // INCR upsize
@@ -564,11 +619,12 @@ package tb_axi_dw_pkg    ;
               automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, slv_port_axi.aw_size) + (unsigned'(slv_port_axi.aw_len) << slv_port_axi.aw_size), AxiMstPortMaxSize);
 
               exp_aw = '{
-                axi_id   : slv_port_axi.aw_id                                ,
-                axi_addr : slv_port_axi.aw_addr                              ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize,
-                axi_burst: slv_port_axi.aw_burst                             ,
-                axi_size : AxiMstPortMaxSize
+                axi_id   : slv_port_axi.aw_id                                                 ,
+                axi_addr : slv_port_axi.aw_addr                                               ,
+                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize                 ,
+                axi_burst: slv_port_axi.aw_burst                                              ,
+                axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size : AxiMstPortMaxSize,
+                axi_cache: slv_port_axi.aw_cache
               };
             end
             // WRAP upsize
@@ -578,7 +634,7 @@ package tb_axi_dw_pkg    ;
             end
           endcase
           this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-          incr_expected_tests(5)                                     ;
+          incr_expected_tests(6)                                     ;
           $display("%0tns > Master: AW with ID: %b",
             $time, slv_port_axi.aw_id);
         end
@@ -606,7 +662,8 @@ package tb_axi_dw_pkg    ;
             axi_addr : slv_port_axi.ar_addr ,
             axi_len  : slv_port_axi.ar_len  ,
             axi_burst: slv_port_axi.ar_burst,
-            axi_size : slv_port_axi.ar_size
+            axi_size : slv_port_axi.ar_size ,
+            axi_cache: slv_port_axi.ar_cache
           };
         end
         // Modifiable transaction
@@ -619,7 +676,8 @@ package tb_axi_dw_pkg    ;
                 axi_addr : slv_port_axi.ar_addr ,
                 axi_len  : slv_port_axi.ar_len  ,
                 axi_burst: slv_port_axi.ar_burst,
-                axi_size : slv_port_axi.ar_size
+                axi_size : slv_port_axi.ar_size ,
+                axi_cache: slv_port_axi.ar_cache
               };
             end
             // INCR upsize
@@ -628,11 +686,12 @@ package tb_axi_dw_pkg    ;
               automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, slv_port_axi.ar_size) + (unsigned'(slv_port_axi.ar_len) << slv_port_axi.ar_size), AxiMstPortMaxSize);
 
               exp_slv_ar = '{
-                axi_id   : slv_port_axi.ar_id                                ,
-                axi_addr : slv_port_axi.ar_addr                              ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize,
-                axi_burst: slv_port_axi.ar_burst                             ,
-                axi_size : AxiMstPortMaxSize
+                axi_id   : slv_port_axi.ar_id                                 ,
+                axi_addr : slv_port_axi.ar_addr                               ,
+                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize ,
+                axi_burst: slv_port_axi.ar_burst                              ,
+                axi_size : slv_port_axi.ar_len == 0 ? slv_port_axi.ar_size : AxiMstPortMaxSize,
+                axi_cache: slv_port_axi.ar_cache
               };
             end
             // WRAP upsize
@@ -642,12 +701,87 @@ package tb_axi_dw_pkg    ;
             end
           endcase
           this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-          incr_expected_tests(5)                                         ;
+          incr_expected_tests(6)                                         ;
           $display("%0tns > Master: AR with ID: %b",
             $time, slv_port_axi.ar_id);
         end
       end
     endtask : mon_slv_port_ar
+
+    task automatic mon_mst_port_r ();
+      if (mst_port_axi.r_valid && mst_port_axi.r_ready) begin
+        // Retrieve the AR requests related to this R beat
+        exp_ax_t act_mst_ar = act_mst_port_ar_queue.get(mst_port_axi.r_id);
+        exp_ax_t act_slv_ar = act_slv_port_ar_queue.get(mst_port_axi.r_id);
+        axi_id_t id         = mst_port_axi.r_id                           ;
+
+        // Calculate the offsets inside the incoming word
+        shortint unsigned mst_port_lower_byte =
+        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        shortint unsigned mst_port_upper_byte =
+        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        // Pointer inside the incoming word
+        shortint unsigned mst_port_data_pointer = mst_port_lower_byte;
+
+        // Conversion ratio. How many R beats are generated from this incoming R beat.
+        int unsigned conversion_ratio = axi_pkg::modifiable(act_mst_ar.axi_cache) ? conv_ratio(act_mst_ar.axi_size, act_slv_ar.axi_size) : 1;
+
+        // Several R beats generated from this incoming R beat
+        for (int unsigned beat = 0; beat < conversion_ratio; beat++) begin
+          exp_rw_t act_slv_r = '0;
+
+          // Calculate the offsets inside the outcoming word
+          shortint unsigned slv_port_lower_byte =
+          axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+          shortint unsigned slv_port_upper_byte =
+          axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+
+          shortint unsigned bytes_copied = 0;
+
+          act_slv_r.axi_id   = mst_port_axi.r_id                       ;
+          act_slv_r.axi_last = slv_port_r_cnt[id] == act_slv_ar.axi_len;
+          act_slv_r.axi_data = {AxiSlvPortDataWidth{1'b?}}             ;
+          act_slv_r.axi_strb = {AxiSlvPortStrbWidth{1'b?}}             ;
+          for (shortint unsigned b = mst_port_data_pointer; b <= mst_port_upper_byte; b++) begin
+            act_slv_r.axi_data[8*(b + slv_port_lower_byte - mst_port_data_pointer) +: 8] = mst_port_axi.r_data[8*b +: 8];
+            bytes_copied++;
+            if (b + slv_port_lower_byte - mst_port_data_pointer == slv_port_upper_byte)
+              break;
+          end
+          this.exp_slv_port_r_queue.push(act_slv_r.axi_id, act_slv_r);
+          incr_expected_tests(3)                                     ;
+
+          // Increment the len counters
+          slv_port_r_cnt[id]++                 ;
+          mst_port_data_pointer += bytes_copied;
+
+          // Used the whole R beat
+          if (mst_port_data_pointer == AxiMstPortStrbWidth)
+            break;
+          // Finished the R beat
+          if (act_slv_r.axi_last)
+            break;
+        end
+
+        // Increment the len counter
+        mst_port_r_cnt[id]++;
+
+        // Pop the AR request from the queues
+        if (mst_port_r_cnt[id] == act_mst_ar.axi_len + 1) begin
+          void'(act_mst_port_ar_queue.pop_id(act_mst_ar.axi_id));
+          mst_port_r_cnt[id] = 0;
+        end
+        if (slv_port_r_cnt[id] == act_slv_ar.axi_len + 1) begin
+          void'(act_slv_port_ar_queue.pop_id(act_slv_ar.axi_id));
+          slv_port_r_cnt[id] = 0;
+        end
+      end
+    endtask: mon_mst_port_r
+
+    task automatic mon_slv_port_w();
+    // TODO Auto-generated task stub
+    endtask : mon_slv_port_w
+
   endclass : axi_dw_upsizer_monitor
 
   /***************
@@ -677,15 +811,6 @@ package tb_axi_dw_pkg    ;
     /**********************
      *  Helper functions  *
      **********************/
-
-    /**
-     * Returns the downsize ratio between the incoming AXI transaction and the outcoming
-     * transaction of axsize AxiMstPortMaxSize.
-     * @return ceil(num_bytes(size)/num_bytes(AxiMstPortMaxSize))
-     */
-    function automatic int unsigned downsize_ratio(axi_pkg::size_t size)                                                 ;
-      return (axi_pkg::num_bytes(size) + axi_pkg::num_bytes(AxiMstPortMaxSize) - 1)/axi_pkg::num_bytes(AxiMstPortMaxSize);
-    endfunction: downsize_ratio
 
     /*
      * Returns how many beats of the incoming AXI transaction will be dropped after downsizing
@@ -732,21 +857,22 @@ package tb_axi_dw_pkg    ;
         case (slv_port_axi.aw_burst)
           axi_pkg::BURST_INCR: begin
             // Transaction unchanged
-            if (downsize_ratio(slv_port_axi.aw_size) == 1) begin
+            if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) == 1) begin
               exp_aw = '{
                 axi_id   : slv_port_axi.aw_id   ,
                 axi_addr : slv_port_axi.aw_addr ,
                 axi_len  : slv_port_axi.aw_len  ,
                 axi_burst: slv_port_axi.aw_burst,
-                axi_size : slv_port_axi.aw_size
+                axi_size : slv_port_axi.aw_size ,
+                axi_cache: slv_port_axi.aw_cache
               };
 
               this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-              incr_expected_tests(5)                                     ;
+              incr_expected_tests(6)                                     ;
             end
             // INCR downsize
             else begin
-              automatic int unsigned num_beats = (slv_port_axi.aw_len + 1) * downsize_ratio(slv_port_axi.aw_size) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size);
+              automatic int unsigned num_beats = (slv_port_axi.aw_len + 1) * conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size);
               // One burst
               if (num_beats <= 256) begin
                 exp_aw = '{
@@ -754,11 +880,12 @@ package tb_axi_dw_pkg    ;
                   axi_addr : slv_port_axi.aw_addr ,
                   axi_len  : num_beats - 1        ,
                   axi_burst: slv_port_axi.aw_burst,
-                  axi_size : AxiMstPortMaxSize
+                  axi_size : AxiMstPortMaxSize    ,
+                  axi_cache: slv_port_axi.aw_cache
                 };
 
                 this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                                     ;
+                incr_expected_tests(6)                                     ;
               end
               // Need to split the incoming burst into several INCR bursts
               else begin
@@ -772,10 +899,11 @@ package tb_axi_dw_pkg    ;
                   axi_addr : slv_port_axi.aw_addr ,
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.aw_burst,
-                  axi_size : AxiMstPortMaxSize
+                  axi_size : AxiMstPortMaxSize    ,
+                  axi_cache: slv_port_axi.aw_cache
                 }                                                          ;
                 this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                                     ;
+                incr_expected_tests(6)                                     ;
 
                 // Push the other bursts in a loop
                 num_beats  = num_beats - burst_len - 1                                                                   ;
@@ -787,10 +915,11 @@ package tb_axi_dw_pkg    ;
                     axi_addr : burst_addr           ,
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.aw_burst,
-                    axi_size : AxiMstPortMaxSize
+                    axi_size : AxiMstPortMaxSize    ,
+                    axi_cache: slv_port_axi.aw_cache
                   }                                                          ;
                   this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                  incr_expected_tests(5)                                     ;
+                  incr_expected_tests(6)                                     ;
 
                   num_beats  = num_beats - burst_len - 1                                                                   ;
                   burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
@@ -801,32 +930,34 @@ package tb_axi_dw_pkg    ;
           // Passthrough downsize
           axi_pkg::BURST_FIXED: begin
             // Transaction unchanged
-            if (downsize_ratio(slv_port_axi.aw_size) == 1) begin
+            if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) == 1) begin
               exp_aw = '{
                 axi_id   : slv_port_axi.aw_id   ,
                 axi_addr : slv_port_axi.aw_addr ,
                 axi_len  : slv_port_axi.aw_len  ,
                 axi_burst: slv_port_axi.aw_burst,
-                axi_size : slv_port_axi.aw_size
+                axi_size : slv_port_axi.aw_size ,
+                axi_cache: slv_port_axi.aw_cache
               };
 
               this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-              incr_expected_tests(5)                                     ;
+              incr_expected_tests(6)                                     ;
             end
             // Split into master_axi.aw_len + 1 INCR bursts
             else begin
               for (int unsigned j = 0; j <= slv_port_axi.aw_len; j++) begin
-                exp_aw.axi_id    = slv_port_axi.aw_id  ;
-                exp_aw.axi_addr  = slv_port_axi.aw_addr;
-                exp_aw.axi_burst = axi_pkg::BURST_INCR ;
-                exp_aw.axi_size  = AxiMstPortMaxSize   ;
-                if (downsize_ratio(slv_port_axi.aw_size) >= aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) + 1)
-                  exp_aw.axi_len = downsize_ratio(slv_port_axi.aw_size) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) - 1;
+                exp_aw.axi_id    = slv_port_axi.aw_id   ;
+                exp_aw.axi_addr  = slv_port_axi.aw_addr ;
+                exp_aw.axi_burst = axi_pkg::BURST_INCR  ;
+                exp_aw.axi_size  = AxiMstPortMaxSize    ;
+                exp_aw.axi_cache = slv_port_axi.aw_cache;
+                if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) >= aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) + 1)
+                  exp_aw.axi_len = conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) - 1;
                 else
                   exp_aw.axi_len = 0;
 
                 this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
-                incr_expected_tests(5)                                     ;
+                incr_expected_tests(6)                                     ;
               end
             end
           end
@@ -866,7 +997,7 @@ package tb_axi_dw_pkg    ;
           shortint unsigned slv_port_data_pointer = slv_port_lower_byte;
 
           // Several W beats generated from this incoming W beat
-          for (int unsigned beat = 0; beat < downsize_ratio(act_slv_aw.axi_size); beat++) begin
+          for (int unsigned beat = 0; beat < conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize); beat++) begin
             exp_rw_t act_mst_w = '0;
 
             // Calculate the offsets inside the outcoming word
@@ -891,8 +1022,8 @@ package tb_axi_dw_pkg    ;
             incr_expected_tests(3)                        ;
 
             // Increment the len counters
-            mst_port_w_cnt++                                   ;
-            slv_port_data_pointer += bytes_copied              ;
+            mst_port_w_cnt++                      ;
+            slv_port_data_pointer += bytes_copied ;
 
             // Used the whole W beat
             if (slv_port_data_pointer == AxiSlvPortStrbWidth)
@@ -926,21 +1057,22 @@ package tb_axi_dw_pkg    ;
         case (slv_port_axi.ar_burst)
           axi_pkg::BURST_INCR: begin
             // Transaction unchanged
-            if (downsize_ratio(slv_port_axi.ar_size) == 1) begin
+            if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) == 1) begin
               exp_slv_ar = '{
                 axi_id   : slv_port_axi.ar_id   ,
                 axi_addr : slv_port_axi.ar_addr ,
                 axi_len  : slv_port_axi.ar_len  ,
                 axi_burst: slv_port_axi.ar_burst,
-                axi_size : slv_port_axi.ar_size
+                axi_size : slv_port_axi.ar_size ,
+                axi_cache: slv_port_axi.ar_cache
               };
 
               this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-              incr_expected_tests(5)                                         ;
+              incr_expected_tests(6)                                         ;
             end
             // INCR downsize
             else begin
-              automatic int unsigned num_beats = (slv_port_axi.ar_len + 1) * downsize_ratio(slv_port_axi.ar_size) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size);
+              automatic int unsigned num_beats = (slv_port_axi.ar_len + 1) * conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size);
               // One burst
               if (num_beats <= 256) begin
                 exp_slv_ar = '{
@@ -948,11 +1080,12 @@ package tb_axi_dw_pkg    ;
                   axi_addr : slv_port_axi.ar_addr ,
                   axi_len  : num_beats - 1        ,
                   axi_burst: slv_port_axi.ar_burst,
-                  axi_size : AxiMstPortMaxSize
+                  axi_size : AxiMstPortMaxSize    ,
+                  axi_cache: slv_port_axi.ar_cache
                 };
 
                 this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                         ;
+                incr_expected_tests(6)                                         ;
               end
               // Need to split the incoming burst into several INCR bursts
               else begin
@@ -966,10 +1099,11 @@ package tb_axi_dw_pkg    ;
                   axi_addr : slv_port_axi.ar_addr ,
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.ar_burst,
-                  axi_size : AxiMstPortMaxSize
+                  axi_size : AxiMstPortMaxSize    ,
+                  axi_cache: slv_port_axi.ar_cache
                 }                                                              ;
                 this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                         ;
+                incr_expected_tests(6)                                         ;
 
                 // Push the other bursts in a loop
                 num_beats  = num_beats - burst_len - 1                                                                   ;
@@ -981,10 +1115,11 @@ package tb_axi_dw_pkg    ;
                     axi_addr : burst_addr           ,
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.ar_burst,
-                    axi_size : AxiMstPortMaxSize
+                    axi_size : AxiMstPortMaxSize    ,
+                    axi_cache: slv_port_axi.ar_cache
                   }                                                              ;
                   this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                  incr_expected_tests(5)                                         ;
+                  incr_expected_tests(6)                                         ;
 
                   num_beats  = num_beats - burst_len - 1                                                                   ;
                   burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
@@ -995,32 +1130,34 @@ package tb_axi_dw_pkg    ;
           // Passthrough downsize
           axi_pkg::BURST_FIXED: begin
             // Transaction unchanged
-            if (downsize_ratio(slv_port_axi.ar_size) == 1) begin
+            if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) == 1) begin
               exp_slv_ar = '{
                 axi_id   : slv_port_axi.ar_id   ,
                 axi_addr : slv_port_axi.ar_addr ,
                 axi_len  : slv_port_axi.ar_len  ,
                 axi_burst: slv_port_axi.ar_burst,
-                axi_size : slv_port_axi.ar_size
+                axi_size : slv_port_axi.ar_size ,
+                axi_cache: slv_port_axi.ar_cache
               };
 
               this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-              incr_expected_tests(5)                                         ;
+              incr_expected_tests(6)                                         ;
             end
             // Split into master_axi.ar_len + 1 INCR bursts
             else begin
               for (int unsigned j = 0; j <= slv_port_axi.ar_len; j++) begin
-                exp_slv_ar.axi_id    = slv_port_axi.aw_id  ;
-                exp_slv_ar.axi_addr  = slv_port_axi.aw_addr;
-                exp_slv_ar.axi_burst = axi_pkg::BURST_INCR ;
-                exp_slv_ar.axi_size  = AxiMstPortMaxSize   ;
-                if (downsize_ratio(slv_port_axi.ar_size) >= aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) + 1)
-                  exp_slv_ar.axi_len = downsize_ratio(slv_port_axi.ar_size) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) - 1;
+                exp_slv_ar.axi_id    = slv_port_axi.ar_id   ;
+                exp_slv_ar.axi_addr  = slv_port_axi.ar_addr ;
+                exp_slv_ar.axi_burst = axi_pkg::BURST_INCR  ;
+                exp_slv_ar.axi_size  = AxiMstPortMaxSize    ;
+                exp_slv_ar.axi_cache = slv_port_axi.ar_cache;
+                if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) >= aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) + 1)
+                  exp_slv_ar.axi_len = conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) - 1;
                 else
                   exp_slv_ar.axi_len = 0;
 
                 this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
-                incr_expected_tests(5)                                         ;
+                incr_expected_tests(6)                                         ;
               end
             end
           end
