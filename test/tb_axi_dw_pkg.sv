@@ -707,6 +707,11 @@ package tb_axi_dw_pkg       ;
               || mst_port_w_pnt == AxiMstPortStrbWidth     // Filled up an outcoming W beat
               || act_slv_w.axi_last                        // Last beat of a W burst
             ) begin
+            // Don't care for the bits outside these accessed by this request
+            for (int unsigned b = 0; b < AxiMstPortStrbWidth; b++)
+              if (!(mst_port_lower_byte <= b && b <= mst_port_upper_byte))
+                mst_port_w.axi_data[8*b +: 8] = {8{1'b?}};
+
             this.exp_mst_port_w_queue.push_back(mst_port_w);
             incr_expected_tests(3)                         ;
 
@@ -714,9 +719,8 @@ package tb_axi_dw_pkg       ;
             mst_port_w_cnt++;
 
             // Reset W beat
-            mst_port_w          = '0                         ;
-            mst_port_w.axi_data = {AxiMstPortDataWidth{1'b?}};
-            mst_port_w_pnt      = '1                         ;
+            mst_port_w     = '0;
+            mst_port_w_pnt = '1;
           end
 
           // Pop the AW request from the queues
@@ -886,6 +890,10 @@ package tb_axi_dw_pkg       ;
       .TimeTest           (TimeTest           )
     );
 
+    local static shortint unsigned slv_port_r_cnt[axi_id_t];
+    local static shortint unsigned mst_port_r_cnt[axi_id_t];
+    local static exp_slv_rw_t      slv_port_r[axi_id_t];
+    local static shortint unsigned slv_port_r_pnt[axi_id_t];
     local static shortint unsigned slv_port_w_cnt;
     local static shortint unsigned mst_port_w_cnt;
 
@@ -924,6 +932,12 @@ package tb_axi_dw_pkg       ;
 
         slv_port_w_cnt = 0;
         mst_port_w_cnt = 0;
+        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+          slv_port_r_cnt[id] = '0;
+          mst_port_r_cnt[id] = '0;
+          slv_port_r[id]     = '0;
+          slv_port_r_pnt[id] = '1;
+        end
       end
     endfunction
 
@@ -1079,7 +1093,7 @@ package tb_axi_dw_pkg       ;
 
           // Several W beats generated from this incoming W beat
           for (int unsigned beat = 0; beat < conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize); beat++) begin
-            exp_slv_rw_t act_mst_w = '0;
+            exp_mst_rw_t act_mst_w = '0;
 
             // Calculate the offsets inside the outcoming word
             shortint unsigned mst_port_lower_byte =
@@ -1091,20 +1105,25 @@ package tb_axi_dw_pkg       ;
 
             act_mst_w.axi_id   = act_mst_aw.axi_id                   ;
             act_mst_w.axi_last = mst_port_w_cnt == act_mst_aw.axi_len;
-            act_mst_w.axi_data = {AxiMstPortDataWidth{1'b?}}         ;
+            act_mst_w.axi_data = '0                                  ;
             for (shortint unsigned b = slv_port_data_pointer; b < AxiSlvPortStrbWidth; b++) begin
               if (b + mst_port_lower_byte - slv_port_data_pointer == AxiMstPortStrbWidth)
                 break;
-              act_mst_w.axi_data[8*(b + mst_port_lower_byte - slv_port_data_pointer) +: 8] = act_slv_w.axi_strb[b] ? act_slv_w.axi_data[8*b +: 8] : {8{1'b?}};
-              act_mst_w.axi_strb[b + mst_port_lower_byte - slv_port_data_pointer]          = act_slv_w.axi_strb[b];
-              bytes_copied++ ;
+              act_mst_w.axi_data[8*(b + mst_port_lower_byte - slv_port_data_pointer) +: 8] = act_slv_w.axi_data[8*b +: 8];
+              act_mst_w.axi_strb[b + mst_port_lower_byte - slv_port_data_pointer]          = act_slv_w.axi_strb[b]       ;
+              bytes_copied++;
             end
+            // Don't care for the bits outside these accessed by this request
+            for (int unsigned b = 0; b < AxiMstPortStrbWidth; b++)
+              if (!(mst_port_lower_byte <= b && b <= mst_port_upper_byte))
+                act_mst_w.axi_data[8*b +: 8] = {8{1'b?}};
+
             this.exp_mst_port_w_queue.push_back(act_mst_w);
             incr_expected_tests(3)                        ;
 
             // Increment the len counters
-            mst_port_w_cnt++                      ;
-            slv_port_data_pointer += bytes_copied ;
+            mst_port_w_cnt++                     ;
+            slv_port_data_pointer += bytes_copied;
 
             // Used the whole W beat
             if (slv_port_data_pointer == AxiSlvPortStrbWidth)
@@ -1253,6 +1272,73 @@ package tb_axi_dw_pkg       ;
           $time, slv_port_axi.ar_id);
       end
     endtask : mon_slv_port_ar
+
+    virtual task automatic mon_mst_port_r();
+      if (mst_port_axi.r_valid && mst_port_axi.r_ready) begin
+        // Retrieve the AR requests related to this R beat
+        exp_ax_t act_mst_ar = act_mst_port_ar_queue.get(mst_port_axi.r_id);
+        exp_ax_t act_slv_ar = act_slv_port_ar_queue.get(mst_port_axi.r_id);
+        axi_id_t id         = mst_port_axi.r_id                           ;
+
+        // Calculate the offsets
+        shortint unsigned mst_port_lower_byte =
+        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        shortint unsigned mst_port_upper_byte =
+        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        shortint unsigned slv_port_lower_byte =
+        axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+        shortint unsigned slv_port_upper_byte =
+        axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+
+        // Pointer inside the outcoming word
+        shortint unsigned bytes_copied = 0;
+        if (slv_port_r_pnt[id] == '1)
+          slv_port_r_pnt[id] = slv_port_lower_byte;
+
+        slv_port_r[id].axi_id   = id                                      ;
+        slv_port_r[id].axi_last = slv_port_r_cnt[id] == act_slv_ar.axi_len;
+        for (shortint unsigned b = mst_port_lower_byte; b <= mst_port_upper_byte; b++) begin
+          if (b + slv_port_r_pnt[id] - mst_port_lower_byte == AxiSlvPortStrbWidth)
+            break;
+          slv_port_r[id].axi_data[8*(b + slv_port_r_pnt[id] - mst_port_lower_byte) +: 8] = mst_port_axi.r_data[8*b +: 8];
+          bytes_copied++;
+        end
+
+        // Increment the len counters
+        mst_port_r_cnt[id]++              ;
+        slv_port_r_pnt[id] += bytes_copied;
+
+        if (slv_port_r_pnt[id] == AxiSlvPortStrbWidth                    // Filled up an outcoming R beat
+            || conv_ratio(act_slv_ar.axi_size, act_mst_ar.axi_size) == 1 // Not downsizing
+            || mst_port_axi.r_last                                       // Last beat of an R burst
+          ) begin
+          // Don't care for the bits outside these accessed by this request
+          for (int unsigned b = 0; b < AxiSlvPortStrbWidth; b++)
+            if (!(slv_port_lower_byte <= b && b <= slv_port_upper_byte))
+              slv_port_r[id].axi_data[8*b +: 8] = {8{1'b?}};
+
+          this.exp_slv_port_r_queue.push(id, slv_port_r[id]);
+          incr_expected_tests(3)                            ;
+
+          // Increment the len counter
+          slv_port_r_cnt[id]++;
+
+          // Reset R beat
+          slv_port_r[id]     = '0;
+          slv_port_r_pnt[id] = '1;
+        end
+
+        // Pop the AW request from the queues
+        if (slv_port_r_cnt[id] == act_slv_ar.axi_len + 1) begin
+          void'(act_slv_port_ar_queue.pop_id(id));
+          slv_port_r_cnt[id] = 0;
+        end
+        if (mst_port_r_cnt[id] == act_mst_ar.axi_len + 1) begin
+          void'(act_mst_port_ar_queue.pop_id(id));
+          mst_port_r_cnt[id] = 0;
+        end
+      end
+    endtask : mon_mst_port_r
   endclass : axi_dw_downsizer_monitor
 
 endpackage: tb_axi_dw_pkg
