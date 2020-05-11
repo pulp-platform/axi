@@ -98,9 +98,33 @@ module tb_axi_lite_regs #(
     lite_axi_master.reset();
     @(posedge rst_n);
     repeat (5) @(posedge clk);
+    // Test known register.
+    // Write to it.
     lite_axi_master.write(axi_addr_t'(32'h0000_0000), axi_pkg::prot_t'('0),
         axi_data_t'(64'hDEADBEEFDEADBEEF), axi_strb_t'(8'hFF), resp);
+    if (PrivProtOnly || SecuProtOnly) begin
+      assert (resp == axi_pkg::RESP_SLVERR) else
+          $fatal(1, "PrivProtOnly || SecuProtOnly: Unprivileged access was falsely granted.");
+    end else begin
+      assert (resp == axi_pkg::RESP_OKAY) else
+          $fatal(1, "Access should be granted");
+    end
+    // Read from it.
     lite_axi_master.read(axi_addr_t'(32'h0000_0000), axi_pkg::prot_t'('0), data, resp);
+    if (PrivProtOnly || SecuProtOnly) begin
+      // Expect error response
+      assert (resp == axi_pkg::RESP_SLVERR) else
+          $fatal(1, "PrivProtOnly || SecuProtOnly: Unprivileged access was falsely granted.");
+      assert (data == axi_data_t'(32'hBA5E1E55)) else
+          $fatal(1, "Data is unexpected, should be axi_data_t'(32'hBA5E1E55).");
+    end else begin
+      assert (resp == axi_pkg::RESP_OKAY) else
+          $fatal(1, "Access should be granted.");
+      assert (data == axi_data_t'(64'hDEADBEEFDEADBEEF)) else
+          $fatal(1, "Data is unexpected, should be axi_data_t'(64'hDEADBEEFDEADBEEF).");
+    end
+
+    // Let random stimuli application checking is separate.
     lite_axi_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
   end
