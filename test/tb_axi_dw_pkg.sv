@@ -59,7 +59,13 @@ package tb_axi_dw_pkg       ;
       slv_port_data_t axi_data;
       slv_port_strb_t axi_strb;
       logic axi_last          ;
-    } exp_rw_t;
+    } exp_slv_rw_t;
+    typedef struct packed {
+      axi_id_t axi_id         ;
+      mst_port_data_t axi_data;
+      mst_port_strb_t axi_strb;
+      logic axi_last          ;
+    } exp_mst_rw_t;
     typedef struct packed {
       axi_id_t axi_id    ;
       axi_addr_t axi_addr;
@@ -78,9 +84,13 @@ package tb_axi_dw_pkg       ;
       .ID_WIDTH(AxiIdWidth)
     ) b_queue_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_rw_t  ),
-      .ID_WIDTH(AxiIdWidth)
-    ) r_queue_t;
+      .data_t  (exp_slv_rw_t ),
+      .ID_WIDTH(AxiIdWidth   )
+    ) slv_r_queue_t;
+    typedef rand_id_queue_pkg::rand_id_queue #(
+      .data_t  (exp_mst_rw_t ),
+      .ID_WIDTH(AxiIdWidth   )
+    ) mst_r_queue_t;
 
     /**********************
      *  Helper functions  *
@@ -128,20 +138,20 @@ package tb_axi_dw_pkg       ;
     // Queues and FIFOs to hold the expected AXIDs
 
     // Write transactions
-    ax_queue_t exp_mst_port_aw_queue;
-    exp_ax_t   act_mst_port_aw_queue [$];
-    exp_ax_t   act_slv_port_aw_queue [$];
-    exp_rw_t   exp_mst_port_w_queue [$];
-    exp_rw_t   act_mst_port_w_queue [$];
-    exp_rw_t   act_slv_port_w_queue [$];
-    b_queue_t  exp_slv_port_b_queue;
+    ax_queue_t   exp_mst_port_aw_queue;
+    exp_ax_t     act_mst_port_aw_queue [$];
+    exp_ax_t     act_slv_port_aw_queue [$];
+    exp_mst_rw_t exp_mst_port_w_queue [$];
+    exp_mst_rw_t act_mst_port_w_queue [$];
+    exp_slv_rw_t act_slv_port_w_queue [$];
+    b_queue_t    exp_slv_port_b_queue;
 
     // Read transactions
-    ax_queue_t exp_mst_port_ar_queue;
-    ax_queue_t act_mst_port_ar_queue;
-    ax_queue_t act_slv_port_ar_queue;
-    exp_rw_t   act_slv_port_r_queue [$];
-    r_queue_t  exp_slv_port_r_queue;
+    ax_queue_t    exp_mst_port_ar_queue;
+    ax_queue_t    act_mst_port_ar_queue;
+    ax_queue_t    act_slv_port_ar_queue;
+    exp_slv_rw_t  act_slv_port_r_queue [$];
+    slv_r_queue_t exp_slv_port_r_queue;
 
     /*****************
      *  Constructor  *
@@ -339,7 +349,7 @@ package tb_axi_dw_pkg       ;
      * This task compares the expected and actual W beats on the master port.
      */
     task automatic mon_mst_port_w ();
-      exp_rw_t exp_w, act_w;
+      exp_mst_rw_t exp_w, act_w;
       while (this.exp_mst_port_w_queue.size() != 0 && this.act_mst_port_w_queue.size() != 0) begin
         exp_w = this.exp_mst_port_w_queue.pop_front();
         act_w = this.act_mst_port_w_queue.pop_front();
@@ -434,9 +444,9 @@ package tb_axi_dw_pkg       ;
      * which are determined by the sequence of previously sent AR vectors.
      */
     task automatic mon_slv_port_r ();
-      exp_rw_t exp_r;
+      exp_slv_rw_t exp_r;
       if (act_slv_port_r_queue.size() != 0) begin
-        exp_rw_t act_r = act_slv_port_r_queue[0] ;
+        exp_slv_rw_t act_r = act_slv_port_r_queue[0] ;
         if (exp_slv_port_r_queue.queues[act_r.axi_id].size() != 0) begin
           exp_r = exp_slv_port_r_queue.pop_id(act_r.axi_id);
           void'(act_slv_port_r_queue.pop_front());
@@ -550,7 +560,10 @@ package tb_axi_dw_pkg       ;
 
     local static shortint unsigned slv_port_r_cnt[axi_id_t];
     local static shortint unsigned mst_port_r_cnt[axi_id_t];
-
+    local static shortint unsigned slv_port_w_cnt;
+    local static shortint unsigned mst_port_w_cnt;
+    local static exp_mst_rw_t      mst_port_w;
+    local static shortint unsigned mst_port_w_pnt;
 
     /*****************
      *  Constructor  *
@@ -572,9 +585,13 @@ package tb_axi_dw_pkg       ;
       );
       begin
         super.new(slv_port_vif, mst_port_vif);
+        slv_port_w_cnt = '0;
+        mst_port_w_cnt = '0;
+        mst_port_w_pnt = '1;
+        mst_port_w     = '0;
         for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
-          slv_port_r_cnt[id] = 0;
-          mst_port_r_cnt[id] = 0;
+          slv_port_r_cnt[id] = '0;
+          mst_port_r_cnt[id] = '0;
         end
       end
     endfunction
@@ -619,10 +636,10 @@ package tb_axi_dw_pkg       ;
               automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, slv_port_axi.aw_size) + (unsigned'(slv_port_axi.aw_len) << slv_port_axi.aw_size), AxiMstPortMaxSize);
 
               exp_aw = '{
-                axi_id   : slv_port_axi.aw_id                                                 ,
-                axi_addr : slv_port_axi.aw_addr                                               ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize                 ,
-                axi_burst: slv_port_axi.aw_burst                                              ,
+                axi_id   : slv_port_axi.aw_id                                 ,
+                axi_addr : slv_port_axi.aw_addr                               ,
+                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize ,
+                axi_burst: slv_port_axi.aw_burst                              ,
                 axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size : AxiMstPortMaxSize,
                 axi_cache: slv_port_axi.aw_cache
               };
@@ -648,6 +665,75 @@ package tb_axi_dw_pkg       ;
         $display("        Expect B response.") ;
       end
     endtask : mon_slv_port_aw
+
+    task automatic mon_slv_port_w ();
+      if (act_slv_port_w_queue.size() != 0) begin
+        exp_slv_rw_t act_slv_w = act_slv_port_w_queue[0];
+
+        if (act_mst_port_aw_queue.size() != 0 && act_slv_port_aw_queue.size() != 0) begin
+          // Retrieve the AW requests related to this W beat
+          exp_ax_t act_mst_aw = act_mst_port_aw_queue[0];
+          exp_ax_t act_slv_aw = act_slv_port_aw_queue[0];
+
+          // Calculate the offsets
+          shortint unsigned mst_port_lower_byte =
+          axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+          shortint unsigned mst_port_upper_byte =
+          axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+          shortint unsigned slv_port_lower_byte =
+          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+          shortint unsigned slv_port_upper_byte =
+          axi_pkg::beat_upper_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+
+          shortint unsigned bytes_copied = 0;
+          // Pointer inside the outcoming word
+          if (mst_port_w_pnt == '1)
+            mst_port_w_pnt = mst_port_lower_byte;
+
+          mst_port_w.axi_last = mst_port_w_cnt == act_mst_aw.axi_len;
+          for (shortint unsigned b = slv_port_lower_byte; b <= slv_port_upper_byte; b++) begin
+            if (b + mst_port_w_pnt - slv_port_lower_byte == AxiMstPortStrbWidth)
+              break;
+            mst_port_w.axi_data[8*(b + mst_port_w_pnt - slv_port_lower_byte) +: 8] = act_slv_w.axi_data[8*b +: 8];
+            mst_port_w.axi_strb[b + mst_port_w_pnt - slv_port_lower_byte]          = act_slv_w.axi_strb[b]       ;
+            bytes_copied++;
+          end
+
+          // Increment the len counters
+          slv_port_w_cnt++              ;
+          mst_port_w_pnt += bytes_copied;
+
+          if (act_mst_aw.axi_burst == axi_pkg::BURST_FIXED // No upsizing
+              || mst_port_w_pnt == AxiMstPortStrbWidth     // Filled up an outcoming W beat
+              || act_slv_w.axi_last                        // Last beat of a W burst
+            ) begin
+            this.exp_mst_port_w_queue.push_back(mst_port_w);
+            incr_expected_tests(3)                         ;
+
+            // Increment the len counter
+            mst_port_w_cnt++;
+
+            // Reset W beat
+            mst_port_w          = '0                         ;
+            mst_port_w.axi_data = {AxiMstPortDataWidth{1'b?}};
+            mst_port_w_pnt      = '1                         ;
+          end
+
+          // Pop the AW request from the queues
+          if (slv_port_w_cnt == act_slv_aw.axi_len + 1) begin
+            void'(act_slv_port_aw_queue.pop_front());
+            slv_port_w_cnt = 0;
+          end
+          if (mst_port_w_cnt == act_mst_aw.axi_len + 1) begin
+            void'(act_mst_port_aw_queue.pop_front());
+            mst_port_w_cnt = 0;
+          end
+
+          // Pop the W request
+          void'(act_slv_port_w_queue.pop_front());
+        end
+      end
+    endtask : mon_slv_port_w
 
     task automatic mon_slv_port_ar ();
       exp_ax_t exp_slv_ar;
@@ -728,7 +814,7 @@ package tb_axi_dw_pkg       ;
 
         // Several R beats generated from this incoming R beat
         for (int unsigned beat = 0; beat < conversion_ratio; beat++) begin
-          exp_rw_t act_slv_r = '0;
+          exp_slv_rw_t act_slv_r = '0;
 
           // Calculate the offsets inside the outcoming word
           shortint unsigned slv_port_lower_byte =
@@ -777,11 +863,6 @@ package tb_axi_dw_pkg       ;
         end
       end
     endtask: mon_mst_port_r
-
-    task automatic mon_slv_port_w();
-    // TODO Auto-generated task stub
-    endtask : mon_slv_port_w
-
   endclass : axi_dw_upsizer_monitor
 
   /***************
@@ -983,7 +1064,7 @@ package tb_axi_dw_pkg       ;
 
     task automatic mon_slv_port_w ();
       if (act_slv_port_w_queue.size() != 0) begin
-        exp_rw_t act_slv_w = act_slv_port_w_queue[0];
+        exp_slv_rw_t act_slv_w = act_slv_port_w_queue[0];
 
         if (act_mst_port_aw_queue.size() != 0 && act_slv_port_aw_queue.size() != 0) begin
           // Retrieve the AW requests related to this W beat
@@ -998,7 +1079,7 @@ package tb_axi_dw_pkg       ;
 
           // Several W beats generated from this incoming W beat
           for (int unsigned beat = 0; beat < conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize); beat++) begin
-            exp_rw_t act_mst_w = '0;
+            exp_slv_rw_t act_mst_w = '0;
 
             // Calculate the offsets inside the outcoming word
             shortint unsigned mst_port_lower_byte =
