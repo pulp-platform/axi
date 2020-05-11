@@ -87,7 +87,8 @@ module tb_axi_dw_downsizer #(
     .TT             (TestTime           ),
     .MAX_READ_TXNS  (8                  ),
     .MAX_WRITE_TXNS (8                  ),
-    .AXI_BURST_FIXED(1'b0               )
+    .AXI_BURST_FIXED(1'b0               ),
+    .AXI_ATOPS      (1'b1               )
   ) master_drv = new (master_dv);
 
   // Slave port

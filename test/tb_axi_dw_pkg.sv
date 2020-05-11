@@ -247,7 +247,7 @@ package tb_axi_dw_pkg       ;
             axi_cache: slv_port_axi.ar_cache
           });
 
-      if (slv_port_axi.aw_valid && slv_port_axi.aw_ready)
+      if (slv_port_axi.aw_valid && slv_port_axi.aw_ready) begin
         act_slv_port_aw_queue.push_back('{
             axi_id   : slv_port_axi.aw_id   ,
             axi_burst: slv_port_axi.aw_burst,
@@ -256,6 +256,20 @@ package tb_axi_dw_pkg       ;
             axi_len  : slv_port_axi.aw_len  ,
             axi_cache: slv_port_axi.aw_cache
           });
+
+        // This request generates an R response.
+        // Push this to the AR queue.
+        if (slv_port_axi.aw_atop[axi_pkg::ATOP_R_RESP])
+          act_slv_port_ar_queue.push(slv_port_axi.aw_id,
+            '{
+              axi_id   : slv_port_axi.aw_id   ,
+              axi_burst: slv_port_axi.aw_burst,
+              axi_size : slv_port_axi.aw_size ,
+              axi_addr : slv_port_axi.aw_addr ,
+              axi_len  : slv_port_axi.aw_len  ,
+              axi_cache: slv_port_axi.aw_cache
+            });
+      end
 
       if (slv_port_axi.w_valid && slv_port_axi.w_ready)
         this.act_slv_port_w_queue.push_back('{
@@ -284,7 +298,7 @@ package tb_axi_dw_pkg       ;
             axi_cache: mst_port_axi.ar_cache
           });
 
-      if (mst_port_axi.aw_valid && mst_port_axi.aw_ready)
+      if (mst_port_axi.aw_valid && mst_port_axi.aw_ready) begin
         act_mst_port_aw_queue.push_back('{
             axi_id   : mst_port_axi.aw_id   ,
             axi_burst: mst_port_axi.aw_burst,
@@ -293,6 +307,20 @@ package tb_axi_dw_pkg       ;
             axi_len  : mst_port_axi.aw_len  ,
             axi_cache: mst_port_axi.aw_cache
           });
+
+        // This request generates an R response.
+        // Push this to the AR queue.
+        if (mst_port_axi.aw_atop[axi_pkg::ATOP_R_RESP])
+          act_mst_port_ar_queue.push(mst_port_axi.aw_id,
+            '{
+              axi_id   : mst_port_axi.aw_id   ,
+              axi_burst: mst_port_axi.aw_burst,
+              axi_size : mst_port_axi.aw_size ,
+              axi_addr : mst_port_axi.aw_addr ,
+              axi_len  : mst_port_axi.aw_len  ,
+              axi_cache: mst_port_axi.aw_cache
+            });
+      end
 
       if (mst_port_axi.w_valid && mst_port_axi.w_ready)
         this.act_mst_port_w_queue.push_back('{
