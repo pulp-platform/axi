@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.23.0 - 2020-05-11
+
+### Added
 - `axi_lite_regs`: Add memory-mapped registers with AXI4-Lite slave port and the option to make
   individual bytes read-only.
 
@@ -23,8 +32,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     - The `send_aws` and the `send_ars` function now randomizes the `prot` signal of each AW and AR,
       respectively.
   - `axi_test::rand_axi_slave`: Display `prot` signal (but otherwise still ignore it).
-
-### Fixed
 
 
 ## 0.22.1 - 2020-05-11
