@@ -83,7 +83,8 @@ module tb_axi_dw_upsizer #(
     .TA            (ApplTime           ),
     .TT            (TestTime           ),
     .MAX_READ_TXNS (8                  ),
-    .MAX_WRITE_TXNS(8                  )
+    .MAX_WRITE_TXNS(8                  ),
+    .AXI_ATOPS     (1'b1               )
   ) master_drv = new (master_dv);
 
   // Slave port
