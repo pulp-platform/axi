@@ -141,6 +141,16 @@ module synth_bench (
     ) i_synth_axi_serializer (.*);
   end
 
+  // AXI4-Lite Registers
+  for (genvar i = 0; i < 6; i++) begin
+    localparam int unsigned NUM_BYTES[6] = {1, 4, 42, 64, 129, 512};
+    synth_axi_lite_regs #(
+      .REG_NUM_BYTES  ( NUM_BYTES[i]      ),
+      .AXI_ADDR_WIDTH ( 32'd32            ),
+      .AXI_DATA_WIDTH ( 32'd32            )
+    ) i_axi_lite_regs (.*);
+  end
+
 endmodule
 
 
@@ -538,5 +548,44 @@ module synth_axi_serializer #(
     .rst_ni,
     .slv        ( axi[0]   ), // slave port
     .mst        ( axi[1]   )  // master port
+  );
+endmodule
+
+module synth_axi_lite_regs #(
+  parameter int unsigned REG_NUM_BYTES  = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+  typedef logic [7:0] byte_t;
+
+  AXI_LITE #(
+    .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH )
+  ) slv ();
+
+  logic  [REG_NUM_BYTES-1:0] wr_active, rd_active;
+  byte_t [REG_NUM_BYTES-1:0] reg_d,     reg_q;
+  logic  [REG_NUM_BYTES-1:0] reg_load;
+
+  axi_lite_regs_intf #(
+    .REG_NUM_BYTES  ( REG_NUM_BYTES          ),
+    .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH         ),
+    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH         ),
+    .PRIV_PROT_ONLY ( 1'd0                   ),
+    .SECU_PROT_ONLY ( 1'd0                   ),
+    .AXI_READ_ONLY  ( {REG_NUM_BYTES{1'b0}}  ),
+    .REG_RST_VAL    ( {REG_NUM_BYTES{8'h00}} )
+  ) i_axi_lite_regs (
+    .clk_i,
+    .rst_ni,
+    .slv         ( slv         ),
+    .wr_active_o ( wr_active   ),
+    .rd_active_o ( rd_active   ),
+    .reg_d_i     ( reg_d       ),
+    .reg_load_i  ( reg_load    ),
+    .reg_q_o     ( reg_q       )
   );
 endmodule

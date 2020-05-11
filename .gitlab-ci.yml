@@ -71,6 +71,11 @@ axi_isolate:
   variables:
     TEST_MODULE: axi_isolate
 
+axi_lite_regs:
+  <<: *test_module
+  variables:
+    TEST_MODULE: axi_lite_regs
+
 axi_lite_to_apb:
   <<: *test_module
   variables:

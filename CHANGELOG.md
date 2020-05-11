@@ -8,8 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_lite_regs`: Add memory-mapped registers with AXI4-Lite slave port and the option to make
+  individual bytes read-only.
 
 ### Changed
+- Interfaces `AXI_LITE` and `AXI_LITE_DV`: add `aw_prot` and `ar_prot` signals.
+  - The `AXI_LITE_ASSIGN*` and `AXI_LITE_SET*` macros (in `include/axi/assign.svh`) have been
+    updated to include the two new interface signals.
+  - `axi_test::axi_lite_driver`: A new `prot` function argument has been added to the `send_aw`,
+    `send_ar`, `recv_aw`, and `recv_ar` functions.
+  - `axi_test::rand_axi_lite_master`:
+    - A new `w_prot` and `r_prot` function argument has been added to the `write` and `read`
+      function, respectively.  The new arguments have a default value of `'0`.
+    - The `send_aws` and the `send_ars` function now randomizes the `prot` signal of each AW and AR,
+      respectively.
+  - `axi_test::rand_axi_slave`: Display `prot` signal (but otherwise still ignore it).
 
 ### Fixed
 

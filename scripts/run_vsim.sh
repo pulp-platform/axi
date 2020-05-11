@@ -56,6 +56,13 @@ exec_test() {
                 call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
+        axi_lite_regs)
+            for PRIV in 0 1; do
+                for SECU in 0 1; do
+                    call_vsim tb_axi_lite_regs -GPrivProtOnly=$PRIV -GSecuProtOnly=$SECU
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;

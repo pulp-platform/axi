@@ -116,56 +116,56 @@ module tb_axi_lite_mailbox;
     // -------------------------------
     $info("Initial test by reading each register");
     $display("%0t MST_0> Read register MBOXW ", $time());
-    lite_axi_master.read(MBOXW, data, resp);
+    lite_axi_master.read(MBOXW, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(32'hFEEDC0DE)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register MBOXR, this generates an error ", $time());
-    lite_axi_master.read(MBOXR, data, resp);
+    lite_axi_master.read(MBOXR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(32'hFEEDDEAD)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_SLVERR) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register STATUS", $time());
-    lite_axi_master.read(STATUS, data, resp);
+    lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register ERROR ", $time());
-    lite_axi_master.read(ERROR, data, resp);
+    lite_axi_master.read(ERROR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register WIRQT ", $time());
-    lite_axi_master.read(WIRQT, data, resp);
+    lite_axi_master.read(WIRQT, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(0)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register RIRQT ", $time());
-    lite_axi_master.read(RIRQT, data, resp);
+    lite_axi_master.read(RIRQT, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(0)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register IRQS  ", $time());
-    lite_axi_master.read(IRQS, data, resp);
+    lite_axi_master.read(IRQS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(3'b100)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Acknowledge Error by writing to IRQS", $time());
-    lite_axi_master.write(IRQS, 64'h4, 8'hFF, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), 64'h4, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register IRQEN ", $time());
-    lite_axi_master.read(IRQEN, data, resp);
+    lite_axi_master.read(IRQEN, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(0)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register IRQP  ", $time());
-    lite_axi_master.read(IRQP, data, resp);
+    lite_axi_master.read(IRQP, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(0)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register CTRL  ", $time());
-    lite_axi_master.read(CTRL, data, resp);
+    lite_axi_master.read(CTRL, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(0)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
@@ -175,25 +175,25 @@ module tb_axi_lite_mailbox;
     repeat (50) @(posedge clk);
     $info("Test error interrupt");
     $display("%0t MST_0> Enable Error interrupt  ", $time());
-    lite_axi_master.write(IRQEN, data_t'(3'b100), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(3'b100), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register MBOXR, this generates an error ", $time());
-    lite_axi_master.read(MBOXR, data, resp);
+    lite_axi_master.read(MBOXR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(32'hFEEDDEAD)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_SLVERR) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read register ERROR ", $time());
-    lite_axi_master.read(ERROR, data, resp);
+    lite_axi_master.read(ERROR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Acknowledge Error by writing to IRQS", $time());
-    lite_axi_master.write(IRQS, data_t'(3'b100), 8'hFF, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(3'b100), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Disable interrupt", $time());
-    lite_axi_master.write(IRQEN, data_t'(0), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(0), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     // -------------------------------
@@ -202,71 +202,71 @@ module tb_axi_lite_mailbox;
     repeat (50) @(posedge clk);
     $info("Test sending data from one to the other slave interface");
     $display("%0t MST_0> Set write threshold to 100, truncates to depth ", $time());
-    lite_axi_master.write(WIRQT, 64'd100, 8'hFF, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), 64'd100, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read out write threshold ", $time());
-    lite_axi_master.read(WIRQT, data, resp);
+    lite_axi_master.read(WIRQT, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(MailboxDepth - 1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Set write threshold to 0", $time());
-    lite_axi_master.write(WIRQT, 64'd0, 8'hFF, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), 64'd0, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
 
     $display("%0t MST_0> Set Read threshold to 100, truncates to depth ", $time());
-    lite_axi_master.write(RIRQT, 64'd100, 8'hFF, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), 64'd100, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Read out read threshold ", $time());
-    lite_axi_master.read(RIRQT, data, resp);
+    lite_axi_master.read(RIRQT, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(MailboxDepth - 1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Set Read threshold to 64'd2 ", $time());
-    lite_axi_master.write(RIRQT, 64'd2, 8'hFF, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), 64'd2, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Enable Read threshold interrupt  ", $time());
-    lite_axi_master.write(IRQEN, 64'h2, 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), 64'h2, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     $display("%0t MST_0> Send to slave 1 data  ", $time());
-    lite_axi_master.write(MBOXW, data_t'(32'hFEEDFEED), 8'hFF, resp);
+    lite_axi_master.write(MBOXW, axi_pkg::prot_t'('0), data_t'(32'hFEEDFEED), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     // wait for interrupt
     wait (irq[0]);
     $display("%0t MST_0> interrupt recieved, test that it is the expected one  ", $time());
-    lite_axi_master.read(IRQP, data, resp);
+    lite_axi_master.read(IRQP, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(3'b010)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.read(STATUS, data, resp);
+    lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(4'b1000)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
     $display("%0t MST_0> empty data from port  ", $time());
     while (!data[0]) begin
-      lite_axi_master.read(MBOXR, data, resp);
+      lite_axi_master.read(MBOXR, axi_pkg::prot_t'('0), data, resp);
       assert (data == data_t'(loop)) else begin test_failed[0]++; $error("Unexpected result"); end
       assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
       loop ++;
-      lite_axi_master.read(STATUS, data, resp);
+      lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
     end
     $display("%0t MST_0> FIFO is now empty, clear interrupt and disable it  ", $time());
-    lite_axi_master.write(IRQS, data_t'(3'b111), 8'hFF, resp);
-    lite_axi_master.write(IRQEN, data_t'(0), 8'hFF, resp);
-    lite_axi_master.write(RIRQT, data_t'(0), 8'hFF, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(3'b111), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(0), 8'hFF, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), data_t'(0), 8'hFF, resp);
 
     // -------------------------------
     // Test Flush
     // -------------------------------
     repeat (50) @(posedge clk);
     $info("%0t MST_0> Test Flush all FIFOs  ", $time());
-    lite_axi_master.write(CTRL, data_t'('1), 8'h00, resp);
+    lite_axi_master.write(CTRL, axi_pkg::prot_t'('0), data_t'('1), 8'h00, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
-    lite_axi_master.write(CTRL, data_t'('1), 8'hFF, resp);
+    lite_axi_master.write(CTRL, axi_pkg::prot_t'('0), data_t'('1), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     // -------------------------------
@@ -274,22 +274,22 @@ module tb_axi_lite_mailbox;
     // -------------------------------
     repeat (50) @(posedge clk);
     $info("%0t MST_0> Test Write error interrupt  ", $time());
-    lite_axi_master.write(IRQEN, data_t'(3'b100), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(3'b100), 8'hFF, resp);
     loop = 0;
     while (!irq[0]) begin
-      lite_axi_master.write(MBOXW, data_t'(loop), 8'hFF, resp);
+      lite_axi_master.write(MBOXW, axi_pkg::prot_t'('0), data_t'(loop), 8'hFF, resp);
     end
-    lite_axi_master.read(IRQP, data, resp);
+    lite_axi_master.read(IRQP, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(3'b100)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.read(ERROR, data, resp);
+    lite_axi_master.read(ERROR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(2'b10)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(CTRL, data_t'(2'b01), 8'h01, resp);
+    lite_axi_master.write(CTRL, axi_pkg::prot_t'('0), data_t'(2'b01), 8'h01, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQS, data_t'(3'b111), 8'h01, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(3'b111), 8'h01, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.read(STATUS, data, resp);
+    lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(4'b0001)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
@@ -298,27 +298,27 @@ module tb_axi_lite_mailbox;
     // -------------------------------
     repeat (50) @(posedge clk);
     $info("%0t MST_0> Make an unmapped access read and write ", $time());
-    lite_axi_master.read(addr_t'(16'hDEAD), data, resp);
+    lite_axi_master.read(addr_t'(16'hDEAD), axi_pkg::prot_t'('0), data, resp);
     assert (resp == axi_pkg::RESP_SLVERR) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(addr_t'(16'hDEAD), data_t'(16'hDEAD), 8'hFF, resp);
+    lite_axi_master.write(addr_t'(16'hDEAD), axi_pkg::prot_t'('0), data_t'(16'hDEAD), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_SLVERR) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(ERROR, data_t'(16'hDEAD), 8'hFF, resp);
+    lite_axi_master.write(ERROR, axi_pkg::prot_t'('0), data_t'(16'hDEAD), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_SLVERR) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQEN, data_t'(16'hDEAD), 8'h00, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(16'hDEAD), 8'h00, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQS, data_t'(16'hDEAD), 8'h00, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(16'hDEAD), 8'h00, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(WIRQT, data_t'('1), 8'h00, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), data_t'('1), 8'h00, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(WIRQT, data_t'('1), 8'hFF, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), data_t'('1), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(WIRQT, data_t'('0), 8'hFF, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), data_t'('0), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(RIRQT, data_t'('1), 8'h00, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), data_t'('1), 8'h00, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(RIRQT, data_t'('1), 8'hFF, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), data_t'('1), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
-    lite_axi_master.write(WIRQT, data_t'('0), 8'hFF, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), data_t'('0), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
     end_of_sim[0] <= 1'b1;
@@ -338,68 +338,68 @@ module tb_axi_lite_mailbox;
     // Test Flush seperately
     // -------------------------------
     $display("%0t MST_1> Flush Read MBOX ", $time());
-    lite_axi_master.write(CTRL, data_t'(2'b10), 8'hFF, resp);
+    lite_axi_master.write(CTRL, axi_pkg::prot_t'('0), data_t'(2'b10), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     $display("%0t MST_1> Flush Write MBOX ", $time());
-    lite_axi_master.write(CTRL, data_t'(2'b01), 8'hFF, resp);
+    lite_axi_master.write(CTRL, axi_pkg::prot_t'('0), data_t'(2'b01), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     // -------------------------------
     // Set read and write thresholds, wait for reflect some data
     // -------------------------------
     $display("%0t MST_1> Set Read threshold to 64'd0 ", $time());
-    lite_axi_master.write(RIRQT, data_t'(0), 8'hFF, resp);
+    lite_axi_master.write(RIRQT, axi_pkg::prot_t'('0), data_t'(0), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     $display("%0t MST_1> Enable Read threshold interrupt  ", $time());
-    lite_axi_master.write(IRQEN, data_t'(2), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(2), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     $display("%0t MST_1> Wait for Read threshold interrupt  ", $time());
     wait (irq[1]);
     $display("%0t MST_1> Interrupt Recieved, read pending register and Acknowledge irq ", $time());
-    lite_axi_master.read(IRQP, data, resp);
+    lite_axi_master.read(IRQP, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(2)) else begin test_failed[1]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.read(IRQS, data, resp);
+    lite_axi_master.read(IRQS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(2)) else begin test_failed[1]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.read(MBOXR, data, resp);
+    lite_axi_master.read(MBOXR, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(32'hFEEDFEED)) else begin test_failed[1]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQS, data_t'(2), 8'h1, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(2), 8'h1, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     $display("%0t MST_1> Enable write threshold interrupt ", $time());
-    lite_axi_master.write(WIRQT, 32'h8, 8'h1, resp);
+    lite_axi_master.write(WIRQT, axi_pkg::prot_t'('0), 32'h8, 8'h1, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQEN, data_t'(1), 8'hFF, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(1), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     $display("%0t MST_1> Write back looping answer ", $time());
     while (!irq[1]) begin
-      lite_axi_master.write(MBOXW, data_t'(loop), 8'hFF, resp);
+      lite_axi_master.write(MBOXW, axi_pkg::prot_t'('0), data_t'(loop), 8'hFF, resp);
       assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
       loop++;
     end
     $display("%0t MST_1> Stop looping answer and clear interrupt", $time());
-    lite_axi_master.read(IRQP, data, resp);
+    lite_axi_master.read(IRQP, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(1)) else begin test_failed[1]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.read(IRQS, data, resp);
+    lite_axi_master.read(IRQS, axi_pkg::prot_t'('0), data, resp);
     assert (data == data_t'(1)) else begin test_failed[1]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
     // clear the interrupt, if the Write FIFO is status reg is below threshold
-    lite_axi_master.read(STATUS, data, resp);
+    lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
     while (data[3]) begin
       repeat (10) @(posedge clk);
-      lite_axi_master.read(STATUS, data, resp);
+      lite_axi_master.read(STATUS, axi_pkg::prot_t'('0), data, resp);
       assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
     end
-    lite_axi_master.write(IRQS, data_t'(2), 8'h1, resp);
+    lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(2), 8'h1, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
-    lite_axi_master.write(IRQEN, data_t'(0), 8'h1, resp);
+    lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(0), 8'h1, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[1]++; $error("Unexpected result"); end
 
     end_of_sim[1] <= 1'b1;

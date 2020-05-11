@@ -84,7 +84,7 @@ module tb_axi_lite_to_axi;
     automatic axi_pkg::resp_t resp;
     axi_lite_drv.reset_master();
     @(posedge clk);
-    axi_lite_drv.send_aw('hdeadbeef);
+    axi_lite_drv.send_aw('hdeadbeef, axi_pkg::prot_t'('0));
     axi_lite_drv.send_w('hdeadbeef, '1);
     axi_lite_drv.recv_b(resp);
     $info("AXI-Lite B: resp %h", resp);

@@ -114,6 +114,19 @@ artifacts:
     outputs:
       - build/axi_isolate.tested
 
+  axi_lite_regs:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_regs.sv
+      - test/tb_axi_lite_regs.sv
+    outputs:
+      - build/axi_lite_regs.tested
+
   axi_lite_to_apb:
     inputs:
       - Bender.yml
