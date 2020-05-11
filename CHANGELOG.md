@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
       respectively.
   - `axi_test::rand_axi_slave`: Display `prot` signal (but otherwise still ignore it).
 
+### Fixed
+- `rand_axi_master` (in `axi_test`): Another fix to respect burst type restrictions when emitting
+  ATOPs.
+
 
 ## 0.22.1 - 2020-05-11
 

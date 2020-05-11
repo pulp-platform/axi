@@ -881,21 +881,23 @@ package axi_test;
           end
           beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
         end
-        // Determine `ax_addr`.
-        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP && AXI_BURST_FIXED) begin
+        // Determine `ax_addr` and `ax_burst`.
+        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
           // The address must be aligned to half the outbound data size. [E2-337]
           beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
-        end else begin
-          // The address must be aligned to the data size. [E2-337]
-          beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
-        end
-        // Determine `ax_burst`.
-        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
           // If the address is aligned to the total size of outgoing data, the burst type must be
           // INCR. Otherwise, it must be WRAP. [E2-338]
           beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
               axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
+          // If we are not allowed to emit WRAP bursts, align the address to the total size of
+          // outgoing data and fall back to INCR.
+          if (beat.ax_burst == axi_pkg::BURST_WRAP && !AXI_BURST_WRAP) begin
+            beat.ax_addr -= (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size));
+            beat.ax_burst = axi_pkg::BURST_INCR;
+          end
         end else begin
+          // The address must be aligned to the data size. [E2-337]
+          beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
           // Only INCR allowed.
           beat.ax_burst = axi_pkg::BURST_INCR;
         end
