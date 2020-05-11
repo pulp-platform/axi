@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     `send_ar`, `recv_aw`, and `recv_ar` functions.
   - `axi_test::rand_axi_lite_master`:
     - A new `w_prot` and `r_prot` function argument has been added to the `write` and `read`
-      function, respectively.
+      function, respectively.  The new arguments have a default value of `'0`.
     - The `send_aws` and the `send_ars` function now randomizes the `prot` signal of each AW and AR,
       respectively.
   - `axi_test::rand_axi_slave`: Display `prot` signal (but otherwise still ignore it).
