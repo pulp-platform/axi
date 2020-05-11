@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `rand_axi_master` (in `axi_test`): Respect burst type restrictions when emitting ATOPs.
 
 
 ## 0.22.0 - 2020-05-01
