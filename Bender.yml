@@ -6,6 +6,7 @@ package:
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
     - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
+    - "Thomas Benz <tbrnz@iis.ee.ethz.ch>"
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.16.4 }
@@ -44,6 +45,10 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
+  - src/dma/axi_dma_data_path.sv
+  - src/dma/axi_dma_data_mover.sv
+  - src/dma/axi_dma_burst_reshaper.sv
+  - src/dma/axi_dma_backend.sv
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
@@ -80,3 +85,5 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar_pkg.sv
       - test/tb_axi_xbar.sv
+      - test/fixture_axi_dma_backend.sv
+      - test/tb_axi_dma_backend.sv
