@@ -1,4 +1,6 @@
 axi:
+  incdirs:
+    - include
   files:
     # Source files grouped in levels. Files in level 0 have no dependencies on files in this
     # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
