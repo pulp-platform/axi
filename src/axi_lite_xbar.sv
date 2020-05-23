@@ -173,6 +173,8 @@ module axi_lite_xbar #(
     ) i_dec_err_conv (
       .slv_req_lite_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
       .slv_resp_lite_o ( slv_resps[i][Cfg.NoMstPorts] ),
+      .slv_aw_cache_i  ( 4'd0                         ),
+      .slv_ar_cache_i  ( 4'd0                         ),
       .mst_req_o       ( decerr_req                   ),
       .mst_resp_i      ( decerr_resp                  )
     );
