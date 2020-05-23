@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_lite_xbar`: Add missing `slv_a{w,r}_cache_i` connections on `axi_lite_to_axi` instance.
 
 
 ## 0.23.0 - 2020-05-11
