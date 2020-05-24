@@ -3,10 +3,10 @@
 <link rel="stylesheet" type="text/css" href="static/light.css">
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
-<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mux_ar_chan_t</a></h1>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">ser_aw_t</a></h1>
 <pre>typedef struct packed {                                       
-    axi_id_mux_t              id;                                       
-    axi_addr_t            addr;                                     
+    ser_id_t              id;                                       
+    addr_t            addr;                                     
     axi_pkg::len_t    len;                                      
     axi_pkg::size_t   size;                                     
     axi_pkg::burst_t  burst;                                    
@@ -15,8 +15,10 @@
     axi_pkg::prot_t   prot;                                     
     axi_pkg::qos_t    qos;                                      
     axi_pkg::region_t region;                                   
-    axi_user_t            user;                                     
-  } mux_ar_chan_t;</pre>
+    axi_pkg::atop_t   atop;                                     
+    user_t            user;                                     
+  } ser_aw_t;</pre>
+<p>AW channel after serializer</p>
 </section>
 </body>
 </html>

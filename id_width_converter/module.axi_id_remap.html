@@ -12,13 +12,14 @@ effectively only uses a (not necessarily contiguous) subset of IDs.</p>
 <p>This module retains the independence of IDs.  That is, if two transactions have different IDs at
 the slave port of this module, they are guaranteed to have different IDs at the master port of
 this module.  This implies a lower bound on the <a href="#parameter.AxiMstPortIdWidth">width of IDs on the master
-port</a>.</p>
+port</a>.  If you require narrower master port IDs and can forgo ID
+independence, use <a href="module.axi_id_serialize"><code>axi_id_serialize</code></a> instead.</p>
 <p>Internally, a <a href="module.axi_id_remap_table">table is used for remapping IDs</a>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.AxiSlvPortIdWidth" class="impl"><code class="in-band">AxiSlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>ID width of the AXI4+ATOP slave port.</p>
-</div><h3 id="parameter.AxiMaxUniqSlvPortIds" class="impl"><code class="in-band">AxiMaxUniqSlvPortIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+</div><h3 id="parameter.AxiSlvPortMaxUniqIds" class="impl"><code class="in-band">AxiSlvPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
 counted separately (except for ATOPs, which count as both read and write).</p>
 <p>It is legal for upstream to have transactions with more unique IDs than the maximum given by
@@ -32,9 +33,9 @@ flight for any ID, but a transaction exceeding the maximum will be stalled until
 transaction with the same ID completes.</p>
 </div><h3 id="parameter.AxiMstPortIdWidth" class="impl"><code class="in-band">AxiMstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>ID width of the AXI4+ATOP master port.</p>
-<p>The minimum value of this parameter is the ceiled binary logarithm of <code>AxiMaxUniqSlvPortIds</code>,
+<p>The minimum value of this parameter is the ceiled binary logarithm of <code>AxiSlvPortMaxUniqIds</code>,
 because IDs at the master port must be wide enough to represent IDs up to
-<code>AxiMaxUniqSlvPortIds-1</code>.</p>
+<code>AxiSlvPortMaxUniqIds-1</code>.</p>
 <p>If master IDs are wider than the minimum, they are extended by prepending zeros.</p>
 </div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band">slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct type of the AXI4+ATOP slave port.</p>

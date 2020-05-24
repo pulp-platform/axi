@@ -5,15 +5,16 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mux_req_t</a></h1>
 <pre>typedef struct packed {                                         
-    mux_aw_chan_t aw;                                                 
+    mux_aw_t aw;                                                 
     logic     aw_valid;                                           
-    mux_w_chan_t  w;                                                  
+    w_t  w;                                                  
     logic     w_valid;                                            
     logic     b_ready;                                            
-    mux_ar_chan_t ar;                                                 
+    mux_ar_t ar;                                                 
     logic     ar_valid;                                           
     logic     r_ready;                                            
   } mux_req_t;</pre>
+<p>AXI requests from the multiplexer</p>
 </section>
 </body>
 </html>

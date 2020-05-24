@@ -3,17 +3,18 @@
 <link rel="stylesheet" type="text/css" href="static/light.css">
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
-<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">one_req_t</a></h1>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">ser_req_t</a></h1>
 <pre>typedef struct packed {                                         
-    one_aw_chan_t aw;                                                 
+    ser_aw_t aw;                                                 
     logic     aw_valid;                                           
-    one_w_chan_t  w;                                                  
+    w_t  w;                                                  
     logic     w_valid;                                            
     logic     b_ready;                                            
-    one_ar_chan_t ar;                                                 
+    ser_ar_t ar;                                                 
     logic     ar_valid;                                           
     logic     r_ready;                                            
-  } one_req_t;</pre>
+  } ser_req_t;</pre>
+<p>AXI Requests from serializer</p>
 </section>
 </body>
 </html>
