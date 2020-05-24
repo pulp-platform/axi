@@ -21,11 +21,11 @@ This is the implementation of the AMBA AXI protocol developed as part of the PUL
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)            | A data width converter between a narrow AXI master and a wider AXI slave.                         |                                |
 | [`axi_err_slv`](src/axi_err_slv.sv)                  | Always responds with an AXI decode/slave error for transactions which are sent to it.             |                                |
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                             |                                |
-| [`axi_id_remap`](src/axi_id_remap.sv)                | This module remaps AXI IDs.                                                                       |                                |
+| [`axi_id_remap`](src/axi_id_remap.sv)                | Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.                 | [Doc][doc.axi_id_remap]        |
+| [`axi_id_serialize`](src/axi_id_serialize.sv)        | Reduce AXI IDs by serializing transactions when necessary.                                        | [Doc][doc.axi_id_serialize]    |
 | [`axi_intf`](src/axi_intf.sv)                        | This file defines the interfaces we support.                                                      |                                |
 | [`axi_isolate.sv`](src/axi_isolate.sv)               | A module that can isolate downstream slaves from receiving new AXI4 transactions.                 |                                |
-| [`axi_iw_converter`](src/axi_iw_converter.sv)        | This module converts between different AXI ID widths.                                             |                                |
-| [`axi_iw_downsizer`](src/axi_iw_downsizer.sv)        | This module downsizes the AXI ID width between slave and master port.                             |                                |
+| [`axi_iw_converter`](src/axi_iw_converter.sv)        | Convert between two AXI ID widths.                                                                | [Doc][doc.axi_iw_converter]    |
 | [`axi_join`](src/axi_join.sv)                        | A connector that joins two AXI interfaces.                                                        |                                |
 | [`axi_lite_demux`](src/axi_lite_demux.sv)            | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                      | [Doc](doc/axi_lite_demux.md)   |
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
@@ -57,4 +57,7 @@ AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as d
 Masters and slaves that do support ATOPs must adhere to Section E2.1 of the AMBA5 specification.
 
 
+[doc.axi_id_remap]: https://pulp-platform.github.io/axi/master/module.axi_id_remap
+[doc.axi_id_serialize]: https://pulp-platform.github.io/axi/master/module.axi_id_serialize
+[doc.axi_iw_converter]: https://pulp-platform.github.io/axi/master/module.axi_iw_converter
 [doc.axi_lite_regs]: https://pulp-platform.github.io/axi/master/module.axi_lite_regs
