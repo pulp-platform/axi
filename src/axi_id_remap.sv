@@ -37,7 +37,7 @@ module axi_id_remap #(
   /// transactions of another ID complete.
   ///
   /// The maximum value of this parameter is `2**AxiSlvPortIdWidth`.
-  parameter int unsigned AxiMaxUniqSlvPortIds = 32'd0,
+  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   ///
   /// It is legal for upstream to have more transactions than the maximum given by this parameter in
@@ -46,9 +46,9 @@ module axi_id_remap #(
   parameter int unsigned AxiMaxTxnsPerId = 32'd0,
   /// ID width of the AXI4+ATOP master port.
   ///
-  /// The minimum value of this parameter is the ceiled binary logarithm of `AxiMaxUniqSlvPortIds`,
+  /// The minimum value of this parameter is the ceiled binary logarithm of `AxiSlvPortMaxUniqIds`,
   /// because IDs at the master port must be wide enough to represent IDs up to
-  /// `AxiMaxUniqSlvPortIds-1`.
+  /// `AxiSlvPortMaxUniqIds-1`.
   ///
   /// If master IDs are wider than the minimum, they are extended by prepending zeros.
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
@@ -126,8 +126,8 @@ module axi_id_remap #(
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
   localparam int unsigned IdxWidth =
-      $clog2(AxiMaxUniqSlvPortIds) > 0 ? $clog2(AxiMaxUniqSlvPortIds) : 1;
-  typedef logic [AxiMaxUniqSlvPortIds-1:0]  field_t;
+      $clog2(AxiSlvPortMaxUniqIds) > 0 ? $clog2(AxiSlvPortMaxUniqIds) : 1;
+  typedef logic [AxiSlvPortMaxUniqIds-1:0]  field_t;
   typedef logic [AxiSlvPortIdWidth-1:0]     id_inp_t;
   typedef logic [IdxWidth-1:0]              idx_t;
   field_t   wr_free,          rd_free,          both_free;
@@ -142,7 +142,7 @@ module axi_id_remap #(
 
   axi_id_remap_table #(
     .InpIdWidth     ( AxiSlvPortIdWidth     ),
-    .MaxUniqInpIds  ( AxiMaxUniqSlvPortIds  ),
+    .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
     .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
   ) i_wr_table (
     .clk_i,
@@ -163,7 +163,7 @@ module axi_id_remap #(
   );
   axi_id_remap_table #(
     .InpIdWidth     ( AxiSlvPortIdWidth     ),
-    .MaxUniqInpIds  ( AxiMaxUniqSlvPortIds  ),
+    .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
     .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
   ) i_rd_table (
     .clk_i,
@@ -184,7 +184,7 @@ module axi_id_remap #(
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  ( AxiMaxUniqSlvPortIds  ),
+    .WIDTH  ( AxiSlvPortMaxUniqIds  ),
     .MODE   ( 1'b0                  )
   ) i_lzc (
     .in_i     ( both_free        ),
@@ -346,10 +346,10 @@ module axi_id_remap #(
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
     assert(AxiMstPortIdWidth >= IdxWidth)
       else $fatal(1, "Parameter AxiMstPortIdWidth has to be at least IdxWidth!");
-    assert (AxiMaxUniqSlvPortIds > 0)
-      else $fatal(1, "Parameter AxiMaxUniqSlvPortIds has to be larger than 0!");
-    assert (AxiMaxUniqSlvPortIds <= 2**AxiSlvPortIdWidth)
-      else $fatal(1, "Parameter AxiMaxUniqSlvPortIds may be at most 2**AxiSlvPortIdWidth!");
+    assert (AxiSlvPortMaxUniqIds > 0)
+      else $fatal(1, "Parameter AxiSlvPortMaxUniqIds has to be larger than 0!");
+    assert (AxiSlvPortMaxUniqIds <= 2**AxiSlvPortIdWidth)
+      else $fatal(1, "Parameter AxiSlvPortMaxUniqIds may be at most 2**AxiSlvPortIdWidth!");
     assert (AxiMaxTxnsPerId > 0)
       else $fatal(1, "Parameter AxiMaxTxnsPerId has to be larger than 0!");
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
@@ -566,7 +566,7 @@ endmodule
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_MAX_UNIQ_SLV_PORT_IDS = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
   parameter int unsigned AXI_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
@@ -613,7 +613,7 @@ module axi_id_remap_intf #(
 
   axi_id_remap #(
     .AxiSlvPortIdWidth    ( AXI_SLV_PORT_ID_WIDTH     ),
-    .AxiMaxUniqSlvPortIds ( AXI_MAX_UNIQ_SLV_PORT_IDS ),
+    .AxiSlvPortMaxUniqIds ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
     .AxiMaxTxnsPerId      ( AXI_MAX_TXNS_PER_ID       ),
     .AxiMstPortIdWidth    ( AXI_MST_PORT_ID_WIDTH     ),
     .slv_req_t            ( slv_req_t                 ),
