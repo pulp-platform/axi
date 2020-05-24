@@ -387,6 +387,133 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal implementation for assigning to structs from structs, allows for standalone
+// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
+// the same code.  This allows assignments between two different structs, although fields that
+// mismatch should, and in some cases must, be still assigned separately.
+`define AXI_TO_AW_STRUCT(opt_as, lhs, rhs)  \
+  opt_as lhs = '{                           \
+    id:      rhs.id,                        \
+    addr:    rhs.addr,                      \
+    len:     rhs.len,                       \
+    size:    rhs.size,                      \
+    burst:   rhs.burst,                     \
+    lock:    rhs.lock,                      \
+    cache:   rhs.cache,                     \
+    prot:    rhs.prot,                      \
+    qos:     rhs.qos,                       \
+    region:  rhs.region,                    \
+    atop:    rhs.atop,                      \
+    user:    rhs.user                       \
+  };
+`define AXI_TO_W_STRUCT(opt_as, lhs, rhs) \
+  opt_as lhs = '{                         \
+    data: rhs.data,                       \
+    strb: rhs.strb,                       \
+    last: rhs.last,                       \
+    user: rhs.user                        \
+  };
+`define AXI_TO_B_STRUCT(opt_as, lhs, rhs) \
+  opt_as lhs = '{                         \
+    id:   rhs.id,                         \
+    resp: rhs.resp,                       \
+    user: rhs.user                        \
+  };
+`define AXI_TO_AR_STRUCT(opt_as, lhs, rhs)  \
+  opt_as lhs = '{                           \
+    id:      rhs.id,                        \
+    addr:    rhs.addr,                      \
+    len:     rhs.len,                       \
+    size:    rhs.size,                      \
+    burst:   rhs.burst,                     \
+    lock:    rhs.lock,                      \
+    cache:   rhs.cache,                     \
+    prot:    rhs.prot,                      \
+    qos:     rhs.qos,                       \
+    region:  rhs.region,                    \
+    user:    rhs.user                       \
+  };
+`define AXI_TO_R_STRUCT(opt_as, lhs, rhs) \
+  opt_as lhs = '{                         \
+    id:   rhs.id,                         \
+    data: rhs.data,                       \
+    resp: rhs.resp,                       \
+    last: rhs.last,                       \
+    user: rhs.user                        \
+  };
+`define AXI_TO_REQ_STRUCT(opt_as, lhs, rhs) \
+  `AXI_TO_AW_STRUCT(opt_as, lhs.aw, rhs.aw) \
+  opt_as lhs.aw_valid = rhs.aw_valid;       \
+  `AXI_TO_W_STRUCT(opt_as, lhs.w, rhs.w)    \
+  opt_as lhs.w_valid = rhs.w_valid;         \
+  opt_as lhs.b_ready = rhs.b_ready;         \
+  `AXI_TO_AR_STRUCT(opt_as, lhs.ar, rhs.ar) \
+  opt_as lhs.ar_valid = rhs.ar_valid;       \
+  opt_as lhs.r_ready = rhs.r_ready;
+`define AXI_TO_RESP_STRUCT(opt_as, lhs, rhs)  \
+  opt_as lhs.aw_ready = rhs.aw_ready;         \
+  opt_as lhs.ar_ready = rhs.ar_ready;         \
+  opt_as lhs.w_ready = rhs.w_ready;           \
+  opt_as lhs.b_valid = rhs.b_valid;           \
+  `AXI_TO_B_STRUCT(opt_as, lhs.b, rhs.b)      \
+  opt_as lhs.r_valid = rhs.r_valid;           \
+  `AXI_TO_R_STRUCT(opt_as, lhs.r, rhs.r)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting channel or request/response structs from another struct inside a process.
+//
+// The channel macros `AXI_SET_XX_STRUCT(lhs, rhs)` set the fields of the `lhs` channel struct to
+// the fields of the `rhs` channel struct.  They do not set the handshake signals, which are not
+// part of channel structs.
+// The request macro `AXI_SET_REQ_STRUCT(lhs, rhs)` sets all fields of the `lhs` request struct to
+// the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR) payload
+// and request-side handshake signals (AW, W, and AR valid and B and R ready).
+// The response macro `AXI_SET_RESP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response struct
+// to the fields of the `rhs` response struct.  This includes all response channel (B and R) payload
+// and response-side handshake signals (B and R valid and AW, W, and R ready).
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_SET_REQ_STRUCT(my_req_struct, another_req_struct)
+// end
+`define AXI_SET_AW_STRUCT(lhs, rhs)     `AXI_TO_AW_STRUCT(, lhs, rhs)
+`define AXI_SET_W_STRUCT(lhs, rhs)       `AXI_TO_W_STRUCT(, lhs, rhs)
+`define AXI_SET_B_STRUCT(lhs, rhs)       `AXI_TO_B_STRUCT(, lhs, rhs)
+`define AXI_SET_AR_STRUCT(lhs, rhs)     `AXI_TO_AR_STRUCT(, lhs, rhs)
+`define AXI_SET_R_STRUCT(lhs, rhs)       `AXI_TO_R_STRUCT(, lhs, rhs)
+`define AXI_SET_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ_STRUCT(, lhs, rhs)
+`define AXI_SET_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP_STRUCT(, lhs, rhs)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from another struct outside a process.
+//
+// The channel macros `AXI_ASSIGN_XX_STRUCT(lhs, rhs)` assign the fields of the `lhs` channel struct
+// to the fields of the `rhs` channel struct.  They do not assign the handshake signals, which are
+// not part of the channel structs.
+// The request macro `AXI_ASSIGN_REQ_STRUCT(lhs, rhs)` assigns all fields of the `lhs` request
+// struct to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR)
+// payload and request-side handshake signals (AW, W, and AR valid and B and R ready).
+// The response macro `AXI_ASSIGN_RESP_STRUCT(lhs, rhs)` assigns all fields of the `lhs` response
+// struct to the fields of the `rhs` response struct.  This includes all response channel (B and R)
+// payload and response-side handshake signals (B and R valid and AW, W, and R ready).
+//
+// Usage Example:
+// `AXI_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
+`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `AXI_TO_AW_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `AXI_TO_W_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `AXI_TO_B_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `AXI_TO_AR_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `AXI_TO_R_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP_STRUCT(assign, lhs, rhs)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Assigning one AXI-Lite interface to another, as if you would do `assign slv = mst;`
 //
 // The channel assignments `AXI_LITE_ASSIGN_XX(dst, src)` assign all payload and the valid signal of
