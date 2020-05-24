@@ -22,7 +22,8 @@
 /// This module retains the independence of IDs.  That is, if two transactions have different IDs at
 /// the slave port of this module, they are guaranteed to have different IDs at the master port of
 /// this module.  This implies a lower bound on the [width of IDs on the master
-/// port](#parameter.AxiMstPortIdWidth).
+/// port](#parameter.AxiMstPortIdWidth).  If you require narrower master port IDs and can forgo ID
+/// independence, use [`axi_id_serialize`](module.axi_id_serialize) instead.
 ///
 /// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
 module axi_id_remap #(
