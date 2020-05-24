@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Add infinite, simulation-only memory `axi_sim_mem`.
+- `assign.svh`: Add macros for assigning between `struct`s, both inside a process
+  (`AXI_SET_*_STRUCT`) and outside a process (`AXI_ASSIGN_*_STRUCT`).  This is safer than assigning
+  `struct`s with a simple `=`, because the macros assign individual fields.  (Fields that mismatch
+  between two `struct`s, e.g., due to different `user` signal widths, should, and in some cases
+  must, be still assigned separately.)
 
 ### Changed
 - Rename the following classes in `axi_test` to follow the convention that all user-facing objects
