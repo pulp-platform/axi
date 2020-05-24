@@ -201,14 +201,14 @@ module axi_id_serialize #(
       .mst_resp_i ( tmp_serializer_resps[i] )
     );
     always_comb begin
-      `AXI_SET_REQ_STRUCT(from_serializer_reqs[i], tmp_serializer_reqs)
+      `AXI_SET_REQ_STRUCT(from_serializer_reqs[i], tmp_serializer_reqs[i])
       // Truncate to ID width 1 as all requests have ID '0.
-      from_serializer_reqs[i].aw.id = tmp_serializer_reqs.aw.id[0];
-      from_serializer_reqs[i].ar.id = tmp_serializer_reqs.ar.id[0];
-      `AXI_SET_RESP_STRUCT(tmp_serializer_resps, from_serializer_resps[i])
+      from_serializer_reqs[i].aw.id = tmp_serializer_reqs[i].aw.id[0];
+      from_serializer_reqs[i].ar.id = tmp_serializer_reqs[i].ar.id[0];
+      `AXI_SET_RESP_STRUCT(tmp_serializer_resps[i], from_serializer_resps[i])
       // Zero-extend response IDs.
-      tmp_serializer_resps.b.id = '{'{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].b.id};
-      tmp_serializer_resps.r.id = '{'{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].r.id};
+      tmp_serializer_resps[i].b.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].b.id};
+      tmp_serializer_resps[i].r.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].r.id};
     end
   end
 
@@ -251,10 +251,10 @@ module axi_id_serialize #(
   // Shift the ID one down if needed, as mux prepends IDs
   if (MuxIdWidth > 32'd1) begin : gen_id_shift
     always_comb begin
-      AXI_SET_REQ_STRUCT(mst_req_o, axi_mux_req);
+      `AXI_SET_REQ_STRUCT(mst_req_o, axi_mux_req)
       mst_req_o.aw.id = mst_id_t'(axi_mux_req.aw.id >> 32'd1);
       mst_req_o.ar.id = mst_id_t'(axi_mux_req.ar.id >> 32'd1);
-      AXI_SET_RESP_STRUCT(axi_mux_resp, mst_resp_i);
+      `AXI_SET_RESP_STRUCT(axi_mux_resp, mst_resp_i)
       axi_mux_resp.b.id = mux_id_t'(mst_resp_i.b.id << 32'd1);
       axi_mux_resp.r.id = mux_id_t'(mst_resp_i.r.id << 32'd1);
     end
