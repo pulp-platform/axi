@@ -18,10 +18,11 @@ module tb_axi_iw_converter #(
   // DUT Parameters
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
   parameter int unsigned AxiMstPortIdWidth = 32'd0,
-  parameter int unsigned AxiMaxUniqSlvPortIds = 32'd0,
-  parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
-  parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
-  parameter int unsigned AxiMaxTxnsPerMstPortId = 32'd0,
+  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
+  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   // TB Parameters
   parameter int unsigned NumReadTxns          = 32'd100,
   parameter int unsigned NumWriteTxns         = 32'd200,
@@ -138,10 +139,11 @@ module tb_axi_iw_converter #(
   axi_iw_converter_intf #(
     .AXI_SLV_PORT_ID_WIDTH        ( AxiSlvPortIdWidth       ),
     .AXI_MST_PORT_ID_WIDTH        ( AxiMstPortIdWidth       ),
-    .AXI_MAX_UNIQ_SLV_PORT_IDS    ( AxiMaxUniqSlvPortIds    ),
-    .AXI_MAX_TXNS_PER_SLV_PORT_ID ( AxiMaxTxnsPerSlvPortId  ),
-    .AXI_MAX_UNIQ_MST_PORT_IDS    ( AxiMaxUniqMstPortIds    ),
-    .AXI_MAX_TXNS_PER_MST_PORT_ID ( AxiMaxTxnsPerMstPortId  ),
+    .AXI_SLV_PORT_MAX_UNIQ_IDS    ( AxiSlvPortMaxUniqIds    ),
+    .AXI_SLV_PORT_MAX_TXNS_PER_ID ( AxiSlvPortMaxTxnsPerId  ),
+    .AXI_SLV_PORT_MAX_TXNS        ( AxiSlvPortMaxTxns       ),
+    .AXI_MST_PORT_MAX_UNIQ_IDS    ( AxiMstPortMaxUniqIds    ),
+    .AXI_MST_PORT_MAX_TXNS_PER_ID ( AxiMstPortMaxTxnsPerId  ),
     .AXI_ADDR_WIDTH               ( AxiAddrWidth            ),
     .AXI_DATA_WIDTH               ( AxiDataWidth            ),
     .AXI_USER_WIDTH               ( AxiUserWidth            )
