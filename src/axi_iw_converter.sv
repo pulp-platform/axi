@@ -59,14 +59,25 @@ module axi_iw_converter #(
   /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
   /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
   parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
+  /// Maximum number of in-flight transactions at the slave port.  Reads and writes are counted
+  /// separately (except for ATOPs, which count as both read and write).
+  ///
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiSlvPortMaxTxns).
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
   /// Maximum number of different IDs that can be in flight at the master port.  Reads and writes
   /// are counted separately (except for ATOPs, which count as both read and write).
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxUniqIds).
   parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the master port.
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.
+  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxTxnsPerId).
   parameter int unsigned AxiMaxTxnsPerMstPortId = 32'd0,
   /// Address width of both AXI4+ATOP ports
   parameter int unsigned AxiAddrWidth = 32'd0,
@@ -124,7 +135,7 @@ module axi_iw_converter #(
         .slv_resp_t           ( slv_resp_t              ),
         .mst_req_t            ( mst_req_t               ),
         .mst_resp_t           ( mst_resp_t              )
-      ) i_remap (
+      ) i_axi_id_remap (
         .clk_i,
         .rst_ni,
         .slv_req_i  ( slv_req_i  ),
@@ -133,29 +144,20 @@ module axi_iw_converter #(
         .mst_resp_i ( mst_resp_i )
       );
     end else begin : gen_serialize
-      axi_iw_downsizer #(
-        .NumIds        ( AxiMaxUniqMstPortIds   ),
-        .MaxTrans      ( AxiMaxTxnsPerMstPortId ),
-        .AxiAddrWidth  ( AxiAddrWidth           ),
-        .AxiDataWidth  ( AxiDataWidth           ),
-        .AxiUserWidth  ( AxiUserWidth           ),
-        .AxiIdWidthSlv ( AxiSlvPortIdWidth      ),
-        .slv_aw_chan_t ( slv_aw_t               ),
-        .slv_w_chan_t  ( w_t                    ),
-        .slv_b_chan_t  ( slv_b_t                ),
-        .slv_ar_chan_t ( slv_ar_t               ),
-        .slv_r_chan_t  ( slv_r_t                ),
-        .slv_req_t     ( slv_req_t              ),
-        .slv_resp_t    ( slv_resp_t             ),
-        .AxiIdWidthMst ( AxiMstPortIdWidth      ),
-        .mst_aw_chan_t ( mst_aw_t               ),
-        .mst_w_chan_t  ( w_t                    ),
-        .mst_b_chan_t  ( mst_b_t                ),
-        .mst_ar_chan_t ( mst_ar_t               ),
-        .mst_r_chan_t  ( mst_r_t                ),
-        .mst_req_t     ( mst_req_t              ),
-        .mst_resp_t    ( mst_resp_t             )
-      ) i_axi_iw_downsizer (
+      axi_id_serialize #(
+        .AxiSlvPortIdWidth      ( AxiSlvPortIdWidth       ),
+        .AxiSlvPortMaxTxns      ( AxiSlvPortMaxTxns       ),
+        .AxiMstPortIdWidth      ( AxiMstPortIdWidth       ),
+        .AxiMstPortMaxUniqIds   ( AxiMaxUniqMstPortIds    ),
+        .AxiMstPortMaxTxnsPerId ( AxiMaxTxnsPerMstPortId  ),
+        .AxiAddrWidth           ( AxiAddrWidth            ),
+        .AxiDataWidth           ( AxiDataWidth            ),
+        .AxiUserWidth           ( AxiUserWidth            ),
+        .slv_req_t              ( slv_req_t               ),
+        .slv_resp_t             ( slv_resp_t              ),
+        .mst_req_t              ( mst_req_t               ),
+        .mst_resp_t             ( mst_resp_t              )
+      ) i_axi_id_serialize (
         .clk_i,
         .rst_ni,
         .slv_req_i  ( slv_req_i  ),
@@ -263,6 +265,7 @@ module axi_iw_converter_intf #(
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_MAX_UNIQ_SLV_PORT_IDS = 32'd0,
   parameter int unsigned AXI_MAX_TXNS_PER_SLV_PORT_ID = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_MAX_TXNS = 32'd0,
   parameter int unsigned AXI_MAX_UNIQ_MST_PORT_IDS = 32'd0,
   parameter int unsigned AXI_MAX_TXNS_PER_MST_PORT_ID = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
@@ -312,6 +315,7 @@ module axi_iw_converter_intf #(
     .AxiMstPortIdWidth      ( AXI_MST_PORT_ID_WIDTH         ),
     .AxiMaxUniqSlvPortIds   ( AXI_MAX_UNIQ_SLV_PORT_IDS     ),
     .AxiMaxTxnsPerSlvPortId ( AXI_MAX_TXNS_PER_SLV_PORT_ID  ),
+    .AxiSlvPortMaxTxns      ( AXI_SLV_PORT_MAX_TXNS         ),
     .AxiMaxUniqMstPortIds   ( AXI_MAX_UNIQ_MST_PORT_IDS     ),
     .AxiMaxTxnsPerMstPortId ( AXI_MAX_TXNS_PER_MST_PORT_ID  ),
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
