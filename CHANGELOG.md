@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `axi_id_remap` remaps AXI IDs from wide IDs at the slave port to narrower IDs at the master
     port without serializing transactions..
   - `axi_id_serialize` reduces AXI IDs by serializing transactions when necessary.
+- `assign.svh`: Add macros to assign between two `struct`s inside or outside a process with
+  `AXI_SET_*_STRUCT` or `AXI_ASSIGN_*_STRUCT`, respectively.
 
 ### Changed
 
