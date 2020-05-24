@@ -25,11 +25,11 @@
 /// ## Options for reducing the ID width
 ///
 /// The two options for reducing ID widths differ in the maximum number of different IDs that can be
-/// in flight at the slave port of this module, given in the `AxiMaxUniqSlvPortIds` parameter.
+/// in flight at the slave port of this module, given in the `AxiSlvPortMaxUniqIds` parameter.
 ///
 /// ### Fewer unique slave port IDs than master port IDs
 ///
-/// If `AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth`, there are fewer unique slave port IDs than
+/// If `AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth`, there are fewer unique slave port IDs than
 /// master port IDs.  Therefore, IDs that are different at the slave port of this module can remain
 /// different at the reduced-ID-width master port and thus remain *independently reorderable*.
 /// Since the IDs are master port are nonetheless shorter than at the slave port, they need to be
@@ -37,7 +37,7 @@
 ///
 /// ### More unique slave port IDs than master port IDs
 ///
-/// If `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`, there are more unique slave port IDs than
+/// If `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`, there are more unique slave port IDs than
 /// master port IDs.  Therefore, some IDs that are different at the slave port need to be assigned
 /// to the same master port ID and thus become ordered with respect to each other.  An instance of
 /// [`axi_id_serialize`](module.axi_id_serialize) handles this case.
@@ -52,33 +52,33 @@ module axi_iw_converter #(
   /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
-  parameter int unsigned AxiMaxUniqSlvPortIds = 32'd0,
+  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the slave port.
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth`.  In that
   /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
   /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
-  parameter int unsigned AxiMaxTxnsPerSlvPortId = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
   /// Maximum number of in-flight transactions at the slave port.  Reads and writes are counted
   /// separately (except for ATOPs, which count as both read and write).
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
   /// case, this parameter is passed to
   /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiSlvPortMaxTxns).
   parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
   /// Maximum number of different IDs that can be in flight at the master port.  Reads and writes
   /// are counted separately (except for ATOPs, which count as both read and write).
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
   /// case, this parameter is passed to
   /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxUniqIds).
-  parameter int unsigned AxiMaxUniqMstPortIds = 32'd0,
+  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the master port.
   ///
-  /// This parameter is only relevant if `AxiMaxUniqSlvPortIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
   /// case, this parameter is passed to
   /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxTxnsPerId).
-  parameter int unsigned AxiMaxTxnsPerMstPortId = 32'd0,
+  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   /// Address width of both AXI4+ATOP ports
   parameter int unsigned AxiAddrWidth = 32'd0,
   /// Data width of both AXI4+ATOP ports
@@ -125,12 +125,12 @@ module axi_iw_converter #(
   `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
 
   if (AxiMstPortIdWidth < AxiSlvPortIdWidth) begin : gen_downsize
-    if (AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth) begin : gen_remap
+    if (AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth) begin : gen_remap
       axi_id_remap #(
         .AxiSlvPortIdWidth    ( AxiSlvPortIdWidth       ),
         .AxiMstPortIdWidth    ( AxiMstPortIdWidth       ),
-        .AxiMaxUniqSlvPortIds ( AxiMaxUniqSlvPortIds    ),
-        .AxiMaxTxnsPerId      ( AxiMaxTxnsPerSlvPortId  ),
+        .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds    ),
+        .AxiMaxTxnsPerId      ( AxiSlvPortMaxTxnsPerId  ),
         .slv_req_t            ( slv_req_t               ),
         .slv_resp_t           ( slv_resp_t              ),
         .mst_req_t            ( mst_req_t               ),
@@ -148,8 +148,8 @@ module axi_iw_converter #(
         .AxiSlvPortIdWidth      ( AxiSlvPortIdWidth       ),
         .AxiSlvPortMaxTxns      ( AxiSlvPortMaxTxns       ),
         .AxiMstPortIdWidth      ( AxiMstPortIdWidth       ),
-        .AxiMstPortMaxUniqIds   ( AxiMaxUniqMstPortIds    ),
-        .AxiMstPortMaxTxnsPerId ( AxiMaxTxnsPerMstPortId  ),
+        .AxiMstPortMaxUniqIds   ( AxiMstPortMaxUniqIds    ),
+        .AxiMstPortMaxTxnsPerId ( AxiMstPortMaxTxnsPerId  ),
         .AxiAddrWidth           ( AxiAddrWidth            ),
         .AxiDataWidth           ( AxiDataWidth            ),
         .AxiUserWidth           ( AxiUserWidth            ),
@@ -232,14 +232,14 @@ module axi_iw_converter #(
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
     assert(AxiMstPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiMstPortIdWidth has to be larger than 0!");
-    if (AxiMaxUniqSlvPortIds <= 2**AxiMstPortIdWidth) begin
-      assert(AxiMaxTxnsPerSlvPortId > 32'd0)
-        else $fatal(1, "Parameter AxiMaxTxnsPerSlvPortId has to be larger than 0!");
+    if (AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth) begin
+      assert(AxiSlvPortMaxTxnsPerId > 32'd0)
+        else $fatal(1, "Parameter AxiSlvPortMaxTxnsPerId has to be larger than 0!");
     end else begin
-      assert(AxiMaxUniqMstPortIds > 32'd0)
-        else $fatal(1, "Parameter AxiMaxUniqMstPortIds has to be larger than 0!");
-      assert(AxiMaxTxnsPerMstPortId > 32'd0)
-        else $fatal(1, "Parameter AxiMaxTxnsPerMstPortId has to be larger than 0!");
+      assert(AxiMstPortMaxUniqIds > 32'd0)
+        else $fatal(1, "Parameter AxiMstPortMaxUniqIds has to be larger than 0!");
+      assert(AxiMstPortMaxTxnsPerId > 32'd0)
+        else $fatal(1, "Parameter AxiMstPortMaxTxnsPerId has to be larger than 0!");
     end
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
@@ -263,11 +263,11 @@ endmodule
 module axi_iw_converter_intf #(
   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_MAX_UNIQ_SLV_PORT_IDS = 32'd0,
-  parameter int unsigned AXI_MAX_TXNS_PER_SLV_PORT_ID = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_SLV_PORT_MAX_TXNS = 32'd0,
-  parameter int unsigned AXI_MAX_UNIQ_MST_PORT_IDS = 32'd0,
-  parameter int unsigned AXI_MAX_TXNS_PER_MST_PORT_ID = 32'd0,
+  parameter int unsigned AXI_MST_PORT_MAX_UNIQ_IDS = 32'd0,
+  parameter int unsigned AXI_MST_PORT_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
   parameter int unsigned AXI_USER_WIDTH = 32'd0
@@ -313,11 +313,11 @@ module axi_iw_converter_intf #(
   axi_iw_converter #(
     .AxiSlvPortIdWidth      ( AXI_SLV_PORT_ID_WIDTH         ),
     .AxiMstPortIdWidth      ( AXI_MST_PORT_ID_WIDTH         ),
-    .AxiMaxUniqSlvPortIds   ( AXI_MAX_UNIQ_SLV_PORT_IDS     ),
-    .AxiMaxTxnsPerSlvPortId ( AXI_MAX_TXNS_PER_SLV_PORT_ID  ),
+    .AxiSlvPortMaxUniqIds   ( AXI_SLV_PORT_MAX_UNIQ_IDS     ),
+    .AxiSlvPortMaxTxnsPerId ( AXI_SLV_PORT_MAX_TXNS_PER_ID  ),
     .AxiSlvPortMaxTxns      ( AXI_SLV_PORT_MAX_TXNS         ),
-    .AxiMaxUniqMstPortIds   ( AXI_MAX_UNIQ_MST_PORT_IDS     ),
-    .AxiMaxTxnsPerMstPortId ( AXI_MAX_TXNS_PER_MST_PORT_ID  ),
+    .AxiMstPortMaxUniqIds   ( AXI_MST_PORT_MAX_UNIQ_IDS     ),
+    .AxiMstPortMaxTxnsPerId ( AXI_MST_PORT_MAX_TXNS_PER_ID  ),
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
     .AxiDataWidth           ( AXI_DATA_WIDTH                ),
     .AxiUserWidth           ( AXI_USER_WIDTH                ),
