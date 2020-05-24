@@ -76,7 +76,6 @@ sources:
       - test/tb_axi_isolate.sv
       - test/tb_axi_lite_regs.sv
       - test/tb_axi_iw_converter.sv
-      - test/tb_axi_iw_downsizer.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv
