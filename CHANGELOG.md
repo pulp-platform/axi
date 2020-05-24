@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add `axi_iw_downsizer`, Downsize the ID width of the AXI channel.
-- Add `axi_iw_converter`, inside is `axi_id_remap` or `axi_id_prepend` depending on the conversion.
+- Add three modules to convert between two AXI ID widths under many different traffic
+  characteristics:
+  - `axi_iw_converter` is the top-level module that converts between any two AXI ID widths with all
+    supported parameters.  It upsizes IDs by extending the MSBs with zeros and joins two interfaces
+    with identical ID widths.  For downsizing IDs, it instantiates one of the following two modules:
+  - `axi_id_remap` remaps AXI IDs from wide IDs at the slave port to narrower IDs at the master
+    port without serializing transactions..
+  - `axi_id_serialize` reduces AXI IDs by serializing transactions when necessary.
 
 ### Changed
 
