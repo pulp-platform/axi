@@ -71,8 +71,7 @@ module axi_id_serialize #(
 );
 
   /// Number of bits of the slave port ID that determine the mapping to the master port ID
-  localparam int unsigned SelectWidth =
-      (AxiMstPortMaxUniqIds > 32'd1) ? $clog2(AxiMstPortMaxUniqIds) : 32'd1;
+  localparam int unsigned SelectWidth = cf_math_pkg::idx_width(AxiMstPortMaxUniqIds);
   /// Slice of slave port IDs that determines the master port ID
   typedef logic [SelectWidth-1:0] select_t;
 
