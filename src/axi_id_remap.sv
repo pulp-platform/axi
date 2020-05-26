@@ -288,7 +288,7 @@ module axi_id_remap #(
       end
 
       HoldAR: begin
-        // Drive `mst_req_o.ar.id` through rd_push_oup_id.
+        // Drive `mst_req_o.ar.id` through `rd_push_oup_id`.
         rd_push_oup_id      = ar_id_q;
         mst_req_o.ar_valid  = 1'b1;
         slv_resp_o.ar_ready = mst_resp_i.ar_ready;
@@ -298,7 +298,7 @@ module axi_id_remap #(
       end
 
       HoldAW: begin
-        // Drive mst_req_o.aw.id through wr_push_oup_id.
+        // Drive mst_req_o.aw.id through `wr_push_oup_id`.
         wr_push_oup_id      = aw_id_q;
         mst_req_o.aw_valid  = 1'b1;
         slv_resp_o.aw_ready = mst_resp_i.aw_ready;
