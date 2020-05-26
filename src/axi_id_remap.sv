@@ -13,6 +13,8 @@
 // Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
+`include "common_cells/registers.svh"
+
 /// Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.
 ///
 /// This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely
@@ -326,17 +328,9 @@ module axi_id_remap #(
   end
 
   // Registers
-  always_ff @(posedge clk_i, negedge rst_ni) begin
-    if (!rst_ni) begin
-      ar_id_q <= '0;
-      aw_id_q <= '0;
-      state_q <= Ready;
-    end else begin
-      ar_id_q <= ar_id_d;
-      aw_id_q <= aw_id_d;
-      state_q <= state_d;
-    end
-  end
+  `FFARN(ar_id_q, ar_id_d, '0, clk_i, rst_ni)
+  `FFARN(aw_id_q, aw_id_d, '0, clk_i, rst_ni)
+  `FFARN(state_q, state_d, Ready, clk_i, rst_ni)
 
   // pragma translate_off
   `ifndef VERILATOR
@@ -386,7 +380,6 @@ module axi_id_remap #(
       |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
   // pragma translate_on
 endmodule
-
 
 /// Internal module of [`axi_id_remap`](module.axi_id_remap): Table to remap input to output IDs.
 ///
@@ -526,13 +519,7 @@ module axi_id_remap_table #(
   end
 
   // Registers
-  always_ff @(posedge clk_i, negedge rst_ni) begin
-    if (!rst_ni) begin
-      table_q <= '0;
-    end else begin
-      table_q <= table_d;
-    end
-  end
+  `FFARN(table_q, table_d, '0, clk_i, rst_ni)
 
   // Assertions
   `ifndef TARGET_SYNTHESIS
