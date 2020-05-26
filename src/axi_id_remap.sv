@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 ETH Zurich, University of Bologna
+// Copyright (c) 2014-2020 ETH Zurich, University of Bologna
 //
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
