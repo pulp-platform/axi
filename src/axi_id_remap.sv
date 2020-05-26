@@ -125,8 +125,7 @@ module axi_id_remap #(
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  localparam int unsigned IdxWidth =
-      $clog2(AxiSlvPortMaxUniqIds) > 0 ? $clog2(AxiSlvPortMaxUniqIds) : 1;
+  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(AxiSlvPortMaxUniqIds);
   typedef logic [AxiSlvPortMaxUniqIds-1:0]  field_t;
   typedef logic [AxiSlvPortIdWidth-1:0]     id_inp_t;
   typedef logic [IdxWidth-1:0]              idx_t;
@@ -421,7 +420,7 @@ module axi_id_remap_table #(
   localparam type id_inp_t = logic [InpIdWidth-1:0],
   /// Derived (**=do not override**) width of table index (ceiled binary logarithm of
   /// `MaxUniqInpIds`).
-  localparam int unsigned IdxWidth = $clog2(MaxUniqInpIds) > 0 ? $clog2(MaxUniqInpIds) : 1,
+  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(MaxUniqInpIds),
   /// Derived (**=do not override**) type of table index (width = `IdxWidth`).
   localparam type idx_t = logic [IdxWidth-1:0],
   /// Derived (**=do not override**) type with one bit per table entry (thus also output ID).
