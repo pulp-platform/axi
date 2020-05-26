@@ -522,7 +522,8 @@ module axi_id_remap_table #(
   `FFARN(table_q, table_d, '0, clk_i, rst_ni)
 
   // Assertions
-  `ifndef TARGET_SYNTHESIS
+  // pragma translate_off
+  `ifndef VERILATOR
     default disable iff (!rst_ni);
     assume property (@(posedge clk_i) push_i |->
         table_q[push_oup_id_i].cnt == '0 || table_q[push_oup_id_i].inp_id == push_inp_id_i)
@@ -541,6 +542,7 @@ module axi_id_remap_table #(
       assert (IdxWidth >= 1);
     end
   `endif
+  // pragma translate_on
 
 endmodule
 
