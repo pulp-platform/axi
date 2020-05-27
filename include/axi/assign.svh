@@ -261,76 +261,76 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Internal implementation for assigning to structs from interfaces, allows for standalone
-// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
-// the same code.
-`define AXI_TO_AW(opt_as, aw_struct, axi_if)  \
-  opt_as aw_struct = '{                       \
-    id:      axi_if.aw_id,                    \
-    addr:    axi_if.aw_addr,                  \
-    len:     axi_if.aw_len,                   \
-    size:    axi_if.aw_size,                  \
-    burst:   axi_if.aw_burst,                 \
-    lock:    axi_if.aw_lock,                  \
-    cache:   axi_if.aw_cache,                 \
-    prot:    axi_if.aw_prot,                  \
-    qos:     axi_if.aw_qos,                   \
-    region:  axi_if.aw_region,                \
-    atop:    axi_if.aw_atop,                  \
-    user:    axi_if.aw_user                   \
+// Internal implementation for assigning to structs from anything (as defined by `__sep`), allows
+// for standalone assignments (with `opt_as = assign`) and assignments inside processes (with
+// `opt_as` void) with the same code.
+`define AXI_TO_AW(__opt_as, __lhs, __rhs, __sep)  \
+  __opt_as __lhs = '{                             \
+    id:      __rhs``__sep``id,                    \
+    addr:    __rhs``__sep``addr,                  \
+    len:     __rhs``__sep``len,                   \
+    size:    __rhs``__sep``size,                  \
+    burst:   __rhs``__sep``burst,                 \
+    lock:    __rhs``__sep``lock,                  \
+    cache:   __rhs``__sep``cache,                 \
+    prot:    __rhs``__sep``prot,                  \
+    qos:     __rhs``__sep``qos,                   \
+    region:  __rhs``__sep``region,                \
+    atop:    __rhs``__sep``atop,                  \
+    user:    __rhs``__sep``user                   \
   };
-`define AXI_TO_W(opt_as, w_struct, axi_if)  \
-  opt_as w_struct = '{                      \
-    data: axi_if.w_data,                    \
-    strb: axi_if.w_strb,                    \
-    last: axi_if.w_last,                    \
-    user: axi_if.w_user                     \
+`define AXI_TO_W(__opt_as, __lhs, __rhs, __sep) \
+  __opt_as __lhs = '{                           \
+    data: __rhs``__sep``data,                   \
+    strb: __rhs``__sep``strb,                   \
+    last: __rhs``__sep``last,                   \
+    user: __rhs``__sep``user                    \
   };
-`define AXI_TO_B(opt_as, b_struct, axi_if)  \
-  opt_as b_struct = '{                      \
-    id:   axi_if.b_id,                      \
-    resp: axi_if.b_resp,                    \
-    user: axi_if.b_user                     \
+`define AXI_TO_B(__opt_as, __lhs, __rhs, __sep) \
+  __opt_as __lhs = '{                           \
+    id:   __rhs``__sep``id,                     \
+    resp: __rhs``__sep``resp,                   \
+    user: __rhs``__sep``user                    \
   };
-`define AXI_TO_AR(opt_as, ar_struct, axi_if)  \
-  opt_as ar_struct = '{                       \
-    id:      axi_if.ar_id,                    \
-    addr:    axi_if.ar_addr,                  \
-    len:     axi_if.ar_len,                   \
-    size:    axi_if.ar_size,                  \
-    burst:   axi_if.ar_burst,                 \
-    lock:    axi_if.ar_lock,                  \
-    cache:   axi_if.ar_cache,                 \
-    prot:    axi_if.ar_prot,                  \
-    qos:     axi_if.ar_qos,                   \
-    region:  axi_if.ar_region,                \
-    user:    axi_if.ar_user                   \
+`define AXI_TO_AR(__opt_as, __lhs, __rhs, __sep)  \
+  __opt_as __lhs = '{                             \
+    id:      __rhs``__sep``id,                    \
+    addr:    __rhs``__sep``addr,                  \
+    len:     __rhs``__sep``len,                   \
+    size:    __rhs``__sep``size,                  \
+    burst:   __rhs``__sep``burst,                 \
+    lock:    __rhs``__sep``lock,                  \
+    cache:   __rhs``__sep``cache,                 \
+    prot:    __rhs``__sep``prot,                  \
+    qos:     __rhs``__sep``qos,                   \
+    region:  __rhs``__sep``region,                \
+    user:    __rhs``__sep``user                   \
   };
-`define AXI_TO_R(opt_as, r_struct, axi_if)  \
-  opt_as r_struct = '{                      \
-    id:   axi_if.r_id,                      \
-    data: axi_if.r_data,                    \
-    resp: axi_if.r_resp,                    \
-    last: axi_if.r_last,                    \
-    user: axi_if.r_user                     \
+`define AXI_TO_R(__opt_as, __lhs, __rhs, __sep) \
+  __opt_as __lhs = '{                           \
+    id:   __rhs``__sep``id,                     \
+    data: __rhs``__sep``data,                   \
+    resp: __rhs``__sep``resp,                   \
+    last: __rhs``__sep``last,                   \
+    user: __rhs``__sep``user                    \
   };
-`define AXI_TO_REQ(opt_as, req_struct, axi_if)  \
-  `AXI_TO_AW(opt_as, req_struct.aw, axi_if)     \
-  opt_as req_struct.aw_valid = axi_if.aw_valid; \
-  `AXI_TO_W(opt_as, req_struct.w, axi_if)       \
-  opt_as req_struct.w_valid = axi_if.w_valid;   \
-  opt_as req_struct.b_ready = axi_if.b_ready;   \
-  `AXI_TO_AR(opt_as, req_struct.ar, axi_if)     \
-  opt_as req_struct.ar_valid = axi_if.ar_valid; \
-  opt_as req_struct.r_ready = axi_if.r_ready;
-`define AXI_TO_RESP(opt_as, resp_struct, axi_if)  \
-  opt_as resp_struct.aw_ready = axi_if.aw_ready;  \
-  opt_as resp_struct.ar_ready = axi_if.ar_ready;  \
-  opt_as resp_struct.w_ready = axi_if.w_ready;    \
-  opt_as resp_struct.b_valid = axi_if.b_valid;    \
-  `AXI_TO_B(opt_as, resp_struct.b, axi_if)        \
-  opt_as resp_struct.r_valid = axi_if.r_valid;    \
-  `AXI_TO_R(opt_as, resp_struct.r, axi_if)
+`define AXI_TO_REQ(__opt_as, __lhs, __rhs, __sep) \
+  `AXI_TO_AW(__opt_as, __lhs.aw, __rhs.aw, __sep) \
+  __opt_as __lhs.aw_valid = __rhs.aw_valid;       \
+  `AXI_TO_W(__opt_as, __lhs.w, __rhs.w, __sep)    \
+  __opt_as __lhs.w_valid = __rhs.w_valid;         \
+  __opt_as __lhs.b_ready = __rhs.b_ready;         \
+  `AXI_TO_AR(__opt_as, __lhs.ar, __rhs.ar, __sep) \
+  __opt_as __lhs.ar_valid = __rhs.ar_valid;       \
+  __opt_as __lhs.r_ready = __rhs.r_ready;
+`define AXI_TO_RESP(__opt_as, __lhs, __rhs, __sep)  \
+  __opt_as __lhs.aw_ready = __rhs.aw_ready;         \
+  __opt_as __lhs.ar_ready = __rhs.ar_ready;         \
+  __opt_as __lhs.w_ready = __rhs.w_ready;           \
+  __opt_as __lhs.b_valid = __rhs.b_valid;           \
+  `AXI_TO_B(__opt_as, __lhs.b, __rhs.b, __sep)      \
+  __opt_as __lhs.r_valid = __rhs.r_valid;           \
+  `AXI_TO_R(__opt_as, __lhs.r, __rhs.r, __sep)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -351,13 +351,13 @@
 // always_comb begin
 //   `AXI_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_SET_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(, aw_struct, axi_if)
-`define AXI_SET_TO_W(w_struct, axi_if)       `AXI_TO_W(, w_struct, axi_if)
-`define AXI_SET_TO_B(b_struct, axi_if)       `AXI_TO_B(, b_struct, axi_if)
-`define AXI_SET_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(, ar_struct, axi_if)
-`define AXI_SET_TO_R(r_struct, axi_if)       `AXI_TO_R(, r_struct, axi_if)
-`define AXI_SET_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(, req_struct, axi_if)
-`define AXI_SET_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(, resp_struct, axi_if)
+`define AXI_SET_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(, aw_struct, axi_if.aw, _)
+`define AXI_SET_TO_W(w_struct, axi_if)       `AXI_TO_W(, w_struct, axi_if.w, _)
+`define AXI_SET_TO_B(b_struct, axi_if)       `AXI_TO_B(, b_struct, axi_if.b, _)
+`define AXI_SET_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(, ar_struct, axi_if.ar, _)
+`define AXI_SET_TO_R(r_struct, axi_if)       `AXI_TO_R(, r_struct, axi_if.r, _)
+`define AXI_SET_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(, req_struct, axi_if, _)
+`define AXI_SET_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(, resp_struct, axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -376,88 +376,13 @@
 //
 // Usage Example:
 // `AXI_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(assign, aw_struct, axi_if)
-`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `AXI_TO_W(assign, w_struct, axi_if)
-`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `AXI_TO_B(assign, b_struct, axi_if)
-`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(assign, ar_struct, axi_if)
-`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `AXI_TO_R(assign, r_struct, axi_if)
-`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(assign, req_struct, axi_if)
-`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(assign, resp_struct, axi_if)
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Internal implementation for assigning to structs from structs, allows for standalone
-// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
-// the same code.  This allows assignments between two different structs, although fields that
-// mismatch should, and in some cases must, be still assigned separately.
-`define AXI_TO_AW_STRUCT(opt_as, lhs, rhs)  \
-  opt_as lhs = '{                           \
-    id:      rhs.id,                        \
-    addr:    rhs.addr,                      \
-    len:     rhs.len,                       \
-    size:    rhs.size,                      \
-    burst:   rhs.burst,                     \
-    lock:    rhs.lock,                      \
-    cache:   rhs.cache,                     \
-    prot:    rhs.prot,                      \
-    qos:     rhs.qos,                       \
-    region:  rhs.region,                    \
-    atop:    rhs.atop,                      \
-    user:    rhs.user                       \
-  };
-`define AXI_TO_W_STRUCT(opt_as, lhs, rhs) \
-  opt_as lhs = '{                         \
-    data: rhs.data,                       \
-    strb: rhs.strb,                       \
-    last: rhs.last,                       \
-    user: rhs.user                        \
-  };
-`define AXI_TO_B_STRUCT(opt_as, lhs, rhs) \
-  opt_as lhs = '{                         \
-    id:   rhs.id,                         \
-    resp: rhs.resp,                       \
-    user: rhs.user                        \
-  };
-`define AXI_TO_AR_STRUCT(opt_as, lhs, rhs)  \
-  opt_as lhs = '{                           \
-    id:      rhs.id,                        \
-    addr:    rhs.addr,                      \
-    len:     rhs.len,                       \
-    size:    rhs.size,                      \
-    burst:   rhs.burst,                     \
-    lock:    rhs.lock,                      \
-    cache:   rhs.cache,                     \
-    prot:    rhs.prot,                      \
-    qos:     rhs.qos,                       \
-    region:  rhs.region,                    \
-    user:    rhs.user                       \
-  };
-`define AXI_TO_R_STRUCT(opt_as, lhs, rhs) \
-  opt_as lhs = '{                         \
-    id:   rhs.id,                         \
-    data: rhs.data,                       \
-    resp: rhs.resp,                       \
-    last: rhs.last,                       \
-    user: rhs.user                        \
-  };
-`define AXI_TO_REQ_STRUCT(opt_as, lhs, rhs) \
-  `AXI_TO_AW_STRUCT(opt_as, lhs.aw, rhs.aw) \
-  opt_as lhs.aw_valid = rhs.aw_valid;       \
-  `AXI_TO_W_STRUCT(opt_as, lhs.w, rhs.w)    \
-  opt_as lhs.w_valid = rhs.w_valid;         \
-  opt_as lhs.b_ready = rhs.b_ready;         \
-  `AXI_TO_AR_STRUCT(opt_as, lhs.ar, rhs.ar) \
-  opt_as lhs.ar_valid = rhs.ar_valid;       \
-  opt_as lhs.r_ready = rhs.r_ready;
-`define AXI_TO_RESP_STRUCT(opt_as, lhs, rhs)  \
-  opt_as lhs.aw_ready = rhs.aw_ready;         \
-  opt_as lhs.ar_ready = rhs.ar_ready;         \
-  opt_as lhs.w_ready = rhs.w_ready;           \
-  opt_as lhs.b_valid = rhs.b_valid;           \
-  `AXI_TO_B_STRUCT(opt_as, lhs.b, rhs.b)      \
-  opt_as lhs.r_valid = rhs.r_valid;           \
-  `AXI_TO_R_STRUCT(opt_as, lhs.r, rhs.r)
+`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_TO_AW(assign, aw_struct, axi_if.aw, _)
+`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `AXI_TO_W(assign, w_struct, axi_if.w, _)
+`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `AXI_TO_B(assign, b_struct, axi_if.b, _)
+`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_TO_AR(assign, ar_struct, axi_if.ar, _)
+`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `AXI_TO_R(assign, r_struct, axi_if.r, _)
+`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_TO_REQ(assign, req_struct, axi_if, _)
+`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_TO_RESP(assign, resp_struct, axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -478,13 +403,13 @@
 // always_comb begin
 //   `AXI_SET_REQ_STRUCT(my_req_struct, another_req_struct)
 // end
-`define AXI_SET_AW_STRUCT(lhs, rhs)     `AXI_TO_AW_STRUCT(, lhs, rhs)
-`define AXI_SET_W_STRUCT(lhs, rhs)       `AXI_TO_W_STRUCT(, lhs, rhs)
-`define AXI_SET_B_STRUCT(lhs, rhs)       `AXI_TO_B_STRUCT(, lhs, rhs)
-`define AXI_SET_AR_STRUCT(lhs, rhs)     `AXI_TO_AR_STRUCT(, lhs, rhs)
-`define AXI_SET_R_STRUCT(lhs, rhs)       `AXI_TO_R_STRUCT(, lhs, rhs)
-`define AXI_SET_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ_STRUCT(, lhs, rhs)
-`define AXI_SET_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP_STRUCT(, lhs, rhs)
+`define AXI_SET_AW_STRUCT(lhs, rhs)     `AXI_TO_AW(, lhs, rhs, .)
+`define AXI_SET_W_STRUCT(lhs, rhs)       `AXI_TO_W(, lhs, rhs, .)
+`define AXI_SET_B_STRUCT(lhs, rhs)       `AXI_TO_B(, lhs, rhs, .)
+`define AXI_SET_AR_STRUCT(lhs, rhs)     `AXI_TO_AR(, lhs, rhs, .)
+`define AXI_SET_R_STRUCT(lhs, rhs)       `AXI_TO_R(, lhs, rhs, .)
+`define AXI_SET_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ(, lhs, rhs, .)
+`define AXI_SET_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP(, lhs, rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -503,13 +428,13 @@
 //
 // Usage Example:
 // `AXI_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
-`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `AXI_TO_AW_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `AXI_TO_W_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `AXI_TO_B_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `AXI_TO_AR_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `AXI_TO_R_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ_STRUCT(assign, lhs, rhs)
-`define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP_STRUCT(assign, lhs, rhs)
+`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `AXI_TO_AW(assign, lhs, rhs, .)
+`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `AXI_TO_W(assign, lhs, rhs, .)
+`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `AXI_TO_B(assign, lhs, rhs, .)
+`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `AXI_TO_AR(assign, lhs, rhs, .)
+`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `AXI_TO_R(assign, lhs, rhs, .)
+`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `AXI_TO_REQ(assign, lhs, rhs, .)
+`define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `AXI_TO_RESP(assign, lhs, rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

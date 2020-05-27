@@ -181,7 +181,7 @@ module tb_axi_serializer #(
       #TestTime;
       // All FIFOs get populated if there is something to put in
       if (master.aw_valid && master.aw_ready) begin
-        `AXI_TO_AW(, aw_exp, master)
+        `AXI_SET_TO_AW(aw_exp, master)
         aw_exp.id = '0;
         id_exp    = master.aw_id;
         aw_chan.push_back(aw_exp);
@@ -191,24 +191,24 @@ module tb_axi_serializer #(
         end
       end
       if (master.w_valid && master.w_ready) begin
-        `AXI_TO_W(, w_exp, master)
+        `AXI_SET_TO_W(w_exp, master)
         w_chan.push_back(w_exp);
       end
       if (slave.b_valid && slave.b_ready) begin
         id_exp = aw_queue.pop_front();
-        `AXI_TO_B(, b_exp, slave)
+        `AXI_SET_TO_B(b_exp, slave)
         b_exp.id = id_exp;
         b_chan.push_back(b_exp);
       end
       if (master.ar_valid && master.ar_ready) begin
-        `AXI_TO_AR(, ar_exp, master)
+        `AXI_SET_TO_AR(ar_exp, master)
         ar_exp.id = '0;
         id_exp    = master.ar_id;
         ar_chan.push_back(ar_exp);
         ar_queue.push_back(id_exp);
       end
       if (slave.r_valid && slave.r_ready) begin
-        `AXI_TO_R(, r_exp, slave)
+        `AXI_SET_TO_R(r_exp, slave)
         if (slave.r_last) begin
           id_exp = ar_queue.pop_front();
         end else begin
@@ -220,27 +220,27 @@ module tb_axi_serializer #(
       // Check that all channels match the expected response
       if (slave.aw_valid && slave.aw_ready) begin
         aw_exp = aw_chan.pop_front();
-        `AXI_TO_AW(, aw_act, slave)
+        `AXI_SET_TO_AW(aw_act, slave)
         assert(aw_act == aw_exp) else $error("AW Measured: %h Expected: %h", aw_act, aw_exp);
       end
       if (slave.w_valid && slave.w_ready) begin
         w_exp = w_chan.pop_front();
-        `AXI_TO_W(, w_act, slave)
+        `AXI_SET_TO_W(w_act, slave)
         assert(w_act == w_exp) else $error("W Measured: %h Expected: %h", w_act, w_exp);
       end
       if (master.b_valid && master.b_ready) begin
         b_exp = b_chan.pop_front();
-        `AXI_TO_B(, b_act, master)
+        `AXI_SET_TO_B(b_act, master)
         assert(b_act == b_exp) else $error("B Measured: %h Expected: %h", b_act, b_exp);
       end
       if (slave.ar_valid && slave.ar_ready) begin
         ar_exp = ar_chan.pop_front();
-        `AXI_TO_AR(, ar_act, slave)
+        `AXI_SET_TO_AR(ar_act, slave)
         assert(ar_act == ar_exp) else $error("AR Measured: %h Expected: %h", ar_act, ar_exp);
       end
       if (master.r_valid && master.r_ready) begin
         r_exp = r_chan.pop_front();
-        `AXI_TO_R(, r_act, master)
+        `AXI_SET_TO_R(r_act, master)
         assert(r_act == r_exp) else $error("R Measured: %h Expected: %h", r_act, r_exp);
       end
     end
