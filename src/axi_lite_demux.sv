@@ -436,6 +436,8 @@ module axi_lite_demux_intf #(
     .b_chan_t    (  b_chan_t   ),
     .ar_chan_t   ( ar_chan_t   ),
     .r_chan_t    (  r_chan_t   ),
+    .req_t       (     req_t   ),
+    .resp_t      (    resp_t   ),
     .NoMstPorts  ( NoMstPorts  ),
     .MaxTrans    ( MaxTrans    ),
     .FallThrough ( FallThrough ),
