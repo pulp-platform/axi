@@ -12,72 +12,253 @@
 // File:   axi_llc_top.sv
 // Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
 // Date:   30.04.2019
-//
-// Description: Contains the top_level of the axi_llc with structs as AXI connections.
-//              The standard configuration is a cache size of 512KByte with a set-associativity
-//              of 8, and line length of 8 blocks, one block equals the AXI data width of the
-//              master port. Each set, also called way, can be configured to be directly
-//              accessible as scratch pad memory. This can be done by setting the corresponding
-//              register over the AXI LITE port.
-//
-//              AXI ports: The FULL AXI ports, have different ID widths. The master ports ID is
-//                         one bit wider than the slave port. The reason is the `axi_mux` which
-//                         controls the AXI bypass.
-//
 
+/// Contains the top_level of the axi_llc with structs as AXI connections.
+/// The standard configuration is a cache size of 512KByte with a set-associativity
+/// of 8, and line length of 8 blocks, one block equals the AXI data width of the
+/// master port. Each set, also called way, can be configured to be directly
+/// accessible as scratch pad memory. This can be done by setting the corresponding
+/// register over the AXI LITE port.
+///
+///              AXI ports: The FULL AXI ports, have different ID widths. The master ports ID is
+///                         one bit wider than the slave port. The reason is the `axi_mux` which
+///                         controls the AXI bypass.
+///
+
+/// # AXI4+ATOP Last Level Cache (LLC)
+///
+/// This is the top-level module of `axi_llc`.
+///
+/// ## Overview
+///
+/// Features:
+/// * Write-back last level cache.
+/// * Multiple outstanding transactions, priority for cache hits.
+/// * Hot configurable scratch-pad memory.
+///   * Individual cache sets can be configured to be direct addressable scratch pad while
+///     cache is in operation.
+///   * Contend of set is flushed back to memory.
+/// * Bypass for non-cached memory accesses. (Bypass active when all sets are configured as SPM.)
+/// * User configurable cache flush: See [`axi_llc_config`](module.axi_llc_config)
+/// * Performance counters: See [`axi_llc_config`](module.axi_llc_config)
+///
+/// ![Block-diagram he Top Level of the LLC.](axi_llc_top.svg "Block-diagram of the Top Level of the LLC.")
+///
+  /// The module has three main parameters. They determine the overall size and shape of the LLC.
+  /// All are of the type `int unsigned`.
+  ///
+  /// * `SetAssociativity`: The set-associativity of the LLC. This parameter determines how many ways/sets will be instantiated. The minimum value is 1. The maximum value depends on the data width of the AXI LITE configuration port and should either be 32 or 64 to stay inside the protocol specification. The reason is that the SPM configuration register matches in width the data width of the LITE configuration port.
+  /// * `NoLines`: Specifies the number of lines in each way. This value has to be higher than two. The reason is that in the address at least one bit has to be mapped onto a cache-line index. This is a limitation of the *system verilog* language, which requires at least one bit wide fields inside of a struct. Further this value has to be a power of 2. This has to do with the requirement that the address mapping from the address onto the cache-line index has to be continuous.
+  /// * `NoBlocks`: Specifies the number of blocks inside a cache line. A block is defined to have the data width of the master port. Currently this also matches the data with of the slave port. The same value limitation as with the *NoLines* parameter applies. Fixing the minimum value to 2 and the overall value to be a power of 2.
+  ///
+  ///
+  /// There exists an additional top level parameter which is compromised of a struct defining the AXI parameters of the different ports. The definition can be found in `axi_llc_pkg`. Following table defines the fields of this struct which are all of type `int unsigned`.
+  ///
+  ///
+  /// | Name        | Function |
+  /// |:------------------ |:------------------------------------------------------ |
+  /// | `SlvPortIdWidth`    | AXI ID width of the slave port, facing the CPU side. |
+  /// | `AddrWidthFull`     | AXI address width of both the slave and master port. |
+  /// | `DataWidthFull`     | AXI data width of both the slave and the master port. |
+  /// | `LitePortAddrWidth` | AXI address width of the configuration LITE port. |
+  /// | `LitePortDataWidth` | AXI data width of the configuration LITE port. Has to be ether 32 or 64 bit to adhere to the AXI4 specification. Further limits the maximum set-associativity of the cache. |
+  ///
+///
+/// It is required to provide the detailed AXI4+ATOP and AXI4-Lite structs as parameters.
+/// The structs follow the naming scheme *port*\_*xx*\_chan_t. Where *port* stands for the
+/// respective port and have the values *slv*, *mst* and *lite*. In addition the respective request
+/// and response structs have to be given. The address rule struct from the
+/// `common_cells/addr_decode` has to be specified for the AXI4+ATOP and AXI4-Lite ports as they are
+/// used internally to provide address mapping for the AXI transfers onto the different SPM and
+/// cache regions.
+///
+/// The overall size in bytes of the LLC in byte can be calculated with:
+///
+/// ![Equation axi_llc size](axi_llc_size_equ.gif "Equation axi_llc size")
+///
+/// ## Operation principle
+///
+/// The AXI4 protocol issues its transfers in a bursted fashion. The architecture of the LLC uses
+/// most of the control information provided by the protocol to implement the cache control in a
+/// decentralized way. For this it uses a data-flow driven control scheme.
+///
+/// The premise is that an AXI transfer gets translated into a number of descriptors which then flow
+/// through a pipeline. Each descriptor maps the specific operation onto a cache line and basically
+/// translates long bursts onto shorter ones which exactly map onto a single cache line.
+/// For example when an AXI4+ATOP burst wants to write on three cache-lines, the control beat gets
+/// translated into three descriptors which then flow through the pipeline.
+///
+/// Example of a write transfer when it accesses the cache:
+/// * AW beat is valid on the slave port of the LLC.
+/// * AW address gets decoded in the configuration module.
+/// * AW enters the split unit and first descriptor enters the spill register.
+/// * Request gets issued to the tag-storage (compromised of one SRAM block per set of the cache).
+/// * Hit or miss and exact cacheline location (set) is determined. The dirty flag is set.
+///   Cache line is locked for other following descriptors. Lock is taken away when descriptor
+///   is finished with operation on this cache line.
+/// * On hit:
+///   * Descriptor goes directly to the write unit, takes hit bypass.
+///   * Allows hits to overtake misses, if the AXI ID is different.
+/// * On miss:
+///   * Descriptor goes to the eviction/refill pipeline.
+///   * If the cache-line is dirty it gets evicted by issuing a write request on the AXI4+ATOP
+///     master port.
+///   * Cache line is refilled from main memory.
+///   * Descriptor is transferred into the write unit.
+///  * Write unit sends the W beats from the CPU towards the data storage.
+///  * Write unit issues a B beat back to the CPU, when the last W beat of the AXI4+ATOP
+///    transfer is sent to the LLC data storage.
+///
+/// Reads are analogous to writes and use the same pipeline.
+///
+/// The hit bypass allows AXI4+ATOP transaction hitting onto the cache to overtake ones that are in
+/// the miss pipeline.
+/// Example: This has the advantage that a short write transaction from a CPU can overtake a long
+///          read transactions (DMA). The feature requires that the AXI4+ATOP IDs of the transfers
+///          are different.
+///
+/// Following table shows the internal struct which is used to define a
+/// [cache descriptor](type llc_desc_t).
+/// Part of the descriptor uses directly types defined in `axi_pkg`.
+/// The other fields get defined when instantiating the design.
+///
+/// | Name        | Type               | Function |
+/// |:----------- |:------------------ |:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+/// | `a_x_id`    | `axi_slv_id_t`     | The AXI4+ATOP ID of the burst entering through the slave port of the design. It has the same width as the slave port AXI ID.                                                                                                                                                                                |
+/// | `a_x_addr`  | `axi_addr_t`       | The address of the descriptor. Aligned to the corresponding cache block.                                                                                                                                                                                                                                    |
+/// | `a_x_len`   | `axi_pkg::len_t`   | AXI4+ATOP burst length field. Corresponds to the number of beats which map onto the cache line accessed by this descriptor. Gets set in the splitting unit which does the mapping onto the cache line.                                                                                                      |
+/// | `a_x_size`  | `axi_pkg::size_t`  | AXI4+ATOP size field. This is important for the write and read unit to find the exact block and byte offset. Used for calculating the block location in the data storage.                                                                                                                                   |
+/// | `a_x_burst` | `axi_pkg::burst_t` | AXI4+ATOP burst type. This is important for the splitter unit as well as the read and write unit. It determines the descriptor field `a_x_addr`.                                                                                                                                                            |
+/// | `a_x_lock`  | `logic`            | AXI4+ATOP lock signal. Passed further in the miss pipeline when the line gets evicted or refilled.                                                                                                                                                                                                          |
+/// | `a_x_cache` | `axi_pkg::cache_t` | AXI4+ATOP cache signal. The cache only supports write back mode.                                                                                                                                                                                                                                            |
+/// | `a_x_prot`  | `axi_pkg::prot_t`  | AXI4+ATOP protection signal. Passed further in the miss pipeline.                                                                                                                                                                                                                                           |
+/// | `x_resp`    | `axi_pkg::resp_t`  | AXI4+ATOP response signal. This tells if we try to make un-allowed accesses onto address regions which are not mapped to either SPM nor cache. When this signal gets set somewhere in the pipeline, all following modules will pass the descriptor along and absorb the corresponding beats from the ports. |
+/// | `x_last`    | `logic`            | AXI4+ATOP last flag. Defines if the read or write unit send back the response.                                                                                                                                                                                                                              |
+/// | `spm`       | `logic`            | This field signals that the descriptor is of type SPM. It will not make a lookup in the hit/miss detection and utilize the hit bypass if applicable.                                                                                                                                                        |
+/// | `rw`        | `logic`            | This field determines if the descriptor makes a write access `1'b1` or read access `1'b0`.                                                                                                                                                                                                                  |
+/// | `way_ind`   | `logic`            | The way indicator. Is a vector of width equal of the set-associativity. Decodes the index of the cache set where the descriptor should make an access.                                                                                                                                                      |
+/// | `evict`     | `logic`            | The eviction flag. The descriptor missed and the line at the position was determined dirty by the detection. The evict unit will write back the dirty cache-line to the main memory.                                                                                                                        |
+/// | `evict_tag` | `logic`            | The eviction tag. As the field `a_x_addr` has the new tag in it, it is used to send back the right address to the main memory during eviction.                                                                                                                                                              |
+/// | `refill`    | `logic`            | The refill flag. The descriptor will trigger a read transaction to the main memory, refilling the cache-line.                                                                                                                                                                                               |
+/// | `flush`     | `logic`            | The flush flag. This only gets set when a way should be flushed. It gets only set by descriptors coming from the configuration module.                                                                                                                                                                      |
 module axi_llc_top #(
-  parameter int unsigned    SetAssociativity   = 8,    // set associativity of the cache
-  parameter int unsigned    NoLines            = 1024, // number of cache lines per Way
-  parameter int unsigned    NoBlocks           = 8,    // number of Blocks (Words) in a cache line
-  // Give the exact AXI parameters, definition in `axi_llc_pkg`
+  /// The set-associativity of the LLC.
+  ///
+  /// This parameter determines how many ways/sets will be instantiated.
+  ///
+  /// Restrictions:
+  /// * Minimum value: `32'd1`
+  /// * Maximum value: `32'd32`
+  /// TODO: CHANGE: The maximum value depends on the data width of the AXI LITE configuration port
+  ///               and should either be 32 or 64 to stay inside the protocol specification.
+  ///               The reason is that the SPM configuration register matches in width the data
+  ///               width of the LITE configuration port.
+  parameter int unsigned    SetAssociativity   = 32'd8,
+  /// Number of cache lines per way.
+  ///
+  /// Restrictions:
+  /// * Minimum value: `32'd2`
+  /// * Has to be a power of two.
+  ///
+  /// Note on restrictions:
+  /// The reason is that in the address, at least one bit has to be mapped onto a cache-line index.
+  /// This is a limitation of the *system verilog* language, which requires at least one bit wide
+  /// fields inside of a struct. Further this value has to be a power of 2. This has to do with the
+  /// requirement that the address mapping from the address onto the cache-line index has to be
+  /// continuous.
+  parameter int unsigned    NoLines            = 32'd1024,
+  /// Number of blocks (words) in a cache line.
+  ///
+  /// The width of a block is the same as the data width of the AXI4+ATOP ports. Defined with
+  /// parameter `AxiCfg.DataWidthFull` in bits.
+  ///
+  /// Restrictions:
+  /// * Minimum value: 32'd2
+  /// * Has to be a power of two.
+  ///
+  /// Note on restrictions:
+  /// The same restriction as of parameter `NoLines` applies.
+  parameter int unsigned    NoBlocks           = 32'd8,
+  /// Give the exact AXI parameters in struct form.
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
   parameter axi_llc_pkg::llc_axi_cfg_t  AxiCfg = '0,
-  // AXI channel types
-  parameter type slv_aw_chan_t  = logic, // AW Channel Type slave  port
-  parameter type mst_aw_chan_t  = logic, // AW Channel Type master port
-  parameter type w_chan_t       = logic, //  W Channel Type both   ports
-  parameter type slv_b_chan_t   = logic, //  B Channel Type slave  port
-  parameter type mst_b_chan_t   = logic, //  B Channel Type master port
-  parameter type slv_ar_chan_t  = logic, // AR Channel Type slave  port
-  parameter type mst_ar_chan_t  = logic, // AR Channel Type master port
-  parameter type slv_r_chan_t   = logic, //  R Channel Type slave  port
-  parameter type mst_r_chan_t   = logic, //  R Channel Type master port
-  parameter type slv_req_t      = logic, // requests  slave  port
-  parameter type slv_resp_t     = logic, // responses slave  port
-  parameter type mst_req_t      = logic, // requests  master port
-  parameter type mst_resp_t     = logic, // responses master port
-  parameter type lite_aw_chan_t = logic, // AXI Lite AW channel
-  parameter type lite_w_chan_t  = logic, // AXI Lite W channel
-  parameter type lite_b_chan_t  = logic, // AXI Lite B channel
-  parameter type lite_ar_chan_t = logic, // AXI Lite AR channel
-  parameter type lite_r_chan_t  = logic, // AXI Lite R channel
-  parameter type lite_req_t     = logic, // request  lite port
-  parameter type lite_resp_t    = logic, // response lite port
-  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t, // Full AXI Port address decoding rule
-  parameter type rule_lite_t    = axi_pkg::xbar_rule_64_t  // LITE AXI Port address decoding rule
+  /// AW Channel Type slave  port
+  parameter type slv_aw_chan_t  = logic,
+  /// AW Channel Type master port
+  parameter type mst_aw_chan_t  = logic,
+  ///  W Channel Type both   ports
+  parameter type w_chan_t       = logic,
+  ///  B Channel Type slave  port
+  parameter type slv_b_chan_t   = logic,
+  ///  B Channel Type master port
+  parameter type mst_b_chan_t   = logic,
+  /// AR Channel Type slave  port
+  parameter type slv_ar_chan_t  = logic,
+  /// AR Channel Type master port
+  parameter type mst_ar_chan_t  = logic,
+  ///  R Channel Type slave  port
+  parameter type slv_r_chan_t   = logic,
+  ///  R Channel Type master port
+  parameter type mst_r_chan_t   = logic,
+  /// requests  slave  port
+  parameter type slv_req_t      = logic,
+  /// responses slave  port
+  parameter type slv_resp_t     = logic,
+  /// requests  master port
+  parameter type mst_req_t      = logic,
+  /// responses master port
+  parameter type mst_resp_t     = logic,
+  /// AXI Lite AW channel
+  parameter type lite_aw_chan_t = logic,
+  /// AXI Lite W channel
+  parameter type lite_w_chan_t  = logic,
+  /// AXI Lite B channel
+  parameter type lite_b_chan_t  = logic,
+  /// AXI Lite AR channel
+  parameter type lite_ar_chan_t = logic,
+  /// AXI Lite R channel
+  parameter type lite_r_chan_t  = logic,
+  /// request  lite port
+  parameter type lite_req_t     = logic,
+  /// response lite port
+  parameter type lite_resp_t    = logic,
+  /// Full AXI Port address decoding rule
+  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t,
+  /// LITE AXI Port address decoding rule
+  parameter type rule_lite_t    = axi_pkg::xbar_rule_64_t
 ) (
-  input  logic                                 clk_i,  // Clock
-  input  logic                                 rst_ni, // Asynchronous reset active low
-  input  logic                                 test_i, // Test mode activate
-  // Slave Bus Port from CPU side
+  /// Rising-edge clock of all ports.
+  input  logic                                 clk_i,
+  /// Asynchronous reset, active low
+  input  logic                                 rst_ni,
+  /// Test mode activate, active high, TODO: remove?
+  input  logic                                 test_i,
+  /// AXI4+ATOP slave port request, CPU side
   input  slv_req_t                             slv_req_i,
+  /// AXI4+ATOP slave port response, CPU side
   output slv_resp_t                            slv_resp_o,
-  // Master Bus Port to Memory
+  /// AXI4+ATOP master port request, memory side
   output mst_req_t                             mst_req_o,
+  /// AXI4+ATOP master port response, memory side
   input  mst_resp_t                            mst_resp_i,
-  // LITE Slave Bus Port from CPU side (Config)
+  /// AXI4-Lite slave port request, configuration
   input  lite_req_t                            conf_req_i,
+  /// AXI4-Lite slave port response, configuration
   output lite_resp_t                           conf_resp_o,
-  // Address Map the rest gets calculated internally
+  /// Start of address region mapped to cache
   input  logic [AxiCfg.AddrWidthFull-1:0]      ram_start_addr_i,
+  /// End of address region mapped to cache
   input  logic [AxiCfg.AddrWidthFull-1:0]      ram_end_addr_i,
+  /// SPM start address
   input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
+  /// Config start address, TODO: remove when switch to `axi_lite_regs`
   input  logic [AxiCfg.LitePortAddrWidth-1:0]  cfg_start_addr_i
 );
   typedef logic [ AxiCfg.SlvPortIdWidth  -1:0] axi_slv_id_t;
   typedef logic [ AxiCfg.AddrWidthFull   -1:0] axi_addr_t;
   typedef logic [ AxiCfg.DataWidthFull   -1:0] axi_data_t;
   typedef logic [(AxiCfg.DataWidthFull/8)-1:0] axi_strb_t;
-
 
   // configuration struct that has all the cache parameters included for the submodules
   localparam axi_llc_pkg::llc_cfg_t Cfg = '{
@@ -96,7 +277,7 @@ module axi_llc_top #(
   // definition of the descriptor struct that gets sent around in the llc
   // (necessary here, because we can not have variable length structs in a package...)
   typedef struct packed {
-    // Axi4 specific descriptor signals
+    // AXI4+ATOP specific descriptor signals
     axi_slv_id_t                      a_x_id;   // AXI ID from slave port
     axi_addr_t                        a_x_addr; // memory address
     axi_pkg::len_t                    a_x_len;  // AXI burst length
