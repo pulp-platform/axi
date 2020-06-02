@@ -13,95 +13,124 @@
 // Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
 // Date:   30.04.2019
 //
-// Description: Contains the configuration and internal messages structs of the LLC.
-//              Parameter contained in this package are for fine grain configuration of the module.
-//              They can be changed to adapt the cache to a specific design for optimal performance.
-//
-
+/// Contains the configuration and internal messages structs of the `axi_llc`.
+/// Parameter contained in this package are for fine grain configuration of the modules.
+/// They can be changed to adapt the cache to a specific design for optimal performance.
 package axi_llc_pkg;
-  // AxiCfgStruct to be set externally as part of the `axi_llc_top` parameter configuration
+  /// AxiCfgStruct to be set externally as part of the [`axi_llc_top`](module.axi_llc_top)
+  /// parameter configuration.
+  ///
+  /// Example configuration:
+  ///
+  /// localparam axi_llc_pkg::llc_axi_cfg_t AxiLlcAxiCfg = axi_llc_pkg::llc_axi_cfg_t'{
+  ///   SlvPortIdWidth:    32'd6,
+  ///   AddrWidthFull:     32'd64,
+  ///   DataWidthFull:     32'd64,
+  ///   LitePortAddrWidth: 32'd32,
+  ///   LitePortDataWidth: 32'd32
+  /// };
   typedef struct packed {
-    int unsigned SlvPortIdWidth;    // AXI ID width of the slave port, CPU side
-    int unsigned AddrWidthFull;     // Address width of the full AXI 4 ports
-    int unsigned DataWidthFull;     // Data width of the full AXI 4 ports
-    int unsigned LitePortAddrWidth; // Addr width of the config AXI LITE port
-    int unsigned LitePortDataWidth; // Data width of the config AXI LITE port Has to be 32 bit
+    /// AXI4+ATOP ID width of the slave port, CPU side, in bits
+    int unsigned SlvPortIdWidth;
+    /// AXI4+ATOP address width of the ports for accessing the LLC, in bits
+    int unsigned AddrWidthFull;
+    /// AXI4+ATOP data width of the ports for accessing the LLC, in bits
+    int unsigned DataWidthFull;
+    /// AXI4+ATOP address width of the config AXI LITE port, in bits
+    int unsigned LitePortAddrWidth;
+    /// AXI4+ATOP Data width of the config AXI LITE port Has to be 32 bit
+    int unsigned LitePortDataWidth;
   } llc_axi_cfg_t;
 
-  // Cache configuration, used internally in the LLC
+  /// Cache configuration, used internally as localparam in the LLC submodules.
+  /// Automatically set in (module.axi_llc_top).
   typedef struct packed {
-    int unsigned SetAssociativity;               // Set Associativity of the cache
-    int unsigned NoLines;                        // Number of cache lines per way
-    int unsigned NoBlocks;                       // Number of Blocks (Words) in a cache line
-    int unsigned BlockSize;                      // Size of a Block (Word) in bit.
-    int unsigned TagLength;                      // Length of the Address Tag
-    int unsigned IndexLength;                    // Length of the Index ( Line Address )
-    int unsigned BlockOffsetLength;              // Length of the Block Offset
-    int unsigned ByteOffsetLength;               // Length of the Byte Offset
-    int unsigned SPMLength;                      // SPM Address Length
+    /// Set-associativity of the cache
+    int unsigned SetAssociativity;
+    /// Number of cache lines per way
+    int unsigned NoLines;
+    /// Number of blocks (words) in a cache line
+    int unsigned NoBlocks;
+    /// Size of a block (word) in bit.
+    int unsigned BlockSize;
+    /// Length of the address tag
+    int unsigned TagLength;
+    /// Length of the index ( line address )
+    int unsigned IndexLength;
+    /// Length of the block offset
+    int unsigned BlockOffsetLength;
+    /// Length of the byte offset
+    int unsigned ByteOffsetLength;
+    /// SPM address length
+    int unsigned SPMLength;
   } llc_cfg_t;
 
-  // config definitions
-  // number of cfg registers of length llc_axi::DataWidthLite
-  localparam int unsigned nbCfgRegs        = 4;
-  // Config reg definition , move to llc config?
-  typedef struct packed {
-    logic [32-1:0] bist_out; // read only
-    logic [32-1:0] flushed;  // read only
-    logic [32-1:0] flush;    // read and write
-    logic [32-1:0] spm_cfg;  // read and write
-  } llc_cfg_reg_t;
+  /// Maximum concurrent AXI transactions on both ports
+  parameter int unsigned MaxTrans = 32'd10;
 
-  // Maximum concurrent AXI transactions on both ports
-  localparam int unsigned MaxTrans = 32'd10;
+  /// Request Id for refill operations (is constant so that no read interleaving is happening)
+  /// Casted/extended to the required ID width in `ax_master`.
+  parameter logic [3:0] AxReqId = 4'b1001;
 
-  // Request Id for refill operations (is constant so that no read interleaving is happening)
-  // Cast to rigth Id width happens in `ax_master`.
-  localparam logic [3:0] AxReqId = 4'b1001;
-
-  // Tag storage request mode
+  /// Tag storage request enumeration definition
   typedef enum logic [1:0] {
-    BIST,   // 0 Run BIST/INIT
-    FLUSH,  // 1 Flush the requested position (output tells if to evict)
-    LOOKUP, // 2 Lookup, Performs Hit detection
-    STORE   // 3 Store, Writes a tag at the position set with way_ind_i
+    /// Run BIST/INIT
+    BIST   = 2'b00,
+    /// Flush the requested position (output tells if to evict)
+    FLUSH  = 2'b01,
+    /// Lookup, Performs Hit detection
+    LOOKUP = 2'b10,
+    /// Store, Writes a tag at the position set with `way_ind_i`
+    STORE  = 2'b11
   } tag_req_e;
 
   // Configuration of the counting bloom filter in `lock_box_bloom` located in `hit_miss`.
   // Change these parameters if you want to optimize the false positive rate.
-  localparam int unsigned BloomKHashes     = 3;
-  localparam int unsigned BloomHashWidth   = 6;
-  localparam int unsigned BloomHashRounds  = 1;
-  localparam int unsigned BloomBucketWidth = 3;
-  localparam cb_filter_pkg::cb_seed_t [BloomKHashes-1:0] BloomSeeds = '{
-    '{PermuteSeed: 32'd299034753, XorSeed: 32'd4094834  },
-    '{PermuteSeed: 32'd19921030,  XorSeed: 32'd995713   },
-    '{PermuteSeed: 32'd294388,    XorSeed: 32'd65146511 }
+  /// Number of different hashes used in (`module.lock_box_bloom`).
+  parameter int unsigned BloomKHashes     = 32'd3;
+  /// Width of the calculated hash function.
+  ///
+  /// Restriction has to be wider than TODO.
+  parameter int unsigned BloomHashWidth   = 32'd6;
+  /// Number of hash rounds of the counting bloom filter.
+  parameter int unsigned BloomHashRounds  = 32'd1;
+  /// Width of the buckets of the counting bloom filter.
+  parameter int unsigned BloomBucketWidth = 32'd3;
+  parameter cb_filter_pkg::cb_seed_t [BloomKHashes-1:0] BloomSeeds = '{
+    cb_filter_pkg::cb_seed_t'{PermuteSeed: 32'd299034753, XorSeed: 32'd4094834  },
+    cb_filter_pkg::cb_seed_t'{PermuteSeed: 32'd19921030,  XorSeed: 32'd995713   },
+    cb_filter_pkg::cb_seed_t'{PermuteSeed: 32'd294388,    XorSeed: 32'd65146511 }
   };
 
-  // The FIFO depths in the miss pipeline of the LLC, determines the number of simultanous
-  // in flight cache line eviction or refill requests on the master port of the cache
-  localparam int unsigned EvictFifoDepth   = 4; // Number of simultanous evictions
-  localparam int unsigned MissBufferDepth  = 2; // Number of descriptors between eviction and refill
-  localparam int unsigned RefillFifoDepth  = 4; // Number of simultanous refills
+  /// Number of simultaneous eviction transactions.
+  parameter int unsigned EvictFifoDepth   = 32'd4;
+  /// Number of descriptors between eviction and refill.
+  parameter int unsigned MissBufferDepth  = 32'd2;
+  /// Number of simultaneous refill transactions.
+  parameter int unsigned RefillFifoDepth  = 32'd4;
 
-  // The Width of the counters to prevent reordering
-  // This number determines how many descriptors of a given ID can go into the miss pipeline before
-  localparam int unsigned MissCntWidth     = 5; // normal counters
-  localparam int unsigned MissCntMaxWWidth = 7; // write counter
-  // This number tells us how many bits of the slave port AXI ID are used for pointing on a counter
-  // translates in 2**`UseIdBits` counters innferred
-  // set this parameter to the slave port AXI ID width if you want one counter for each AXI ID
-  localparam int unsigned UseIdBits        = 4;
+  /// Miss counter determine how many descriptors of a given ID can go into the miss pipeline before
+  /// the module stalls.
+  parameter int unsigned MissCntWidth     = 5;
+  /// Writes are counted separately. Writes have to be in order, only one counter.
+  parameter int unsigned MissCntMaxWWidth = 7;
+  /// This number tells us how many bits of the slave port AXI ID are used for pointing on a counter
+  /// * Translates in 2**`UseIdBits` counters inferred.
+  /// * Set this parameter to the slave port AXI ID width if you want one counter for each AXI ID.
+  parameter int unsigned UseIdBits        = 4;
 
-  // Width of the performance counters
-  localparam int unsigned PerfWidth = 32'd42;
+  /// Width of the performance counters in (module.axi_llc_config)
+  parameter int unsigned PerfWidth = 32'd42;
 
-  // this enum is for indicating a way which unit does an operation onto a cache line
+  /// Indicates which unit does an operation onto a cache line data storage element
   typedef enum logic [1:0] {
-    EvictUnit = 2'b00, // 0
-    RefilUnit = 2'b01, // 1
-    WChanUnit = 2'b10, // 2
-    RChanUnit = 2'b11  // 3
+    /// Eviction Unit
+    EvictUnit = 2'b00,
+    /// Refill Unit
+    RefilUnit = 2'b01,
+    /// Write Unit
+    WChanUnit = 2'b10,
+    /// Read UNit
+    RChanUnit = 2'b11
   } cache_unit_e;
 endpackage
