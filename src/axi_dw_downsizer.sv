@@ -547,8 +547,23 @@ module axi_dw_downsizer #(
                   r_req_d.r.data    = r_data                  ;
                   r_req_d.r.last    = (r_req_q.burst_len == 0);
                   r_req_d.r.id      = mst_resp.r.id           ;
-                  r_req_d.r.resp    = mst_resp.r.resp         ;
                   r_req_d.r.user    = mst_resp.r.user         ;
+
+                  // Priority case for the RESP field
+                  case (r_req_q.r.resp)
+                    axi_pkg::RESP_OKAY: begin
+                      // Any response can overwrite this OKAY
+                      r_req_d.r.resp = mst_resp.r.resp;
+                    end
+                    axi_pkg::RESP_EXOKAY: begin
+                      if (mst_resp.r.resp != axi_pkg::RESP_OKAY)
+                        r_req_d.r.resp = mst_resp.r.resp;
+                    end
+                    axi_pkg::RESP_SLVERR: begin
+                      if (mst_resp.r.resp != axi_pkg::RESP_OKAY && mst_resp.r.resp != axi_pkg::RESP_EXOKAY)
+                        r_req_d.r.resp = mst_resp.r.resp;
+                    end
+                  endcase
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
@@ -618,6 +633,7 @@ module axi_dw_downsizer #(
     burst_len_t burst_len         ;
     axi_pkg::len_t orig_aw_len    ;
     axi_pkg::burst_t orig_aw_burst;
+    axi_pkg::resp_t burst_resp    ;
     axi_pkg::size_t orig_aw_size  ;
   } w_req_t;
 
@@ -675,8 +691,26 @@ module axi_dw_downsizer #(
     mst_req.w_valid    = '0;
     slv_resp_o.w_ready = '0;
 
+
     // B Channel (No latency)
-    slv_resp_o.b = mst_resp.b;
+    // Priority case for the RESP field
+    if (mst_resp.b_valid)
+      case (w_req_q.burst_resp)
+        axi_pkg::RESP_OKAY: begin
+          // Any response can overwrite this OKAY
+          w_req_d.burst_resp = mst_resp.b.resp;
+        end
+        axi_pkg::RESP_EXOKAY: begin
+          if (mst_resp.b.resp != axi_pkg::RESP_OKAY)
+            w_req_d.burst_resp = mst_resp.b.resp;
+        end
+        axi_pkg::RESP_SLVERR: begin
+          if (mst_resp.b.resp != axi_pkg::RESP_OKAY && mst_resp.b.resp != axi_pkg::RESP_EXOKAY)
+            w_req_d.burst_resp = mst_resp.b.resp;
+        end
+      endcase
+    slv_resp_o.b      = mst_resp.b        ;
+    slv_resp_o.b.resp = w_req_d.burst_resp;
 
     // Each write transaction might trigger several B beats on the master (narrow) side.
     // Only forward the last B beat of each transaction.
@@ -774,9 +808,10 @@ module axi_dw_downsizer #(
     // Can start a new request as soon as w_state_d is W_IDLE
     if (w_state_d == W_IDLE) begin
       // Reset channels
-      w_req_d.aw             = '0  ;
-      w_req_d.aw_valid       = 1'b0;
-      w_req_d.aw_throw_error = 1'b0;
+      w_req_d.aw             = '0                ;
+      w_req_d.aw_valid       = 1'b0              ;
+      w_req_d.aw_throw_error = 1'b0              ;
+      w_req_d.burst_resp     = axi_pkg::RESP_OKAY;
 
       if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
         inject_aw_into_ar_req = 1'b1                 ;
