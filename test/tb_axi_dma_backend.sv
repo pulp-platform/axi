@@ -37,7 +37,7 @@ module tb_axi_dma_backend;
         fix.oned_random_launch(10, 1);
         fix.compare_memories();
         
-        // short transfers
+        // // short transfers
         for (int i = 0; i < 1000; i = i + 1) begin
             fix.oned_random_launch(100, 0);
             $display();
@@ -45,7 +45,7 @@ module tb_axi_dma_backend;
         fix.oned_random_launch(100, 1);
         fix.compare_memories();
         
-        // medium transfers
+        // // medium transfers
         for (int i = 0; i < 200; i = i + 1) begin
             fix.oned_random_launch(1000, 0);
             $display();

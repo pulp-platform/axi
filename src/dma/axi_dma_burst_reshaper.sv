@@ -224,7 +224,8 @@ module axi_dma_burst_reshaper #(
         read_req_o.ar.last     = r_finish;
         read_req_o.ar.burst    = burst_q.src.burst;
         read_req_o.ar.cache    = burst_q.src.cache;
-        r_valid_o              = burst_q.src.valid;
+        r_valid_o              = burst_q.decouple_rw ? 
+                                 burst_q.src.valid : burst_q.src.valid & w_ready_i;
 
         // create the R request
         read_req_o.r.offset = r_addr_offset;
@@ -273,7 +274,8 @@ module axi_dma_burst_reshaper #(
         write_req_o.aw.last     = w_finish;
         write_req_o.aw.burst    = burst_q.dst.burst;
         write_req_o.aw.cache    = burst_q.dst.cache;
-        w_valid_o               = burst_q.dst.valid;
+        w_valid_o               = burst_q.decouple_rw ? 
+                                  burst_q.dst.valid : burst_q.dst.valid & r_ready_i;
 
         // create the W request
         write_req_o.w.offset    = w_addr_offset;
@@ -331,8 +333,14 @@ module axi_dma_burst_reshaper #(
             burst_q.decouple_rw        <= burst_d.decouple_rw;
             burst_q.deburst            <= burst_d.deburst;
             burst_q.shift              <= burst_d.shift;
-            if (r_ready_i) burst_q.src <= burst_d.src;
-            if (w_ready_i) burst_q.dst <= burst_d.dst;
+            // couple read and write machines in the coupled test
+            if (burst_d.decouple_rw) begin
+                if (r_ready_i)              burst_q.src <= burst_d.src;
+                if (w_ready_i)              burst_q.dst <= burst_d.dst;
+            end else begin
+                if (r_ready_i & w_ready_i)  burst_q.src <= burst_d.src;
+                if (w_ready_i & r_ready_i)  burst_q.dst <= burst_d.dst; 
+            end               
         end
     end
 endmodule : axi_dma_burst_reshaper

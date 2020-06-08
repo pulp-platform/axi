@@ -321,7 +321,7 @@ module axi_dma_data_path #(
             w_strb_o = out_mask;
         end
 
-        // differenciate between the burst and non-burst case. If a transfer 
+        // differentiate between the burst and non-burst case. If a transfer 
         // consists just of one beat the counters are disabled
         if (w_is_single_i) begin
             // in the single case the transfer is both first and last.

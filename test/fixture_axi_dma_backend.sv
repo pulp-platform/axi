@@ -259,12 +259,14 @@ module fixture_axi_dma_backend();
         .DATA_WIDTH          ( DATA_WIDTH          ),
         .ADDR_WIDTH          ( ADDR_WIDTH          ),
         .ID_WIDTH            ( ID_WIDTH            ),
+        .DMA_ID_WIDTH        ( 32                  ),
         .AXI_REQ_FIFO_DEPTH  ( 3                   ),
         .REQ_FIFO_DEPTH      ( 2                   ),
         .BUFFER_DEPTH        ( 3                   ),
         .axi_req_t           ( dma_req_t           ),
         .axi_res_t           ( dma_resp_t          ),
-        .burst_req_t         ( burst_req_t         )
+        .burst_req_t         ( burst_req_t         ),
+        .DMA_TRACING         ( 0                   )
     ) i_dut_axi_backend (
         .clk_i              ( clk              ),
         .rst_ni             ( rst_n            ),
@@ -274,7 +276,8 @@ module fixture_axi_dma_backend();
         .valid_i            ( burst_req_valid  ),
         .ready_o            ( burst_req_ready  ),
         .backend_idle_o     ( backend_idle     ),
-        .trans_complete_o   ( )
+        .trans_complete_o   ( ),
+        .dma_id_i           ( '0               )
     );
 
     //--------------------------------------
