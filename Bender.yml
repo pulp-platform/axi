@@ -20,9 +20,26 @@ sources:
   # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
+  - src/axi_llc/axi_llc_desc_fifo.sv
+  - src/axi_llc/axi_llc_pkg.sv
   - src/axi_pkg.sv
+  - target: simulation
+    files:
+      -  src/axi_llc/test/axi_llc_sram_func.sv
   # Level 1
   - src/axi_intf.sv
+  - src/axi_llc/axi_llc_burst_cutter.sv
+  - src/axi_llc/axi_llc_data_way.sv
+  - src/axi_llc/axi_llc_merge_unit.sv
+  - src/axi_llc/axi_llc_read_unit.sv
+  - src/axi_llc/axi_llc_write_unit.sv
+  - src/axi_llc/eviction_refill/axi_llc_ax_master.sv
+  - src/axi_llc/eviction_refill/axi_llc_r_master.sv
+  - src/axi_llc/eviction_refill/axi_llc_w_master.sv
+  - src/axi_llc/hit_miss_detect/axi_llc_evict_box.sv
+  - src/axi_llc/hit_miss_detect/axi_llc_lock_box_bloom.sv
+  - src/axi_llc/hit_miss_detect/axi_llc_miss_counters.sv
+  - src/axi_llc/hit_miss_detect/axi_llc_tag_pattern_gen.sv
   # Level 2
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
@@ -44,6 +61,11 @@ sources:
   - src/axi_lite_regs.sv
   - src/axi_lite_to_apb.sv
   - src/axi_lite_to_axi.sv
+  - src/axi_llc/axi_llc_chan_splitter.sv
+  - src/axi_llc/axi_llc_evict_unit.sv
+  - src/axi_llc/axi_llc_refill_unit.sv
+  - src/axi_llc/axi_llc_ways.sv
+  - src/axi_llc/hit_miss_detect/axi_llc_tag_store.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
@@ -52,11 +74,14 @@ sources:
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
   - src/axi_id_serialize.sv
+  - src/axi_llc/axi_llc_config.sv
+  - src/axi_llc/axi_llc_hit_miss.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
   # Level 4
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
+  - src/axi_llc/axi_llc_top.sv
   - src/axi_xbar.sv
 
   - target: synth_test
@@ -87,60 +112,10 @@ sources:
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_llc_pkg.sv
+      - test/tb_axi_llc.sv
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar.sv
-
-  - target: axi_llc
-    files:
-      # Source files grouped in levels. Files in level 0 have no dependencies on files in this package.
-      # Files in level 1 only depend on files in level 0, files in level 2 on files in levels 1 and 0,
-      # etc. Files within a level are ordered alphabetically.
-      # LLC Level 0
-      - src/axi_llc/axi_llc_pkg.sv
-      - src/axi_llc/axi_llc_desc_fifo.sv
-
-      - target: simulation
-        files:
-        -  src/axi_llc/test/axi_llc_sram_func.sv
-
-      # LLC Level 1
-
-      - src/axi_llc/axi_llc_burst_cutter.sv
-      - src/axi_llc/axi_llc_data_way.sv
-
-      - src/axi_llc/eviction_refill/axi_llc_ax_master.sv
-      - src/axi_llc/eviction_refill/axi_llc_r_master.sv
-      - src/axi_llc/eviction_refill/axi_llc_w_master.sv
-
-      - src/axi_llc/hit_miss_detect/axi_llc_evict_box.sv
-      - src/axi_llc/hit_miss_detect/axi_llc_lock_box_bloom.sv
-      - src/axi_llc/hit_miss_detect/axi_llc_miss_counters.sv
-      - src/axi_llc/hit_miss_detect/axi_llc_tag_pattern_gen.sv
-
-      - src/axi_llc/axi_llc_config.sv
-      - src/axi_llc/axi_llc_merge_unit.sv
-
-      - src/axi_llc/axi_llc_read_unit.sv
-      - src/axi_llc/axi_llc_write_unit.sv
-
-      # LLC Level 2
-      - src/axi_llc/axi_llc_chan_splitter.sv
-      - src/axi_llc/axi_llc_evict_unit.sv
-      - src/axi_llc/hit_miss_detect/axi_llc_tag_store.sv
-      - src/axi_llc/axi_llc_ways.sv
-      - src/axi_llc/axi_llc_refill_unit.sv
-
-      # LLC Level 3
-      - src/axi_llc/axi_llc_hit_miss.sv
-
-      # LLC Level 4
-      - src/axi_llc/axi_llc_top.sv
-
-      # LLC Level 5
-      - target: test
-        files:
-          - src/axi_llc/test/tb_axi_llc_pkg.sv
-          - src/axi_llc/test/tb_axi_llc.sv

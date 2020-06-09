@@ -121,7 +121,7 @@ module tb_axi_llc #(
       .IW ( llc_axi::IdWidthSlave  ),
       .UW ( 1                      ),
       // Stimuli application and test time
-      .TA ( tb_axi_llc_pkg::appliSkew                           ),
+      .TA ( tb_axi_llc_pkg::appliSkew                               ),
       .TT ( tb_axi_llc_pkg::clockPeriod - tb_axi_llc_pkg::aquisSkew ),
       // Maximum number of read and write transactions in flight
       .MAX_READ_TXNS       ( 5          ),
@@ -137,7 +137,9 @@ module tb_axi_llc #(
       // Config Axi Lite Driver
       axi_test::axi_lite_driver #(
       .AW ( llc_axi::AddrWidth     ),
-      .DW ( llc_axi::DataWidthLite )
+      .DW ( llc_axi::DataWidthLite ),
+      .TA ( tb_axi_llc_pkg::appliSkew                               ),
+      .TT ( tb_axi_llc_pkg::clockPeriod - tb_axi_llc_pkg::aquisSkew )
       ) axi_lite_drv;
 
       tb_axi_llc_pkg::axi_llc_monitor #(
@@ -171,71 +173,77 @@ module tb_axi_llc #(
 
         repeat (10) @(posedge clk);
         print_test_info("Read Cfg @ 64'h0001_0000");
-        axi_lite_drv.send_ar(64'h0001_0000);
+        axi_lite_drv.send_ar(64'h0001_0000, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $info("AXI-LITE conf data: %h", data);
         $info("Response was      : %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Read Cfg @ 64'h0002_0000: Expect Error");
-        axi_lite_drv.send_ar(64'h0002_0000);
+        axi_lite_drv.send_ar(64'h0002_0000, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $info("AXI-LITE conf data: %h", data);
         $info("Response was      : %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Write Cfg @ 64'h0001_0000 with 32'hDEAD_BEEF");
-        axi_lite_drv.send_aw(64'h0001_0000);
-        axi_lite_drv.send_w(32'hDEAD_BEEF, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0000, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'hDEAD_BEEF, '1);
+        join
         axi_lite_drv.recv_b(resp);
         $info("AXI-Lite B: resp %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Read Cfg @ 64'h0001_0000: Expect 32'hDEAD_BEEF");
-        axi_lite_drv.send_ar(64'h0001_0000);
+        axi_lite_drv.send_ar(64'h0001_0000, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $info("AXI-LITE conf data: %h", data);
         $info("Response was      : %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Write Cfg @ 64'h0001_0000 with 32'h0000_000F");
-        axi_lite_drv.send_aw(64'h0001_0000);
-        axi_lite_drv.send_w(32'h0000_000F, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0000, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_000F, '1);
+        join
         axi_lite_drv.recv_b(resp);
         $info("AXI-Lite B: resp %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Read Cfg @ 64'h0001_0000: Expect 32'h0000_000F");
-        axi_lite_drv.send_ar(64'h0001_0000);
+        axi_lite_drv.send_ar(64'h0001_0000, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $info("AXI-LITE conf data: %h", data);
         $info("Response was      : %h", resp);
 
         repeat (10) @(posedge clk);
-        print_test_info("Read Cfg @ 64'h0001_0004: Expect 32'h0000_0000 FLUSH REG");
-        axi_lite_drv.send_ar(64'h0001_0004);
+        print_test_info("Read Cfg @ 64'h0001_0008: Expect 32'h0000_0000 FLUSH REG");
+        axi_lite_drv.send_ar(64'h0001_0008, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $info("AXI-LITE conf data: %h", data);
         $info("Response was      : %h", resp);
 
-        repeat (10) @(posedge clk);
-        print_test_info("Read Cfg @ 64'h0001_001C: Expect FLUSHED REGISTER");
-        axi_lite_drv.send_ar(64'h0001_001C);
-        axi_lite_drv.recv_r(data, resp);
-        $info("AXI-LITE conf data: %h", data);
-        $info("Response was      : %h", resp);
-
-        repeat (10) @(posedge clk);
-        print_test_info("Read Cfg @ 64'h0001_020: Expect BIST RESULT");
-        axi_lite_drv.send_ar(64'h0001_0020);
-        axi_lite_drv.recv_r(data, resp);
-        $info("AXI-LITE conf data: %h", data);
-        $info("Response was      : %h", resp);
+//        repeat (10) @(posedge clk);
+//        print_test_info("Read Cfg @ 64'h0001_0010: Expect FLUSHED REGISTER");
+//        axi_lite_drv.send_ar(64'h0001_0010, axi_pkg::prot_t'(1'b0));
+//        axi_lite_drv.recv_r(data, resp);
+//        $info("AXI-LITE conf data: %h", data);
+//        $info("Response was      : %h", resp);
+//
+//        repeat (10) @(posedge clk);
+//        print_test_info("Read Cfg @ 64'h0001_020: Expect BIST RESULT");
+//        axi_lite_drv.send_ar(64'h0001_0020, axi_pkg::prot_t'(1'b0));
+//        axi_lite_drv.recv_r(data, resp);
+//        $info("AXI-LITE conf data: %h", data);
+//        $info("Response was      : %h", resp);
 
         repeat (10) @(posedge clk);
         print_test_info("Write Cfg @ 64'h0001_0008 with 32'h0000_0001, enable perf counter");
-        axi_lite_drv.send_aw(64'h0001_0008);
-        axi_lite_drv.send_w(32'h0000_0001, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0010, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_0001, '1);
+        join
         axi_lite_drv.recv_b(resp);
         $info("AXI-Lite B: resp %h", resp);
 
@@ -254,8 +262,10 @@ module tb_axi_llc #(
 
           print_test_info("Flushing the cache and reversing the SPM definition");
           repeat (10) @(posedge clk);
-          axi_lite_drv.send_aw(64'h0001_0000);
-          axi_lite_drv.send_w(32'h0000_00F0, '1);
+          fork
+            axi_lite_drv.send_aw(64'h0001_0000, axi_pkg::prot_t'(1'b0));
+            axi_lite_drv.send_w(32'h0000_00F0, '1);
+          join
           axi_lite_drv.recv_b(resp);
           $info("AXI-Lite B: resp %h", resp);
           repeat (100000) @(posedge clk);
@@ -265,12 +275,14 @@ module tb_axi_llc #(
           repeat (1000) @(posedge clk);
 
         end else if (SimSpm) begin
-         repeat (10) @(posedge clk);
-         print_test_info("Write Cfg @ 64'h0001_0000 with 32'h0000_00FF");
-         axi_lite_drv.send_aw(64'h0001_0000);
-         axi_lite_drv.send_w(32'h0000_00FF, '1);
-         axi_lite_drv.recv_b(resp);
-         $info("AXI-Lite B: resp %h", resp);
+          repeat (10) @(posedge clk);
+          print_test_info("Write Cfg @ 64'h0001_0000 with 32'h0000_00FF");
+          fork
+            axi_lite_drv.send_aw(64'h0001_0000, axi_pkg::prot_t'(1'b0));
+            axi_lite_drv.send_w(32'h0000_00FF, '1);
+          join
+          axi_lite_drv.recv_b(resp);
+          $info("AXI-Lite B: resp %h", resp);
 
           repeat (2000) @(posedge clk);
           rand_axi_master.add_memory_region(64'h1000_0000, 64'h1003_FFFF,
@@ -285,43 +297,54 @@ module tb_axi_llc #(
 
         print_test_info("Reading out perf counters.");
         // stop the counters
-        axi_lite_drv.send_aw(64'h0001_0008);
-        axi_lite_drv.send_w(32'h0000_0000, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0010, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_0000, '1);
+        join
         axi_lite_drv.recv_b(resp);
-        axi_lite_drv.send_ar(64'h0001_000C);
+        axi_lite_drv.send_ar(64'h0001_0010, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $display("No Cycles: %h", data);
-        axi_lite_drv.send_ar(64'h0001_0010);
+        axi_lite_drv.send_ar(64'h0001_0018, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $display("No Descs:  %h", data);
-        axi_lite_drv.send_ar(64'h0001_0014);
+        axi_lite_drv.send_ar(64'h0001_0020, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $display("No Hits:   %h", data);
-        axi_lite_drv.send_ar(64'h0001_0018);
+        axi_lite_drv.send_ar(64'h0001_0028, axi_pkg::prot_t'(1'b0));
         axi_lite_drv.recv_r(data, resp);
         $display("No Misses: %h", data);
         print_test_info("Clearing counters.");
-        axi_lite_drv.send_aw(64'h0001_0008);
-        axi_lite_drv.send_w(32'h0000_0002, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0010, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_0002, '1);
+        join
         axi_lite_drv.recv_b(resp);
-        axi_lite_drv.send_aw(64'h0001_0008);
-        axi_lite_drv.send_w(32'h0000_0000, '1);
+        fork
+          axi_lite_drv.send_aw(64'h0001_0010, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_0000, '1);
+        join
         axi_lite_drv.recv_b(resp);
 
 
 
         repeat (10) @(posedge clk);
-        print_test_info("Write Cfg @ 64'h0001_0004 with 32'h0000_0004 should Flush way 2");
-        axi_lite_drv.send_aw(64'h0001_0004);
-        axi_lite_drv.send_w(32'h0000_0004, '1);
+        print_test_info("Write Cfg @ 64'h0001_0008 with 32'h0000_0004 should Flush way 2");
+        fork
+          axi_lite_drv.send_aw(64'h0001_0008, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'h0000_0004, '1);
+        join
         axi_lite_drv.recv_b(resp);
         $info("AXI-Lite B: resp %h", resp);
 
 
         repeat (100000) @(posedge clk);
-        axi_lite_drv.send_aw(64'h0001_0004);
-        print_test_info("Write Cfg @ 64'h0001_0004 with 32'hFFFF_FFFF should Flush the rest");
-        axi_lite_drv.send_w(32'hFFFF_FFFF, '1);
+
+        print_test_info("Write Cfg @ 64'h0001_0008 with 32'hFFFF_FFFF should Flush the rest");
+        fork
+          axi_lite_drv.send_aw(64'h0001_0008, axi_pkg::prot_t'(1'b0));
+          axi_lite_drv.send_w(32'hFFFF_FFFF, '1);
+        join
         axi_lite_drv.recv_b(resp);
         $info("AXI-Lite B: resp %h", resp);
 
@@ -399,9 +422,9 @@ module tb_axi_llc #(
 
   axi_llc_top #(
     .AxiCfg         ( AxiCfg                  ),
-    .SetAssociativity( 8                      ),
-    .NoLines         ( 1024                   ),
-    .NoBlocks        ( 8                      ),
+    .SetAssociativity( 32'd8                  ),
+    .NoLines         ( 32'd1024               ),
+    .NoBlocks        ( 32'd8                  ),
     .slv_aw_chan_t  ( llc_axi::aw_chan_slv_t  ),
     .mst_aw_chan_t  ( llc_axi::aw_chan_mst_t  ),
     .w_chan_t       ( llc_axi::w_chan_t       ),
@@ -415,11 +438,6 @@ module tb_axi_llc #(
     .slv_resp_t     ( llc_axi::resp_slv_t     ),
     .mst_req_t      ( llc_axi::req_mst_t      ),
     .mst_resp_t     ( llc_axi::resp_mst_t     ),
-    .lite_aw_chan_t ( llc_axi::aw_chan_lite_t ),
-    .lite_w_chan_t  ( llc_axi::w_chan_lite_t  ),
-    .lite_b_chan_t  ( llc_axi::b_chan_lite_t  ),
-    .lite_ar_chan_t ( llc_axi::ar_chan_lite_t ),
-    .lite_r_chan_t  ( llc_axi::r_chan_lite_t  ),
     .lite_req_t     ( llc_axi::req_lite_t     ),
     .lite_resp_t    ( llc_axi::resp_lite_t    )
   ) dut (
@@ -441,7 +459,6 @@ module tb_axi_llc #(
   // address mapping
     .ram_start_addr_i ( 64'h2000_0000 ),
     .ram_end_addr_i   ( 64'h2010_0000 ),
-    .spm_start_addr_i ( 64'h1000_0000 ),
-    .cfg_start_addr_i ( 64'h0001_0000 )
+    .spm_start_addr_i ( 64'h1000_0000 )
   );
 endmodule
