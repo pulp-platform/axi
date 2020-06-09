@@ -1,343 +1,533 @@
-/* Copyright 2019 ETH Zurich and University of Bologna.
- * Copyright and related rights are licensed under the Solderpad Hardware
- * License, Version 0.51 (the “License”); you may not use this file except in
- * compliance with the License.  You may obtain a copy of the License at
- * http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
- * or agreed to in writing, software, hardware and materials distributed under
- * this License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR
- * CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
- *
- * File:   llc_config.sv
- * Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
- * Date:   17.06.2019
- *
- * Description: Contains the Config registers to the LLC
- *              It handels Axi LITE transactions onto the Config registers
- *              The configuration can be only written onto, if the AXI_LITE
- *              `prot` signal is correctly set.
- */
+// Copyright 2019 ETH Zurich and University of Bologna.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the “License”); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+// File:   axi_llc_config.sv
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// Date:   17.06.2019
 
+/// # Configuration of `axi_llc`
+///
+/// Contains the configuration registers of the `axi_llc`.
+///
+/// ## Register Map
+///
+/// The configuration registers are exposed over an AXI4-Lite port.
+/// Registers are all 8-byte aligned.
+///
+/// Detailed descriptions of the individual registers can be found below.
+///
+/// | Name        | Address (HEX) | read/write | Description                                      |
+/// |:-----------:|:-------------:|:----------:|:------------------------------------------------:|
+/// | `CfgSpm`    | `0x00`        | read-write | [SPM Configuration](###CfgSpm)                   |
+/// | `CfgFlush`  | `0x08`        | read-write | [Flush Configuration](###CfgFlush)               |
+/// | `CfgPcnt`   | `0x10`        | read-write | [Performance Counter Configuration](###CfgPcnt)  |
+/// | `CntCycle`  | `0x18`        | read-only  | [Cycle Counter](###CntCycle)                     |
+/// | `CntDesc`   | `0x20`        | read-only  | [Descriptor Counter](###CntDesc)                 |
+/// | `CntHit`    | `0x28`        | read-only  | [Hit Counter](###CntHit)                         |
+/// | `CntMiss`   | `0x30`        | read-only  | [Miss Counter](###CntMiss)                       |
+/// | `CntEvict`  | `0x38`        | read-only  | [Eviction Counter](###CntEvict)                  |
+/// | `CntRefil`  | `0x40`        | read-only  | [Refill Counter](###CntRefil)                    |
+/// | `CntFlush`  | `0x48`        | read-only  | [Flush Counter](###CntFlush)                     |
+/// | `Flushed`   | `0x50`        | read-only  | [Flushed Flag](###Flushed)                       |
+/// | `BistOut`   | `0x58`        | read-only  | [Tag Storage BIST Result](###BistOut)            |
+/// | `SetAsso`   | `0x60`        | read-only  | [Instantiated Set-Associativity](###SetAsso)     |
+/// | `NumLines`  | `0x68`        | read-only  | [Instantiated Number of Cache-Lines](###NumLines)|
+/// | `NumBlocks` | `0x70`        | read-only  | [Instantiated Number of Blocks](###NumBlocks)    |
+///
+/// ### CfgSpm
+///
+/// The scratch-pad-memory configuration register.
+/// This register is read and writable on the AXI4-Lite port.
+///
+/// Register Bit Map:
+/// | Bits                    | Reset Value | Function                |
+/// |:-----------------------:|:-----------:|:-----------------------:|
+/// | `[0]`                   | `1'b0`      | SPM Configuration Set-0 |
+/// | ...                     | ...         | ...                     |
+/// | `[SetAssociativity-1]`  | `1'b0`      | SPM Configuration Set-X |
+/// | `[63:SetAssociativity]` | `'0`        | Reserved                |
+///
+///
+/// ### CfgFlush
+///
+/// Flush configuration register.
+/// This register is read and writable on the AXI4-Lite port.
+///
+/// This register enables flushing of individual cache sets.
+///
+/// Register Bit Map:
+/// | Bits                    | Reset Value | Function            |
+/// |:-----------------------:|:-----------:|:-------------------:|
+/// | `[0]`                   | `1'b0`      | Flush Trigger Set-0 |
+/// | ...                     | ...         | ...                 |
+/// | `[SetAssociativity-1]`  | `1'b0`      | Flush Trigger Set-X |
+/// | `[63:SetAssociativity]` | `'0`        | Reserved            |
+///
+///
+/// ### CfgPcnt
+///
+/// Performance counter configuration register.
+/// This register is read and writable on the AXI4-Lite port.
+///
+/// The events sampled by the performance counters are generated when a descriptor
+/// leaves the hit-miss detection unit. The counters are only counting when they are enabled.
+/// The clear flag is stronger than the enable flag.
+/// TODO: Make self clearing.
+///
+/// Register Bit Map:
+/// | Bits    | Reset Value | Function                                                |
+/// |:-------:|:-----------:|:-------------------------------------------------------:|
+/// | `[0]`   | `1'b0`      | Enable performance counters: `1`: Enabled `0`: Disabled |
+/// | `[1]`   | `1'b0`      | Clear performance counters: `1`: Clear `0`: Counting    |
+/// | `[63:2]`| `'0`        | Reserved                                                |
+///
+///
+/// ### CntCycle
+///
+/// Performance counter for counting clock cycles.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up every clock cycle as long as the performance counters are enabled.
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function    |
+/// |:------------------------------:|:-----------:|:-----------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Cycle Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved    |
+///
+///
+/// ### CntDesc
+///
+/// Performance counter for counting descriptors leaving the hit-miss detection unit.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit.
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function         |
+/// |:------------------------------:|:-----------:|:----------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Descriptor Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved         |
+///
+///
+/// ### CntHit
+///
+/// Performance counter for line hit counting.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and takes the
+/// hit bypass. These descriptors are a subset of [`CntDesc`](###CntDesc).
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function       |
+/// |:------------------------------:|:-----------:|:--------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Hit Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved       |
+///
+///
+/// ### CntMiss
+///
+/// Performance counter for line miss counting.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and takes the
+/// miss pipeline. These descriptors are a subset of [`CntDesc`](###CntDesc).
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function        |
+/// |:------------------------------:|:-----------:|:---------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Miss Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved        |
+///
+///
+/// ### CntEvict
+///
+/// Performance counter for line eviction counting.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
+/// the eviction flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function            |
+/// |:------------------------------:|:-----------:|:-------------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Eviction Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved            |
+///
+///
+/// ### CntRefil
+///
+/// Performance counter for line refill counting.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
+/// the refill flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function          |
+/// |:------------------------------:|:-----------:|:-----------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Refill Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved          |
+///
+///
+/// ### CntFlush
+///
+/// Performance counter for flush descriptor counting.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
+/// the flush flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
+///
+/// Register Bit Map:
+/// | Bits                           | Reset Value | Function               |
+/// |:------------------------------:|:-----------:|:----------------------:|
+/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Flush Descriptor Count |
+/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved               |
+///
+///
+/// ### Flushed
+///
+/// Flushed status of the individual cache sets.
+/// This register is read only on the AXI4-Lite port.
+///
+/// These bits are set, if the corresponding set is in a flushed state.
+/// Sets configured as SPM will have the corresponding bits set.
+///
+/// Register Bit Map:
+/// | Bits                    | Reset Value | Function               |
+/// |:-----------------------:|:-----------:|:----------------------:|
+/// | `[0]`                   | `1'b0`      | Flushed Status Set-0   |
+/// | ...                     | ...         | ...                    |
+/// | `[SetAssociativity-1]`  | `1'b0`      | Flushed Status Set-X   |
+/// | `[63:SetAssociativity]` | `'0`        | Reserved               |
+///
+///
+/// ### BistOut
+///
+/// Build-in self-test result of the tag-storage macros.
+/// When
+///
+/// Register Bit Map:
+/// | Bits                    | Reset Value | Function         |
+/// |:-----------------------:|:-----------:|:----------------:|
+/// | `[0]`                   | `1'b0`      | BIST Error Set-0 |
+/// | ...                     | ...         | ...              |
+/// | `[SetAssociativity-1]`  | `1'b0`      | BIST Error Set-X |
+/// | `[63:SetAssociativity]` | `'0`        | Reserved         |
+///
+///
+/// ### SetAsso
+///
+/// Register showing the instantiated cache set-associativity.
+/// This register is read only on the AXI4-Lite port.
+///
+/// Equal to the parameter of `axi_llc_top` `SetAssociativity`.
+///
+/// Register Bit Map:
+/// | Bits     | Reset Value        | Function          |
+/// |:--------:|:------------------:|:-----------------:|
+/// | `[63:0]` | `SetAssociativity` | Set-Associativity |
+///
+///
+/// ### NumLines
+///
+/// Register showing the instantiated number of cache lines per set.
+/// This register is read only on the AXI4-Lite port.
+///
+/// Equal to the parameter of `axi_llc_top` `NoLines`.
+///
+/// Register Bit Map:
+/// | Bits     | Reset Value | Function        |
+/// |:--------:|:-----------:|:---------------:|
+/// | `[63:0]` | `NoLines`   | Number of Lines |
+///
+///
+/// ### `NumBlocks`
+///
+/// Register showing the instantiated number of blocks per cache-line.
+/// This register is read only on the AXI4-Lite port.
+///
+/// Equal to the parameter of `axi_llc_top` `NoBlocks`.
+///
+/// Register Bit Map:
+/// | Bits     | Reset Value | Function         |
+/// |:--------:|:-----------:|:----------------:|
+/// | `[63:0]` | `NoBlocks`  | Number of Blocks |
+///
 module axi_llc_config #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg        = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg     = -1,
+  ///
+  parameter axi_llc_pkg::llc_cfg_t     Cfg            = '0,
+  /// Give the exact AXI parameters in struct form. This is passed down from
+  /// [`axi_llc_top`](module.axi_llc_top).
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg         = '0,
+  /// Descriptor type. This is requires as this module emits the flush descriptors.
+  /// Struct definition is in [`axi_llc_top`](module.axi_llc_top).
   parameter type                       desc_t         = logic,
-  parameter type                       lite_aw_chan_t = logic,
-  parameter type                       lite_w_chan_t  = logic,
-  parameter type                       lite_b_chan_t  = logic,
-  parameter type                       lite_ar_chan_t = logic,
-  parameter type                       lite_r_chan_t  = logic,
+  /// AXI4-Lite request struct definition.
   parameter type                       lite_req_t     = logic,
+  /// AXI4-Lite response struct definition.
   parameter type                       lite_resp_t    = logic,
   parameter type                       rule_full_t    = logic,
   parameter type                       rule_lite_t    = logic
 ) (
-  input  logic clk_i,    // Clock
-  input  logic rst_ni,   // Asynchronous reset active low
-  // config port
+  /// Rising-edge clock
+  input  logic clk_i,
+  /// Asynchronous reset, active low
+  input  logic rst_ni,
+  /// AXI4-Lite slave port request.
+  ///
+  /// Here the configuration registers are exposed.
   input  lite_req_t  conf_req_i,
+  /// AXI4-Lite slave port response.
+  ///
+  /// Here the configuration registers are exposed.
   output lite_resp_t conf_resp_o,
-  // SPM lock output
-  output logic [Cfg.SetAssociativity-1:0]  spm_lock_o, // only store new tags in not SPM locked ones
-  output logic [Cfg.SetAssociativity-1:0]  flushed_o,  // lookup tags in ways not flushed
-  // descriptor out (for flushing)
+  /// SPM lock.
+  ///
+  /// The cache only stores new tags in ways which are not SPM locked.
+  output logic [Cfg.SetAssociativity-1:0]  spm_lock_o,
+  /// Flushed way flag.
+  ///
+  /// This signal defines all ways which are flushed and have no valid tags in them.
+  /// Tags are not looked up in the ways which are flushed.
+  output logic [Cfg.SetAssociativity-1:0]  flushed_o,
+  /// Flush descriptor output.
+  ///
+  /// Payload data for flush descriptors. These descriptors are generated either by configuring
+  /// cache ways to SPM or when an explicit flush was triggered.
   output desc_t                            desc_o,
+  /// Flush descriptor handshake, valid
   output logic                             desc_valid_o,
+  /// Flush descriptor handshake, ready
   input  logic                             desc_ready_i,
-  // AXI address input from slave port for controlling bypass
+  /// AXI4 AW address from AXI4 slave port.
+  ///
+  /// This is for controlling the bypass multiplexer.
   input  logic [AxiCfg.AddrWidthFull-1:0]  slv_aw_addr_i,
+  /// AXI4 AR address from AXI4 slave port.
+  ///
+  /// This is for controlling the bypass multiplexer.
   input  logic [AxiCfg.AddrWidthFull-1:0]  slv_ar_addr_i,
+  /// Bypass selection for the AXI AW channel.
   output logic                             mst_aw_bypass_o,
+  /// Bypass selection for the AXI AR channel.
   output logic                             mst_ar_bypass_o,
-  // flush control signals to prevent new data in ax_cutter loading
+  /// Isolate the AXI slave port.
+  ///
+  /// Flush control sets this signal to prevent active cache accesses during flushing.
+  /// This is to preserve data integrity when a cache flush is underway.
   output logic                             llc_isolate_o,
+  /// The AXI salve port is isolated.
+  ///
+  /// This signals the flush FSM that it can safely perform the flush.
   input  logic                             llc_isolated_i,
+  /// The AW descriptor generation unit is busy.
+  ///
+  /// This signal is needed for the flush control so that no active functional descriptors
+  /// interfere with the flush operation.
   input  logic                             aw_unit_busy_i,
+  /// The AR descriptor generation unit is busy.
+  ///
+  /// This signal is needed for the flush control so that no active functional descriptors
+  /// interfere with the flush operation.
   input  logic                             ar_unit_busy_i,
+  /// A flush descriptor is finished flushing its cache line.
+  ///
+  /// This is for controlling the counters which keep track of how many flush descriptors are
+  /// underway.
   input  logic                             flush_desc_recv_i,
-  // performance counter inputs for hit/miss ratio determination
+  /// Performance counter: A descriptor which takes the hit bypass is valid on the
+  /// `hit-miss unit`.
   input  logic                             hit_valid_i,
+  /// Performance counter: A descriptor which takes the hit bypass is ready on the
+  /// `hit-miss unit`.
   input  logic                             hit_ready_i,
+  /// Performance counter: A descriptor which takes the miss pipeline is valid on the
+  /// `hit-miss unit`.
   input  logic                             miss_valid_i,
+  /// Performance counter: A descriptor which takes the miss pipeline is ready on the
+  /// `hit-miss unit`.
   input  logic                             miss_ready_i,
+  /// Performance counter: A descriptor which takes the miss pipeline has the eviction flag set.
   input  logic                             evict_flag_i,
+  /// Performance counter: A descriptor which takes the miss pipeline has the refill flag set.
   input  logic                             refil_flag_i,
+  /// Performance counter: A descriptor which takes the miss pipeline has the flush flag set.
   input  logic                             flush_flag_i,
-  // BIST input
+  /// Result data of the BIST from the tag storage macros.
   input  logic  [Cfg.SetAssociativity-1:0] bist_res_i,
+  /// Result data of the BIST from the tag storage macros is valid.
   input  logic                             bist_valid_i,
-  // main axi addr rule, used for setting the bypass
+  /// Address rule for the AXI memory region which maps onto the cache.
+  ///
+  /// This rule is used to set the AXI LLC bypass.
+  /// If all cache ways are flushed, accesses onto this address region take the bypass directly
+  /// to main memory.
   input  rule_full_t                       axi_ram_rule_i,
-  input  rule_full_t                       axi_spm_rule_i,
-  // Cfg address rule, only listens to start address and computes the rest from that
-  input  logic [AxiCfg.LitePortAddrWidth-1:0 ] cfg_start_addr_i
+  /// Address rule for the AXI memory region which maps to the scratch pad memory region.
+  ///
+  /// Accesses are only successful, if the corresponding way is mapped as SPM
+  input  rule_full_t                       axi_spm_rule_i
 );
-  localparam int unsigned LiteStrbWidth = AxiCfg.LitePortDataWidth / 8;
-  typedef logic [AxiCfg.LitePortAddrWidth-1:0] addr_t;
-  typedef logic [AxiCfg.LitePortDataWidth-1:0] data_t;
+  // register macros from `common_cells`
+  `include "common_cells/registers.svh"
+
+  // Define the Address type for the bypass address map
+  typedef logic [AxiCfg.AddrWidthFull-1:0]   addr_full_t;
+  // Define the configuration register address alignment.
+  localparam int unsigned AlignToBytes = 32'd8;
+  localparam int unsigned CfgRegWidth  = 32'd8 * AlignToBytes;
+  // Data type definition for the union which maps the Cfg regs to the structs.
+  typedef logic [7:0]                        byte_t;
+  typedef logic [CfgRegWidth-1:0]            data_cfg_t;
+  typedef logic [AlignToBytes-1:0]           strb_cfg_t;
+  // Performance counter type definitions and padding so that the structs are byte aligned.
+  localparam int unsigned CntPadWidth = CfgRegWidth - axi_llc_pkg::PerfWidth;
+  typedef logic [axi_llc_pkg::PerfWidth-1:0] cnt_perf_t;
+  typedef logic [CntPadWidth-1:0]            pad_perf_t; // Zero Padding
+  // Type for the Set Associativity puls padding
+  localparam int unsigned SetAssoPadWidth = CfgRegWidth - Cfg.SetAssociativity;
+  typedef logic [Cfg.SetAssociativity-1:0]   set_asso_t;
+  typedef logic [SetAssoPadWidth-1:0]        pad_asso_t; // Zero padding
 
   // Definition of the configuration registers.
-  // The data width of the AXI LITE port determines the maximum set associativity!
-  localparam int unsigned NO_CFG_REGS = 32'd15;
-  typedef enum logic [3:0] {
-    REG_NO_BLOCKS = 4'b1110, // read only, fixed
-    REG_NO_LINES  = 4'b1101, // read only, fixed
-    REG_SET_ASSO  = 4'b1100, // read only, fixed
+  // The registers are aligned to `AlignToBytes`.
+  localparam int unsigned NumCfgRegs      = 32'd15;
+  localparam int unsigned NumBytesCfgRegs = AlignToBytes * NumCfgRegs;
 
-    REG_BIST_OUT  = 4'b1011, // read only
-    REG_FLUSHED   = 4'b1010, // read only
+  // Define the struct mapping of all configuration registers.
+  // Functional bits are byte aligned to `AlignToBytes`.
+  typedef struct packed {
+    data_cfg_t NumBlocks;   // read only, fixed
+    data_cfg_t NumLines;    // read only, fixed
+    data_cfg_t SetAsso;     // read only, fixed
+    pad_asso_t PadBistOut;  // Map to '0
+    set_asso_t BistOut;     // read only
+    pad_asso_t PadFlushed;  // Map to '0
+    set_asso_t Flushed;     // read only
+    pad_perf_t PadCntFlush; // Map to '0
+    cnt_perf_t CntFlush;    // read only
+    pad_perf_t PadCntRefil; // Map to '0
+    cnt_perf_t CntRefil;    // read only
+    pad_perf_t PadCntEvict; // Map to '0
+    cnt_perf_t CntEvict;    // read only
+    pad_perf_t PadCntMiss;  // Map to '0
+    cnt_perf_t CntMiss;     // read only
+    pad_perf_t PadCntHit;   // Map to '0
+    cnt_perf_t CntHit;      // read only
+    pad_perf_t PadCntDesc;  // Map to '0
+    cnt_perf_t CntDesc;     // read only
+    pad_perf_t PadCntCycle; // Map to '0
+    cnt_perf_t CntCycle;    // read only
+    data_cfg_t CfgPcnt;     // read and write
+    pad_asso_t PadFlush;    // Map to '0
+    set_asso_t CfgFlush;    // read and write
+    pad_asso_t PadSpm;      // Map to '0
+    set_asso_t CfgSpm;      // read and write
+  } struct_reg_data_t;
+  // Struct for strobe values for each register:
+  typedef struct packed {
+    strb_cfg_t NumBlocks;
+    strb_cfg_t NumLines;
+    strb_cfg_t SetAsso;
+    strb_cfg_t BistOut;
+    strb_cfg_t Flushed;
+    strb_cfg_t CntFlush;
+    strb_cfg_t CntRefil;
+    strb_cfg_t CntEvict;
+    strb_cfg_t CntMiss;
+    strb_cfg_t CntHit;
+    strb_cfg_t CntDesc;
+    strb_cfg_t CntCycle;
+    strb_cfg_t CfgPcnt;
+    strb_cfg_t CfgFlush;
+    strb_cfg_t CfgSpm;
+  } struct_reg_strb_t;
 
-    REG_FLUSH_CNT = 4'b1001, // read only
-    REG_REFIL_CNT = 4'b1000, // read only
-    REG_EVICT_CNT = 4'b0111, // read only
-    REG_MISS_CNT  = 4'b0110, // read only
-    REG_HIT_CNT   = 4'b0101, // read only
-    REG_DESC_CNT  = 4'b0100, // read only
-    REG_CYCLE_CNT = 4'b0011, // read only
+  // Define a union for the configuration register data:
+  // * Once as pure bytes for the module `i_axi_lite_regs`.
+  // * Once as `struct_reg_data_t` for easy access into the individual fields.
+  // Be careful with with the assignment of the zero padding inside the struct representation!
+  typedef union packed {
+    byte_t [NumBytesCfgRegs-1:0] ByteMap;
+    struct_reg_data_t            StructMap;
+  } union_reg_data_t;
 
-    REG_PCNT_CFG  = 4'b0010, // read and write [0]: enable, [1]: clear
-    REG_FLUSH     = 4'b0001, // read and write
-    REG_SPM_CFG   = 4'b0000  // read and write
-  } llc_cfg_reg_e;
+  typedef union packed {
+    logic [NumBytesCfgRegs-1:0]  LogicMap;
+    struct_reg_strb_t            StrbMap;
+  } union_reg_strb_t;
 
-  // determine the reset value for registers not set to '0.
-  localparam int unsigned HalfSetAsso   = Cfg.SetAssociativity / 2;
-  localparam addr_t       AddrOffset    = addr_t'(AxiCfg.LitePortDataWidth / 8);
-  localparam data_t       CfgResetValue = data_t'('0); // default spm config is all cache
-  // define case addresses decode
-  rule_lite_t [NO_CFG_REGS-1:0]    cfg_addr_map;
-  logic  [$clog2(NO_CFG_REGS)-1:0] aw_reg_idx,       ar_reg_idx;
-  logic                            cfg_aw_dec_valid, cfg_ar_dec_valid;
 
-  always_comb begin : proc_lite_addr_map
-    // default assignments
-    cfg_addr_map = '0;
-    for (int unsigned i = 0; i < NO_CFG_REGS; i++) begin
-      cfg_addr_map[i].idx        = i;
-      cfg_addr_map[i].start_addr = cfg_start_addr_i + i * AddrOffset;
-      cfg_addr_map[i].end_addr   = cfg_start_addr_i + i * AddrOffset + AddrOffset;
-    end
-  end
+  // define the reset value for the configuration registers.
+  localparam union_reg_data_t CfgRstValue = struct_reg_data_t'{
+    NumBlocks: data_cfg_t'(Cfg.NoBlocks),
+    NumLines:  data_cfg_t'(Cfg.NoLines),
+    SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
+    default:   '0
+  };
+
+  // define the read-only values for the individual aligned registers
+  localparam union_reg_strb_t CfgReadOnly = struct_reg_strb_t'{
+    NumBlocks: {AlignToBytes{1'b1}}, // read-only
+    NumLines:  {AlignToBytes{1'b1}}, // read-only
+    SetAsso:   {AlignToBytes{1'b1}}, // read-only
+    BistOut:   {AlignToBytes{1'b1}}, // read-only
+    Flushed:   {AlignToBytes{1'b1}}, // read-only
+    CntFlush:  {AlignToBytes{1'b1}}, // read-only
+    CntRefil:  {AlignToBytes{1'b1}}, // read-only
+    CntEvict:  {AlignToBytes{1'b1}}, // read-only
+    CntMiss:   {AlignToBytes{1'b1}}, // read-only
+    CntHit:    {AlignToBytes{1'b1}}, // read-only
+    CntDesc:   {AlignToBytes{1'b1}}, // read-only
+    CntCycle:  {AlignToBytes{1'b1}}, // read-only
+    CfgPcnt:   {AlignToBytes{1'b0}}, // read and write
+    CfgFlush:  {AlignToBytes{1'b0}}, // read and write
+    CfgSpm:    {AlignToBytes{1'b0}}  // read and write
+  };
 
   // Flipflop signals declaration
-  data_t [NO_CFG_REGS-1:0]         config_d,     config_q;
-  logic  [LiteStrbWidth-1:0]       load_spm,     load_flush,  load_pcnt_cfg;
-  logic                            en_cycle_cnt, en_desc_cnt, en_hit_cnt,    en_miss_cnt;
-  logic                            load_aw,      load_ar,     load_flushed;
-  // flush flags
-  logic [Cfg.SetAssociativity-1:0] to_flush_d,    to_flush_q;
-  logic                            load_to_flush;
-  // transaction busy flags
-  logic                            aw_busy_d, aw_busy_q;
-  lite_aw_chan_t                   aw_d,      aw_q;
-  logic                            b_busy_d,  b_busy_q;
-  logic                            ar_busy_d, ar_busy_q;
-  lite_ar_chan_t                   ar_d,      ar_q;
-  // counter signals for flush control
-  logic                            clear_cnt;
-  logic                            en_send_cnt, en_recv_cnt;
-  logic                            load_cnt;
-  logic [Cfg.IndexLength-1:0]      flush_addr, to_recieve;
-  // lzc signals
-  logic [$clog2(Cfg.SetAssociativity)-1:0] to_flush_nub;
-  logic                                    lzc_empty;
-  logic [Cfg.SetAssociativity-1:0]         flush_way_ind;
-  // control signals
-  logic req_flush;
-  logic aw_lock;
-  logic clear_flush;
+  union_reg_data_t config_d,    config_q; // Configuration register mapped to AXI
+  union_reg_strb_t config_load;           // Load enable for the configuration registers
+  union_reg_strb_t config_wr;             // AXI has written to this configuration register
 
-  // spm_lock output are the lowest bit of the registers
-  assign spm_lock_o = config_q[REG_SPM_CFG][0+:Cfg.SetAssociativity];
-  assign flushed_o  = config_q[REG_FLUSHED][0+:Cfg.SetAssociativity];
+  // Counter signals for flush control
+  logic                         clear_cnt;
+  logic                         en_send_cnt, en_recv_cnt;
+  logic                         load_cnt;
+  logic [Cfg.IndexLength-1:0]   flush_addr,  to_recieve;
+  // Trailing zero counter signals, for flush descriptor generation.
+  logic [$clog2(Cfg.SetAssociativity)-1:0]   to_flush_nub;
+  logic                                      lzc_empty;
+  set_asso_t                                 flush_way_ind;
 
-  ////////////////////////////////////////////////////////////
-  // Write Cfg Register
-  ////////////////////////////////////////////////////////////
-  always_comb begin : proc_write
-    // default assignments
-    config_d[REG_PCNT_CFG] = config_q[REG_PCNT_CFG];
-    load_pcnt_cfg          = '0;
-    config_d[REG_FLUSH]    = config_q[REG_FLUSH];
-    load_flush             = '0;
-    config_d[REG_SPM_CFG]  = config_q[REG_SPM_CFG];
-    load_spm               = '0;
-    aw_busy_d              = aw_busy_q;
-    aw_d                   = aw_q;
-    load_aw                = 1'b0;
-    b_busy_d               = b_busy_q;
-    // Handshakes
-    conf_resp_o.aw_ready   = 1'b0;
-    conf_resp_o.w_ready    = 1'b0;
-    conf_resp_o.b_valid    = 1'b0;
-    // request flush when b response is sent back, activates flush fsm
-    req_flush              = 1'b0;
-
-    // B Response output Lite interface
-    if (cfg_aw_dec_valid) begin
-      conf_resp_o.b.resp = axi_pkg::RESP_OKAY;
-    end else begin
-      conf_resp_o.b.resp = axi_pkg::RESP_SLVERR;
-    end
-
-    // we write the w beat to the register
-    if (aw_busy_q && !b_busy_q) begin
-      conf_resp_o.w_ready = 1'b1;
-      // W transaction
-      if (conf_req_i.w_valid) begin
-        // only write the data, if decode is valid and protection signal is right!
-        if (cfg_aw_dec_valid) begin
-          // further are only these two registers writable
-          case (llc_cfg_reg_e'(aw_reg_idx))
-            REG_PCNT_CFG : begin
-              config_d[REG_PCNT_CFG] = conf_req_i.w.data;
-              load_pcnt_cfg          = conf_req_i.w.strb;
-            end
-            REG_FLUSH    : begin
-              config_d[REG_FLUSH]    = conf_req_i.w.data;
-              load_flush             = conf_req_i.w.strb;
-            end
-            REG_SPM_CFG  : begin
-              config_d[REG_SPM_CFG]  = conf_req_i.w.data;
-              load_spm               = conf_req_i.w.strb;
-            end
-            default : /* do nothing if address is not right */;
-          endcase
-        end
-        // go to state send B, we have written something
-        b_busy_d = 1'b1;
-      end
-
-    // we send the b response
-    end else if (aw_busy_q && b_busy_q) begin
-      conf_resp_o.b_valid = 1'b1;
-      // B transaction
-      if(conf_req_i.b_ready) begin
-        aw_busy_d = 1'b0;
-        b_busy_d  = 1'b0;
-        // request flush if a write was successful
-        req_flush = 1'b1;
-      end
-
-    // we wait for a aw vector
-    end else begin
-      // only be ready if aw is not locked
-      if(!aw_lock) begin
-        conf_resp_o.aw_ready = 1'b1;
-        // AW transaction
-        if(conf_req_i.aw_valid) begin
-          aw_busy_d = 1'b1;
-          aw_d      = conf_req_i.aw;
-          load_aw   = 1'b1;
-        end
-      end
-      // reset the config_q.flush register, if the user flush is finished
-      if(clear_flush) begin
-        config_d[REG_FLUSH]  = '0;
-        load_flush           = '1;
-      end
-    end
-  end
-
-  addr_decode #(
-    .NoIndices ( NO_CFG_REGS ),
-    .NoRules   ( NO_CFG_REGS ),
-    .addr_t    ( addr_t      ),
-    .rule_t    ( rule_lite_t )
-  ) i_aw_cfg_addr_decode (
-    .addr_i           ( aw_q.addr        ),
-    .addr_map_i       ( cfg_addr_map     ),
-    .idx_o            ( aw_reg_idx       ),
-    .dec_valid_o      ( cfg_aw_dec_valid ),
-    .dec_error_o      ( /*not used*/ ),
-    .en_default_idx_i ( 1'b0         ), // not used
-    .default_idx_i    ( '0           )  // not used
-  );
-
-  ////////////////////////////////////////////////////////////
-  // Read Cfg Register
-  ////////////////////////////////////////////////////////////
-  always_comb begin : proc_read
-    // default assignments
-    ar_busy_d = ar_busy_q;
-    ar_d      = ar_q;
-    load_ar   = 1'b0;
-    // Handshakes
-    conf_resp_o.ar_ready = 1'b0;
-    conf_resp_o.r_valid  = 1'b0;
-    // Read Output Lite interface
-    if(cfg_ar_dec_valid) begin
-      conf_resp_o.r.data = config_q[ar_reg_idx]; // from addr decode
-      conf_resp_o.r.resp = axi_pkg::RESP_OKAY;
-    end else begin
-      conf_resp_o.r.data = data_t'(32'hBADC0DED);
-      conf_resp_o.r.resp = axi_pkg::RESP_SLVERR;
-    end
-
-    // Handle the Transactions
-    if (ar_busy_q) begin
-      conf_resp_o.r_valid  = 1'b1;
-      // R transaction
-      if (conf_req_i.r_ready) begin
-        ar_busy_d = 1'b0;
-      end
-    // we are ready to take a new read transaction
-    end else
-      conf_resp_o.ar_ready = 1'b1;
-      // AR transaction
-      if (conf_req_i.ar_valid) begin
-        ar_busy_d = 1'b1;
-        ar_d      = conf_req_i.ar;
-        load_ar   = 1'b1;
-    end
-  end
-
-  addr_decode #(
-    .NoIndices ( NO_CFG_REGS ),
-    .NoRules   ( NO_CFG_REGS ),
-    .addr_t    ( addr_t      ),
-    .rule_t    ( rule_lite_t )
-  ) i_ar_cfg_addr_decode (
-    .addr_i           ( ar_q.addr        ),
-    .addr_map_i       ( cfg_addr_map     ),
-    .idx_o            ( ar_reg_idx       ),
-    .dec_valid_o      ( cfg_ar_dec_valid ),
-    .dec_error_o      ( /*not used*/     ),
-    .en_default_idx_i ( 1'b0             ), // not used
-    .default_idx_i    ( '0               )  // not used
-  );
-
-  ////////////////////////////////////////////////////////////
-  // Flush and Bypass Control
-  ////////////////////////////////////////////////////////////
-  // states for the control FSM
-  typedef enum logic [3:0] {
-    FsmIdle,
-    FsmWaitAx,
-    FsmWaitSplitter,
-    FsmInitFlush,
-    FsmSendFlush,
-    FsmWaitFlush,
-    FsmEndFlush
-  } flush_fsm_e;
-  flush_fsm_e flush_state_d, flush_state_q;
-  logic       switch_state;
-
+  ////////////////////////
+  // AXI Bypass control //
+  ////////////////////////
   // local address maps for bypass 1:DRAM 0:SPM
   rule_full_t [1:0] axi_addr_map;
   always_comb begin : proc_axi_rule
     axi_addr_map[0] = axi_spm_rule_i;
     axi_addr_map[1] = axi_ram_rule_i;
-    // define that spm always goes to the llc
+    // Define that accesses to the SPM region always go into the `axi_llc`.
     axi_addr_map[0].idx = 1'b0;
     // define that all burst go to the bypass, if flushed is completely set
-    axi_addr_map[1].idx = (config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0] == '1);
+    axi_addr_map[1].idx = (config_q.StructMap.Flushed == {Cfg.SetAssociativity{1'b1}});
   end
 
   addr_decode #(
-    .NoIndices ( 2           ),
-    .NoRules   ( 2           ),
-    .addr_t    ( addr_t      ),
+    .NoIndices ( 32'd2       ),
+    .NoRules   ( 32'd2       ),
+    .addr_t    ( addr_full_t ),
     .rule_t    ( rule_full_t )
   ) i_aw_addr_decode (
     .addr_i           ( slv_aw_addr_i   ),
@@ -350,9 +540,9 @@ module axi_llc_config #(
   );
 
   addr_decode #(
-    .NoIndices ( 2           ),
-    .NoRules   ( 2           ),
-    .addr_t    ( addr_t      ),
+    .NoIndices ( 32'd2       ),
+    .NoRules   ( 32'd2       ),
+    .addr_t    ( addr_full_t ),
     .rule_t    ( rule_full_t )
   ) i_ar_addr_decode (
     .addr_i           ( slv_ar_addr_i   ),
@@ -364,20 +554,90 @@ module axi_llc_config #(
     .default_idx_i    ( '0              )
   );
 
-  always_comb begin : proc_flush_control
-    // default assignments
+  //////////////////////////////////////////////////////////////////
+  // Configuration registers: Flush Control, Performance Counters //
+  //////////////////////////////////////////////////////////////////
+  // States for the control FSM
+  typedef enum logic [3:0] {
+    FsmIdle,
+    FsmWaitAx,
+    FsmWaitSplitter,
+    FsmInitFlush,
+    FsmSendFlush,
+    FsmWaitFlush,
+    FsmEndFlush,
+    FsmPreInit
+  } flush_fsm_e;
+  flush_fsm_e flush_state_d, flush_state_q;
+  logic       switch_state;
+  set_asso_t  to_flush_d,    to_flush_q;
+  logic       load_to_flush;
+
+  `FFLARN(flush_state_q, flush_state_d, switch_state, FsmPreInit, clk_i, rst_ni)
+  `FFLARN(to_flush_q, to_flush_d, load_to_flush, '0, clk_i, rst_ni)
+  // Load enable signals, so that the FF is only active when needed.
+  assign switch_state  = (flush_state_d != flush_state_q);
+  assign load_to_flush = (to_flush_d    != to_flush_q);
+
+  // Counter enable signals
+  logic count_flush, count_refil, count_evict, count_miss, count_hit, count_desc, count_cycle;
+  // The counters are reset by the configuration port
+  logic enable_counters, clear_counters;
+  assign clear_counters  = config_q.StructMap.CfgPcnt[1];
+  assign enable_counters = config_q.StructMap.CfgPcnt[0];
+  // These are the load enable signals for the counters mapped in `i_axi_lite_regs`.
+  assign count_flush = clear_counters | (count_miss & flush_flag_i);
+  assign count_refil = clear_counters | (count_miss & refil_flag_i);
+  assign count_evict = clear_counters | (count_miss & evict_flag_i);
+  assign count_miss  = clear_counters | (enable_counters & miss_valid_i & miss_ready_i);
+  assign count_hit   = clear_counters | (enable_counters & hit_valid_i  & hit_ready_i);
+  assign count_desc  = clear_counters | (count_hit  | count_miss);
+  assign count_cycle = clear_counters |  enable_counters;
+
+  always_comb begin : proc_axi_llc_cfg
+    // Default assignments
+    // Ensure that the struct padding is always '0!
+    // Not used fields are also tied to '0!
+    config_d.StructMap = struct_reg_data_t'{
+      NumBlocks: data_cfg_t'(Cfg.NoBlocks),
+      NumLines:  data_cfg_t'(Cfg.NoLines),
+      SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
+      BistOut:   bist_res_i,
+      Flushed:   config_q.StructMap.Flushed,
+      CntFlush:  (clear_counters ? '0 : config_q.StructMap.CntFlush + cnt_perf_t'(1)),
+      CntRefil:  (clear_counters ? '0 : config_q.StructMap.CntRefil + cnt_perf_t'(1)),
+      CntEvict:  (clear_counters ? '0 : config_q.StructMap.CntEvict + cnt_perf_t'(1)),
+      CntMiss:   (clear_counters ? '0 : config_q.StructMap.CntMiss  + cnt_perf_t'(1)),
+      CntHit:    (clear_counters ? '0 : config_q.StructMap.CntHit   + cnt_perf_t'(1)),
+      CntDesc:   (clear_counters ? '0 : config_q.StructMap.CntDesc  + cnt_perf_t'(1)),
+      CntCycle:  (clear_counters ? '0 : config_q.StructMap.CntCycle + cnt_perf_t'(1)),
+      CfgFlush:  config_q.StructMap.CfgFlush,
+      CfgSpm:    config_q.StructMap.CfgSpm,
+      default:   '0
+    };
+    // load enables, default is zero, if needed set below
+    config_load.StrbMap = struct_reg_strb_t'{
+      BistOut:  {AlignToBytes{bist_valid_i}},
+      CntFlush: {AlignToBytes{count_flush}},
+      CntRefil: {AlignToBytes{count_refil}},
+      CntEvict: {AlignToBytes{count_evict}},
+      CntMiss:  {AlignToBytes{count_miss}},
+      CntHit:   {AlignToBytes{count_hit}},
+      CntDesc:  {AlignToBytes{count_desc}},
+      CntCycle: {AlignToBytes{count_cycle}},
+      CfgFlush: {AlignToBytes{1'b1}},        // default one to prevent overwrite from AXI on flush
+      CfgSpm:   {AlignToBytes{1'b1}},        // default one to prevent overwrite from AXI on flush
+      default: '0
+    };
+    // Flush state machine
     flush_state_d  = flush_state_q;
-    // slave port gets isolated during flush
+    // Slave port is isolated during flush.
     llc_isolate_o  = 1'b1;
-    // flushed register
-    config_d[REG_FLUSHED] = config_q[REG_FLUSHED];
-    // to flush register
+    // To flush register, holds the ways which have to be flushed.
     to_flush_d     = to_flush_q;
-    // control signals to proc_write
+    // Emit flush descriptors.
     desc_valid_o   = 1'b0;
-    aw_lock        = 1'b1; // prevent that new AWs get accepted during flushing
-    clear_flush    = 1'b0; // clear the user set flush register, if flush finished
-    // signals for the descriptor send and receive counters
+    // Default signal definitions for the descriptor send and receive counter control.
     clear_cnt      = 1'b0;
     en_send_cnt    = 1'b0;
     en_recv_cnt    = 1'b0;
@@ -385,58 +645,60 @@ module axi_llc_config #(
 
     // FSM for controlling the AW AR input to the cache and flush control
     unique case (flush_state_q)
-      FsmIdle :  begin
-        // this state is normal operation, allow Cfg editing and do not isolate main AXI
-        aw_lock       = 1'b0;
-        llc_isolate_o = 1'b0;
-        // change state, if there is a flush request
-        if (req_flush) begin
+      FsmIdle:  begin
+        // this state is normal operation, allow Cfg editing of the fields `CfgSpm` and `CfgFlush`
+        // and do not isolate main AXI
+        config_load.StrbMap.CfgSpm   = strb_cfg_t'(1'b0);
+        config_load.StrbMap.CfgFlush = strb_cfg_t'(1'b0);
+        llc_isolate_o                = 1'b0;
+        // Change state, if there is a flush request, i.e. if one of the configuration fields
+        // has been written by AXI
+        if ((|config_wr.StrbMap.CfgSpm) || (|config_wr.StrbMap.CfgFlush)) begin
           flush_state_d = FsmWaitAx;
         end
       end
-      FsmWaitAx : begin
+      FsmWaitAx: begin
         // wait until main AXI is free
         if (llc_isolated_i) begin
           flush_state_d = FsmWaitSplitter;
         end
       end
-      FsmWaitSplitter : begin
+      FsmWaitSplitter: begin
         // wait till none of the splitter units still have vectors in them
         if (!aw_unit_busy_i && !ar_unit_busy_i) begin
           flush_state_d = FsmInitFlush;
         end
       end
-      FsmInitFlush : begin
+      FsmInitFlush: begin
         // this state determines which cache way should be flushed
         // it also sets up the counters for state-keeping how along the flush operation is going
         // define if the user requested a flush
-        if (|config_q[REG_FLUSH][Cfg.SetAssociativity-1:0]) begin
-          to_flush_d = config_q[REG_FLUSH][Cfg.SetAssociativity-1:0] &
-                          ~config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0];
+        if (|config_q.StructMap.CfgFlush) begin
+          to_flush_d = config_q.StructMap.CfgFlush & ~config_q.StructMap.Flushed;
         end else begin
-          to_flush_d            = config_q[REG_SPM_CFG][Cfg.SetAssociativity-1:0] &
-                                      ~config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0];
-          config_d[REG_FLUSHED] = config_q[REG_SPM_CFG][Cfg.SetAssociativity-1:0] &
-                                      config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0];
+          to_flush_d                  = config_q.StructMap.CfgSpm & ~config_q.StructMap.Flushed;
+          config_d.StructMap.Flushed  = config_q.StructMap.CfgSpm &  config_q.StructMap.Flushed;
+          config_load.StrbMap.Flushed = {AlignToBytes{1'b1}};
         end
         // now determine if we have something to do at all
         if (to_flush_d == '0) begin
           // nothing to flush, go to idle
           flush_state_d = FsmIdle;
           // reset the flushed register to SPM as new requests can enter the cache
-          clear_flush   = 1'b1;
+          // load signal od `CfgFlush` is default 1
+          config_d.StructMap.CfgFlush = set_asso_t'(1'b0);
         end else begin
           flush_state_d = FsmSendFlush;
           load_cnt      = 1'b1;
         end
       end
-      FsmSendFlush : begin
+      FsmSendFlush: begin
         // this state sends all required flush descriptors to the specified way
         desc_valid_o = 1'b1;
         // transaction
         if (desc_ready_i) begin
           // last flush descriptor for this way?
-          if (flush_addr == '1) begin
+          if (flush_addr == {Cfg.IndexLength{1'b1}}) begin
             flush_state_d = FsmWaitFlush;
           end else begin
             en_send_cnt = 1'b1;
@@ -450,298 +712,172 @@ module axi_llc_config #(
       FsmWaitFlush : begin
         // this state waits till all flush operations have exited the cache, then `FsmEndFlush`
         if (flush_desc_recv_i) begin
-          if(to_recieve == '0) begin
+          if(to_recieve == {Cfg.IndexLength{1'b0}}) begin
             flush_state_d = FsmEndFlush;
           end else begin
             en_recv_cnt = 1'b1;
           end
         end
       end
-      FsmEndFlush : begin
+      FsmEndFlush: begin
         // this state decides, if we have other ways to flush, or if we can go back to idle
         clear_cnt    = 1'b1;
         if (to_flush_q == flush_way_ind) begin
           flush_state_d = FsmIdle;
           // reset the flushed register to SPM as new requests can enter the cache
-          config_d[REG_FLUSHED][Cfg.SetAssociativity-1:0] =
-              config_q[REG_SPM_CFG][Cfg.SetAssociativity-1:0];
-          to_flush_d    = '0;
-          clear_flush   = 1'b1;
+          config_d.StructMap.Flushed  = config_q.StructMap.CfgSpm;
+          config_load.StrbMap.Flushed = {AlignToBytes{1'b1}};
+          to_flush_d                  = set_asso_t'(1'b0);
+          // Clear the `CfgFlush` register, load enable is default '1
+          config_d.StructMap.CfgFlush = set_asso_t'(1'b0);
         end else begin
           // there are still ways to flush
-          flush_state_d = FsmInitFlush;
-          config_d[REG_FLUSHED][Cfg.SetAssociativity-1:0] =
-              config_q[REG_FLUSHED][Cfg.SetAssociativity-1:0] | flush_way_ind;
+          flush_state_d               = FsmInitFlush;
+          config_d.StructMap.Flushed  = config_q.StructMap.Flushed | flush_way_ind;
+          config_load.StrbMap.Flushed = {AlignToBytes{1'b1}};
+        end
+      end
+      FsmPreInit: begin
+        // The state machine starts in this state. It remains in this state until the
+        // BIST of the tag storage macros is finished.
+        // When the result of the BIST comes in, it is also written to the SPM configuration.
+        // However does not trigger a flush. This is to have per default tag-macros with errors
+        // to be mapped as SPM, so that they are not used. However they can be enabled using
+        // the normal SPM configuration.
+        if (bist_valid_i) begin
+          flush_state_d               = FsmIdle;
+          config_d.StructMap.CfgSpm   = bist_res_i;
+          // No load specified for CfgSpm, as per default the reg is loaded anyway.
+          config_d.StructMap.Flushed  = bist_res_i;
+          config_load.StrbMap.Flushed = {AlignToBytes{1'b1}};
         end
       end
       default : /*do nothing*/;
     endcase
   end
 
-  assign switch_state  = (flush_state_d         != flush_state_q);
-  assign load_flushed  = (config_d[REG_FLUSHED] != config_q[REG_FLUSHED]);
-  assign load_to_flush = (to_flush_d            != to_flush_q);
+  ////////////////////////
+  // Output assignments //
+  ////////////////////////
+  // Flush descriptor output is static, except for the fields defined here.
+  assign desc_o = desc_t'{
+    a_x_addr:  {{Cfg.TagLength{1'b0}}, flush_addr, {Cfg.ByteOffsetLength+Cfg.BlockOffsetLength{1'b0}}},
+    a_x_burst: axi_pkg::BURST_INCR,
+    x_resp:    axi_pkg::RESP_OKAY,
+    way_ind:   flush_way_ind,
+    flush:     1'b1,
+    default:   '0
+  };
+  // Configuration registers which are used in other modules.
+  assign spm_lock_o = config_q.StructMap.CfgSpm;
+  assign flushed_o  = config_q.StructMap.Flushed;
 
-  ////////////////////////////////////////////////////////////
-  // Flush Descriptor generation
-  ////////////////////////////////////////////////////////////
-  always_comb begin : proc_desc_o
-    // default assignment
-    desc_o       = '0;
-    // populate descriptor
-    desc_o.a_x_addr[Cfg.ByteOffsetLength+Cfg.BlockOffsetLength+:Cfg.IndexLength] = flush_addr;
-    desc_o.a_x_burst = axi_pkg::BURST_INCR;
-    desc_o.x_resp    = axi_pkg::RESP_OKAY;
-    desc_o.way_ind   = flush_way_ind;
-    desc_o.flush     = 1'b1;
-  end
-
-  // trailing zero counter for determination of way to flush
+  // This trailing zero counter determines which way should be flushed next.
   lzc #(
-  /// The width of the input vector.
-  .WIDTH ( Cfg.SetAssociativity ),
-  .MODE  (                 1'b0 ) // 0 -> trailing zero, 1 -> leading zero
+    .WIDTH ( Cfg.SetAssociativity ),
+    .MODE  ( 1'b0                 )
   ) i_lzc_flush (
-  .in_i    ( to_flush_q   ),
-  .cnt_o   ( to_flush_nub ),
-  .empty_o (    lzc_empty ) // asserted if all bits in in_i are zero
+    .in_i    ( to_flush_q   ),
+    .cnt_o   ( to_flush_nub ),
+    .empty_o ( lzc_empty    )
   );
-  // onehot indicator signal (decode)
-  assign flush_way_ind = (lzc_empty) ? '0 : data_t'(1) << to_flush_nub;
+  // Decode flush way indicator from binary to one-hot signal.
+  assign flush_way_ind = (lzc_empty) ? set_asso_t'(1'b0) : set_asso_t'(64'd1) << to_flush_nub;
 
-  // counter for flushing control
+  ///////////////////////////////
+  // Counter for flush control //
+  ///////////////////////////////
+  // This counts how many flush descriptors have been sent.
   counter #(
-    .WIDTH      (Cfg.IndexLength)
+    .WIDTH ( Cfg.IndexLength )
   ) i_flush_send_counter (
-    .clk_i      ( clk_i          ),
-    .rst_ni     ( rst_ni         ),
-    .clear_i    ( clear_cnt      ),  // synchronous clear
-    .en_i       ( en_send_cnt    ),  // enable the counter
-    .load_i     ( load_cnt       ),
-    .down_i     ( 1'b0           ),  // downcount, default is up
-    .d_i        ( '0             ),
-    .q_o        ( flush_addr     ),
-    .overflow_o ( /*not used*/   )
+    .clk_i      ( clk_i                   ),
+    .rst_ni     ( rst_ni                  ),
+    .clear_i    ( clear_cnt               ),
+    .en_i       ( en_send_cnt             ),
+    .load_i     ( load_cnt                ),
+    .down_i     ( 1'b0                    ),
+    .d_i        ( {Cfg.IndexLength{1'b0}} ),
+    .q_o        ( flush_addr              ),
+    .overflow_o ( /*not used*/            )
   );
 
+  // This counts how many flush descriptors are not done flushing.
   counter #(
-    .WIDTH      (Cfg.IndexLength)
+    .WIDTH ( Cfg.IndexLength )
   ) i_flush_recv_counter (
-    .clk_i      ( clk_i             ),
-    .rst_ni     ( rst_ni            ),
-    .clear_i    ( clear_cnt         ),
-    .en_i       ( en_recv_cnt       ),
-    .load_i     ( load_cnt          ),
-    .down_i     ( 1'b1              ),
-    .d_i        ( '1                ),
-    .q_o        ( to_recieve        ),
-    .overflow_o ( /*not used*/      )
+    .clk_i      ( clk_i                   ),
+    .rst_ni     ( rst_ni                  ),
+    .clear_i    ( clear_cnt               ),
+    .en_i       ( en_recv_cnt             ),
+    .load_i     ( load_cnt                ),
+    .down_i     ( 1'b1                    ),
+    .d_i        ( {Cfg.IndexLength{1'b1}} ),
+    .q_o        ( to_recieve              ),
+    .overflow_o ( /*not used*/            )
   );
 
-  ////////////////////////////////////////////////////////////
-  // performance counter control
-  ////////////////////////////////////////////////////////////
-  localparam int unsigned ActPerfWidth = (AxiCfg.LitePortDataWidth < axi_llc_pkg::PerfWidth) ?
-                                          AxiCfg.LitePortDataWidth : axi_llc_pkg::PerfWidth;
-  typedef logic [ActPerfWidth-1:0] perf_t;
-  // assign all not defined config_q signals to 0
-  if (ActPerfWidth < AxiCfg.LitePortDataWidth) begin : gen_tie_config_cnt_0
-    assign config_q[REG_FLUSH_CNT][AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_REFIL_CNT][AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_EVICT_CNT][AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_MISS_CNT] [AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_HIT_CNT]  [AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_DESC_CNT] [AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-    assign config_q[REG_CYCLE_CNT][AxiCfg.LitePortDataWidth-1:ActPerfWidth] = '0;
-  end
-
-  always_comb begin : proc_perf_cnt
-    // default assignments
-    config_d[REG_CYCLE_CNT][ActPerfWidth-1:0] = config_q[REG_CYCLE_CNT][ActPerfWidth-1:0];
-    en_cycle_cnt                              = 1'b0;
-    config_d[REG_DESC_CNT][ActPerfWidth-1:0]  = config_q[REG_DESC_CNT][ActPerfWidth-1:0];
-    en_desc_cnt                               = 1'b0;
-    config_d[REG_HIT_CNT][ActPerfWidth-1:0]   = config_q[REG_HIT_CNT][ActPerfWidth-1:0];
-    en_hit_cnt                                = 1'b0;
-    config_d[REG_MISS_CNT][ActPerfWidth-1:0]  = config_q[REG_MISS_CNT][ActPerfWidth-1:0];
-    config_d[REG_EVICT_CNT][ActPerfWidth-1:0] = config_q[REG_EVICT_CNT][ActPerfWidth-1:0];
-    config_d[REG_REFIL_CNT][ActPerfWidth-1:0] = config_q[REG_REFIL_CNT][ActPerfWidth-1:0];
-    config_d[REG_FLUSH_CNT][ActPerfWidth-1:0] = config_q[REG_FLUSH_CNT][ActPerfWidth-1:0];
-    en_miss_cnt                               = 1'b0;
-    // control when enabled
-    if (config_q[REG_PCNT_CFG][32'd1]) begin
-      // clear is set
-      config_d[REG_CYCLE_CNT][ActPerfWidth-1:0] = '0;
-      en_cycle_cnt                              = 1'b1;
-      config_d[REG_DESC_CNT][ActPerfWidth-1:0]  = '0;
-      en_desc_cnt                               = 1'b1;
-      config_d[REG_HIT_CNT][ActPerfWidth-1:0]   = '0;
-      en_hit_cnt                                = 1'b1;
-      config_d[REG_MISS_CNT][ActPerfWidth-1:0]  = '0;
-      config_d[REG_EVICT_CNT][ActPerfWidth-1:0] = '0;
-      config_d[REG_REFIL_CNT][ActPerfWidth-1:0] = '0;
-      config_d[REG_FLUSH_CNT][ActPerfWidth-1:0] = '0;
-      en_miss_cnt                               = 1'b1;
-    end else if (config_q[REG_PCNT_CFG][32'd0]) begin
-      // no clear but enabled
-      // count every cycle regardless of valid flags
-      config_d[REG_CYCLE_CNT][ActPerfWidth-1:0] =
-          config_q[REG_CYCLE_CNT][ActPerfWidth-1:0] + perf_t'(1);
-      en_cycle_cnt = 1'b1;
-      if (hit_valid_i && hit_ready_i) begin
-        // count hits
-        config_d[REG_HIT_CNT][ActPerfWidth-1:0] =
-            config_q[REG_HIT_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        en_hit_cnt = 1'b1;
-      end else if (miss_valid_i && miss_ready_i) begin
-        // count misses
-        config_d[REG_MISS_CNT][ActPerfWidth-1:0] =
-            config_q[REG_MISS_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        if (evict_flag_i) begin
-          config_d[REG_EVICT_CNT][ActPerfWidth-1:0] =
-              config_q[REG_EVICT_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        end
-        if (refil_flag_i) begin
-          config_d[REG_REFIL_CNT][ActPerfWidth-1:0] =
-              config_q[REG_REFIL_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        end
-        if (flush_flag_i) begin
-          config_d[REG_FLUSH_CNT][ActPerfWidth-1:0] =
-              config_q[REG_FLUSH_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        end
-        en_miss_cnt            = 1'b1;
-      end
-      if (en_hit_cnt || en_miss_cnt) begin
-        // count descriptors
-        config_d[REG_DESC_CNT][ActPerfWidth-1:0] =
-            config_q[REG_DESC_CNT][ActPerfWidth-1:0] + perf_t'(1);
-        en_desc_cnt            = 1'b1;
-      end
-    end
-  end
-
-  ////////////////////////////////////////////////////////////
-  // Assignment of static LLC configuration information
-  ////////////////////////////////////////////////////////////
-  assign config_q[REG_SET_ASSO]  = data_t'(Cfg.SetAssociativity);
-  assign config_q[REG_NO_LINES]  = data_t'(Cfg.NoLines);
-  assign config_q[REG_NO_BLOCKS] = data_t'(Cfg.NoBlocks);
-
-  ////////////////////////////////////////////////////////////
-  // Configuration FlipFlops
-  ////////////////////////////////////////////////////////////
-  always_ff @(posedge clk_i, negedge rst_ni) begin
-    if (!rst_ni) begin
-      aw_busy_q                                 <= '0;
-      aw_q                                      <= '0;
-      b_busy_q                                  <= '0;
-      ar_busy_q                                 <= '0;
-      ar_q                                      <= '0;
-      to_flush_q                                <= '0;
-      flush_state_q                             <= FsmIdle;
-      config_q[REG_BIST_OUT]                    <= '0; // read only
-      config_q[REG_FLUSHED]                     <= CfgResetValue; // read only has to be the same as SPMCfg default
-      config_q[REG_FLUSH_CNT][ActPerfWidth-1:0] <= '0; // only reset the ones that are really
-      config_q[REG_REFIL_CNT][ActPerfWidth-1:0] <= '0; // counters, prefent inferring of latches
-      config_q[REG_EVICT_CNT][ActPerfWidth-1:0] <= '0;
-      config_q[REG_MISS_CNT][ActPerfWidth-1:0]  <= '0;
-      config_q[REG_HIT_CNT][ActPerfWidth-1:0]   <= '0;
-      config_q[REG_DESC_CNT][ActPerfWidth-1:0]  <= '0;
-      config_q[REG_CYCLE_CNT][ActPerfWidth-1:0] <= '0;
-      config_q[REG_PCNT_CFG]                    <= '0;
-      config_q[REG_FLUSH]                       <= '0;
-      config_q[REG_SPM_CFG]                     <= CfgResetValue; // has to be the same as Flushed default
-    end else begin
-      aw_busy_q    <= aw_busy_d;
-      b_busy_q     <= b_busy_d;
-      ar_busy_q    <= ar_busy_d;
-      // load aw addr
-      if (load_aw) begin
-        aw_q <= aw_d;
-      end
-      // load ar addr
-      if (load_ar) begin
-        ar_q <= ar_d;
-      end
-      // update BIST response
-      if (bist_valid_i) begin
-        config_q[REG_BIST_OUT] <= bist_res_i;
-      end
-      // flush FSM
-      if (switch_state) begin
-        flush_state_q <= flush_state_d;
-      end
-      // update to flush register
-      if (load_to_flush) begin
-        to_flush_q <= to_flush_d;
-      end
-      // update Flushed register
-      if (load_flushed) begin
-        config_q[REG_FLUSHED] <= config_d[REG_FLUSHED];
-      end
-      // update which way should be spm
-      for (int unsigned i = 0; i < LiteStrbWidth; i++) begin
-        if (load_spm[i]) begin
-          config_q[REG_SPM_CFG][i*8+:8] <= config_d[REG_SPM_CFG][i*8+:8];
-        end
-      end
-      // update the user settable flush register
-      for (int unsigned i = 0; i < LiteStrbWidth; i++) begin
-        if (load_flush[i]) begin
-          config_q[REG_FLUSH][i*8+:8] <= config_d[REG_FLUSH][i*8+:8];
-        end
-      end
-      // performance counters
-      // update the performance counter cfg
-      for (int unsigned i = 0; i < LiteStrbWidth; i++) begin
-        if (load_pcnt_cfg[i]) begin
-          config_q[REG_PCNT_CFG][i*8+:8] <= config_d[REG_PCNT_CFG][i*8+:8];
-        end
-      end
-      if (en_cycle_cnt) begin
-        config_q[REG_CYCLE_CNT][ActPerfWidth-1:0] <= config_d[REG_CYCLE_CNT][ActPerfWidth-1:0];
-      end
-      if (en_desc_cnt) begin
-        config_q[REG_DESC_CNT][ActPerfWidth-1:0] <= config_d[REG_DESC_CNT][ActPerfWidth-1:0];
-      end
-      if (en_hit_cnt) begin
-        config_q[REG_HIT_CNT][ActPerfWidth-1:0] <= config_d[REG_HIT_CNT][ActPerfWidth-1:0];
-      end
-      if (en_miss_cnt) begin
-        config_q[REG_MISS_CNT][ActPerfWidth-1:0]  <= config_d[REG_MISS_CNT][ActPerfWidth-1:0];
-        config_q[REG_EVICT_CNT][ActPerfWidth-1:0] <= config_d[REG_EVICT_CNT][ActPerfWidth-1:0];
-        config_q[REG_REFIL_CNT][ActPerfWidth-1:0] <= config_d[REG_REFIL_CNT][ActPerfWidth-1:0];
-        config_q[REG_FLUSH_CNT][ActPerfWidth-1:0] <= config_d[REG_FLUSH_CNT][ActPerfWidth-1:0];
-      end
-    end
-  end
+  ///////////////////////////////////////
+  // AXI4-Lite configuration registers //
+  ///////////////////////////////////////
+  // This module holds the configuration registers which can be accessed over the AXI4-Lite port.
+  axi_lite_regs#(
+    .RegNumBytes  ( NumBytesCfgRegs          ),
+    .AxiAddrWidth ( AxiCfg.LitePortAddrWidth ),
+    .AxiDataWidth ( AxiCfg.LitePortDataWidth ),
+    .PrivProtOnly ( 1'b0                     ),
+    .SecuProtOnly ( 1'b0                     ),
+    .AxiReadOnly  ( CfgReadOnly.LogicMap     ),
+    .RegRstVal    ( CfgRstValue.ByteMap      ),
+    .req_lite_t   ( lite_req_t               ),
+    .resp_lite_t  ( lite_resp_t              )
+  ) i_axi_lite_regs (
+    .clk_i,
+    .rst_ni,
+    .axi_req_i   ( conf_req_i           ),
+    .axi_resp_o  ( conf_resp_o          ),
+    .wr_active_o ( config_wr.LogicMap   ),
+    .rd_active_o ( /*Not used*/         ),
+    .reg_d_i     ( config_d.ByteMap     ),
+    .reg_load_i  ( config_load.LogicMap ),
+    .reg_q_o     ( config_q.ByteMap     )
+  );
 
   initial begin : proc_check_params
-    set_asso      : assume (Cfg.SetAssociativity <= AxiCfg.LitePortDataWidth) else
-      $fatal(1, $sformatf("LLCCfg > The maximum set associativity has to be equal or smaller than \
-                           the data width of the configuration AXI LITE."));
+    set_asso      : assert (Cfg.SetAssociativity < CfgRegWidth) else
+        $fatal(1, $sformatf("LLCCfg: The maximum set associativity (%0d) has to be smaller than \
+                             the the configuration register alignment in bits: %0d (dec).\n \
+                             Reason: SystemVerilog requires a min struct field width of one.",
+                             Cfg.SetAssociativity, CfgRegWidth));
+    perf_width    : assert (axi_llc_pkg::PerfWidth < CfgRegWidth) else
+        $fatal(1, $sformatf("LLCCfg: The maximum width of the performance counters \
+                             `axi_llc_pkg::PerfWidth: %0d` has to be smaller than the \
+                             configuration register alignment in bits: %0d. \n \
+                             Reason: SystemVerilog requires a min struct field width of one.",
+                             axi_llc_pkg::PerfWidth, CfgRegWidth));
     axi_lite_data : assume ((AxiCfg.LitePortDataWidth == 32'd64) ||
                             (AxiCfg.LitePortDataWidth == 32'd32)) else
-      $warning("LitePortDataWidth > Not using AXI4 defined LITE data width!!!");
+        $warning("LitePortDataWidth: Not using AXI4 defined LITE data width!!!");
   end
 
   initial begin : proc_llc_hello
     @(posedge rst_ni);
     $display("###############################################################################");
     $display("###############################################################################");
-    $display("LLC module instantiated!");
+    $display("AXI LLC module instantiated:");
+    $display("%m");
     $display("###############################################################################");
     $display("Cache Size parameters:");
     $display($sformatf("SetAssociativity (Number of Ways)  (decimal): %d", Cfg.SetAssociativity ));
     $display($sformatf("Number of Cache Lines per Set      (decimal): %d", Cfg.NoLines          ));
     $display($sformatf("Number of Blocks per Cache Line    (decimal): %d", Cfg.NoBlocks         ));
-    $display($sformatf("Block Sizs in Bits                 (decimal): %d", Cfg.BlockSize        ));
-    $display($sformatf("Tag Length of Axi Address          (decimal): %d", Cfg.TagLength        ));
-    $display($sformatf("Index Length of Axi Address        (decimal): %d", Cfg.IndexLength      ));
-    $display($sformatf("Block Offset Length of Axi Address (decimal): %d", Cfg.BlockOffsetLength));
-    $display($sformatf("Byte Offset Length of Axi Address  (decimal): %d", Cfg.ByteOffsetLength ));
+    $display($sformatf("Block Size in Bits                 (decimal): %d", Cfg.BlockSize        ));
+    $display($sformatf("Tag Length of AXI Address          (decimal): %d", Cfg.TagLength        ));
+    $display($sformatf("Index Length of AXI Address        (decimal): %d", Cfg.IndexLength      ));
+    $display($sformatf("Block Offset Length of AXI Address (decimal): %d", Cfg.BlockOffsetLength));
+    $display($sformatf("Byte Offset Length of AXI Address  (decimal): %d", Cfg.ByteOffsetLength ));
     $display("###############################################################################");
-    $display("AXI Port parameters:");
+    $display("AXI4 Port parameters:");
     $display("Slave port (CPU):");
     $display($sformatf("ID   width (decimal): %d", AxiCfg.SlvPortIdWidth ));
     $display($sformatf("ADDR width (decimal): %d", AxiCfg.AddrWidthFull  ));
@@ -756,28 +892,28 @@ module axi_llc_config #(
     $display($sformatf("ADDR width (decimal): %d", AxiCfg.LitePortAddrWidth  ));
     $display($sformatf("DATA width (decimal): %d", AxiCfg.LitePortDataWidth  ));
     $display($sformatf("STRB width (decimal): %d", AxiCfg.LitePortDataWidth/8));
-    $display("###############################################################################");
     $display("Address mapping information:");
     $display($sformatf("Ram Start Address (hex): %h", axi_ram_rule_i.start_addr ));
     $display($sformatf("Ram End   Address (hex): %h", axi_ram_rule_i.end_addr   ));
     $display($sformatf("SPM Start Address (hex): %h", axi_spm_rule_i.start_addr ));
     $display($sformatf("SPM End   Address (hex): %h", axi_spm_rule_i.end_addr   ));
-    $display($sformatf("CFG:REG_SPM_CFG   (hex): %h", cfg_addr_map[REG_SPM_CFG  ].start_addr ));
-    $display($sformatf("CFG:REG_FLUSH     (hex): %h", cfg_addr_map[REG_FLUSH    ].start_addr ));
-    $display($sformatf("CFG:REG_PCNT_CFG  (hex): %h", cfg_addr_map[REG_PCNT_CFG ].start_addr ));
-    $display($sformatf("CFG:REG_CYCLE_CNT (hex): %h", cfg_addr_map[REG_CYCLE_CNT].start_addr ));
-    $display($sformatf("CFG:REG_DESC_CNT  (hex): %h", cfg_addr_map[REG_DESC_CNT ].start_addr ));
-    $display($sformatf("CFG:REG_HIT_CNT   (hex): %h", cfg_addr_map[REG_HIT_CNT  ].start_addr ));
-    $display($sformatf("CFG:REG_MISS_CNT  (hex): %h", cfg_addr_map[REG_MISS_CNT ].start_addr ));
-    $display($sformatf("CFG:REG_EVICT_CNT (hex): %h", cfg_addr_map[REG_EVICT_CNT].start_addr ));
-    $display($sformatf("CFG:REG_REFIL_CNT (hex): %h", cfg_addr_map[REG_REFIL_CNT].start_addr ));
-    $display($sformatf("CFG:REG_FLUSH_CNT (hex): %h", cfg_addr_map[REG_FLUSH_CNT].start_addr ));
-    $display($sformatf("CFG:REG_FLUSHED   (hex): %h", cfg_addr_map[REG_FLUSHED  ].start_addr ));
-    $display($sformatf("CFG:REG_BIST_OUT  (hex): %h", cfg_addr_map[REG_BIST_OUT ].start_addr ));
-    $display($sformatf("CFG:REG_SET_ASSO  (hex): %h", cfg_addr_map[REG_SET_ASSO ].start_addr ));
-    $display($sformatf("CFG:REG_NO_LINES  (hex): %h", cfg_addr_map[REG_NO_LINES ].start_addr ));
-    $display($sformatf("CFG:REG_NO_BLOCKS (hex): %h", cfg_addr_map[REG_NO_BLOCKS].start_addr ));
     $display("###############################################################################");
     $display("###############################################################################");
+//     $display($sformatf("CFG:REG_SPM_CFG   (hex): %h", cfg_addr_map[REG_SPM_CFG  ].start_addr ));
+//     $display($sformatf("CFG:REG_FLUSH     (hex): %h", cfg_addr_map[REG_FLUSH    ].start_addr ));
+//     $display($sformatf("CFG:REG_PCNT_CFG  (hex): %h", cfg_addr_map[REG_PCNT_CFG ].start_addr ));
+//     $display($sformatf("CFG:REG_CYCLE_CNT (hex): %h", cfg_addr_map[REG_CYCLE_CNT].start_addr ));
+//     $display($sformatf("CFG:REG_DESC_CNT  (hex): %h", cfg_addr_map[REG_DESC_CNT ].start_addr ));
+//     $display($sformatf("CFG:REG_HIT_CNT   (hex): %h", cfg_addr_map[REG_HIT_CNT  ].start_addr ));
+//     $display($sformatf("CFG:REG_MISS_CNT  (hex): %h", cfg_addr_map[REG_MISS_CNT ].start_addr ));
+//     $display($sformatf("CFG:REG_EVICT_CNT (hex): %h", cfg_addr_map[REG_EVICT_CNT].start_addr ));
+//     $display($sformatf("CFG:REG_REFIL_CNT (hex): %h", cfg_addr_map[REG_REFIL_CNT].start_addr ));
+//     $display($sformatf("CFG:REG_FLUSH_CNT (hex): %h", cfg_addr_map[REG_FLUSH_CNT].start_addr ));
+//     $display($sformatf("CFG:REG_FLUSHED   (hex): %h", cfg_addr_map[REG_FLUSHED  ].start_addr ));
+//     $display($sformatf("CFG:REG_BIST_OUT  (hex): %h", cfg_addr_map[REG_BIST_OUT ].start_addr ));
+//     $display($sformatf("CFG:REG_SET_ASSO  (hex): %h", cfg_addr_map[REG_SET_ASSO ].start_addr ));
+//     $display($sformatf("CFG:REG_NO_LINES  (hex): %h", cfg_addr_map[REG_NO_LINES ].start_addr ));
+//     $display($sformatf("CFG:REG_NO_BLOCKS (hex): %h", cfg_addr_map[REG_NO_BLOCKS].start_addr ));
+//     $display("###############################################################################");
   end
 endmodule
