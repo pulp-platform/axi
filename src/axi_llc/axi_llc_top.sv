@@ -148,7 +148,7 @@ module axi_llc_top #(
   ///
   /// Restrictions:
   /// * Minimum value: `32'd1`
-  /// * Maximum value: `32'd32`
+  /// * Maximum value: `32'd63`
   /// TODO: CHANGE: The maximum value depends on the data width of the AXI LITE configuration port
   ///               and should either be 32 or 64 to stay inside the protocol specification.
   ///               The reason is that the SPM configuration register matches in width the data
@@ -209,16 +209,6 @@ module axi_llc_top #(
   parameter type mst_req_t      = logic,
   /// responses master port
   parameter type mst_resp_t     = logic,
-  /// AXI Lite AW channel
-  parameter type lite_aw_chan_t = logic,
-  /// AXI Lite W channel
-  parameter type lite_w_chan_t  = logic,
-  /// AXI Lite B channel
-  parameter type lite_b_chan_t  = logic,
-  /// AXI Lite AR channel
-  parameter type lite_ar_chan_t = logic,
-  /// AXI Lite R channel
-  parameter type lite_r_chan_t  = logic,
   /// request  lite port
   parameter type lite_req_t     = logic,
   /// response lite port
@@ -251,9 +241,7 @@ module axi_llc_top #(
   /// End of address region mapped to cache
   input  logic [AxiCfg.AddrWidthFull-1:0]      ram_end_addr_i,
   /// SPM start address
-  input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
-  /// Config start address, TODO: remove when switch to `axi_lite_regs`
-  input  logic [AxiCfg.LitePortAddrWidth-1:0]  cfg_start_addr_i
+  input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i
 );
   typedef logic [ AxiCfg.SlvPortIdWidth  -1:0] axi_slv_id_t;
   typedef logic [ AxiCfg.AddrWidthFull   -1:0] axi_addr_t;
@@ -418,11 +406,6 @@ module axi_llc_top #(
     .Cfg            ( Cfg              ),
     .AxiCfg         ( AxiCfg           ),
     .desc_t         ( llc_desc_t       ),
-    .lite_aw_chan_t ( lite_aw_chan_t   ),
-    .lite_w_chan_t  ( lite_w_chan_t    ),
-    .lite_b_chan_t  ( lite_b_chan_t    ),
-    .lite_ar_chan_t ( lite_ar_chan_t   ),
-    .lite_r_chan_t  ( lite_r_chan_t    ),
     .lite_req_t     ( lite_req_t       ),
     .lite_resp_t    ( lite_resp_t      ),
     .rule_full_t    ( rule_full_t      ),
@@ -461,8 +444,7 @@ module axi_llc_top #(
     .bist_valid_i      ( bist_valid        ),
     // address rules for bypass selection
     .axi_ram_rule_i    ( ram_addr_rule     ),
-    .axi_spm_rule_i    ( spm_addr_rule     ),
-    .cfg_start_addr_i  ( cfg_start_addr_i  )
+    .axi_spm_rule_i    ( spm_addr_rule     )
   );
 
   // Isolation module before demux to easy flushing,
