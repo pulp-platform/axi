@@ -111,13 +111,13 @@ package axi_llc_pkg;
 
   /// Miss counter determine how many descriptors of a given ID can go into the miss pipeline before
   /// the module stalls.
-  parameter int unsigned MissCntWidth     = 5;
+  parameter int unsigned MissCntWidth     = 32'd5;
   /// Writes are counted separately. Writes have to be in order, only one counter.
-  parameter int unsigned MissCntMaxWWidth = 7;
+  parameter int unsigned MissCntMaxWWidth = 32'd7;
   /// This number tells us how many bits of the slave port AXI ID are used for pointing on a counter
   /// * Translates in 2**`UseIdBits` counters inferred.
   /// * Set this parameter to the slave port AXI ID width if you want one counter for each AXI ID.
-  parameter int unsigned UseIdBits        = 4;
+  parameter int unsigned UseIdBits        = 32'd4;
 
   /// Width of the performance counters in (module.axi_llc_config)
   parameter int unsigned PerfWidth = 32'd42;
