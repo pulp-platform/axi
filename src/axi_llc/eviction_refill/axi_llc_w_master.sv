@@ -208,6 +208,7 @@ module axi_llc_w_master #(
           load_busy = 1'b1;
         end
       end
+      default: /*do nothing*/ ;
     endcase
   end
 
