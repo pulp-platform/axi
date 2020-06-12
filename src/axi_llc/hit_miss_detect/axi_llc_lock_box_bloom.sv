@@ -128,15 +128,11 @@ module axi_llc_lock_box_bloom #(
                                       axi_llc_pkg::BloomHashWidth : (DataWidth - 1);
   cb_filter #(
     .KHashes     ( axi_llc_pkg::BloomKHashes     ),
-    .HashWidth   ( axi_llc_pkg::BloomHashWidth   ),
+    .HashWidth   ( HashWidth                     ),
     .HashRounds  ( axi_llc_pkg::BloomHashRounds  ),
-    .InpWidth    ( DataWidth                 ),
+    .InpWidth    ( DataWidth                     ),
     .BucketWidth ( axi_llc_pkg::BloomBucketWidth ),
     .Seeds       ( axi_llc_pkg::BloomSeeds       )
-    // Seeds and NB_HASH at defaults
-    //.HASH_WIDTH   ( 6     ), // Number of counters is 2**HASH_WIDTH
-    //.INP_WIDTH    ( WIDTH ), // Input data width
-    //.BUCKET_WIDTH ( 3     ) // Width of Bucket counters
   ) i_cb_filter(
     .clk_i,   // Clock
     .rst_ni,  // Active low reset
