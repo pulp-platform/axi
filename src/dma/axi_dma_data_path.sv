@@ -193,10 +193,10 @@ module axi_dma_data_path #(
 
     always_comb begin : proc_read_control
         // sticky is first bit for read
-        if (r_valid_i && !r_last_i) begin
+        if (r_valid_i & !r_last_i) begin
             // new transfer has started
             is_first_r_d = 1'b0;
-        end else if (r_last_i && r_valid_i) begin
+        end else if (r_last_i & r_valid_i) begin
             // finish read burst
             is_first_r_d = 1'b1;
         end else begin
@@ -400,7 +400,7 @@ module axi_dma_data_path #(
             w_num_beats_q <= 8'h0;
         end else begin
             // running_q <= running_d;
-            is_first_r    <= is_first_r_d;
+            if (r_valid_i & r_ready_o) is_first_r    <= is_first_r_d;
             w_cnt_valid_q <= w_cnt_valid_d;
             w_num_beats_q <= w_num_beats_d;
         end
