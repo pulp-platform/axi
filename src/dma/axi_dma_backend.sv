@@ -407,14 +407,14 @@ module axi_dma_backend #(
                     "axi_dma_bus_b_ready"                        : i_axi_dma_data_mover.axi_dma_req_o.b_ready,
                     "axi_dma_bus_b_valid"                        : i_axi_dma_data_mover.axi_dma_res_i.b_valid,
                     // AR AXI signals
-                    "axi_dma_bus_aw_id"                          : i_axi_dma_data_mover.axi_dma_req_o.ar.id,
-                    "axi_dma_bus_aw_addr"                        : i_axi_dma_data_mover.axi_dma_req_o.ar.addr,
-                    "axi_dma_bus_aw_len"                         : i_axi_dma_data_mover.axi_dma_req_o.ar.len,
-                    "axi_dma_bus_aw_size"                        : i_axi_dma_data_mover.axi_dma_req_o.ar.size,
-                    "axi_dma_bus_aw_burst"                       : i_axi_dma_data_mover.axi_dma_req_o.ar.burst,
-                    "axi_dma_bus_aw_cache"                       : i_axi_dma_data_mover.axi_dma_req_o.ar.cache,
-                    "axi_dma_bus_aw_valid"                       : i_axi_dma_data_mover.axi_dma_req_o.ar_valid,
-                    "axi_dma_bus_aw_ready"                       : i_axi_dma_data_mover.axi_dma_res_i.ar_ready
+                    "axi_dma_bus_ar_id"                          : i_axi_dma_data_mover.axi_dma_req_o.ar.id,
+                    "axi_dma_bus_ar_addr"                        : i_axi_dma_data_mover.axi_dma_req_o.ar.addr,
+                    "axi_dma_bus_ar_len"                         : i_axi_dma_data_mover.axi_dma_req_o.ar.len,
+                    "axi_dma_bus_ar_size"                        : i_axi_dma_data_mover.axi_dma_req_o.ar.size,
+                    "axi_dma_bus_ar_burst"                       : i_axi_dma_data_mover.axi_dma_req_o.ar.burst,
+                    "axi_dma_bus_ar_cache"                       : i_axi_dma_data_mover.axi_dma_req_o.ar.cache,
+                    "axi_dma_bus_ar_valid"                       : i_axi_dma_data_mover.axi_dma_req_o.ar_valid,
+                    "axi_dma_bus_ar_ready"                       : i_axi_dma_data_mover.axi_dma_res_i.ar_ready
                 };
     
                 data_path_trace = '{
