@@ -266,7 +266,7 @@ module fixture_axi_dma_backend();
         .axi_req_t           ( dma_req_t           ),
         .axi_res_t           ( dma_resp_t          ),
         .burst_req_t         ( burst_req_t         ),
-        .DMA_TRACING         ( 0                   )
+        .DMA_TRACING         ( 1                   )
     ) i_dut_axi_backend (
         .clk_i              ( clk              ),
         .rst_ni             ( rst_n            ),
@@ -470,7 +470,7 @@ module fixture_axi_dma_backend();
         dst_addr[63:32]   = $urandom();
         dst_addr[31: 0]   = $urandom();
         num_bytes         = 0;
-        num_bytes[15: 0]  = $urandom_range(max_len, 0);
+        num_bytes[15: 0]  = $urandom_range(max_len, 1);
         decouple_rw       = $urandom();
         deburst           = $urandom();
 

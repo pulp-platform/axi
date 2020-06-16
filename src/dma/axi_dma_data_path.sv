@@ -400,7 +400,7 @@ module axi_dma_data_path #(
             w_num_beats_q <= 8'h0;
         end else begin
             // running_q <= running_d;
-            if (r_valid_i & r_ready_o) is_first_r    <= is_first_r_d;
+            if (r_valid_i & r_ready_o) is_first_r <= is_first_r_d;
             w_cnt_valid_q <= w_cnt_valid_d;
             w_num_beats_q <= w_num_beats_d;
         end

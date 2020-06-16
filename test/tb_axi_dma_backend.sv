@@ -22,7 +22,7 @@ module tb_axi_dma_backend;
         fix.reset_lfsr();
         
         // ultra short transfers
-        for (int i = 0; i < 10000; i = i + 1) begin
+        for (int i = 0; i < 20000; i = i + 1) begin
             fix.oned_random_launch(4, 0);
             $display();
         end
@@ -30,7 +30,7 @@ module tb_axi_dma_backend;
         fix.compare_memories();
         
         // medium short transfers
-        for (int i = 0; i < 5000; i = i + 1) begin
+        for (int i = 0; i < 20000; i = i + 1) begin
             fix.oned_random_launch(10, 0);
             $display();
         end
@@ -38,23 +38,23 @@ module tb_axi_dma_backend;
         fix.compare_memories();
         
         // // short transfers
-        for (int i = 0; i < 1000; i = i + 1) begin
+        for (int i = 0; i < 25000; i = i + 1) begin
             fix.oned_random_launch(100, 0);
             $display();
         end
         fix.oned_random_launch(100, 1);
         fix.compare_memories();
         
-        // // medium transfers
-        for (int i = 0; i < 200; i = i + 1) begin
-            fix.oned_random_launch(1000, 0);
-            $display();
-        end
-        fix.oned_random_launch(1000, 1);
-        fix.compare_memories();
+         // // medium transfers
+         for (int i = 0; i < 1000; i = i + 1) begin
+             fix.oned_random_launch(1000, 0);
+             $display();
+         end
+         fix.oned_random_launch(1000, 1);
+         fix.compare_memories();
         
         // long transfers
-        for (int i = 0; i < 100; i = i + 1) begin
+        for (int i = 0; i < 250; i = i + 1) begin
             fix.oned_random_launch(10000, 0);
             $display();
         end
@@ -75,3 +75,4 @@ module tb_axi_dma_backend;
     end
 
 endmodule
+
