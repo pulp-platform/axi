@@ -18,8 +18,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `axi_id_serialize` reduces AXI IDs by serializing transactions when necessary.
 - `assign.svh`: Add macros to assign between two `struct`s inside or outside a process with
   `AXI_SET_*_STRUCT` or `AXI_ASSIGN_*_STRUCT`, respectively.
+- `axi_xp`: Crosspoint with homomorphous slave and master ports.
 
 ### Changed
+- `axi_xbar`: Add connectivity parameter to selectively connect slave ports to master ports.
 
 ### Fixed
 - `axi_lite_xbar`: Add missing `slv_a{w,r}_cache_i` connections on `axi_lite_to_axi` instance.
