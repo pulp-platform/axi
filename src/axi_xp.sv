@@ -20,6 +20,10 @@ module axi_xp #(
   parameter int unsigned NumSlvPorts = 32'd0,
   /// Number of master ports.
   parameter int unsigned NumMstPorts = 32'd0,
+  /// Connectivity from a slave port to the master ports.  A `1'b1` in `Connectivity[i][j]` means
+  /// that slave port `i` is connected to master port `j`.  By default, all slave ports are
+  /// connected to all master ports.
+  parameter bit [NumSlvPorts-1:0][NumMstPorts-1:0] Connectivity = '1,
   /// Address width of all ports.
   parameter int unsigned AxiAddrWidth = 32'd0,
   /// Data width of all ports.
@@ -118,21 +122,22 @@ module axi_xp #(
   };
 
   axi_xbar #(
-    .Cfg            ( xbar_cfg    ),
-    .slv_aw_chan_t  ( aw_t        ),
-    .mst_aw_chan_t  ( xbar_aw_t   ),
-    .w_chan_t       ( w_t         ),
-    .slv_b_chan_t   ( b_t         ),
-    .mst_b_chan_t   ( xbar_b_t    ),
-    .slv_ar_chan_t  ( ar_t        ),
-    .mst_ar_chan_t  ( xbar_ar_t   ),
-    .slv_r_chan_t   ( r_t         ),
-    .mst_r_chan_t   ( xbar_r_t    ),
-    .slv_req_t      ( req_t       ),
-    .slv_resp_t     ( resp_t      ),
-    .mst_req_t      ( xbar_req_t  ),
-    .mst_resp_t     ( xbar_resp_t ),
-    .rule_t         ( rule_t      )
+    .Cfg            ( xbar_cfg      ),
+    .Connectivity   ( Connectivity  ),
+    .slv_aw_chan_t  ( aw_t          ),
+    .mst_aw_chan_t  ( xbar_aw_t     ),
+    .w_chan_t       ( w_t           ),
+    .slv_b_chan_t   ( b_t           ),
+    .mst_b_chan_t   ( xbar_b_t      ),
+    .slv_ar_chan_t  ( ar_t          ),
+    .mst_ar_chan_t  ( xbar_ar_t     ),
+    .slv_r_chan_t   ( r_t           ),
+    .mst_r_chan_t   ( xbar_r_t      ),
+    .slv_req_t      ( req_t         ),
+    .slv_resp_t     ( resp_t        ),
+    .mst_req_t      ( xbar_req_t    ),
+    .mst_resp_t     ( xbar_resp_t   ),
+    .rule_t         ( rule_t        )
   ) i_xbar (
     .clk_i,
     .rst_ni,
