@@ -241,7 +241,11 @@ module axi_llc_top #(
   /// End of address region mapped to cache
   input  logic [AxiCfg.AddrWidthFull-1:0]      ram_end_addr_i,
   /// SPM start address
-  input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i
+  input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
+  /// Events output, for tracked events see `axi_llc_pkg`.
+  ///
+  /// Ehen not used, leave open.
+  output axi_llc_pkg::events_t                 axi_llc_events_o
 );
   typedef logic [ AxiCfg.SlvPortIdWidth  -1:0] axi_slv_id_t;
   typedef logic [ AxiCfg.AddrWidthFull   -1:0] axi_addr_t;
@@ -411,40 +415,32 @@ module axi_llc_top #(
     .rule_full_t    ( rule_full_t      ),
     .rule_lite_t    ( rule_lite_t      )
   ) i_llc_config (
-    .clk_i             ( clk_i             ),
-    .rst_ni            ( rst_ni            ),
-    .conf_req_i        ( conf_req_i        ),
-    .conf_resp_o       ( conf_resp_o       ),
-    .spm_lock_o        ( spm_lock          ),
-    .flushed_o         ( flushed           ),
-    .desc_o            ( ax_desc[2]        ),
-    .desc_valid_o      ( ax_desc_valid[2]  ),
-    .desc_ready_i      ( ax_desc_ready[2]  ),
+    .clk_i             ( clk_i                                  ),
+    .rst_ni            ( rst_ni                                 ),
+    .conf_req_i        ( conf_req_i                             ),
+    .conf_resp_o       ( conf_resp_o                            ),
+    .spm_lock_o        ( spm_lock                               ),
+    .flushed_o         ( flushed                                ),
+    .desc_o            ( ax_desc[axi_llc_pkg::ConfigUnit]       ),
+    .desc_valid_o      ( ax_desc_valid[axi_llc_pkg::ConfigUnit] ),
+    .desc_ready_i      ( ax_desc_ready[axi_llc_pkg::ConfigUnit] ),
     // AXI address input from slave port for controlling bypass
-    .slv_aw_addr_i     ( slv_req_i.aw.addr ),
-    .slv_ar_addr_i     ( slv_req_i.ar.addr ),
-    .mst_aw_bypass_o   ( slv_aw_bypass     ),
-    .mst_ar_bypass_o   ( slv_ar_bypass     ),
+    .slv_aw_addr_i     ( slv_req_i.aw.addr                      ),
+    .slv_ar_addr_i     ( slv_req_i.ar.addr                      ),
+    .mst_aw_bypass_o   ( slv_aw_bypass                          ),
+    .mst_ar_bypass_o   ( slv_ar_bypass                          ),
     // flush control signals to prevent new data in ax_cutter loading
-    .llc_isolate_o     ( llc_isolate       ),
-    .llc_isolated_i    ( llc_isolated      ),
-    .aw_unit_busy_i    ( aw_unit_busy      ),
-    .ar_unit_busy_i    ( ar_unit_busy      ),
-    .flush_desc_recv_i ( flush_recv        ),
-    // performance register inputs
-    .hit_valid_i       ( hit_valid         ),
-    .hit_ready_i       ( hit_ready         ),
-    .miss_valid_i      ( miss_valid        ),
-    .miss_ready_i      ( miss_ready        ),
-    .evict_flag_i      ( desc.evict        ),
-    .refil_flag_i      ( desc.refill       ),
-    .flush_flag_i      ( desc.flush        ),
+    .llc_isolate_o     ( llc_isolate                            ),
+    .llc_isolated_i    ( llc_isolated                           ),
+    .aw_unit_busy_i    ( aw_unit_busy                           ),
+    .ar_unit_busy_i    ( ar_unit_busy                           ),
+    .flush_desc_recv_i ( flush_recv                             ),
     // BIST input
-    .bist_res_i        ( bist_res          ),
-    .bist_valid_i      ( bist_valid        ),
+    .bist_res_i        ( bist_res                               ),
+    .bist_valid_i      ( bist_valid                             ),
     // address rules for bypass selection
-    .axi_ram_rule_i    ( ram_addr_rule     ),
-    .axi_spm_rule_i    ( spm_addr_rule     )
+    .axi_ram_rule_i    ( ram_addr_rule                          ),
+    .axi_spm_rule_i    ( spm_addr_rule                          )
   );
 
   // Isolation module before demux to easy flushing,
@@ -503,17 +499,17 @@ module axi_llc_top #(
     .desc_t ( llc_desc_t    ),
     .rule_t ( rule_full_t   )
   ) i_aw_splitter    (
-    .clk_i           ( clk_i                ),
-    .rst_ni          ( rst_ni               ),
-    .ax_chan_slv_i   ( to_llc_req.aw        ),
-    .ax_chan_valid_i ( to_llc_req.aw_valid  ),
-    .ax_chan_ready_o ( to_llc_resp.aw_ready ),
-    .desc_o          ( ax_desc[1]           ),
-    .desc_valid_o    ( ax_desc_valid[1]     ),
-    .desc_ready_i    ( ax_desc_ready[1]     ),
-    .unit_busy_o     ( aw_unit_busy         ),
-    .ram_rule_i      ( ram_addr_rule        ),
-    .spm_rule_i      ( spm_addr_rule        )
+    .clk_i           ( clk_i                                  ),
+    .rst_ni          ( rst_ni                                 ),
+    .ax_chan_slv_i   ( to_llc_req.aw                          ),
+    .ax_chan_valid_i ( to_llc_req.aw_valid                    ),
+    .ax_chan_ready_o ( to_llc_resp.aw_ready                   ),
+    .desc_o          ( ax_desc[axi_llc_pkg::AwChanUnit]       ),
+    .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::AwChanUnit] ),
+    .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::AwChanUnit] ),
+    .unit_busy_o     ( aw_unit_busy                           ),
+    .ram_rule_i      ( ram_addr_rule                          ),
+    .spm_rule_i      ( spm_addr_rule                          )
   );
 
 
@@ -526,17 +522,17 @@ module axi_llc_top #(
     .desc_t ( llc_desc_t    ),
     .rule_t ( rule_full_t   )
   ) i_ar_splitter    (
-    .clk_i           ( clk_i                ),
-    .rst_ni          ( rst_ni               ),
-    .ax_chan_slv_i   ( to_llc_req.ar        ),
-    .ax_chan_valid_i ( to_llc_req.ar_valid  ),
-    .ax_chan_ready_o ( to_llc_resp.ar_ready ),
-    .desc_o          ( ax_desc[0]           ),
-    .desc_valid_o    ( ax_desc_valid[0]     ),
-    .desc_ready_i    ( ax_desc_ready[0]     ),
-    .unit_busy_o     ( ar_unit_busy         ),
-    .ram_rule_i      ( ram_addr_rule        ),
-    .spm_rule_i      ( spm_addr_rule        )
+    .clk_i           ( clk_i                                  ),
+    .rst_ni          ( rst_ni                                 ),
+    .ax_chan_slv_i   ( to_llc_req.ar                          ),
+    .ax_chan_valid_i ( to_llc_req.ar_valid                    ),
+    .ax_chan_ready_o ( to_llc_resp.ar_ready                   ),
+    .desc_o          ( ax_desc[axi_llc_pkg::ArChanUnit]       ),
+    .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::ArChanUnit] ),
+    .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::ArChanUnit] ),
+    .unit_busy_o     ( ar_unit_busy                           ),
+    .ram_rule_i      ( ram_addr_rule                          ),
+    .spm_rule_i      ( spm_addr_rule                          )
   );
 
   // arbitration tree which funnels the flush, read and write descriptors together
@@ -613,31 +609,31 @@ module axi_llc_top #(
     .w_chan_t  ( w_chan_t      ),
     .b_chan_t  ( slv_b_chan_t  )
   ) i_evict_unit (
-    .clk_i             ( clk_i                                 ),
-    .rst_ni            ( rst_ni                                ),
-    .test_i            ( test_i                                ),
-    .desc_i            ( desc                                  ),
-    .desc_valid_i      ( miss_valid                            ),
-    .desc_ready_o      ( miss_ready                            ),
-    .desc_o            ( evict_desc                            ),
-    .desc_valid_o      ( evict_desc_valid                      ),
-    .desc_ready_i      ( evict_desc_ready                      ),
-    .way_inp_o         ( to_way       [axi_llc_pkg::EvictUnit] ),
-    .way_inp_valid_o   ( to_way_valid [axi_llc_pkg::EvictUnit] ),
-    .way_inp_ready_i   ( to_way_ready [axi_llc_pkg::EvictUnit] ),
-    .way_out_i         ( evict_way_out                         ),
-    .way_out_valid_i   ( evict_way_out_valid                   ),
-    .way_out_ready_o   ( evict_way_out_ready                   ),
-    .aw_chan_mst_o     ( from_llc_req.aw                       ),
-    .aw_chan_valid_o   ( from_llc_req.aw_valid                 ),
-    .aw_chan_ready_i   ( from_llc_resp.aw_ready                ),
-    .w_chan_mst_o      ( from_llc_req.w                        ),
-    .w_chan_valid_o    ( from_llc_req.w_valid                  ),
-    .w_chan_ready_i    ( from_llc_resp.w_ready                 ),
-    .b_chan_mst_i      ( from_llc_resp.b                       ),
-    .b_chan_valid_i    ( from_llc_resp.b_valid                 ),
-    .b_chan_ready_o    ( from_llc_req.b_ready                  ),
-    .flush_desc_recv_o ( flush_recv                            )
+    .clk_i             ( clk_i                                ),
+    .rst_ni            ( rst_ni                               ),
+    .test_i            ( test_i                               ),
+    .desc_i            ( desc                                 ),
+    .desc_valid_i      ( miss_valid                           ),
+    .desc_ready_o      ( miss_ready                           ),
+    .desc_o            ( evict_desc                           ),
+    .desc_valid_o      ( evict_desc_valid                     ),
+    .desc_ready_i      ( evict_desc_ready                     ),
+    .way_inp_o         ( to_way[axi_llc_pkg::EvictUnit]       ),
+    .way_inp_valid_o   ( to_way_valid[axi_llc_pkg::EvictUnit] ),
+    .way_inp_ready_i   ( to_way_ready[axi_llc_pkg::EvictUnit] ),
+    .way_out_i         ( evict_way_out                        ),
+    .way_out_valid_i   ( evict_way_out_valid                  ),
+    .way_out_ready_o   ( evict_way_out_ready                  ),
+    .aw_chan_mst_o     ( from_llc_req.aw                      ),
+    .aw_chan_valid_o   ( from_llc_req.aw_valid                ),
+    .aw_chan_ready_i   ( from_llc_resp.aw_ready               ),
+    .w_chan_mst_o      ( from_llc_req.w                       ),
+    .w_chan_valid_o    ( from_llc_req.w_valid                 ),
+    .w_chan_ready_i    ( from_llc_resp.w_ready                ),
+    .b_chan_mst_i      ( from_llc_resp.b                      ),
+    .b_chan_valid_i    ( from_llc_resp.b_valid                ),
+    .b_chan_ready_o    ( from_llc_req.b_ready                 ),
+    .flush_desc_recv_o ( flush_recv                           )
   );
 
   // plug in refill unit for test
@@ -649,24 +645,24 @@ module axi_llc_top #(
     .ar_chan_t ( slv_ar_chan_t ),
     .r_chan_t  ( slv_r_chan_t  )
   ) i_refill_unit (
-    .clk_i           ( clk_i                                 ),
-    .rst_ni          ( rst_ni                                ),
-    .test_i          ( test_i                                ),
-    .desc_i          ( evict_desc                            ),
-    .desc_valid_i    ( evict_desc_valid                      ),
-    .desc_ready_o    ( evict_desc_ready                      ),
-    .desc_o          ( refill_desc                           ),
-    .desc_valid_o    ( refill_desc_valid                     ),
-    .desc_ready_i    ( refill_desc_ready                     ),
-    .way_inp_o       ( to_way       [axi_llc_pkg::RefilUnit] ),
-    .way_inp_valid_o ( to_way_valid [axi_llc_pkg::RefilUnit] ),
-    .way_inp_ready_i ( to_way_ready [axi_llc_pkg::RefilUnit] ),
-    .ar_chan_mst_o   ( from_llc_req.ar                       ),
-    .ar_chan_valid_o ( from_llc_req.ar_valid                 ),
-    .ar_chan_ready_i ( from_llc_resp.ar_ready                ),
-    .r_chan_mst_i    ( from_llc_resp.r                       ),
-    .r_chan_valid_i  ( from_llc_resp.r_valid                 ),
-    .r_chan_ready_o  ( from_llc_req.r_ready                  )
+    .clk_i           ( clk_i                                ),
+    .rst_ni          ( rst_ni                               ),
+    .test_i          ( test_i                               ),
+    .desc_i          ( evict_desc                           ),
+    .desc_valid_i    ( evict_desc_valid                     ),
+    .desc_ready_o    ( evict_desc_ready                     ),
+    .desc_o          ( refill_desc                          ),
+    .desc_valid_o    ( refill_desc_valid                    ),
+    .desc_ready_i    ( refill_desc_ready                    ),
+    .way_inp_o       ( to_way[axi_llc_pkg::RefilUnit]       ),
+    .way_inp_valid_o ( to_way_valid[axi_llc_pkg::RefilUnit] ),
+    .way_inp_ready_i ( to_way_ready[axi_llc_pkg::RefilUnit] ),
+    .ar_chan_mst_o   ( from_llc_req.ar                      ),
+    .ar_chan_valid_o ( from_llc_req.ar_valid                ),
+    .ar_chan_ready_i ( from_llc_resp.ar_ready               ),
+    .r_chan_mst_i    ( from_llc_resp.r                      ),
+    .r_chan_valid_i  ( from_llc_resp.r_valid                ),
+    .r_chan_ready_o  ( from_llc_req.r_ready                 )
   );
 
   // merge unit
@@ -702,24 +698,24 @@ module axi_llc_top #(
     .w_chan_t  ( w_chan_t     ),
     .b_chan_t  ( slv_b_chan_t )
   ) i_write_unit  (
-    .clk_i           ( clk_i                                 ),
-    .rst_ni          ( rst_ni                                ),
-    .test_i          ( test_i                                ),
-    .desc_i          ( write_desc                            ),
-    .desc_valid_i    ( write_desc_valid                      ),
-    .desc_ready_o    ( write_desc_ready                      ),
-    .w_chan_slv_i    ( to_llc_req.w                          ),
-    .w_chan_valid_i  ( to_llc_req.w_valid                    ),
-    .w_chan_ready_o  ( to_llc_resp.w_ready                   ),
-    .b_chan_slv_o    ( to_llc_resp.b                         ),
-    .b_chan_valid_o  ( to_llc_resp.b_valid                   ),
-    .b_chan_ready_i  ( to_llc_req.b_ready                    ),
-    .way_inp_o       ( to_way       [axi_llc_pkg::WChanUnit] ),
-    .way_inp_valid_o ( to_way_valid [axi_llc_pkg::WChanUnit] ),
-    .way_inp_ready_i ( to_way_ready [axi_llc_pkg::WChanUnit] ),
-    .w_unlock_o      ( w_unlock                              ),
-    .w_unlock_req_o  ( w_unlock_req                          ),
-    .w_unlock_gnt_i  ( w_unlock_gnt                          )
+    .clk_i           ( clk_i                                ),
+    .rst_ni          ( rst_ni                               ),
+    .test_i          ( test_i                               ),
+    .desc_i          ( write_desc                           ),
+    .desc_valid_i    ( write_desc_valid                     ),
+    .desc_ready_o    ( write_desc_ready                     ),
+    .w_chan_slv_i    ( to_llc_req.w                         ),
+    .w_chan_valid_i  ( to_llc_req.w_valid                   ),
+    .w_chan_ready_o  ( to_llc_resp.w_ready                  ),
+    .b_chan_slv_o    ( to_llc_resp.b                        ),
+    .b_chan_valid_o  ( to_llc_resp.b_valid                  ),
+    .b_chan_ready_i  ( to_llc_req.b_ready                   ),
+    .way_inp_o       ( to_way[axi_llc_pkg::WChanUnit]       ),
+    .way_inp_valid_o ( to_way_valid[axi_llc_pkg::WChanUnit] ),
+    .way_inp_ready_i ( to_way_ready[axi_llc_pkg::WChanUnit] ),
+    .w_unlock_o      ( w_unlock                             ),
+    .w_unlock_req_o  ( w_unlock_req                         ),
+    .w_unlock_gnt_i  ( w_unlock_gnt                         )
   );
 
   // read unit
@@ -805,6 +801,136 @@ module axi_llc_top #(
     .mst_req_o   ( mst_req_o                  ),
     .mst_resp_i  ( mst_resp_i                 )
   );
+
+  // Events output track successfull handshakes at different `axi_llc` units.
+  // Function definition see `axi_llc_pkg`.
+  assign axi_llc_events_o = axi_llc_pkg::events_t'{
+    aw_slv_transfer:    axi_llc_pkg::event_num_bytes(
+        to_llc_req.aw.len,
+        to_llc_req.aw.size,
+        to_llc_req.aw_valid,
+        to_llc_resp.aw_ready),
+    ar_slv_transfer:    axi_llc_pkg::event_num_bytes(
+        to_llc_req.ar.len,
+        to_llc_req.ar.size,
+        to_llc_req.ar_valid,
+        to_llc_resp.ar_ready),
+    aw_bypass_transfer: axi_llc_pkg::event_num_bytes(
+        bypass_req.aw.len,
+        bypass_req.aw.size,
+        bypass_req.aw_valid,
+        bypass_resp.aw_ready),
+    ar_bypass_transfer: axi_llc_pkg::event_num_bytes(
+        bypass_req.ar.len,
+        bypass_req.ar.size,
+        bypass_req.ar_valid,
+        bypass_resp.ar_ready),
+    aw_mst_transfer:    axi_llc_pkg::event_num_bytes(
+        from_llc_req.aw.len,
+        from_llc_req.aw.size,
+        from_llc_req.aw_valid,
+        from_llc_resp.aw_ready),
+    ar_mst_transfer:    axi_llc_pkg::event_num_bytes(
+        from_llc_req.ar.len,
+        from_llc_req.ar.size,
+        from_llc_req.ar_valid,
+        from_llc_resp.ar_ready),
+    aw_desc_spm:        axi_llc_pkg::event_num_bytes(
+        ax_desc[axi_llc_pkg::AwChanUnit].a_x_len,
+        ax_desc[axi_llc_pkg::AwChanUnit].a_x_size,
+        ax_desc_valid[axi_llc_pkg::AwChanUnit] & ax_desc[axi_llc_pkg::AwChanUnit].spm,
+        ax_desc_ready[axi_llc_pkg::AwChanUnit]),
+    ar_desc_spm:        axi_llc_pkg::event_num_bytes(
+        ax_desc[axi_llc_pkg::ArChanUnit].a_x_len,
+        ax_desc[axi_llc_pkg::ArChanUnit].a_x_size,
+        ax_desc_valid[axi_llc_pkg::ArChanUnit] & ax_desc[axi_llc_pkg::ArChanUnit].spm,
+        ax_desc_ready[axi_llc_pkg::ArChanUnit]),
+    aw_desc_cache:      axi_llc_pkg::event_num_bytes(
+        ax_desc[axi_llc_pkg::AwChanUnit].a_x_len,
+        ax_desc[axi_llc_pkg::AwChanUnit].a_x_size,
+        ax_desc_valid[axi_llc_pkg::AwChanUnit] & ~ax_desc[axi_llc_pkg::AwChanUnit].spm,
+        ax_desc_ready[axi_llc_pkg::AwChanUnit]),
+    ar_desc_cache:      axi_llc_pkg::event_num_bytes(
+        ax_desc[axi_llc_pkg::ArChanUnit].a_x_len,
+        ax_desc[axi_llc_pkg::ArChanUnit].a_x_size,
+        ax_desc_valid[axi_llc_pkg::ArChanUnit] & ~ax_desc[axi_llc_pkg::ArChanUnit].spm,
+        ax_desc_ready[axi_llc_pkg::ArChanUnit]),
+    config_desc:        axi_llc_pkg::event_num_bytes(
+        ax_desc[axi_llc_pkg::ConfigUnit].a_x_len,
+        ax_desc[axi_llc_pkg::ConfigUnit].a_x_size,
+        ax_desc_valid[axi_llc_pkg::ConfigUnit],
+        ax_desc_ready[axi_llc_pkg::ConfigUnit]),
+    hit_write_spm:      axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        hit_valid & desc.rw & desc.spm & ~desc.flush,
+        hit_ready),
+    hit_read_spm:       axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        hit_valid & ~desc.rw & desc.spm & ~desc.flush,
+        hit_ready),
+    miss_write_spm:     axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & desc.rw & desc.spm & ~desc.flush,
+        miss_ready),
+    miss_read_spm:      axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & ~desc.rw & desc.spm & ~desc.flush,
+        miss_ready),
+    hit_write_cache:    axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        hit_valid & desc.rw & ~desc.spm & ~desc.flush,
+        hit_ready),
+    hit_read_cache:     axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        hit_valid & ~desc.rw & ~desc.spm & ~desc.flush,
+        hit_ready),
+    miss_write_cache:   axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & desc.rw & ~desc.spm & ~desc.flush,
+        miss_ready),
+    miss_read_cache:    axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & ~desc.rw & ~desc.spm & ~desc.flush,
+        miss_ready),
+    refill_write:       axi_llc_pkg::event_num_bytes(
+        evict_desc.a_x_len,
+        evict_desc.a_x_size,
+        evict_desc_valid & evict_desc.rw & ~evict_desc.spm & ~evict_desc.flush & evict_desc.refill,
+        evict_desc_ready),
+    refill_read:        axi_llc_pkg::event_num_bytes(
+        evict_desc.a_x_len,
+        evict_desc.a_x_size,
+        evict_desc_valid & ~evict_desc.rw & ~evict_desc.spm & ~evict_desc.flush & evict_desc.refill,
+        evict_desc_ready),
+    evict_write:        axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & desc.rw & ~desc.spm & ~desc.flush & desc.evict,
+        miss_ready),
+    evict_read:         axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & ~desc.rw & ~desc.spm & ~desc.flush & desc.evict,
+        miss_ready),
+    evict_flush:        axi_llc_pkg::event_num_bytes(
+        desc.a_x_len,
+        desc.a_x_size,
+        miss_valid & ~desc.spm & desc.flush & desc.evict,
+        miss_ready),
+    evict_unit_req:     to_way_valid[axi_llc_pkg::EvictUnit] & to_way_ready[axi_llc_pkg::EvictUnit],
+    refill_unit_req:    to_way_valid[axi_llc_pkg::RefilUnit] & to_way_ready[axi_llc_pkg::RefilUnit],
+    w_chan_unit_req:    to_way_valid[axi_llc_pkg::WChanUnit] & to_way_ready[axi_llc_pkg::WChanUnit],
+    r_chan_unit_req:    to_way_valid[axi_llc_pkg::RChanUnit] & to_way_ready[axi_llc_pkg::RChanUnit],
+    default: '0
+  };
 
 // pragma translate_off
 `ifndef VERILATOR

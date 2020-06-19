@@ -27,19 +27,12 @@
 /// |:-----------:|:-------------:|:----------:|:------------------------------------------------:|
 /// | `CfgSpm`    | `0x00`        | read-write | [SPM Configuration](###CfgSpm)                   |
 /// | `CfgFlush`  | `0x08`        | read-write | [Flush Configuration](###CfgFlush)               |
-/// | `CfgPcnt`   | `0x10`        | read-write | [Performance Counter Configuration](###CfgPcnt)  |
-/// | `CntCycle`  | `0x18`        | read-only  | [Cycle Counter](###CntCycle)                     |
-/// | `CntDesc`   | `0x20`        | read-only  | [Descriptor Counter](###CntDesc)                 |
-/// | `CntHit`    | `0x28`        | read-only  | [Hit Counter](###CntHit)                         |
-/// | `CntMiss`   | `0x30`        | read-only  | [Miss Counter](###CntMiss)                       |
-/// | `CntEvict`  | `0x38`        | read-only  | [Eviction Counter](###CntEvict)                  |
-/// | `CntRefil`  | `0x40`        | read-only  | [Refill Counter](###CntRefil)                    |
-/// | `CntFlush`  | `0x48`        | read-only  | [Flush Counter](###CntFlush)                     |
-/// | `Flushed`   | `0x50`        | read-only  | [Flushed Flag](###Flushed)                       |
-/// | `BistOut`   | `0x58`        | read-only  | [Tag Storage BIST Result](###BistOut)            |
-/// | `SetAsso`   | `0x60`        | read-only  | [Instantiated Set-Associativity](###SetAsso)     |
-/// | `NumLines`  | `0x68`        | read-only  | [Instantiated Number of Cache-Lines](###NumLines)|
-/// | `NumBlocks` | `0x70`        | read-only  | [Instantiated Number of Blocks](###NumBlocks)    |
+/// | `Flushed`   | `0x10`        | read-only  | [Flushed Flag](###Flushed)                       |
+/// | `BistOut`   | `0x18`        | read-only  | [Tag Storage BIST Result](###BistOut)            |
+/// | `SetAsso`   | `0x20`        | read-only  | [Instantiated Set-Associativity](###SetAsso)     |
+/// | `NumLines`  | `0x28`        | read-only  | [Instantiated Number of Cache-Lines](###NumLines)|
+/// | `NumBlocks` | `0x30`        | read-only  | [Instantiated Number of Blocks](###NumBlocks)    |
+/// | `Version`   | `0x38`        | read-only  | [AXI LLC Version](###Version)                    |
 ///
 /// ### CfgSpm
 ///
@@ -69,127 +62,6 @@
 /// | ...                     | ...         | ...                 |
 /// | `[SetAssociativity-1]`  | `1'b0`      | Flush Trigger Set-X |
 /// | `[63:SetAssociativity]` | `'0`        | Reserved            |
-///
-///
-/// ### CfgPcnt
-///
-/// Performance counter configuration register.
-/// This register is read and writable on the AXI4-Lite port.
-///
-/// The events sampled by the performance counters are generated when a descriptor
-/// leaves the hit-miss detection unit. The counters are only counting when they are enabled.
-/// The clear flag is stronger than the enable flag.
-/// TODO: Make self clearing.
-///
-/// Register Bit Map:
-/// | Bits    | Reset Value | Function                                                |
-/// |:-------:|:-----------:|:-------------------------------------------------------:|
-/// | `[0]`   | `1'b0`      | Enable performance counters: `1`: Enabled `0`: Disabled |
-/// | `[1]`   | `1'b0`      | Clear performance counters: `1`: Clear `0`: Counting    |
-/// | `[63:2]`| `'0`        | Reserved                                                |
-///
-///
-/// ### CntCycle
-///
-/// Performance counter for counting clock cycles.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up every clock cycle as long as the performance counters are enabled.
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function    |
-/// |:------------------------------:|:-----------:|:-----------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Cycle Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved    |
-///
-///
-/// ### CntDesc
-///
-/// Performance counter for counting descriptors leaving the hit-miss detection unit.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit.
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function         |
-/// |:------------------------------:|:-----------:|:----------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Descriptor Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved         |
-///
-///
-/// ### CntHit
-///
-/// Performance counter for line hit counting.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and takes the
-/// hit bypass. These descriptors are a subset of [`CntDesc`](###CntDesc).
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function       |
-/// |:------------------------------:|:-----------:|:--------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Hit Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved       |
-///
-///
-/// ### CntMiss
-///
-/// Performance counter for line miss counting.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and takes the
-/// miss pipeline. These descriptors are a subset of [`CntDesc`](###CntDesc).
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function        |
-/// |:------------------------------:|:-----------:|:---------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Miss Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved        |
-///
-///
-/// ### CntEvict
-///
-/// Performance counter for line eviction counting.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
-/// the eviction flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function            |
-/// |:------------------------------:|:-----------:|:-------------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Eviction Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved            |
-///
-///
-/// ### CntRefil
-///
-/// Performance counter for line refill counting.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
-/// the refill flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function          |
-/// |:------------------------------:|:-----------:|:-----------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Line Refill Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved          |
-///
-///
-/// ### CntFlush
-///
-/// Performance counter for flush descriptor counting.
-/// This register is read only on the AXI4-Lite port.
-///
-/// This counter counts up whenever a descriptor leaves the hit-miss detection unit and has
-/// the flush flag set. These descriptors are a subset of [`CntMiss`](###CntMiss).
-///
-/// Register Bit Map:
-/// | Bits                           | Reset Value | Function               |
-/// |:------------------------------:|:-----------:|:----------------------:|
-/// | `[axi_llc_pkg::PerfWidth-1:0]` | `'0`        | Flush Descriptor Count |
-/// | `[63:axi_llc_pkg::PerfWidth]`  | `'0`        | Reserved               |
 ///
 ///
 /// ### Flushed
@@ -260,6 +132,19 @@
 /// | Bits     | Reset Value | Function         |
 /// |:--------:|:-----------:|:----------------:|
 /// | `[63:0]` | `NoBlocks`  | Number of Blocks |
+///
+///
+/// ### `Version`
+///
+/// Register showing the instantiated version of the module `axi_llc`.
+/// This register is read only on the AXI4-Lite port.
+///
+/// This value is defined by `axi_llc_pkg::AxiLlcVersion`.
+///
+/// Register Bit Map:
+/// | Bits     | Reset Value                   | Function                    |
+/// |:--------:|:-----------------------------:|:---------------------------:|
+/// | `[63:0]` | `axi_llc_pkg::AxiLlcVersion`  | Shows the `axi_llc_version` |
 ///
 module axi_llc_config #(
   ///
@@ -345,24 +230,6 @@ module axi_llc_config #(
   /// This is for controlling the counters which keep track of how many flush descriptors are
   /// underway.
   input  logic                             flush_desc_recv_i,
-  /// Performance counter: A descriptor which takes the hit bypass is valid on the
-  /// `hit-miss unit`.
-  input  logic                             hit_valid_i,
-  /// Performance counter: A descriptor which takes the hit bypass is ready on the
-  /// `hit-miss unit`.
-  input  logic                             hit_ready_i,
-  /// Performance counter: A descriptor which takes the miss pipeline is valid on the
-  /// `hit-miss unit`.
-  input  logic                             miss_valid_i,
-  /// Performance counter: A descriptor which takes the miss pipeline is ready on the
-  /// `hit-miss unit`.
-  input  logic                             miss_ready_i,
-  /// Performance counter: A descriptor which takes the miss pipeline has the eviction flag set.
-  input  logic                             evict_flag_i,
-  /// Performance counter: A descriptor which takes the miss pipeline has the refill flag set.
-  input  logic                             refil_flag_i,
-  /// Performance counter: A descriptor which takes the miss pipeline has the flush flag set.
-  input  logic                             flush_flag_i,
   /// Result data of the BIST from the tag storage macros.
   input  logic  [Cfg.SetAssociativity-1:0] bist_res_i,
   /// Result data of the BIST from the tag storage macros is valid.
@@ -390,10 +257,6 @@ module axi_llc_config #(
   typedef logic [7:0]                        byte_t;
   typedef logic [CfgRegWidth-1:0]            data_cfg_t;
   typedef logic [AlignToBytes-1:0]           strb_cfg_t;
-  // Performance counter type definitions and padding so that the structs are byte aligned.
-  localparam int unsigned CntPadWidth = CfgRegWidth - axi_llc_pkg::PerfWidth;
-  typedef logic [axi_llc_pkg::PerfWidth-1:0] cnt_perf_t;
-  typedef logic [CntPadWidth-1:0]            pad_perf_t; // Zero Padding
   // Type for the Set Associativity puls padding
   localparam int unsigned SetAssoPadWidth = CfgRegWidth - Cfg.SetAssociativity;
   typedef logic [Cfg.SetAssociativity-1:0]   set_asso_t;
@@ -401,12 +264,13 @@ module axi_llc_config #(
 
   // Definition of the configuration registers.
   // The registers are aligned to `AlignToBytes`.
-  localparam int unsigned NumCfgRegs      = 32'd15;
+  localparam int unsigned NumCfgRegs      = 32'd8;
   localparam int unsigned NumBytesCfgRegs = AlignToBytes * NumCfgRegs;
 
   // Define the struct mapping of all configuration registers.
   // Functional bits are byte aligned to `AlignToBytes`.
   typedef struct packed {
+    data_cfg_t Version;     // read only, fixed
     data_cfg_t NumBlocks;   // read only, fixed
     data_cfg_t NumLines;    // read only, fixed
     data_cfg_t SetAsso;     // read only, fixed
@@ -414,21 +278,6 @@ module axi_llc_config #(
     set_asso_t BistOut;     // read only
     pad_asso_t PadFlushed;  // Map to '0
     set_asso_t Flushed;     // read only
-    pad_perf_t PadCntFlush; // Map to '0
-    cnt_perf_t CntFlush;    // read only
-    pad_perf_t PadCntRefil; // Map to '0
-    cnt_perf_t CntRefil;    // read only
-    pad_perf_t PadCntEvict; // Map to '0
-    cnt_perf_t CntEvict;    // read only
-    pad_perf_t PadCntMiss;  // Map to '0
-    cnt_perf_t CntMiss;     // read only
-    pad_perf_t PadCntHit;   // Map to '0
-    cnt_perf_t CntHit;      // read only
-    pad_perf_t PadCntDesc;  // Map to '0
-    cnt_perf_t CntDesc;     // read only
-    pad_perf_t PadCntCycle; // Map to '0
-    cnt_perf_t CntCycle;    // read only
-    data_cfg_t CfgPcnt;     // read and write
     pad_asso_t PadFlush;    // Map to '0
     set_asso_t CfgFlush;    // read and write
     pad_asso_t PadSpm;      // Map to '0
@@ -436,19 +285,12 @@ module axi_llc_config #(
   } struct_reg_data_t;
   // Struct for strobe values for each register:
   typedef struct packed {
+    strb_cfg_t Version;
     strb_cfg_t NumBlocks;
     strb_cfg_t NumLines;
     strb_cfg_t SetAsso;
     strb_cfg_t BistOut;
     strb_cfg_t Flushed;
-    strb_cfg_t CntFlush;
-    strb_cfg_t CntRefil;
-    strb_cfg_t CntEvict;
-    strb_cfg_t CntMiss;
-    strb_cfg_t CntHit;
-    strb_cfg_t CntDesc;
-    strb_cfg_t CntCycle;
-    strb_cfg_t CfgPcnt;
     strb_cfg_t CfgFlush;
     strb_cfg_t CfgSpm;
   } struct_reg_strb_t;
@@ -467,9 +309,9 @@ module axi_llc_config #(
     struct_reg_strb_t            StrbMap;
   } union_reg_strb_t;
 
-
   // define the reset value for the configuration registers.
   localparam union_reg_data_t CfgRstValue = struct_reg_data_t'{
+    Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
     NumBlocks: data_cfg_t'(Cfg.NoBlocks),
     NumLines:  data_cfg_t'(Cfg.NoLines),
     SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
@@ -478,19 +320,12 @@ module axi_llc_config #(
 
   // define the read-only values for the individual aligned registers
   localparam union_reg_strb_t CfgReadOnly = struct_reg_strb_t'{
+    Version:   {AlignToBytes{1'b1}}, // read-only
     NumBlocks: {AlignToBytes{1'b1}}, // read-only
     NumLines:  {AlignToBytes{1'b1}}, // read-only
     SetAsso:   {AlignToBytes{1'b1}}, // read-only
     BistOut:   {AlignToBytes{1'b1}}, // read-only
     Flushed:   {AlignToBytes{1'b1}}, // read-only
-    CntFlush:  {AlignToBytes{1'b1}}, // read-only
-    CntRefil:  {AlignToBytes{1'b1}}, // read-only
-    CntEvict:  {AlignToBytes{1'b1}}, // read-only
-    CntMiss:   {AlignToBytes{1'b1}}, // read-only
-    CntHit:    {AlignToBytes{1'b1}}, // read-only
-    CntDesc:   {AlignToBytes{1'b1}}, // read-only
-    CntCycle:  {AlignToBytes{1'b1}}, // read-only
-    CfgPcnt:   {AlignToBytes{1'b0}}, // read and write
     CfgFlush:  {AlignToBytes{1'b0}}, // read and write
     CfgSpm:    {AlignToBytes{1'b0}}  // read and write
   };
@@ -579,38 +414,17 @@ module axi_llc_config #(
   assign switch_state  = (flush_state_d != flush_state_q);
   assign load_to_flush = (to_flush_d    != to_flush_q);
 
-  // Counter enable signals
-  logic count_flush, count_refil, count_evict, count_miss, count_hit, count_desc, count_cycle;
-  // The counters are reset by the configuration port
-  logic enable_counters, clear_counters;
-  assign clear_counters  = config_q.StructMap.CfgPcnt[1];
-  assign enable_counters = config_q.StructMap.CfgPcnt[0];
-  // These are the load enable signals for the counters mapped in `i_axi_lite_regs`.
-  assign count_flush = clear_counters | (count_miss & flush_flag_i);
-  assign count_refil = clear_counters | (count_miss & refil_flag_i);
-  assign count_evict = clear_counters | (count_miss & evict_flag_i);
-  assign count_miss  = clear_counters | (enable_counters & miss_valid_i & miss_ready_i);
-  assign count_hit   = clear_counters | (enable_counters & hit_valid_i  & hit_ready_i);
-  assign count_desc  = clear_counters | (count_hit  | count_miss);
-  assign count_cycle = clear_counters |  enable_counters;
-
   always_comb begin : proc_axi_llc_cfg
     // Default assignments
     // Ensure that the struct padding is always '0!
     // Not used fields are also tied to '0!
     config_d.StructMap = struct_reg_data_t'{
+      Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
       NumBlocks: data_cfg_t'(Cfg.NoBlocks),
       NumLines:  data_cfg_t'(Cfg.NoLines),
       SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
       BistOut:   bist_res_i,
       Flushed:   config_q.StructMap.Flushed,
-      CntFlush:  (clear_counters ? '0 : config_q.StructMap.CntFlush + cnt_perf_t'(1)),
-      CntRefil:  (clear_counters ? '0 : config_q.StructMap.CntRefil + cnt_perf_t'(1)),
-      CntEvict:  (clear_counters ? '0 : config_q.StructMap.CntEvict + cnt_perf_t'(1)),
-      CntMiss:   (clear_counters ? '0 : config_q.StructMap.CntMiss  + cnt_perf_t'(1)),
-      CntHit:    (clear_counters ? '0 : config_q.StructMap.CntHit   + cnt_perf_t'(1)),
-      CntDesc:   (clear_counters ? '0 : config_q.StructMap.CntDesc  + cnt_perf_t'(1)),
-      CntCycle:  (clear_counters ? '0 : config_q.StructMap.CntCycle + cnt_perf_t'(1)),
       CfgFlush:  config_q.StructMap.CfgFlush,
       CfgSpm:    config_q.StructMap.CfgSpm,
       default:   '0
@@ -618,13 +432,6 @@ module axi_llc_config #(
     // load enables, default is zero, if needed set below
     config_load.StrbMap = struct_reg_strb_t'{
       BistOut:  {AlignToBytes{bist_valid_i}},
-      CntFlush: {AlignToBytes{count_flush}},
-      CntRefil: {AlignToBytes{count_refil}},
-      CntEvict: {AlignToBytes{count_evict}},
-      CntMiss:  {AlignToBytes{count_miss}},
-      CntHit:   {AlignToBytes{count_hit}},
-      CntDesc:  {AlignToBytes{count_desc}},
-      CntCycle: {AlignToBytes{count_cycle}},
       CfgFlush: {AlignToBytes{1'b1}},        // default one to prevent overwrite from AXI on flush
       CfgSpm:   {AlignToBytes{1'b1}},        // default one to prevent overwrite from AXI on flush
       default: '0
@@ -762,6 +569,8 @@ module axi_llc_config #(
   // Flush descriptor output is static, except for the fields defined here.
   assign desc_o = desc_t'{
     a_x_addr:  {{Cfg.TagLength{1'b0}}, flush_addr, {Cfg.ByteOffsetLength+Cfg.BlockOffsetLength{1'b0}}},
+    a_x_len:   axi_pkg::len_t'(Cfg.NoBlocks - 32'd1),
+    a_x_size:  axi_pkg::size_t'($clog2(Cfg.BlockSize / 32'd8)),
     a_x_burst: axi_pkg::BURST_INCR,
     x_resp:    axi_pkg::RESP_OKAY,
     way_ind:   flush_way_ind,
@@ -845,16 +654,10 @@ module axi_llc_config #(
 
   initial begin : proc_check_params
     set_asso      : assert (Cfg.SetAssociativity < CfgRegWidth) else
-        $fatal(1, $sformatf("LLCCfg: The maximum set associativity (%0d) has to be smaller than \
+        $fatal(1, $sformatf("LlcCfg: The maximum set associativity (%0d) has to be smaller than \
                              the the configuration register alignment in bits: %0d (dec).\n \
                              Reason: SystemVerilog requires a min struct field width of one.",
                              Cfg.SetAssociativity, CfgRegWidth));
-    perf_width    : assert (axi_llc_pkg::PerfWidth < CfgRegWidth) else
-        $fatal(1, $sformatf("LLCCfg: The maximum width of the performance counters \
-                             `axi_llc_pkg::PerfWidth: %0d` has to be smaller than the \
-                             configuration register alignment in bits: %0d. \n \
-                             Reason: SystemVerilog requires a min struct field width of one.",
-                             axi_llc_pkg::PerfWidth, CfgRegWidth));
     axi_lite_data : assume ((AxiCfg.LitePortDataWidth == 32'd64) ||
                             (AxiCfg.LitePortDataWidth == 32'd32)) else
         $warning("LitePortDataWidth: Not using AXI4 defined LITE data width!!!");

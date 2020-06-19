@@ -1893,8 +1893,8 @@ package axi_test;
         wait (this.aw_sample.size() > 0);
         aw_beat        = this.aw_sample.pop_front();
         // This scoreborad only supports this type of burst:
-        assert (aw_beat.ax_burst == axi_pkg::BURST_INCR || aw_beat.ax_len == '0) else
-            $warning("Not supported AW burst: BURST: %0h.", aw_beat.ax_burst);
+        //assert (aw_beat.ax_burst == axi_pkg::BURST_INCR || aw_beat.ax_len == '0) else
+        //    $warning("Not supported AW burst: BURST: %0h.", aw_beat.ax_burst);
         assert (aw_beat.ax_atop == '0) else
             $warning("Atomic transfers not supported: ATOP: %0h.", aw_beat.ax_atop);
 
@@ -1966,8 +1966,8 @@ package axi_test;
         wait (this.ar_sample[id].size() > 0);
         ar_beat = this.ar_sample[id].pop_front();
         // This scoreborad only supports this type of burst:
-        assert (ar_beat.ax_burst == axi_pkg::BURST_INCR || ar_beat.ax_len == '0) else
-            $warning("Not supported AR burst: BURST: %0h.", ar_beat.ax_burst);
+        // assert (ar_beat.ax_burst == axi_pkg::BURST_INCR || ar_beat.ax_len == '0) else
+        //     $warning("Not supported AR burst: BURST: %0h.", ar_beat.ax_burst);
 
         for (int unsigned i = 0; i <= ar_beat.ax_len; i++) begin
           wait (this.r_sample[id].size() > 0);
@@ -2182,6 +2182,13 @@ package axi_test;
         assert(this.b_queue[i].size()   == 0);
       end
     endtask : reset
+
+    /// Check that the byte in memory_q is the same as check_data.
+    task automatic check_byte(axi_addr_t check_addr, byte_t check_data);
+      assert(this.memory_q[check_addr][0] === check_data) else
+        $warning("Byte at ADDR: %h does not match: memory_q: %h check_data: %h",
+            check_addr, this.memory_q[check_addr][0], check_data);
+    endtask : check_byte
   endclass : axi_scoreboard
 
 endpackage
