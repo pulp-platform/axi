@@ -214,13 +214,32 @@ module axi_tlb #(
   // Pipeline translated address together with AW and AR.
   mst_addr_t  l1_tlb_wr_res_addr_buf,
               l1_tlb_rd_res_addr_buf;
-  if (L1CutAx) begin : gen_res_addr_buf
-    `FFARN(l1_tlb_wr_res_addr_buf, l1_tlb_wr_res.addr, '0, clk_i, rst_ni)
-    `FFARN(l1_tlb_rd_res_addr_buf, l1_tlb_rd_res.addr, '0, clk_i, rst_ni)
-  end else begin : gen_no_res_addr_buf
-    assign l1_tlb_wr_res_addr_buf = l1_tlb_wr_res.addr;
-    assign l1_tlb_rd_res_addr_buf = l1_tlb_rd_res.addr;
-  end
+  spill_register #(
+    .T      ( mst_addr_t  ),
+    .Bypass ( ~L1CutAx    )
+  ) i_spill_reg_wr_addr (
+    .clk_i,
+    .rst_ni,
+    .valid_i  ( demux_req.aw_valid && l1_tlb_wr_res.hit && demux_resp.aw_ready  ),
+    .ready_o  ( /* unused */                                                    ),
+    .data_i   ( l1_tlb_wr_res.addr                                              ),
+    .valid_o  ( /* unused */                                                    ),
+    .ready_i  ( mod_addr_req.aw_valid && mod_addr_resp.aw_ready                 ),
+    .data_o   ( l1_tlb_wr_res_addr_buf                                          )
+  );
+  spill_register #(
+    .T      ( mst_addr_t  ),
+    .Bypass ( ~L1CutAx    )
+  ) i_spill_reg_rd_addr (
+    .clk_i,
+    .rst_ni,
+    .valid_i  ( demux_req.ar_valid && l1_tlb_rd_res.hit && demux_resp.ar_ready  ),
+    .ready_o  ( /* unused */                                                    ),
+    .data_i   ( l1_tlb_rd_res.addr                                              ),
+    .valid_o  ( /* unused */                                                    ),
+    .ready_i  ( mod_addr_req.ar_valid && mod_addr_resp.ar_ready                 ),
+    .data_o   ( l1_tlb_rd_res_addr_buf                                          )
+  );
 
   // Handle TLB hits: Replace address and forward to master port.
   axi_modify_address #(
