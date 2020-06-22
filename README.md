@@ -3,7 +3,7 @@
 [![GitHub tag (latest SemVer)](https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&url=https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Ftag%2Fpulp-platform%2Faxi%3Fcolor%3Dblue%26label%3Dcurrent%26sort%3Dsemver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
-This is the implementation of the AMBA AXI protocol developed as part of the PULP platform as ETH Zurich. We implement AXI4+ATOPs and AXI4-Lite.
+This is the implementation of the AMBA AXI protocol developed as part of the PULP platform at ETH Zurich. We implement AXI4+ATOPs and AXI4-Lite.
 
 
 ## List of Modules
