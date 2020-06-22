@@ -94,15 +94,12 @@ module axi_tlb_l1 #(
   } entry_t;
 
   entry_t [NumEntries-1:0]  entries;
-  inp_page_t                wr_req_page,
-                            rd_req_page;
 
   // Write channel
-  assign wr_req_page = wr_req_addr_i >> 12;
   axi_tlb_l1_chan #(
     .NumEntries     ( NumEntries  ),
     .IsWriteChannel ( 1'b1        ),
-    .req_page_t     ( inp_page_t  ),
+    .req_addr_t     ( inp_addr_t  ),
     .entry_t        ( entry_t     ),
     .res_t          ( res_t       )
   ) i_wr_chan (
@@ -110,7 +107,7 @@ module axi_tlb_l1 #(
     .rst_ni,
     .test_en_i,
     .entries_i    ( entries         ),
-    .req_page_i   ( wr_req_page     ),
+    .req_addr_i   ( wr_req_addr_i   ),
     .req_valid_i  ( wr_req_valid_i  ),
     .req_ready_o  ( wr_req_ready_o  ),
     .res_o        ( wr_res_o        ),
@@ -119,11 +116,10 @@ module axi_tlb_l1 #(
   );
 
   // Read channel
-  assign rd_req_page = rd_req_addr_i >> 12;
   axi_tlb_l1_chan #(
     .NumEntries     ( NumEntries  ),
     .IsWriteChannel ( 1'b0        ),
-    .req_page_t     ( inp_page_t  ),
+    .req_addr_t     ( inp_addr_t  ),
     .entry_t        ( entry_t     ),
     .res_t          ( res_t       )
   ) i_rd_chan (
@@ -131,7 +127,7 @@ module axi_tlb_l1 #(
     .rst_ni,
     .test_en_i,
     .entries_i    ( entries         ),
-    .req_page_i   ( rd_req_page     ),
+    .req_addr_i   ( rd_req_addr_i   ),
     .req_valid_i  ( rd_req_valid_i  ),
     .req_ready_o  ( rd_req_ready_o  ),
     .res_o        ( rd_res_o        ),
@@ -207,8 +203,8 @@ module axi_tlb_l1_chan #(
   parameter int unsigned NumEntries = 0,
   /// Is this channel is used for writes?
   parameter logic IsWriteChannel = 1'b0,
-  /// Type of request page number
-  parameter type req_page_t = logic,
+  /// Type of request address
+  parameter type req_addr_t = logic,
   /// Type of a translation table entry
   parameter type entry_t = logic,
   /// Type of translation result
@@ -222,8 +218,8 @@ module axi_tlb_l1_chan #(
   input  logic                    test_en_i,
   /// Translation table entries
   input  entry_t [NumEntries-1:0] entries_i,
-  /// Request page number
-  input  req_page_t               req_page_i,
+  /// Request address
+  input  req_addr_t               req_addr_i,
   /// Request valid
   input  logic                    req_valid_i,
   /// Request ready
@@ -244,8 +240,8 @@ module axi_tlb_l1_chan #(
   logic [NumEntries-1:0] entry_matches;
   for (genvar i = 0; i < NumEntries; i++) begin : gen_matches
     assign entry_matches[i] = entries_i[i].valid & req_valid_i
-        & (req_page_i >= entries_i[i].first)
-        & (req_page_i <= entries_i[i].last)
+        & ((req_addr_i >> 12) >= entries_i[i].first)
+        & ((req_addr_i >> 12) <= entries_i[i].last)
         & (~IsWriteChannel | ~entries_i[i].read_only);
   end
 
@@ -269,8 +265,14 @@ module axi_tlb_l1_chan #(
     req_ready_o = 1'b0;
     res = '{default: '0};
     if (req_valid_i) begin
-      res.hit = ~no_match;
-      res.addr = (entries_i[match_idx].base + (req_page_i - entries_i[match_idx].first)) << 12;
+      if (no_match) begin
+        res = '{default: '0};
+      end else begin
+        res.hit = 1'b1;
+        res.addr = {(
+          ((req_addr_i >> 12) - entries_i[match_idx].first) + entries_i[match_idx].base
+        ), req_addr_i[11:0]};
+      end
       res_valid = 1'b1;
       req_ready_o = res_ready;
     end
