@@ -145,8 +145,19 @@ module axi_tlb_l1 #(
   localparam int unsigned EntryBytesAligned =
       2 * InpPageNumBytesAligned + OupPageNumBytesAligned + FlagBytesAligned;
   localparam int unsigned RegNumBytes = NumEntries * EntryBytesAligned;
-  // FIXME: generalize
-  localparam bit [RegNumBytes-1:0] AxiReadOnly = 64'b1110100010001000111010001000100011101000100010001110100010001000;
+  typedef struct packed {
+    bit [FlagBytesAligned-1:0]        flags;
+    bit [OupPageNumBytesAligned-1:0]  base;
+    bit [InpPageNumBytesAligned-1:0]  last;
+    bit [InpPageNumBytesAligned-1:0]  first;
+  } entry_bits_t;
+  localparam entry_bits_t [NumEntries-1:0] AxiReadOnly = '{NumEntries{'{
+    flags:              {{FlagBytesAligned-FlagBytes{1'b1}},       {FlagBytes{1'b0}}},
+    base:   {{OupPageNumBytesAligned-OupPageNumBytes{1'b1}}, {OupPageNumBytes{1'b0}}},
+    last:   {{InpPageNumBytesAligned-InpPageNumBytes{1'b1}}, {InpPageNumBytes{1'b0}}},
+    first:  {{InpPageNumBytesAligned-InpPageNumBytes{1'b1}}, {InpPageNumBytes{1'b0}}},
+    default: 1'b0 // this should not be needed, but in doubt better make the bytes writeable
+  }}};
   typedef logic [7:0] byte_t;
   byte_t [RegNumBytes-1:0] reg_q;
   axi_lite_regs #(
