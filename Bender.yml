@@ -10,6 +10,7 @@ package:
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.0 }
+  tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git",  rev:     master }
 
 export_include_dirs:
   - include
@@ -54,6 +55,7 @@ sources:
   - src/axi_id_serialize.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
+  - src/axi_to_mem_banked.sv
   # Level 4
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
@@ -91,4 +93,5 @@ sources:
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
       - test/tb_axi_to_axi_lite.sv
+      - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
