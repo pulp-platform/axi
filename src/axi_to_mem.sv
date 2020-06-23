@@ -129,7 +129,7 @@ module axi_to_mem #(
     // Default assignments
     axi_resp_o.ar_ready = 1'b0;
     rd_meta_d           = rd_meta_q;
-    rd_meta             = 'x;
+    rd_meta             = meta_t'{default: '0};
     rd_valid            = 1'b0;
     r_cnt_d             = r_cnt_q;
     // Handle R burst in progress.
@@ -169,7 +169,7 @@ module axi_to_mem #(
     axi_resp_o.aw_ready = 1'b0;
     axi_resp_o.w_ready  = 1'b0;
     wr_meta_d           = wr_meta_q;
-    wr_meta             = 'x;
+    wr_meta             = meta_t'{default: '0};
     wr_valid            = 1'b0;
     w_cnt_d             = w_cnt_q;
     // Handle W bursts in progress.
@@ -209,16 +209,16 @@ module axi_to_mem #(
 
   // Arbitrate between reads and writes.
   stream_mux #(
-    .DATA_T (meta_t),
-    .N_INP  (2)
+    .DATA_T ( meta_t ),
+    .N_INP  ( 32'd2  )
   ) i_ax_mux (
-    .inp_data_i   ({wr_meta, rd_meta}),
+    .inp_data_i   ({wr_meta,  rd_meta }),
     .inp_valid_i  ({wr_valid, rd_valid}),
     .inp_ready_o  ({wr_ready, rd_ready}),
-    .inp_sel_i    (meta_sel_d),
-    .oup_data_o   (meta),
-    .oup_valid_o  (arb_valid),
-    .oup_ready_i  (arb_ready)
+    .inp_sel_i    ( meta_sel_d         ),
+    .oup_data_o   ( meta               ),
+    .oup_valid_o  ( arb_valid          ),
+    .oup_ready_i  ( arb_ready          )
   );
   always_comb begin
     meta_sel_d = meta_sel_q;

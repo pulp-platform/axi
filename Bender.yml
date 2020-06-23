@@ -8,8 +8,9 @@ package:
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.20.0 }
-  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1 }
+  common_cells:        { git: "https://github.com/pulp-platform/common_cells.git",        version: 1.20.0 }
+  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1  }
+  tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git",  rev:     master }
 
 export_include_dirs:
   - include
@@ -50,6 +51,7 @@ sources:
   - src/axi_dw_converter.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
+  - src/axi_to_mem_banked.sv
   # Level 4
   - src/axi_lite_xbar.sv
   - src/axi_xbar.sv
@@ -85,4 +87,6 @@ sources:
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
       - test/tb_axi_to_axi_lite.sv
+      - test/tb_axi_to_mem_banked.sv
+      - test/tb_axi_xbar_pkg.sv
       - test/tb_axi_xbar.sv
