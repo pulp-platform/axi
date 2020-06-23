@@ -118,6 +118,16 @@ axi_iw_converter:
   variables:
     TEST_MODULE: axi_iw_converter
 
+axi_lite_dw_converter:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_dw_converter
+
+axi_lite_mailbox:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_mailbox
+
 axi_lite_regs:
   <<: *run_vsim
   variables:
@@ -132,11 +142,6 @@ axi_lite_to_axi:
   <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_to_axi
-
-axi_lite_mailbox:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_mailbox
 
 axi_lite_xbar:
   <<: *run_vsim
