@@ -158,6 +158,12 @@ module axi_tlb_l1 #(
     first:  {{InpPageNumBytesAligned-InpPageNumBytes{1'b1}}, {InpPageNumBytes{1'b0}}},
     default: 1'b0 // this should not be needed, but in doubt better make the bytes writeable
   }}};
+  typedef struct packed {
+    logic [FlagBytesAligned*8-1:0]        flags;
+    logic [OupPageNumBytesAligned*8-1:0]  base;
+    logic [InpPageNumBytesAligned*8-1:0]  last;
+    logic [InpPageNumBytesAligned*8-1:0]  first;
+  } entry_padded_t;
   typedef logic [7:0] byte_t;
   byte_t [RegNumBytes-1:0] reg_q;
   axi_lite_regs #(
@@ -181,17 +187,14 @@ module axi_tlb_l1 #(
     .reg_load_i   ( '{RegNumBytes{1'b0}}  ),
     .reg_q_o      ( reg_q                 )
   );
+  entry_padded_t [NumEntries-1:0] entries_padded;
+  assign {>>{entries_padded}} = reg_q;
   for (genvar i = 0; i < NumEntries; i++) begin : gen_unpack_entry
-    localparam int unsigned Offset = i * EntryBytesAligned;
-    // FIXME: generalize
-    assign entries[i].first[15:0] = reg_q[Offset+0+:1];
-    assign entries[i].first[19:16] = reg_q[Offset+2][3:0];
-    assign entries[i].last[15:0] = reg_q[Offset+4+:1];
-    assign entries[i].last[19:16] = reg_q[Offset+6][3:0];
-    assign entries[i].base[15:0] = reg_q[Offset+8+:1];
-    assign entries[i].base[19:16] = reg_q[Offset+10][3:0];
-    assign entries[i].valid = reg_q[Offset+12][0];
-    assign entries[i].read_only = reg_q[Offset+12][1];
+    assign entries[i].first = entries_padded[i].first[InpPageNumWidth-1:0];
+    assign entries[i].last = entries_padded[i].last[InpPageNumWidth-1:0];
+    assign entries[i].base = entries_padded[i].base[OupPageNumWidth-1:0];
+    assign entries[i].valid = entries_padded[i].flags[0];
+    assign entries[i].read_only = entries_padded[i].flags[1];
   end
 
   `ifndef VERILATOR
