@@ -1729,15 +1729,17 @@ package axi_test;
 
     task automatic send_rs();
       forever begin
-        automatic logic rand_success;
-        automatic addr_t ar_addr;
-        automatic data_t r_data;
+        automatic logic           rand_success;
+        automatic addr_t          ar_addr;
+        automatic data_t          r_data;
+        automatic axi_pkg::resp_t r_resp;
         wait (ar_queue.size() > 0);
         ar_addr = this.ar_queue.pop_front();
         rand_success = std::randomize(r_data); assert(rand_success);
+        rand_success = std::randomize(r_resp); assert(rand_success);
         rand_wait(R_MIN_WAIT_CYCLES, R_MAX_WAIT_CYCLES);
-        $display("%0t %s> Send  R with DATA: %h", $time(), this.name, r_data);
-        this.drv.send_r(r_data, axi_pkg::RESP_OKAY);
+        $display("%0t %s> Send  R with DATA: %h RESP: %h", $time(), this.name, r_data, r_resp);
+        this.drv.send_r(r_data, r_resp);
       end
     endtask : send_rs
 
