@@ -94,7 +94,7 @@ module axi_llc_ways #(
       ~r_switch_full & inp_ready[axi_llc_pkg::RChanUnit];
 
   // demultiplexer for each unit to the ways
-  for (genvar i = 0; i < 4; i++) begin : gen_connect_demux
+  for (genvar i = 0; unsigned'(i) < 4; i++) begin : gen_connect_demux
     onehot_to_bin #(
       .ONEHOT_WIDTH ( Cfg.SetAssociativity )
     ) i_demux_onehot (
@@ -111,14 +111,14 @@ module axi_llc_ways #(
       .oup_valid_o  ( to_way_valid[i] ),
       .oup_ready_i  ( to_way_ready[i] )
     );
-    for (genvar j = 0; j < Cfg.SetAssociativity; j++) begin : gen_connect_cross
+    for (genvar j = 0; unsigned'(j) < Cfg.SetAssociativity; j++) begin : gen_connect_cross
       assign t_to_way_valid[j][i] = to_way_valid[i][j];
       assign to_way_ready[i][j]   = t_to_way_ready[j][i];
     end
   end
 
   // once for each way
-  for (genvar j = 0; j < Cfg.SetAssociativity; j++) begin : gen_data_ways
+  for (genvar j = 0; unsigned'(j) < Cfg.SetAssociativity; j++) begin : gen_data_ways
     // connect both units to the RAM
     rr_arb_tree #(
       .NumIn    ( 4          ),
