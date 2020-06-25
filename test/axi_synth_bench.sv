@@ -174,6 +174,25 @@ module axi_synth_bench (
     end
   end
 
+  // AXI4+ATOP on chip memory slave banked
+  for (genvar i = 0; i < 5; i++) begin : gen_axi_to_mem_banked_data
+    for (genvar j = 0; j < 5; j++) begin : gen_axi_to_mem_banked_bank_num
+      for (genvar k = 0; k < 2; k++) begin : gen_axi_to_mem_banked_bank_addr
+        localparam int unsigned DATA_WIDTH_AXI[5]   = {32'd32, 32'd64, 32'd128, 32'd256, 32'd512};
+        localparam int unsigned NUM_BANKS[5]        = {32'd2,  32'd4,  32'd6,   32'd8,   32'd16};
+        localparam int unsigned ADDR_WIDTH_BANKS[2] = {32'd5,  32'd11};
+
+        synth_axi_to_mem_banked #(
+          .AxiDataWidth  ( DATA_WIDTH_AXI[i]   ),
+          .BankNum       ( NUM_BANKS[j]        ),
+          .BankAddrWidth ( ADDR_WIDTH_BANKS[k] )
+        ) i_axi_to_mem_banked (.*);
+      end
+    end
+  end
+
+
+
 endmodule
 
 
@@ -658,4 +677,72 @@ module synth_axi_iw_converter # (
     .slv     ( upstream   ),
     .mst     ( downstream )
   );
+endmodule
+
+module synth_axi_to_mem_banked #(
+  parameter int unsigned AxiDataWidth  = 32'd0,
+  parameter int unsigned BankNum       = 32'd0,
+  parameter int unsigned BankAddrWidth = 32'd0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+  localparam int unsigned AxiIdWidth    = 32'd10;
+  localparam int unsigned AxiAddrWidth  = 32'd64;
+  localparam int unsigned AxiStrbWidth  = AxiDataWidth / 32'd8;
+  localparam int unsigned AxiUserWidth  = 32'd8;
+  localparam int unsigned BankDataWidth = 32'd2 * AxiDataWidth / BankNum;
+  localparam int unsigned BankStrbWidth = BankDataWidth / 32'd8;
+  localparam int unsigned BankLatency   = 32'd1;
+
+  typedef logic [BankAddrWidth-1:0] mem_addr_t;
+  typedef logic [BankDataWidth-1:0] mem_data_t;
+  typedef logic [BankStrbWidth-1:0] mem_strb_t;
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
+    .AXI_DATA_WIDTH ( AxiAddrWidth ),
+    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth )
+  ) axi ();
+
+  // Misc signals
+  logic                             test;
+  logic           [1:0]             axi_to_mem_busy;
+  // Signals for mem macros
+  logic           [BankNum-1:0] mem_req;
+  logic           [BankNum-1:0] mem_gnt;
+  mem_addr_t      [BankNum-1:0] mem_addr;
+  logic           [BankNum-1:0] mem_we;
+  mem_data_t      [BankNum-1:0] mem_wdata;
+  mem_strb_t      [BankNum-1:0] mem_be;
+  axi_pkg::atop_t [BankNum-1:0] mem_atop;
+  mem_data_t      [BankNum-1:0] mem_rdata;
+
+
+  axi_to_mem_banked_intf #(
+    .AXI_ID_WIDTH    ( AxiIdWidth    ),
+    .AXI_ADDR_WIDTH  ( AxiAddrWidth  ),
+    .AXI_DATA_WIDTH  ( AxiDataWidth  ),
+    .AXI_USER_WIDTH  ( AxiUserWidth  ),
+    .MEM_NUM_BANKS   ( BankNum       ),
+    .MEM_ADDR_WIDTH  ( BankAddrWidth ),
+    .MEM_DATA_WIDTH  ( BankDataWidth ),
+    .MEM_LATENCY     ( BankLatency   )
+  ) i_axi_to_mem_banked_intf (
+    .clk_i,
+    .rst_ni,
+    .test_i            ( test            ),
+    .slv               ( axi             ),
+    .mem_req_o         ( mem_req         ),
+    .mem_gnt_i         ( mem_gnt         ),
+    .mem_add_o         ( mem_addr        ),
+    .mem_we_o          ( mem_we          ),
+    .mem_wdata_o       ( mem_wdata       ),
+    .mem_be_o          ( mem_be          ),
+    .mem_atop_o        ( mem_atop        ),
+    .mem_rdata_i       ( mem_rdata       ),
+    .axi_to_mem_busy_o ( axi_to_mem_busy )
+  );
+
 endmodule
