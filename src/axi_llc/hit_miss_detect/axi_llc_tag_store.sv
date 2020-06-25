@@ -313,7 +313,7 @@ module axi_llc_tag_store #(
   end // proc_tag_out_mux
 
   // generate for each Way once
-  for (genvar i = 0; i < Cfg.SetAssociativity; i++) begin : proc_tag
+  for (genvar i = 0; unsigned'(i) < Cfg.SetAssociativity; i++) begin : proc_tag
     tag_t tag_r_ram;    // read data from the sram
     tag_t tag_compared; // comparison result of tags
 
