@@ -254,7 +254,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_xbar`: Add parameter to disable support for atomic operations (`ATOPs`).
-- Add last level cache `axi_llc_top`.
+- `Bender`: Add dependency `tech_cells_generic` `v0.2.2` for generic SRAM macro for simulation.
+- `axi_llc_top`: AXI4+ATOP last level cache.
+  - Configurable in set-associativity, number of cache lines and number of blocks.
+  - Data-flow driven design, simultaneous read, write, eviction and refill.
+  - Each set can be configured to be directly addressable as scratch pad memory. This
+    can be configured, dynamically while the rest is used as cache.
+  - User triggered flush.
+  - Bypass when not accessing the cached or SPM mapped address regions.
+  - Integrated marchX test for SRAM used for the tag storage.
 
 ### Changed
 - `AXI_BUS`, `AXI_BUS_ASYNC`, `AXI_BUS_DV`, `AXI_LITE`, and `AXI_LITE_DV`: Change type of every
