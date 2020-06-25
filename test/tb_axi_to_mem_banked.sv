@@ -29,9 +29,9 @@ module tb_axi_to_mem_banked #(
   /// Latancy in cycles of a memory bank.
   parameter int unsigned TbMemLatency   = 32'd2,
   /// Number of writes performed by the testbench.
-  parameter int unsigned NumWrites    = 32'd5000,
+  parameter int unsigned NumWrites      = 32'd10000,
   /// Number of writes performed by the testbench.
-  parameter int unsigned NumReads     = 32'd10000
+  parameter int unsigned NumReads       = 32'd10000
 );
   // test bench params
   localparam time CyclTime = 10ns;
