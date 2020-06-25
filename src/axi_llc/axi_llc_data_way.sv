@@ -10,50 +10,53 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_data_way.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   20.05.2019
-//
-// Description: Implements one Way/Set of the cache and controls the memory macro where the
-//              cached data is stored in. From the `way_inp` struct it determines what action
-//              should be performed on the macro. The module answers with read output and the
-//              enum of the module, which made the read request. The module is able to stall
-//              if the read is not consumed the cycle it is made.
-//
-//              The input struct has to be defined as follows (is done in `axi_llc_top`):
-//              typedef struct packed {
-//                axi_axi_llc_pkg::cache_unit_e         cache_unit;   // which unit does the access
-//                logic [Cfg.SetAssociativity -1:0] way_ind;      // to which way the access goes
-//                logic [Cfg.IndexLength      -1:0] line_addr;    // cache line address
-//                logic [Cfg.BlockOffsetLength-1:0] blk_offset;   // block offset
-//                logic                             we;           // write enable
-//                axi_data_t                        data;         // write data to the macro
-//                axi_strb_t                        strb;         // write enable (AXI strb)
-//              } way_inp_t;
-//
-//              The output struct has to be defined as follows (is done in `axi_llc_top`):
-//              typedef struct packed {
-//                axi_axi_llc_pkg::cache_unit_e cache_unit;   // which unit had the access
-//                axi_data_t                data;         // read data from the macro
-//              } way_oup_t;
 
-// register macros
+/// Implements one Way/Set of the cache and controls the memory macro where the
+/// cached data is stored in. From the `way_inp` struct it determines what action
+/// should be performed on the macro. The module answers with read output and the
+/// enum of the module, which made the read request. The module is able to stall
+/// if the read is not consumed the cycle it is made.
 `include "common_cells/registers.svh"
-
 module axi_llc_data_way #(
-  parameter axi_llc_pkg::llc_cfg_t   Cfg        = -1,    // static LLC configuration
-  parameter type                     way_inp_t  = logic, // struct of signals going into the way
-  parameter type                     way_oup_t  = logic  // struct of signals going out of the way
+  /// Static AXI LLC configuration
+  parameter axi_llc_pkg::llc_cfg_t   Cfg        = -1,
+  /// The input struct has to be defined as follows (is done in `axi_llc_top`):
+  /// typedef struct packed {
+  ///   axi_axi_llc_pkg::cache_unit_e     cache_unit;   // which unit does the access
+  ///   logic [Cfg.SetAssociativity -1:0] way_ind;      // to which way the access goes
+  ///   logic [Cfg.IndexLength      -1:0] line_addr;    // cache line address
+  ///   logic [Cfg.BlockOffsetLength-1:0] blk_offset;   // block offset
+  ///   logic                             we;           // write enable
+  ///   axi_data_t                        data;         // write data to the macro
+  ///   axi_strb_t                        strb;         // write enable (AXI strb)
+  /// } way_inp_t;
+  parameter type                     way_inp_t  = logic,
+  /// The output struct has to be defined as follows (is done in `axi_llc_top`):
+  /// typedef struct packed {
+  ///   axi_axi_llc_pkg::cache_unit_e cache_unit;   // which unit had the access
+  ///   axi_data_t                    data;         // read data from the macro
+  /// } way_oup_t;
+  parameter type                     way_oup_t  = logic
 ) (
-  input  logic     clk_i,  // Clock
-  input  logic     rst_ni, // Asynchronous reset active low
-  input  logic     test_i, // Enables SRam bypass
-  // input operation
+  /// Clock, positive edge triggered
+  input  logic     clk_i,
+  /// Asynchronous reset active low
+  input  logic     rst_ni,
+  /// Testmode enable
+  input  logic     test_i,
+  /// Data way request input
   input  way_inp_t inp_i,
+  /// Request is valid
   input  logic     inp_valid_i,
+  /// Module is ready to handle a request
   output logic     inp_ready_o,
-  // output (read data)
+  /// Output is read data, has routing information, which unit made an access.
   output way_oup_t out_o,
+  /// Output is valid.
   output logic     out_valid_o,
+  /// Downstream is ready for output.
   input  logic     out_ready_i
 );
 
@@ -119,22 +122,26 @@ module axi_llc_data_way #(
     end
   end
 
-  axi_llc_sram #(
-    .DATA_WIDTH ( Cfg.BlockSize              ),
-    .N_WORDS    ( Cfg.NoLines * Cfg.NoBlocks )
+  tc_sram #(
+    .NumWords   ( Cfg.NoLines * Cfg.NoBlocks ),
+    .DataWidth  ( Cfg.BlockSize              ),
+    .ByteWidth  ( 32'd8                      ),
+    .NumPorts   ( 32'd1                      ),
+    .Latency    ( 32'd1                      ),
+    .SimInit    ( "none"                     ),
+    .PrintSimCfg( 1'b1                       )
   ) i_data_sram (
-    .clk_i      ( clk_i      ),
-    .rst_ni     ( rst_ni     ),
-    .test_i     ( test_i     ),
-    .req_i      ( ram_req    ),
-    .we_i       ( inp_i.we   ),
-    .addr_i     ( addr       ),
-    .wdata_i    ( inp_i.data ),
-    .be_i       ( inp_i.strb ),
-    .rdata_o    ( out_o.data )
+    .clk_i,
+    .rst_ni,
+    .req_i   ( ram_req    ),
+    .we_i    ( inp_i.we   ),
+    .addr_i  ( addr       ),
+    .wdata_i ( inp_i.data ),
+    .be_i    ( inp_i.strb ),
+    .rdata_o ( out_o.data )
   );
 
   // Flip Flops to hold the read request meta information
-  `FFLARN(outp_valid_q, outp_valid_d, load_valid, '0,                     clk_i, rst_ni)
-  `FFLARN(cache_unit_q, cache_unit_d, load_unit,  axi_llc_pkg::EvictUnit, clk_i, rst_ni)
+  `FFLARN(outp_valid_q, outp_valid_d, load_valid, '0, clk_i, rst_ni)
+  `FFLARN(cache_unit_q, cache_unit_d, load_unit, axi_llc_pkg::EvictUnit, clk_i, rst_ni)
 endmodule

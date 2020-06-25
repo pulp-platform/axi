@@ -12,57 +12,68 @@
 // File:   tag_store.sv
 // Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
 // Date:   06.06.2019
-//
-// Description: This is the Tag storage for the LLC
-//              There are four types of requests which can be made onto this unit.
-//              BIST:   The pattern gets written or read to all macros, BIST resulte gets activated
-//              FLUSH:  Perform a way trageted eviction
-//              LOOKUP: Perform a tag lookup in all non SPM ways, hit/eviction gets set if needed
-//              STORE:  Store the given tag plus flags in a given way
-//
 
-// register macros
+/// This is the Tag storage for the LLC
+/// There are four types of requests which can be made onto this unit.
+/// BIST:   The pattern gets written or read to all macros, BIST resulte gets activated
+/// FLUSH:  Perform a way trageted eviction
+/// LOOKUP: Perform a tag lookup in all non SPM ways, hit/eviction gets set if needed
+/// STORE:  Store the given tag plus flags in a given way
 `include "common_cells/registers.svh"
-
 module axi_llc_tag_store #(
+  /// Static LLC configuration struct
   parameter axi_llc_pkg::llc_cfg_t Cfg = -1
 ) (
-  input  logic clk_i,   // Clock
-  input  logic rst_ni,  // Asynchronous reset active low
-  input  logic test_i,  // to enable during testing (activates sram bypass)
-  // inputs
-  // Which ways are disabled for STORE requests, because they are beeing used as SPM
+  /// Clock, positive edge triggered
+  input  logic clk_i,
+  /// Asynchronous reset, active low
+  input  logic rst_ni,
+  /// Testmode enable
+  input  logic test_i,
+  /// SPM lock signal input.
+  ///
+  /// For each way there is one signal. When high the way is configured as SPM. They are disabled
+  /// for store requests.
   input  logic [Cfg.SetAssociativity-1:0] spm_lock_i,
-  // LOOKUP have to be the inverse of the flushed signal, as during flushing
-  // other mem accesses on ways that are actively flushing could be valid
+  /// Flushed indicator from `axi_llc_config`.
+  ///
+  /// This indicates that a way is flushed. No LOOKUP operations are performed on flushed ways.
   input  logic [Cfg.SetAssociativity-1:0] flushed_i,
-  // -------------------------------------------------
-  // request
-  // control
-  input  logic                            valid_i,      // valid request to the tag storage
-  output logic                            ready_o,      // tag storage is ready for a request
-  input  axi_llc_pkg::tag_req_e           req_mode_i,   // what mode the request has
-  // In which way should the request be operated on
+  /// Request to the tag storage is valid.
+  input  logic                            valid_i,
+  /// Tag storage is ready for an request.
+  output logic                            ready_o,
+  /// The request type is indicated on this signal.
+  ///
+  /// Possible requests are defined in `axi_llc_pkg`'
+  input  axi_llc_pkg::tag_req_e           req_mode_i,
+  /// Request are performed on these ways.
   input  logic [Cfg.SetAssociativity-1:0] way_ind_i,
-  // Is the Cache index of the lookup/write, equals Line Address
+  /// Is the Cache index of the lookup/write, equals cache line address.
   input  logic [Cfg.IndexLength-1:0]      index_i,
-  // Indicates in the SRAM that the Tag inside is dirty (on write requests to the cache)
+  /// Indicates that the tag stored is dirty (on write requests to the cache).
   input  logic                            tag_dit_i,
-  // Tag for which the lookup or the write should be done
+  /// Tag (higher part of the address) for which the lookup or the write should be done.
   input  logic [Cfg.TagLength-1:0]        tag_i,
-  // --------------------------------------------------
-  // outputs
-  output logic [Cfg.SetAssociativity-1:0] way_ind_o,    // cache operation has to be on this way
-  output logic                            hit_o,        // request has a cache hit
-  output logic                            evict_o,      // line has dirty data in it -> evict
-  output logic [Cfg.TagLength-1:0]        tag_o,        // tag for eviction
-  output logic                            dit_o,        // eviction tag has the dirty field set
-  output logic                            valid_o,      // output of the detection is valid
-  input  logic                            ready_i,      // handshake
-  // --------------------------------------------------
-  // BIST output
-  output logic [Cfg.SetAssociativity-1:0] bist_res_o,   // BIST output
-  output logic                            bist_valid_o  // BIST output is valid
+  /// The descriptor has to do its operation this way.
+  output logic [Cfg.SetAssociativity-1:0] way_ind_o,
+  /// Descriptor hits on the cache line when high. Low means a miss. and line has to be refilled.
+  output logic                            hit_o,
+  /// The cache line has dirty data on it currently. It has to be evicted.
+  output logic                            evict_o,
+  /// The old tag for eviction.
+  output logic [Cfg.TagLength-1:0]        tag_o,
+  /// Tag evicted is dirty.
+  output logic                            dit_o,
+  /// Output of the hit miss detection is valid.
+  output logic                            valid_o,
+  /// Rest of the unit is ready to process the detection output.
+  input  logic                            ready_i,
+  /// BIST result output. If one of these bits is high, when `bist_valid_o` is `1`. The
+  /// corresponding tag storage SRAM macro failed the test.
+  output logic [Cfg.SetAssociativity-1:0] bist_res_o,
+  /// BIST output is valid.
+  output logic                            bist_valid_o
 );
 
   // typedef, because we use in this module many signals with the width of SetAssiciativity
@@ -317,18 +328,24 @@ module axi_llc_tag_store #(
     tag_t tag_r_ram;    // read data from the sram
     tag_t tag_compared; // comparison result of tags
 
-    axi_llc_sram #(
-      .DATA_WIDTH (  TagDataLen ),
-      .N_WORDS    ( Cfg.NoLines )
+    tc_sram #(
+      .NumWords    ( Cfg.NoLines ),
+      .DataWidth   ( TagDataLen  ),
+      .ByteWidth   ( TagDataLen  ),
+      .NumPorts    ( 32'd1       ),
+      .Latency     ( 32'd1       ),
+      .SimInit     ( "none"      ),
+      .PrintSimCfg ( 1'b1        )
+      //.AddrWidth  ((NumWords > 32'd1) ? (NumWords) : 32'd1),
+      //.BeWidth    ((DataWidth + ByteWidth - 32'd1) / ByteWidth)
     ) i_tag_store (
-      .clk_i   (      clk_i ),
-      .rst_ni  (     rst_ni ),
-      .test_i  (     test_i ),
+      .clk_i,
+      .rst_ni,
       .req_i   ( req_ram[i] ),
       .we_i    (  we_ram[i] ),
       .addr_i  (  index_ram ),
       .wdata_i (  tag_w_ram ),
-      .be_i    (         '1 ),
+      .be_i    (  we_ram[i] ),
       .rdata_o (  tag_r_ram )
     );
 
@@ -380,11 +397,11 @@ module axi_llc_tag_store #(
   );
 
   // Flip Flops
-  `FFLARN(busy_q,     busy_d,     load_busy,            '0, clk_i, rst_ni)
-  `FFLARN(req_mode_q, req_mode_d,      load, axi_llc_pkg::BIST, clk_i, rst_ni)
-  `FFLARN(way_ind_q,  way_ind_d,       load,            '0, clk_i, rst_ni)
-  `FFLARN(index_q,    index_d,         load,            '0, clk_i, rst_ni)
-  `FFLARN(tag_q,      tag_d,           load,            '0, clk_i, rst_ni)
+  `FFLARN(busy_q, busy_d, load_busy, '0, clk_i, rst_ni)
+  `FFLARN(req_mode_q, req_mode_d, load, axi_llc_pkg::BIST, clk_i, rst_ni)
+  `FFLARN(way_ind_q, way_ind_d, load, '0, clk_i, rst_ni)
+  `FFLARN(index_q, index_d, load, '0, clk_i, rst_ni)
+  `FFLARN(tag_q, tag_d, load, '0, clk_i, rst_ni)
 
   // assertions
   // pragma translate_off
