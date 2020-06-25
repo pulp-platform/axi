@@ -12,13 +12,10 @@
 // - Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>
 
 /// AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.
-/// Address transltion is handled as follows:
+/// Has higher throughput than `axi_to_mem`, however needs more hardware.
 ///
-/// Address: {`Ignored`, `Word Address`, `BankSelection`, `ByteOffset`}
-/// - `Ignored`:       .
-/// - `Word Address`:  .
-/// - `BankSelection`: .
-/// - `ByteOffset`:    .
+/// The used address space starts at 0x0 and ends at the capacity of all memory banks combined.
+/// The higher address bits are ignored for accesses.
 module axi_to_mem_banked #(
   /// AXI4+ATOP ID width
   parameter int unsigned                  AxiIdWidth    = 32'd0,
@@ -56,7 +53,7 @@ module axi_to_mem_banked #(
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Address type of the memory request.
   parameter type mem_addr_t = logic [MemAddrWidth-1:0],
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Atomic operation type for the memory request.
-  parameter type mem_atop_t = logic [5:0],
+  parameter type mem_atop_t = axi_pkg::atop_t,
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Data type for the memory request.
   parameter type mem_data_t = logic [MemDataWidth-1:0],
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Byte strobe/enable signal for the memory request.
@@ -94,10 +91,12 @@ module axi_to_mem_banked #(
   /// This specifies the number of banks needed to have the full data bandwidth of one
   /// AXI data channel.
   localparam int unsigned BanksPerAxiChannel = AxiDataWidth / MemDataWidth;
-  /// Offset of the byte address from AXI to determine, where the selection signal should start
+  /// Offset of the byte address from AXI to determine, where the selection signal for the
+  /// memory bank should start.
   localparam int unsigned BankSelOffset = $clog2(MemDataWidth / 32'd8);
-  /// Selection signal width of the xbar.
-  localparam int unsigned BankSelWidth = cf_math_pkg::idx_width(MemNumBanks);
+  /// Selection signal width of the xbar. This is the reason for power of two banks, otherwise
+  /// There are holes in the address mapping.
+  localparam int unsigned BankSelWidth  = cf_math_pkg::idx_width(MemNumBanks);
   typedef logic [BankSelWidth-1:0] xbar_sel_t;
 
   // Typedef for defining the channels
