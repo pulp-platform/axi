@@ -203,7 +203,7 @@ module axi_to_mem_banked #(
       .mem_rdata_i  ( res_rdata                       )
     );
     // Pack the payload data together
-    for (genvar j = 0; j < BanksPerAxiChannel; j++) begin : gen_response_mux
+    for (genvar j = 0; unsigned'(j) < BanksPerAxiChannel; j++) begin : gen_response_mux
       // Cut out the bank selection signal.
       assign inter_sel[i][j] = req_addr[j][BankSelOffset+:BankSelWidth];
 

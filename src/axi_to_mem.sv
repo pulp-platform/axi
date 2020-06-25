@@ -316,7 +316,7 @@ module axi_to_mem #(
   );
 
   // Assemble the actual memory request from meta information and write data.
-  assign m2s_req = '{
+  assign m2s_req = mem_req_t'{
     addr:  meta.addr,
     atop:  meta.atop,
     strb:  axi_req_i.w.strb,
@@ -632,7 +632,7 @@ module mem_to_banks #(
 
   // Handle requests.
   assign req_valid = req_i & gnt_o;
-  for (genvar i = 0; i < NumBanks; i++) begin : gen_reqs
+  for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_reqs
     assign bank_req[i].addr  = align_addr(addr_i) + i * BytesPerBank;
     assign bank_req[i].wdata = wdata_i[i*BitsPerBank+:BitsPerBank];
     assign bank_req[i].strb  = strb_i[i*BytesPerBank+:BytesPerBank];
@@ -663,7 +663,7 @@ module mem_to_banks #(
   assign gnt_o = (&req_ready) & (&resp_ready);
 
   // Handle responses.
-  for (genvar i = 0; i < NumBanks; i++) begin : gen_resp_regs
+  for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
     fall_through_register #(
       .T ( oup_data_t )
     ) i_ft_reg (

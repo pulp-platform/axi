@@ -153,10 +153,10 @@ module synth_bench (
 
   // AXI4+ATOP on chip memory slave banked
   for (genvar i = 0; i < 5; i++) begin : gen_axi_to_mem_banked_data
-    for (genvar j = 0; j < 5; j++) begin : gen_axi_to_mem_banked_bank_num
+    for (genvar j = 0; j < 4; j++) begin : gen_axi_to_mem_banked_bank_num
       for (genvar k = 0; k < 2; k++) begin : gen_axi_to_mem_banked_bank_addr
         localparam int unsigned DATA_WIDTH_AXI[5]   = {32'd32, 32'd64, 32'd128, 32'd256, 32'd512};
-        localparam int unsigned NUM_BANKS[5]        = {32'd2,  32'd4,  32'd6,   32'd8,   32'd16};
+        localparam int unsigned NUM_BANKS[4]        = {32'd2,  32'd4,  32'd6,   32'd8};
         localparam int unsigned ADDR_WIDTH_BANKS[2] = {32'd5,  32'd11};
 
         synth_axi_to_mem_banked #(
