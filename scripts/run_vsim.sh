@@ -103,6 +103,29 @@ exec_test() {
                 done
             done
             ;;
+        axi_xbar)
+            for GEN_ATOP in 0 1; do
+                for NUM_MST in 1 2 4 6; do
+                    for NUM_SLV in 2 7 9; do
+                        for MST_ID_USE in 3 5; do
+                            MST_ID=5
+                            for DATA_WIDTH in 64 256; do
+                                for PIPE in 0 1; do
+                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
+                                        -gTbNumMasters=$NUM_MST       \
+                                        -gTbNumSlaves=$NUM_SLV        \
+                                        -gTbAxiIdWidthMasters=$MST_ID \
+                                        -gTbAxiIdUsed=$MST_ID_USE     \
+                                        -gTbAxiDataWidth=$DATA_WIDTH  \
+                                        -gTbPipeline=$PIPE            \
+                                        -gTbEnAtop=$GEN_ATOP
+                                done
+                            done
+                        done
+                    done
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
