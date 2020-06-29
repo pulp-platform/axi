@@ -178,8 +178,25 @@ module axi_xbar #(
   // cross all channels
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_xbar_slv_cross
     for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
-      assign mst_reqs[j][i]  = slv_reqs[i][j];
-      assign slv_resps[i][j] = mst_resps[j][i];
+      // slv_req_t  pipe_req;
+      // slv_resp_t pipe_resp;
+      axi_multicut #(
+        .NoCuts    ( Cfg.PipelineStages ),
+        .aw_chan_t ( slv_aw_chan_t      ),
+        .w_chan_t  ( w_chan_t           ),
+        .b_chan_t  ( slv_b_chan_t       ),
+        .ar_chan_t ( slv_ar_chan_t      ),
+        .r_chan_t  ( slv_r_chan_t       ),
+        .req_t     ( slv_req_t          ),
+        .resp_t    ( slv_resp_t         )
+      ) i_axi_multicut_xbar_pipeline (
+        .clk_i,
+        .rst_ni,
+        .slv_req_i  ( slv_reqs[i][j]  ),
+        .slv_resp_o ( slv_resps[i][j] ),
+        .mst_req_o  ( mst_reqs[j][i]  ),
+        .mst_resp_i ( mst_resps[j][i] )
+      );
     end
   end
 
