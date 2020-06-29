@@ -244,6 +244,11 @@ package axi_llc_pkg;
   /// * Set this parameter to the slave port AXI ID width if you want one counter for each AXI ID.
   parameter int unsigned UseIdBits        = 32'd4;
 
+  /// Determined if a spill register is added for the descriptors after the `hit_miss_detect_unit`.
+  /// `0`: no spill register
+  /// `1`: add spill register
+  parameter bit SpillHitMiss = 1'b1;
+
   /// Indicates which unit does an operation onto a cache line data storage element
   typedef enum logic [1:0] {
     /// Eviction Unit
