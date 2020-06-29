@@ -506,7 +506,7 @@ module axi_llc_top #(
     .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::AwChanUnit] ),
     .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::AwChanUnit] ),
     .unit_busy_o     ( aw_unit_busy                           ),
-    .ram_rule_i      ( cached_addr_rule                       ),
+    .cached_rule_i   ( cached_addr_rule                       ),
     .spm_rule_i      ( spm_addr_rule                          )
   );
 
@@ -529,7 +529,7 @@ module axi_llc_top #(
     .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::ArChanUnit] ),
     .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::ArChanUnit] ),
     .unit_busy_o     ( ar_unit_busy                           ),
-    .ram_rule_i      ( cached_addr_rule                       ),
+    .cached_rule_i   ( cached_addr_rule                       ),
     .spm_rule_i      ( spm_addr_rule                          )
   );
 
