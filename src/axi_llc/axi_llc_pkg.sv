@@ -55,7 +55,7 @@ package axi_llc_pkg;
     /// Number of cache lines per way
     int unsigned NoLines;
     /// Number of blocks (words) in a cache line
-    int unsigned NoBlocks;
+    int unsigned NumBlocks;
     /// Size of a block (word) in bit.
     int unsigned BlockSize;
     /// Length of the address tag

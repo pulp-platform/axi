@@ -234,9 +234,9 @@ module axi_llc_w_master #(
   endfunction : load_new_desc
 
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b1         ),  // FIFO is in fall-through mode
-    .DEPTH        ( Cfg.NoBlocks ),  // can store a whole cache line
-    .dtype        ( data_t       )
+    .FALL_THROUGH ( 1'b1          ),  // FIFO is in fall-through mode
+    .DEPTH        ( Cfg.NumBlocks ),  // can store a whole cache line
+    .dtype        ( data_t        )
   ) i_r_data_fifo (
     .clk_i        ( clk_i             ),  // Clock
     .rst_ni       ( rst_ni            ),  // Asynchronous reset active low

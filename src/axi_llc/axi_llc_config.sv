@@ -126,12 +126,12 @@
 /// Register showing the instantiated number of blocks per cache-line.
 /// This register is read only on the AXI4-Lite port.
 ///
-/// Equal to the parameter of `axi_llc_top` `NoBlocks`.
+/// Equal to the parameter of `axi_llc_top` `NumBlocks`.
 ///
 /// Register Bit Map:
 /// | Bits     | Reset Value | Function         |
 /// |:--------:|:-----------:|:----------------:|
-/// | `[63:0]` | `NoBlocks`  | Number of Blocks |
+/// | `[63:0]` | `NumBlocks`  | Number of Blocks |
 ///
 ///
 /// ### `Version`
@@ -313,7 +313,7 @@ module axi_llc_config #(
   // define the reset value for the configuration registers.
   localparam union_reg_data_t CfgRstValue = struct_reg_data_t'{
     Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
-    NumBlocks: data_cfg_t'(Cfg.NoBlocks),
+    NumBlocks: data_cfg_t'(Cfg.NumBlocks),
     NumLines:  data_cfg_t'(Cfg.NoLines),
     SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
     default:   '0
@@ -421,7 +421,7 @@ module axi_llc_config #(
     // Not used fields are also tied to '0!
     config_d.StructMap = struct_reg_data_t'{
       Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
-      NumBlocks: data_cfg_t'(Cfg.NoBlocks),
+      NumBlocks: data_cfg_t'(Cfg.NumBlocks),
       NumLines:  data_cfg_t'(Cfg.NoLines),
       SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
       BistOut:   bist_res_i,
@@ -570,7 +570,7 @@ module axi_llc_config #(
   // Flush descriptor output is static, except for the fields defined here.
   assign desc_o = desc_t'{
     a_x_addr:  {{Cfg.TagLength{1'b0}}, flush_addr, {Cfg.ByteOffsetLength+Cfg.BlockOffsetLength{1'b0}}},
-    a_x_len:   axi_pkg::len_t'(Cfg.NoBlocks - 32'd1),
+    a_x_len:   axi_pkg::len_t'(Cfg.NumBlocks - 32'd1),
     a_x_size:  axi_pkg::size_t'($clog2(Cfg.BlockSize / 32'd8)),
     a_x_burst: axi_pkg::BURST_INCR,
     x_resp:    axi_pkg::RESP_OKAY,
@@ -674,7 +674,7 @@ module axi_llc_config #(
     $display("Cache Size parameters:");
     $display($sformatf("SetAssociativity (Number of Ways)  (decimal): %d", Cfg.SetAssociativity ));
     $display($sformatf("Number of Cache Lines per Set      (decimal): %d", Cfg.NoLines          ));
-    $display($sformatf("Number of Blocks per Cache Line    (decimal): %d", Cfg.NoBlocks         ));
+    $display($sformatf("Number of Blocks per Cache Line    (decimal): %d", Cfg.NumBlocks        ));
     $display($sformatf("Block Size in Bits                 (decimal): %d", Cfg.BlockSize        ));
     $display($sformatf("Tag Length of AXI Address          (decimal): %d", Cfg.TagLength        ));
     $display($sformatf("Index Length of AXI Address        (decimal): %d", Cfg.IndexLength      ));

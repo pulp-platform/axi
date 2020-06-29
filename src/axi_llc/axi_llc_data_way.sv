@@ -123,13 +123,13 @@ module axi_llc_data_way #(
   end
 
   tc_sram #(
-    .NumWords   ( Cfg.NoLines * Cfg.NoBlocks ),
-    .DataWidth  ( Cfg.BlockSize              ),
-    .ByteWidth  ( 32'd8                      ),
-    .NumPorts   ( 32'd1                      ),
-    .Latency    ( 32'd1                      ),
-    .SimInit    ( "none"                     ),
-    .PrintSimCfg( 1'b1                       )
+    .NumWords   ( Cfg.NoLines * Cfg.NumBlocks ),
+    .DataWidth  ( Cfg.BlockSize               ),
+    .ByteWidth  ( 32'd8                       ),
+    .NumPorts   ( 32'd1                       ),
+    .Latency    ( 32'd1                       ),
+    .SimInit    ( "none"                      ),
+    .PrintSimCfg( 1'b1                        )
   ) i_data_sram (
     .clk_i,
     .rst_ni,
