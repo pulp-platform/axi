@@ -817,7 +817,6 @@ module axi_demux_intf #(
   parameter int unsigned MAX_TRANS        = 32'd8,
   parameter int unsigned AXI_LOOK_BITS    = 32'd3,
   parameter bit          UNIQUE_IDS       = 1'b0,
-  parameter bit          FALL_THROUGH     = 1'b0,
   parameter bit          SPILL_AW         = 1'b1,
   parameter bit          SPILL_W          = 1'b0,
   parameter bit          SPILL_B          = 1'b0,
