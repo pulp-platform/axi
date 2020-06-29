@@ -30,9 +30,9 @@ module tb_axi_xbar #(
   /// Number of AXI slaves connected to the xbar. (Number of master ports)
   parameter int unsigned TbNumSlaves         = 32'd8,
   /// Number of write transactions per master.
-  parameter int unsigned TbNumWrites         = 32'd100,
+  parameter int unsigned TbNumWrites         = 32'd200,
   /// Number of read transactions per master.
-  parameter int unsigned TbNumReads          = 32'd100,
+  parameter int unsigned TbNumReads          = 32'd200,
   /// AXI4+ATOP ID wisth of the masters connected to the slave ports of the DUT.
   /// The ID width of the salves is calulated depending on the xbar configuration.
   parameter int unsigned TbAxiIdWidthMasters = 32'd5,
