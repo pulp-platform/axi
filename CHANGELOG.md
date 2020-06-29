@@ -277,8 +277,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_test::rand_axi_lite_slave` and `axi_test::rand_axi_lite_master`: Change type of address and
   data width parameters (`AW` and `DW`) from `int` to `int unsigned`.  Same rationale as for
   `AXI_BUS` (et al.) above.
+<<<<<<< HEAD
 - `axi_test:axi_rand_slave:` Add a mapped mode, where the salve will generate random data
     if the memory location was never accessed previously, and then answer like a memory.
+=======
+- `axi_demux`: Remove FIFO between AW and W channel, is now a register plus counter.
+               Prevents AWs to be emmitted downstream to a different master port as long as Ws
+               are still in flight to another. This prevents deadlock, if there is stalling
+               downstream.
+
+>>>>>>> 0018e38... axi_demux: Remove W select FIFO, add counter and register
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
