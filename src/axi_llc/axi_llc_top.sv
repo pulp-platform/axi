@@ -149,10 +149,7 @@ module axi_llc_top #(
   /// Restrictions:
   /// * Minimum value: `32'd1`
   /// * Maximum value: `32'd63`
-  /// TODO: CHANGE: The maximum value depends on the data width of the AXI LITE configuration port
-  ///               and should either be 32 or 64 to stay inside the protocol specification.
-  ///               The reason is that the SPM configuration register matches in width the data
-  ///               width of the LITE configuration port.
+  /// The maximum value depends on the AXI-Lite register mapping of `axi_llc_config`.
   parameter int unsigned    SetAssociativity   = 32'd8,
   /// Number of cache lines per way.
   ///
@@ -214,9 +211,7 @@ module axi_llc_top #(
   /// response lite port
   parameter type lite_resp_t    = logic,
   /// Full AXI Port address decoding rule
-  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t,
-  /// LITE AXI Port address decoding rule
-  parameter type rule_lite_t    = axi_pkg::xbar_rule_64_t
+  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t
 ) (
   /// Rising-edge clock of all ports.
   input  logic                                 clk_i,
@@ -237,10 +232,14 @@ module axi_llc_top #(
   /// AXI4-Lite slave port response, configuration
   output lite_resp_t                           conf_resp_o,
   /// Start of address region mapped to cache
-  input  logic [AxiCfg.AddrWidthFull-1:0]      ram_start_addr_i,
+  input  logic [AxiCfg.AddrWidthFull-1:0]      cached_start_addr_i,
   /// End of address region mapped to cache
-  input  logic [AxiCfg.AddrWidthFull-1:0]      ram_end_addr_i,
+  input  logic [AxiCfg.AddrWidthFull-1:0]      cached_end_addr_i,
   /// SPM start address
+  ///
+  /// The end address is automatically caclulated by the configuration of the LLC.
+  /// `spm_end_addr` = `spm_start_addr_i` +
+  ///     `SetAssociativity` * `NoLines` * `NoBlocks` * (`AxiCfg.DataWidthFull/8`)
   input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
   /// Events output, for tracked events see `axi_llc_pkg`.
   ///
@@ -253,7 +252,7 @@ module axi_llc_top #(
   typedef logic [(AxiCfg.DataWidthFull/8)-1:0] axi_strb_t;
 
   // configuration struct that has all the cache parameters included for the submodules
-  localparam axi_llc_pkg::llc_cfg_t Cfg = '{
+  localparam axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{
     SetAssociativity  : SetAssociativity,
     NoLines           : NoLines,
     NoBlocks          : NoBlocks,
@@ -392,14 +391,14 @@ module axi_llc_top #(
   logic llc_isolate, llc_isolated, aw_unit_busy, ar_unit_busy, flush_recv;
 
   // define address rules from the address ports, propagate it throughout the design
-  rule_full_t ram_addr_rule;
-  assign ram_addr_rule = '{
-    start_addr: ram_start_addr_i,
-    end_addr:   ram_end_addr_i,
+  rule_full_t cached_addr_rule;
+  assign cached_addr_rule = rule_full_t'{
+    start_addr: cached_start_addr_i,
+    end_addr:   cached_end_addr_i,
     default:    '0
   };
   rule_full_t spm_addr_rule;
-  assign spm_addr_rule = '{
+  assign spm_addr_rule = rule_full_t'{
     start_addr: spm_start_addr_i,
     end_addr:   spm_start_addr_i + axi_addr_t'(Cfg.SPMLength),
     default:    '0
@@ -412,8 +411,7 @@ module axi_llc_top #(
     .desc_t         ( llc_desc_t       ),
     .lite_req_t     ( lite_req_t       ),
     .lite_resp_t    ( lite_resp_t      ),
-    .rule_full_t    ( rule_full_t      ),
-    .rule_lite_t    ( rule_lite_t      )
+    .rule_full_t    ( rule_full_t      )
   ) i_llc_config (
     .clk_i             ( clk_i                                  ),
     .rst_ni            ( rst_ni                                 ),
@@ -439,7 +437,7 @@ module axi_llc_top #(
     .bist_res_i        ( bist_res                               ),
     .bist_valid_i      ( bist_valid                             ),
     // address rules for bypass selection
-    .axi_ram_rule_i    ( ram_addr_rule                          ),
+    .axi_cached_rule_i ( cached_addr_rule                       ),
     .axi_spm_rule_i    ( spm_addr_rule                          )
   );
 
@@ -508,7 +506,7 @@ module axi_llc_top #(
     .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::AwChanUnit] ),
     .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::AwChanUnit] ),
     .unit_busy_o     ( aw_unit_busy                           ),
-    .ram_rule_i      ( ram_addr_rule                          ),
+    .ram_rule_i      ( cached_addr_rule                       ),
     .spm_rule_i      ( spm_addr_rule                          )
   );
 
@@ -531,7 +529,7 @@ module axi_llc_top #(
     .desc_valid_o    ( ax_desc_valid[axi_llc_pkg::ArChanUnit] ),
     .desc_ready_i    ( ax_desc_ready[axi_llc_pkg::ArChanUnit] ),
     .unit_busy_o     ( ar_unit_busy                           ),
-    .ram_rule_i      ( ram_addr_rule                          ),
+    .ram_rule_i      ( cached_addr_rule                       ),
     .spm_rule_i      ( spm_addr_rule                          )
   );
 

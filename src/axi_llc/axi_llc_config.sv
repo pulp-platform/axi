@@ -161,8 +161,9 @@ module axi_llc_config #(
   parameter type                       lite_req_t     = logic,
   /// AXI4-Lite response struct definition.
   parameter type                       lite_resp_t    = logic,
-  parameter type                       rule_full_t    = logic,
-  parameter type                       rule_lite_t    = logic
+  /// Address rule struct for `common_cells/addr_decode`. Is used for bypass `axi_demux`
+  /// steering.
+  parameter type                       rule_full_t    = logic
 ) (
   /// Rising-edge clock
   input  logic clk_i,
@@ -239,7 +240,7 @@ module axi_llc_config #(
   /// This rule is used to set the AXI LLC bypass.
   /// If all cache ways are flushed, accesses onto this address region take the bypass directly
   /// to main memory.
-  input  rule_full_t                       axi_ram_rule_i,
+  input  rule_full_t                       axi_cached_rule_i,
   /// Address rule for the AXI memory region which maps to the scratch pad memory region.
   ///
   /// Accesses are only successful, if the corresponding way is mapped as SPM
@@ -336,27 +337,27 @@ module axi_llc_config #(
   union_reg_strb_t config_wr;             // AXI has written to this configuration register
 
   // Counter signals for flush control
-  logic                         clear_cnt;
-  logic                         en_send_cnt, en_recv_cnt;
-  logic                         load_cnt;
-  logic [Cfg.IndexLength-1:0]   flush_addr,  to_recieve;
+  logic                                    clear_cnt;
+  logic                                    en_send_cnt, en_recv_cnt;
+  logic                                    load_cnt;
+  logic [Cfg.IndexLength-1:0]              flush_addr,  to_recieve;
   // Trailing zero counter signals, for flush descriptor generation.
-  logic [$clog2(Cfg.SetAssociativity)-1:0]   to_flush_nub;
-  logic                                      lzc_empty;
-  set_asso_t                                 flush_way_ind;
+  logic [$clog2(Cfg.SetAssociativity)-1:0] to_flush_nub;
+  logic                                    lzc_empty;
+  set_asso_t                               flush_way_ind;
 
   ////////////////////////
   // AXI Bypass control //
   ////////////////////////
-  // local address maps for bypass 1:DRAM 0:SPM
+  // local address maps for bypass 1:Bypass 0:LLC
   rule_full_t [1:0] axi_addr_map;
   always_comb begin : proc_axi_rule
     axi_addr_map[0] = axi_spm_rule_i;
-    axi_addr_map[1] = axi_ram_rule_i;
+    axi_addr_map[1] = axi_cached_rule_i;
     // Define that accesses to the SPM region always go into the `axi_llc`.
     axi_addr_map[0].idx = 1'b0;
     // define that all burst go to the bypass, if flushed is completely set
-    axi_addr_map[1].idx = (config_q.StructMap.Flushed == {Cfg.SetAssociativity{1'b1}});
+    axi_addr_map[1].idx = &config_q.StructMap.Flushed;
   end
 
   addr_decode #(
@@ -371,7 +372,7 @@ module axi_llc_config #(
     .dec_valid_o      ( /*not used*/    ),
     .dec_error_o      ( /*not used*/    ),
     .en_default_idx_i ( 1'b1            ),
-    .default_idx_i    ( '0              )  // on decerror go to llc
+    .default_idx_i    ( 1'b1            )  // on decerror go through bypass
   );
 
   addr_decode #(
@@ -385,8 +386,8 @@ module axi_llc_config #(
     .idx_o            ( mst_ar_bypass_o ),
     .dec_valid_o      ( /*not used*/    ),
     .dec_error_o      ( /*not used*/    ),
-    .en_default_idx_i ( 1'b1            ), // on decerror go to llc
-    .default_idx_i    ( '0              )
+    .en_default_idx_i ( 1'b1            ), // on decerror go through bypass
+    .default_idx_i    ( 1'b1            )
   );
 
   //////////////////////////////////////////////////////////////////
@@ -696,10 +697,10 @@ module axi_llc_config #(
     $display($sformatf("DATA width (decimal): %d", AxiCfg.LitePortDataWidth  ));
     $display($sformatf("STRB width (decimal): %d", AxiCfg.LitePortDataWidth/8));
     $display("Address mapping information:");
-    $display($sformatf("Ram Start Address (hex): %h", axi_ram_rule_i.start_addr ));
-    $display($sformatf("Ram End   Address (hex): %h", axi_ram_rule_i.end_addr   ));
-    $display($sformatf("SPM Start Address (hex): %h", axi_spm_rule_i.start_addr ));
-    $display($sformatf("SPM End   Address (hex): %h", axi_spm_rule_i.end_addr   ));
+    $display($sformatf("Ram Start Address (hex): %h", axi_cached_rule_i.start_addr ));
+    $display($sformatf("Ram End   Address (hex): %h", axi_cached_rule_i.end_addr   ));
+    $display($sformatf("SPM Start Address (hex): %h", axi_spm_rule_i.start_addr    ));
+    $display($sformatf("SPM End   Address (hex): %h", axi_spm_rule_i.end_addr      ));
     $display("###############################################################################");
     $display("###############################################################################");
 //     $display($sformatf("CFG:REG_SPM_CFG   (hex): %h", cfg_addr_map[REG_SPM_CFG  ].start_addr ));
