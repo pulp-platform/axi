@@ -399,6 +399,7 @@ package axi_pkg;
     int unsigned   MaxSlvTrans;
     bit            FallThrough;
     xbar_latency_e LatencyMode;
+    int unsigned   PipelineStages;
     int unsigned   AxiIdWidthSlvPorts;
     int unsigned   AxiIdUsedSlvPorts;
     bit            UniqueIds;
