@@ -85,8 +85,8 @@ module axi_llc_burst_cutter #(
     for (int unsigned i = 1; i <= Cfg.SetAssociativity; i++) begin
       addr_map[i].idx = i;
       addr_map[i].start_addr   = tmp_addr;
-      addr_map[i].end_addr     = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NoBlocks * Cfg.NoLines;
-      tmp_addr                 = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NoBlocks * Cfg.NoLines;
+      addr_map[i].end_addr     = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NumBlocks * Cfg.NoLines;
+      tmp_addr                 = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NumBlocks * Cfg.NoLines;
     end
   end
 

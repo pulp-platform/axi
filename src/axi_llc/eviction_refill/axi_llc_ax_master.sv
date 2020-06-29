@@ -124,7 +124,7 @@ module axi_llc_ax_master #(
     end else begin
       chan_d.addr = refill_addr;
     end
-    chan_d.len    = Cfg.NoBlocks - 1;          // This unit always makes request for the whole line
+    chan_d.len    = Cfg.NumBlocks - 1;         // This unit always makes request for the whole line
     chan_d.size   = $clog2(Cfg.BlockSize / 8); // and all blocks
     chan_d.burst  = axi_pkg::BURST_INCR;
     chan_d.lock   = desc_i.a_x_lock;

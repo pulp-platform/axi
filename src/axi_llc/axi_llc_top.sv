@@ -49,7 +49,7 @@
   ///
   /// * `SetAssociativity`: The set-associativity of the LLC. This parameter determines how many ways/sets will be instantiated. The minimum value is 1. The maximum value depends on the data width of the AXI LITE configuration port and should either be 32 or 64 to stay inside the protocol specification. The reason is that the SPM configuration register matches in width the data width of the LITE configuration port.
   /// * `NoLines`: Specifies the number of lines in each way. This value has to be higher than two. The reason is that in the address at least one bit has to be mapped onto a cache-line index. This is a limitation of the *system verilog* language, which requires at least one bit wide fields inside of a struct. Further this value has to be a power of 2. This has to do with the requirement that the address mapping from the address onto the cache-line index has to be continuous.
-  /// * `NoBlocks`: Specifies the number of blocks inside a cache line. A block is defined to have the data width of the master port. Currently this also matches the data with of the slave port. The same value limitation as with the *NoLines* parameter applies. Fixing the minimum value to 2 and the overall value to be a power of 2.
+  /// * `NumBlocks`: Specifies the number of blocks inside a cache line. A block is defined to have the data width of the master port. Currently this also matches the data with of the slave port. The same value limitation as with the *NoLines* parameter applies. Fixing the minimum value to 2 and the overall value to be a power of 2.
   ///
   ///
   /// There exists an additional top level parameter which is compromised of a struct defining the AXI parameters of the different ports. The definition can be found in `axi_llc_pkg`. Following table defines the fields of this struct which are all of type `int unsigned`.
@@ -175,7 +175,7 @@ module axi_llc_top #(
   ///
   /// Note on restrictions:
   /// The same restriction as of parameter `NoLines` applies.
-  parameter int unsigned    NoBlocks           = 32'd8,
+  parameter int unsigned    NumBlocks           = 32'd8,
   /// Give the exact AXI parameters in struct form.
   ///
   /// Required struct definition in: `axi_llc_pkg`.
@@ -239,7 +239,7 @@ module axi_llc_top #(
   ///
   /// The end address is automatically caclulated by the configuration of the LLC.
   /// `spm_end_addr` = `spm_start_addr_i` +
-  ///     `SetAssociativity` * `NoLines` * `NoBlocks` * (`AxiCfg.DataWidthFull/8`)
+  ///     `SetAssociativity` * `NoLines` * `NumBlocks` * (`AxiCfg.DataWidthFull/8`)
   input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
   /// Events output, for tracked events see `axi_llc_pkg`.
   ///
@@ -255,14 +255,14 @@ module axi_llc_top #(
   localparam axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{
     SetAssociativity  : SetAssociativity,
     NoLines           : NoLines,
-    NoBlocks          : NoBlocks,
+    NumBlocks         : NumBlocks,
     BlockSize         : AxiCfg.DataWidthFull,
     TagLength         : AxiCfg.AddrWidthFull - $clog2(NoLines) -
-                        $clog2(NoBlocks)     - $clog2(AxiCfg.DataWidthFull/8),
+                        $clog2(NumBlocks)    - $clog2(AxiCfg.DataWidthFull/8),
     IndexLength       : $clog2(NoLines),
-    BlockOffsetLength : $clog2(NoBlocks),
+    BlockOffsetLength : $clog2(NumBlocks),
     ByteOffsetLength  : $clog2(AxiCfg.DataWidthFull/8),
-    SPMLength         : SetAssociativity * NoLines * NoBlocks * (AxiCfg.DataWidthFull/8)
+    SPMLength         : SetAssociativity * NoLines * NumBlocks * (AxiCfg.DataWidthFull/8)
   };
 
   // definition of the descriptor struct that gets sent around in the llc

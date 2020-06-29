@@ -221,9 +221,9 @@ module axi_llc_read_unit #(
     .pop_i        ( meta_fifo_pop   )   // pop when data is pushed to R FIFO
   );
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b1         ),  // FIFO is in fall-through mode, for read response latency
-    .DEPTH        ( Cfg.NoBlocks ),  // can store a whole cache line, when the request size is max
-    .dtype        ( r_chan_t     )
+    .FALL_THROUGH ( 1'b1          ),  // FIFO is in fall-through mode, for read response latency
+    .DEPTH        ( Cfg.NumBlocks ),  // can store a whole cache line, when the request size is max
+    .dtype        ( r_chan_t      )
   ) i_r_fifo (
     .clk_i        ( clk_i        ),  // Clock
     .rst_ni       ( rst_ni       ),  // Asynchronous reset active low
