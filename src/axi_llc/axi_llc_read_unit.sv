@@ -193,9 +193,11 @@ module axi_llc_read_unit #(
   assign r_fifo_pop      =  r_chan_ready_i & ~r_fifo_empty;
 
   // R FIFO data assignment
-  assign r_fifo_inp = '{
+  assign r_fifo_inp = r_chan_t'{
     id:   meta_fifo_outp.id,
-    data: way_out_i.data,      // add data from the SRAM
+    // Add data from the SRAM only if the response is ok.
+    data: (meta_fifo_outp.resp inside {axi_pkg::RESP_OKAY}) ?
+              way_out_i.data : data_t'(axi_llc_pkg::AxiLlcVersion),
     resp: meta_fifo_outp.resp,
     last: meta_fifo_outp.last,
     default: '0
