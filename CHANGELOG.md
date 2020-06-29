@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
   in the crossed connections in the xbar between the demuxes and muxes.
 - `axi_pkg`: Add documentation to `xbar_cfg_t`.
+- `axi_demux`: Remove FIFO between AW and W channel, is now a register plus counter.
+               Prevents AWs to be emmitted downstream to a different master port as long as Ws
+               are still in flight to another. This prevents deadlock, if there is stalling
+               downstream.
+- `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`. This adds `axi_multicuts`
+              in the crossed connections in the xbar between the demuxes and muxes.
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
