@@ -120,8 +120,8 @@ module tb_axi_xbar #(
     .MAX_READ_TXNS  ( 20       ),
     .MAX_WRITE_TXNS ( 20       ),
     .AXI_ATOPS      ( TbEnAtop )
-  ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  ) rand_axi_master_t;
+  typedef axi_test::rand_axi_slave #(
     // AXI interface parameters
     .AW ( TbAxiAddrWidth     ),
     .DW ( TbAxiDataWidth     ),
