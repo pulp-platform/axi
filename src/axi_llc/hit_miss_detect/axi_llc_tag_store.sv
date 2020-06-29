@@ -329,15 +329,13 @@ module axi_llc_tag_store #(
     tag_t tag_compared; // comparison result of tags
 
     tc_sram #(
-      .NumWords    ( Cfg.NoLines ),
-      .DataWidth   ( TagDataLen  ),
-      .ByteWidth   ( TagDataLen  ),
-      .NumPorts    ( 32'd1       ),
-      .Latency     ( 32'd1       ),
-      .SimInit     ( "none"      ),
-      .PrintSimCfg ( 1'b1        )
-      //.AddrWidth  ((NumWords > 32'd1) ? (NumWords) : 32'd1),
-      //.BeWidth    ((DataWidth + ByteWidth - 32'd1) / ByteWidth)
+      .NumWords    ( Cfg.NumLines ),
+      .DataWidth   ( TagDataLen   ),
+      .ByteWidth   ( TagDataLen   ),
+      .NumPorts    ( 32'd1        ),
+      .Latency     ( 32'd1        ),
+      .SimInit     ( "none"       ),
+      .PrintSimCfg ( 1'b1         )
     ) i_tag_store (
       .clk_i,
       .rst_ni,
