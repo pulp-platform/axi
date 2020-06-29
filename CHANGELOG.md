@@ -65,6 +65,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Add parameter `PipelineStages`.  This adds `axi_multicuts` in the crossed connections in the
     xbar between the demuxes and muxes.
   - `axi_pkg`: Add documentation to `xbar_cfg_t`.
+- `axi_test:axi_rand_slave:` Add a mapped mode, where the salve will generate random data
+                             if the memory location was never accessed previously, and then
+                             answer like a memory.
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
