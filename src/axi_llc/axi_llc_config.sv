@@ -113,12 +113,12 @@
 /// Register showing the instantiated number of cache lines per set.
 /// This register is read only on the AXI4-Lite port.
 ///
-/// Equal to the parameter of `axi_llc_top` `NoLines`.
+/// Equal to the parameter of `axi_llc_top` `NumLines`.
 ///
 /// Register Bit Map:
 /// | Bits     | Reset Value | Function        |
 /// |:--------:|:-----------:|:---------------:|
-/// | `[63:0]` | `NoLines`   | Number of Lines |
+/// | `[63:0]` | `NumLines`   | Number of Lines |
 ///
 ///
 /// ### `NumBlocks`
@@ -314,7 +314,7 @@ module axi_llc_config #(
   localparam union_reg_data_t CfgRstValue = struct_reg_data_t'{
     Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
     NumBlocks: data_cfg_t'(Cfg.NumBlocks),
-    NumLines:  data_cfg_t'(Cfg.NoLines),
+    NumLines:  data_cfg_t'(Cfg.NumLines),
     SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
     default:   '0
   };
@@ -422,7 +422,7 @@ module axi_llc_config #(
     config_d.StructMap = struct_reg_data_t'{
       Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
       NumBlocks: data_cfg_t'(Cfg.NumBlocks),
-      NumLines:  data_cfg_t'(Cfg.NoLines),
+      NumLines:  data_cfg_t'(Cfg.NumLines),
       SetAsso:   data_cfg_t'(Cfg.SetAssociativity),
       BistOut:   bist_res_i,
       Flushed:   config_q.StructMap.Flushed,
@@ -673,7 +673,7 @@ module axi_llc_config #(
     $display("###############################################################################");
     $display("Cache Size parameters:");
     $display($sformatf("SetAssociativity (Number of Ways)  (decimal): %d", Cfg.SetAssociativity ));
-    $display($sformatf("Number of Cache Lines per Set      (decimal): %d", Cfg.NoLines          ));
+    $display($sformatf("Number of Cache Lines per Set      (decimal): %d", Cfg.NumLines         ));
     $display($sformatf("Number of Blocks per Cache Line    (decimal): %d", Cfg.NumBlocks        ));
     $display($sformatf("Block Size in Bits                 (decimal): %d", Cfg.BlockSize        ));
     $display($sformatf("Tag Length of AXI Address          (decimal): %d", Cfg.TagLength        ));

@@ -53,7 +53,7 @@ package axi_llc_pkg;
     /// Set-associativity of the cache
     int unsigned SetAssociativity;
     /// Number of cache lines per way
-    int unsigned NoLines;
+    int unsigned NumLines;
     /// Number of blocks (words) in a cache line
     int unsigned NumBlocks;
     /// Size of a block (word) in bit.
