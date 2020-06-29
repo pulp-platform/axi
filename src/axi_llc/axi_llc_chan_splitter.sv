@@ -40,7 +40,7 @@ module axi_llc_chan_splitter #(
   // output busy status, for flushing
   output logic  unit_busy_o,
   // addr map input,
-  input  rule_t ram_rule_i,      // only `start_addr`, `end_addr` get used
+  input  rule_t cached_rule_i,   // only `start_addr`, `end_addr` get used
   input  rule_t spm_rule_i       // only `start_addr` gets used
 );
   // Registers
@@ -121,20 +121,20 @@ module axi_llc_chan_splitter #(
 
   // this module determines how many data beats of the AX request map onto a cache line
   axi_llc_burst_cutter #(
-    .Cfg        ( Cfg      ),
-    .AxiCfg     ( AxiCfg   ),
-    .chan_t     ( chan_t   ),
-    .Write      ( Write    ),
-    .desc_t     ( desc_t   ),
-    .rule_t     ( rule_t   )
+    .Cfg    ( Cfg      ),
+    .AxiCfg ( AxiCfg   ),
+    .chan_t ( chan_t   ),
+    .Write  ( Write    ),
+    .desc_t ( desc_t   ),
+    .rule_t ( rule_t   )
   ) i_burst_cutter (
-    .clk_i      ( clk_i       ),
-    .rst_ni     ( rst_ni      ),
-    .curr_chan_i( curr_chan   ),
-    .next_chan_o( next_chan   ),
-    .desc_o     ( desc_o      ),
-    .ram_rule_i ( ram_rule_i  ),
-    .spm_rule_i ( spm_rule_i  )
+    .clk_i,
+    .rst_ni,
+    .curr_chan_i   ( curr_chan     ),
+    .next_chan_o   ( next_chan     ),
+    .desc_o        ( desc_o        ),
+    .cached_rule_i ( cached_rule_i ),
+    .spm_rule_i    ( spm_rule_i    )
   );
 
   // Flip Flops

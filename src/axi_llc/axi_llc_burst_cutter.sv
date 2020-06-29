@@ -10,33 +10,51 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_burst_cutter.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   02.05.2019
-//
-// Description: This module takes as input an Axi4 AW or AR channel struct
-//              It computes the current descriptor for the LLC, which maps part of the burst
-//              onto a cache line
-//              It computes the remaining channel struct, all remaining parts of the burst
-//              which map onto other cache lines
-//              This module further caclulates the exact data way where an spm access goes to
 
+
+/// This module takes as input an Axi4 AW or AR channel struct
+/// It computes the current descriptor for the LLC, which maps part of the burst
+/// onto a cache line
+/// It computes the remaining channel struct, all remaining parts of the burst
+/// which map onto other cache lines
+/// This module further caclulates the exact data way where an spm access will go to.
 module axi_llc_burst_cutter #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg    = -1,                     // LLC configuration
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = -1,                     // AXI configuration
-  parameter type                       chan_t = logic,                  // AXI channel type
-  parameter bit                        Write  = 1'b0,                   // depends on channel type
-  parameter type                       desc_t = logic,                  // LLC descriptor
-  parameter type                       rule_t = axi_pkg::xbar_rule_64_t // adress rule struct
+  /// LLC configuration struct, with static parameters.
+  parameter axi_llc_pkg::llc_cfg_t     Cfg    = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// AXI channel configuration struct.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// AXI AW or AR channel struct definition.
+  parameter type                       chan_t = logic,
+  /// The type of channel, how the write bit in the descriptor should be set.
+  /// `0`: AR channel is connected, descriptors do read accesses.
+  /// `1`: AW channel is connected, descriptors do write accesses.
+  parameter bit                        Write  = 1'b0,
+  /// LLC descriptor type defeintion.
+  parameter type                       desc_t = logic,
+  /// Type of the address rule struct used for SPM access streeri
+  parameter type                       rule_t = axi_pkg::xbar_rule_64_t
 ) (
- 	input  logic  clk_i,    // Clock
- 	input  logic  rst_ni,   // Asynchronous reset active low
-  // channels
+  /// Clock, positive edge triggered.
+ 	input  logic  clk_i,
+  /// Asynchronous reset, active low.
+ 	input  logic  rst_ni,
+  /// The current AW or AR channel. This is the whole AXI transaction.
+  /// It is split into a descriptor and a next channel, which is a smaller transfer if it accesses
+  /// another cache line.
   input  chan_t curr_chan_i,
+  /// The Ax transaction where the part accessed on the current cache line has been removed.
   output chan_t next_chan_o,
+  /// Output descriptor for the current line.
   output desc_t desc_o,
-  // add rules
-  input  rule_t ram_rule_i, // `start_addr` and `end_addr` get used
-  input  rule_t spm_rule_i  // only `start_addr` gets used
+  /// Address rule for mapping the cached address region.
+  /// `start_addr` and `end_addr` are used.
+  input  rule_t cached_rule_i,
+  /// Address rule for mapping the SPM mapped region.
+  /// Here only the `satrt_addr` field is used. Internal builds an address decoding map
+  /// one for each cache way.
+  input  rule_t spm_rule_i
   );
 
   // typedefs for casting
@@ -44,7 +62,7 @@ module axi_llc_burst_cutter #(
   typedef logic [Cfg.SetAssociativity-1:0] indi_t; // way indicator type
 
   // line offset is the index where we are interested in, or where the line index starts
-  localparam LineOffset = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength;
+  localparam int unsigned LineOffset = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength;
 
   addr_t         this_line_address; // address of this line (tag included)
   addr_t         next_line_address; // address of the next line (tag included)
@@ -61,8 +79,8 @@ module axi_llc_burst_cutter #(
     tmp_addr = spm_rule_i.start_addr; // init tmp_addr
     addr_map = '0;
     // assign the ram range
-    addr_map[0].start_addr = ram_rule_i.start_addr;
-    addr_map[0].end_addr   = ram_rule_i.end_addr;
+    addr_map[0].start_addr = cached_rule_i.start_addr;
+    addr_map[0].end_addr   = cached_rule_i.end_addr;
     // assign the spm regions
     for (int unsigned i = 1; i <= Cfg.SetAssociativity; i++) begin
       addr_map[i].idx = i;
@@ -73,18 +91,20 @@ module axi_llc_burst_cutter #(
   end
 
   always_comb begin : proc_cutter
-    // make shure the outputs are defined to a default
+    // Make sure the outputs are defined to a default.
     next_chan_o         = curr_chan_i;
-    desc_o              = '0;                // init the whole descriptor to 0!
-    desc_o.a_x_id       = curr_chan_i.id;
-    desc_o.a_x_addr     = curr_chan_i.addr;
-    desc_o.a_x_size     = curr_chan_i.size;
-    desc_o.a_x_burst    = curr_chan_i.burst;
-    desc_o.a_x_lock     = curr_chan_i.lock;
-    desc_o.a_x_prot     = curr_chan_i.prot;
-    desc_o.a_x_cache    = curr_chan_i.cache;
-    desc_o.x_resp       = axi_pkg::RESP_OKAY;
-    desc_o.rw           = Write;
+    desc_o              = desc_t'{
+      a_x_id:    curr_chan_i.id,
+      a_x_addr:  curr_chan_i.addr,
+      a_x_size:  curr_chan_i.size,
+      a_x_burst: curr_chan_i.burst,
+      a_x_lock:  curr_chan_i.lock,
+      a_x_prot:  curr_chan_i.prot,
+      a_x_cache: curr_chan_i.cache,
+      x_resp:    axi_pkg::RESP_OKAY,
+      rw:        Write,
+      default: '0
+    };
 
     // calculate the line address (tag included)
     this_line_address   = addr_t'(curr_chan_i.addr[LineOffset+:(AxiCfg.AddrWidthFull-LineOffset)]
@@ -117,9 +137,9 @@ module axi_llc_burst_cutter #(
       next_chan_o.len   = curr_chan_i.len - beats_on_line;
       desc_o.a_x_len    = beats_on_line - 1;
       desc_o.x_last     = 1'b0;
-    end else begin // all remaining beats are on the current chacheline.
-      next_chan_o.addr  = '0;
-      next_chan_o.len   = '0;
+    end else begin // all remaining beats are on the current cacheline.
+      next_chan_o.addr  = addr_t'(0);
+      next_chan_o.len   = axi_pkg::len_t'(0);
       desc_o.a_x_len    = curr_chan_i.len;
       desc_o.x_last     = 1'b1;
     end
