@@ -272,6 +272,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_test::rand_axi_lite_slave` and `axi_test::rand_axi_lite_master`: Change type of address and
   data width parameters (`AW` and `DW`) from `int` to `int unsigned`.  Same rationale as for
   `AXI_BUS` (et al.) above.
+- `axi_test:axi_rand_slave:` Add a mapped mode, where the salve will generate random data
+                             if the memory location was never accessed previously, and then
+                             answer like a memory.
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
