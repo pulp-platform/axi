@@ -257,12 +257,12 @@ module axi_llc_top #(
     NumLines          : NumLines,
     NumBlocks         : NumBlocks,
     BlockSize         : AxiCfg.DataWidthFull,
-    TagLength         : AxiCfg.AddrWidthFull - $clog2(NumLines) -
-                        $clog2(NumBlocks)    - $clog2(AxiCfg.DataWidthFull/8),
-    IndexLength       : $clog2(NumLines),
-    BlockOffsetLength : $clog2(NumBlocks),
-    ByteOffsetLength  : $clog2(AxiCfg.DataWidthFull/8),
-    SPMLength         : SetAssociativity * NumLines * NumBlocks * (AxiCfg.DataWidthFull/8)
+    TagLength         : AxiCfg.AddrWidthFull - unsigned'($clog2(NumLines)) -
+        unsigned'($clog2(NumBlocks)) - unsigned'($clog2(AxiCfg.DataWidthFull / 32'd8)),
+    IndexLength       : unsigned'($clog2(NumLines)),
+    BlockOffsetLength : unsigned'($clog2(NumBlocks)),
+    ByteOffsetLength  : unsigned'($clog2(AxiCfg.DataWidthFull / 32'd8)),
+    SPMLength         : SetAssociativity * NumLines * NumBlocks * (AxiCfg.DataWidthFull / 32'd8)
   };
 
   // definition of the descriptor struct that gets sent around in the llc
