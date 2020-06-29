@@ -244,9 +244,6 @@ package axi_llc_pkg;
   /// * Set this parameter to the slave port AXI ID width if you want one counter for each AXI ID.
   parameter int unsigned UseIdBits        = 32'd4;
 
-  /// Width of the performance counters in (module.axi_llc_config)
-  parameter int unsigned PerfWidth = 32'd42;
-
   /// Indicates which unit does an operation onto a cache line data storage element
   typedef enum logic [1:0] {
     /// Eviction Unit
