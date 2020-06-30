@@ -105,8 +105,8 @@ exec_test() {
             ;;
         axi_xbar)
             for GEN_ATOP in 0 1; do
-                for NUM_MST in 1 2 4 6; do
-                    for NUM_SLV in 2 7 9; do
+                for NUM_MST in 1 6; do
+                    for NUM_SLV in 2 9; do
                         for MST_ID_USE in 3 5; do
                             MST_ID=5
                             for DATA_WIDTH in 64 256; do
