@@ -28,25 +28,27 @@
 `include "common_cells/registers.svh"
 
 module axi_llc_tag_pattern_gen #(
-  parameter axi_llc_pkg::llc_cfg_t Cfg          = -1,
-  parameter type                   pattern_type = logic
+  parameter axi_llc_pkg::llc_cfg_t Cfg       = -1,
+  parameter type                   pattern_t = logic,
+  parameter type                   way_ind_t = logic,
+  parameter type                   index_t   = logic
 ) (
-  input  logic clk_i,    // Clock
-  input  logic rst_ni,   // Asynchronous reset active low
+  input  logic     clk_i,    // Clock
+  input  logic     rst_ni,   // Asynchronous reset active low
 
-  input  logic                            valid_i,          // valid request to start BIST
-  output logic                            ready_o,          // handshaking
+  input  logic     valid_i,          // valid request to start BIST
+  output logic     ready_o,          // handshaking
   // pattern output
-  output logic [Cfg.IndexLength-1:0]      index_o,          // address for the sram
-  output pattern_type                     pattern_o,        // output pattern
-  output logic                            req_o,            // request signal for the tag sram
-  output logic                            we_o,             // write enable for tag sram
+  output index_t   index_o,          // address for the sram
+  output pattern_t pattern_o,        // output pattern
+  output logic     req_o,            // request signal for the tag sram
+  output logic     we_o,             // write enable for tag sram
   // BIST comparison input from the tag sram
-  input  logic [Cfg.SetAssociativity-1:0] bist_res_i,       // individual BIST comparison results
-  input  logic                            bist_res_valid_i, // bist_res_i is valid
+  input  way_ind_t bist_res_i,       // individual BIST comparison results
+  input  logic     bist_res_valid_i, // bist_res_i is valid
   // BIST finished output
-  output logic [Cfg.SetAssociativity-1:0] bist_res_o,       // aggregated output of bist
-  output logic                            eoc_o             // end of computation
+  output way_ind_t bist_res_o,       // aggregated output of bist
+  output logic     eoc_o             // end of computation
 );
 
   // unit status

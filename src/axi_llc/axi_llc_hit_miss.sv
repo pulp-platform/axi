@@ -9,104 +9,131 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// File:   read_unit.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// File:   axi_llc_hit_miss.sv
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   11.06.2019
-//
-// Description: This module houses the hit miss detection logic and the tag storage.
-//              When a descriptor gets loaded into the unit the respective tag operation happens
-//              depending on the input descriptor.
-//              The unit starts uninitialized and starts in the first cycle after each reset
-//              the tag pattern generator to perform a march X BIST onto the macros.
-//              After the BIST is finished, the macros are initialyzed to all zero.
-//              During initialisation no descriptors can enter the unit.
-//
-//              This unit keeps track of which cache lines are currently in use by descriptors
-//              downstream with the help od a bloom filter. If there is a new descriptor, which
-//              will access a cache line currently in use, it wil be stalled untill the line is
-//              unlocked. This is to prevent data corruption.
-//
-//              There is an array of counter which keep track which IDs of descriptors
-//              are currently in the miss pipeline. All subsequent hits which normally would go
-//              through the bypass will get sent also towards the miss pipeline. However their
-//              eviction and refill fields will not be set. This is to clear the unit from
-//              descriptors, so that new ones from other IDs can use the hit bypass.
-//
-//              // definition of the lock signals
-//              typedef struct packed {
-//                logic [Cfg.IndexLength-1:0]      index;        // index of lock (cacheline)
-//                logic [Cfg.SetAssociativity-1:0] way_ind;      // way which is locked
-//              } lock_t;
-//
-//              // definitions of the miss counting struct
-//              typedef struct packed {
-//                axi_slv_id_t                     id;           // Axi id of the count operation
-//                logic                            rw;           // 0:read, 1:write
-//                logic                            valid;        // valid, equals enable
-//              } cnt_t;
-//
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This module houses the hit miss detection logic and the tag storage.
+/// When a descriptor gets loaded into the unit the respective tag operation happens
+/// depending on the input descriptor.
+/// The unit starts uninitialized and starts in the first cycle after each reset
+/// the tag pattern generator to perform a march X BIST onto the macros.
+/// After the BIST is finished, the macros are initialyzed to all zero.
+/// During initialisation no descriptors can enter the unit.
+///
+/// This unit keeps track of which cache lines are currently in use by descriptors
+/// downstream with the help od a bloom filter. If there is a new descriptor, which
+/// will access a cache line currently in use, it wil be stalled untill the line is
+/// unlocked. This is to prevent data corruption.
+///
+/// There is an array of counter which keep track which IDs of descriptors
+/// are currently in the miss pipeline. All subsequent hits which normally would go
+/// through the bypass will get sent also towards the miss pipeline. However their
+/// eviction and refill fields will not be set. This is to clear the unit from
+/// descriptors, so that new ones from other IDs can use the hit bypass.
 module axi_llc_hit_miss #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg    = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = -1,
-  parameter type                       desc_t = logic,
-  parameter type                       lock_t = logic,
-  parameter type                       cnt_t  = logic
+  /// Stattic LLC configuration struct.
+  parameter axi_llc_pkg::llc_cfg_t     Cfg       = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// AXI parameter configuration
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type
+  parameter type                       desc_t    = logic,
+  /// Lock struct definition. The lock signal indicate that a cache line is unlocked.
+  ///
+  ///  typedef struct packed {
+  ///    logic [Cfg.IndexLength-1:0]      index;        // index of lock (cacheline)
+  ///    logic [Cfg.SetAssociativity-1:0] way_ind;      // way which is locked
+  ///  } lock_t;
+  parameter type                       lock_t    = logic,
+  /// Expected type definition definition of the miss counting struct
+  ///
+  /// typedef struct packed {
+  ///   axi_slv_id_t id;    // Axi id of the count operation
+  ///   logic        rw;    // 0:read, 1:write
+  ///   logic        valid; // valid, equals enable
+  /// } cnt_t;
+  parameter type                       cnt_t     = logic,
+  /// Way indicator, is a onehot signal with width: `Cfg.SetAssociativity`.
+  parameter type                       way_ind_t = logic
 ) (
-  input  logic  clk_i,    // Clock
-  input  logic  rst_ni,   // Asynchronous reset active low
-  input  logic  test_i,   // Test Signal for Test mode
-  // Descriptor Input
-  input  desc_t desc_i,
-  input  logic  valid_i,
-  output logic  ready_o,
-  // Descriptor Output
-  output desc_t desc_o,
-  output logic  miss_valid_o,
-  input  logic  miss_ready_i,
-  output logic  hit_valid_o,
-  input  logic  hit_ready_i,
+  /// Clock, positive edge triggered.
+  input  logic     clk_i,
+  /// Asynchronous reset, active low.
+  input  logic     rst_ni,
+  /// Testmode enable, active high.
+  input  logic     test_i,
+  /// Input descriptor payload.
+  input  desc_t    desc_i,
+  /// Input descriptor is valid.
+  input  logic     valid_i,
+  /// Module is ready to accept a new input descriptor.
+  output logic     ready_o,
+  /// Descriptor Output TODO
+  output desc_t    desc_o,
+  output logic     miss_valid_o,
+  input  logic     miss_ready_i,
+  output logic     hit_valid_o,
+  input  logic     hit_ready_i,
   // Configuration input
-  input  logic [Cfg.SetAssociativity-1:0] spm_lock_i,
-  input  logic [Cfg.SetAssociativity-1:0] flushed_i,
+  input  way_ind_t spm_lock_i,
+  input  way_ind_t flushed_i,
   // unlock inputs from the units
-  input  lock_t w_unlock_i,
-  input  logic  w_unlock_req_i,
-  output logic  w_unlock_gnt_o,
-  input  lock_t r_unlock_i,
-  input  logic  r_unlock_req_i,
-  output logic  r_unlock_gnt_o,
+  input  lock_t    w_unlock_i,
+  input  logic     w_unlock_req_i,
+  output logic     w_unlock_gnt_o,
+  input  lock_t    r_unlock_i,
+  input  logic     r_unlock_req_i,
+  output logic     r_unlock_gnt_o,
   // counter inputs to count down
-  input  cnt_t  cnt_down_i,
+  input  cnt_t     cnt_down_i,
   // bist aoutput
-  output logic [Cfg.SetAssociativity-1:0] bist_res_o,
-  output logic                            bist_valid_o
+  output way_ind_t bist_res_o,
+  output logic     bist_valid_o
 );
+  `include "common_cells/registers.svh"
   localparam int unsigned IndexBase = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength;
   localparam int unsigned TagBase   = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength +
                                       Cfg.IndexLength;
+  // Type definitions for the requests and responses to/from the tag storage
+      // typedef logic [Cfg.SetAssociativity-1:0] way_ind_t;
+  typedef logic [Cfg.IndexLength-1:0]      index_t;
+  typedef logic [Cfg.TagLength-1:0]        tag_t;
+
+  /// Request struct to the tag storage.
+  typedef struct packed {
+    /// The request mode. What operation the tag storage should perform with the request.
+    axi_llc_pkg::tag_mode_e mode;
+    /// The indicatior encodes with a hot signal, to which ways the request should be made.
+    way_ind_t               indicator;
+    /// The index points to the cache line, for which the request is made.
+    index_t                 index;
+    /// The tag for which the request to the tag storage is made.
+    tag_t                   tag;
+    /// The tag is dirty, comes from a write.
+    logic                   dirty;
+  } store_req_t;
+
+  /// The response will only come out of the tag storage, id a lookup request was made.
+  typedef struct packed {
+    /// The descriptor has to operate on this way
+    way_ind_t indicator;
+    /// The request has hit on a cache line.
+    logic     hit;
+    /// The tag currently stored is dirty.
+    /// The tag storage wants to evict the current line stored at this position.
+    logic     evict;
+    /// The tag which is evicted.
+    tag_t     evict_tag;
+  } store_res_t;
 
   // Signals to/from the tag store
-  logic                            req_valid;
-  logic                            req_ready;
-  axi_llc_pkg::tag_req_e           req_mode;
-  // Request towards the tag store
-  logic [Cfg.SetAssociativity-1:0] req_ind;
-  logic                            req_we;
-  logic [Cfg.IndexLength-1:0]      req_index;
-  logic                            req_tag_dit;
-  logic [Cfg.TagLength-1:0]        req_tag;
-  // response from the tag storage
-  logic [Cfg.SetAssociativity-1:0] out_ind;
-  logic                            out_hit;
-  logic                            out_evict;
-  logic [Cfg.TagLength-1:0]        out_tag;
-  logic                            out_dirty;
-  logic                            out_valid;
-  logic                            out_ready;
+  store_req_t store_req;
+  logic       store_req_valid;
+  logic       store_req_ready;
+
+  store_res_t store_res;
+  logic       store_res_valid;
+  logic       store_res_ready;
   // lock signal
   lock_t lock;
   logic  lock_req, locked;
@@ -137,15 +164,10 @@ module axi_llc_hit_miss #(
     miss_valid_o = 1'b0;
     hit_valid_o  = 1'b0;
     // inputs to the tag store
-    req_valid    = 1'b0;
-    req_mode     = axi_llc_pkg::BIST;
-    req_ind      = '0;
-    req_we       = '0;
-    req_index    = '0;
-    //req_tag_val  = 1'b0; not used
-    req_tag_dit  = 1'b0;
-    req_tag      = '0;
-    out_ready    = 1'b0;
+    store_req       = store_req_t'{mode: axi_llc_pkg::Bist, default: '0};
+    store_req_valid = 1'b0;
+
+    store_res_ready = 1'b0;
 
     // we are initialized, can operate on input descriptors
     if (init_q) begin
@@ -184,20 +206,21 @@ module axi_llc_hit_miss #(
         end else begin
           ////////////////////////////////////////////////////////////////
           // NORMAL or FLUSH descriptor in unit, made req to tag_store
+          // wait for the response
           ////////////////////////////////////////////////////////////////
-          if (out_valid) begin
+          if (store_res_valid) begin
             if (desc_q.flush) begin
-              // we have to send further, update desc_o
-              desc_o.evict     = out_evict;
-              desc_o.evict_tag = out_tag;
+              // We have to send further, update desc_o
+              desc_o.evict     = store_res.evict;
+              desc_o.evict_tag = store_res.evict_tag;
               // check that the line is not locked!
               if (!locked) begin
                 miss_valid_o     = 1'b1;
                 // transfer of flush descriptor to miss unit
                 if (miss_ready_i) begin
-                  out_ready = 1'b1;
-                  busy_d    = 1'b0;
-                  load_busy = 1'b1;
+                  store_res_ready = 1'b1;
+                  busy_d          = 1'b0;
+                  load_busy       = 1'b1;
                 end
               end
             end else begin
@@ -205,65 +228,53 @@ module axi_llc_hit_miss #(
               // NORMAL lookup - differentiate between hit / miss
               /////////////////////////////////////////////////////////////
               // set out descriptor
-              desc_o.way_ind   = out_ind;
-              desc_o.evict     = out_evict;
-              desc_o.evict_tag = out_tag;
-              desc_o.refill    = out_hit ? 1'b0 : 1'b1;
+              desc_o.way_ind   = store_res.indicator;
+              desc_o.evict     = store_res.evict;
+              desc_o.evict_tag = store_res.evict_tag;
+              desc_o.refill    = store_res.hit ? 1'b0 : 1'b1;
               // determine if it has to go to the bypass or not if we are not stalled
               if (!(locked || cnt_stall)) begin
-                hit_valid_o  = ~to_miss &  out_hit;
-                miss_valid_o =  to_miss | ~out_hit;
+                hit_valid_o  = ~to_miss &  store_res.hit;
+                miss_valid_o =  to_miss | ~store_res.hit;
                 // check for a transfer, do not update hit_valid or miss_valid from this point on!
                 if ((hit_valid_o && hit_ready_i) || (miss_valid_o && miss_ready_i)) begin
-                  out_ready = 1'b1;
-                  // do we have to make a store reqest to the tag store?
-                  // - if there was a miss
-                  // - if we have a write hit, but previously was not dirty
-                  if (!out_hit || (out_hit && desc_q.rw && !out_dirty)) begin
-                    req_valid   = 1'b1;
-                    req_mode    = axi_llc_pkg::STORE;
-                    req_ind     = out_ind;
-                    req_index   = desc_q.a_x_addr[IndexBase+:Cfg.IndexLength];
-                    req_tag_dit = desc_q.rw;
-                    req_tag     = desc_q.a_x_addr[TagBase+:Cfg.TagLength];;
-                    // should check on readyness of the tag_store, but should be ok?
-                    // because we have made a lookup request in the previous cycle, and
-                    // then the tag store should be ready anyways
-                    busy_d      = 1'b0;
-                    load_busy   = 1'b1;
-                  // otherwise snoop, if there is another request to be made
-                  end else begin
-                    // we signal that we are ready only, if there is a valid input descriptor
-                    if (valid_i) begin
-                      // snoop at the descriptors spm, we do not have to make a lookup if it is spm
-                      if (desc_i.spm) begin
-                        // load directly, if it is spm
+                  store_res_ready = 1'b1;
+                  // New tag is written with the lookup or flush if it was necessary and the storage
+                  // will go to ready, if it can take a new request.
+                  // Does the module have a new descriptor at its input and we can take it?
+                  if (valid_i) begin
+                    // snoop at the descriptors spm, we do not have to make a lookup if it is spm
+                    if (desc_i.spm) begin
+                      // load directly, if it is spm
+                      ready_o   = 1'b1;
+                      desc_d    = desc_i;
+                      load_desc = 1'b1;
+                    end else begin
+                      // make the request to the tag store,
+                      store_req = store_req_t'{
+                        mode:      desc_i.flush ? axi_llc_pkg::Flush : axi_llc_pkg::Lookup,
+                        indicator: desc_i.flush ? desc_i.way_ind     : ~flushed_i,
+                        index:     desc_i.a_x_addr[IndexBase+:Cfg.IndexLength],
+                        tag:       desc_i.flush ? tag_t'(0)          : desc_i.a_x_addr[TagBase+:Cfg.TagLength],
+                        dirty:     desc_i.rw,
+                        default:   '0
+                      };
+                      store_req_valid = 1'b1;
+                      // transfer
+                      if (store_req_ready) begin
                         ready_o   = 1'b1;
                         desc_d    = desc_i;
                         load_desc = 1'b1;
                       end else begin
-                        // make the request to the tag store
-                        req_valid = 1'b1;
-                        req_mode  = desc_i.flush ? axi_llc_pkg::FLUSH : axi_llc_pkg::LOOKUP;
-                        req_ind   = desc_i.flush ? desc_i.way_ind     : '0;
-                        req_index = desc_i.a_x_addr[IndexBase+:Cfg.IndexLength];
-                        req_tag   = desc_i.flush ? '0 : desc_i.a_x_addr[TagBase+:Cfg.TagLength];
-                        // transfer
-                        if (req_ready) begin
-                          ready_o   = 1'b1;
-                          desc_d    = desc_i;
-                          load_desc = 1'b1;
-                        end else begin
-                          // to idle, because unit not ready
-                          busy_d    = 1'b0;
-                          load_busy = 1'b1;
-                        end
+                        // go to idle and do nothing
+                        busy_d    = 1'b0;
+                        load_busy = 1'b1;
                       end
-                    end else begin
-                      // no new descriptor to idle
-                      busy_d    = 1'b0;
-                      load_busy = 1'b1;
                     end
+                  end else begin
+                    // Go to IDLE otherwise
+                    busy_d    = 1'b0;
+                    load_busy = 1'b1;
                   end
                 end
               end
@@ -286,14 +297,18 @@ module axi_llc_hit_miss #(
             desc_d    = desc_i;
             load_desc = 1'b1;
           end else begin
-            // make the request to the tag store
-            req_valid = 1'b1;
-            req_mode  = desc_i.flush ? axi_llc_pkg::FLUSH : axi_llc_pkg::LOOKUP;
-            req_ind   = desc_i.flush ? desc_i.way_ind     : '0;
-            req_index = desc_i.a_x_addr[IndexBase+:Cfg.IndexLength];
-            req_tag   = desc_i.flush ? '0 : desc_i.a_x_addr[TagBase+:Cfg.TagLength];
+            // make the request to the tag store,
+            store_req = store_req_t'{
+              mode:      desc_i.flush ? axi_llc_pkg::Flush : axi_llc_pkg::Lookup,
+              indicator: desc_i.flush ? desc_i.way_ind     : ~flushed_i,
+              index:     desc_i.a_x_addr[IndexBase+:Cfg.IndexLength],
+              tag:       desc_i.flush ? tag_t'(0)          : desc_i.a_x_addr[TagBase+:Cfg.TagLength],
+              dirty:     desc_i.rw,
+              default:   '0
+            };
+            store_req_valid = 1'b1;
             // transfer
-            if (req_ready) begin
+            if (store_req_ready) begin
               ready_o   = 1'b1;
               busy_d    = 1'b1;
               load_busy = 1'b1;
@@ -309,10 +324,13 @@ module axi_llc_hit_miss #(
     ///////////////////////////////////////////////////////////////////////////////
     end else begin
       // first cycle after reset start initialization of the sram makros
-      req_valid = 1'b1;
-      req_mode  = axi_llc_pkg::BIST;
-      req_ind   = '1;
-      if (req_ready) begin
+      store_req = store_req_t'{
+        mode:      axi_llc_pkg::Bist,
+        indicator: {Cfg.SetAssociativity{1'b1}},
+        default:   '0
+      };
+      store_req_valid = 1'b1;
+      if (store_req_ready) begin
         init_d    = 1'b1;
         load_init = 1'b1;
       end
@@ -320,29 +338,24 @@ module axi_llc_hit_miss #(
   end
 
   axi_llc_tag_store #(
-    .Cfg (Cfg)
+    .Cfg         ( Cfg         ),
+    .way_ind_t   ( way_ind_t   ),
+    .store_req_t ( store_req_t ),
+    .store_res_t ( store_res_t )
   ) i_tag_store (
-    .clk_i        (        clk_i ),
-    .rst_ni       (       rst_ni ),
-    .test_i       (       test_i ),
-    .spm_lock_i   (   spm_lock_i ),
-    .flushed_i    (    flushed_i ),
-    .valid_i      (    req_valid ),
-    .ready_o      (    req_ready ),
-    .req_mode_i   (     req_mode ),
-    .way_ind_i    (      req_ind ),
-    .index_i      (    req_index ),
-    .tag_dit_i    (  req_tag_dit ),
-    .tag_i        (      req_tag ),
-    .way_ind_o    (      out_ind ),
-    .hit_o        (      out_hit ),
-    .evict_o      (    out_evict ),
-    .tag_o        (      out_tag ),
-    .dit_o        (    out_dirty ),
-    .valid_o      (    out_valid ),
-    .ready_i      (    out_ready ),
-    .bist_res_o   (   bist_res_o ),
-    .bist_valid_o ( bist_valid_o )
+    .clk_i,
+    .rst_ni,
+    .test_i,
+    .spm_lock_i   ( spm_lock_i      ),
+    .flushed_i    ( flushed_i       ),
+    .req_i        ( store_req       ),
+    .valid_i      ( store_req_valid ),
+    .ready_o      ( store_req_ready ),
+    .res_o        ( store_res       ),
+    .valid_o      ( store_res_valid ),
+    .ready_i      ( store_res_ready ),
+    .bist_res_o   ( bist_res_o      ),
+    .bist_valid_o ( bist_valid_o    )
   );
 
   // inputs to the miss counter unit
@@ -397,16 +410,12 @@ module axi_llc_hit_miss #(
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
-  valid_o : assert property(
-    @(posedge clk_i) disable iff (!rst_ni) !(miss_valid_o & hit_valid_o))
-    else $fatal (1, "Duplicated descriptors, both valid outs are active.");
+    valid_o : assert property(
+      @(posedge clk_i) disable iff (!rst_ni) !(miss_valid_o & hit_valid_o))
+      else $fatal (1, "Duplicated descriptors, both valid outs are active.");
 
-  detect_way_onehot : assert property(
-    @(posedge clk_i) disable iff (!rst_ni) $onehot0(desc_o.way_ind))
-    else $fatal(1, "[hit_miss.desc_o.way_ind] More than two bit set in the one-hot signal!");
-  `endif
-  `endif
+    detect_way_onehot : assert property(
+      @(posedge clk_i) disable iff (!rst_ni) $onehot0(desc_o.way_ind))
+      else $fatal(1, "[hit_miss.desc_o.way_ind] More than two bit set in the one-hot signal!");
   `endif
 endmodule
