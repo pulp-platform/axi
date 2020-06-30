@@ -15,409 +15,410 @@
 
 /// This is the Tag storage for the LLC
 /// There are four types of requests which can be made onto this unit.
-/// BIST:   The pattern gets written or read to all macros, BIST resulte gets activated
-/// FLUSH:  Perform a way trageted eviction
-/// LOOKUP: Perform a tag lookup in all non SPM ways, hit/eviction gets set if needed
-/// STORE:  Store the given tag plus flags in a given way
+/// `axi_llc_pkg::Bist`:
+///   The pattern gets written or read to all macros, BIST resulte gets activated
+/// `axi_llc_pkg::Flush`:
+///   Perform a way trageted eviction, the tag is written in with all zero.
+/// `axi_llc_pkg::Lookup`:
+///   Perform a tag lookup in all non SPM ways, hit/eviction gets set if needed.
+///   Writes the tag into the macro if needed.
 `include "common_cells/registers.svh"
 module axi_llc_tag_store #(
   /// Static LLC configuration struct
-  parameter axi_llc_pkg::llc_cfg_t Cfg = -1
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Way indicator type
+  /// EG: typedef logic [Cfg.SetAssociativity-1:0] way_ind_t;
+  parameter type way_ind_t = logic,
+  /// Type of the request payload made to the tag storage
+  parameter type store_req_t = logic,
+  /// Type of the response payload expected from the tag storage
+  parameter type store_res_t = logic
 ) (
   /// Clock, positive edge triggered
-  input  logic clk_i,
+  input  logic       clk_i,
   /// Asynchronous reset, active low
-  input  logic rst_ni,
+  input  logic       rst_ni,
   /// Testmode enable
-  input  logic test_i,
+  input  logic       test_i,
   /// SPM lock signal input.
   ///
   /// For each way there is one signal. When high the way is configured as SPM. They are disabled
   /// for store requests.
-  input  logic [Cfg.SetAssociativity-1:0] spm_lock_i,
+  input  way_ind_t   spm_lock_i,
   /// Flushed indicator from `axi_llc_config`.
   ///
   /// This indicates that a way is flushed. No LOOKUP operations are performed on flushed ways.
-  input  logic [Cfg.SetAssociativity-1:0] flushed_i,
+  input  way_ind_t   flushed_i,
+  /// Tag storage request payload.
+  input  store_req_t req_i,
   /// Request to the tag storage is valid.
-  input  logic                            valid_i,
+  input  logic       valid_i,
   /// Tag storage is ready for an request.
-  output logic                            ready_o,
-  /// The request type is indicated on this signal.
-  ///
-  /// Possible requests are defined in `axi_llc_pkg`'
-  input  axi_llc_pkg::tag_req_e           req_mode_i,
-  /// Request are performed on these ways.
-  input  logic [Cfg.SetAssociativity-1:0] way_ind_i,
-  /// Is the Cache index of the lookup/write, equals cache line address.
-  input  logic [Cfg.IndexLength-1:0]      index_i,
-  /// Indicates that the tag stored is dirty (on write requests to the cache).
-  input  logic                            tag_dit_i,
-  /// Tag (higher part of the address) for which the lookup or the write should be done.
-  input  logic [Cfg.TagLength-1:0]        tag_i,
-  /// The descriptor has to do its operation this way.
-  output logic [Cfg.SetAssociativity-1:0] way_ind_o,
-  /// Descriptor hits on the cache line when high. Low means a miss. and line has to be refilled.
-  output logic                            hit_o,
-  /// The cache line has dirty data on it currently. It has to be evicted.
-  output logic                            evict_o,
-  /// The old tag for eviction.
-  output logic [Cfg.TagLength-1:0]        tag_o,
-  /// Tag evicted is dirty.
-  output logic                            dit_o,
-  /// Output of the hit miss detection is valid.
-  output logic                            valid_o,
-  /// Rest of the unit is ready to process the detection output.
-  input  logic                            ready_i,
+  output logic       ready_o,
+  /// Tag storage response payload
+  output store_res_t res_o,
+  /// Tag stoarage response is valid.
+  output logic       valid_o,
+  /// Hit miss unit is ready to accept response.
+  input  logic       ready_i,
   /// BIST result output. If one of these bits is high, when `bist_valid_o` is `1`. The
   /// corresponding tag storage SRAM macro failed the test.
-  output logic [Cfg.SetAssociativity-1:0] bist_res_o,
+  output way_ind_t   bist_res_o,
   /// BIST output is valid.
-  output logic                            bist_valid_o
+  output logic       bist_valid_o
 );
 
   // typedef, because we use in this module many signals with the width of SetAssiciativity
-  typedef logic [Cfg.SetAssociativity-1:0] indi_t;  // stands for indicator
-  typedef logic [Cfg.IndexLength-1:0]      index_t; // index type (equals the address for sram)
+  typedef logic [Cfg.IndexLength-1:0] index_t; // index type (equals the address for sram)
+  typedef logic [Cfg.TagLength-1:0]   tag_t;
 
   // typedef to have consistent tag data (that what gets written into the sram)
-  localparam TagDataLen = Cfg.TagLength + 2;
+  localparam int unsigned TagDataLen = Cfg.TagLength + 32'd2;
+  /// Packed struct for the data stored in the memory macros.
   typedef struct packed {
-    logic                     val;
-    logic                     dit;
-    logic [Cfg.TagLength-1:0] tag;
-  } tag_t;
+    /// The tag stored is valid.
+    logic val;
+    /// The tag stored is dirty.
+    logic dit;
+    /// The stored tag itself.
+    tag_t tag;
+  } tag_data_t;
 
-  // signals horizontally over the inputs to the tag srams
-  tag_t   tag; // here we aggregate the inputs in for easyer handeling
+  // Binary indicator of the output way selected.
+  localparam int unsigned BinIndicatorWidth = cf_math_pkg::idx_width(Cfg.SetAssociativity);
+  typedef logic [BinIndicatorWidth-1:0] bin_ind_t;
 
-  // signals to/from the pattern generator
-  logic   gen_valid,   gen_ready;
-  index_t index_gen;
-  tag_t   pattern_gen;
-  logic   req_gen,     we_gen;
-  logic   eoc_gen;
+  // The module can be busy or not.
+  logic       busy_q,      busy_d,       switch_busy;
 
-  // signals around the sram blocks
-  // read data tag is defined inside generate block further down
-  indi_t  we_ram   ; // write enable this ram
-  indi_t  req_ram  ; // request this sram
-  index_t index_ram; // address to the sram
-  tag_t   tag_w_ram; // write data to the sram
+  // Save the request in state
+  store_req_t req_q;
+  logic       load_req;
 
-  // Flip Flops parallel to the Tag SRAM
-  logic   load;
-  indi_t  way_ind_d,  way_ind_q;
-  index_t index_d,    index_q;
-  tag_t   tag_d,      tag_q;
+  // Macro signals
+  // Request for the macros
+  way_ind_t   ram_req;
+  // Write enable for the macros, active high. (Also functions as byte enable as there is one byte).
+  way_ind_t   ram_we;
+  // Index is the address.
+  index_t     ram_index;
+  // Write data for the macros.
+  tag_data_t  ram_wdata;
+  // Read data is valid
+  way_ind_t   ram_rvalid,  ram_rvalid_q, ram_rvalid_d;
+  logic       lock_rvalid;
+  // Hit indication signals
+  way_ind_t   hit, tag_val, tag_dit,     tag_equ;
+  tag_data_t  [Cfg.SetAssociativity-1:0] stored_tag;
+  // Binary representation of the selected output indicator
+  bin_ind_t   bin_ind;
+  // The pattern generation unit signals
+  logic       gen_valid,   gen_ready;
+  index_t     gen_index;
+  tag_data_t  gen_pattern, bist_pattern;
+  logic       gen_req,     gen_we;
+  way_ind_t   bist_res;
+  logic       bist_valid,  gen_eoc;
+  // Evict box signals
+  logic       evict_req,   evict_valid;
 
-  // signals horizontally along the outputs of the srams
-  indi_t  tag_val; // output sram tag valid
-  indi_t  tag_dit; // output sram tag dirty
-  indi_t  tag_equ; // signal that tag_q and the one from the sram are equal
-  // hit indicator
-  indi_t  hit;
-  logic   hit_red;
+  // macro control
+  always_comb begin : proc_macro_ctrl
+    // default assignments
+    // FFs
+    switch_busy  = 1'b0;
+    ready_o      = 1'b0;
+    load_req     = 1'b0;
+    valid_o      = 1'b0;
+    ram_req      = way_ind_t'(0);
+    ram_we       = way_ind_t'(0);
+    ram_index    = way_ind_t'(0);
+    ram_wdata    = tag_data_t'{default: '0};
+    // Evict box
+    evict_req    = 1'b0;
+    // generation request
+    gen_valid    = 1'b0;
 
-  //signals from the evict_box
-  logic   evict_req;
-  indi_t  evict_way_ind;
-  logic   evict_flag;
-  logic   evict_valid;
-
-  // unit status
-  logic                  busy_d,     busy_q, load_busy;
-  axi_llc_pkg::tag_req_e req_mode_d, req_mode_q;
-
-  // BIST result
-  indi_t bist_res;
-  logic  bist_valid;
-
-  // signal for tag output mux
-  tag_t [Cfg.SetAssociativity-1:0] tag_out;
-
-  // gathering of the tag inputs to the struct
-  // only when we perform a tag store operation, then the tag gets valid
-  assign tag.val = (req_mode_i == axi_llc_pkg::STORE) ? 1'b1 : 1'b0;
-  assign tag.dit = tag_dit_i;
-  assign tag.tag = tag_i;
-
-  assign hit_red = |hit;
-
-  always_comb begin : proc_control
-    //default assignments
-    busy_d     = busy_q;
-    load_busy  = 1'b0;
-    req_mode_d = req_mode_q;
-    way_ind_d  = way_ind_q;
-    index_d    = index_q;
-    tag_d      = tag_q;
-    load       = 1'b0;  // load the registers parallel to the tag srams
-    ready_o    = 1'b0;
-    gen_valid  = 1'b0;
-    // request to the srams
-    req_ram    = '0;
-    we_ram     = '0;
-    index_ram  = '0;
-    tag_w_ram  = '0;
-    // requests to the evict box
-    evict_req  = 1'b0;
-    // unit outputs other than tag
-    valid_o    = 1'b0;
-    way_ind_o  = '0;
-    hit_o      = '0;
-    evict_o    = '0;
-    // bist signals
-    bist_valid = 1'b0;
-
-    // we have an operation to do on the tag storages
     if (busy_q) begin
-      case (req_mode_q)
-        // BIST / init is running
-        axi_llc_pkg::BIST : begin
-          index_ram  = index_gen;
-          req_ram    = req_gen ? way_ind_q : '0;
-          we_ram     = we_gen  ? way_ind_q : '0;
-          tag_w_ram  = pattern_gen;
-          // also load the register parallel to the macros, for comparison
-          load       = 1'b1;
-          tag_d      = pattern_gen;
-          // repurpose index register [0] for bist_valid flag, when the comparison of BIST is valid
-          index_d[0] = ~we_gen & req_gen;
-          bist_valid = index_q[0];
-          // if finished, go to idle
-          if (eoc_gen) begin
-            busy_d    = 1'b0;
-            load_busy = 1'b1;
-          end
-        end
-        // we had a flush request to a position, check dirty and act accordingly
-        axi_llc_pkg::FLUSH : begin
-          // Regardless if the flushed tag is dirty or not, we have valid output
-          // tag mux gets set with way_ind_o
-          way_ind_o = way_ind_q;
-          evict_o   = |(way_ind_q & tag_val & tag_dit);
-          valid_o   = 1'b1;
-          // if the output gets eaten, store all 0's back into the sram and unit to not busy
-          if (ready_i) begin
-            busy_d    = 1'b0;
-            load_busy = 1'b1;
-            index_ram = index_q;
-            req_ram   = way_ind_q;
-            we_ram    = way_ind_q;
-          end
-        end
-        // Had a normal lookup, Hit detection
-        axi_llc_pkg::LOOKUP : begin
-          // set the signals for the hit generation
-          evict_req = (hit_red) ? 1'b0 : 1'b1;
-          // output generation
-          way_ind_o = (hit_red) ? hit  : evict_way_ind;
-          hit_o     = (hit_red);
-          evict_o   = (hit_red) ? 1'b0 : evict_flag;
-          valid_o   = (hit_red) ? 1'b1 : evict_valid;
-          // output gets eaten, decide what to do next
-          if (valid_o & ready_i) begin
-            // check what would be the next request, default go to not busy
-            busy_d    = 1'b0;
-            load_busy = 1'b1;
-            if (valid_i) begin
-              // only be fast if there is a lookup or store next
-              case (req_mode_i)
-                axi_llc_pkg::LOOKUP : begin
-                  // stay busy, as the result of the next lookup is availanle next cycle
-                  busy_d     = 1'b1;
-                  ready_o    = 1'b1;
-                  req_mode_d = req_mode_i;
-                  way_ind_d  = ~flushed_i;
-                  index_d    = index_i;
-                  tag_d      = tag;
-                  load       = 1'b1;
-                  req_ram    = ~flushed_i;
-                  index_ram  = index_i;
-                end
-                axi_llc_pkg::STORE : begin
-                  ready_o    = 1'b1;
-                  req_mode_d = req_mode_i;
-                  load       = 1'b1;
-                  index_ram  = index_i;
-                  req_ram    = way_ind_i;
-                  we_ram     = way_ind_i;
-                  tag_w_ram  = tag;
-                end
-                default : /* go back to idle, do nothing, we can be slow for Flush and BIST */;
-              endcase
+      // We are busy so there are active operations going on, we are not ready.
+      unique case (req_q.mode)
+          axi_llc_pkg::Bist: begin
+            // During BIST connect the request to the tag pattern generator.
+            ram_req    = {Cfg.SetAssociativity{gen_req}};
+            ram_we     = {Cfg.SetAssociativity{gen_we}};
+            ram_index  = gen_index;
+            ram_wdata  = gen_pattern;
+            bist_valid = |ram_rvalid;
+            // If BIST finished, go to idle.
+            if (gen_eoc) begin
+              switch_busy = 1'b1;
             end
           end
-        end
-        default : begin
-          // should never be triggered, this would mean a STORE operation went into busy
-          busy_d    = 1'b0;
-          load_busy = 1'b1;
-        end
-      endcase
+          axi_llc_pkg::Lookup: begin
+            // Wait for valid macro output
+            if ((|ram_rvalid) | (|ram_rvalid_q)) begin
+              // We are valid on hit.
+              if (|hit) begin
+                valid_o = 1'b1;
+              end else begin
+                evict_req = 1'b1;
+                valid_o   = evict_valid;
+              end
+            end
 
-    // we do not have any request so we are ready when we have a request
-    end else begin
-      // request is valid
-      if (valid_i) begin
-        load       = 1'b1;
-        req_mode_d = req_mode_i;
-        case (req_mode_i)
-          // Initialization / BIST
-          axi_llc_pkg::BIST : begin
-            // start this mode, if pattern gen is also ready
-            gen_valid = 1'b1;
-            if (gen_ready) begin
-              ready_o   = 1'b1;
-              busy_d    = 1'b1;
-              load_busy = 1'b1;
-              way_ind_d = way_ind_i;
+            // Do we have to write back something?
+            if (valid_o && ready_i) begin
+              if (res_o.hit) begin
+                // This is a hit
+                if (req_q.dirty && !tag_dit[bin_ind]) begin
+                  // Do we have to store a dirty as the hit was not dirty until now?
+                  ram_req   = res_o.indicator;
+                  ram_we    = res_o.indicator;
+                  ram_index = req_q.index;
+                  ram_wdata = tag_data_t'{
+                                val: 1'b1,
+                                dit: 1'b1,
+                                tag: req_q.tag
+                              };
+                  switch_busy = 1'b1;
+                end else begin
+                  // Noting to write back, do we have a new LOOKUP request?
+                  if (valid_i && (req_i.mode == axi_llc_pkg::Lookup)) begin
+                    ready_o = 1'b1;
+                    // Do the lookup on the requested macros
+                    ram_req     = req_i.indicator;
+                    ram_index   = req_i.index;
+                    load_req    = 1'b1;
+                  end else begin
+                    // Go back to IDLE if no Lookup
+                    switch_busy = 1'b1;
+                  end
+                end
+              end else begin
+                // This is a miss!
+                // Write back the new tag, it was a miss.
+                ram_req   = res_o.indicator;
+                ram_we    = res_o.indicator;
+                ram_index = req_q.index;
+                ram_wdata = tag_data_t'{
+                              val: 1'b1,
+                              dit: req_q.dirty,
+                              tag: req_q.tag
+                            };
+                // Go back to idle.
+                switch_busy = 1'b1;
+              end
             end
           end
-          // Flush this Position
-          axi_llc_pkg::FLUSH : begin
-            ready_o   = 1'b1;
-            busy_d    = 1'b1;
-            load_busy = 1'b1;
-            way_ind_d = way_ind_i;
-            index_d   = index_i;
-            req_ram   = way_ind_i;
-            index_ram = index_i;
+          axi_llc_pkg::Flush: begin
+            if ((|ram_rvalid) | (|ram_rvalid_q)) begin
+              // We are valid on hit.
+              if (|hit) begin
+                valid_o = 1'b1;
+              end else begin
+                evict_req = 1'b1;
+                valid_o   = evict_valid;
+              end
+            end
+
+            // Write back all zeros to the storage if the output is acknowledged.
+            if (valid_o && ready_i) begin
+              ram_req     = req_q.indicator;
+              ram_we      = req_q.indicator;
+              ram_index   = req_q.index;
+              ram_wdata   = tag_data_t'{default: '0};
+              switch_busy = 1'b1;
+            end
           end
-          // Lookup, next cycle Hit detection
-          axi_llc_pkg::LOOKUP : begin
-            ready_o   = 1'b1;
-            busy_d    = 1'b1;
-            load_busy = 1'b1;
-            way_ind_d = ~flushed_i;
-            index_d   = index_i;
-            tag_d     = tag;
-            req_ram   = ~flushed_i;
-            index_ram = index_i;
+        default : /* default */;
+      endcase
+    end else begin
+      // we are not busy, so we are ready to get a new request.
+      ready_o = 1'b1;
+
+      if (valid_i) begin
+        // There is a request to the tag store.
+        switch_busy = 1'b1;
+        load_req    = 1'b1;
+
+        // Make the requests to the tag macros.
+        unique case (req_i.mode)
+          axi_llc_pkg::Bist: begin
+            gen_valid   = 1'b1;
+            ready_o     = gen_ready;
+            // Only switch the state, if the request is valid
+            switch_busy = gen_ready;
           end
-          // Store the tag
-          axi_llc_pkg::STORE : begin
-            // we do not need to switch to busy, because there will be no output
-            ready_o   = 1'b1;
-            req_ram   = way_ind_i;
-            we_ram    = way_ind_i;
-            index_ram = index_i;
-            tag_w_ram = tag;
+          axi_llc_pkg::Lookup, axi_llc_pkg::Flush: begin
+            // Do the lookup on the requested macros
+            ram_req     = req_i.indicator;
+            ram_index   = req_i.index;
+            load_req    = 1'b1;
+            switch_busy = 1'b1;
           end
-          default : /* default */;
+          default : /* do nothing */;
         endcase
       end
     end
-  end // proc_control
+  end
 
-  // tag output multiplexer
-  always_comb begin : proc_tag_out_mux
-    tag_o = '0;
-    dit_o = 1'b0;
-    for (int unsigned i = 0; i < Cfg.SetAssociativity; i++) begin
-      if (way_ind_o[i]) begin
-        tag_o = tag_out[i].tag;
-        dit_o = tag_out[i].dit;
-      end
-    end
-  end // proc_tag_out_mux
+  `FFLARN(req_q, req_i, load_req, store_req_t'{default: '0}, clk_i, rst_ni)
+  `FFLARN(busy_q, busy_d, switch_busy, 1'b0, clk_i, rst_ni)
+  assign busy_d = ~busy_q;
+  `FFLARN(ram_rvalid_q, ram_rvalid_d, lock_rvalid, way_ind_t'(0), clk_i, rst_ni)
+  assign ram_rvalid_d = (valid_o & ready_i) ? way_ind_t'(0) : ram_rvalid;
+  assign lock_rvalid  = (valid_o & ready_i) | (|ram_rvalid);
 
-  // generate for each Way once
-  for (genvar i = 0; unsigned'(i) < Cfg.SetAssociativity; i++) begin : proc_tag
-    tag_t tag_r_ram;    // read data from the sram
-    tag_t tag_compared; // comparison result of tags
+  // generate for each Way one tag storage macro
+  for (genvar i = 0; unsigned'(i) < Cfg.SetAssociativity; i++) begin : gen_tag_macros
+    tag_data_t ram_rdata;    // read data from the sram
+    tag_data_t ram_compared; // comparison result of tags
 
     tc_sram #(
-      .NumWords    ( Cfg.NumLines ),
-      .DataWidth   ( TagDataLen   ),
-      .ByteWidth   ( TagDataLen   ),
-      .NumPorts    ( 32'd1        ),
-      .Latency     ( 32'd1        ),
-      .SimInit     ( "none"       ),
-      .PrintSimCfg ( 1'b1         )
+      .NumWords    ( Cfg.NumLines                 ),
+      .DataWidth   ( TagDataLen                   ),
+      .ByteWidth   ( TagDataLen                   ),
+      .NumPorts    ( 32'd1                        ),
+      .Latency     ( axi_llc_pkg::TagMacroLatency ),
+      .SimInit     ( "none"                       ),
+      .PrintSimCfg ( 1'b1                         )
     ) i_tag_store (
       .clk_i,
       .rst_ni,
-      .req_i   ( req_ram[i] ),
-      .we_i    (  we_ram[i] ),
-      .addr_i  (  index_ram ),
-      .wdata_i (  tag_w_ram ),
-      .be_i    (  we_ram[i] ),
-      .rdata_o (  tag_r_ram )
+      .req_i   ( ram_req[i] ),
+      .we_i    ( ram_we[i]  ),
+      .addr_i  ( ram_index  ),
+      .wdata_i ( ram_wdata  ),
+      .be_i    ( ram_we[i]  ),
+      .rdata_o ( ram_rdata  )
+    );
+
+    // shift register for a validtoken for read data, this pulses once for each read request
+    shift_reg #(
+      .dtype ( logic                        ),
+      .Depth ( axi_llc_pkg::TagMacroLatency )
+    ) i_shift_reg_rvalid (
+      .clk_i,
+      .rst_ni,
+      .d_i    ( ram_req[i] & ~ram_we[i] ),
+      .d_o    ( ram_rvalid[i]           )
     );
 
     // comparator (XNOR)
-    assign tag_compared = tag_q ~^ tag_r_ram;
-    assign tag_equ[i]   = &tag_compared.tag; // valid if the stored tag equals the one looked up
-    assign tag_val[i]   = tag_r_ram.val;     // indicates where valid values are in the line
-    assign tag_dit[i]   = tag_r_ram.dit;     // indicates which tags are dirty
+    assign ram_compared = tag_data_t'{
+          val: bist_pattern.val,
+          dit: bist_pattern.dit,
+          tag: (req_q.mode == axi_llc_pkg::Bist) ? bist_pattern.tag : req_q.tag
+        } ~^ ram_rdata;
+    assign tag_equ[i] = &ram_compared.tag; // valid if the stored tag equals the one looked up
+    assign tag_val[i] = ram_rdata.val;     // indicates where valid values are in the line
+    assign tag_dit[i] = ram_rdata.dit;     // indicates which tags are dirty
 
     // hit detection
-    assign hit[i]       = way_ind_q[i]     & tag_val[i]       & tag_equ[i];
+    assign hit[i]        = req_q.indicator[i] & tag_val[i] & tag_equ[i];
     // BIST also add the two bits of valid and dirty
-    assign bist_res[i]  = tag_compared.val & tag_compared.dit & tag_equ[i];
+    assign bist_res[i]   = ram_compared.val & ram_compared.dit & tag_equ[i];
     // assignment to wide output signal that goes to the tag output mux
-    assign tag_out[i]   = tag_r_ram;
+    assign stored_tag[i] = ram_rdata;
   end
 
   axi_llc_tag_pattern_gen #(
-    .Cfg          (      Cfg ),
-    .pattern_type (     tag_t)
+    .Cfg       ( Cfg        ),
+    .pattern_t ( tag_data_t ),
+    .way_ind_t ( way_ind_t  ),
+    .index_t   ( index_t    )
   ) i_tag_pattern_gen (
-    .clk_i            (       clk_i ),
-    .rst_ni           (      rst_ni ),
-    .valid_i          (   gen_valid ),
-    .ready_o          (   gen_ready ),
-    .index_o          (   index_gen ),
-    .pattern_o        ( pattern_gen ),
-    .req_o            (     req_gen ),
-    .we_o             (      we_gen ),
-    .bist_res_i       (    bist_res ),
-    .bist_res_valid_i (  bist_valid ),
-    .bist_res_o       (  bist_res_o ),
-    .eoc_o            (     eoc_gen )
+    .clk_i,
+    .rst_ni,
+    .valid_i          ( gen_valid   ),
+    .ready_o          ( gen_ready   ),
+    .index_o          ( gen_index   ),
+    .pattern_o        ( gen_pattern ),
+    .req_o            ( gen_req     ),
+    .we_o             ( gen_we      ),
+    .bist_res_i       ( bist_res    ),
+    .bist_res_valid_i ( bist_valid  ),
+    .bist_res_o       ( bist_res_o  ),
+    .eoc_o            ( gen_eoc     )
   );
-  assign bist_valid_o = (req_mode_q == axi_llc_pkg::BIST) & eoc_gen;
+  assign bist_valid_o = (req_q.mode == axi_llc_pkg::BIST) & gen_eoc;
+
+  // This shift register holds the pattern for comparison of the bist.
+  shift_reg #(
+    .dtype ( tag_data_t                   ),
+    .Depth ( axi_llc_pkg::TagMacroLatency )
+  ) i_shift_reg_bist (
+    .clk_i,
+    .rst_ni,
+    .d_i    ( gen_pattern  ),
+    .d_o    ( bist_pattern )
+  );
+
+  way_ind_t evict_way_ind;
 
   axi_llc_evict_box #(
-    .Cfg         ( Cfg )
+    .Cfg ( Cfg )
   ) i_evict_box (
-    .clk_i       (            clk_i ),
-    .rst_ni      (           rst_ni ),
-    .req_i       (        evict_req ),
-    .tag_valid_i (          tag_val ),
-    .tag_dirty_i (          tag_dit ),
-    .spm_lock_i  (       spm_lock_i ),
-    .way_ind_o   (    evict_way_ind ),
-    .evict_o     (       evict_flag ),
-    .valid_o     (      evict_valid )
+    .clk_i,
+    .rst_ni,
+    .req_i       ( evict_req     ),
+    .tag_valid_i ( tag_val       ),
+    .tag_dirty_i ( tag_dit       ),
+    .spm_lock_i  ( spm_lock_i    ),
+    .way_ind_o   ( evict_way_ind ),
+    .evict_o     ( evict_flag    ),
+    .valid_o     ( evict_valid   )
   );
 
-  // Flip Flops
-  `FFLARN(busy_q, busy_d, load_busy, '0, clk_i, rst_ni)
-  `FFLARN(req_mode_q, req_mode_d, load, axi_llc_pkg::BIST, clk_i, rst_ni)
-  `FFLARN(way_ind_q, way_ind_d, load, '0, clk_i, rst_ni)
-  `FFLARN(index_q, index_d, load, '0, clk_i, rst_ni)
-  `FFLARN(tag_q, tag_d, load, '0, clk_i, rst_ni)
+  onehot_to_bin #(
+    .ONEHOT_WIDTH ( Cfg.SetAssociativity )
+  ) i_onehot_to_bin (
+    .onehot ( res_o.indicator ),
+    .bin    ( bin_ind         )
+  );
 
-  // assertions
+  // Silence output when not in a mode where it is required.
+  always_comb begin
+    // Default assignment
+    res_o = store_res_t'{default: '0};
+    if (busy_q) begin
+      unique case (req_q.mode)
+        axi_llc_pkg::Lookup: begin
+          res_o = store_res_t'{
+            indicator: (|hit) ? hit       : evict_way_ind,
+            hit:       (|hit) ? 1'b1      : 1'b0,
+            evict:     (|hit) ? 1'b0      : evict_flag,
+            evict_tag: (|hit) ? tag_t'(0) : stored_tag[bin_ind].tag,
+            default:   '0
+          };
+        end
+        axi_llc_pkg::Flush: begin
+          res_o = store_res_t'{
+            indicator: req_q.indicator,
+            hit:       1'b0,
+            evict:     stored_tag[bin_ind].val & stored_tag[bin_ind].dit,
+            evict_tag: stored_tag[bin_ind].tag,
+            default:   '0
+          };
+        end
+        default : /* not used */;
+      endcase
+    end
+  end
+
+  // Assertions
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
   onehot_hit:  assert property ( @(posedge clk_i) disable iff (!rst_ni)
-      (req_mode_q != axi_llc_pkg::BIST) |-> $onehot0(hit)) else
+      (req_q.mode inside {axi_llc_pkg::Lookup, axi_llc_pkg::Flush}) |-> $onehot0(hit)) else
       $fatal(1, "[hit_ind] More than two bit set in the one-hot signal, multiple hits!");
   onehot_ind:  assert property ( @(posedge clk_i) disable iff (!rst_ni)
-      (req_mode_q != axi_llc_pkg::BIST) |-> $onehot0(way_ind_o)) else
+      (req_q.mode inside {axi_llc_pkg::Lookup, axi_llc_pkg::Flush}) |-> $onehot0(res_o.indicator)) else
       $fatal(1, "[way_ind_o] More than two bit set in the one-hot signal, multiple hits!");
   // trigger warning if output valid gets deasserted without ready
   check_valid: assert property ( @(posedge clk_i) disable iff (!rst_ni)
       (valid_o && !ready_i) |=> valid_o) else
       $warning("Valid was deasserted, even when no ready was set.");
-  `endif
-  `endif
   `endif
   // pragma translate_on
 endmodule

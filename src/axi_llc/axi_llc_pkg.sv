@@ -209,6 +209,18 @@ package axi_llc_pkg;
     STORE  = 2'b11
   } tag_req_e;
 
+  /// Tag storage request enumeration definition
+  typedef enum logic [1:0] {
+    /// Run BIST/INIT
+    Bist   = 2'b00,
+    /// Flush the requested position (output tells if to evict)
+    Flush  = 2'b01,
+    /// Lookup, Performs Hit detection
+    Lookup = 2'b10
+  } tag_mode_e;
+
+
+
   // Configuration of the counting bloom filter in `lock_box_bloom` located in `hit_miss`.
   // Change these parameters if you want to optimize the false positive rate.
   /// Number of different hashes used in (`module.lock_box_bloom`).
@@ -248,6 +260,10 @@ package axi_llc_pkg;
   /// `0`: no spill register
   /// `1`: add spill register
   parameter bit SpillHitMiss = 1'b1;
+
+  /// Latency of the memory macros responsible for saving the tags.
+  /// This value has to be >= 32'd1.
+  parameter int unsigned TagMacroLatency = 32'd1;
 
   /// Indicates which unit does an operation onto a cache line data storage element
   typedef enum logic [1:0] {

@@ -23,7 +23,7 @@ module axi_llc_evict_box #(
 ) (
   input  logic clk_i,                                  // Clock
   input  logic rst_ni,                                 // Asynchronous reset active low
-  input  logic                            req_i,       // request an aoutput
+  input  logic                            req_i,       // request an output
   input  logic [Cfg.SetAssociativity-1:0] tag_valid_i, // all valid tags as input -> free pace
   input  logic [Cfg.SetAssociativity-1:0] tag_dirty_i, // all dirty tags as input -> eviction?
   input  logic [Cfg.SetAssociativity-1:0] spm_lock_i,  // is the way configured for SPM

@@ -267,26 +267,28 @@ module axi_llc_top #(
 
   // definition of the descriptor struct that gets sent around in the llc
   // (necessary here, because we can not have variable length structs in a package...)
+  typedef logic [Cfg.SetAssociativity-1:0] way_ind_t;
+
   typedef struct packed {
     // AXI4+ATOP specific descriptor signals
-    axi_slv_id_t                      a_x_id;   // AXI ID from slave port
-    axi_addr_t                        a_x_addr; // memory address
-    axi_pkg::len_t                    a_x_len;  // AXI burst length
-    axi_pkg::size_t                   a_x_size; // AXI burst size
-    axi_pkg::burst_t                  a_x_burst;// AXI burst type
-    logic                             a_x_lock; // AXI lock signal
-    axi_pkg::cache_t                  a_x_cache;// AXI cache signal
-    axi_pkg::prot_t                   a_x_prot; // AXI protection signal
-    axi_pkg::resp_t                   x_resp;   // AXI response signal, for error propagation
-    logic                             x_last;   // Last descriptor of a burst
+    axi_slv_id_t                     a_x_id;   // AXI ID from slave port
+    axi_addr_t                       a_x_addr; // memory address
+    axi_pkg::len_t                   a_x_len;  // AXI burst length
+    axi_pkg::size_t                  a_x_size; // AXI burst size
+    axi_pkg::burst_t                 a_x_burst;// AXI burst type
+    logic                            a_x_lock; // AXI lock signal
+    axi_pkg::cache_t                 a_x_cache;// AXI cache signal
+    axi_pkg::prot_t                  a_x_prot; // AXI protection signal
+    axi_pkg::resp_t                  x_resp;   // AXI response signal, for error propagation
+    logic                            x_last;   // Last descriptor of a burst
     // Cache specific descriptor signals
-    logic                             spm;      // this descriptor targets a SPM region in the cache
-    logic                             rw;       // this descriptor is a read:0 or write:1 access
-    logic [Cfg.SetAssociativity-1:0]  way_ind;  // way we have to perform an operation on
-    logic                             evict;    // evict what is standing in the line
-    logic [Cfg.TagLength -1:0]        evict_tag;// tag for evicting a line
-    logic                             refill;   // refill the cache line
-    logic                             flush;    // flush this line, comes from config
+    logic                            spm;      // this descriptor targets a SPM region in the cache
+    logic                            rw;       // this descriptor is a read:0 or write:1 access
+    logic [Cfg.SetAssociativity-1:0] way_ind;  // way we have to perform an operation on
+    logic                            evict;    // evict what is standing in the line
+    logic [Cfg.TagLength -1:0]       evict_tag;// tag for evicting a line
+    logic                            refill;   // refill the cache line
+    logic                            flush;    // flush this line, comes from config
   } llc_desc_t;
 
   // definition of the structs that are between the units and the ways
@@ -567,11 +569,12 @@ module axi_llc_top #(
   );
 
   axi_llc_hit_miss #(
-    .Cfg      ( Cfg       ),
-    .AxiCfg   ( AxiCfg    ),
-    .desc_t   ( llc_desc_t),
-    .lock_t   ( lock_t    ),
-    .cnt_t    ( cnt_t     )
+    .Cfg       ( Cfg        ),
+    .AxiCfg    ( AxiCfg     ),
+    .desc_t    ( llc_desc_t ),
+    .lock_t    ( lock_t     ),
+    .cnt_t     ( cnt_t      ),
+    .way_ind_t ( way_ind_t  )
   ) i_hit_miss_unit (
     .clk_i,
     .rst_ni,
@@ -603,7 +606,8 @@ module axi_llc_top #(
     logic      miss;
   } hit_miss_desc_t;
 
-  hit_miss_desc_t hit_miss_desc, hit_miss_desc_spill;
+  hit_miss_desc_t hit_miss_desc,        hit_miss_spill_desc;
+  logic           hit_miss_spill_valid, hit_miss_spill_ready;
   // Pack the decision together.
   assign hit_miss_desc = hit_miss_desc_t'{
     llc_desc_t: desc,
