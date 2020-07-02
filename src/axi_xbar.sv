@@ -99,7 +99,8 @@ import cf_math_pkg::idx_width;
 `endif
 );
 
-  typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
+  // Address tpye for inidvidual address signals
+  typedef logic [Cfg.AxiAddrWidth-1:0] addr_t;
   // to account for the decoding error slave
 `ifdef VCS
   localparam int unsigned MstPortsIdxWidthOne =
