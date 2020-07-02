@@ -366,7 +366,6 @@ module axi_llc_hit_miss #(
 
   axi_llc_miss_counters #(
     .Cfg     ( Cfg    ),
-    .AxiCfg  ( AxiCfg ),
     .cnt_t   ( cnt_t  )
   ) i_miss_counters (
     .clk_i      (      clk_i ),
