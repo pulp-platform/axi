@@ -357,7 +357,8 @@ module axi_llc_tag_store #(
   way_ind_t evict_way_ind;
 
   axi_llc_evict_box #(
-    .Cfg ( Cfg )
+    .Cfg       ( Cfg       ),
+    .way_ind_t ( way_ind_t )
   ) i_evict_box (
     .clk_i,
     .rst_ni,
