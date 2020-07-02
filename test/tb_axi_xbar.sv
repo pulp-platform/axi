@@ -30,17 +30,17 @@ module tb_axi_xbar #(
   parameter int unsigned TbNumWrites         = 32'd200,
   /// Number of read transactions per master.
   parameter int unsigned TbNumReads          = 32'd200,
-  /// AXI4+ATOP ID wisth of the masters connected to the slave ports of the DUT.
-  /// The ID width of the salves is calulated depending on the xbar configuration.
+  /// AXI4+ATOP ID width of the masters connected to the slave ports of the DUT.
+  /// The ID width of the slaves is calculated depending on the xbar configuration.
   parameter int unsigned TbAxiIdWidthMasters = 32'd5,
   /// The used ID width of the DUT.
   /// Has to be `TbAxiIdWidthMasters >= TbAxiIdUsed`.
   parameter int unsigned TbAxiIdUsed         = 32'd3,
   /// Data width of the AXI channels.
   parameter int unsigned TbAxiDataWidth      = 32'd64,
-  /// Pipeline stages in the xbar itself. (Between Demux and mux)
+  /// Pipeline stages in the xbar itself (between demux and mux).
   parameter int unsigned TbPipeline          = 32'd1,
-  /// Eanable ATOP generation
+  /// Enable ATOP generation
   parameter bit          TbEnAtop            = 1'b1
 );
 

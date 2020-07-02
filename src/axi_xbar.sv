@@ -93,7 +93,8 @@ module axi_xbar #(
   input  default_idx_t [Cfg.NoSlvPorts-1:0] default_mst_port_i
 );
 
-  typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
+  // Address tpye for inidvidual address signals
+  typedef logic [Cfg.AxiAddrWidth-1:0] addr_t;
   // to account for the decoding error slave
   typedef logic [cf_math_pkg::idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 
