@@ -323,12 +323,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_test::rand_axi_lite_slave` and `axi_test::rand_axi_lite_master`: Change type of address and
   data width parameters (`AW` and `DW`) from `int` to `int unsigned`.  Same rationale as for
   `AXI_BUS` (et al.) above.
-- `axi_demux`: Remove FIFO between AW and W channel, is now a register plus counter.
-               Prevents AWs to be emmitted downstream to a different master port as long as Ws
-               are still in flight to another. This prevents deadlock, if there is stalling
-               downstream.
-- `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`. This adds `axi_multicuts`
-              in the crossed connections in the xbar between the demuxes and muxes.
+- `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
+  AWs from being issued to one master port while Ws from another burst are ongoing to another
+  master port.  This is required to prevents deadlocks due to circular waits downstream.
+- `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
+  in the crossed connections in the xbar between the demuxes and muxes.
 - `axi_pkg`: Add documentation to `xbar_cfg_t`.
 
 ### Fixed
