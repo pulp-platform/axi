@@ -10,34 +10,50 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_lock_box_bloom.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   21.08.2019
-//
-// Description: This module implements the locking with a bloom filter
-//              Seeding Parameters are at the default of the `cb_filter` module for
-//              number of hashes and respective seeds
-//              unlock happens from anoter unit and is registered in a FIFO
-//              the `rr_arb_tree` then merges the unlock requests onto the bloom decrement
 
+/// This module implements the locking with a bloom filter
+/// Seeding Parameters are at the default of the `cb_filter` module for
+/// number of hashes and respective seeds
+/// unlock happens from anoter unit and is registered in a FIFO
+/// the `rr_arb_tree` then merges the unlock requests onto the bloom decrement
 module axi_llc_lock_box_bloom #(
-  parameter axi_llc_pkg::llc_cfg_t Cfg    = -1,
-  parameter type                   lock_t = logic
+  /// Static LLC parameter configuration struct.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Struct for bundling the signals defining the locking.
+  /// Required fields:
+  /// typedef struct packed {
+  ///    logic [Cfg.IndexLength-1:0]      index;        // index of lock (cacheline)
+  ///    logic [Cfg.SetAssociativity-1:0] way_ind;      // way which is locked
+  /// } lock_t;
+  parameter type lock_t = logic
 ) (
-  input  logic  clk_i,   // Clock
-  input  logic  rst_ni,  // Asynchronous reset active low
-  input  logic  test_i,  // test mode enable
-  // lookup and lock
+  /// Clock, positive edge triggered
+  input  logic  clk_i,
+  /// Asynchronous reset, active low
+  input  logic  rst_ni,
+  /// Testmode enable, active high
+  input  logic  test_i,
+  /// Lock request payload. Performs the lookup and the lock of the line.
   input  lock_t lock_i,
-  input  logic  lock_req_i, // lock the line, ie increment the bloom filter
-  // output that tell us the bit is set
+  /// Lock the line defined by `lock_i`, ie increment the bloom filter.
+  input  logic  lock_req_i,
+  /// This signal indicates that the lookup performed from `lock_i` Found a locked cache line.
+  /// This means that another descriptor is currently using the cacheline.
+  /// Wait with asserting `lock_req_i` untill this is `'0`;
   output logic  locked_o,
-  // unlock from the write unit
+  /// Unlock payload from the write unit.
   input  lock_t w_unlock_i,
+  /// Unlock request from the write unit is valid.
   input  logic  w_unlock_req_i,
+  /// We are ready to accept an unlock from the write unit.
   output logic  w_unlock_gnt_o,
-  // unlock from the read unit
+  /// Unlock payload from the read unit.
   input  lock_t r_unlock_i,
+  /// Unlock request from the read unit is valid.
   input  logic  r_unlock_req_i,
+  /// We are ready to accept an unlock from the read unit.
   output logic  r_unlock_gnt_o
 );
   localparam int unsigned DataWidth = Cfg.SetAssociativity + Cfg.IndexLength;
@@ -157,12 +173,8 @@ module axi_llc_lock_box_bloom #(
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
   check_blomm_error: assert property (@(posedge clk_i) disable iff (~rst_ni) (!error)) else
       $fatal(1, "Bloom Filter is in Error state!");
-  `endif
-  `endif
   `endif
   // pragma translate_on
 endmodule
