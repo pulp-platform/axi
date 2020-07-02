@@ -12,31 +12,35 @@
 // File:   miss_counters.sv
 // Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
 // Date:   12.06.2019
-//
-// Description: This module counts if there are any descriptors of a given transaction ID
-//              in the miss pipeline, and combinationally counts up of down the respective ID
-//              of the cnt_t struct matches. There is a counter for all id's and one for writes
-//              as all writes have to be transferred in order.
-//
-//              typedef struct packed {
-//              axi_slv_id_t id;        // AXI ID of the descriptor operating the counter
-//              logic        rw;        // 0:read, 1:write
-//              logic        valid;     // valid, equals enable of the counter
-//              } cnt_t;
 
+/// This module counts if there are any descriptors of a given transaction ID
+/// in the miss pipeline, and combinationally counts up of down the respective ID
+/// of the cnt_t struct matches. There is a counter for all id's and one for writes
+/// as all writes have to be transferred in order.
 module axi_llc_miss_counters #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg    = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = -1,
-  parameter type                       cnt_t  = logic
+  /// Static LLC parameter configuration.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Counter request type.
+  ///
+  /// typedef struct packed {
+  ///   axi_slv_id_t id;        // AXI ID of the descriptor operating the counter
+  ///   logic        rw;        // 0:read, 1:write
+  ///   logic        valid;     // valid, equals enable of the counter
+  /// } cnt_t;
+  parameter type cnt_t  = logic
 ) (
-  input  logic clk_i,    // Clock
-  input  logic rst_ni,   // Asynchronous reset active low
-  //input  logic test_i,
-  input  cnt_t cnt_up_i,      // the descriptor gets transferred into the miss pipeline
-  input  cnt_t cnt_down_i,    // the descriptor gets transferred out of the miss pipeline
-  // outputs to have the current status
-  output logic to_miss_o,     // tells that a descriptor should go to the miss pipeline
-  output logic stall_o        // one of the counters is overflowing, stall descriptor!
+  /// Clock, positive edge triggered.
+  input  logic clk_i,
+  /// Asynchronous reset, active low.
+  input  logic rst_ni,
+  /// The descriptor gets transferred into the miss pipeline.
+  input  cnt_t cnt_up_i,
+  /// The descriptor gets transferred out of the miss pipeline.
+  input  cnt_t cnt_down_i,
+  /// Tells that a descriptor should go to the miss pipeline.
+  output logic to_miss_o,
+  /// One of the counters is overflowing, stall descriptor!
+  output logic stall_o
 );
   localparam int unsigned NoCounters = 2**axi_llc_pkg::UseIdBits;
   // stall signal for each counter (no minus 1, because the write counter is extra )
