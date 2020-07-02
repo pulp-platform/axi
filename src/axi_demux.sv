@@ -195,10 +195,10 @@ module axi_demux #(
         // Process can start handling a transaction if its `i_aw_id_counter` and `w_fifo` have
         // space in them. Further check if we could inject something on the AR channel.
         if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) && !ar_id_cnt_full) begin
-          /// There is a valid AW vector make the id lookup and go further, if it passes.
-          /// Also stall if previous transmitted AWs still have active W's in flight.
-          /// This prevents deadlocking of the W channel. The counters are there for the
-          /// Handling of the B responses.
+          // There is a valid AW vector make the id lookup and go further, if it passes.
+          // Also stall if previous transmitted AWs still have active W's in flight.
+          // This prevents deadlocking of the W channel. The counters are there for the
+          // Handling of the B responses.
           if (slv_aw_valid &&
                 ((w_open == '0) || (w_select == slv_aw_chan_select.aw_select)) &&
                 (!aw_select_occupied || (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
