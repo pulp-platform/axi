@@ -150,7 +150,7 @@ module axi_llc_top #(
   /// * Minimum value: `32'd1`
   /// * Maximum value: `32'd63`
   /// The maximum value depends on the AXI-Lite register mapping of `axi_llc_config`.
-  parameter int unsigned    SetAssociativity   = 32'd8,
+  parameter int unsigned SetAssociativity = 32'd0,
   /// Number of cache lines per way.
   ///
   /// Restrictions:
@@ -163,7 +163,7 @@ module axi_llc_top #(
   /// fields inside of a struct. Further this value has to be a power of 2. This has to do with the
   /// requirement that the address mapping from the address onto the cache-line index has to be
   /// continuous.
-  parameter int unsigned    NumLines           = 32'd1024,
+  parameter int unsigned NumLines = 32'd0,
   /// Number of blocks (words) in a cache line.
   ///
   /// The width of a block is the same as the data width of the AXI4+ATOP ports. Defined with
@@ -175,11 +175,18 @@ module axi_llc_top #(
   ///
   /// Note on restrictions:
   /// The same restriction as of parameter `NumLines` applies.
-  parameter int unsigned    NumBlocks          = 32'd8,
-  /// Give the exact AXI parameters in struct form.
-  ///
-  /// Required struct definition in: `axi_llc_pkg`.
-  parameter axi_llc_pkg::llc_axi_cfg_t  AxiCfg = '0,
+  parameter int unsigned NumBlocks = 32'd0,
+  /// AXI4+ATOP ID field width of the slave port.
+  /// The ID field width of the master port is this parameter + 1.
+  parameter int unsigned AxiIdWidth = 32'd0,
+  /// AXI4+ATOP address field width of both the slave and master port.
+  parameter int unsigned AxiAddrWidth = 32'd0,
+  /// AXI4+ATOP data field width of both the slave and the master port.
+  parameter int unsigned AxiDataWidth = 32'd0,
+  /// AXI4-Lite address field width of the configuration slave port.
+  parameter int unsigned AxiLiteAddrWidth = 32'd0,
+  /// AXI4-Lite data field width of the configuration slave port.
+  parameter int unsigned AxiLiteDataWidth = 32'd0,
   /// AW Channel Type slave  port
   parameter type slv_aw_chan_t  = logic,
   /// AW Channel Type master port
@@ -214,41 +221,50 @@ module axi_llc_top #(
   parameter type rule_full_t    = axi_pkg::xbar_rule_64_t
 ) (
   /// Rising-edge clock of all ports.
-  input  logic                                 clk_i,
+  input logic clk_i,
   /// Asynchronous reset, active low
-  input  logic                                 rst_ni,
-  /// Test mode activate, active high, TODO: remove?
-  input  logic                                 test_i,
+  input logic rst_ni,
+  /// Test mode activate, active high.
+  input logic test_i,
   /// AXI4+ATOP slave port request, CPU side
-  input  slv_req_t                             slv_req_i,
+  input slv_req_t slv_req_i,
   /// AXI4+ATOP slave port response, CPU side
-  output slv_resp_t                            slv_resp_o,
+  output slv_resp_t slv_resp_o,
   /// AXI4+ATOP master port request, memory side
-  output mst_req_t                             mst_req_o,
+  output mst_req_t mst_req_o,
   /// AXI4+ATOP master port response, memory side
-  input  mst_resp_t                            mst_resp_i,
+  input mst_resp_t mst_resp_i,
   /// AXI4-Lite slave port request, configuration
-  input  lite_req_t                            conf_req_i,
+  input lite_req_t conf_req_i,
   /// AXI4-Lite slave port response, configuration
-  output lite_resp_t                           conf_resp_o,
+  output lite_resp_t conf_resp_o,
   /// Start of address region mapped to cache
-  input  logic [AxiCfg.AddrWidthFull-1:0]      cached_start_addr_i,
+  input logic [AxiAddrWidth-1:0] cached_start_addr_i,
   /// End of address region mapped to cache
-  input  logic [AxiCfg.AddrWidthFull-1:0]      cached_end_addr_i,
+  input logic [AxiAddrWidth-1:0] cached_end_addr_i,
   /// SPM start address
   ///
-  /// The end address is automatically caclulated by the configuration of the LLC.
+  /// The end address is automatically calculated by the configuration of the LLC.
   /// `spm_end_addr` = `spm_start_addr_i` +
   ///     `SetAssociativity` * `NumLines` * `NumBlocks` * (`AxiCfg.DataWidthFull/8`)
-  input  logic [AxiCfg.AddrWidthFull-1:0]      spm_start_addr_i,
+  input logic [AxiAddrWidth-1:0] spm_start_addr_i,
   /// Events output, for tracked events see `axi_llc_pkg`.
   ///
   /// Ehen not used, leave open.
-  output axi_llc_pkg::events_t                 axi_llc_events_o
+  output axi_llc_pkg::events_t axi_llc_events_o
 );
-  typedef logic [ AxiCfg.SlvPortIdWidth  -1:0] axi_slv_id_t;
-  typedef logic [ AxiCfg.AddrWidthFull   -1:0] axi_addr_t;
-  typedef logic [ AxiCfg.DataWidthFull   -1:0] axi_data_t;
+  // Axi parameters are accumulated in a struct for further use.
+  localparam axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{
+    SlvPortIdWidth:    AxiIdWidth,
+    AddrWidthFull:     AxiAddrWidth,
+    DataWidthFull:     AxiDataWidth,
+    LitePortAddrWidth: AxiLiteAddrWidth,
+    LitePortDataWidth: AxiLiteDataWidth
+  };
+
+  typedef logic [AxiCfg.SlvPortIdWidth-1:0]    axi_slv_id_t;
+  typedef logic [AxiCfg.AddrWidthFull-1:0]     axi_addr_t;
+  typedef logic [AxiCfg.DataWidthFull-1:0]     axi_data_t;
   typedef logic [(AxiCfg.DataWidthFull/8)-1:0] axi_strb_t;
 
   // configuration struct that has all the cache parameters included for the submodules
@@ -413,7 +429,9 @@ module axi_llc_top #(
     .desc_t         ( llc_desc_t       ),
     .lite_req_t     ( lite_req_t       ),
     .lite_resp_t    ( lite_resp_t      ),
-    .rule_full_t    ( rule_full_t      )
+    .rule_full_t    ( rule_full_t      ),
+    .set_asso_t     ( way_ind_t        ),
+    .addr_full_t    ( axi_addr_t       )
   ) i_llc_config (
     .clk_i             ( clk_i                                  ),
     .rst_ni            ( rst_ni                                 ),
@@ -1020,7 +1038,7 @@ module axi_llc_top #(
       $fatal(1, $sformatf("llc> Cfg Lite port, AW ADDR width not equal to AxiCfg"));
     lite_ar_addr : assume ($bits(conf_req_i.ar.addr) == AxiCfg.LitePortAddrWidth ) else
       $fatal(1, $sformatf("llc> Cfg Lite port, AR ADDR width not equal to AxiCfg"));
-    lite_data    : assume ((AxiCfg.LitePortDataWidth == 32)||(AxiCfg.LitePortDataWidth == 64)) else
+    lite_data    : assume (AxiCfg.LitePortDataWidth inside {32'd32, 32'd64}) else
       $fatal(1, $sformatf("llc> Axi 4 LITE spec defines a DATA width of 32 or 64 bits!"));
     lite_w_data  : assume ($bits(conf_req_i.w.data) == AxiCfg.LitePortDataWidth) else
       $fatal(1, $sformatf("llc> Cfg Lite port, W DATA width not equal to AxiCfg"));

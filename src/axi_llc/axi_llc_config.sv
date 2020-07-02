@@ -147,32 +147,37 @@
 /// | `[63:0]` | `axi_llc_pkg::AxiLlcVersion`  | Shows the `axi_llc_version` |
 ///
 module axi_llc_config #(
-  ///
-  parameter axi_llc_pkg::llc_cfg_t     Cfg            = '0,
+  /// Static AXI LLC configuration.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
   /// Give the exact AXI parameters in struct form. This is passed down from
   /// [`axi_llc_top`](module.axi_llc_top).
   ///
   /// Required struct definition in: `axi_llc_pkg`.
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg         = '0,
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
   /// Descriptor type. This is requires as this module emits the flush descriptors.
   /// Struct definition is in [`axi_llc_top`](module.axi_llc_top).
-  parameter type                       desc_t         = logic,
+  parameter type desc_t = logic,
   /// AXI4-Lite request struct definition.
-  parameter type                       lite_req_t     = logic,
+  parameter type lite_req_t = logic,
   /// AXI4-Lite response struct definition.
-  parameter type                       lite_resp_t    = logic,
+  parameter type lite_resp_t = logic,
   /// Address rule struct for `common_cells/addr_decode`. Is used for bypass `axi_demux`
   /// steering.
-  parameter type                       rule_full_t    = logic
+  parameter type rule_full_t = logic,
+  /// Type for indicating the set associativity, same as way_ind_t in `axi_llc_top`.
+  parameter type set_asso_t = logic,
+  /// Address type for the memory regions defined for caching and SPM. The same width as
+  /// the address field of the AXI4+ATOP slave and master port.
+  parameter type addr_full_t = logic
 ) (
   /// Rising-edge clock
-  input  logic clk_i,
+  input logic clk_i,
   /// Asynchronous reset, active low
-  input  logic rst_ni,
+  input logic rst_ni,
   /// AXI4-Lite slave port request.
   ///
   /// Here the configuration registers are exposed.
-  input  lite_req_t  conf_req_i,
+  input lite_req_t conf_req_i,
   /// AXI4-Lite slave port response.
   ///
   /// Here the configuration registers are exposed.
@@ -180,77 +185,75 @@ module axi_llc_config #(
   /// SPM lock.
   ///
   /// The cache only stores new tags in ways which are not SPM locked.
-  output logic [Cfg.SetAssociativity-1:0]  spm_lock_o,
+  output set_asso_t spm_lock_o,
   /// Flushed way flag.
   ///
   /// This signal defines all ways which are flushed and have no valid tags in them.
   /// Tags are not looked up in the ways which are flushed.
-  output logic [Cfg.SetAssociativity-1:0]  flushed_o,
+  output set_asso_t flushed_o,
   /// Flush descriptor output.
   ///
   /// Payload data for flush descriptors. These descriptors are generated either by configuring
   /// cache ways to SPM or when an explicit flush was triggered.
-  output desc_t                            desc_o,
+  output desc_t desc_o,
   /// Flush descriptor handshake, valid
-  output logic                             desc_valid_o,
+  output logic desc_valid_o,
   /// Flush descriptor handshake, ready
-  input  logic                             desc_ready_i,
+  input logic desc_ready_i,
   /// AXI4 AW address from AXI4 slave port.
   ///
   /// This is for controlling the bypass multiplexer.
-  input  logic [AxiCfg.AddrWidthFull-1:0]  slv_aw_addr_i,
+  input addr_full_t slv_aw_addr_i,
   /// AXI4 AR address from AXI4 slave port.
   ///
   /// This is for controlling the bypass multiplexer.
-  input  logic [AxiCfg.AddrWidthFull-1:0]  slv_ar_addr_i,
+  input addr_full_t slv_ar_addr_i,
   /// Bypass selection for the AXI AW channel.
-  output logic                             mst_aw_bypass_o,
+  output logic mst_aw_bypass_o,
   /// Bypass selection for the AXI AR channel.
-  output logic                             mst_ar_bypass_o,
+  output logic mst_ar_bypass_o,
   /// Isolate the AXI slave port.
   ///
   /// Flush control sets this signal to prevent active cache accesses during flushing.
   /// This is to preserve data integrity when a cache flush is underway.
-  output logic                             llc_isolate_o,
+  output logic llc_isolate_o,
   /// The AXI salve port is isolated.
   ///
   /// This signals the flush FSM that it can safely perform the flush.
-  input  logic                             llc_isolated_i,
+  input logic llc_isolated_i,
   /// The AW descriptor generation unit is busy.
   ///
   /// This signal is needed for the flush control so that no active functional descriptors
   /// interfere with the flush operation.
-  input  logic                             aw_unit_busy_i,
+  input logic aw_unit_busy_i,
   /// The AR descriptor generation unit is busy.
   ///
   /// This signal is needed for the flush control so that no active functional descriptors
   /// interfere with the flush operation.
-  input  logic                             ar_unit_busy_i,
+  input logic ar_unit_busy_i,
   /// A flush descriptor is finished flushing its cache line.
   ///
   /// This is for controlling the counters which keep track of how many flush descriptors are
   /// underway.
-  input  logic                             flush_desc_recv_i,
+  input logic flush_desc_recv_i,
   /// Result data of the BIST from the tag storage macros.
-  input  logic  [Cfg.SetAssociativity-1:0] bist_res_i,
+  input set_asso_t bist_res_i,
   /// Result data of the BIST from the tag storage macros is valid.
-  input  logic                             bist_valid_i,
+  input logic bist_valid_i,
   /// Address rule for the AXI memory region which maps onto the cache.
   ///
   /// This rule is used to set the AXI LLC bypass.
   /// If all cache ways are flushed, accesses onto this address region take the bypass directly
   /// to main memory.
-  input  rule_full_t                       axi_cached_rule_i,
+  input  rule_full_t axi_cached_rule_i,
   /// Address rule for the AXI memory region which maps to the scratch pad memory region.
   ///
   /// Accesses are only successful, if the corresponding way is mapped as SPM
-  input  rule_full_t                       axi_spm_rule_i
+  input  rule_full_t axi_spm_rule_i
 );
   // register macros from `common_cells`
   `include "common_cells/registers.svh"
 
-  // Define the Address type for the bypass address map
-  typedef logic [AxiCfg.AddrWidthFull-1:0]   addr_full_t;
   // Define the configuration register address alignment.
   localparam int unsigned AlignToBytes = 32'd8;
   localparam int unsigned CfgRegWidth  = 32'd8 * AlignToBytes;
@@ -260,7 +263,6 @@ module axi_llc_config #(
   typedef logic [AlignToBytes-1:0]           strb_cfg_t;
   // Type for the Set Associativity puls padding
   localparam int unsigned SetAssoPadWidth = CfgRegWidth - Cfg.SetAssociativity;
-  typedef logic [Cfg.SetAssociativity-1:0]   set_asso_t;
   typedef logic [SetAssoPadWidth-1:0]        pad_asso_t; // Zero padding
 
   // Definition of the configuration registers.

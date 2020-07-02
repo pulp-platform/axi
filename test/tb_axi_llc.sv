@@ -83,14 +83,6 @@ module tb_axi_llc #(
   `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_lite_t, w_lite_t, ar_lite_t)
   `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_lite_t, r_lite_t)
 
-  localparam axi_llc_pkg::llc_axi_cfg_t AxiLlcAxiCfg = axi_llc_pkg::llc_axi_cfg_t'{
-    SlvPortIdWidth:    TbAxiIdWidthFull,
-    AddrWidthFull:     TbAxiAddrWidthFull,
-    DataWidthFull:     TbAxiDataWidthFull,
-    LitePortAddrWidth: TbAxiAddrWidthLite,
-    LitePortDataWidth: TbAxiDataWidthLite
-  };
-
   // rule definitions
   typedef struct packed {
     int unsigned idx;
@@ -338,23 +330,27 @@ module tb_axi_llc #(
     .SetAssociativity ( TbSetAssociativity ),
     .NumLines         ( TbNumLines         ),
     .NumBlocks        ( TbNumBlocks        ),
-    .AxiCfg           ( AxiLlcAxiCfg     ),
-    .slv_aw_chan_t    ( axi_slv_aw_t     ),
-    .mst_aw_chan_t    ( axi_mst_aw_t     ),
-    .w_chan_t         ( axi_w_t          ),
-    .slv_b_chan_t     ( axi_slv_b_t      ),
-    .mst_b_chan_t     ( axi_mst_b_t      ),
-    .slv_ar_chan_t    ( axi_slv_ar_t     ),
-    .mst_ar_chan_t    ( axi_mst_ar_t     ),
-    .slv_r_chan_t     ( axi_slv_r_t      ),
-    .mst_r_chan_t     ( axi_mst_r_t      ),
-    .slv_req_t        ( axi_slv_req_t    ),
-    .slv_resp_t       ( axi_slv_resp_t   ),
-    .mst_req_t        ( axi_mst_req_t    ),
-    .mst_resp_t       ( axi_mst_resp_t   ),
-    .lite_req_t       ( req_lite_t       ),
-    .lite_resp_t      ( resp_lite_t      ),
-    .rule_full_t      ( rule_full_t      )
+    .AxiIdWidth       ( TbAxiIdWidthFull   ),
+    .AxiAddrWidth     ( TbAxiAddrWidthFull ),
+    .AxiDataWidth     ( TbAxiDataWidthFull ),
+    .AxiLiteAddrWidth ( TbAxiAddrWidthLite ),
+    .AxiLiteDataWidth ( TbAxiDataWidthLite ),
+    .slv_aw_chan_t    ( axi_slv_aw_t       ),
+    .mst_aw_chan_t    ( axi_mst_aw_t       ),
+    .w_chan_t         ( axi_w_t            ),
+    .slv_b_chan_t     ( axi_slv_b_t        ),
+    .mst_b_chan_t     ( axi_mst_b_t        ),
+    .slv_ar_chan_t    ( axi_slv_ar_t       ),
+    .mst_ar_chan_t    ( axi_mst_ar_t       ),
+    .slv_r_chan_t     ( axi_slv_r_t        ),
+    .mst_r_chan_t     ( axi_mst_r_t        ),
+    .slv_req_t        ( axi_slv_req_t      ),
+    .slv_resp_t       ( axi_slv_resp_t     ),
+    .mst_req_t        ( axi_mst_req_t      ),
+    .mst_resp_t       ( axi_mst_resp_t     ),
+    .lite_req_t       ( req_lite_t         ),
+    .lite_resp_t      ( resp_lite_t        ),
+    .rule_full_t      ( rule_full_t        )
   ) i_axi_llc_dut (
     .clk_i               ( clk                                    ),
     .rst_ni              ( rst_n                                  ),
