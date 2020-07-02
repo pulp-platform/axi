@@ -17,18 +17,8 @@
 /// Parameter contained in this package are for fine grain configuration of the modules.
 /// They can be changed to adapt the cache to a specific design for optimal performance.
 package axi_llc_pkg;
-  /// AxiCfgStruct to be set externally as part of the [`axi_llc_top`](module.axi_llc_top)
-  /// parameter configuration.
-  ///
-  /// Example configuration:
-  ///
-  /// localparam axi_llc_pkg::llc_axi_cfg_t AxiLlcAxiCfg = axi_llc_pkg::llc_axi_cfg_t'{
-  ///   SlvPortIdWidth:    32'd6,
-  ///   AddrWidthFull:     32'd64,
-  ///   DataWidthFull:     32'd64,
-  ///   LitePortAddrWidth: 32'd32,
-  ///   LitePortDataWidth: 32'd32
-  /// };
+  /// AxiCfgStruct to be set internally in [`axi_llc_top`](module.axi_llc_top). It bundles the
+  /// AXI parameters together.
   typedef struct packed {
     /// AXI4+ATOP ID width of the slave port, CPU side, in bits
     int unsigned SlvPortIdWidth;
