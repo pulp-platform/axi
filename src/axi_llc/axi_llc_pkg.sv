@@ -248,12 +248,12 @@ package axi_llc_pkg;
   /// `1`: add spill register
   parameter bit SpillHitMiss = 1'b1;
 
-  /// Latency of the memory macros responsible for saving the tags.
+  /// Read latency of the memory macros responsible for saving the tags.
   /// This value has to be >= 32'd1.
   parameter int unsigned TagMacroLatency = 32'd1;
 
-  /// Latency of the memory macros responsible for saving the data.
-  /// This value has to be >= 32'd1.
+  /// Read latency of the memory macros responsible for saving the data.
+  /// This value has to be == 32'd1.
   parameter int unsigned DataMacroLatency = 32'd1;
 
   /// Indicates which unit does an operation onto a cache line data storage element
