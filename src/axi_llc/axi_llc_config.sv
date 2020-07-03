@@ -333,20 +333,23 @@ module axi_llc_config #(
     CfgSpm:    {AlignToBytes{1'b0}}  // read and write
   };
 
+  localparam int unsigned FlushIdxWidth = cf_math_pkg::idx_width(Cfg.SetAssociativity);
+  typedef logic [FlushIdxWidth-1:0] flush_idx_t;
+
   // Flipflop signals declaration
   union_reg_data_t config_d,    config_q; // Configuration register mapped to AXI
   union_reg_strb_t config_load;           // Load enable for the configuration registers
   union_reg_strb_t config_wr;             // AXI has written to this configuration register
 
   // Counter signals for flush control
-  logic                                    clear_cnt;
-  logic                                    en_send_cnt, en_recv_cnt;
-  logic                                    load_cnt;
-  logic [Cfg.IndexLength-1:0]              flush_addr,  to_recieve;
+  logic                       clear_cnt;
+  logic                       en_send_cnt, en_recv_cnt;
+  logic                       load_cnt;
+  logic [Cfg.IndexLength-1:0] flush_addr,  to_recieve;
   // Trailing zero counter signals, for flush descriptor generation.
-  logic [$clog2(Cfg.SetAssociativity)-1:0] to_flush_nub;
-  logic                                    lzc_empty;
-  set_asso_t                               flush_way_ind;
+  flush_idx_t                 to_flush_nub;
+  logic                       lzc_empty;
+  set_asso_t                  flush_way_ind;
 
   ////////////////////////
   // AXI Bypass control //
@@ -655,6 +658,8 @@ module axi_llc_config #(
     .reg_q_o     ( config_q.ByteMap     )
   );
 
+// pragma translate_off
+`ifndef VERILATOR
   initial begin : proc_check_params
     set_asso      : assert (Cfg.SetAssociativity < CfgRegWidth) else
         $fatal(1, $sformatf("LlcCfg: The maximum set associativity (%0d) has to be smaller than \
@@ -723,4 +728,6 @@ module axi_llc_config #(
 //     $display($sformatf("CFG:REG_NO_BLOCKS (hex): %h", cfg_addr_map[REG_NO_BLOCKS].start_addr ));
 //     $display("###############################################################################");
   end
+`endif
+// pragma translate_on
 endmodule
