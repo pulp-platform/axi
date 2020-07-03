@@ -40,26 +40,25 @@ package axi_llc_pkg;
   /// Cache configuration, used internally as localparam in the LLC submodules.
   /// Automatically set in (module.axi_llc_top).
   typedef struct packed {
-    /// Set-associativity of the cache
+    /// Set-associativity of the cache.
     int unsigned SetAssociativity;
-    /// Number of cache lines per way
+    /// Number of cache lines per way.
     int unsigned NumLines;
-    /// Number of blocks (words) in a cache line
+    /// Number of blocks (words) in a cache line.
     int unsigned NumBlocks;
     /// Size of a block (word) in bit.
     int unsigned BlockSize;
-    /// Length of the address tag
+    /// Length of the address tag, in bits.
     int unsigned TagLength;
-    /// Length of the index ( line address )
+    /// Length of the index ( line address ), in bits.
     int unsigned IndexLength;
-    /// Length of the block offset
+    /// Length of the block offset in bits.
     int unsigned BlockOffsetLength;
-    /// Length of the byte offset
+    /// Length of the byte offset in bits.
     int unsigned ByteOffsetLength;
-    /// SPM address length
+    /// SPM address region length, in bytes.
     int unsigned SPMLength;
   } llc_cfg_t;
-
 
   /// Number of bytes transfered in an Ax transfer. Is used in `evens_t`. There they correspond to
   /// the fields labeled `*_num_bytes`. They are valid if the corresponding `active` field is `1`
@@ -208,8 +207,6 @@ package axi_llc_pkg;
     /// Lookup, Performs Hit detection
     Lookup = 2'b10
   } tag_mode_e;
-
-
 
   // Configuration of the counting bloom filter in `lock_box_bloom` located in `hit_miss`.
   // Change these parameters if you want to optimize the false positive rate.
