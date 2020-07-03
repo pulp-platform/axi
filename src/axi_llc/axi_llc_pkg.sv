@@ -10,9 +10,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   llc_pkg.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   30.04.2019
-//
+
 /// Contains the configuration and internal messages structs of the `axi_llc`.
 /// Parameter contained in this package are for fine grain configuration of the modules.
 /// They can be changed to adapt the cache to a specific design for optimal performance.
