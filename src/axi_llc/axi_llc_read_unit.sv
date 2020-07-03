@@ -10,53 +10,72 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_read_unit.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   24.05.2019
-//
-// Description: This module takes a descriptor as input and sends
-//              appropriate R channel beats from the data storage
-//              It issues read requests to the data SRAM way specified in the descriptor
-//              There is a FIFO, which stores the R channel meta information, when the
-//              read request is made to the data SRAM, all other fields of the R beat get also
-//              described into this R metadata FIFO. When the read data response arrives, the
-//              complete R beat gets assembled and put into the R channel output FIFO.
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This module takes a descriptor as input and sends appropriate R channel beats from the data
+/// storage.
+/// It issues read requests to the data SRAM way specified in the descriptor.
+/// There is a FIFO, which stores the R channel meta information, when the read request is made to
+/// the data SRAM, all other fields of the R beat get also described into this R metadata FIFO.
+/// When the read data response arrives, the complete R beat gets assembled and put into the R
+/// channel output FIFO.
 module axi_llc_read_unit #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
+  /// Static LLC configuration parameter struct.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: 0},
+  /// Static LLC AXI configuration parameters.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
   parameter type                       desc_t    = logic,
+  /// Data way request payload type definition.
   parameter type                       way_inp_t = logic,
+  /// Data way response payload type definition.
   parameter type                       way_oup_t = logic,
+  /// Lock struct definition. This is for the bloom filter to signal, that the line is unlocked.
   parameter type                       lock_t    = logic,
+  /// AXI slave port R channel struct definition.
   parameter type                       r_chan_t  = logic
 ) (
-  input  logic     clk_i,  // Clock
-  input  logic     rst_ni, // Active low reset
-  input  logic     test_i, // Testmode
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // R channel output
-  output r_chan_t  r_chan_slv_o,
-  output logic     r_chan_valid_o,
-  input  logic     r_chan_ready_i,
-  // signals to the ways
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Testmode enable, active high.
+  input logic test_i,
+  /// Read descriptor payload input.
+  input desc_t desc_i,
+  /// Input descriptor is valid.
+  input logic desc_valid_i,
+  /// Module is ready to take in a new descriptor.
+  output logic desc_ready_o,
+  /// Slave port R channel beat data.
+  output r_chan_t r_chan_slv_o,
+  /// R beat is valid.
+  output logic r_chan_valid_o,
+  /// R beat is ready.
+  input logic r_chan_ready_i,
+  /// Data storage way request payload.
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i,
-  // signals from the ways
-  input  way_oup_t way_out_i,
-  input  logic     way_out_valid_i,
-  output logic     way_out_ready_o,
-  // unlock signal
-  output lock_t    r_unlock_o,
-  output logic     r_unlock_req_o, // NOT AXI compliant!
-  input  logic     r_unlock_gnt_i  // NOT AXI compliant!
+  /// Data way request is valid.
+  output logic way_inp_valid_o,
+  /// Data way is ready for a request.
+  input logic way_inp_ready_i,
+  /// Read data payload from the data ways.
+  input way_oup_t way_out_i,
+  /// Data way response is valid.
+  input logic way_out_valid_i,
+  /// Module is ready to take in a response.
+  output logic way_out_ready_o,
+  /// Unlock signal payload for the line locking mechanism.
+  output lock_t r_unlock_o,
+  /// Request to unlock the line.
+  /// NOT AXI compliant!
+  output logic r_unlock_req_o,
+  /// Grant for the unlock request.
+  /// NOT AXI compliant!
+  input logic r_unlock_gnt_i
 );
+  `include "common_cells/registers.svh"
   typedef logic [AxiCfg.SlvPortIdWidth-1:0] id_t;
   typedef logic [AxiCfg.DataWidthFull-1:0]  data_t;
   // this struct saves the r channel meta information before it goes to the R FIFO
@@ -94,28 +113,11 @@ module axi_llc_read_unit #(
     default: '0
   }; // other fields not needed, `we` is `1'b0.
 
-  //always_comb begin
-  //  way_inp_o = '0;
-  //  way_inp_o.cache_unit   = axi_llc_pkg::RChanUnit;
-  //  way_inp_o.way_ind      = desc_q.way_ind;
-  //  way_inp_o.line_addr    =
-  //      desc_q.a_x_addr[(Cfg.ByteOffsetLength + Cfg.BlockOffsetLength)+:Cfg.IndexLength];
-  //  way_inp_o.blk_offset   =
-  //      desc_q.a_x_addr[ Cfg.ByteOffsetLength                         +:Cfg.BlockOffsetLength];
-  //  // these comments are just for reasoning, why the fields are not set
-  //  // way_inp_o.we           = 1'b0;
-  //  // way_inp_o.data         = '0; // this is the read unit, we do not have write data
-  //  // way_inp_o.strb         = '0;
-  //end
-
   // unlock assignment
   assign r_unlock_o = '{
     index:   desc_q.a_x_addr[(Cfg.ByteOffsetLength + Cfg.BlockOffsetLength)+:Cfg.IndexLength],
     way_ind: desc_q.way_ind
   };
-//  assign r_unlock_o.index   =
-//      desc_q.a_x_addr[(Cfg.ByteOffsetLength + Cfg.BlockOffsetLength)+:Cfg.IndexLength];
-//  assign r_unlock_o.way_ind = desc_q.way_ind;
 
   // control
   always_comb begin
@@ -204,12 +206,12 @@ module axi_llc_read_unit #(
   };
 
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b0     ),  // FIFO not in fall-through mode as SRAM has one cycle latency
-    .DEPTH        ( 3        ),  // two places for stalling
+    .FALL_THROUGH ( 1'b0                                    ), // No fallthrough
+    .DEPTH        ( axi_llc_pkg::DataMacroLatency + 32'd2   ), // two places for stalling
     .dtype        ( r_meta_t )
   ) i_r_meta_fifo (
-    .clk_i        ( clk_i           ),  // Clock
-    .rst_ni       ( rst_ni          ),  // Asynchronous reset active low
+    .clk_i,                             // Clock
+    .rst_ni,                            // Asynchronous reset active low
     .flush_i      ( '0              ),  // flush the queue
     .testmode_i   ( test_i          ),  // test_mode to bypass clock gating
     .full_o       ( meta_fifo_full  ),  // queue is full
@@ -225,8 +227,8 @@ module axi_llc_read_unit #(
     .DEPTH        ( Cfg.NumBlocks ),  // can store a whole cache line, when the request size is max
     .dtype        ( r_chan_t      )
   ) i_r_fifo (
-    .clk_i        ( clk_i        ),  // Clock
-    .rst_ni       ( rst_ni       ),  // Asynchronous reset active low
+    .clk_i,                          // Clock
+    .rst_ni,                         // Asynchronous reset active low
     .flush_i      ( '0           ),  // flush the queue
     .testmode_i   ( test_i       ),  // test_mode to bypass clock gating
     .full_o       ( r_fifo_full  ),  // queue is full
