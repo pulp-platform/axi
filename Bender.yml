@@ -21,9 +21,6 @@ sources:
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
   - src/axi_pkg.sv
-  - target: simulation
-    files:
-      -  src/axi_llc/test/axi_llc_sram_func.sv
   # Level 1
   - src/axi_llc/axi_llc_pkg.sv
   - src/axi_intf.sv
