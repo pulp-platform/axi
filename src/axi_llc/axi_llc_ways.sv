@@ -10,50 +10,58 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_ways.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   31.05.2019
-//
-// Description: Holds the interconnect and the generates the different Ways for the llc
-// Inputs     : The four way_inp_t from the units, structs are defined in `axi_llc_top`.
-//              The struct needs a field called `way_ind` for switching.
-// Outputs    : The responses to the two units that want a read response from the macros.
-//
-// There are two FIFO's parallel to the ways, they hold the output switching decision for
-// read outputs. These are necessary, if one of the read request unit stalls, there could be
-// multiple read responses waiting in different ways. The output multiplexer has to know
-// in which ordering the requests were made.
 
+/// Holds the interconnect and the generates the different Ways for the llc
+/// Inputs:  The four way_inp_t from the units, structs are defined in `axi_llc_top`.
+///   The struct needs a field called `way_ind` for switching.
+/// Outputs: The responses to the two units that want a read response from the macros.
+///
+/// There are two FIFO's parallel to the ways, they hold the output switching decision for
+/// read outputs. These are necessary, if one of the read request unit stalls, there could be
+/// multiple read responses waiting in different ways. The output multiplexer has to know
+/// in which ordering the requests were made.
 module axi_llc_ways #(
-  parameter axi_llc_pkg::llc_cfg_t    Cfg = -1,
-  parameter type                way_inp_t = logic,
-  parameter type                way_oup_t = logic
+  /// Static LLC configuration parameter struct.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Data way request payload type definition.
+  parameter type way_inp_t = logic,
+  /// Data way response payload type definition.
+  parameter type way_oup_t = logic
 ) (
-  input  logic           clk_i,  // Clock
-  input  logic           rst_ni, // Asynchronous reset active low
-  input  logic           test_i, // Test Mode Enable
-  // Way inputs
-  input  way_inp_t [3:0] way_inp_i,
-  input  logic     [3:0] way_inp_valid_i,
-  output logic     [3:0] way_inp_ready_o,
-  // Way outputs
-  output way_oup_t       evict_way_out_o,
-  output logic           evict_way_out_valid_o,
-  input  logic           evict_way_out_ready_i,
-  output way_oup_t       read_way_out_o,
-  output logic           read_way_out_valid_o,
-  input  logic           read_way_out_ready_i
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Testmode enable, active high.
+  input logic test_i,
+  /// Way request payloads inputs. One array index for each unit which can make request to the
+  /// data storage macros.
+  input way_inp_t [3:0] way_inp_i,
+  /// Way request is valid.
+  input logic [3:0] way_inp_valid_i,
+  /// Data way is ready for the request.
+  output logic [3:0] way_inp_ready_o,
+  /// Way response payload to the evict unit.
+  output way_oup_t evict_way_out_o,
+  /// Response to the evict unit is valid.
+  output logic evict_way_out_valid_o,
+  /// Evict unit is ready for the response.
+  input logic evict_way_out_ready_i,
+  /// Way response payload to the read unit.
+  output way_oup_t read_way_out_o,
+  /// Response to the read unit is valid.
+  output logic read_way_out_valid_o,
+  /// Read unit is ready for the response.
+  input logic read_way_out_ready_i
 );
-
+  localparam int unsigned SelIdxWidth = cf_math_pkg::idx_width(Cfg.SetAssociativity);
+  typedef logic [SelIdxWidth-1:0]          way_sel_t; // Binary representation of the way selection
   typedef logic [Cfg.SetAssociativity-1:0] way_ind_t; // way indicator for switching decision
 
   // input signal handshaking can be disconnected if the read output FIFO is full
   logic [3:0] inp_valid, inp_ready;
-
-  // crossbar signals, these arrays have to be explicit
-  logic [3:0][Cfg.SetAssociativity-1:0] to_way_valid;
-  logic [Cfg.SetAssociativity-1:0][3:0] t_to_way_valid;
-  logic [3:0][Cfg.SetAssociativity-1:0] to_way_ready;
-  logic [Cfg.SetAssociativity-1:0][3:0] t_to_way_ready;
 
   // input to the ways
   way_inp_t [Cfg.SetAssociativity-1:0]  way_inp;
@@ -66,7 +74,7 @@ module axi_llc_ways #(
   logic     [Cfg.SetAssociativity-1:0]  way_out_ready;
 
   // binary number which selects the right way to send the request to
-  logic [3:0][$clog2(Cfg.SetAssociativity)-1:0] demux_bin;
+  way_sel_t [3:0] way_sel;
 
   // FIFO signals, these are here so that read responses can not get reordered!
   way_ind_t e_switch,       r_switch;
@@ -75,7 +83,9 @@ module axi_llc_ways #(
   logic     e_switch_push,  r_switch_push;
   logic     e_switch_pop,   r_switch_pop;
 
-  // connect the right inputs dependent on FIFO fullness where it is required
+  // Connect the right input handshaking dependent on FIFO fullness where it is required.
+  // All are written here explicit, so that unit can be extended in the future to
+  // also have a read response (e.g. ATOP support in write unit).
   // Evict unit (watch the FIFO)
   assign inp_valid[axi_llc_pkg::EvictUnit]       =
       ~e_switch_full & way_inp_valid_i[axi_llc_pkg::EvictUnit];
@@ -93,59 +103,49 @@ module axi_llc_ways #(
   assign way_inp_ready_o[axi_llc_pkg::RChanUnit] =
       ~r_switch_full & inp_ready[axi_llc_pkg::RChanUnit];
 
-  // demultiplexer for each unit to the ways
-  for (genvar i = 0; unsigned'(i) < 4; i++) begin : gen_connect_demux
+  // Selection signal of each unit to the ways.
+  for (genvar i = 0; unsigned'(i) < 32'd4; i++) begin : gen_connect_demux
     onehot_to_bin #(
       .ONEHOT_WIDTH ( Cfg.SetAssociativity )
-    ) i_demux_onehot (
+    ) i_onehot_to_bin (
       .onehot ( way_inp_i[i].way_ind ),
-      .bin    ( demux_bin[i]         )
+      .bin    ( way_sel[i]           )
     );
-
-    stream_demux #(
-      .N_OUP        ( Cfg.SetAssociativity )
-    ) i_unit_demux (
-      .inp_valid_i  ( inp_valid[i]    ),
-      .inp_ready_o  ( inp_ready[i]    ),
-      .oup_sel_i    ( demux_bin[i]    ),
-      .oup_valid_o  ( to_way_valid[i] ),
-      .oup_ready_i  ( to_way_ready[i] )
-    );
-    for (genvar j = 0; unsigned'(j) < Cfg.SetAssociativity; j++) begin : gen_connect_cross
-      assign t_to_way_valid[j][i] = to_way_valid[i][j];
-      assign to_way_ready[i][j]   = t_to_way_ready[j][i];
-    end
   end
+
+  stream_xbar #(
+    .NumInp      ( 32'd4                ),
+    .NumOut      ( Cfg.SetAssociativity ),
+    .payload_t   ( way_inp_t            ),
+    .OutSpillReg ( 1'b0                 ),
+    .ExtPrio     ( 1'b0                 ),
+    .AxiVldRdy   ( 1'b1                 ),
+    .LockIn      ( 1'b1                 )
+  ) i_stream_xbar (
+    .clk_i,
+    .rst_ni,
+    .flush_i ( '0              ),
+    .rr_i    ( '0              ),
+    .data_i  ( way_inp_i       ),
+    .sel_i   ( way_sel         ),
+    .valid_i ( inp_valid       ),
+    .ready_o ( inp_ready       ),
+    .data_o  ( way_inp         ),
+    .idx_o   ( /*not used*/    ),
+    .valid_o ( way_inp_valid   ),
+    .ready_i ( way_inp_ready   )
+  );
 
   // once for each way
   for (genvar j = 0; unsigned'(j) < Cfg.SetAssociativity; j++) begin : gen_data_ways
-    // connect both units to the RAM
-    rr_arb_tree #(
-      .NumIn    ( 4          ),
-      .DataType ( way_inp_t  ),
-      .AxiVldRdy( 1'b1       )
-    ) i_req_mux (
-      .clk_i    ( clk_i             ),
-      .rst_ni   ( rst_ni            ),
-      .flush_i  ( 1'b0              ),
-      .rr_i     ( '0                ),
-      .data_i   ( way_inp_i         ),
-      .req_i    ( t_to_way_valid[j] ), // equals valid
-      .gnt_o    ( t_to_way_ready[j] ), // equals ready
-      .data_o   ( way_inp      [j]  ),
-      .req_o    ( way_inp_valid[j]  ),
-      .gnt_i    ( way_inp_ready[j]  ),
-      .idx_o    (                   )
-    );
-
     axi_llc_data_way #(
       .Cfg       ( Cfg       ),
       .way_inp_t ( way_inp_t ),
       .way_oup_t ( way_oup_t )
     ) i_data_way (
-      .clk_i      ( clk_i            ),
-      .rst_ni     ( rst_ni           ),
-      .test_i     ( test_i           ),
+      .clk_i,
+      .rst_ni,
+      .test_i,
       .inp_i      ( way_inp[j]       ),
       .inp_valid_i( way_inp_valid[j] ),
       .inp_ready_o( way_inp_ready[j] ),
@@ -167,34 +167,34 @@ module axi_llc_ways #(
     .DEPTH        ( Cfg.SetAssociativity ),  // each way could have a read response request
     .dtype        ( way_ind_t            )
   ) i_r_switch_fifo (
-    .clk_i        ( clk_i                                     ),  // Clock
-    .rst_ni       ( rst_ni                                    ),  // Asynchronous reset active low
-    .flush_i      ( '0                                        ),  // flush the queue
-    .testmode_i   ( test_i                                    ),  // test_mode
-    .full_o       ( r_switch_full                             ),  // queue is full
-    .empty_o      ( r_switch_empty                            ),  // queue is empty
-    .usage_o      (                                           ),  // fill pointer
-    .data_i       ( way_inp_i[axi_llc_pkg::RChanUnit].way_ind ),  // data to push into the queue
-    .push_i       ( r_switch_push                             ),  // data is valid
-    .data_o       ( r_switch                                  ),  // output data
-    .pop_i        ( r_switch_pop                              )   // pop head from queue
+    .clk_i,                                                     // Clock
+    .rst_ni,                                                    // Asynchronous reset active low
+    .flush_i    ( '0                                        ),  // flush the queue
+    .testmode_i ( test_i                                    ),  // test_mode
+    .full_o     ( r_switch_full                             ),  // queue is full
+    .empty_o    ( r_switch_empty                            ),  // queue is empty
+    .usage_o    (                                           ),  // fill pointer
+    .data_i     ( way_inp_i[axi_llc_pkg::RChanUnit].way_ind ),  // data to push into the queue
+    .push_i     ( r_switch_push                             ),  // data is valid
+    .data_o     ( r_switch                                  ),  // output data
+    .pop_i      ( r_switch_pop                              )   // pop head from queue
   );
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0                 ), // SRAM has one cycle latency anyway
     .DEPTH        ( Cfg.SetAssociativity ), // each way could have a read response request
     .dtype        ( way_ind_t            )
   ) i_e_switch_fifo (
-    .clk_i        ( clk_i                                     ),  // Clock
-    .rst_ni       ( rst_ni                                    ),  // Asynchronous reset active low
-    .flush_i      ( '0                                        ),  // flush the queue
-    .testmode_i   ( test_i                                    ),  // test_mode
-    .full_o       ( e_switch_full                             ),  // queue is full
-    .empty_o      ( e_switch_empty                            ),  // queue is empty
-    .usage_o      (                                           ),  // fill pointer
-    .data_i       ( way_inp_i[axi_llc_pkg::EvictUnit].way_ind ),  // data to push into the queue
-    .push_i       ( e_switch_push                             ),  // data is valid
-    .data_o       ( e_switch                                  ),  // output data
-    .pop_i        ( e_switch_pop                              )   // pop head from queue
+    .clk_i,                                                     // Clock
+    .rst_ni,                                                    // Asynchronous reset active low
+    .flush_i    ( '0                                        ),  // flush the queue
+    .testmode_i ( test_i                                    ),  // test_mode
+    .full_o     ( e_switch_full                             ),  // queue is full
+    .empty_o    ( e_switch_empty                            ),  // queue is empty
+    .usage_o    (                                           ),  // fill pointer
+    .data_i     ( way_inp_i[axi_llc_pkg::EvictUnit].way_ind ),  // data to push into the queue
+    .push_i     ( e_switch_push                             ),  // data is valid
+    .data_o     ( e_switch                                  ),  // output data
+    .pop_i      ( e_switch_pop                              )   // pop head from queue
   );
 
   // output to evict and read unit, listen to the output of the switch FIFOs
