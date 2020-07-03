@@ -10,58 +10,85 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_evict_unit.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   29.05.2019
-//
-// Description: houses the components for the evict operation
-//              Is AW/W/B AXI Master and evicts lines from the different ways
-//              Descripors enter, go to the AW master, then to W master, then leave through a FIFO
-//              The port `flush_desc_recv_o` notifies the config module that a flush descriptor
-//              ended its journey through the eviction pipeline.
 
+/// Houses the components for the eviction operation.
+/// Is AW/W/B AXI Master and evicts lines from the different ways
+/// Descriptors enter, go to the AW master, then to W master, then leave through a FIFO
+/// The port `flush_desc_recv_o` notifies the configuration module that a flush descriptor
+/// ended its journey through the eviction pipeline.
 module axi_llc_evict_unit #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
-  parameter type                       desc_t    = logic,
-  parameter type                       way_inp_t = logic,
-  parameter type                       way_oup_t = logic,
-  parameter type                       aw_chan_t = logic,
-  parameter type                       w_chan_t  = logic,
-  parameter type                       b_chan_t  = logic
+  /// Static LLC configuration parameters.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Static LLC AXI configuration parameters.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// LLC way input request payload type.
+  parameter type way_inp_t = logic,
+  /// LLC way output response payload type.
+  parameter type way_oup_t = logic,
+  /// AXI master port AW channel type.
+  parameter type aw_chan_t = logic,
+  /// AXI master port W channel type.
+  parameter type w_chan_t = logic,
+  /// AXI master port B channel type.
+  parameter type b_chan_t = logic
 ) (
-  input clk_i,    // Clock
-  input rst_ni,   // Asynchronous reset active low
-  input test_i,   // Test mode activate
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // descriptor output
-  output desc_t    desc_o,
-  output logic     desc_valid_o,
-  input  logic     desc_ready_i,
-  // to the ways
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Test mode enable, active high.
+  input logic test_i,
+  /// Descriptor payload input. This descriptor comes from the hit_miss detection unit.
+  input desc_t desc_i,
+  /// Input descriptor is valid.
+  input logic desc_valid_i,
+  /// Module is ready to accept a descriptor.
+  output logic desc_ready_o,
+  /// Descriptor payload output. This descriptor finished the eviction pipeline and goes
+  /// to the refill pipeline.
+  output desc_t desc_o,
+  /// Output descriptor is valid.
+  output logic desc_valid_o,
+  /// Downstream is ready to accept the output descriptor.
+  input logic desc_ready_i,
+  /// Eviction request to the data ways. This comes from the W channel unit and will issue
+  /// reads for cache lines that are evicted/written back.
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i,
-  // from the ways
-  input  way_oup_t way_out_i,
-  input  logic     way_out_valid_i,
-  output logic     way_out_ready_o,
-  // AW channel master
+  /// Data storage way request is valid.
+  output logic way_inp_valid_o,
+  /// Way is ready to accept the request.
+  input logic way_inp_ready_i,
+  /// Response payload from the ways. This is the read data from the storage macros which is
+  /// written back through the master port.
+  input way_oup_t way_out_i,
+  /// Data way has a valid response.
+  input logic way_out_valid_i,
+  /// Unit is ready to accept the response from the ways.
+  output logic way_out_ready_o,
+  /// AW master channel payload.
   output aw_chan_t aw_chan_mst_o,
-  output logic     aw_chan_valid_o,
-  input  logic     aw_chan_ready_i,
-  // W channel master
-  output w_chan_t  w_chan_mst_o,
-  output logic     w_chan_valid_o,
-  input  logic     w_chan_ready_i,
-  // B channel master
-  input  b_chan_t  b_chan_mst_i,
-  input  logic     b_chan_valid_i,
-  output logic     b_chan_ready_o,
-  // to cfg
-  output logic     flush_desc_recv_o
+  /// AW beat is valid.
+  output logic aw_chan_valid_o,
+  /// AW beat is ready.
+  input logic aw_chan_ready_i,
+  /// W master channel payload.
+  output w_chan_t w_chan_mst_o,
+  /// W beat is valid.
+  output logic w_chan_valid_o,
+  /// W beat is ready.
+  input logic w_chan_ready_i,
+  /// B master channel payload.
+  input b_chan_t b_chan_mst_i,
+  /// B beat is valid.
+  input logic b_chan_valid_i,
+  /// B beat is ready.
+  output logic b_chan_ready_o,
+  /// A flush descriptor finished/destroyed in the eviction pipeline.
+  output logic flush_desc_recv_o
 );
 
   // descriptor signals between AW master and eviction FIFO
@@ -100,34 +127,33 @@ module axi_llc_evict_unit #(
     .ax_chan_ready_i ( aw_chan_ready_i )
   );
 
-  // FIFO between AW master and W mastrer, this many evictions transactions can be in flight
-  axi_llc_desc_fifo #(
-    .desc_t        ( desc_t                      ),
-    .Depth         ( axi_llc_pkg::EvictFifoDepth )
-  ) i_no_evictions_fifo (
-    .clk_i         ( clk_i          ),
-    .rst_ni        ( rst_ni         ),
-    .test_i        ( test_i         ),
-    // from AW master
-    .desc_i        ( desc_aw        ),
-    .desc_valid_i  ( desc_aw_valid  ),
-    .desc_ready_o  ( desc_aw_ready  ),
-    // to W master
-    .desc_o        ( desc_w         ),
-    .desc_valid_o  ( desc_w_valid   ),
-    .desc_ready_i  ( desc_w_ready   ),
-    // fill flag
-    .fifo_ussage_o ( /*not used*/   )
+  // FIFO between AW master and W master, this many evictions transactions can be in flight
+  stream_fifo #(
+    .FALL_THROUGH ( 1'b1                        ),
+    .DEPTH        ( axi_llc_pkg::EvictFifoDepth ),
+    .T            ( desc_t                      )
+  ) i_stream_fifo_evict (
+    .clk_i,
+    .rst_ni,
+    .flush_i    ( 1'b0          ),
+    .testmode_i ( test_i        ),
+    .usage_o    ( /*not used*/  ),
+    .data_i     ( desc_aw       ),
+    .valid_i    ( desc_aw_valid ),
+    .ready_o    ( desc_aw_ready ),
+    .data_o     ( desc_w        ),
+    .valid_o    ( desc_w_valid  ),
+    .ready_i    ( desc_w_ready  )
   );
 
   axi_llc_w_master #(
-    .Cfg             ( Cfg       ),
-    .AxiCfg          ( AxiCfg    ),
-    .desc_t          ( desc_t    ),
-    .way_inp_t       ( way_inp_t ),
-    .way_oup_t       ( way_oup_t ),
-    .w_chan_t        ( w_chan_t  ),
-    .b_chan_t        ( b_chan_t  )
+    .Cfg       ( Cfg       ),
+    .AxiCfg    ( AxiCfg    ),
+    .desc_t    ( desc_t    ),
+    .way_inp_t ( way_inp_t ),
+    .way_oup_t ( way_oup_t ),
+    .w_chan_t  ( w_chan_t  ),
+    .b_chan_t  ( b_chan_t  )
   ) i_w_master (
     .clk_i           ( clk_i           ),
     .rst_ni          ( rst_ni          ),
@@ -160,22 +186,21 @@ module axi_llc_evict_unit #(
     .flush_desc_recv_o(flush_desc_recv_o)
   );
 
-  axi_llc_desc_fifo #(
-    .desc_t        ( desc_t                       ),
-    .Depth         ( axi_llc_pkg::MissBufferDepth )
-  ) i_miss_buffer_fifo (
-    .clk_i         ( clk_i          ),
-    .rst_ni        ( rst_ni         ),
-    .test_i        ( test_i         ),
-    // from W master
-    .desc_i        ( desc_b         ),
-    .desc_valid_i  ( desc_b_valid   ),
-    .desc_ready_o  ( desc_b_ready   ),
-    // to output
-    .desc_o        ( desc_o         ),
-    .desc_valid_o  ( desc_valid_o   ),
-    .desc_ready_i  ( desc_ready_i   ),
-    // fill flag
-    .fifo_ussage_o ( /*not used*/   )
+  stream_fifo #(
+    .FALL_THROUGH ( 1'b1                         ),
+    .DEPTH        ( axi_llc_pkg::MissBufferDepth ),
+    .T            ( desc_t                       )
+  ) i_stream_fifo_miss_buffer (
+    .clk_i,
+    .rst_ni,
+    .flush_i    ( 1'b0         ),
+    .testmode_i ( test_i       ),
+    .usage_o    ( /*not used*/ ),
+    .data_i     (desc_b        ),
+    .valid_i    (desc_b_valid  ),
+    .ready_o    (desc_b_ready  ),
+    .data_o     (desc_o        ),
+    .valid_o    (desc_valid_o  ),
+    .ready_i    (desc_ready_i  )
   );
 endmodule
