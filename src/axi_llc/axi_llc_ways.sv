@@ -162,10 +162,13 @@ module axi_llc_ways #(
   assign e_switch_push =
       way_inp_valid_i[axi_llc_pkg::EvictUnit] & way_inp_ready_o[axi_llc_pkg::EvictUnit];
 
+
+  // SRAM has usually at least one cycle latency anyway.
+  // Each way could have a read response request, and have buffer for latency.
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b0                 ),  // SRAM has on cycle latency anyway
-    .DEPTH        ( Cfg.SetAssociativity ),  // each way could have a read response request
-    .dtype        ( way_ind_t            )
+    .FALL_THROUGH ( 1'b0                                                 ),
+    .DEPTH        ( Cfg.SetAssociativity + axi_llc_pkg::DataMacroLatency ),
+    .dtype        ( way_ind_t                                            )
   ) i_r_switch_fifo (
     .clk_i,                                                     // Clock
     .rst_ni,                                                    // Asynchronous reset active low
@@ -180,9 +183,9 @@ module axi_llc_ways #(
     .pop_i      ( r_switch_pop                              )   // pop head from queue
   );
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b0                 ), // SRAM has one cycle latency anyway
-    .DEPTH        ( Cfg.SetAssociativity ), // each way could have a read response request
-    .dtype        ( way_ind_t            )
+    .FALL_THROUGH ( 1'b0                                                 ),
+    .DEPTH        ( Cfg.SetAssociativity + axi_llc_pkg::DataMacroLatency ),
+    .dtype        ( way_ind_t                                            )
   ) i_e_switch_fifo (
     .clk_i,                                                     // Clock
     .rst_ni,                                                    // Asynchronous reset active low
