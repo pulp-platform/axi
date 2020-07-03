@@ -10,45 +10,63 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_refill_unit.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   28.05.2019
-//
-// Description: houses the components for the refill operation
-//              Is Ar/R Axi Master and refills lines to the different cache ways
-//              Descripors enter, go to the ar master, then to a fifo, then to r master, then leave
-//
 
+/// Houses the components for the refill operation.
+/// Is Ar/R Axi Master and refills lines to the different cache ways.
+/// Descripors enter, go to the ar master, then to a fifo, then to r master, then leave.
 module axi_llc_refill_unit #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
-  parameter type                       desc_t    = logic,
-  parameter type                       way_inp_t = logic,
-  parameter type                       ar_chan_t = logic,
-  parameter type                       r_chan_t  = logic
+  /// Static LLC configuration parameters.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Static LLC AXI configuration parameters.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// LLC way input request payload type.
+  parameter type way_inp_t = logic,
+  /// AXI master port AR channel type.
+  parameter type ar_chan_t = logic,
+  /// AXI master port R channel type.
+  parameter type r_chan_t = logic
 ) (
-  input  logic clk_i,  // Clock
-  input  logic rst_ni, // Asynchronous reset active low
-  input  logic test_i, // set during test
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // descriptor output
-  output desc_t              desc_o,
-  output logic     desc_valid_o,
-  input  logic     desc_ready_i,
-  // to the ways
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Testmode enable, active high.
+  input logic test_i,
+  /// Descriptor payload input. Comes from the eviction pipeline.
+  input desc_t desc_i,
+  /// Input descriptor is vaild.
+  input logic desc_valid_i,
+  /// Module is ready to accept a descriptor.
+  output logic desc_ready_o,
+  /// Output descriptor payload. This descriptor finished the refill pipeline and can be
+  /// transferred to either the read or the write unit.
+  output desc_t desc_o,
+  /// Output descriptor is valid.
+  output logic desc_valid_o,
+  /// Downstream is ready to accept the output descriptor.
+  input logic desc_ready_i,
+  /// Request payload to the data storage ways. These will be writes as it is a refill.
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i,
-  // AR channel master
+  /// Request to the data storage ways is valid.
+  output logic way_inp_valid_o,
+  /// Data storage way is ready to accept the request.
+  input logic way_inp_ready_i,
+  /// AR master channel payload.
   output ar_chan_t ar_chan_mst_o,
-  output logic     ar_chan_valid_o,
-  input  logic     ar_chan_ready_i,
-  // R channel master
-  input  r_chan_t  r_chan_mst_i,
-  input  logic     r_chan_valid_i,
-  output logic     r_chan_ready_o
+  /// AR beat is valid.
+  output logic ar_chan_valid_o,
+  /// AR beat is ready.
+  input logic ar_chan_ready_i,
+  /// R master channel payload.
+  input r_chan_t r_chan_mst_i,
+  /// R beat is valid.
+  input logic r_chan_valid_i,
+  /// R beat is ready.
+  output logic r_chan_ready_o
 );
 
   // descriptor signals between ar master and fifo
@@ -83,23 +101,22 @@ module axi_llc_refill_unit #(
     .ax_chan_ready_i ( ar_chan_ready_i )
   );
 
-  axi_llc_desc_fifo #(
-    .desc_t ( desc_t                       ),
-    .Depth  ( axi_llc_pkg::RefillFifoDepth )
-  ) i_no_refills_fifo (
-    .clk_i          ( clk_i         ),
-    .rst_ni         ( rst_ni        ),
-    .test_i         ( test_i        ),
-    // from ar master
-    .desc_i         ( desc_ar       ),
-    .desc_valid_i   ( desc_ar_valid ),
-    .desc_ready_o   ( desc_ar_ready ),
-    // to r master
-    .desc_o         ( desc_r        ),
-    .desc_valid_o   ( desc_r_valid  ),
-    .desc_ready_i   ( desc_r_ready  ),
-    // fill pionter
-    .fifo_ussage_o  ( /*not used*/  )
+  stream_fifo #(
+    .FALL_THROUGH ( 1'b1                         ),
+    .DEPTH        ( axi_llc_pkg::RefillFifoDepth ),
+    .T            ( desc_t                       )
+  ) i_stream_fifo_refill (
+    .clk_i,
+    .rst_ni,
+    .flush_i   ( 1'b0          ),
+    .testmode_i( test_i        ),
+    .usage_o   ( /*not used*/  ),
+    .data_i    ( desc_ar       ),
+    .valid_i   ( desc_ar_valid ),
+    .ready_o   ( desc_ar_ready ),
+    .data_o    ( desc_r        ),
+    .valid_o   ( desc_r_valid  ),
+    .ready_i   ( desc_r_ready  )
   );
 
   axi_llc_r_master #(
