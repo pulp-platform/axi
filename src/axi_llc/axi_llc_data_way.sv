@@ -144,4 +144,13 @@ module axi_llc_data_way #(
   // Flip Flops to hold the read request meta information
   `FFLARN(outp_valid_q, outp_valid_d, load_valid, '0, clk_i, rst_ni)
   `FFLARN(cache_unit_q, cache_unit_d, load_unit, axi_llc_pkg::EvictUnit, clk_i, rst_ni)
+
+// pragma translate_off
+`ifndef VERILATOR
+  initial begin
+    assert (axi_llc_pkg::DataMacroLatency == 32'd1) else
+        $fatal(1, "Currently only support axi_llc_pkg::DataMacroLatency == 32'd1");
+  end
+`endif
+// pragma translate_on
 endmodule
