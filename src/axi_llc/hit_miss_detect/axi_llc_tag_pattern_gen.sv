@@ -53,7 +53,8 @@ module axi_llc_tag_pattern_gen #(
   input  way_ind_t bist_res_i,
   /// `bist_res_i` is valid.
   input  logic     bist_res_valid_i,
-  /// Aggregated output of bist.
+  /// Aggregated output of bist. This indicates errors if there are any.
+  /// Initial SPM configuration will be this result.
   output way_ind_t bist_res_o,
   /// End of computation.
   output logic     eoc_o
@@ -121,15 +122,17 @@ module axi_llc_tag_pattern_gen #(
         // read out all zeros counting up
         RZEROUP   : begin
           if (overflow_cnt) begin
-            clear_cnt   = 1'b1;
-            bist_d      = WONEUP;
-            update_bist = 1'b1;
+            if (!bist_res_valid_i) begin// Wait until the last read response has been checked.
+              clear_cnt   = 1'b1;
+              bist_d      = WONEUP;
+              update_bist = 1'b1;
+            end
           end else begin
             req_o  = 1'b1;
             en_cnt = 1'b1;
           end
           // do checking of the bist result gets only saved, if one of the bist_res_i is zero
-          bist_res_d = bist_res_q & bist_res_i;
+          bist_res_d = bist_res_q | ~bist_res_i;
         end
         // write all ones counting up
         WONEUP    : begin
@@ -148,15 +151,19 @@ module axi_llc_tag_pattern_gen #(
         // read out all ones counting down
         RONEDOWN  : begin
           if (overflow_cnt) begin
-            load_cnt    = 1'b1;
-            data_cnt    = '1;
-            bist_d      = WZERODOWN;
-            update_bist = 1'b1;
+            if (!bist_res_valid_i) begin // Wait until the last read response has been checked.
+              load_cnt    = 1'b1;
+              data_cnt    = '1;
+              bist_d      = WZERODOWN;
+              update_bist = 1'b1;
+            end
           end else begin
             req_o     = 1'b1;
             pattern_o = {PatternWidth{1'b1}};
             en_cnt    = 1'b1;
             down_cnt  = 1'b1;
+          // do checking of the bist result gets only saved, if one of the bist_res_i is zero
+          bist_res_d = bist_res_q | ~bist_res_i;
           end
         end
         // write all zeros counting down
@@ -176,14 +183,18 @@ module axi_llc_tag_pattern_gen #(
         // read all zeros counting down
         RZERODOWN : begin
           if (overflow_cnt) begin
-            clear_cnt   = 1'b1;
-            bist_d      = BISTEND;
-            update_bist = 1'b1;
+            if (!bist_res_valid_i) begin // Wait until the last read response has been checked.
+              clear_cnt   = 1'b1;
+              bist_d      = BISTEND;
+              update_bist = 1'b1;
+            end
           end else begin
             req_o         = 1'b1;
             en_cnt        = 1'b1;
             down_cnt      = 1'b1;
           end
+          // do checking of the bist result gets only saved, if one of the bist_res_i is zero
+          bist_res_d = bist_res_q | ~bist_res_i;
         end
         BISTEND   : begin
           bist_d      = WZEROUP;
