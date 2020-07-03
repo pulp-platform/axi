@@ -10,65 +10,82 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_write_unit.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   21.05.2019
-//
-// Description: This module takes a descriptor as input and sends
-//              appropriate W channel beats to the data storage.
-//              When the last descriptor of a burst is finished
-//              writing onto the macros it sends the appropriate
-//              B response onto the B channel of the slave port.
-//              For this the unit has a small FIFO, writes can only
-//              done if there is space in the FIFO.
-//              When a write descriptor is finished, the bloom filter
-//              in the hit_miss_unit gets notified and the line unlocked.
-//              This unit can only perform writes when `w_unlock_gnt_i`
-//              is asserted.
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This module takes a descriptor as input and sends appropriate W channel beats to the data
+/// storage.
+/// When the last descriptor of a burst is finished writing onto the macros it sends the appropriate
+/// B response onto the B channel of the slave port.
+/// For this the unit has a small FIFO, writes can only done if there is space in the FIFO.
+/// When a write descriptor is finished, the bloom filter in the hit_miss_unit gets notified and the
+/// line unlocked.
+/// This unit can only perform writes when `w_unlock_gnt_i`
+/// is asserted.
 module axi_llc_write_unit #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
-  parameter type                       desc_t    = logic,
-  parameter type                       way_inp_t = logic,
-  parameter type                       lock_t    = logic,
-  parameter type                       w_chan_t  = logic,
-  parameter type                       b_chan_t  = logic
+  /// Static LLC configuration parameter struct.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Static LLC AXI configuration parameters.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// Data way request payload type definition.
+  parameter type way_inp_t = logic,
+  /// Lock struct definition. This is for the bloom filter to signal, that the line is unlocked.
+  parameter type lock_t = logic,
+  /// AXI slave port W channel struct definition.
+  parameter type w_chan_t = logic,
+  /// AXI slave port B channel struct definition.
+  parameter type b_chan_t = logic
 ) (
-  input  logic     clk_i,  // Clock
-  input  logic     rst_ni, // Active low reset
-  input  logic     test_i, // test mode enable
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // W channel input
-  input  w_chan_t  w_chan_slv_i,
-  input  logic     w_chan_valid_i,
-  output logic     w_chan_ready_o,
-  // B chan response
-  output b_chan_t  b_chan_slv_o,
-  output logic     b_chan_valid_o,
-  input  logic     b_chan_ready_i,
-  // signals to the ways
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Testmode enable, active high.
+  input logic test_i,
+  /// Write descriptor payload input.
+  input desc_t desc_i,
+  /// An input descriptor is valid.
+  input logic desc_valid_i,
+  /// Unit is ready for accepting an input descriptor.
+  output logic desc_ready_o,
+  /// AXI slave port W channel payload input.
+  input w_chan_t w_chan_slv_i,
+  /// AXI W beat is valid.
+  input logic w_chan_valid_i,
+  /// AXI W beat is ready.
+  output logic w_chan_ready_o,
+  /// AXI slave port B channel payload output.
+  output b_chan_t b_chan_slv_o,
+  /// AXI B beat is valid.
+  output logic b_chan_valid_o,
+  /// AXI B Beat is ready.
+  input logic b_chan_ready_i,
+  /// Request payload to the data ways.
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i,
-  // unlock signal
-  output lock_t    w_unlock_o,
-  output logic     w_unlock_req_o, // NOT AXI compliant!
-  input  logic     w_unlock_gnt_i  // NOT AXI compliant! has to be `1'b1` so that the unit is active
+  /// Data way request is valid.
+  output logic way_inp_valid_o,
+  /// Data way is ready for a request.
+  input logic way_inp_ready_i,
+  /// Unlock signal payload for the line locking mechanism.
+  output lock_t w_unlock_o,
+  /// Unlock request.
+  /// NOT AXI compliant!
+  output logic w_unlock_req_o,
+  /// Unlock request can be granted.
+  /// NOT AXI compliant! Has to be `1'b1` so that the unit is active!
+  input logic w_unlock_gnt_i
 );
+  `include "common_cells/registers.svh"
   typedef logic [AxiCfg.AddrWidthFull-1:0] addr_t;
   // flip flops
   desc_t         desc_d,      desc_q;
   logic          busy_d,      busy_q;
   logic          load_desc,   load_busy;
-  // B FIFO control signals
-  b_chan_t       b_chan;           // slave B channel response
-  logic          b_fifo_full, b_fifo_empty, b_fifo_push, b_fifo_pop;
+  // B spill register signals
+  b_chan_t       b_chan;
+  logic          b_valid, b_ready;
 
   // way_inp assignments
   assign way_inp_o = '{
@@ -100,11 +117,12 @@ module axi_llc_write_unit #(
     // unlock signal
     w_unlock_req_o   = 1'b0;
     // b response FIFO push signal
-    b_fifo_push      = 1'b0;
+    b_valid          = 1'b0;
     // control
     if (busy_q) begin
       // only do something if the B response could be send
-      if (!b_fifo_full && w_unlock_gnt_i) begin
+      // allowed to listen for b ready as it comes from a spill register
+      if (b_ready && w_unlock_gnt_i) begin
 
         // check if there is no internal error, this block has to be before the next one
         // as the W beat handshaking gets set here
@@ -122,7 +140,7 @@ module axi_llc_write_unit #(
           if (desc_q.a_x_len == '0) begin
             // should a B be sent?
             if (desc_q.x_last) begin
-              b_fifo_push = 1'b1;
+              b_valid = 1'b1;
             end
             busy_d         = 1'b0;
             load_busy      = 1'b1;
@@ -165,26 +183,20 @@ module axi_llc_write_unit #(
     default: '0
   };
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b1     ), // fall through mode, because latency should be low
-    .DEPTH        ( 32'd2    ),
-    .dtype        ( b_chan_t )
-  ) i_b_fifo (
+  // Spill register so that the B response is one cycle after W last.
+  spill_register #(
+    .T      ( b_chan_t ),
+    .Bypass ( 1'b0     )
+  ) i_spill_register_b (
     .clk_i,
     .rst_ni,
-    .flush_i    ( 1'b0         ),
-    .testmode_i ( test_i       ),
-    .empty_o    ( b_fifo_empty ),
-    .full_o     ( b_fifo_full  ),
-    .data_i     ( b_chan       ),
-    .push_i     ( b_fifo_push  ),
-    .usage_o    ( /*not used*/ ),
-    .data_o     ( b_chan_slv_o ),
-    .pop_i      ( b_fifo_pop   )
+    .valid_i ( b_valid        ),
+    .ready_o ( b_ready        ),
+    .data_i  ( b_chan         ),
+    .valid_o ( b_chan_valid_o ),
+    .ready_i ( b_chan_ready_i ),
+    .data_o  ( b_chan_slv_o   )
   );
-  // B channel control
-  assign b_chan_valid_o = ~b_fifo_empty;
-  assign b_fifo_pop     = b_chan_valid_o & b_chan_ready_i;
 
   `FFLARN(desc_q, desc_d, load_desc, '0, clk_i, rst_ni)
   `FFLARN(busy_q, busy_d, load_busy, '0, clk_i, rst_ni)
