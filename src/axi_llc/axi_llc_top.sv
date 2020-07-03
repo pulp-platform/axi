@@ -44,25 +44,6 @@
 ///
 /// ![Block-diagram he Top Level of the LLC.](axi_llc_top.svg "Block-diagram of the Top Level of the LLC.")
 ///
-  /// The module has three main parameters. They determine the overall size and shape of the LLC.
-  /// All are of the type `int unsigned`.
-  ///
-  /// * `SetAssociativity`: The set-associativity of the LLC. This parameter determines how many ways/sets will be instantiated. The minimum value is 1. The maximum value depends on the data width of the AXI LITE configuration port and should either be 32 or 64 to stay inside the protocol specification. The reason is that the SPM configuration register matches in width the data width of the LITE configuration port.
-  /// * `NumLines`: Specifies the number of lines in each way. This value has to be higher than two. The reason is that in the address at least one bit has to be mapped onto a cache-line index. This is a limitation of the *system verilog* language, which requires at least one bit wide fields inside of a struct. Further this value has to be a power of 2. This has to do with the requirement that the address mapping from the address onto the cache-line index has to be continuous.
-  /// * `NumBlocks`: Specifies the number of blocks inside a cache line. A block is defined to have the data width of the master port. Currently this also matches the data with of the slave port. The same value limitation as with the *NumLines* parameter applies. Fixing the minimum value to 2 and the overall value to be a power of 2.
-  ///
-  ///
-  /// There exists an additional top level parameter which is compromised of a struct defining the AXI parameters of the different ports. The definition can be found in `axi_llc_pkg`. Following table defines the fields of this struct which are all of type `int unsigned`.
-  ///
-  ///
-  /// | Name        | Function |
-  /// |:------------------ |:------------------------------------------------------ |
-  /// | `SlvPortIdWidth`    | AXI ID width of the slave port, facing the CPU side. |
-  /// | `AddrWidthFull`     | AXI address width of both the slave and master port. |
-  /// | `DataWidthFull`     | AXI data width of both the slave and the master port. |
-  /// | `LitePortAddrWidth` | AXI address width of the configuration LITE port. |
-  /// | `LitePortDataWidth` | AXI data width of the configuration LITE port. Has to be ether 32 or 64 bit to adhere to the AXI4 specification. Further limits the maximum set-associativity of the cache. |
-  ///
 ///
 /// It is required to provide the detailed AXI4+ATOP and AXI4-Lite structs as parameters.
 /// The structs follow the naming scheme *port*\_*xx*\_chan_t. Where *port* stands for the
