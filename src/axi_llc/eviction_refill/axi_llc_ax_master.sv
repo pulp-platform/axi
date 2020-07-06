@@ -10,47 +10,63 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_ax_master.sv
-// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   27.05.2019
-//
-// This module acts as the AX master for either the eviction or the refill unit.
-// When this unit gets a descripor it looks at the corresponding flag. If it is set,
-// the AX register gets loaded with the ricght burst. The Sending of the AX vector is
-// independednt of the further transmission of the descriptor, however the unit will
-// wait with loading the next descriptor as long as the AX is not sent.
-//
-// `cache_unit = axi_llc_pkg::EvictUnit`:
-//        The unit is configured for eviction and has to be connected to the AW master channel.
-//        It looks, if the evict flag is set in the descriptor.
-// `cache_unit = axi_llc_pkg::REFILUnit`:
-//        The unit is configures for refill and has to be connected to the AR master channel.
-//        It looks, if the refill flag is set in the descriptor.
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This module acts as the AX master for either the eviction or the refill unit.
+/// When this unit gets a descriptor it looks at the corresponding flag. If it is set,
+/// the AX register gets loaded with the right burst. The Sending of the AX vector is
+/// independent of the further transmission of the descriptor, however the unit will
+/// wait with loading the next descriptor as long as the AX is not sent.
+///
+/// Possible configurations for `cache_unit`:
+/// `cache_unit = axi_llc_pkg::EvictUnit`:
+///        The unit is configured for eviction and has to be connected to the AW master channel.
+///        It looks, if the evict flag is set in the descriptor.
+/// `cache_unit = axi_llc_pkg::REFILUnit`:
+///        The unit is configures for refill and has to be connected to the AR master channel.
+///        It looks, if the refill flag is set in the descriptor.
 module axi_llc_ax_master #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg        = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg     = -1,
-  parameter type                       desc_t     = logic,
-  parameter type                       ax_chan_t  = logic,
+  /// Static LLC configuration struct.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Give the exact AXI parameters in struct form. This is passed down from
+  /// [`axi_llc_top`](module.axi_llc_top).
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// AXI LLC descriptor type definition,
+  parameter type desc_t = logic,
+  /// AXI master port Ax channel type definition.
+  parameter type ax_chan_t = logic,
+  /// Define if it is the master unit for either:
+  /// AW channel: axi_llc_pkg::EvictUnit
+  /// AR channel: axi_llc_pkg::RefilUnit
   parameter axi_llc_pkg::cache_unit_e  cache_unit = axi_llc_pkg::EvictUnit
 ) (
-  input  logic     clk_i,  // Clock
-  input  logic     rst_ni, // Asynchronous reset active low
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // descriptor output
-  output desc_t    desc_o,
-  output logic     desc_valid_o,
-  input  logic     desc_ready_i,
-  // Axi AR master channel
+  /// Clock, poitive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Input descripor payload.
+  input desc_t desc_i,
+  /// Input descriptor is valid.
+  input logic desc_valid_i,
+  /// `axi_llc_ax_master` is ready to accept an descriptor.
+  output logic desc_ready_o,
+  /// Output descriptor paylaod.
+  output desc_t desc_o,
+  /// Output descripor is valid .
+  output logic desc_valid_o,
+  /// Next unit is ready to accept the output descriptor.
+  input logic desc_ready_i,
+  /// AXI AX master channel payload.
   output ax_chan_t ax_chan_mst_o,
-  output logic     ax_chan_valid_o,
-  input  logic     ax_chan_ready_i
+  /// AXI AX master channel is valid.
+  output logic ax_chan_valid_o,
+  /// AXI AX master channel is ready.
+  input logic ax_chan_ready_i
 );
+  `include "common_cells/registers.svh"
   // The master port ID is one bit wider than the slave port one, see `axi_mux`
   typedef logic [AxiCfg.SlvPortIdWidth:0]  id_mst_t;
   typedef logic [AxiCfg.AddrWidthFull-1:0] addr_t;
@@ -113,7 +129,7 @@ module axi_llc_ax_master #(
 
   always_comb begin : proc_chan_control
     // default assignments
-    chan_d          = '0;
+    chan_d          = ax_chan_t'{default:'0};
     load_chan       = 1'b0;
     chan_valid_d    = chan_valid_q;
     load_chan_valid = 1'b0;
@@ -148,23 +164,19 @@ module axi_llc_ax_master #(
   end
 
   // Flip Flops
-  `FFLARN(desc_q,       desc_d,       load_desc,       '0, clk_i, rst_ni)
-  `FFLARN(desc_valid_q, desc_valid_d, load_desc_valid, '0, clk_i, rst_ni)
-  `FFLARN(chan_q,       chan_d,       load_chan,       '0, clk_i, rst_ni)
-  `FFLARN(chan_valid_q, chan_valid_d, load_chan_valid, '0, clk_i, rst_ni)
+  `FFLARN(desc_q, desc_d, load_desc, desc_t'{default: '0}, clk_i, rst_ni)
+  `FFLARN(desc_valid_q, desc_valid_d, load_desc_valid, 1'b0, clk_i, rst_ni)
+  `FFLARN(chan_q, chan_d, load_chan, ax_chan_t'{default: '0}, clk_i, rst_ni)
+  `FFLARN(chan_valid_q, chan_valid_d, load_chan_valid, 1'b0, clk_i, rst_ni)
 
   // these assumptions check if the module has valid parameters
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
-  initial begin : proc_check_params
-    unit_check: assume ((cache_unit == axi_llc_pkg::EvictUnit) ||
-                        (cache_unit == axi_llc_pkg::RefilUnit)) else
-      $fatal(1, "Wrong cache_unit parameter.");
-  end
-  `endif
-  `endif
+    initial begin : proc_check_params
+      unit_check: assume ((cache_unit == axi_llc_pkg::EvictUnit) ||
+                          (cache_unit == axi_llc_pkg::RefilUnit)) else
+        $fatal(1, "Wrong cache_unit parameter.");
+    end
   `endif
   // pragma translate_on
 endmodule
