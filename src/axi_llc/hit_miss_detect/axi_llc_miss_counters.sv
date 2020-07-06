@@ -10,7 +10,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   miss_counters.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee..ethz.ch>
 // Date:   12.06.2019
 
 /// This module counts if there are any descriptors of a given transaction ID
