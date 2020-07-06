@@ -420,6 +420,9 @@ module axi_llc_tag_store #(
   check_valid: assert property ( @(posedge clk_i) disable iff (!rst_ni)
       (valid_o && !ready_i) |=> valid_o) else
       $warning("Valid was deasserted, even when no ready was set.");
+  check_all_spm: assert property ( @(posedge clk_i) disable iff (~rst_ni)
+      ((flushed_i == {Cfg.SetAssociativity{1'b1}}) |-> (evict_req == 1'b0))) else
+      $fatal(1, "Should not have a request for the evict box, if all ways are flushed!");
   `endif
   // pragma translate_on
 endmodule
