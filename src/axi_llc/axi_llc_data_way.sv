@@ -21,7 +21,7 @@
 `include "common_cells/registers.svh"
 module axi_llc_data_way #(
   /// Static AXI LLC configuration
-  parameter axi_llc_pkg::llc_cfg_t   Cfg        = -1,
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
   /// The input struct has to be defined as follows (is done in `axi_llc_top`):
   /// typedef struct packed {
   ///   axi_axi_llc_pkg::cache_unit_e     cache_unit;   // which unit does the access
@@ -32,32 +32,32 @@ module axi_llc_data_way #(
   ///   axi_data_t                        data;         // write data to the macro
   ///   axi_strb_t                        strb;         // write enable (AXI strb)
   /// } way_inp_t;
-  parameter type                     way_inp_t  = logic,
+  parameter type way_inp_t = logic,
   /// The output struct has to be defined as follows (is done in `axi_llc_top`):
   /// typedef struct packed {
   ///   axi_axi_llc_pkg::cache_unit_e cache_unit;   // which unit had the access
   ///   axi_data_t                    data;         // read data from the macro
   /// } way_oup_t;
-  parameter type                     way_oup_t  = logic
+  parameter type way_oup_t = logic
 ) (
   /// Clock, positive edge triggered
-  input  logic     clk_i,
+  input logic clk_i,
   /// Asynchronous reset active low
-  input  logic     rst_ni,
+  input logic rst_ni,
   /// Testmode enable
-  input  logic     test_i,
+  input logic test_i,
   /// Data way request input
-  input  way_inp_t inp_i,
+  input way_inp_t inp_i,
   /// Request is valid
-  input  logic     inp_valid_i,
+  input logic inp_valid_i,
   /// Module is ready to handle a request
-  output logic     inp_ready_o,
+  output logic inp_ready_o,
   /// Output is read data, has routing information, which unit made an access.
   output way_oup_t out_o,
   /// Output is valid.
-  output logic     out_valid_o,
+  output logic out_valid_o,
   /// Downstream is ready for output.
-  input  logic     out_ready_i
+  input logic out_ready_i
 );
 
   // The number of lines of each data SRAM macro
