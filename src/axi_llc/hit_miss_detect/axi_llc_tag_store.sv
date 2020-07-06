@@ -10,7 +10,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   tag_store.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   06.06.2019
 
 /// This is the Tag storage for the LLC

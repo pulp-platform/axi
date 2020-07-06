@@ -10,7 +10,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_top.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   30.04.2019
 
 /// Contains the top_level of the axi_llc with structs as AXI connections.
@@ -20,11 +20,10 @@
 /// accessible as scratch pad memory. This can be done by setting the corresponding
 /// register over the AXI LITE port.
 ///
-///              AXI ports: The FULL AXI ports, have different ID widths. The master ports ID is
-///                         one bit wider than the slave port. The reason is the `axi_mux` which
-///                         controls the AXI bypass.
+/// AXI ports: The FULL AXI ports, have different ID widths. The master ports ID is
+///            one bit wider than the slave port. The reason is the `axi_mux` which
+///            controls the AXI bypass.
 ///
-
 /// # AXI4+ATOP Last Level Cache (LLC)
 ///
 /// This is the top-level module of `axi_llc`.
