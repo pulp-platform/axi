@@ -10,39 +10,60 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   chan_splitter.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   02.05.2019
-//
-// Description: Takes an axi4 AW vector and converts it to one or multiple
-//              Chache line descriptors.
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This is the AX slave module of `axi_llc`. It accepts AXI4 AX vectors and converts them to
+/// LLC descriptors. Each descriptor has all information of the burst considering a single cache
+/// line.
 module axi_llc_chan_splitter #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg    = -1,    // static LLC configuration
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = -1,    // AXI configuration
-  parameter type                       chan_t = logic, // AW or AR channel type
-  parameter bit                        Write  = 1'b1,  // Write:1 Read:0
-  parameter type                       desc_t = logic, // cache descriptor (def in `axi_llc_top`)
-  parameter type                       rule_t = axi_pkg::xbar_rule_64_t
+  /// Static configuration parameters of the LLC.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Give the exact AXI parameters in struct form. This is passed down from
+  /// [`axi_llc_top`](module.axi_llc_top).
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// AXI4 AX channel type. This can either be the AW or AR channel.
+  parameter type chan_t = logic,
+  /// This defines if the unit is on the AW or the AR channel.
+  /// AW: 1
+  /// AR: 0
+  parameter bit Write = 1'b1,
+  /// AXI LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// Address rule type definitions for the AXI slave port.
+  parameter type rule_t = axi_pkg::xbar_rule_64_t
 ) (
-  input clk_i,                   // Clock
-  input rst_ni,                  // Asynchronous reset active low
-  // AXI AW channel Slave Port (from CPU side)
-  input  chan_t ax_chan_slv_i,
-  input  logic  ax_chan_valid_i,
-  output logic  ax_chan_ready_o,
-  // chache line descriptor
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// AXI AX slave channel payload.
+  input chan_t ax_chan_slv_i,
+  /// AXI AX slave channel is valid.
+  input logic ax_chan_valid_i,
+  /// AXI AX slave channel is ready.
+  output logic ax_chan_ready_o,
+  /// Generated output descriptor payload.
   output desc_t desc_o,
-  output logic  desc_valid_o,
-  input  logic  desc_ready_i,
-  // output busy status, for flushing
-  output logic  unit_busy_o,
-  // addr map input,
-  input  rule_t cached_rule_i,   // only `start_addr`, `end_addr` get used
-  input  rule_t spm_rule_i       // only `start_addr` gets used
+  /// Descriptor is valid.
+  output logic desc_valid_o,
+  /// Downstream unit is ready for a descriptor.
+  input logic desc_ready_i,
+  /// Busy flag of the unit. This signals that an AX vector is actively generating descriptors.
+  /// This is used for flushing to prevent flush descriptors interfering with normal operation.
+  output logic unit_busy_o,
+  /// Cached region address map input.
+  /// `start_addr` and `end_addr` are used.
+  input rule_t cached_rule_i,
+  /// SPM mapping rule input.
+  /// This is used in the address decoder for finding out the exact way where the access is
+  /// matching.
+  /// Only `start_addr` is used.
+  input rule_t spm_rule_i
 );
+  `include "common_cells/registers.svh"
   // Registers
   chan_t chan_d,    chan_q;      // to store channel information
   logic  busy_d,    busy_q;      // to store if spitter is ready for next descriptor or not
