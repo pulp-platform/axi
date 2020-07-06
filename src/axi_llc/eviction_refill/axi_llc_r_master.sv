@@ -10,42 +10,57 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_r_master.sv
-// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   27.05.2019
-//
-// This unit waits for refill R bursts on the AXI master port to put them towards the
-// data storage. It uses a void function to encapsulate the loading of a new descriptor
-// in its control always comb block.
 
-// register macros
-`include "common_cells/registers.svh"
-
+/// This unit waits for refill R bursts on the AXI master port to put them towards the
+/// data storage. It uses a void function to encapsulate the loading of a new descriptor
+/// in its control always comb block.
 module axi_llc_r_master #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
-  parameter type                       desc_t    = logic,
-  parameter type                       way_inp_t = logic,
-  parameter type                       r_chan_t  = logic
+  /// Static LLC parameter configuration.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Give the exact AXI parameters in struct form. This is passed down from
+  /// [`axi_llc_top`](module.axi_llc_top).
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// Data way request payload definition.
+  parameter type way_inp_t = logic,
+  /// AXI R channel payload type definition.
+  parameter type r_chan_t  = logic
 ) (
-  input  logic clk_i,  // Clock
-  input  logic rst_ni, // Asynchronous reset active low
-  // descriptor input
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // descriptor output
-  output desc_t    desc_o,
-  output logic     desc_valid_o,
-  input  logic     desc_ready_i,
-  // R channel
-  input  r_chan_t  r_chan_mst_i,
-  input  logic     r_chan_valid_i,
-  output logic     r_chan_ready_o,
-  // signal to the ways (is a write)
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Input descriptor payload.
+  input desc_t desc_i,
+  /// Input descriptor is valid.
+  input logic desc_valid_i,
+  /// Unit is ready to accept a new descriptor.
+  output logic desc_ready_o,
+  /// Output descriptor payload.
+  output desc_t desc_o,
+  /// The descriptor is valid to be transferred to the next unit.
+  output logic desc_valid_o,
+  /// The next unit is ready to accept the output descriptor.
+  input logic desc_ready_i,
+  /// AXI R master channel payload.
+  input r_chan_t r_chan_mst_i,
+  /// AXI R channel is valid.
+  input logic r_chan_valid_i,
+  /// AXI R channel is ready.
+  output logic r_chan_ready_o,
+  /// Data way request payload. (Write data).
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i
+  /// Data way request is valid.
+  output logic way_inp_valid_o,
+  /// Data way is ready to accept a request.
+  input logic way_inp_ready_i
 );
+  `include "common_cells/registers.svh"
 
   typedef logic [Cfg.BlockOffsetLength-1:0] offset_t;
 
