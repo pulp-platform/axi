@@ -10,72 +10,95 @@
 // specific language governing permissions and limitations under the License.
 //
 // File:   axi_llc_w_master.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
+// Author: Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // Date:   29.05.2019
-//
-// This unit handles the generation of w beats on the master channel if there is a cache line
-// to evict. It has a register that holds the descriptor. All operations occur, when a valid
-// descriptor is in the unit. The unit has two status flags `busy_q` and `send_q`. These
-// define the state in which the unit is currently at.
-//
-// case {busy_q, send_q}
-// 2'b00: IDLE:  The unit can take in a new descriptor.
-// 2'b01: SEND:  The unit sends the descriptor to the next unit. If the descriptor is from a
-//               flush, it gets destroyed and the flush control gets notified.
-// 2'b10: EVICT: The unit generates requests to the macros and sends W beats on the AXI.
-//               The response data of the macros can get buffered in the FIFO.
-// 2'b11: RESP:  The unit waits for the B response
 
-// On Descriptor load the evict flag of it gets checked. When it is set, initialize two counters.
-// `i_block_offset_counter`is responsible for generating the block offset of the request towards
-// the SRAM macros. This counter gets on descriptor load initialized to '0 and counts up.
-// It has the same width as the block offset, this means if the counter overflows through counting
-// up all required requests to the macros where made for this line eviction.
-// `i_w_to_send_counter` counts down and corresponds to the AX length signal. if it reaches zero
-// It indicates the last transfer of this write and the last flag gets set.
-
-// register macros
-`include "common_cells/registers.svh"
-
+/// This unit handles the generation of w beats on the master channel if there is a cache line
+/// to evict. It has a register that holds the descriptor. All operations occur, when a valid
+/// descriptor is in the unit. The unit has two status flags `busy_q` and `send_q`. These
+/// define the state in which the unit is currently at.
+///
+/// State machine:
+/// case {busy_q, send_q}
+/// 2'b00: IDLE:  The unit can take in a new descriptor.
+/// 2'b01: SEND:  The unit sends the descriptor to the next unit. If the descriptor is from a
+///               flush, it gets destroyed and the flush control gets notified.
+/// 2'b10: EVICT: The unit generates requests to the macros and sends W beats on the AXI.
+///               The response data of the macros can get buffered in the FIFO.
+/// 2'b11: RESP:  The unit waits for the B response
+///
+/// On Descriptor load the evict flag of it gets checked. When it is set, initialize two counters.
+/// `i_block_offset_counter`is responsible for generating the block offset of the request towards
+/// the SRAM macros. This counter gets on descriptor load initialized to '0 and counts up.
+/// It has the same width as the block offset, this means if the counter overflows through counting
+/// up all required requests to the macros where made for this line eviction.
+/// `i_w_to_send_counter` counts down and corresponds to the AX length signal. if it reaches zero
+/// It indicates the last transfer of this write and the last flag gets set.
 module axi_llc_w_master #(
-  parameter axi_llc_pkg::llc_cfg_t     Cfg       = -1,
-  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg    = -1,
-  parameter type                       desc_t    = logic,
-  parameter type                       way_inp_t = logic,
-  parameter type                       way_oup_t = logic,
-  parameter type                       w_chan_t  = logic,
-  parameter type                       b_chan_t  = logic
+  /// Static LLC parameter configuration.
+  parameter axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{default: '0},
+  /// Give the exact AXI parameters in struct form. This is passed down from
+  /// [`axi_llc_top`](module.axi_llc_top).
+  ///
+  /// Required struct definition in: `axi_llc_pkg`.
+  parameter axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{default: '0},
+  /// LLC descriptor type definition.
+  parameter type desc_t = logic,
+  /// Data way request payload definition.
+  parameter type way_inp_t = logic,
+  /// Data way response payload definition.
+  parameter type way_oup_t = logic,
+  /// AXI W channel payload type definition.
+  parameter type w_chan_t = logic,
+  /// AXI B channel payload type definition.
+  parameter type b_chan_t = logic
 ) (
-  input  logic     clk_i,
-  input  logic     rst_ni,
-  input  logic     test_i,
-  // Descriptor in
-  input  desc_t    desc_i,
-  input  logic     desc_valid_i,
-  output logic     desc_ready_o,
-  // Descriptor out
-  output desc_t    desc_o,
-  output logic     desc_valid_o,
-  input  logic     desc_ready_i,
-  // W channel master
-  output w_chan_t  w_chan_mst_o,
-  output logic     w_chan_valid_o,
-  input  logic     w_chan_ready_i,
-  // B channel master
-  input  b_chan_t  b_chan_mst_i,
-  input  logic     b_chan_valid_i,
-  output logic     b_chan_ready_o,
-  // to data way
+  /// Clock, positive edge triggered.
+  input logic clk_i,
+  /// Asynchronous reset, active low.
+  input logic rst_ni,
+  /// Testmode enable, active high.
+  input logic test_i,
+  /// Input descriptor payload.
+  input desc_t desc_i,
+  /// Input descriptor is valid.
+  input logic desc_valid_i,
+  /// Unit is ready for a new descriptor.
+  output logic desc_ready_o,
+  /// Output descriptor payload.
+  output desc_t desc_o,
+  /// Output descriptor is valid.
+  output logic desc_valid_o,
+  /// The next unit is ready to accept the output descriptor.
+  input logic desc_ready_i,
+  /// AXI W master channel payload.
+  output w_chan_t w_chan_mst_o,
+  /// AXI W master channel is valid.
+  output logic w_chan_valid_o,
+  /// AXI W master channel is ready.
+  input logic w_chan_ready_i,
+  /// AXI B master channel payload.
+  input b_chan_t b_chan_mst_i,
+  /// AXI B master channel is valid.
+  input logic b_chan_valid_i,
+  /// AXI B master channel is ready.
+  output logic b_chan_ready_o,
+  /// Data way request payload.
   output way_inp_t way_inp_o,
-  output logic     way_inp_valid_o,
-  input  logic     way_inp_ready_i,
-  // from data way
-  input  way_oup_t way_out_i,
-  input  logic     way_out_valid_i,
-  output logic     way_out_ready_o,
-  // a flush descriptor was destroyed here
-  output logic     flush_desc_recv_o
-  );
+  /// Data way request is valid.
+  output logic way_inp_valid_o,
+  /// Data way is ready for a request.
+  input logic way_inp_ready_i,
+  /// Data way response payload.
+  input way_oup_t way_out_i,
+  /// Data way response is valid.
+  input logic way_out_valid_i,
+  /// Unit is ready for data way response.
+  output logic way_out_ready_o,
+  /// Flag for the configuration module that a flush descriptor was destroyed here.
+  output logic flush_desc_recv_o
+);
+  `include "common_cells/registers.svh"
   // typedefs
   typedef logic [Cfg.BlockOffsetLength-1:0] offset_t;
   typedef logic [AxiCfg.DataWidthFull-1:0]  data_t;
