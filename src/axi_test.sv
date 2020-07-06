@@ -2054,11 +2054,19 @@ package axi_test;
               idx_data  = 8*BUS_SIZE'(beat_address+j);
               act_data  = r_beat.r_data[idx_data+:8];
               exp_data  = this.memory_q[beat_address+j];
-              tst_data  = exp_data.find with (item === 8'hxx || item === act_data);
-              assert (tst_data.size() > 0) else begin
-                $warning("Unexpected RData ID: %0h Addr: %0h Byte Idx: %0h Exp Data : %0h Data: %h, BeatData: %h",
-                r_beat.r_id, beat_address+j, idx_data, exp_data, act_data, r_beat.r_data);
+              if (exp_data.size() > 0) begin
+                tst_data  = exp_data.find with (item === 8'hxx || item === act_data);
+                assert (tst_data.size() > 0) else begin
+                  $warning("Unexpected RData ID: %0h \n \
+                            Addr:     %h \n \
+                            Byte Idx: %h \n \
+                            Exp Data: %h \n \
+                            Act Data: %h \n \
+                            BeatData: %h",
+                  r_beat.r_id, beat_address+j, idx_data, exp_data, act_data, r_beat.r_data);
+                end
               end
+
             end
           end
         end
@@ -2258,7 +2266,9 @@ package axi_test;
 
     /// Clear a byte from memoy. Can be used to partially delete mem space.
     task clear_byte(axi_addr_t clear_addr);
-      this.memory_q[clear_addr].delete();
+      if (this.memory_q.exists(clear_addr)) begin
+        this.memory_q.delete(clear_addr);
+      end
     endtask : clear_byte
 
     /// Clear a memory range.
@@ -2270,6 +2280,15 @@ package axi_test;
         curr_addr++;
       end
     endtask : clear_range
+
+    /// Get a byte from the modeled memory.
+    task automatic get_byte(input axi_addr_t byte_addr, output byte_t byte_data);
+      if (this.memory_q.exists(byte_addr)) begin
+        byte_data = this.memory_q[byte_addr][0];
+      end else begin
+        byte_data = 8'hxx;
+      end
+    endtask : get_byte
 
   endclass : axi_scoreboard
 

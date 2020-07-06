@@ -83,12 +83,26 @@ module tb_axi_llc #(
   `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_lite_t, w_lite_t, ar_lite_t)
   `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_lite_t, r_lite_t)
 
+  typedef logic [7:0] byte_t;
+
   // rule definitions
   typedef struct packed {
     int unsigned idx;
     axi_addr_t   start_addr;
     axi_addr_t   end_addr;
   } rule_full_t;
+
+  // Config register addresses
+  typedef enum logic [7:0] {
+    CfgSpm    = axi_lite_addr_t'(8'h00),
+    CfgFlush  = axi_lite_addr_t'(8'h08),
+    Flushed   = axi_lite_addr_t'(8'h10),
+    BistOut   = axi_lite_addr_t'(8'h18),
+    SetAsso   = axi_lite_addr_t'(8'h20),
+    NumLines  = axi_lite_addr_t'(8'h28),
+    NumBlocks = axi_lite_addr_t'(8'h30),
+    Version   = axi_lite_addr_t'(8'h38)
+  } llc_cfg_addr_e;
 
   ////////////////////////////////
   // Stimuli generator typedefs //
@@ -264,6 +278,7 @@ module tb_axi_llc #(
     // Variables for the LITE config thingy.
     automatic axi_lite_addr_t lite_addr  = axi_lite_addr_t'(0);
     automatic axi_pkg::prot_t lite_prot  = axi_pkg::prot_t'(0);
+    automatic axi_lite_data_t lite_rdata = axi_lite_data_t'(0);
     automatic axi_lite_data_t lite_wdata = axi_lite_data_t'(0);
     automatic axi_lite_strb_t lite_wstrb = axi_lite_strb_t'(0);
     automatic axi_pkg::resp_t lite_resp  = axi_pkg::RESP_OKAY;
@@ -284,21 +299,57 @@ module tb_axi_llc #(
     mem_scoreboard.enable_all_checks();
 
     @(posedge rst_n);
-
     cpu_scoreboard.monitor();
     mem_scoreboard.monitor();
 
-    axi_master.run(5000, 5000);
 
-    // Flush the cache, everything!
-    $info("Flushing the cache!");
-    lite_addr  = axi_lite_addr_t'(8'h08);
+    $info("Read all Cfg registers.");
+    axi_lite_master.read(CfgSpm,    lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(CfgFlush,  lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(Flushed,   lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(BistOut,   lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(SetAsso,   lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(NumLines,  lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(NumBlocks, lite_prot, lite_rdata, lite_resp);
+    axi_lite_master.read(Version,   lite_prot, lite_rdata, lite_resp);
+
+    $info("Random read and write");
+    axi_master.run(5000, 5000);
+    flush_all(axi_lite_master);
+    compare_mems(cpu_scoreboard, mem_scoreboard);
+    clear_spm_cpu(cpu_scoreboard);
+
+    $info("Enable lower half SPM");
+    lite_addr  = CfgSpm;
+    lite_wdata = axi_lite_data_t'({(TbSetAssociativity/2){1'b1}});
+    lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
+    axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
+    axi_master.run(5000, 5000);
+    flush_all(axi_lite_master);
+    compare_mems(cpu_scoreboard, mem_scoreboard);
+    clear_spm_cpu(cpu_scoreboard);
+
+    $info("All SPM");
+    lite_addr  = CfgSpm;
     lite_wdata = axi_lite_data_t'({TbSetAssociativity{1'b1}});
     lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
     axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
+    axi_master.run(5000, 5000);
+    flush_all(axi_lite_master);
+    compare_mems(cpu_scoreboard, mem_scoreboard);
+    clear_spm_cpu(cpu_scoreboard);
 
-    repeat (100000) @(posedge clk);
+    $info("Random read and write");
+    lite_addr  = CfgSpm;
+    lite_wdata = axi_lite_data_t'({TbSetAssociativity{1'b0}});
+    lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
+    axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
+    axi_master.run(5000, 5000);
+    flush_all(axi_lite_master);
+    compare_mems(cpu_scoreboard, mem_scoreboard);
+    clear_spm_cpu(cpu_scoreboard);
 
+    $display("Tests ended!");
     $stop();
   end
 
@@ -309,18 +360,40 @@ module tb_axi_llc #(
     axi_slave.run();
   end
 
+  task compare_mems(axi_scoreboard_cpu_t cpu_scoreboard, axi_scoreboard_mem_t mem_scoreboard);
+    automatic byte_t     cpu_byte, mem_byte;
+    automatic axi_addr_t compare_addr = CachedRegionStart;
+    while (compare_addr < (CachedRegionStart + 2*CachedRegionLength)) begin
+      cpu_scoreboard.get_byte(compare_addr, cpu_byte);
+      mem_scoreboard.get_byte(compare_addr, mem_byte);
+      // As the whole cache line is written back there are some bytes which are only present
+      // in the scoreboard of the memory and X in the CPU memory.
+      if (cpu_byte !== 8'hxx) begin
+        assert (cpu_byte === mem_byte) /*$display("Pass addr: %h", compare_addr);*/ else
+          $error("At addr: %h differeing memory values are encoutered! \n CPU: %h \n MEM: %h",
+              compare_addr, cpu_byte, mem_byte);
+      end
+      compare_addr++;
+    end
+  endtask : compare_mems
 
+  task clear_spm_cpu(axi_scoreboard_cpu_t cpu_scoreboard);
+    cpu_scoreboard.clear_range(SpmRegionStart, SpmRegionStart + SpmRegionLength);
+  endtask : clear_spm_cpu
 
-
-
-
-
-
-
-
-
-
-
+  task flush_all(rand_axi_lite_master_t axi_lite_master);
+    automatic axi_pkg::resp_t l_resp;
+    automatic axi_lite_data_t data = {TbSetAssociativity{1'b1}};
+    $info("Flushing the cache!");
+    axi_lite_master.write(CfgFlush, axi_pkg::prot_t'(0), data,
+        axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}}), l_resp);
+    // poll on the flush config untill it is cleared
+    while (|data) begin
+      axi_lite_master.read(CfgFlush, axi_pkg::prot_t'(0), data, l_resp);
+      repeat (5000) @(posedge clk);
+    end
+    $info("Finished flushing the cache!");
+  endtask : flush_all
 
 
   ///////////////////////
