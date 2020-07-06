@@ -212,13 +212,8 @@ module axi_llc_tag_store #(
           end
           axi_llc_pkg::Flush: begin
             if ((|ram_rvalid) | (|ram_rvalid_q)) begin
-              // We are valid on hit.
-              if (|hit) begin
-                valid_o = 1'b1;
-              end else begin
-                evict_req = 1'b1;
-                valid_o   = evict_valid;
-              end
+              // We are valid when the read output of the macros is valid!
+              valid_o = 1'b1;
             end
 
             // Write back all zeros to the storage if the output is acknowledged.
