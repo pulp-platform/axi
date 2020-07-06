@@ -104,9 +104,6 @@ module axi_llc_evict_box #(
   `ifndef VERILATOR
   check_onehot: assert property ( @(posedge clk_i) disable iff (~rst_ni) $onehot0(way_ind_o)) else
       $fatal(1, "More than two bit set in the one-hot signal");
-  check_all_spm:    assert property ( @(posedge clk_i) disable iff (~rst_ni)
-                                 ((spm_lock_i == '1) |-> (req_i == 1'b0))) else
-      $fatal(1, "Should not have a request, if all ways are spm!");
   `endif
   // pragma translate_on
 endmodule
