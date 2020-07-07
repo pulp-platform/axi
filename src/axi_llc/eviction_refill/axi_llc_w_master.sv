@@ -313,8 +313,6 @@ module axi_llc_w_master #(
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
-  `ifndef SYNTHESIS
   read_fifo_error: assert property(
     @(posedge clk_i) disable iff (~rst_ni) (!busy_q |-> fifo_empty)) else
       $fatal(1, "Write Unit is not busy even fifo is not empty.");
@@ -322,8 +320,6 @@ module axi_llc_w_master #(
     block_offset_constraint: assume ($bits(axi_pkg::len_t) >= Cfg.BlockOffsetLength) else
       $fatal(1, "The BlockOffsetLength is at maximum the width of the AXI len_t signal.");
   end
-  `endif
-  `endif
   `endif
   // pragma translate_on
 endmodule
