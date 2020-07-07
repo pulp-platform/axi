@@ -151,7 +151,8 @@ module axi_llc_read_unit #(
             // more read requests have to be made, update the address and update the length
             if (desc_q.a_x_burst != axi_pkg::BURST_FIXED) begin
               // update the address
-              desc_d.a_x_addr = desc_q.a_x_addr + 2**desc_q.a_x_size;
+              desc_d.a_x_addr = axi_pkg::aligned_addr(desc_q.a_x_addr +
+                                    axi_pkg::num_bytes(desc_q.a_x_size), desc_q.a_x_size);
             end
             desc_d.a_x_len  = desc_q.a_x_len - axi_pkg::len_t'(1);
             load_desc       = 1'b1;
