@@ -152,7 +152,8 @@ module axi_llc_write_unit #(
             desc_d.a_x_len = desc_q.a_x_len - axi_pkg::len_t'(1);
             // update the address when necessary
             if (desc_q.a_x_burst != axi_pkg::BURST_FIXED) begin
-              desc_d.a_x_addr = desc_d.a_x_addr + addr_t'(2**desc_q.a_x_size);
+              desc_d.a_x_addr = axi_pkg::aligned_addr(desc_q.a_x_addr +
+                                    axi_pkg::num_bytes(desc_q.a_x_size), desc_q.a_x_size);
             end
           end
         end
