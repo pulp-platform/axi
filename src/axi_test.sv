@@ -1190,11 +1190,12 @@ package axi_test;
         static logic rand_success;
         wait (w_queue.size() > 0 || (aw_done && w_queue.size() == 0));
         aw_beat = w_queue.pop_front();
-        addr = aw_beat.ax_addr;
         for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
           automatic w_beat_t w_beat = new;
           automatic int unsigned begin_byte, end_byte, n_bytes;
           automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
+          addr = axi_pkg::beat_addr(aw_beat.ax_addr, aw_beat.ax_size, aw_beat.ax_len,
+                                    aw_beat.ax_burst, i);
           rand_success = w_beat.randomize(); assert (rand_success);
           // Determine strobe.
           w_beat.w_strb = '0;
@@ -1210,8 +1211,6 @@ package axi_test;
           w_beat.w_last = (i == aw_beat.ax_len);
           rand_wait(W_MIN_WAIT_CYCLES, W_MAX_WAIT_CYCLES);
           drv.send_w(w_beat);
-          if (aw_beat.ax_burst == axi_pkg::BURST_INCR)
-            addr += n_bytes;
         end
       end
     endtask

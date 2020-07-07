@@ -283,6 +283,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `tb_axi_lite_regs`: Removed superfluous hardcoded assertion.
 - Improve compatibility with Vivado XSim by disabling formal properties in `axi_demux`,
   `axi_err_slv`, and `axi_xbar` if `XSIM` is defined.
+- `axi_test:rand_axi_master`: Fix W strobe signal on narrow bursts.
 
 
 ## 0.24.2 - 2021-01-11
