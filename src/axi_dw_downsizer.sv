@@ -787,78 +787,80 @@ module axi_dw_downsizer #(
       w_req_d.aw_throw_error = 1'b0              ;
       w_req_d.burst_resp     = axi_pkg::RESP_OKAY;
 
-      if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
-        inject_aw_into_ar_req = 1'b1                 ;
-        slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
-      end else begin // Regular AW
-        slv_resp_o.aw_ready = 1'b1;
-      end
+      if (!forward_b_beat_full) begin
+        if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
+          inject_aw_into_ar_req = 1'b1                 ;
+          slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
+        end else begin // Regular AW
+          slv_resp_o.aw_ready = 1'b1;
+        end
 
-      // New write request
-      if (slv_req_i.aw_valid && slv_resp_o.aw_ready && !forward_b_beat_full) begin
-        // Default state
-        w_state_d = W_PASSTHROUGH;
+        // New write request
+        if (slv_req_i.aw_valid && slv_resp_o.aw_ready) begin
+          // Default state
+          w_state_d = W_PASSTHROUGH;
 
-        // Save beat
-        w_req_d.aw            = slv_req_i.aw      ;
-        w_req_d.aw_valid      = 1'b1              ;
-        w_req_d.burst_len     = slv_req_i.aw.len  ;
-        w_req_d.orig_aw_len   = slv_req_i.aw.len  ;
-        w_req_d.orig_aw_size  = slv_req_i.aw.size ;
-        w_req_d.orig_aw_burst = slv_req_i.aw.burst;
+          // Save beat
+          w_req_d.aw            = slv_req_i.aw      ;
+          w_req_d.aw_valid      = 1'b1              ;
+          w_req_d.burst_len     = slv_req_i.aw.len  ;
+          w_req_d.orig_aw_len   = slv_req_i.aw.len  ;
+          w_req_d.orig_aw_size  = slv_req_i.aw.size ;
+          w_req_d.orig_aw_burst = slv_req_i.aw.burst;
 
-        case (slv_req_i.aw.burst)
-          axi_pkg::BURST_INCR: begin
-            // Evaluate downsize ratio
-            automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
-            automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
-
-            // Evaluate output burst length
-            automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-            w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1                     ;
-
-            if (conv_ratio != 1) begin
-              w_req_d.aw.size = AxiMstPortMaxSize;
-
-              if (w_req_d.burst_len <= 255) begin
-                w_state_d      = W_INCR_DOWNSIZE  ;
-                w_req_d.aw.len = w_req_d.burst_len;
-              end else begin
-                w_state_d      = W_SPLIT_INCR_DOWNSIZE;
-                w_req_d.aw.len = 255 - align_adj      ;
-              end
-            end
-          end
-
-          axi_pkg::BURST_FIXED: begin
-            // Single transaction
-            if (slv_req_i.aw.len == '0) begin
+          case (slv_req_i.aw.burst)
+            axi_pkg::BURST_INCR: begin
               // Evaluate downsize ratio
               automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
               automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
               // Evaluate output burst length
               automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-              w_req_d.burst_len          = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
+              w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1                     ;
 
               if (conv_ratio != 1) begin
-                w_state_d        = W_INCR_DOWNSIZE    ;
-                w_req_d.aw.len   = w_req_d.burst_len  ;
-                w_req_d.aw.size  = AxiMstPortMaxSize  ;
-                w_req_d.aw.burst = axi_pkg::BURST_INCR;
-              end
-            end else begin
-              // The downsizer does not support fixed bursts
-              w_req_d.aw_throw_error = 1'b1;
-            end
-          end
+                w_req_d.aw.size = AxiMstPortMaxSize;
 
-          axi_pkg::BURST_WRAP: begin
-            // The DW converter does not support this type of burst.
-            w_state_d              = W_PASSTHROUGH;
-            w_req_d.aw_throw_error = 1'b1         ;
-          end
-        endcase
+                if (w_req_d.burst_len <= 255) begin
+                  w_state_d      = W_INCR_DOWNSIZE  ;
+                  w_req_d.aw.len = w_req_d.burst_len;
+                end else begin
+                  w_state_d      = W_SPLIT_INCR_DOWNSIZE;
+                  w_req_d.aw.len = 255 - align_adj      ;
+                end
+              end
+            end
+
+            axi_pkg::BURST_FIXED: begin
+              // Single transaction
+              if (slv_req_i.aw.len == '0) begin
+                // Evaluate downsize ratio
+                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
+                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+
+                // Evaluate output burst length
+                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                w_req_d.burst_len          = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
+
+                if (conv_ratio != 1) begin
+                  w_state_d        = W_INCR_DOWNSIZE    ;
+                  w_req_d.aw.len   = w_req_d.burst_len  ;
+                  w_req_d.aw.size  = AxiMstPortMaxSize  ;
+                  w_req_d.aw.burst = axi_pkg::BURST_INCR;
+                end
+              end else begin
+                // The downsizer does not support fixed bursts
+                w_req_d.aw_throw_error = 1'b1;
+              end
+            end
+
+            axi_pkg::BURST_WRAP: begin
+              // The DW converter does not support this type of burst.
+              w_state_d              = W_PASSTHROUGH;
+              w_req_d.aw_throw_error = 1'b1         ;
+            end
+          endcase
+        end
       end
     end
   end
