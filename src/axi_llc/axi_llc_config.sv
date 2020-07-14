@@ -573,8 +573,10 @@ module axi_llc_config #(
   // Output assignments //
   ////////////////////////
   // Flush descriptor output is static, except for the fields defined here.
+  localparam int unsigned FlushAddrShift = Cfg.BlockOffsetLength + Cfg.ByteOffsetLength;
+
   assign desc_o = desc_t'{
-    a_x_addr:  {{Cfg.TagLength{1'b0}}, flush_addr, {Cfg.ByteOffsetLength+Cfg.BlockOffsetLength{1'b0}}},
+    a_x_addr:  addr_full_t'(flush_addr) << FlushAddrShift,
     a_x_len:   axi_pkg::len_t'(Cfg.NumBlocks - 32'd1),
     a_x_size:  axi_pkg::size_t'($clog2(Cfg.BlockSize / 32'd8)),
     a_x_burst: axi_pkg::BURST_INCR,
