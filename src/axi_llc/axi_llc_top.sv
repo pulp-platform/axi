@@ -566,6 +566,8 @@ module axi_llc_top #(
     .data_o  ( spill_desc    )
   );
 
+  logic hit_miss_ready;
+
   axi_llc_hit_miss #(
     .Cfg       ( Cfg        ),
     .AxiCfg    ( AxiCfg     ),
