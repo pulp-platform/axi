@@ -350,6 +350,7 @@ module axi_llc_tag_store #(
   );
 
   way_ind_t evict_way_ind;
+  logic     evict_flag;
 
   axi_llc_evict_box #(
     .Cfg       ( Cfg       ),
