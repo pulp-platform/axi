@@ -575,16 +575,17 @@ module axi_llc_config #(
   // Flush descriptor output is static, except for the fields defined here.
   localparam int unsigned FlushAddrShift = Cfg.BlockOffsetLength + Cfg.ByteOffsetLength;
 
-  assign desc_o = desc_t'{
-    a_x_addr:  addr_full_t'(flush_addr) << FlushAddrShift,
-    a_x_len:   axi_pkg::len_t'(Cfg.NumBlocks - 32'd1),
-    a_x_size:  axi_pkg::size_t'($clog2(Cfg.BlockSize / 32'd8)),
-    a_x_burst: axi_pkg::BURST_INCR,
-    x_resp:    axi_pkg::RESP_OKAY,
-    way_ind:   flush_way_ind,
-    flush:     1'b1,
-    default:   '0
-  };
+  always_comb begin
+    desc_o           = '0;
+    desc_o.a_x_addr  = addr_full_t'(flush_addr) << FlushAddrShift;
+    desc_o.a_x_len   = axi_pkg::len_t'(Cfg.NumBlocks - 32'd1);
+    desc_o.a_x_size  = axi_pkg::size_t'($clog2(Cfg.BlockSize / 32'd8));
+    desc_o.a_x_burst = axi_pkg::BURST_INCR;
+    desc_o.x_resp    = axi_pkg::RESP_OKAY;
+    desc_o.way_ind   = flush_way_ind;
+    desc_o.flush     = 1'b1;
+  end
+
   // Configuration registers which are used in other modules.
   assign spm_lock_o = config_q.StructMap.CfgSpm;
   assign flushed_o  = config_q.StructMap.Flushed;
