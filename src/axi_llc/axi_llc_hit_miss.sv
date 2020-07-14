@@ -417,4 +417,5 @@ module axi_llc_hit_miss #(
       @(posedge clk_i) disable iff (!rst_ni) $onehot0(desc_o.way_ind))
       else $fatal(1, "[hit_miss.desc_o.way_ind] More than two bit set in the one-hot signal!");
   `endif
+  // pragma translate_on
 endmodule
