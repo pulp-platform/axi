@@ -138,6 +138,7 @@ module axi_llc_tag_store #(
     evict_req    = 1'b0;
     // generation request
     gen_valid    = 1'b0;
+    bist_valid   = 1'b0;
 
     if (busy_q) begin
       // We are busy so there are active operations going on, we are not ready.
