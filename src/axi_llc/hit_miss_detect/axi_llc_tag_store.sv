@@ -121,6 +121,9 @@ module axi_llc_tag_store #(
   logic       bist_valid,  gen_eoc;
   // Evict box signals
   logic       evict_req,   evict_valid;
+  // Response output into the spill register
+  store_res_t res;
+  logic       res_valid,   res_ready;
 
   // macro control
   always_comb begin : proc_macro_ctrl
@@ -129,7 +132,7 @@ module axi_llc_tag_store #(
     switch_busy  = 1'b0;
     ready_o      = 1'b0;
     load_req     = 1'b0;
-    valid_o      = 1'b0;
+    res_valid    = 1'b0;
     ram_req      = way_ind_t'(0);
     ram_we       = way_ind_t'(0);
     ram_index    = way_ind_t'(0);
@@ -160,21 +163,21 @@ module axi_llc_tag_store #(
             if ((|ram_rvalid) | (|ram_rvalid_q)) begin
               // We are valid on hit.
               if (|hit) begin
-                valid_o = 1'b1;
+                res_valid = 1'b1;
               end else begin
                 evict_req = 1'b1;
-                valid_o   = evict_valid;
+                res_valid = evict_valid;
               end
             end
 
             // Do we have to write back something?
-            if (valid_o && ready_i) begin
-              if (res_o.hit) begin
+            if (res_valid && res_ready) begin
+              if (res.hit) begin
                 // This is a hit
                 if (req_q.dirty && !tag_dit[bin_ind]) begin
                   // Do we have to store a dirty as the hit was not dirty until now?
-                  ram_req   = res_o.indicator;
-                  ram_we    = res_o.indicator;
+                  ram_req   = res.indicator;
+                  ram_we    = res.indicator;
                   ram_index = req_q.index;
                   ram_wdata = tag_data_t'{
                                 val: 1'b1,
@@ -198,8 +201,8 @@ module axi_llc_tag_store #(
               end else begin
                 // This is a miss!
                 // Write back the new tag, it was a miss.
-                ram_req   = res_o.indicator;
-                ram_we    = res_o.indicator;
+                ram_req   = res.indicator;
+                ram_we    = res.indicator;
                 ram_index = req_q.index;
                 ram_wdata = tag_data_t'{
                               val: 1'b1,
@@ -214,11 +217,11 @@ module axi_llc_tag_store #(
           axi_llc_pkg::Flush: begin
             if ((|ram_rvalid) | (|ram_rvalid_q)) begin
               // We are valid when the read output of the macros is valid!
-              valid_o = 1'b1;
+              res_valid = 1'b1;
             end
 
             // Write back all zeros to the storage if the output is acknowledged.
-            if (valid_o && ready_i) begin
+            if (res_valid && res_ready) begin
               ram_req     = req_q.indicator;
               ram_we      = req_q.indicator;
               ram_index   = req_q.index;
@@ -262,8 +265,8 @@ module axi_llc_tag_store #(
   `FFLARN(busy_q, busy_d, switch_busy, 1'b0, clk_i, rst_ni)
   assign busy_d = ~busy_q;
   `FFLARN(ram_rvalid_q, ram_rvalid_d, lock_rvalid, way_ind_t'(0), clk_i, rst_ni)
-  assign ram_rvalid_d = (valid_o & ready_i) ? way_ind_t'(0) : ram_rvalid;
-  assign lock_rvalid  = (valid_o & ready_i) | (|ram_rvalid);
+  assign ram_rvalid_d = (res_valid & res_ready) ? way_ind_t'(0) : ram_rvalid;
+  assign lock_rvalid  = (res_valid & res_ready) | (|ram_rvalid);
 
   // generate for each Way one tag storage macro
   for (genvar i = 0; unsigned'(i) < Cfg.SetAssociativity; i++) begin : gen_tag_macros
@@ -371,18 +374,18 @@ module axi_llc_tag_store #(
   onehot_to_bin #(
     .ONEHOT_WIDTH ( Cfg.SetAssociativity )
   ) i_onehot_to_bin (
-    .onehot ( res_o.indicator ),
-    .bin    ( bin_ind         )
+    .onehot ( res.indicator ),
+    .bin    ( bin_ind       )
   );
 
   // Silence output when not in a mode where it is required.
   always_comb begin
     // Default assignment
-    res_o = store_res_t'{default: '0};
+    res = store_res_t'{default: '0};
     if (busy_q) begin
       unique case (req_q.mode)
         axi_llc_pkg::Lookup: begin
-          res_o = store_res_t'{
+          res = store_res_t'{
             indicator: (|hit) ? hit       : evict_way_ind,
             hit:       (|hit) ? 1'b1      : 1'b0,
             evict:     (|hit) ? 1'b0      : evict_flag,
@@ -391,7 +394,7 @@ module axi_llc_tag_store #(
           };
         end
         axi_llc_pkg::Flush: begin
-          res_o = store_res_t'{
+          res = store_res_t'{
             indicator: req_q.indicator,
             hit:       1'b0,
             evict:     stored_tag[bin_ind].val & stored_tag[bin_ind].dit,
@@ -404,6 +407,21 @@ module axi_llc_tag_store #(
     end
   end
 
+  // Output spill register for breaking timing path
+  spill_register #(
+    .T       ( store_res_t                 ),
+    .Bypass  ( !axi_llc_pkg::SpillTagStore )
+  ) i_spill_register (
+    .clk_i,
+    .rst_ni,
+    .valid_i ( res_valid ),
+    .ready_o ( res_ready ),
+    .data_i  ( res       ),
+    .valid_o ( valid_o   ),
+    .ready_i ( ready_i   ),
+    .data_o  ( res_o     )
+  );
+
   // Assertions
   // pragma translate_off
   `ifndef VERILATOR
@@ -411,11 +429,11 @@ module axi_llc_tag_store #(
       (req_q.mode inside {axi_llc_pkg::Lookup, axi_llc_pkg::Flush}) |-> $onehot0(hit)) else
       $fatal(1, "[hit_ind] More than two bit set in the one-hot signal, multiple hits!");
   onehot_ind:  assert property ( @(posedge clk_i) disable iff (!rst_ni)
-      (req_q.mode inside {axi_llc_pkg::Lookup, axi_llc_pkg::Flush}) |-> $onehot0(res_o.indicator)) else
+      (req_q.mode inside {axi_llc_pkg::Lookup, axi_llc_pkg::Flush}) |-> $onehot0(res.indicator)) else
       $fatal(1, "[way_ind_o] More than two bit set in the one-hot signal, multiple hits!");
   // trigger warning if output valid gets deasserted without ready
   check_valid: assert property ( @(posedge clk_i) disable iff (!rst_ni)
-      (valid_o && !ready_i) |=> valid_o) else
+      (res_valid && !res_ready) |=> res_valid) else
       $warning("Valid was deasserted, even when no ready was set.");
   check_all_spm: assert property ( @(posedge clk_i) disable iff (~rst_ni)
       ((flushed_i == {Cfg.SetAssociativity{1'b1}}) |-> (evict_req == 1'b0))) else

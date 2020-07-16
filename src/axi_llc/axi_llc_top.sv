@@ -404,14 +404,14 @@ module axi_llc_top #(
 
   // configuration, also has control over bypass logic and flush
   axi_llc_config #(
-    .Cfg            ( Cfg              ),
-    .AxiCfg         ( AxiCfg           ),
-    .desc_t         ( llc_desc_t       ),
-    .lite_req_t     ( lite_req_t       ),
-    .lite_resp_t    ( lite_resp_t      ),
-    .rule_full_t    ( rule_full_t      ),
-    .set_asso_t     ( way_ind_t        ),
-    .addr_full_t    ( axi_addr_t       )
+    .Cfg            ( Cfg         ),
+    .AxiCfg         ( AxiCfg      ),
+    .desc_t         ( llc_desc_t  ),
+    .lite_req_t     ( lite_req_t  ),
+    .lite_resp_t    ( lite_resp_t ),
+    .rule_full_t    ( rule_full_t ),
+    .set_asso_t     ( way_ind_t   ),
+    .addr_full_t    ( axi_addr_t  )
   ) i_llc_config (
     .clk_i             ( clk_i                                  ),
     .rst_ni            ( rst_ni                                 ),
@@ -566,8 +566,6 @@ module axi_llc_top #(
     .data_o  ( spill_desc    )
   );
 
-  logic hit_miss_ready;
-
   axi_llc_hit_miss #(
     .Cfg       ( Cfg        ),
     .AxiCfg    ( AxiCfg     ),
@@ -579,57 +577,26 @@ module axi_llc_top #(
     .clk_i,
     .rst_ni,
     .test_i,
-    .desc_i         ( spill_desc     ),
-    .valid_i        ( spill_valid    ),
-    .ready_o        ( spill_ready    ),
-    .desc_o         ( desc           ),
-    .miss_valid_o   ( miss_valid     ),
-    .miss_ready_i   ( hit_miss_ready ),
-    .hit_valid_o    ( hit_valid      ),
-    .hit_ready_i    ( hit_miss_ready ),
-    .spm_lock_i     ( spm_lock       ),
-    .flushed_i      ( flushed        ),
-    .w_unlock_i     ( w_unlock       ),
-    .w_unlock_req_i ( w_unlock_req   ),
-    .w_unlock_gnt_o ( w_unlock_gnt   ),
-    .r_unlock_i     ( r_unlock       ),
-    .r_unlock_req_i ( r_unlock_req   ),
-    .r_unlock_gnt_o ( r_unlock_gnt   ),
-    .cnt_down_i     ( cnt_down       ),
-    .bist_res_o     ( bist_res       ),
-    .bist_valid_o   ( bist_valid     )
+    .desc_i         ( spill_desc   ),
+    .valid_i        ( spill_valid  ),
+    .ready_o        ( spill_ready  ),
+    .desc_o         ( desc         ),
+    .miss_valid_o   ( miss_valid   ),
+    .miss_ready_i   ( miss_ready   ),
+    .hit_valid_o    ( hit_valid    ),
+    .hit_ready_i    ( hit_ready    ),
+    .spm_lock_i     ( spm_lock     ),
+    .flushed_i      ( flushed      ),
+    .w_unlock_i     ( w_unlock     ),
+    .w_unlock_req_i ( w_unlock_req ),
+    .w_unlock_gnt_o ( w_unlock_gnt ),
+    .r_unlock_i     ( r_unlock     ),
+    .r_unlock_req_i ( r_unlock_req ),
+    .r_unlock_gnt_o ( r_unlock_gnt ),
+    .cnt_down_i     ( cnt_down     ),
+    .bist_res_o     ( bist_res     ),
+    .bist_valid_o   ( bist_valid   )
   );
-
-  // This spill register is to ease timing constraints.
-  typedef struct packed {
-    llc_desc_t desc;
-    logic      miss;
-  } hit_miss_desc_t;
-
-  hit_miss_desc_t hit_miss_desc,        hit_miss_spill_desc;
-  logic           hit_miss_spill_valid, hit_miss_spill_ready;
-  // Pack the decision together.
-  assign hit_miss_desc = hit_miss_desc_t'{
-    llc_desc_t: desc,
-    miss:       miss_valid
-  };
-
-  // This spill register is to cut the longest path.
-  spill_register #(
-    .T      ( hit_miss_desc_t             ),
-    .Bypass ( !axi_llc_pkg::SpillHitMiss  )
-  ) i_spill_register_hit_miss (
-    .clk_i,
-    .rst_ni,
-    .valid_i ( hit_valid | miss_valid ),
-    .ready_o ( hit_miss_ready         ),
-    .data_i  ( hit_miss_desc          ),
-    .valid_o ( hit_miss_spill_valid   ),
-    .ready_i ( hit_miss_spill_ready   ),
-    .data_o  ( hit_miss_spill_desc    )
-  );
-  assign hit_miss_spill_ready = hit_miss_spill_desc.miss ? miss_ready : hit_ready;
-
 
   axi_llc_evict_unit #(
     .Cfg       ( Cfg           ),
@@ -641,31 +608,31 @@ module axi_llc_top #(
     .w_chan_t  ( w_chan_t      ),
     .b_chan_t  ( slv_b_chan_t  )
   ) i_evict_unit (
-    .clk_i             ( clk_i                                           ),
-    .rst_ni            ( rst_ni                                          ),
-    .test_i            ( test_i                                          ),
-    .desc_i            ( hit_miss_spill_desc.desc                        ),
-    .desc_valid_i      ( hit_miss_spill_desc.miss & hit_miss_spill_valid ),
-    .desc_ready_o      ( miss_ready                                      ),
-    .desc_o            ( evict_desc                                      ),
-    .desc_valid_o      ( evict_desc_valid                                ),
-    .desc_ready_i      ( evict_desc_ready                                ),
-    .way_inp_o         ( to_way[axi_llc_pkg::EvictUnit]                  ),
-    .way_inp_valid_o   ( to_way_valid[axi_llc_pkg::EvictUnit]            ),
-    .way_inp_ready_i   ( to_way_ready[axi_llc_pkg::EvictUnit]            ),
-    .way_out_i         ( evict_way_out                                   ),
-    .way_out_valid_i   ( evict_way_out_valid                             ),
-    .way_out_ready_o   ( evict_way_out_ready                             ),
-    .aw_chan_mst_o     ( from_llc_req.aw                                 ),
-    .aw_chan_valid_o   ( from_llc_req.aw_valid                           ),
-    .aw_chan_ready_i   ( from_llc_resp.aw_ready                          ),
-    .w_chan_mst_o      ( from_llc_req.w                                  ),
-    .w_chan_valid_o    ( from_llc_req.w_valid                            ),
-    .w_chan_ready_i    ( from_llc_resp.w_ready                           ),
-    .b_chan_mst_i      ( from_llc_resp.b                                 ),
-    .b_chan_valid_i    ( from_llc_resp.b_valid                           ),
-    .b_chan_ready_o    ( from_llc_req.b_ready                            ),
-    .flush_desc_recv_o ( flush_recv                                      )
+    .clk_i             ( clk_i                                ),
+    .rst_ni            ( rst_ni                               ),
+    .test_i            ( test_i                               ),
+    .desc_i            ( desc                                 ),
+    .desc_valid_i      ( miss_valid                           ),
+    .desc_ready_o      ( miss_ready                           ),
+    .desc_o            ( evict_desc                           ),
+    .desc_valid_o      ( evict_desc_valid                     ),
+    .desc_ready_i      ( evict_desc_ready                     ),
+    .way_inp_o         ( to_way[axi_llc_pkg::EvictUnit]       ),
+    .way_inp_valid_o   ( to_way_valid[axi_llc_pkg::EvictUnit] ),
+    .way_inp_ready_i   ( to_way_ready[axi_llc_pkg::EvictUnit] ),
+    .way_out_i         ( evict_way_out                        ),
+    .way_out_valid_i   ( evict_way_out_valid                  ),
+    .way_out_ready_o   ( evict_way_out_ready                  ),
+    .aw_chan_mst_o     ( from_llc_req.aw                      ),
+    .aw_chan_valid_o   ( from_llc_req.aw_valid                ),
+    .aw_chan_ready_i   ( from_llc_resp.aw_ready               ),
+    .w_chan_mst_o      ( from_llc_req.w                       ),
+    .w_chan_valid_o    ( from_llc_req.w_valid                 ),
+    .w_chan_ready_i    ( from_llc_resp.w_ready                ),
+    .b_chan_mst_i      ( from_llc_resp.b                      ),
+    .b_chan_valid_i    ( from_llc_resp.b_valid                ),
+    .b_chan_ready_o    ( from_llc_req.b_ready                 ),
+    .flush_desc_recv_o ( flush_recv                           )
   );
 
   // plug in refill unit for test
@@ -705,19 +672,19 @@ module axi_llc_top #(
   ) i_merge_unit (
     .clk_i,
     .rst_ni,
-    .bypass_desc_i ( hit_miss_spill_desc.desc                         ),
-    .bypass_valid_i( ~hit_miss_spill_desc.miss & hit_miss_spill_valid ),
-    .bypass_ready_o( hit_ready                                        ),
-    .refill_desc_i ( refill_desc                                      ),
-    .refill_valid_i( refill_desc_valid                                ),
-    .refill_ready_o( refill_desc_ready                                ),
-    .read_desc_o   ( read_desc                                        ),
-    .read_valid_o  ( read_desc_valid                                  ),
-    .read_ready_i  ( read_desc_ready                                  ),
-    .write_desc_o  ( write_desc                                       ),
-    .write_valid_o ( write_desc_valid                                 ),
-    .write_ready_i ( write_desc_ready                                 ),
-    .cnt_down_o    ( cnt_down                                         )
+    .bypass_desc_i ( desc              ),
+    .bypass_valid_i( hit_valid         ),
+    .bypass_ready_o( hit_ready         ),
+    .refill_desc_i ( refill_desc       ),
+    .refill_valid_i( refill_desc_valid ),
+    .refill_ready_o( refill_desc_ready ),
+    .read_desc_o   ( read_desc         ),
+    .read_valid_o  ( read_desc_valid   ),
+    .read_ready_i  ( read_desc_ready   ),
+    .write_desc_o  ( write_desc        ),
+    .write_valid_o ( write_desc_valid  ),
+    .write_ready_i ( write_desc_ready  ),
+    .cnt_down_o    ( cnt_down          )
   );
 
   // write unit
