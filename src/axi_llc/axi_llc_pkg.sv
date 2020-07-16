@@ -243,14 +243,16 @@ package axi_llc_pkg;
   /// * Set this parameter to the slave port AXI ID width if you want one counter for each AXI ID.
   parameter int unsigned UseIdBits        = 32'd4;
 
-  /// Determined if a spill register is added for the descriptors after the `hit_miss_detect_unit`.
+  /// This adds a spill register in the response path of the tag stroage unit.
+  /// This should be used to achieve good timing characteristics in synthsis as the longest
+  /// path in the design comes out of the tag storage macros.
   /// `0`: no spill register
   /// `1`: add spill register
-  parameter bit SpillHitMiss = 1'b1;
+  parameter bit SpillTagStore             = 1'b1;
 
   /// Read latency of the memory macros responsible for saving the tags.
   /// This value has to be >= 32'd1.
-  parameter int unsigned TagMacroLatency = 32'd1;
+  parameter int unsigned TagMacroLatency  = 32'd1;
 
   /// Read latency of the memory macros responsible for saving the data.
   /// This value has to be == 32'd1.
