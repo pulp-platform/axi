@@ -23,11 +23,11 @@ module tb_axi_llc #(
   /// ID width of the Full AXI slave port, master port has ID `AxiIdWidthFull + 32'd1`
   parameter int unsigned TbAxiIdWidthFull   = 32'd6,
   /// Address width of the full AXI bus
-  parameter int unsigned TbAxiAddrWidthFull = 32'd64,
+  parameter int unsigned TbAxiAddrWidthFull = 32'd32,
   /// Data width of the full AXI bus
   parameter int unsigned TbAxiDataWidthFull = 32'd128,
   /// Address width of the AXI configureation port
-  parameter int unsigned TbAxiAddrWidthLite = 32'd64,
+  parameter int unsigned TbAxiAddrWidthLite = 32'd32,
   /// Data width of the AXI configuration port
   parameter int unsigned TbAxiDataWidthLite = 32'd32,
   /// Cycle time for the TB clock generator
@@ -406,17 +406,9 @@ module tb_axi_llc #(
     .AxiIdWidth       ( TbAxiIdWidthFull   ),
     .AxiAddrWidth     ( TbAxiAddrWidthFull ),
     .AxiDataWidth     ( TbAxiDataWidthFull ),
+    .AxiUserWidth     ( TbAxiUserWidthFull ),
     .AxiLiteAddrWidth ( TbAxiAddrWidthLite ),
     .AxiLiteDataWidth ( TbAxiDataWidthLite ),
-    .slv_aw_chan_t    ( axi_slv_aw_t       ),
-    .mst_aw_chan_t    ( axi_mst_aw_t       ),
-    .w_chan_t         ( axi_w_t            ),
-    .slv_b_chan_t     ( axi_slv_b_t        ),
-    .mst_b_chan_t     ( axi_mst_b_t        ),
-    .slv_ar_chan_t    ( axi_slv_ar_t       ),
-    .mst_ar_chan_t    ( axi_mst_ar_t       ),
-    .slv_r_chan_t     ( axi_slv_r_t        ),
-    .mst_r_chan_t     ( axi_mst_r_t        ),
     .slv_req_t        ( axi_slv_req_t      ),
     .slv_resp_t       ( axi_slv_resp_t     ),
     .mst_req_t        ( axi_mst_req_t      ),
@@ -439,13 +431,6 @@ module tb_axi_llc #(
     .spm_start_addr_i    ( SpmRegionStart                         ),
     .axi_llc_events_o    ( llc_events                             )
   );
-
-  ///////////////////////////////////////////
-  // AXI4+ATOP slave acting as main memory //
-  ///////////////////////////////////////////
-
-
-
 
   ////////////////////////////
   // `Perf Counter` process //
