@@ -163,42 +163,36 @@ module axi_llc_top #(
   parameter int unsigned AxiAddrWidth = 32'd0,
   /// AXI4+ATOP data field width of both the slave and the master port.
   parameter int unsigned AxiDataWidth = 32'd0,
+  /// AXI4+ATOP user field width of both the slave and the master port.
+  parameter int unsigned AxiUserWidth = 32'd0,
   /// AXI4-Lite address field width of the configuration slave port.
   parameter int unsigned AxiLiteAddrWidth = 32'd0,
   /// AXI4-Lite data field width of the configuration slave port.
   parameter int unsigned AxiLiteDataWidth = 32'd0,
-  /// AW Channel Type slave  port
-  parameter type slv_aw_chan_t  = logic,
-  /// AW Channel Type master port
-  parameter type mst_aw_chan_t  = logic,
-  ///  W Channel Type both   ports
-  parameter type w_chan_t       = logic,
-  ///  B Channel Type slave  port
-  parameter type slv_b_chan_t   = logic,
-  ///  B Channel Type master port
-  parameter type mst_b_chan_t   = logic,
-  /// AR Channel Type slave  port
-  parameter type slv_ar_chan_t  = logic,
-  /// AR Channel Type master port
-  parameter type mst_ar_chan_t  = logic,
-  ///  R Channel Type slave  port
-  parameter type slv_r_chan_t   = logic,
-  ///  R Channel Type master port
-  parameter type mst_r_chan_t   = logic,
-  /// requests  slave  port
+  /// AXI4+ATOP request type on the slave port.
+  /// Expected format can be defined using `AXI_TYPEDEF_REQ_T.
   parameter type slv_req_t      = logic,
-  /// responses slave  port
+  /// AXI4+ATOP response type on the slave port.
+  /// Expected format can be defined using `AXI_TYPEDEF_RESP_T.
   parameter type slv_resp_t     = logic,
-  /// requests  master port
+  /// AXI4+ATOP request type on the master port.
+  /// Expected format can be defined using `AXI_TYPEDEF_REQ_T.
   parameter type mst_req_t      = logic,
-  /// responses master port
+  /// AXI4+ATOP response type on the master port.
+  /// Expected format can be defined using `AXI_TYPEDEF_RESP_T.
   parameter type mst_resp_t     = logic,
-  /// request  lite port
+  /// AXI4-Lite request type on the configuration port.
+  /// Expected format can be defined using `AXI_LITE_TYPEDEF_REQ_T.
   parameter type lite_req_t     = logic,
-  /// response lite port
+  /// AXI4+ATOP response type on the configuration port.
+  /// Expected format can be defined using `AXI_LITE_TYPEDEF_RESP_T.
   parameter type lite_resp_t    = logic,
-  /// Full AXI Port address decoding rule
-  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t
+  /// Full AXI4+ATOP Port address decoding rule
+  parameter type rule_full_t    = axi_pkg::xbar_rule_64_t,
+  /// Dependent parameter, do **not** overwrite!
+  /// Address type of the AXI4+ATOP ports.
+  /// The address fields of the rule type have to be the same.
+  parameter type axi_addr_t     = logic[AxiAddrWidth-1:0]
 ) (
   /// Rising-edge clock of all ports.
   input logic clk_i,
@@ -219,20 +213,22 @@ module axi_llc_top #(
   /// AXI4-Lite slave port response, configuration
   output lite_resp_t conf_resp_o,
   /// Start of address region mapped to cache
-  input logic [AxiAddrWidth-1:0] cached_start_addr_i,
+  input axi_addr_t cached_start_addr_i,
   /// End of address region mapped to cache
-  input logic [AxiAddrWidth-1:0] cached_end_addr_i,
+  input axi_addr_t cached_end_addr_i,
   /// SPM start address
   ///
   /// The end address is automatically calculated by the configuration of the LLC.
   /// `spm_end_addr` = `spm_start_addr_i` +
   ///     `SetAssociativity` * `NumLines` * `NumBlocks` * (`AxiCfg.DataWidthFull/8`)
-  input logic [AxiAddrWidth-1:0] spm_start_addr_i,
+  input axi_addr_t spm_start_addr_i,
   /// Events output, for tracked events see `axi_llc_pkg`.
   ///
-  /// Ehen not used, leave open.
+  /// When not used, leave open.
   output axi_llc_pkg::events_t axi_llc_events_o
 );
+  `include "axi/typedef.svh"
+
   // Axi parameters are accumulated in a struct for further use.
   localparam axi_llc_pkg::llc_axi_cfg_t AxiCfg = axi_llc_pkg::llc_axi_cfg_t'{
     SlvPortIdWidth:    AxiIdWidth,
@@ -243,9 +239,20 @@ module axi_llc_top #(
   };
 
   typedef logic [AxiCfg.SlvPortIdWidth-1:0]    axi_slv_id_t;
-  typedef logic [AxiCfg.AddrWidthFull-1:0]     axi_addr_t;
+  typedef logic [AxiCfg.SlvPortIdWidth:0]      axi_mst_id_t;
   typedef logic [AxiCfg.DataWidthFull-1:0]     axi_data_t;
   typedef logic [(AxiCfg.DataWidthFull/8)-1:0] axi_strb_t;
+  typedef logic [AxiUserWidth-1:0]             axi_user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, axi_slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, axi_mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, axi_slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, axi_mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, axi_slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, axi_mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, axi_slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, axi_mst_id_t, axi_user_t)
 
   // configuration struct that has all the cache parameters included for the submodules
   localparam axi_llc_pkg::llc_cfg_t Cfg = axi_llc_pkg::llc_cfg_t'{
@@ -934,65 +941,83 @@ module axi_llc_top #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin : proc_assert_axi_params
+    axi_addr_width : assert(AxiAddrWidth > 32'd0) else
+      $fatal(1, "Parameter `AxiAddrWidth` has to be > 0!");
+    axi_id_width   : assert(AxiIdWidth > 32'd0) else
+      $fatal(1, "Parameter `AxiIdWidth` has to be > 0!");
+    axi_data_width : assert(AxiDataWidth inside {32'd8, 32'd16, 32'd32, 32'd64,
+                                                 32'd128, 32'd256, 32'd512, 32'd1028}) else
+      $fatal(1, "Parameter `AxiDataWidth` has to be inside the AXI4+ATOP specification!");
+    axi_user_width : assert(AxiUserWidth > 32'd0) else
+      $fatal(1, "Parameter `AxiUserWidth` has to be > 0!");
+
+    // check the address rule fields for the right size
+    axi_start_addr : assert($bits(cached_addr_rule.start_addr) == AxiAddrWidth) else
+      $fatal(1, "rule_t.start_addr field does not match AxiAddrWidth!");
+    axi_end_addr   : assert($bits(cached_addr_rule.end_addr) == AxiAddrWidth) else
+      $fatal(1, "rule_t.start_addr field does not match AxiAddrWidth!");
+
     // check the structs against the Cfg
-    slv_aw_id    : assume ($bits(slv_req_i.aw.id) == AxiCfg.SlvPortIdWidth) else
+    slv_aw_id    : assert ($bits(slv_req_i.aw.id) == AxiCfg.SlvPortIdWidth) else
       $fatal(1, $sformatf("llc> AXI Slave port, AW ID width not equal to AxiCfg"));
-    slv_aw_addr  : assume ($bits(slv_req_i.aw.addr) == AxiCfg.AddrWidthFull) else
+    slv_aw_addr  : assert ($bits(slv_req_i.aw.addr) == AxiCfg.AddrWidthFull) else
       $fatal(1, $sformatf("llc> AXI Slave port, AW ADDR width not equal to AxiCfg"));
-    slv_ar_id    : assume ($bits(slv_req_i.ar.id) == AxiCfg.SlvPortIdWidth) else
+    slv_ar_id    : assert ($bits(slv_req_i.ar.id) == AxiCfg.SlvPortIdWidth) else
       $fatal(1, $sformatf("llc> AXI Slave port, AW ID width not equal to AxiCfg"));
-    slv_ar_addr  : assume ($bits(slv_req_i.ar.addr) == AxiCfg.AddrWidthFull) else
+    slv_ar_addr  : assert ($bits(slv_req_i.ar.addr) == AxiCfg.AddrWidthFull) else
       $fatal(1, $sformatf("llc> AXI Slave port, AW ADDR width not equal to AxiCfg"));
-    slv_w_data   : assume ($bits(slv_req_i.w.data) == AxiCfg.DataWidthFull) else
+    slv_w_data   : assert ($bits(slv_req_i.w.data) == AxiCfg.DataWidthFull) else
       $fatal(1, $sformatf("llc> AXI Slave port, W DATA width not equal to AxiCfg"));
-    slv_r_data   : assume ($bits(slv_resp_o.r.data) == AxiCfg.DataWidthFull) else
+    slv_r_data   : assert ($bits(slv_resp_o.r.data) == AxiCfg.DataWidthFull) else
       $fatal(1, $sformatf("llc> AXI Slave port, R DATA width not equal to AxiCfg"));
     // compare the types against the structs
-    slv_req_aw   : assume ($bits(slv_aw_chan_t) == $bits(slv_req_i.aw)) else
+    slv_req_aw   : assert ($bits(slv_aw_chan_t) == $bits(slv_req_i.aw)) else
       $fatal(1, $sformatf("llc> AXI Slave port, slv_aw_chan_t and slv_req_i.aw not equal"));
-    slv_req_w    : assume ($bits(w_chan_t) == $bits(slv_req_i.w)) else
+    slv_req_w    : assert ($bits(w_chan_t) == $bits(slv_req_i.w)) else
       $fatal(1, $sformatf("llc> AXI Slave port, w_chan_t and slv_req_i.w not equal"));
-    slv_req_b    : assume ($bits(slv_b_chan_t) == $bits(slv_resp_o.b)) else
+    slv_req_b    : assert ($bits(slv_b_chan_t) == $bits(slv_resp_o.b)) else
       $fatal(1, $sformatf("llc> AXI Slave port, slv_b_chan_t and slv_resp_o.b not equal"));
-    slv_req_ar   : assume ($bits(slv_ar_chan_t) == $bits(slv_req_i.ar)) else
+    slv_req_ar   : assert ($bits(slv_ar_chan_t) == $bits(slv_req_i.ar)) else
       $fatal(1, $sformatf("llc> AXI Slave port, slv_ar_chan_t and slv_req_i.ar not equal"));
-    slv_req_r    : assume ($bits(slv_r_chan_t) == $bits(slv_resp_o.r)) else
+    slv_req_r    : assert ($bits(slv_r_chan_t) == $bits(slv_resp_o.r)) else
       $fatal(1, $sformatf("llc> AXI Slave port, slv_r_chan_t and slv_resp_o.r not equal"));
     // check the structs against the Cfg
-    mst_aw_id    : assume ($bits(mst_req_o.aw.id) == AxiCfg.SlvPortIdWidth + 1) else
+    mst_aw_id    : assert ($bits(mst_req_o.aw.id) == AxiCfg.SlvPortIdWidth + 1) else
       $fatal(1, $sformatf("llc> AXI Master port, AW ID not equal to AxiCfg.SlvPortIdWidth + 1"));
-    mst_aw_addr  : assume ($bits(mst_req_o.aw.addr) == AxiCfg.AddrWidthFull) else
+    mst_aw_addr  : assert ($bits(mst_req_o.aw.addr) == AxiCfg.AddrWidthFull) else
       $fatal(1, $sformatf("llc> AXI Master port, AW ADDR width not equal to AxiCfg"));
-    mst_ar_id    : assume ($bits(mst_req_o.ar.id) == AxiCfg.SlvPortIdWidth + 1) else
+    mst_ar_id    : assert ($bits(mst_req_o.ar.id) == AxiCfg.SlvPortIdWidth + 1) else
       $fatal(1, $sformatf("llc> AXI Master port, AW ID not equal to AxiCfg.SlvPortIdWidth + 1"));
-    mst_ar_addr  : assume ($bits(mst_req_o.ar.addr) == AxiCfg.AddrWidthFull) else
+    mst_ar_addr  : assert ($bits(mst_req_o.ar.addr) == AxiCfg.AddrWidthFull) else
       $fatal(1, $sformatf("llc> AXI Master port, AW ADDR width not equal to AxiCfg"));
-    mst_w_data   : assume ($bits(mst_req_o.w.data) == AxiCfg.DataWidthFull) else
+    mst_w_data   : assert ($bits(mst_req_o.w.data) == AxiCfg.DataWidthFull) else
       $fatal(1, $sformatf("llc> AXI Master port, W DATA width not equal to AxiCfg"));
-    mst_r_data   : assume ($bits(mst_resp_i.r.data) == AxiCfg.DataWidthFull) else
+    mst_r_data   : assert ($bits(mst_resp_i.r.data) == AxiCfg.DataWidthFull) else
       $fatal(1, $sformatf("llc> AXI Master port, R DATA width not equal to AxiCfg"));
     // compare the types against the structs
-    mst_req_aw   : assume ($bits(mst_aw_chan_t) == $bits(mst_req_o.aw)) else
+    mst_req_aw   : assert ($bits(mst_aw_chan_t) == $bits(mst_req_o.aw)) else
       $fatal(1, $sformatf("llc> AXI Master port, mst_aw_chan_t and mst_req_o.aw not equal"));
-    mst_req_w    : assume ($bits(w_chan_t) == $bits(mst_req_o.w)) else
+    mst_req_w    : assert ($bits(w_chan_t) == $bits(mst_req_o.w)) else
       $fatal(1, $sformatf("llc> AXI Master port, w_chan_t and mst_req_o.w not equal"));
-    mst_req_b    : assume ($bits(mst_b_chan_t) == $bits(mst_resp_i.b)) else
+    mst_req_b    : assert ($bits(mst_b_chan_t) == $bits(mst_resp_i.b)) else
       $fatal(1, $sformatf("llc> AXI Master port, mst_b_chan_t and mst_resp_i.b not equal"));
-    mst_req_ar   : assume ($bits(mst_ar_chan_t) == $bits(mst_req_o.ar)) else
+    mst_req_ar   : assert ($bits(mst_ar_chan_t) == $bits(mst_req_o.ar)) else
       $fatal(1, $sformatf("llc> AXI Master port, mst_ar_chan_t and mst_req_i.ar not equal"));
-    mst_req_r    : assume ($bits(mst_r_chan_t) == $bits(mst_resp_i.r)) else
+    mst_req_r    : assert ($bits(mst_r_chan_t) == $bits(mst_resp_i.r)) else
       $fatal(1, $sformatf("llc> AXI Slave port, slv_r_chan_t and mst_resp_i.r not equal"));
     // check the config lite port against the cfg
-    lite_aw_addr : assume ($bits(conf_req_i.aw.addr) == AxiCfg.LitePortAddrWidth ) else
+    lite_aw_addr : assert ($bits(conf_req_i.aw.addr) == AxiCfg.LitePortAddrWidth ) else
       $fatal(1, $sformatf("llc> Cfg Lite port, AW ADDR width not equal to AxiCfg"));
-    lite_ar_addr : assume ($bits(conf_req_i.ar.addr) == AxiCfg.LitePortAddrWidth ) else
+    lite_ar_addr : assert ($bits(conf_req_i.ar.addr) == AxiCfg.LitePortAddrWidth ) else
       $fatal(1, $sformatf("llc> Cfg Lite port, AR ADDR width not equal to AxiCfg"));
-    lite_data    : assume (AxiCfg.LitePortDataWidth inside {32'd32, 32'd64}) else
+    lite_data    : assert (AxiCfg.LitePortDataWidth inside {32'd32, 32'd64}) else
       $fatal(1, $sformatf("llc> Axi 4 LITE spec defines a DATA width of 32 or 64 bits!"));
-    lite_w_data  : assume ($bits(conf_req_i.w.data) == AxiCfg.LitePortDataWidth) else
+    lite_w_data  : assert ($bits(conf_req_i.w.data) == AxiCfg.LitePortDataWidth) else
       $fatal(1, $sformatf("llc> Cfg Lite port, W DATA width not equal to AxiCfg"));
-    lite_r_data  : assume ($bits(conf_resp_o.r.data) == AxiCfg.LitePortDataWidth) else
+    lite_r_data  : assert ($bits(conf_resp_o.r.data) == AxiCfg.LitePortDataWidth) else
       $fatal(1, $sformatf("llc> Cfg Lite port, R DATA width not equal to AxiCfg"));
+    // Check the address rue struct
+
   end
 `endif
 // pragma translate_on
