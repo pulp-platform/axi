@@ -62,15 +62,16 @@ module axi_llc_burst_cutter #(
   typedef logic [Cfg.SetAssociativity-1:0] indi_t; // way indicator type
 
   // line offset is the index where we are interested in, or where the line index starts
-  localparam int unsigned LineOffset = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength;
+  localparam int unsigned LineOffset     = Cfg.ByteOffsetLength + Cfg.BlockOffsetLength;
+  localparam int unsigned RuleIndexWidth = cf_math_pkg::idx_width(Cfg.SetAssociativity + 32'd1);
 
   addr_t         this_line_address; // address of this line (tag included)
   addr_t         next_line_address; // address of the next line (tag included)
   addr_t         bytes_on_line;     // how many bytes are on this cache line
   axi_pkg::len_t beats_on_line;     // how many beats are on this cache line
   // addr decode signals
-  logic          rule_valid;
-  logic [$clog2(Cfg.SetAssociativity+32'd1)-1:0] rule_index; // so that width matches decoder port
+  logic                      rule_valid;
+  logic [RuleIndexWidth-1:0] rule_index; // so that width matches decoder port
 
   // generate the addr map for the decoder, ram has rule 0 and each way has one for its spm region
   rule_t [Cfg.SetAssociativity:0] addr_map;
@@ -82,11 +83,11 @@ module axi_llc_burst_cutter #(
     addr_map[0].start_addr = cached_rule_i.start_addr;
     addr_map[0].end_addr   = cached_rule_i.end_addr;
     // assign the spm regions
-    for (int unsigned i = 1; i <= Cfg.SetAssociativity; i++) begin
-      addr_map[i].idx = i;
-      addr_map[i].start_addr   = tmp_addr;
-      addr_map[i].end_addr     = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NumBlocks * Cfg.NumLines;
-      tmp_addr                 = tmp_addr + (Cfg.BlockSize / 8) * Cfg.NumBlocks * Cfg.NumLines;
+    for (int unsigned i = 32'd1; i <= Cfg.SetAssociativity; i++) begin
+      addr_map[i].idx        = i;
+      addr_map[i].start_addr = tmp_addr;
+      addr_map[i].end_addr   = tmp_addr + (Cfg.BlockSize / 32'd8) * Cfg.NumBlocks * Cfg.NumLines;
+      tmp_addr               = tmp_addr + (Cfg.BlockSize / 32'd8) * Cfg.NumBlocks * Cfg.NumLines;
     end
   end
 
