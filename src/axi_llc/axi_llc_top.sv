@@ -397,17 +397,15 @@ module axi_llc_top #(
 
   // define address rules from the address ports, propagate it throughout the design
   rule_full_t cached_addr_rule;
-  assign cached_addr_rule = rule_full_t'{
-    start_addr: cached_start_addr_i,
-    end_addr:   cached_end_addr_i,
-    default:    '0
-  };
   rule_full_t spm_addr_rule;
-  assign spm_addr_rule = rule_full_t'{
-    start_addr: spm_start_addr_i,
-    end_addr:   spm_start_addr_i + axi_addr_t'(Cfg.SPMLength),
-    default:    '0
-  };
+  always_comb begin
+    cached_addr_rule            = '0;
+    cached_addr_rule.start_addr = cached_start_addr_i;
+    cached_addr_rule.end_addr   = cached_end_addr_i;
+    spm_addr_rule               = '0;
+    spm_addr_rule.start_addr    = spm_start_addr_i;
+    spm_addr_rule.end_addr      = spm_start_addr_i + axi_addr_t'(Cfg.SPMLength);
+  end
 
   // configuration, also has control over bypass logic and flush
   axi_llc_config #(
