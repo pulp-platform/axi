@@ -360,9 +360,10 @@ module axi_llc_config #(
     axi_addr_map[0] = axi_spm_rule_i;
     axi_addr_map[1] = axi_cached_rule_i;
     // Define that accesses to the SPM region always go into the `axi_llc`.
-    axi_addr_map[0].idx = 1'b0;
+    axi_addr_map[0].idx    = 32'd0;
     // define that all burst go to the bypass, if flushed is completely set
-    axi_addr_map[1].idx = &config_q.StructMap.Flushed;
+    axi_addr_map[1].idx    = 32'd0;
+    axi_addr_map[1].idx[0] = &config_q.StructMap.Flushed;
   end
 
   addr_decode #(
