@@ -273,8 +273,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   data width parameters (`AW` and `DW`) from `int` to `int unsigned`.  Same rationale as for
   `AXI_BUS` (et al.) above.
 - `axi_test:axi_rand_slave:` Add a mapped mode, where the salve will generate random data
-                             if the memory location was never accessed previously, and then
-                             answer like a memory.
+    if the memory location was never accessed previously, and then answer like a memory.
 
 ### Fixed
 - `axi_demux`: Break combinatorial simulation loop.
@@ -284,6 +283,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve compatibility with Vivado XSim by disabling formal properties in `axi_demux`,
   `axi_err_slv`, and `axi_xbar` if `XSIM` is defined.
 - `axi_test:rand_axi_master`: Fix W strobe signal on narrow bursts.
+- `axi_lite_regs`: Fix undefined sizing concatenation warning.
+- `axi_pkg` Fix undefined sizing concatenation warning.
 
 
 ## 0.24.2 - 2021-01-11
