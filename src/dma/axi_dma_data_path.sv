@@ -146,21 +146,39 @@ module axi_dma_data_path #(
     logic [BUFFER_ADDR_WIDTH-1:0]                 shift;
 
     // the barrel shifter is used to realign the read data
-    always_comb begin : barrel_shifter
-        // default all output is 0
-        buffer_in   = '0;
-        in_mask     = '0;
-        shift       = '0;
+    // always_comb begin : barrel_shifter
+    //     // default all output is 0
+    //     buffer_in   = '0;
+    //     in_mask     = '0;
+    //     shift       = '0;
 
-        // write all bytes in the beat at the correct location
-        for (int i = 0; i < BYTES_PER_BEAT; i++) begin
-            // implement wrap with offset
-            shift = BUFFER_ADDR_WIDTH'(r_shift_i + i);
-            // wrapped access         // natural access
-            buffer_in[shift] = r_data_i[i*8 +: 8];
-            in_mask[shift]   = read_aligned_in_mask[i];
-        end
-    end
+    //     // write all bytes in the beat at the correct location
+    //     for (int i = 0; i < BYTES_PER_BEAT; i++) begin
+    //         // implement wrap with offset
+    //         shift = BUFFER_ADDR_WIDTH'(r_shift_i + i);
+    //         // wrapped access         // natural access
+    //         buffer_in[shift] = r_data_i[i*8 +: 8];
+    //         in_mask[shift]   = read_aligned_in_mask[i];
+    //     end
+    // end
+
+    log_barrel_shifter #(
+        .NumInputs ( DATA_WIDTH / 8  ), 
+        .data_t    ( logic[7:0]      )
+    ) i_log_barrel_shifter_data (
+        .shift_i   ( r_shift_i       ),
+        .data_i    ( r_data_i        ),
+        .data_o    ( buffer_in       )
+    );
+
+    log_barrel_shifter #(
+        .NumInputs ( DATA_WIDTH / 8  ), 
+        .data_t    ( logic           )
+    ) i_log_barrel_shifter_maks (
+        .shift_i   ( r_shift_i             ),
+        .data_i    ( read_aligned_in_mask  ),
+        .data_o    ( in_mask               )
+    );
 
 
     //--------------------------------------

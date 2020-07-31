@@ -49,6 +49,7 @@ sources:
   - src/dma/axi_dma_data_mover.sv
   - src/dma/axi_dma_burst_reshaper.sv
   - src/dma/axi_dma_backend.sv
+  - src/dma/log_barrel_shifter.sv
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
@@ -87,3 +88,4 @@ sources:
       - test/tb_axi_xbar.sv
       - test/fixture_axi_dma_backend.sv
       - test/tb_axi_dma_backend.sv
+      - src/dma/log_barrel_shifter_tb.sv
