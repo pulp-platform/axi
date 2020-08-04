@@ -132,15 +132,19 @@ module axi_dma_data_path #(
     // provided address, overflows will naturally wrap
 
     // signals connected to the buffer
-    logic [BYTES_PER_BEAT-1:0][BUFFER_WIDTH-1:0]  buffer_in;
+    logic [BYTES_PER_BEAT-1:0][BUFFER_WIDTH-1:0]    buffer_in;
+    // logic [BYTES_PER_BEAT*2-1:0][BUFFER_WIDTH-1:0]  buffer_tmp;
+    logic [DATA_WIDTH*2-1:0]  buffer_tmp;
+
 
     // read aligned in mask. needs to be rotated together with the data before 
     // it can be used to fill in valid data into the buffer
-    logic [BYTES_PER_BEAT-1:0]                    read_aligned_in_mask;
+    logic [BYTES_PER_BEAT-1:0]                      read_aligned_in_mask;
 
     // in mask is write aligned, so it is the result of the read aligned in mask
     // that is rotated together with the data in the barrel shifter
-    logic [BYTES_PER_BEAT-1:0]                    in_mask;
+    logic [BYTES_PER_BEAT-1:0]                      in_mask;
+    logic [BYTES_PER_BEAT*2-1:0]                    tmp_mask;
 
     // the shift amount
     logic [BUFFER_ADDR_WIDTH-1:0]                 shift;
@@ -162,6 +166,7 @@ module axi_dma_data_path #(
     //     end
     // end
 
+    /*
     log_barrel_shifter #(
         .NumInputs ( DATA_WIDTH / 8  ), 
         .data_t    ( logic[7:0]      )
@@ -179,7 +184,13 @@ module axi_dma_data_path #(
         .data_i    ( read_aligned_in_mask  ),
         .data_o    ( in_mask               )
     );
+    */
 
+    assign buffer_tmp = {r_data_i, r_data_i} << (r_shift_i * 8);
+    assign tmp_mask   = {read_aligned_in_mask, read_aligned_in_mask}  << r_shift_i;
+
+    assign buffer_in  = buffer_tmp[DATA_WIDTH*2-1:DATA_WIDTH];
+    assign in_mask    = tmp_mask[BYTES_PER_BEAT*2-1:BYTES_PER_BEAT];
 
     //--------------------------------------
     // In mask generation
