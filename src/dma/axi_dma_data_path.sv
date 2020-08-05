@@ -16,82 +16,81 @@
 /// of the backend.
 module axi_dma_data_path #(
     /// Data width of the AXI bus
-    parameter int DATA_WIDTH        = -1,
+    parameter int DataWidth = -1,
     /// Number of elements the realignment buffer can hold. To achieve
     /// full performance a depth of 3 is minimally required.
-    parameter int BUFFER_DEPTH      = -1,
+    parameter int BufferDepth = -1,
     // DO NOT OVERWRITE THIS PARAMETER
-    parameter int BYTES_PER_BEAT    = DATA_WIDTH / 8,
-    parameter int BUFFER_ADDR_WIDTH = $clog2(BYTES_PER_BEAT)
+    parameter int StrbWidth = DataWidth / 8,
+    parameter int OffsetWidth = $clog2(StrbWidth)
 ) (
     // status signals
     /// Clock
-    input  logic                         clk_i,
+    input  logic                   clk_i,
     /// Asynchronous reset, active low
-    input  logic                         rst_ni,
+    input  logic                   rst_ni,
 
     // handshaking signals
     /// Handshake: read side of data path is presented with a valid request
-    input  logic                         r_dp_valid_i,
+    input  logic                   r_dp_valid_i,
     /// Handshake: read side of data path is ready to accept new requests
-    output logic                         r_dp_ready_o,
+    output logic                   r_dp_ready_o,
     /// Handshake: write side of data path is presented with a valid request
-    input  logic                         w_dp_valid_i,
+    input  logic                   w_dp_valid_i,
     /// Handshake: write side of data path is ready to accept new requests
-    output logic                         w_dp_ready_o,
+    output logic                   w_dp_ready_o,
 
     // status signal
     /// High if the data path is idle
-    output logic                         data_path_idle_o,
+    output logic                   data_path_idle_o,
 
     // r-channel
     /// Read data from the AXI bus
-    input  logic [       DATA_WIDTH-1:0] r_data_i,
+    input  logic [DataWidth-1:0]   r_data_i,
     /// Valid signal of the AXI r channel
-    input  logic                         r_valid_i,
+    input  logic                   r_valid_i,
     /// Last signal of the AXI r channel
-    input  logic                         r_last_i,
+    input  logic                   r_last_i,
     /// Response signal of the AXI r channel
-    input  logic [                  1:0] r_resp_i,
+    input  logic [            1:0] r_resp_i,
     /// Ready signal of the AXI r channel
-    output logic                         r_ready_o,
+    output logic                   r_ready_o,
 
     /// number of bytes the end of the read transfer is short to reach a 
     /// Bus-aligned boundary
-    input  logic [BUFFER_ADDR_WIDTH-1:0] r_tailer_i,
+    input  logic [OffsetWidth-1:0] r_tailer_i,
     /// number of bytes the read transfers starts after a 
     /// Bus-aligned boundary    
-    input  logic [BUFFER_ADDR_WIDTH-1:0] r_offset_i,
+    input  logic [OffsetWidth-1:0] r_offset_i,
     /// The amount the read data has to be shifted to write-align it
-    input  logic [BUFFER_ADDR_WIDTH-1:0] r_shift_i,
+    input  logic [OffsetWidth-1:0] r_shift_i,
 
     // w-channel
     /// Write data of the AXI bus
-    output logic [       DATA_WIDTH-1:0] w_data_o,
+    output logic [DataWidth-1:0]   w_data_o,
     /// Write strobe of the AXI bus
-    output logic [   BYTES_PER_BEAT-1:0] w_strb_o,
+    output logic [StrbWidth-1:0]   w_strb_o,
     /// Valid signal of the AXI w channel
-    output logic                         w_valid_o,
+    output logic                   w_valid_o,
     /// Last signal of the AXI w channel
-    output logic                         w_last_o,
+    output logic                   w_last_o,
     /// Ready signal of the AXI w channel
-    input  logic                         w_ready_i,
+    input  logic                   w_ready_i,
 
     /// number of bytes the write transfers starts after a 
     /// Bus-aligned boundary   
-    input  logic [BUFFER_ADDR_WIDTH-1:0] w_offset_i,
+    input  logic [OffsetWidth-1:0] w_offset_i,
     /// number of bytes the end of the write transfer is short to reach a 
     /// Bus-aligned boundary
-    input  logic [BUFFER_ADDR_WIDTH-1:0] w_tailer_i,
+    input  logic [OffsetWidth-1:0] w_tailer_i,
     /// Number of beats requested by this transfer
-    input  logic [                  7:0] w_num_beats_i,
+    input  logic [            7:0] w_num_beats_i,
     /// True if the transfer only consists of a single beat
-    input  logic                         w_is_single_i
+    input  logic                   w_is_single_i
 ); 
 
     // buffer contains 8 data bits per FIFO
     // buffer is at least 3 deep to prevent stalls
-    localparam int BUFFER_WIDTH      = 8;
 
     // 64 bit DATA Width example:
     // DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD <- head
@@ -110,87 +109,42 @@ module axi_dma_data_path #(
     // last msk|----full mask----|first msk
 
     // offsets needed for masks to fill/empty buffer
-    logic [BYTES_PER_BEAT-1:0] r_first_mask;
-    logic [BYTES_PER_BEAT-1:0] r_last_mask;
-    logic [BYTES_PER_BEAT-1:0] w_first_mask;
-    logic [BYTES_PER_BEAT-1:0] w_last_mask;
+    logic [StrbWidth-1:0] r_first_mask;
+    logic [StrbWidth-1:0] r_last_mask;
+    logic [StrbWidth-1:0] w_first_mask;
+    logic [StrbWidth-1:0] w_last_mask;
 
     // read align masks
     assign r_first_mask = '1 << r_offset_i;
-    assign r_last_mask  = '1 >> (BYTES_PER_BEAT - r_tailer_i);
+    assign r_last_mask  = '1 >> (StrbWidth - r_tailer_i);
 
     // write align masks
     assign w_first_mask = '1 << w_offset_i;
-    assign w_last_mask  = '1 >> (BYTES_PER_BEAT - w_tailer_i);
+    assign w_last_mask  = '1 >> (StrbWidth - w_tailer_i);
 
 
     //--------------------------------------
     // Barrel shifter
     //-------------------------------------- 
     // data arrives in chuncks of length DATA_WDITH, the buffer will be filled with
-    // the realigned data. BYTES_PER_BEAT bytes will be inserted starting from the
+    // the realigned data. StrbWidth bytes will be inserted starting from the
     // provided address, overflows will naturally wrap
 
     // signals connected to the buffer
-    logic [BYTES_PER_BEAT-1:0][BUFFER_WIDTH-1:0]    buffer_in;
-    // logic [BYTES_PER_BEAT*2-1:0][BUFFER_WIDTH-1:0]  buffer_tmp;
-    logic [DATA_WIDTH*2-1:0]  buffer_tmp;
-
+    logic [StrbWidth-1:0][7:0] buffer_in;
 
     // read aligned in mask. needs to be rotated together with the data before 
     // it can be used to fill in valid data into the buffer
-    logic [BYTES_PER_BEAT-1:0]                      read_aligned_in_mask;
+    logic [StrbWidth-1:0]      read_aligned_in_mask;
 
     // in mask is write aligned, so it is the result of the read aligned in mask
     // that is rotated together with the data in the barrel shifter
-    logic [BYTES_PER_BEAT-1:0]                      in_mask;
-    logic [BYTES_PER_BEAT*2-1:0]                    tmp_mask;
+    logic [StrbWidth-1:0]      in_mask;
 
-    // the shift amount
-    logic [BUFFER_ADDR_WIDTH-1:0]                 shift;
-
-    // the barrel shifter is used to realign the read data
-    // always_comb begin : barrel_shifter
-    //     // default all output is 0
-    //     buffer_in   = '0;
-    //     in_mask     = '0;
-    //     shift       = '0;
-
-    //     // write all bytes in the beat at the correct location
-    //     for (int i = 0; i < BYTES_PER_BEAT; i++) begin
-    //         // implement wrap with offset
-    //         shift = BUFFER_ADDR_WIDTH'(r_shift_i + i);
-    //         // wrapped access         // natural access
-    //         buffer_in[shift] = r_data_i[i*8 +: 8];
-    //         in_mask[shift]   = read_aligned_in_mask[i];
-    //     end
-    // end
-
-    /*
-    log_barrel_shifter #(
-        .NumInputs ( DATA_WIDTH / 8  ), 
-        .data_t    ( logic[7:0]      )
-    ) i_log_barrel_shifter_data (
-        .shift_i   ( r_shift_i       ),
-        .data_i    ( r_data_i        ),
-        .data_o    ( buffer_in       )
-    );
-
-    log_barrel_shifter #(
-        .NumInputs ( DATA_WIDTH / 8  ), 
-        .data_t    ( logic           )
-    ) i_log_barrel_shifter_maks (
-        .shift_i   ( r_shift_i             ),
-        .data_i    ( read_aligned_in_mask  ),
-        .data_o    ( in_mask               )
-    );
-    */
-
-    assign buffer_tmp = {r_data_i, r_data_i} << (r_shift_i * 8);
-    assign tmp_mask   = {read_aligned_in_mask, read_aligned_in_mask}  << r_shift_i;
-
-    assign buffer_in  = buffer_tmp[DATA_WIDTH*2-1:DATA_WIDTH];
-    assign in_mask    = tmp_mask[BYTES_PER_BEAT*2-1:BYTES_PER_BEAT];
+    // a barrel shifter is a concatenation of the same array with itself and a normal
+    // shift. 
+    assign buffer_in = {r_data_i, r_data_i} >> (r_shift_i * 8);
+    assign in_mask   = {read_aligned_in_mask, read_aligned_in_mask}  >> r_shift_i;
 
     //--------------------------------------
     // In mask generation
@@ -203,22 +157,22 @@ module axi_dma_data_path #(
         read_aligned_in_mask = '1;
         // is first word: some bytes at the beginning may be invalid
         read_aligned_in_mask = is_first_r ?
-                               read_aligned_in_mask & r_first_mask : read_aligned_in_mask;
+            read_aligned_in_mask & r_first_mask : read_aligned_in_mask;
         // is last word in write burst: some bytes at the end may be invalid
         if (r_tailer_i != '0) begin
             read_aligned_in_mask = r_last_i ?
-                                   read_aligned_in_mask & r_last_mask : read_aligned_in_mask;
+                read_aligned_in_mask & r_last_mask : read_aligned_in_mask;
         end
     end
 
     //--------------------------------------
     // Read control
     //-------------------------------------- 
-    logic [BYTES_PER_BEAT-1:0] buffer_full;
-    logic [BYTES_PER_BEAT-1:0] buffer_push;
-    logic                      full;
+    logic [StrbWidth-1:0] buffer_full;
+    logic [StrbWidth-1:0] buffer_push;
+    logic                 full;
     // this signal is used for pushing data to the control fifo
-    logic                      push;
+    logic                 push;
 
     always_comb begin : proc_read_control
         // sticky is first bit for read
@@ -249,9 +203,9 @@ module axi_dma_data_path #(
     //--------------------------------------
     // Out mask generation -> wstrb mask
     //-------------------------------------- 
-    // only pop the data actually nneded for write from the buffer,
+    // only pop the data actually needed for write from the buffer,
     // determine valid data to pop by calculation the wstrb
-    logic [BYTES_PER_BEAT-1:0] out_mask;
+    logic [StrbWidth-1:0] out_mask;
     logic                      is_first_w;
     logic                      is_last_w;
 
@@ -272,19 +226,19 @@ module axi_dma_data_path #(
     // once buffer contains a full line -> all fifos are non-empty
     // push it out.
     // signals connected to the buffer
-    logic [BYTES_PER_BEAT-1:0][BUFFER_WIDTH-1:0] buffer_out;
-    logic [BYTES_PER_BEAT-1:0]                   buffer_empty;
-    logic [BYTES_PER_BEAT-1:0]                   buffer_pop;
+    logic [StrbWidth-1:0][7:0] buffer_out;
+    logic [StrbWidth-1:0]      buffer_empty;
+    logic [StrbWidth-1:0]      buffer_pop;
 
     // write is decoupled from read, due to misalignments in the read/write
     // addresses, page crossing can be encountered at any time.
-    // To handle this efficientely, a 2-to-1 or 1-to-2 mapping of r/w beats
+    // To handle this efficiently, a 2-to-1 or 1-to-2 mapping of r/w beats
     // is required. The write unit needs to keep track of progress through 
     // a counter and cannot use `r_last` for that.
     logic [7:0] w_num_beats_d, w_num_beats_q;
     logic       w_cnt_valid_d, w_cnt_valid_q;
 
-    // data from buffer is poped
+    // data from buffer is popped
     logic       pop;
     // write happens                 
     logic       write_happening;
@@ -331,10 +285,10 @@ module axi_dma_data_path #(
         // write happening: both the bus (w_ready) and the buffer (ready_to_write) is high
         write_happening = ready_to_write & w_ready_i;
 
-        // signal the control fifo it could be poped
+        // signal the control fifo it could be popped
         pop             = write_happening;
 
-        // the main buffer is conditionally to the write mask poped
+        // the main buffer is conditionally to the write mask popped
         buffer_pop      = write_happening ? out_mask : '0;
 
         // signal the bus that we are ready
@@ -343,7 +297,7 @@ module axi_dma_data_path #(
         // control the write to the bus apply data to the bus only if data should be written
         if (write_happening == 1'b1) begin
             // assign data from buffers, mask out non valid entries
-            for (int i = 0; i < BYTES_PER_BEAT; i++) begin
+            for (int i = 0; i < StrbWidth; i++) begin
                 w_data_o[i*8 +: 8] = out_mask[i] ? buffer_out[i] : 8'b0;   
             end
             // assign the out mask to the strobe
@@ -360,12 +314,12 @@ module axi_dma_data_path #(
         // in the bursted case the counters are needed to keep track of the progress of sending
         // beats. The w_last_o depends on the state of the counter
         end else begin
-            // first transfer happens as soon as a) the buffer is ready for a first tf and b) 
+            // first transfer happens as soon as a) the buffer is ready for a first transfer and b) 
             // the counter is currently invalid 
-            is_first_w    = first_possible & ~w_cnt_valid_q;
+            is_first_w = first_possible & ~w_cnt_valid_q;
 
             // last happens as soon as a) the counter is valid and b) the counter is now down to 1
-            is_last_w     = w_cnt_valid_q & (w_num_beats_q == 8'h01);
+            is_last_w  = w_cnt_valid_q & (w_num_beats_q == 8'h01);
 
             // load the counter with data in a first cycle, only modifying state if bus is ready
             if (is_first_w && write_happening) begin
@@ -396,11 +350,11 @@ module axi_dma_data_path #(
     //--------------------------------------
     logic control_empty;
 
-    for (genvar i = 0; i < BYTES_PER_BEAT; i++) begin : fifo_buffer
+    for (genvar i = 0; i < StrbWidth; i++) begin : fifo_buffer
         fifo_v3 #(
-            .FALL_THROUGH   ( 1'b0            ),
-            .DATA_WIDTH     ( BUFFER_WIDTH    ),
-            .DEPTH          ( BUFFER_DEPTH    )
+            .FALL_THROUGH   ( 1'b0         ),
+            .DATA_WIDTH     ( 8            ),
+            .DEPTH          ( BufferDepth  )
         ) i_fifo_buffer (
             .clk_i          ( clk_i           ),
             .rst_ni         ( rst_ni          ),

@@ -15,81 +15,78 @@
 /// R config w/o the corresponding W could lead to wrong AXI transfers.
 module axi_dma_data_mover #(
     /// Data width of the AXI bus
-    parameter int unsigned DATA_WIDTH     = -1,
+    parameter int unsigned DataWidth = -1,
     /// Number of AX beats that can be in-flight
-    parameter int unsigned REQ_FIFO_DEPTH = -1,
+    parameter int unsigned ReqFifoDepth = -1,
     /// Number of elements the realignment buffer can hold. To achieve
     /// full performance a depth of 3 is minimally required.
-    parameter int unsigned BUFFER_DEPTH   = -1,
+    parameter int unsigned BufferDepth = -1,
     /// AXI4+ATOP request struct definition.
-    parameter type         axi_req_t      = logic,
+    parameter type         axi_req_t = logic,
     /// AXI4+ATOP response struct definition.
-    parameter type         axi_res_t      = logic,
+    parameter type         axi_res_t = logic,
     /// ax descriptor
-    /// - id: AXI id
-    /// - last: last transaction in burst
-    /// - address: address of burst
-    /// - length: burst length
-    /// - size: bytes in each burst
-    /// - burst: burst type; only INC supported
-    /// - cache: cache type
-    parameter type         desc_ax_t      = logic,
+    /// - `id`: AXI id
+    /// - `last`: last transaction in burst
+    /// - `address`: address of burst
+    /// - `length`: burst length
+    /// - `size`: bytes in each burst
+    /// - `burst`: burst type; only INC supported
+    /// - `cache`: cache type
+    parameter type         desc_ax_t = logic,
     /// r descriptor
-    /// - offset: initial misalignment
-    /// - tailer: final misalignment
-    /// - shift: amount the data needs to be shifted to realign it
-    parameter type         desc_r_t      = logic,
+    /// - `offset`: initial misalignment
+    /// - `tailer`: final misalignment
+    /// - `shift`: amount the data needs to be shifted to realign it
+    parameter type         desc_r_t = logic,
     /// w descriptor
-    /// - offset: initial misalignment
-    /// - tailer: final misalignment
-    /// - num_beats: number of beats in the burst
-    /// - is_single: burst length is 0
-    parameter type         desc_w_t      = logic,
+    /// - `offset`: initial misalignment
+    /// - `tailer`: final misalignment
+    /// - `num_beats`: number of beats in the burst
+    /// - `is_single`: burst length is 0
+    parameter type         desc_w_t = logic,
     /// Read request definition. Includes:
     /// - ax descriptor
-    ///  - id: AXI id
-    ///  - last: last transaction in burst
-    ///  - address: address of burst
-    ///  - length: burst length
-    ///  - size: bytes in each burst
-    ///  - burst: burst type; only INC supported
-    ///  - cache: cache type
+    ///  - `id`: AXI id
+    ///  - `last`: last transaction in burst
+    ///  - `address`: address of burst
+    ///  - `length`: burst length
+    ///  - `size`: bytes in each burst
+    ///  - `burst`: burst type; only INC supported
+    ///  - `cache`: cache type
     /// - r descriptor
-    ///  - offset: initial misalignment
-    ///  - tailer: final misalignment
-    ///  - shift: amount the data needs to be shifted to realign it
-    parameter type         read_req_t     = logic,
+    ///  - `offset`: initial misalignment
+    ///  - `tailer`: final misalignment
+    ///  - `shift`: amount the data needs to be shifted to realign it
+    parameter type         read_req_t = logic,
     /// Write request definition. Includes:
     /// - ax descriptor
-    ///  - id: AXI id
-    ///  - last: last transaction in burst
-    ///  - address: address of burst
-    ///  - length: burst length
-    ///  - size: bytes in each burst
-    ///  - burst: burst type; only INC supported
-    ///  - cache: cache type
+    ///  - `id`: AXI id
+    ///  - `last`: last transaction in burst
+    ///  - `address`: address of burst
+    ///  - `length`: burst length
+    ///  - `size`: bytes in each burst
+    ///  - `burst`: burst type; only INC supported
+    ///  - `cache`: cache type
     /// - w descriptor
-    ///  - offset: initial misalignment
-    ///  - tailer: final misalignment
-    ///  - num_beats: number of beats in the burst
-    ///  - is_single: burst length is 0
-    parameter type         write_req_t    = logic
+    ///  - `offset`: initial misalignment
+    ///  - `tailer`: final misalignment
+    ///  - `num_beats`: number of beats in the burst
+    ///  - `is_single`: burst length is 0
+    parameter type         write_req_t = logic
 ) (
     /// Clock
     input  logic         clk_i,
     /// Asynchronous reset, active low
     input  logic         rst_ni,
-    // AXI4 bus
     /// AXI4+ATOP master request
     output axi_req_t     axi_dma_req_o,
     /// AXI4+ATOP master response
     input  axi_res_t     axi_dma_res_i,
-    // read/write request
     /// Read transfer request
     input read_req_t     read_req_i,
     /// Write transfer request
     input write_req_t    write_req_i,
-    // status signals
     /// Handshake: read transfer request valid
     input  logic         r_valid_i,
     /// Handshake: read transfer request ready
@@ -100,13 +97,14 @@ module axi_dma_data_mover #(
     output logic         w_ready_o,
     /// High if the data mover is idle
     output logic         data_mover_idle_o,
-    // transaction complete
     /// Event: a transaction has completed
     output logic         trans_complete_o
 );
 
-    localparam STRB_WIDTH    = DATA_WIDTH / 8;
-    localparam OFFSET_WIDTH  = $clog2(STRB_WIDTH);
+    localparam int unsigned StrbWidth = DataWidth / 8;
+    // local types
+    typedef logic [DataWidth-1:0] data_t;
+    typedef logic [StrbWidth-1:0] strb_t;
 
     //--------------------------------------
     // AR emitter
@@ -122,7 +120,7 @@ module axi_dma_data_mover #(
     // instanciate a fifo to buffer the address read requests
     fifo_v3 #(
         .FALL_THROUGH  ( 1'b0                 ), 
-        .DEPTH         ( REQ_FIFO_DEPTH       ),
+        .DEPTH         ( ReqFifoDepth         ),
         .dtype         ( desc_ax_t            )
     ) i_fifo_ar_emitter (
         .clk_i         ( clk_i                ),
@@ -153,7 +151,7 @@ module axi_dma_data_mover #(
     fifo_v3 #(
         .FALL_THROUGH  ( 1'b0                  ), 
         .dtype         ( desc_ax_t             ), 
-        .DEPTH         ( REQ_FIFO_DEPTH        )
+        .DEPTH         ( ReqFifoDepth          )
     ) i_fifo_aw_emitter (
         .clk_i         ( clk_i                 ),
         .rst_ni        ( rst_ni                ),
@@ -183,7 +181,7 @@ module axi_dma_data_mover #(
     fifo_v3 #(
         .FALL_THROUGH  ( 1'b0                 ), 
         .dtype         ( desc_r_t             ),
-        .DEPTH         ( REQ_FIFO_DEPTH       )
+        .DEPTH         ( ReqFifoDepth         )
     ) i_fifo_r_emitter (
         .clk_i         ( clk_i                ),
         .rst_ni        ( rst_ni               ),
@@ -213,7 +211,7 @@ module axi_dma_data_mover #(
     fifo_v3 #(
         .FALL_THROUGH  ( 1'b0                  ), 
         .dtype         ( desc_w_t              ),
-        .DEPTH         ( REQ_FIFO_DEPTH        )
+        .DEPTH         ( ReqFifoDepth          )
     ) i_fifo_w_emitter (
         .clk_i         ( clk_i                 ),
         .rst_ni        ( rst_ni                ),
@@ -232,22 +230,22 @@ module axi_dma_data_mover #(
     // instantiate of the data path
     //--------------------------------------
     // AXI bus signals from and to the datapath 
-    logic [DATA_WIDTH -1:0] r_data;
-    logic [            1:0] r_resp;
-    logic                   r_last;
-    logic                   r_valid;
-    logic                   r_ready;
-    logic [DATA_WIDTH -1:0] w_data;
-    logic [STRB_WIDTH -1:0] w_strb;
-    logic                   w_valid;
-    logic                   w_last;
-    logic                   w_ready;
+    data_t          r_data;
+    axi_pkg::resp_t r_resp;
+    logic           r_last;
+    logic           r_valid;
+    logic           r_ready;
+    data_t          w_data;
+    strb_t          w_strb;
+    logic           w_valid;
+    logic           w_last;
+    logic           w_ready;
 
-    logic                   w_next;
+    logic           w_next;
 
     axi_dma_data_path #(
-        .DATA_WIDTH    ( DATA_WIDTH         ),
-        .BUFFER_DEPTH  ( BUFFER_DEPTH       )
+        .DataWidth     ( DataWidth         ),
+        .BufferDepth   ( BufferDepth       )
     ) i_axi_dma_data_path (
         .clk_i                ( clk_i                    ),
         .rst_ni               ( rst_ni                   ),
@@ -351,8 +349,8 @@ module axi_dma_data_mover #(
     //-------------------------------------- 
     logic is_last_aw;
     fifo_v3 #(
-        .DEPTH       ( REQ_FIFO_DEPTH + BUFFER_DEPTH ),
-        .dtype       ( logic                         )
+        .DEPTH       ( ReqFifoDepth + BufferDepth ),
+        .dtype       ( logic                      )
     ) i_last_transaction_queue (
         .clk_i       ( clk_i                 ),
         .rst_ni      ( rst_ni                ),

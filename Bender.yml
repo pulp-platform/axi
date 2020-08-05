@@ -6,7 +6,7 @@ package:
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
     - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
-    - "Thomas Benz <tbrnz@iis.ee.ethz.ch>"
+    - "Thomas Benz <tbenz@iis.ee.ethz.ch>"
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.16.4 }
@@ -21,8 +21,11 @@ sources:
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
   - src/axi_pkg.sv
+  - src/dma/axi_dma_data_path.sv
   # Level 1
   - src/axi_intf.sv
+  - src/dma/axi_dma_data_mover.sv
+  - src/dma/axi_dma_burst_reshaper.sv
   # Level 2
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
@@ -45,11 +48,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
-  - src/dma/axi_dma_data_path.sv
-  - src/dma/axi_dma_data_mover.sv
-  - src/dma/axi_dma_burst_reshaper.sv
   - src/dma/axi_dma_backend.sv
-  - src/dma/log_barrel_shifter.sv
   # Level 3
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
@@ -69,6 +68,8 @@ sources:
 
   - target: test
     files:
+      # Level 0:
+      - test/fixture_axi_dma_backend.sv
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_addr_test.sv
       - test/tb_axi_cdc.sv
@@ -86,6 +87,5 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar_pkg.sv
       - test/tb_axi_xbar.sv
-      - test/fixture_axi_dma_backend.sv
+      # Level 1:
       - test/tb_axi_dma_backend.sv
-      - src/dma/log_barrel_shifter_tb.sv

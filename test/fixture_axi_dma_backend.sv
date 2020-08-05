@@ -24,30 +24,30 @@ module fixture_axi_dma_backend();
     //-------------------------------------- 
     localparam TA          = 0.2ns;  // must be nonzero to avoid Snitch load fifo double pop glitch
     localparam TT          = 0.8ns;
-    localparam HALF_PERIOD = 50ns;
-    localparam RESET       = 75ns;
+    localparam HalfPeriod  = 50ns;
+    localparam Reset       = 75ns;
 
-    localparam DATA_WIDTH  = 512;
-    localparam ADDR_WIDTH  = 64;
-    localparam STRB_WIDTH  = DATA_WIDTH / 8;
-    localparam ID_WIDTH    = 6;
-    localparam USER_WIDTH  = 1;
+    localparam DataWidth   = 512;
+    localparam AddrWidth   = 64;
+    localparam StrbWidth   = DataWidth / 8;
+    localparam IdWidth     = 6;
+    localparam UserWidth   = 1;
 
     typedef union packed {
-        logic [STRB_WIDTH-1:0][7:0] bytes;
-        logic [DATA_WIDTH-1:0]      data;
+        logic [StrbWidth-1:0][7:0] bytes;
+        logic [DataWidth-1:0]      data;
     } block_t;
 
     /// Address Type
-    typedef logic [  ADDR_WIDTH-1:0] addr_t;
+    typedef logic [  AddrWidth-1:0] addr_t;
     /// Data Type
-    typedef logic [  DATA_WIDTH-1:0] data_t;
+    typedef logic [  DataWidth-1:0] data_t;
     /// Strobe Type
-    typedef logic [  STRB_WIDTH-1:0] strb_t;
+    typedef logic [  StrbWidth-1:0] strb_t;
     /// AXI ID Type
-    typedef logic [    ID_WIDTH-1:0] axi_id_t;
+    typedef logic [    IdWidth-1:0] axi_id_t;
     /// AXI USER Type
-    typedef logic [  USER_WIDTH-1:0] user_t;
+    typedef logic [  UserWidth-1:0] user_t;
     /// 1D burst request
     typedef struct packed {
         axi_id_t            id;
@@ -75,16 +75,16 @@ module fixture_axi_dma_backend();
     initial begin
         forever begin
             clk = 0;
-            #HALF_PERIOD;
+            #HalfPeriod;
             clk = 1;
-            #HALF_PERIOD;
+            #HalfPeriod;
         end
     end
 
     logic rst_n;
     initial begin
         rst_n = 0;
-        #RESET;
+        #Reset;
         rst_n = 1;
     end
 
@@ -100,17 +100,17 @@ module fixture_axi_dma_backend();
     dma_resp_t axi_dma_res;
     
     AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( ADDR_WIDTH  ),
-        .AXI_DATA_WIDTH ( DATA_WIDTH  ),
-        .AXI_ID_WIDTH   ( ID_WIDTH    ),
-        .AXI_USER_WIDTH ( 1           )
+        .AXI_ADDR_WIDTH  ( AddrWidth   ),
+        .AXI_DATA_WIDTH  ( DataWidth   ),
+        .AXI_ID_WIDTH    ( IdWidth     ),
+        .AXI_USER_WIDTH  ( 1           )
     ) dma (clk);
     
     AXI_BUS #(
-        .AXI_ADDR_WIDTH ( ADDR_WIDTH  ),
-        .AXI_DATA_WIDTH ( DATA_WIDTH  ),
-        .AXI_ID_WIDTH   ( ID_WIDTH    ),
-        .AXI_USER_WIDTH ( 1           )
+        .AXI_ADDR_WIDTH  ( AddrWidth   ),
+        .AXI_DATA_WIDTH  ( DataWidth   ),
+        .AXI_ID_WIDTH    ( IdWidth     ),
+        .AXI_USER_WIDTH  ( 1           )
     ) mem ();
     
     `AXI_ASSIGN (dma, mem)
@@ -129,8 +129,8 @@ module fixture_axi_dma_backend();
     // Memory
     block_t dma_memory [bit [64-$clog2($bits(block_t))-1:0]];
     
-    // Handle the data output from dma.
-    typedef axi_test::axi_driver #(.AW(ADDR_WIDTH), .DW(DATA_WIDTH), .IW(ID_WIDTH), .UW(1), .TA(0.1*2*HALF_PERIOD), .TT(0.9*2*HALF_PERIOD)) driver_dma_t;
+    // Handle the data output from dma. Model of the memory acting as AXI slave.
+    typedef axi_test::axi_driver #(.AW(AddrWidth), .DW(DataWidth), .IW(IdWidth), .UW(1), .TA(0.1*2*HalfPeriod), .TT(0.9*2*HalfPeriod)) driver_dma_t;
     driver_dma_t driver_dma = new(dma);
     initial begin
         automatic driver_dma_t::ax_beat_t aw_dma_queue[$], ar_dma_queue[$];
@@ -172,7 +172,7 @@ module fixture_axi_dma_backend();
             forever begin
                 automatic driver_dma_t::r_beat_t dma_tx = new();
                 automatic driver_dma_t::ax_beat_t dma_ax;
-                automatic bit [ADDR_WIDTH-1:0] word;
+                automatic bit [AddrWidth-1:0] word;
                 while (ar_dma_queue.size() == 0) @ar_dma_received;
                 dma_ax = ar_dma_queue[0];
                 word = dma_ax.ax_addr >> 6;
@@ -208,14 +208,14 @@ module fixture_axi_dma_backend();
             forever begin
                 automatic driver_dma_t::w_beat_t dma_tx;
                 automatic driver_dma_t::ax_beat_t dma_ax;
-                automatic bit [ADDR_WIDTH-1:0] word;
+                automatic bit [AddrWidth-1:0] word;
                 driver_dma.recv_w(dma_tx);
                 while (aw_dma_queue.size() == 0) @ar_dma_received;
                 dma_ax = aw_dma_queue[0];
                 word = dma_ax.ax_addr >> 6;
                 //$display("Ready to write");
                 //$display("%x", word);
-                for (int i = 0; i < STRB_WIDTH; i++) begin
+                for (int i = 0; i < StrbWidth; i++) begin
                     if (dma_tx.w_strb[i]) begin
                           dma_memory[word].bytes[i] = dma_tx.w_data[i*8+:8];
                     end
@@ -256,17 +256,17 @@ module fixture_axi_dma_backend();
     logic backend_idle;
 
     axi_dma_backend #(
-        .DATA_WIDTH          ( DATA_WIDTH          ),
-        .ADDR_WIDTH          ( ADDR_WIDTH          ),
-        .ID_WIDTH            ( ID_WIDTH            ),
-        .DMA_ID_WIDTH        ( 32                  ),
-        .AXI_REQ_FIFO_DEPTH  ( 3                   ),
-        .REQ_FIFO_DEPTH      ( 2                   ),
-        .BUFFER_DEPTH        ( 3                   ),
+        .DataWidth           ( DataWidth           ),
+        .AddrWidth           ( AddrWidth           ),
+        .IdWidth             ( IdWidth             ),
+        .DmaIdWidth          ( 32                  ),
+        .AxReqFifoDepth      ( 3                   ),
+        .TransFifoDepth      ( 2                   ),
+        .BufferDepth         ( 3                   ),
         .axi_req_t           ( dma_req_t           ),
         .axi_res_t           ( dma_resp_t          ),
         .burst_req_t         ( burst_req_t         ),
-        .DMA_TRACING         ( 1                   )
+        .DmaTracing          ( 1                   )
     ) i_dut_axi_backend (
         .clk_i              ( clk              ),
         .rst_ni             ( rst_n            ),
@@ -284,8 +284,8 @@ module fixture_axi_dma_backend();
     // DMA DUT tasks
     //-------------------------------------- 
     task oned_dut_launch (
-        input logic [  ID_WIDTH-1:0] transf_id_i,
-        input logic [ADDR_WIDTH-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
+        input logic [   IdWidth-1:0] transf_id_i,
+        input logic [ AddrWidth-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
         input logic [           1:0] src_burst_i, dst_burst_i,
         input logic [           3:0] src_cache_i, dst_cache_i,
         input logic                  decouple_rw_i,
@@ -341,8 +341,8 @@ module fixture_axi_dma_backend();
     logic [784:0] lfsr_osmium_q,lfsr_osmium_d;
 
     task oned_osmium_launch (
-        input logic [  ID_WIDTH-1:0] transf_id_i,
-        input logic [ADDR_WIDTH-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
+        input logic [   IdWidth-1:0] transf_id_i,
+        input logic [ AddrWidth-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
         input logic [           1:0] src_burst_i, dst_burst_i,
         input logic [           3:0] src_cache_i, dst_cache_i,
         input logic                  decouple_rw_i,
@@ -421,8 +421,8 @@ module fixture_axi_dma_backend();
     endtask
 
     task oned_launch (
-        input logic [  ID_WIDTH-1:0] transf_id_i,
-        input logic [ADDR_WIDTH-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
+        input logic [   IdWidth-1:0] transf_id_i,
+        input logic [ AddrWidth-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
         input logic                  decouple_rw_i,
         input logic                  deburst_i,
         input logic                  wait_for_completion_i
@@ -458,8 +458,8 @@ module fixture_axi_dma_backend();
         input  logic        wait_for_completion
     );
 
-        logic [  ID_WIDTH-1:0] transf_id;
-        logic [ADDR_WIDTH-1:0] src_addr,  dst_addr,  num_bytes;
+        logic [   IdWidth-1:0] transf_id;
+        logic [ AddrWidth-1:0] src_addr,  dst_addr,  num_bytes;
         logic                  decouple_rw;
         logic                  deburst;
 

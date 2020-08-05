@@ -12,11 +12,11 @@
 /// Splits a generic 1D transfer in AXI-conform transfers
 module axi_dma_burst_reshaper #(
     /// Data width of the AXI bus
-    parameter int unsigned DATA_WIDTH     = -1,
+    parameter int unsigned DataWidth = -1,
     /// Address width of the AXI bus
-    parameter int unsigned ADDR_WIDTH     = -1,
+    parameter int unsigned AddrWidth = -1,
     /// ID width of the AXI bus
-    parameter int unsigned ID_WIDTH       = -1,
+    parameter int unsigned IdWidth = -1,
     /// Arbitrary 1D burst request definition:
     /// - id: the AXI id used - this id should be constant, as the DMA does not support reordering
     /// - src, dst: source and destination address, same width as the AXI 4 interface
@@ -29,7 +29,7 @@ module axi_dma_burst_reshaper #(
     ///   every read request. This mode can improve performance of unaligned transfers when crossing
     ///   the AXI page boundaries.
     /// - deburst: if set, the DMA will split all bursts in single transfers
-    parameter type         burst_req_t    = logic,
+    parameter type         burst_req_t = logic,
     /// Read request definition. Includes:
     /// - ax descriptor
     ///  - id: AXI id
@@ -43,7 +43,7 @@ module axi_dma_burst_reshaper #(
     ///  - offset: initial misalignment
     ///  - tailer: final misalignment
     ///  - shift: amount the data needs to be shifted to realign it
-    parameter type         read_req_t     = logic,
+    parameter type         read_req_t = logic,
     /// Write request definition. Includes:
     /// - ax descriptor
     ///  - id: AXI id
@@ -58,7 +58,7 @@ module axi_dma_burst_reshaper #(
     ///  - tailer: final misalignment
     ///  - num_beats: number of beats in the burst
     ///  - is_single: burst length is 0
-    parameter type         write_req_t    = logic
+    parameter type         write_req_t = logic
 
 ) (
     /// Clock
@@ -88,18 +88,16 @@ module axi_dma_burst_reshaper #(
     input  logic          w_ready_i
 );
 
-    localparam STRB_WIDTH      = DATA_WIDTH / 8;
-    localparam OFFSET_WIDTH    = $clog2(STRB_WIDTH);
-    localparam PAGE_SIZE       = (256 * STRB_WIDTH > 4096) ? 4096 :  256 * STRB_WIDTH;
-    localparam PAGE_ADDR_WIDTH = $clog2(PAGE_SIZE);
+    localparam int unsigned StrbWidth     = DataWidth / 8;
+    localparam int unsigned OffsetWidth   = $clog2(StrbWidth);
+    localparam int unsigned PageSize      = (256 * StrbWidth > 4096) ? 4096 :  256 * StrbWidth;
+    localparam int unsigned PageAddrWidth = $clog2(PageSize);
     /// Offset type
-    typedef logic [OFFSET_WIDTH-1:0] offset_t;
-    /// Beat type 
-    typedef logic [             7:0] beatlen_t;
+    typedef logic [  OffsetWidth-1:0] offset_t;
     /// Address Type
-    typedef logic [  ADDR_WIDTH-1:0] addr_t;
+    typedef logic [    AddrWidth-1:0] addr_t;
     /// AXI ID Type
-    typedef logic [    ID_WIDTH-1:0] axi_id_t;
+    typedef logic [      IdWidth-1:0] axi_id_t;
 
     /// Type containing burst description for each channel independently
     typedef struct packed {
@@ -128,39 +126,39 @@ module axi_dma_burst_reshaper #(
     //--------------------------------------
     // page boundary check
     //-------------------------------------- 
-    logic [PAGE_ADDR_WIDTH-1:0] r_page_offset;
-    logic [PAGE_ADDR_WIDTH  :0] r_num_bytes_to_pb;
-    logic [PAGE_ADDR_WIDTH-1:0] w_page_offset;
-    logic [PAGE_ADDR_WIDTH  :0] w_num_bytes_to_pb;
-    logic [PAGE_ADDR_WIDTH  :0] c_num_bytes_to_pb;
+    logic [PageAddrWidth-1:0] r_page_offset;
+    logic [PageAddrWidth  :0] r_num_bytes_to_pb;
+    logic [PageAddrWidth-1:0] w_page_offset;
+    logic [PageAddrWidth  :0] w_num_bytes_to_pb;
+    logic [PageAddrWidth  :0] c_num_bytes_to_pb;
 
     always_comb begin : proc_write_page_boundry_check
         // implement deburst operation
         if (burst_q.deburst) begin
             // deburst
             // read pages
-            r_page_offset     = burst_q.src.addr[OFFSET_WIDTH-1:0];
+            r_page_offset     = burst_q.src.addr[OffsetWidth-1:0];
             // how many transfers are remaining until the end of the bus?
-            r_num_bytes_to_pb = (STRB_WIDTH - r_page_offset) % (2 * STRB_WIDTH);
+            r_num_bytes_to_pb = (StrbWidth - r_page_offset) % (2 * StrbWidth);
 
             // write pages
-            w_page_offset     = burst_q.dst.addr[OFFSET_WIDTH-1:0];
+            w_page_offset     = burst_q.dst.addr[OffsetWidth-1:0];
             // how many transfers are remaining until the end of the bus?
-            w_num_bytes_to_pb = (STRB_WIDTH - w_page_offset) % (2 * STRB_WIDTH);
+            w_num_bytes_to_pb = (StrbWidth - w_page_offset) % (2 * StrbWidth);
         end else begin
             // bursts allowed
             // read pages
-            r_page_offset     = burst_q.src.addr[PAGE_ADDR_WIDTH-1:0];
+            r_page_offset     = burst_q.src.addr[PageAddrWidth-1:0];
             // how many transfers are remaining in current page?
-            r_num_bytes_to_pb = PAGE_SIZE - r_page_offset;
+            r_num_bytes_to_pb = PageSize - r_page_offset;
 
             // write pages
-            w_page_offset     = burst_q.dst.addr[PAGE_ADDR_WIDTH-1:0];
+            w_page_offset     = burst_q.dst.addr[PageAddrWidth-1:0];
             // how many transfers are remaining in current page?
-            w_num_bytes_to_pb = PAGE_SIZE - w_page_offset;
+            w_num_bytes_to_pb = PageSize - w_page_offset;
         end
         // how many transfers are remaining when concerning both r/w pages?
-        // take the boundry that is closer
+        // take the boundary that is closer
         c_num_bytes_to_pb = (r_num_bytes_to_pb > w_num_bytes_to_pb) ?
                              w_num_bytes_to_pb : r_num_bytes_to_pb;
                              
@@ -169,15 +167,15 @@ module axi_dma_burst_reshaper #(
     //--------------------------------------
     // Synchronized R/W process
     //-------------------------------------- 
-    logic [PAGE_ADDR_WIDTH:0] r_num_bytes_possible;
-    logic [PAGE_ADDR_WIDTH:0] r_num_bytes;
-    logic                     r_finish;
-    logic [ OFFSET_WIDTH-1:0] r_addr_offset;
+    logic [PageAddrWidth:0] r_num_bytes_possible;
+    logic [PageAddrWidth:0] r_num_bytes;
+    logic                   r_finish;
+    logic [OffsetWidth-1:0] r_addr_offset;
 
-    logic [PAGE_ADDR_WIDTH:0] w_num_bytes_possible;
-    logic [PAGE_ADDR_WIDTH:0] w_num_bytes;
-    logic                     w_finish;
-    logic [ OFFSET_WIDTH-1:0] w_addr_offset;
+    logic [PageAddrWidth:0] w_num_bytes_possible;
+    logic [PageAddrWidth:0] w_num_bytes;
+    logic                   w_finish;
+    logic [OffsetWidth-1:0] w_addr_offset;
 
     always_comb begin : proc_read_write_transaction
 
@@ -199,13 +197,13 @@ module axi_dma_burst_reshaper #(
             // not finished
             r_finish              = 1'b0;
             // next address, depends on burst type. only type 01 is supported yet
-            burst_d.src.addr      = (burst_q.src.burst == 2'b01) ?
+            burst_d.src.addr      = (burst_q.src.burst == axi_pkg::BURST_INCR) ?
                                     burst_q.src.addr + r_num_bytes : burst_q.src.addr;
 
-        // remaing bytes fit in one burst
+        // remaining bytes fit in one burst
         // reset storage for the read channel to stop this channel
         end else begin 
-            r_num_bytes   = burst_q.src.num_bytes[PAGE_ADDR_WIDTH:0];
+            r_num_bytes   = burst_q.src.num_bytes[PageAddrWidth:0];
             // default: when a transfer is finished, set it to 0
             burst_d.src   = '0;
             // finished
@@ -213,13 +211,13 @@ module axi_dma_burst_reshaper #(
         end
 
         // calculate the address offset aligned to transfer sizes.
-        r_addr_offset     = burst_q.src.addr[OFFSET_WIDTH-1:0];
+        r_addr_offset     = burst_q.src.addr[OffsetWidth-1:0];
 
         // create the AR request
-        read_req_o.ar.addr     = { burst_q.src.addr[ADDR_WIDTH-1:OFFSET_WIDTH],
-                                   {{OFFSET_WIDTH}{1'b0}} };
-        read_req_o.ar.len      = ((r_num_bytes + r_addr_offset - 1) >> OFFSET_WIDTH);
-        read_req_o.ar.size     = OFFSET_WIDTH;
+        read_req_o.ar.addr     = { burst_q.src.addr[AddrWidth-1:OffsetWidth],
+                                   {{OffsetWidth}{1'b0}} };
+        read_req_o.ar.len      = ((r_num_bytes + r_addr_offset - 1) >> OffsetWidth);
+        read_req_o.ar.size     = axi_pkg::size_t'(OffsetWidth);
         read_req_o.ar.id       = burst_q.src.id;
         read_req_o.ar.last     = r_finish;
         read_req_o.ar.burst    = burst_q.src.burst;
@@ -229,7 +227,7 @@ module axi_dma_burst_reshaper #(
 
         // create the R request
         read_req_o.r.offset = r_addr_offset;
-        read_req_o.r.tailer = OFFSET_WIDTH'(r_num_bytes + r_addr_offset);
+        read_req_o.r.tailer = OffsetWidth'(r_num_bytes + r_addr_offset);
         // shift is determined on a per 1D request base
         read_req_o.r.shift  = burst_q.shift;
 
@@ -248,13 +246,13 @@ module axi_dma_burst_reshaper #(
             // not finished
             w_finish              = 1'b0;
             // next address, depends on burst type. only type 01 is supported yet
-            burst_d.dst.addr      = (burst_q.dst.burst == 2'b01) ?
+            burst_d.dst.addr      = (burst_q.dst.burst == axi_pkg::BURST_INCR) ?
                                      burst_q.dst.addr + w_num_bytes : burst_q.dst.addr;
 
-        // remaing bytes fit in one burst
+        // remaining bytes fit in one burst
         // reset storage for the write channel to stop this channel
         end else begin 
-            w_num_bytes   = burst_q.dst.num_bytes[PAGE_ADDR_WIDTH:0];
+            w_num_bytes   = burst_q.dst.num_bytes[PageAddrWidth:0];
             // default: when a transfer is finished, set it to 0
             burst_d.dst   = '0;
             // finished
@@ -262,13 +260,13 @@ module axi_dma_burst_reshaper #(
         end
 
         // calculate the address offset aligned to transfer sizes.
-        w_addr_offset     = burst_q.dst.addr[OFFSET_WIDTH-1:0];
+        w_addr_offset     = burst_q.dst.addr[OffsetWidth-1:0];
 
         // create the AW request
-        write_req_o.aw.addr     = { burst_q.dst.addr[ADDR_WIDTH-1:OFFSET_WIDTH],
-                                    {{OFFSET_WIDTH}{1'b0}} };
-        write_req_o.aw.len      = ((w_num_bytes + w_addr_offset - 1) >> OFFSET_WIDTH);
-        write_req_o.aw.size     = OFFSET_WIDTH;
+        write_req_o.aw.addr     = { burst_q.dst.addr[AddrWidth-1:OffsetWidth],
+                                    {{OffsetWidth}{1'b0}} };
+        write_req_o.aw.len      = ((w_num_bytes + w_addr_offset - 1) >> OffsetWidth);
+        write_req_o.aw.size     = axi_pkg::size_t'(OffsetWidth);
         write_req_o.aw.id       = burst_q.dst.id;
         // hand over internal transaction id
         write_req_o.aw.last     = w_finish;
@@ -279,9 +277,9 @@ module axi_dma_burst_reshaper #(
 
         // create the W request
         write_req_o.w.offset    = w_addr_offset;
-        write_req_o.w.tailer    = OFFSET_WIDTH'(w_num_bytes + w_addr_offset);
+        write_req_o.w.tailer    = OffsetWidth'(w_num_bytes + w_addr_offset);
         write_req_o.w.num_beats = write_req_o.aw.len;
-        // is the transfer be only one beat in length? Counters dont have to be initialized then.
+        // is the transfer be only one beat in length? Counters don't have to be initialized then.
         write_req_o.w.is_single = (write_req_o.aw.len == '0);
 
         //--------------------------------------
@@ -314,8 +312,20 @@ module axi_dma_burst_reshaper #(
             burst_d.decouple_rw     = burst_req_i.decouple_rw;
             burst_d.deburst         = burst_req_i.deburst;
             // shift is calculated for each 1D transfer
-            burst_d.shift           = burst_req_i.dst[OFFSET_WIDTH-1:0] -
-                                      burst_req_i.src[OFFSET_WIDTH-1:0];
+            burst_d.shift           = burst_req_i.src[OffsetWidth-1:0] -
+                                      burst_req_i.dst[OffsetWidth-1:0];
+
+            // assertions
+            // pragma translate_off
+            `ifndef VERILATOR
+            assert property (@(posedge clk_i) disable iff (~rst_ni) 
+                    (valid_i |-> burst_req_i.burst_src inside {axi_pkg::BURST_INCR})) else
+                $fatal(1, "Unsupported DMA src_burst request..");
+            assert property (@(posedge clk_i) disable iff (~rst_ni) 
+                    (valid_i |-> burst_req_i.burst_dst inside {axi_pkg::BURST_INCR})) else
+                $fatal(1, "Unsupported DMA dst_burst request.");
+            `endif
+            // pragma translate_on
         end
     end
 
