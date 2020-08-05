@@ -21,7 +21,6 @@ module tb_axi_dma_backend;
         fix.clear_memory();
         fix.reset_lfsr();
         
-        /*
         // ultra short transfers
         for (int i = 0; i < 20000; i = i + 1) begin
             fix.oned_random_launch(4, 0);
@@ -69,58 +68,6 @@ module tb_axi_dma_backend;
         end
         fix.oned_random_launch(65000, 1);
         fix.compare_memories();
-        */
-
-        /*
-        // ultra short transfers
-        for (int i = 0; i < 200; i = i + 1) begin
-            fix.oned_random_launch(4, 0);
-            $display();
-        end
-        fix.oned_random_launch(4, 1);
-        fix.compare_memories();
-        
-        // medium short transfers
-        for (int i = 0; i < 200; i = i + 1) begin
-            fix.oned_random_launch(10, 0);
-            $display();
-        end
-        fix.oned_random_launch(10, 1);
-        fix.compare_memories();
-        
-        // // short transfers
-        for (int i = 0; i < 250; i = i + 1) begin
-            fix.oned_random_launch(100, 0);
-            $display();
-        end
-        fix.oned_random_launch(100, 1);
-        fix.compare_memories();
-        
-         // // medium transfers
-         for (int i = 0; i < 10; i = i + 1) begin
-             fix.oned_random_launch(1000, 0);
-             $display();
-         end
-         fix.oned_random_launch(1000, 1);
-         fix.compare_memories();
-        
-        // long transfers
-        for (int i = 0; i < 15; i = i + 1) begin
-            fix.oned_random_launch(10000, 0);
-            $display();
-        end
-        fix.oned_random_launch(10000, 1);
-        fix.compare_memories();
-        
-        // ultra long transfers
-        for (int i = 0; i < 5; i = i + 1) begin
-            fix.oned_random_launch(65000, 0);
-            $display();
-        end
-        fix.oned_random_launch(65000, 1);
-        fix.compare_memories();
-        */
-        fix.oned_launch('0, '0, '0, 16777216, 1, 0, 1);
         
         $display("\nDone :D (in %18.9f seconds", $time() / 1000000.0);
         $display("SUCCESS");
