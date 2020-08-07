@@ -239,3 +239,20 @@ artifacts:
       - test/tb_axi_xbar.sv
     outputs:
       - build/axi_xbar.tested
+
+  axi_dma_backend:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/dma/axi_dma_data_path.sv
+      - src/dma/axi_dma_data_mover.sv
+      - src/dma/axi_dma_burst_reshaper.sv
+      - src/dma/axi_dma_backend.sv
+      - test/fixture_axi_dma_backend.sv
+      - test/tb_axi_dma_backend.sv
+    outputs:
+      - build/axi_dma_backend.tested
