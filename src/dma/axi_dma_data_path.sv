@@ -295,7 +295,7 @@ module axi_dma_data_path #(
         w_valid_o       = ready_to_write;
 
         // control the write to the bus apply data to the bus only if data should be written
-        if (write_happening == 1'b1) begin
+        if (ready_to_write == 1'b1) begin
             // assign data from buffers, mask out non valid entries
             for (int i = 0; i < StrbWidth; i++) begin
                 w_data_o[i*8 +: 8] = out_mask[i] ? buffer_out[i] : 8'b0;   
@@ -338,7 +338,7 @@ module axi_dma_data_path #(
         end
 
         // the w_last_o signal should only be applied to the bus if an actual transfer happens
-        w_last_o = is_last_w & write_happening;
+        w_last_o = is_last_w & ready_to_write;
 
         // we are ready for the next transfer internally, once the w_last_o signal is applied
         w_dp_ready_o = is_last_w & write_happening;
