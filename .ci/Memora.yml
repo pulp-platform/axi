@@ -256,3 +256,4 @@ artifacts:
       - test/tb_axi_dma_backend.sv
     outputs:
       - build/axi_dma_backend.tested
+
