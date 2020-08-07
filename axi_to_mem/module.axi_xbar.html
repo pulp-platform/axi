@@ -1,0 +1,126 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_xbar</a></h1>
+<div class="docblock">
+<p>Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
+See <code>doc/axi_xbar.md</code> for the documentation, including the definition of parameters and ports.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.NumSlvPorts" class="impl"><code class="in-band">NumSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of slave ports of the crossbar.
+This many master modules are connected to it.</p>
+</div><h3 id="parameter.NumMstPorts" class="impl"><code class="in-band">NumMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of master ports of the crossbar.
+This many slave modules are connected to it.</p>
+</div><h3 id="parameter.MaxMstTrans" class="impl"><code class="in-band">MaxMstTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of transactions each master connected to a slave port of the crossbar can have
+in flight at the same time.</p>
+</div><h3 id="parameter.MaxSlvTrans" class="impl"><code class="in-band">MaxSlvTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of transactions each slave connected to a master port of the crossbar can have
+in flight at the same time.</p>
+</div><h3 id="parameter.FallThrough" class="impl"><code class="in-band">FallThrough<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Determine if the internal FIFOs of the crossbar are instantiated in fallthrough mode.</p>
+</div><h3 id="parameter.LatencyMode" class="impl"><code class="in-band">LatencyMode<span class="type-annotation">: axi_pkg::xbar_latency_e</span></code></h3><div class="docblock"
+><p>The Latency mode of the xbar. This determines if the channels on the ports have
+a spill register instantiated.
+Example configurations are provided with the enum <code>axi_pkg::xbar_latency_e</code>.</p>
+</div><h3 id="parameter.PipelineStages" class="impl"><code class="in-band">PipelineStages<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>This is the number of <code>axi_multicut</code> stages instantiated in the line cross of the channels.
+Having multiple stages can potentially add a large number of FFs!</p>
+</div><h3 id="parameter.AxiIdWidthSlvPorts" class="impl"><code class="in-band">AxiIdWidthSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI ID width of the slave ports. The ID width of the master ports is determined
+automatically. See <code>axi_mux</code> for details.</p>
+</div><h3 id="parameter.AxiIdUsedSlvPorts" class="impl"><code class="in-band">AxiIdUsedSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The used ID portion to determine if a different slave is used for the same ID.
+See <code>axi_demux</code> for details.</p>
+</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP address field width.</p>
+</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band">AxiDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP data field width.</p>
+</div><h3 id="parameter.NumAddrRules" class="impl"><code class="in-band">NumAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The number of address rules defined for routing of the transactions.
+Each master port can have multiple rules, should have however at least one.
+If a transaction can not be routed, the xbar will answer with an <code>axi_pkg::RESP_DECERR</code>.</p>
+</div><h3 id="parameter.slv_aw_chan_t" class="impl"><code class="in-band">slv_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP AW channel struct type for the slave ports.</p>
+</div><h3 id="parameter.mst_aw_chan_t" class="impl"><code class="in-band">mst_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP AW channel struct type for the master ports.</p>
+</div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP W channel struct type for all ports.</p>
+</div><h3 id="parameter.slv_b_chan_t" class="impl"><code class="in-band">slv_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel struct type for the slave ports.</p>
+</div><h3 id="parameter.mst_b_chan_t" class="impl"><code class="in-band">mst_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel struct type for the master ports.</p>
+</div><h3 id="parameter.slv_ar_chan_t" class="impl"><code class="in-band">slv_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP AR channel struct type for the slave ports.</p>
+</div><h3 id="parameter.mst_ar_chan_t" class="impl"><code class="in-band">mst_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP AR channel struct type for the master ports.</p>
+</div><h3 id="parameter.slv_r_chan_t" class="impl"><code class="in-band">slv_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP R channel struct type for the slave ports.</p>
+</div><h3 id="parameter.mst_r_chan_t" class="impl"><code class="in-band">mst_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP R channel struct type for the master ports.</p>
+</div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band">slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP request struct type for the slave ports.</p>
+</div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band">slv_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP response struct type for the slave ports.</p>
+</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band">mst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP request struct type for the master ports.</p>
+</div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band">mst_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP response struct type for the master ports.</p>
+</div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Address rule type for the address decoders from <code>common_cells:addr_decode</code>.</p>
+<p>Example types are provided in <code>axi_pkg</code>.</p>
+<p>Required struct fields:</p>
+<p>typedef struct packed {
+int unsigned idx;
+axi_addr_t   start_addr;
+axi_addr_t   end_addr;
+} rule_t;</p>
+</div><h3 id="parameter.DefaultIdxWidth" class="impl"><code class="in-band">DefaultIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong> override!
+Width of the index specifying a master port.</p>
+</div><h3 id="parameter.default_idx_t" class="impl"><code class="in-band">default_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong> override!
+Type of index for a default master port.</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock, positive edge triggered.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low.</p>
+</div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Testmode enable, active high.</p>
+</div><h3 id="port.slv_ports_req_i" class="impl"><code class="in-band">slv_ports_req_i<span class="type-annotation">: input  slv_req_t  [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP requests to the slave ports.</p>
+</div><h3 id="port.slv_ports_resp_o" class="impl"><code class="in-band">slv_ports_resp_o<span class="type-annotation">: output slv_resp_t [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP responses of the slave ports.</p>
+</div><h3 id="port.mst_ports_req_o" class="impl"><code class="in-band">mst_ports_req_o<span class="type-annotation">: output mst_req_t  [NumMstPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP requests of the master ports.</p>
+</div><h3 id="port.mst_ports_resp_i" class="impl"><code class="in-band">mst_ports_resp_i<span class="type-annotation">: input  mst_resp_t [NumMstPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP responses to the master ports.</p>
+</div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t [NumAddrRules-1:0]</span></code></h3><div class="docblock"
+><p>Address map array input for the crossbar. This map is global for the whole module.
+It is used for routing the transactions to the respective master ports.
+Each master port can have multiple different rules.</p>
+</div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
+><p>Enables a default master port for each slave port. When this is enabled unmapped
+transactions get issued at the master port given by <code>default_mst_port_i</code>.</p>
+<p>When not used, tie to <code>'0</code>.</p>
+</div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  default_idx_t [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
+><p>For each slave port the default index where the transaction should be routed, if
+for this slave port the default index functionality is enabled by setting the
+bit <code>en_default_mst_port_i[slave_port_idx]</code> to <code>'1</code>.</p>
+<p>When not used, tie to <code>'0</code>.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_idx_t.html">mst_port_idx_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.dec_aw" class="impl"><code class="in-band">dec_aw<span class="type-annotation">: default_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.dec_ar" class="impl"><code class="in-band">dec_ar<span class="type-annotation">: default_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_aw_select" class="impl"><code class="in-band">slv_aw_select<span class="type-annotation">: mst_port_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_ar_select" class="impl"><code class="in-band">slv_ar_select<span class="type-annotation">: mst_port_idx_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>
