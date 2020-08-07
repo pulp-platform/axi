@@ -1,0 +1,23 @@
+---
+packages:
+  common_cells:
+    revision: eb425a5c76f3c2ae0c1b20f97e6c0d8fd28a1eef
+    version: 1.19.0
+    source:
+      Git: "https://github.com/pulp-platform/common_cells.git"
+    dependencies:
+      - common_verification
+      - tech_cells_generic
+  common_verification:
+    revision: 0143451d43d2026310c802d9c108b6ed2954fcef
+    version: 0.1.2
+    source:
+      Git: "https://github.com/pulp-platform/common_verification.git"
+    dependencies: []
+  tech_cells_generic:
+    revision: 627fd6c50733159354df82ea488aeac9b2e076ea
+    version: 0.2.1
+    source:
+      Git: "https://github.com/pulp-platform/tech_cells_generic.git"
+    dependencies:
+      - common_verification
