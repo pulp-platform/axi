@@ -505,7 +505,7 @@ module axi_dma_backend #(
                 foreach(dma_meta[key])       dma_string = $sformatf("%s'%s': 0x%0x, ", dma_string, key, dma_meta[key]);
                 // only write bulk of data if dma is actually active :)
                 if (!backend_idle_o | valid_i & ready_o | i_axi_dma_burst_reshaper.valid_i & i_axi_dma_burst_reshaper.ready_o |
-                    i_axi_dma_burst_reshaper.burst_q.src.valid | i_axi_dma_burst_reshaper.burst_q.dst.valid ) begin
+                    i_axi_dma_burst_reshaper.burst_q.src.valid | i_axi_dma_burst_reshaper.burst_q.dst.valid |  trans_complete_o) begin
                     foreach(dma_backend[key])    dma_string = $sformatf("%s'%s': 0x%0x, ", dma_string, key, dma_backend[key]);
                     foreach(dma_burst_res[key])  dma_string = $sformatf("%s'%s': 0x%0x, ", dma_string, key, dma_burst_res[key]);
                     foreach(dma_data_mover[key]) dma_string = $sformatf("%s'%s': 0x%0x, ", dma_string, key, dma_data_mover[key]);
