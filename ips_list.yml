@@ -1,3 +1,7 @@
 common_cells:
     commit: 1.16.4
     group: pulp-platform
+
+common_verification:
+    commit: 0.1.1
+    group: pulp-platform
