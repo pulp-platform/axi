@@ -5,14 +5,14 @@
 
 This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards](https://developer.arm.com/documentation/ihi0022/f-b).  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
 
-Our design goals are:
+Our **design goals** are:
 - **Topology Independence**: We provide elementary building blocks such as protocol [multiplexers](src/axi_mux.sv) and [demultiplexers](src/axi_demux.sv) that allow users to implement any network topology.  We also provide commonly used interconnecting components such as a [crossbar](src/axi_xbar.sv).
 - **Modularity**: We favor design by composition over design by configuration where possible.  We strive to apply the *Unix philosophy* to hardware: make each module do one thing well.  This means you will more often instantiate our modules back-to-back than change a parameter value to build more specialized networks.
 - **Fit for Heterogeneous Networks**: Our modules are parametrizable in terms of data width and transaction concurrency.  This allows to create optimized networks for a wide range of performance (e.g., bandwidth, concurrency, timing), power, and area requirements.  We provide modules such as [data width converters](src/axi_dw_converter.sv) that allow to join subnetworks with different properties, creating heterogeneous on-chip networks.
 - **Full AXI Standard Compliance**.
 - **Compatibility** with a wide range of (recent versions of) EDA tools and implementation in standardized synthesizable SystemVerilog.
 
-The design and microarchitecture of the modules in this repository is described in [this paper](https://arxiv.org/abs/2009.05334).  If you use our work in your research, please cite it.
+The **design and microarchitecture** of the modules in this repository is described in [**this paper**](https://arxiv.org/abs/2009.05334).  If you use our work in your research, please cite it.
 
 
 ## List of Modules
