@@ -12,6 +12,8 @@ Our design goals are:
 - **Full AXI Standard Compliance**.
 - **Compatibility** with a wide range of (recent versions of) EDA tools and implementation in standardized synthesizable SystemVerilog.
 
+The design and microarchitecture of the modules in this repository is described in [this paper](https://arxiv.org/abs/2009.05334).  If you use our work in your research, please cite it.
+
 
 ## List of Modules
 
