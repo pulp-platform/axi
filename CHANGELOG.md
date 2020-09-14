@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+
+
+## 0.23.2 - 2020-09-14
+
+### Fixed
 - `ips_list.yml`: Add missing `common_verification` dependency.
 
 
