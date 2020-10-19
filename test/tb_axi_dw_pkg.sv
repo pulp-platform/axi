@@ -1029,10 +1029,10 @@ package tb_axi_dw_pkg       ;
                 incr_expected_tests(6)                                     ;
 
                 // Push the other bursts in a loop
-                num_beats  = num_beats - burst_len - 1                                                                   ;
-                burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
+                num_beats  = num_beats - burst_len - 1                                                                                                                         ;
+                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, AxiMstPortMaxSize), AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 while (num_beats != 0) begin
-                  burst_len = (num_beats - 1) % 256;
+                  burst_len  = num_beats >= 256 ? 255 : num_beats - 1;
                   exp_aw    = '{
                     axi_id   : slv_port_axi.aw_id   ,
                     axi_addr : burst_addr           ,
@@ -1044,8 +1044,8 @@ package tb_axi_dw_pkg       ;
                   this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
                   incr_expected_tests(6)                                     ;
 
-                  num_beats  = num_beats - burst_len - 1                                                                   ;
-                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
+                  num_beats  = num_beats - burst_len - 1                                                                     ;
+                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 end;
               end
             end
@@ -1113,6 +1113,9 @@ package tb_axi_dw_pkg       ;
           exp_ax_t act_mst_aw = act_mst_port_aw_queue[0];
           exp_ax_t act_slv_aw = act_slv_port_aw_queue[0];
 
+          // Address of the current beat
+          axi_addr_t slv_aw_addr = axi_pkg::beat_addr(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, slv_port_w_cnt);
+
           // Calculate the offsets inside the incoming word
           shortint unsigned slv_port_lower_byte =
           axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
@@ -1120,7 +1123,9 @@ package tb_axi_dw_pkg       ;
           shortint unsigned slv_port_data_pointer = slv_port_lower_byte;
 
           // Several W beats generated from this incoming W beat
-          for (int unsigned beat = 0; beat < conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize); beat++) begin
+          int unsigned beat_cnt = conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize) - aligned_adjustment(slv_aw_addr, act_slv_aw.axi_size);
+
+          for (int unsigned beat = 0; beat < beat_cnt; beat++) begin
             exp_mst_rw_t act_mst_w = '0;
 
             // Calculate the offsets inside the outcoming word
@@ -1234,10 +1239,10 @@ package tb_axi_dw_pkg       ;
                 incr_expected_tests(6)                                         ;
 
                 // Push the other bursts in a loop
-                num_beats  = num_beats - burst_len - 1                                                                   ;
-                burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
+                num_beats  = num_beats - burst_len - 1                                                                                                                         ;
+                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, AxiMstPortMaxSize), AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 while (num_beats != 0) begin
-                  burst_len  = (num_beats - 1) % 256;
+                  burst_len  = num_beats >= 256 ? 255 : num_beats - 1;
                   exp_slv_ar = '{
                     axi_id   : slv_port_axi.ar_id   ,
                     axi_addr : burst_addr           ,
@@ -1249,8 +1254,8 @@ package tb_axi_dw_pkg       ;
                   this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
                   incr_expected_tests(6)                                         ;
 
-                  num_beats  = num_beats - burst_len - 1                                                                   ;
-                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len);
+                  num_beats  = num_beats - burst_len - 1                                                                     ;
+                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 end;
               end
             end
@@ -1336,7 +1341,8 @@ package tb_axi_dw_pkg       ;
         mst_port_r_cnt[id]++              ;
         slv_port_r_pnt[id] += bytes_copied;
 
-        if (slv_port_r_pnt[id] == AxiSlvPortStrbWidth                    // Filled up an outcoming R beat
+        if (slv_port_r_pnt[id] == slv_port_upper_byte + 1                // Used all bits from the incoming R beat
+            || slv_port_r_pnt[id] == AxiSlvPortStrbWidth                 // Filled up an outcoming R beat
             || conv_ratio(act_slv_ar.axi_size, act_mst_ar.axi_size) == 1 // Not downsizing
             || mst_port_axi.r_last                                       // Last beat of an R burst
           ) begin
