@@ -865,7 +865,7 @@ package axi_test;
             // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
             automatic int unsigned log_bytes;
             rand_success = std::randomize(log_bytes) with {
-              log_bytes > 0; 2**log_bytes >= AXI_STRB_WIDTH; 2**log_bytes <= 32;
+              log_bytes > 0; 2**log_bytes <= 32;
             }; assert(rand_success);
             bytes = 2**log_bytes;
           end else begin
