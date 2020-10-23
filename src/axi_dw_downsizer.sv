@@ -68,6 +68,10 @@ module axi_dw_downsizer #(
   localparam SlvPortByteMask = AxiSlvPortStrbWidth - 1;
   localparam MstPortByteMask = AxiMstPortStrbWidth - 1;
 
+  // Byte-grouped data words
+  typedef logic [AxiMstPortDataWidth-1:0][7:0] mst_data_t;
+  typedef logic [AxiSlvPortDataWidth-1:0][7:0] slv_data_t;
+
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
@@ -528,16 +532,19 @@ module axi_dw_downsizer #(
                   automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
                   automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
+                  automatic slv_data_t r_data = r_req_d.r.data;
+
                   // Serialization
                   for (int b = 0; b < AxiSlvPortStrbWidth; b++)
                     if ((b >= slv_port_offset) &&
                         (b - slv_port_offset < (1 << r_req_q.orig_ar_size)) &&
                         (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
-                      r_req_d.r.data[8*b +: 8] = mst_resp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
+                      r_data[b] = mst_resp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
                     end
 
                   r_req_d.burst_len = r_req_q.burst_len - 1   ;
                   r_req_d.ar.len    = r_req_q.ar.len - 1      ;
+                  r_req_d.r.data    = r_data                  ;
                   r_req_d.r.last    = (r_req_q.burst_len == 0);
                   r_req_d.r.id      = mst_resp.r.id           ;
                   r_req_d.r.resp    = mst_resp.r.resp         ;
@@ -701,6 +708,8 @@ module axi_dw_downsizer #(
             automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
+            automatic mst_data_t w_data = mst_req.w.data;
+
             // Valid output
             mst_req.w_valid = 1'b1               ;
             mst_req.w.last  = w_req_q.aw.len == 0;
@@ -711,9 +720,10 @@ module axi_dw_downsizer #(
               if ((b >= slv_port_offset) &&
                   (b - slv_port_offset < (1 << w_req_q.orig_aw_size)) &&
                   (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
-                mst_req.w.data[8*(b + mst_port_offset - slv_port_offset) +: 8] = slv_req_i.w.data[8*b +: 8];
-                mst_req.w.strb[b + mst_port_offset - slv_port_offset]          = slv_req_i.w.strb[b]       ;
+                w_data[b + mst_port_offset - slv_port_offset]         = slv_req_i.w.data[8*b +: 8];
+                mst_req.w.strb[b + mst_port_offset - slv_port_offset] = slv_req_i.w.strb[b]       ;
               end
+            mst_req.w.data = w_data;
           end
 
         // Acknowledgment
@@ -781,11 +791,11 @@ module axi_dw_downsizer #(
         w_state_d = W_PASSTHROUGH;
 
         // Save beat
-        w_req_d.aw            = slv_req_i.aw     ;
-        w_req_d.aw_valid      = 1'b1             ;
-        w_req_d.burst_len     = slv_req_i.aw.len ;
-        w_req_d.orig_aw_len   = slv_req_i.aw.len ;
-        w_req_d.orig_aw_size  = slv_req_i.aw.size;
+        w_req_d.aw            = slv_req_i.aw      ;
+        w_req_d.aw_valid      = 1'b1              ;
+        w_req_d.burst_len     = slv_req_i.aw.len  ;
+        w_req_d.orig_aw_len   = slv_req_i.aw.len  ;
+        w_req_d.orig_aw_size  = slv_req_i.aw.size ;
         w_req_d.orig_aw_burst = slv_req_i.aw.burst;
 
         case (slv_req_i.aw.burst)
