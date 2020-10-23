@@ -65,6 +65,10 @@ module axi_dw_upsizer #(
   localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
   localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
 
+  // Byte-grouped data words
+  typedef logic [AxiMstPortDataWidth-1:0][7:0] mst_data_t;
+  typedef logic [AxiSlvPortDataWidth-1:0][7:0] slv_data_t;
+
   // Address width
   typedef logic [AxiAddrWidth-1:0] addr_t;
 
@@ -457,6 +461,8 @@ module axi_dw_upsizer #(
               automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
               automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
+              automatic slv_data_t r_data = slv_r_tran[t].data;
+
               // Valid output
               slv_r_valid_tran[t] = 1'b1                                       ;
               slv_r_tran[t].last  = mst_resp.r.last && (r_req_q.burst_len == 0);
@@ -466,9 +472,10 @@ module axi_dw_upsizer #(
                 if ((b >= mst_port_offset) &&
                     (b - mst_port_offset < (1 << r_req_q.orig_ar_size)) &&
                     (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
-                  slv_r_tran[t].data[8*(b + slv_port_offset - mst_port_offset) +: 8] = mst_resp.r.data[8*b +: 8];
+                  r_data[b + slv_port_offset - mst_port_offset] = mst_resp.r.data[8*b +: 8];
                 end
               end
+              slv_r_tran[t].data = r_data;
 
               // Acknowledgment
               if (slv_r_ready_tran[t]) begin
@@ -582,18 +589,21 @@ module axi_dw_upsizer #(
             automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
+            automatic mst_data_t w_data = w_req_d.w.data;
+
             // Serialization
             for (int b = 0; b < AxiMstPortStrbWidth; b++)
               if ((b >= mst_port_offset) &&
                   (b - mst_port_offset < (1 << w_req_q.orig_aw_size)) &&
                   (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
-                w_req_d.w.data[8*b +: 8] = slv_req_i.w.data[8*(b + slv_port_offset - mst_port_offset) +: 8];
-                w_req_d.w.strb[b]        = slv_req_i.w.strb[b + slv_port_offset - mst_port_offset]         ;
+                w_data[b]         = slv_req_i.w.data[8*(b + slv_port_offset - mst_port_offset) +: 8];
+                w_req_d.w.strb[b] = slv_req_i.w.strb[b + slv_port_offset - mst_port_offset]         ;
               end
 
-            w_req_d.burst_len = w_req_q.burst_len - 1    ;
-            w_req_d.w.last    = (w_req_q.burst_len == 0) ;
-            w_req_d.w.user    = slv_req_i.w.user         ;
+            w_req_d.burst_len = w_req_q.burst_len - 1   ;
+            w_req_d.w.data    = w_data                  ;
+            w_req_d.w.last    = (w_req_q.burst_len == 0);
+            w_req_d.w.user    = slv_req_i.w.user        ;
 
             case (w_req_q.aw.burst)
               axi_pkg::BURST_INCR: begin
