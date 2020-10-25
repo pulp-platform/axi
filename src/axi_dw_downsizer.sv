@@ -549,21 +549,8 @@ module axi_dw_downsizer #(
                   r_req_d.r.id      = mst_resp.r.id           ;
                   r_req_d.r.user    = mst_resp.r.user         ;
 
-                  // Priority case for the RESP field
-                  case (r_req_q.r.resp)
-                    axi_pkg::RESP_OKAY: begin
-                      // Any response can overwrite this OKAY
-                      r_req_d.r.resp = mst_resp.r.resp;
-                    end
-                    axi_pkg::RESP_EXOKAY: begin
-                      if (mst_resp.r.resp != axi_pkg::RESP_OKAY)
-                        r_req_d.r.resp = mst_resp.r.resp;
-                    end
-                    axi_pkg::RESP_SLVERR: begin
-                      if (mst_resp.r.resp != axi_pkg::RESP_OKAY && mst_resp.r.resp != axi_pkg::RESP_EXOKAY)
-                        r_req_d.r.resp = mst_resp.r.resp;
-                    end
-                  endcase
+                  // Merge response of this beat with prior one according to precedence rules.
+                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_q.r.resp, mst_resp.r.resp);
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
@@ -693,22 +680,10 @@ module axi_dw_downsizer #(
 
 
     // B Channel (No latency)
-    // Priority case for the RESP field
-    if (mst_resp.b_valid)
-      case (w_req_q.burst_resp)
-        axi_pkg::RESP_OKAY: begin
-          // Any response can overwrite this OKAY
-          w_req_d.burst_resp = mst_resp.b.resp;
-        end
-        axi_pkg::RESP_EXOKAY: begin
-          if (mst_resp.b.resp != axi_pkg::RESP_OKAY)
-            w_req_d.burst_resp = mst_resp.b.resp;
-        end
-        axi_pkg::RESP_SLVERR: begin
-          if (mst_resp.b.resp != axi_pkg::RESP_OKAY && mst_resp.b.resp != axi_pkg::RESP_EXOKAY)
-            w_req_d.burst_resp = mst_resp.b.resp;
-        end
-      endcase
+    if (mst_resp.b_valid) begin
+      // Merge response of this burst with prior one according to precedence rules.
+      w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
+    end
     slv_resp_o.b      = mst_resp.b        ;
     slv_resp_o.b.resp = w_req_d.burst_resp;
 
