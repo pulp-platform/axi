@@ -678,7 +678,6 @@ module axi_dw_downsizer #(
     mst_req.w_valid    = '0;
     slv_resp_o.w_ready = '0;
 
-
     // B Channel (No latency)
     if (mst_resp.b_valid) begin
       // Merge response of this burst with prior one according to precedence rules.
