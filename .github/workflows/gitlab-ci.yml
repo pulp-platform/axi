@@ -1,0 +1,56 @@
+name: Retrieve CI result from GitLab
+on:
+  push:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
+
+jobs:
+  gitlab-ci:
+    if: github.repository == 'pulp-platform/axi'  # do not run this job on forks (because Gitlab CI
+    runs-on: ubuntu-latest                        # will not trigger on forks)
+    timeout-minutes: 190
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Wait for synchronization (every 5 minutes)
+        run: |
+          while [ $(($(date -d "+1 minute" +%-M) % 5)) -ne 0 ]; do
+            # "+1 minute" because if the current minute is divisible by 5, we likely already missed
+            # the synchronization.
+            sleep 10
+          done
+          sleep 90 # the minute above plus 30 seconds to leave some time for the synchronization
+        shell: bash
+
+      - name: Obtain CI result
+        run: |
+          if echo $GITHUB_REF | grep -qE '^refs/heads'; then
+            BRANCH_NAME="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+          else
+            echo "Error: Could not derive branch name from ref '$GITHUB_REF'!"
+            exit 1
+          fi
+          while true; do
+            resp="$(curl --fail --silent --show-error \
+                  https://akurth.net/usrv/ig/shields/pipeline/akurth/axi/$BRANCH_NAME)"
+            if [ $? -ne 0 ]; then
+              echo "Error: Failed to obtain CI status!"
+              exit 1
+            fi
+            status="$(echo $resp | jq -r .message)"
+            if [ "$status" == "passing" ]; then
+              echo "CI passed."
+              exit 0
+            elif [ "$status" == "running" ]; then
+              echo "CI is running, waiting .."
+            else
+              echo "Error: Unknown or failing status: '$status'!"
+              exit 1
+            fi
+            sleep 10
+          done
+        shell: bash
