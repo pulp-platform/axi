@@ -547,8 +547,10 @@ module axi_dw_downsizer #(
                   r_req_d.r.data    = r_data                  ;
                   r_req_d.r.last    = (r_req_q.burst_len == 0);
                   r_req_d.r.id      = mst_resp.r.id           ;
-                  r_req_d.r.resp    = mst_resp.r.resp         ;
                   r_req_d.r.user    = mst_resp.r.user         ;
+
+                  // Merge response of this beat with prior one according to precedence rules.
+                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_q.r.resp, mst_resp.r.resp);
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
@@ -618,6 +620,7 @@ module axi_dw_downsizer #(
     burst_len_t burst_len         ;
     axi_pkg::len_t orig_aw_len    ;
     axi_pkg::burst_t orig_aw_burst;
+    axi_pkg::resp_t burst_resp    ;
     axi_pkg::size_t orig_aw_size  ;
   } w_req_t;
 
@@ -676,7 +679,12 @@ module axi_dw_downsizer #(
     slv_resp_o.w_ready = '0;
 
     // B Channel (No latency)
-    slv_resp_o.b = mst_resp.b;
+    if (mst_resp.b_valid) begin
+      // Merge response of this burst with prior one according to precedence rules.
+      w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
+    end
+    slv_resp_o.b      = mst_resp.b        ;
+    slv_resp_o.b.resp = w_req_d.burst_resp;
 
     // Each write transaction might trigger several B beats on the master (narrow) side.
     // Only forward the last B beat of each transaction.
@@ -774,9 +782,10 @@ module axi_dw_downsizer #(
     // Can start a new request as soon as w_state_d is W_IDLE
     if (w_state_d == W_IDLE) begin
       // Reset channels
-      w_req_d.aw             = '0  ;
-      w_req_d.aw_valid       = 1'b0;
-      w_req_d.aw_throw_error = 1'b0;
+      w_req_d.aw             = '0                ;
+      w_req_d.aw_valid       = 1'b0              ;
+      w_req_d.aw_throw_error = 1'b0              ;
+      w_req_d.burst_resp     = axi_pkg::RESP_OKAY;
 
       if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
         inject_aw_into_ar_req = 1'b1                 ;
