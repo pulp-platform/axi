@@ -12,28 +12,28 @@ vsim:
   stage: build
   script:
     - >
-      if ! memora lookup vsim; then
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup vsim; then
         cd build && ../scripts/compile_vsim.sh
-        memora insert vsim
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert vsim
       fi
 
 synopsys_dc:
   stage: build
   script:
     - >
-      if ! memora lookup synopsys_dc; then
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup synopsys_dc; then
         cd build && ../scripts/synth.sh
-        memora insert synopsys_dc
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
       fi
 
 .test_module: &test_module
   stage: test
   script:
     - >
-      if ! memora lookup $TEST_MODULE; then
-        memora get vsim
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $TEST_MODULE; then
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim
         cd build && ../scripts/run_vsim.sh $TEST_MODULE
-        memora insert $TEST_MODULE
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $TEST_MODULE
       fi
 
 axi_addr_test:
