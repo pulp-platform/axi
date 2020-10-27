@@ -1,6 +1,6 @@
 # AXI SystemVerilog Modules for High-Performance On-Chip Communication
 [![CI status](https://akurth.net/usrv/ig/shields/pipeline/akurth/axi/master.svg)](https://iis-git.ee.ethz.ch/akurth/axi/commits/master)
-[![GitHub tag (latest SemVer)](https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&url=https%3A%2F%2Fimg.shields.io%2Fgithub%2Fv%2Ftag%2Fpulp-platform%2Faxi%3Fcolor%3Dblue%26label%3Dcurrent%26sort%3Dsemver)](CHANGELOG.md)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
 This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards](https://developer.arm.com/documentation/ihi0022/f-b).  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
