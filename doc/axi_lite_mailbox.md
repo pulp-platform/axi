@@ -69,15 +69,15 @@ When the FIFO is empty, the read response `axi_pkg::RESP_SLVERR` is returned. Ad
 
 ### STATUS Register
 
-Mailbox status register. This register holds the current status of the mailbox.
+Mailbox status register. This read-only register holds the current status of the mailbox.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                           |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:4` | Reserved |             |             | Reserved                                                                                                                                                                              |
-| `3`                | RFIFOL   | R           | `1'b0`      | Read FIFO level is higher than the threshold set in `RIRQT` <br/>[0]: Write Read level is less or equal to the threshold. <br/>[1]: Read FIFO level is higher than the threshold.     |
-| `2`                | WFIFOL   | R           | `1'b0`      | Write FIFO level is higher than the threshold set in `WIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Write FIFO level is higher than the threshold.   |
-| `1`                | Full     | R           | `1'b0`      | Write FIFO is full and subsequent writes to `MBOX` are ignored <br/>[0]: Space for write data. <br/>[1]: No space for data, writes are ignored and error on transaction is generated. |
-| `0`                | Empty    | R           | `1'b1`      | Read FIFO is empty <br/>[0]: Data is available. <br/>[1]: No available data, reads respond with `axi_pkg::RESP_SLVERR`.                                                               |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                                |
+|:------------------:|:--------:|:-----------:|:-----------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:4` | Reserved |             |             | Reserved                                                                                                                                                                                   |
+| `3`                | RFIFOL   | R           | `1'b0`      | Read FIFO level is higher than the threshold set in `RIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Read FIFO level is higher than the threshold.          |
+| `2`                | WFIFOL   | R           | `1'b0`      | Write FIFO level is higher than the threshold set in `WIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Write FIFO level is higher than the threshold.        |
+| `1`                | Full     | R           | `1'b0`      | Write FIFO is full and subsequent writes to mailbox are ignored <br/>[0]: Space for write data. <br/>[1]: No space for data, writes are ignored and responded with `axi_pkg::RESP_SLVERR`. |
+| `0`                | Empty    | R           | `1'b1`      | Read FIFO is empty <br/>[0]: Data is available. <br/>[1]: No available data, reads respond with `axi_pkg::RESP_SLVERR`.                                                                    |
 
 
 ### ERROR Register
