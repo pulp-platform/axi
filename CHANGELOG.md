@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Fixed
+
+
+## 0.24.0 - 2020-10-24
+
+### Added
 - `axi_pkg`: Add function that defines response precedence.
 
 ### Changed
