@@ -64,7 +64,7 @@ Writes are ignored when the FIFO is full and a `axi_pkg::RESP_SLVERR` is returne
 ### MBOXR Register
 
 Mailbox read register. Read here to recieve data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
-When the FIFO is empty the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
+When the FIFO is empty, the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
 
 ### STATUS Register
