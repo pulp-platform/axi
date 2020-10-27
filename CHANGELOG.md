@@ -8,10 +8,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_pkg`: Add function that defines response precedence.
 
 ### Changed
+- `axi_dw_downsizer` and `axi_dw_upsizer`: Pipeline injection of atomic AWs into the AR channel to
+  shorten the critical path.
 
 ### Fixed
+- `axi_dw_downsizer` and `axi_dw_upsizer`: Improve portability of bit slice assignment constructs.
+- `axi_dw_downsizer`:
+  - Forward worst response among split transactions.
+  - Fix overflow of B forward FIFO.
+- `axi_test`: Remove minimal length constraint from `rand_atop_burst`.
 
 
 ## 0.23.2 - 2020-09-14
