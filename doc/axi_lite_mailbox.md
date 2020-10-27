@@ -3,6 +3,7 @@
 `axi_lite_mailbox` implements a hardware mailbox, where two AXI4-Lite slave ports are connected to each other over two FIFOs. Data written on port 0 is made available on the read data at port 1 and vice versa.
 The module features an interrupt for each port which can be enabled with the [IRQEN](#irqen-register) register. Interrupts can be configured to trigger depending on the fill levels of the read ([RIRQT](#rirqt-register)) and write ([WIRQT](#wirqt-register)) FIFO. It is further possible to trigger an interrupt on an mailbox error condition as defined by the [ERROR](#error-register) register.
 
+
 ## Module Parameters
 
 This table describes the parameters of the module.
@@ -17,6 +18,7 @@ This table describes the parameters of the module.
 | `req_lite_t`   | `type`         | In accordance with the `AXI_LITE_TYPEDEF_REQ_T` macro                                        |
 | `resp_lite_t`  | `type`         | In accordance with the `AXI_LITE_TYPEDEF_RESP_T` macro                                       |
 
+
 ## Module Ports
 
 This table describes the ports of the module.
@@ -30,6 +32,7 @@ This table describes the ports of the module.
 | `slv_resps_o`  | `output resp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
 | `irq_o`        | `output logic       [1:0]` | interrupt output for each port                         |
 | `base_addr_i`  | `input  addr_t      [1:0]` | base address for each port                             |
+
 
 
 ## Register Address Mapping
@@ -51,15 +54,18 @@ Each register has one of the acces types `R/W = read and write`, `R = read-only`
 | base_addr_i + 8\*AxiDataWidth/8       | 0x20                            | 0x40                            | [IRQP](#irqp-register)            | R           | `0x0`         | Interrupt pending register        |
 | base_addr_i + 9\*AxiDataWidth/8       | 0x24                            | 0x48                            | [CRTL](#ctrl-register)            | R/W         | `0x0`         | Module control register           |
 
+
 ### MBOXW Register
 
 Mailbox write register. Write here to send data to the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [WIRQT Register](#wirqt-register) (if enabled).
 Writes are ignored when the FIFO is full and a `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
+
 ### MBOXR Register
 
 Mailbox read register. Read here to recieve data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
 When the FIFO is empty the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
+
 
 ### STATUS Register
 
@@ -121,6 +127,7 @@ This register allows acknowledgment of the respective interrupts. To acknowledge
 | `1`                | `RTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in read MBOX  <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
 | `0`                | `WTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in write MBOX <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
 
+
 ### IRQEN Register
 
 Interrupt request enable register. Here the four interrupts from [IRQS](#irqs-register) can be enabled by writing to the corresponding bit in following table.
@@ -131,6 +138,7 @@ Interrupt request enable register. Here the four interrupts from [IRQS](#irqs-re
 | `2`                | `EIRQ`   | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
 | `1`                | `RTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
 | `0`                | `WTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
+
 
 ### IRQP Register
 
@@ -143,6 +151,7 @@ An interrupt gets triggered by the OR of the bits of this register.
 | `2`                | `EIRQ`   | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: Error pending                |
 | `1`                | `RTIRQ`  | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: MBOX read threshold pending  |
 | `0`                | `WTIRQ`  | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: MBOX write threshold pending |
+
 
 ### CTRL Register
 
