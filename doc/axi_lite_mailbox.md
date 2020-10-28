@@ -115,18 +115,18 @@ When a value larger than or equal to the `MailboxDepth` parameter is written to 
 
 ### IRQS Register
 
-Interrupt request status register. This register holds the current interrupt status of this slave port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also fire, when the respective interrupt is not enabled.
-* `EIRQ`:  Error interrupt request, is set to high, when there was an attempted read from an empty `MBOX` or to write on a full `MBOX`.
+Interrupt request status register. This register holds the current interrupt status of this slave port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also get updated when the respective interrupt is not enabled.
+* `EIRQ`:  Error interrupt request, is set to high when there was a read from an empty mailbox or a write to a full mailbox.
 * `RTIRQ`: Read threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the R channel is higher than the threshold set in `RIRQT`.
-* `WEIRQ`: Write error interrupt request, is set to high, when there was an attempted write to a full write FIFO. Will not change when the interrupt is not enabled in `IRQEN`.
-This register allows acknowledgment of the respective interrupts. To acknowledge an interrupt request write a `1'b1` to the corresponding bit described in following table.
+* `WTIRQ`: Write threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the W channel is higher than the threshold set in `WIRQT`.
+To acknowledge an interrupt request write a `1'b1` to the corresponding bit described in following table.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                     |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                                                                                                                        |
-| `2`                | `EIRQ`   | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Error on MBOX access                <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
-| `1`                | `RTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in read MBOX  <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
-| `0`                | `WTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in write MBOX <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                                 |
+|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                                                                                                                                    |
+| `2`                | `EIRQ`   | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Error on mailbox access                        <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request  |
+| `1`                | `RTIRQ`  | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in read mailbox exceeded  <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
+| `0`                | `WTIRQ`  | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in write mailbox exceeded <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
 
 
 ### IRQEN Register
