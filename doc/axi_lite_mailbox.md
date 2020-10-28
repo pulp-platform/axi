@@ -37,9 +37,9 @@ This table describes the ports of the module.
 
 ## Register Address Mapping
 
-This table describes the type of register and the respective address mapping. The address depends on the parameter `AxiDataWidth` and the respective `base_addr_i[*]` of the port accociated to the index.
+This table describes the type of register and the respective address mapping. The address depends on the parameter `AxiDataWidth` and the respective `base_addr_i[*]` of the port associated to the index.
 There are two example columns given for the resulting address for a `base_addr_i[*]` of `'0` and `AxiDataWidth` of 32 and 64 bit.
-Each register has one of the acces types `R/W = read and write`, `R = read-only` and `W = write-only`. Writes to read-only and reads from write-only registers are responded by an `axi_pkg::RESP_SLVERR`.
+Each register has one of the access types `R/W = read and write`, `R = read-only` and `W = write-only`. Writes to read-only and reads from write-only registers are responded by an `axi_pkg::RESP_SLVERR`.
 
 | Base Address + Offset\*AxiDataWidth/8 | Address for `AxiDataWidth = 32` | Address for `AxiDataWidth = 64` | Register Name                     | Access Type | Default Value | Description                       |
 |:--------------------------------------|:-------------------------------:|:-------------------------------:|:---------------------------------:|:-----------:|:-------------:|:----------------------------------|
@@ -63,7 +63,7 @@ Writes are ignored when the FIFO is full and a `axi_pkg::RESP_SLVERR` is returne
 
 ### MBOXR Register
 
-Mailbox read register. Read here to recieve data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
+Mailbox read register. Read here to receive data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
 When the FIFO is empty, the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
 
