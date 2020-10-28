@@ -156,10 +156,10 @@ An interrupt gets triggered by the OR of the bits of this register.
 
 ### CTRL Register
 
-Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal at each FIFO is the OR combination of the respective bits of this register at each slave port. On register write, the FIFO is cleared and the register is reset.
+Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal of each FIFO is the OR combination of the respective bit of this register at each slave port. On register write, the FIFO is cleared and the register is reset.
 
 | Bit(s)             | Name     | Access Type | Reset Value | Description                                  |
 |:------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
 | `AxiDataWidth-1:2` | Reserved |             |             | Reserved                                     |
-| `1`                | `RTIRQ`  | W           | 1'b0        | Flush the read MBOX FIFO for this port       |
-| `0`                | `WTIRQ`  | W           | 1'b0        | Flush the write MBOX FIFO for this port      |
+| `1`                | `RTIRQ`  | W           | `1'b0`      | Flush the read FIFO for this port            |
+| `0`                | `WTIRQ`  | W           | `1'b0`      | Flush the write FIFO for this port           |
