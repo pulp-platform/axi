@@ -131,14 +131,14 @@ To acknowledge an interrupt request write a `1'b1` to the corresponding bit desc
 
 ### IRQEN Register
 
-Interrupt request enable register. Here the four interrupts from [IRQS](#irqs-register) can be enabled by writing to the corresponding bit in following table.
+Interrupt request enable register. Here the interrupts from [IRQS](#irqs-register) can be enabled by setting the corresponding bit in the following table.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                         |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------|
-| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                            |
-| `2`                | `EIRQ`   | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
-| `1`                | `RTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
-| `0`                | `WTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                             |
+|:------------------:|:--------:|:-----------:|:-----------:|:------------------------------------------------------------------------|
+| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                |
+| `2`                | `EIRQ`   | R/W         | `1'b0`      | [0]: Error IRQ disabled <br/>[1]: Error IRQ enabled                     |
+| `1`                | `RTIRQ`  | R/W         | `1'b0`      | [0]: Read threshold IRQ disabled <br/>[1]: Read threshold IRQ enabled   |
+| `0`                | `WTIRQ`  | R/W         | `1'b0`      | [0]: Write threshold IRQ disabled <br/>[1]: Write threshold IRQ enabled |
 
 
 ### IRQP Register
