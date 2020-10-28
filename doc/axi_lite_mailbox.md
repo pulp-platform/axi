@@ -93,13 +93,13 @@ Mailbox error register. This read-only register contains information if a read o
 
 ### WIRQT Register
 
-Write interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the usage pointer of the FIFO connected to the W channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the write FIFO is full.
+Write interrupt request threshold register. When the usage pointer of the FIFO connected to the W channel exceeds this value, a write threshold IRQ is triggered and the corresponding [STATUS register](#status-register) bit is set.
+When a value larger than or equal to the `MailboxDepth` parameter is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an IRQ is triggered when the write FIFO is full.
 
-| Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
-|:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
-| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                                     |
-| `$clog2(MailboxDepth)-1:0`            | `WIRQT`  | R/W         | `'0`        | The lower $clog2(MailboxDepth) bits are used |
+| Bit(s)                                | Name     | Access Type | Reset Value | Description               |
+|:-------------------------------------:|:--------:|:-----------:|:-----------:|:--------------------------|
+| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                  |
+| `$clog2(MailboxDepth)-1:0`            | `WIRQT`  | R/W         | `'0`        | Write IRQ threshold level |
 
 
 ### RIRQT Register
