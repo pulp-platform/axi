@@ -82,13 +82,13 @@ Mailbox status register. This read-only register holds the current status of the
 
 ### ERROR Register
 
-Mailbox error register. This read only register contains information if from an empty read FIFO was read, or to a full FIFO was data written and ignored. This register is cleared on read.
+Mailbox error register. This read-only register contains information if a read occurred on an empty FIFO or a write occurred on a full FIFO. This register is cleared on read.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                          |
-|:------------------:|:--------:|:-----------:|:-----------:|:-------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:2` | Reserved |             |             | Reserved                                                                             |
-| `1`                | Full     | R           | `1'b0`      | Attempted write to a full `MBOX`. <br/>[0]: No Error. <br/>[1]: `MBOX` write error.  |
-| `0`                | Empty    | R           | `1'b1`      | Attempted read from an empty `MBOX` <br/>[0]: No Error. <br/>[1]: `MBOX` read error. |
+| Bit(s)             | Name        | Access Type | Reset Value | Description                                                                            |
+|:------------------:|:-----------:|:-----------:|:-----------:|:---------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:2` | Reserved    |             |             | Reserved                                                                               |
+| `1`                | Write Error | R           | `1'b0`      | Attempted write to a full mailbox. <br/>[0]: No Error. <br/>[1]: Mailbox write error.  |
+| `0`                | Read Error  | R           | `1'b1`      | Attempted read from an empty mailbox <br/>[0]: No Error. <br/>[1]: Mailbox read error. |
 
 
 ### WIRQT Register
