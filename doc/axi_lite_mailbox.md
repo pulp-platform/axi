@@ -3,6 +3,7 @@
 `axi_lite_mailbox` implements a hardware mailbox, where two AXI4-Lite slave ports are connected to each other over two FIFOs. Data written on port 0 is made available on the read data at port 1 and vice versa.
 The module features an interrupt for each port which can be enabled with the [IRQEN](#irqen-register) register. Interrupts can be configured to trigger depending on the fill levels of the read ([RIRQT](#rirqt-register)) and write ([WIRQT](#wirqt-register)) FIFO. It is further possible to trigger an interrupt on an mailbox error condition as defined by the [ERROR](#error-register) register.
 
+
 ## Module Parameters
 
 This table describes the parameters of the module.
@@ -16,6 +17,7 @@ This table describes the parameters of the module.
 | `AxiDataWidth` | `int unsigned` | The AXI4-Lite data width on the W and R channels                                             |
 | `req_lite_t`   | `type`         | In accordance with the `AXI_LITE_TYPEDEF_REQ_T` macro                                        |
 | `resp_lite_t`  | `type`         | In accordance with the `AXI_LITE_TYPEDEF_RESP_T` macro                                       |
+
 
 ## Module Ports
 
@@ -32,11 +34,12 @@ This table describes the ports of the module.
 | `base_addr_i`  | `input  addr_t      [1:0]` | base address for each port                             |
 
 
+
 ## Register Address Mapping
 
-This table describes the type of register and the respective address mapping. The address depends on the parameter `AxiDataWidth` and the respective `base_addr_i[*]` of the port accociated to the index.
+This table describes the type of register and the respective address mapping. The address depends on the parameter `AxiDataWidth` and the respective `base_addr_i[*]` of the port associated to the index.
 There are two example columns given for the resulting address for a `base_addr_i[*]` of `'0` and `AxiDataWidth` of 32 and 64 bit.
-Each register has one of the acces types `R/W = read and write`, `R = read-only` and `W = write-only`. Writes to read-only and reads from write-only registers are responded by an `axi_pkg::RESP_SLVERR`.
+Each register has one of the access types `R/W = read and write`, `R = read-only` and `W = write-only`. Writes to read-only and reads from write-only registers are responded by an `axi_pkg::RESP_SLVERR`.
 
 | Base Address + Offset\*AxiDataWidth/8 | Address for `AxiDataWidth = 32` | Address for `AxiDataWidth = 64` | Register Name                     | Access Type | Default Value | Description                       |
 |:--------------------------------------|:-------------------------------:|:-------------------------------:|:---------------------------------:|:-----------:|:-------------:|:----------------------------------|
@@ -51,105 +54,112 @@ Each register has one of the acces types `R/W = read and write`, `R = read-only`
 | base_addr_i + 8\*AxiDataWidth/8       | 0x20                            | 0x40                            | [IRQP](#irqp-register)            | R           | `0x0`         | Interrupt pending register        |
 | base_addr_i + 9\*AxiDataWidth/8       | 0x24                            | 0x48                            | [CRTL](#ctrl-register)            | R/W         | `0x0`         | Module control register           |
 
+
 ### MBOXW Register
 
 Mailbox write register. Write here to send data to the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [WIRQT Register](#wirqt-register) (if enabled).
 Writes are ignored when the FIFO is full and a `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
+
 ### MBOXR Register
 
-Mailbox read register. Read here to recieve data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
-When the FIFO is empty the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
+Mailbox read register. Read here to receive data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
+When the FIFO is empty, the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
+
 
 ### STATUS Register
 
-Mailbox status register. This register holds the current status of the mailbox.
+Mailbox status register. This read-only register holds the current status of the mailbox.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                           |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:4` | Reserved |             |             | Reserved                                                                                                                                                                              |
-| `3`                | WFIFOL   | R           | `1'b0`      | Write FIFO level is higher than the threshold set in `WIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Write FIFO level is higher than the threshold.   |
-| `2`                | RFIFOL   | R           | `1'b0`      | Read FIFO level is higher than the threshold set in `RIRQT` <br/>[0]: Write Read level is less or equal to the threshold. <br/>[1]: Read FIFO level is higher than the threshold.     |
-| `1`                | Full     | R           | `1'b0`      | Write FIFO is full and subsequent writes to `MBOX` are ignored <br/>[0]: Space for write data. <br/>[1]: No space for data, writes are ignored and error on transaction is generated. |
-| `0`                | Empty    | R           | `1'b1`      | Read FIFO is empty <br/>[0]: Data is available. <br/>[1]: No available data, reads respond with `axi_pkg::RESP_SLVERR`.                                                               |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                                |
+|:------------------:|:--------:|:-----------:|:-----------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:4` | Reserved |             |             | Reserved                                                                                                                                                                                   |
+| `3`                | RFIFOL   | R           | `1'b0`      | Read FIFO level is higher than the threshold set in `RIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Read FIFO level is higher than the threshold.          |
+| `2`                | WFIFOL   | R           | `1'b0`      | Write FIFO level is higher than the threshold set in `WIRQT` <br/>[0]: Write FIFO level is less or equal to the threshold. <br/>[1]: Write FIFO level is higher than the threshold.        |
+| `1`                | Full     | R           | `1'b0`      | Write FIFO is full and subsequent writes to mailbox are ignored <br/>[0]: Space for write data. <br/>[1]: No space for data, writes are ignored and responded with `axi_pkg::RESP_SLVERR`. |
+| `0`                | Empty    | R           | `1'b1`      | Read FIFO is empty <br/>[0]: Data is available. <br/>[1]: No available data, reads respond with `axi_pkg::RESP_SLVERR`.                                                                    |
 
 
 ### ERROR Register
 
-Mailbox error register. This read only register contains information if from an empty read FIFO was read, or to a full FIFO was data written and ignored. This register is cleared on read.
+Mailbox error register. This read-only register contains information if a read occurred on an empty FIFO or a write occurred on a full FIFO. This register is cleared on read.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                          |
-|:------------------:|:--------:|:-----------:|:-----------:|:-------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:2` | Reserved |             |             | Reserved                                                                             |
-| `1`                | Full     | R           | `1'b0`      | Attempted write to a full `MBOX`. <br/>[0]: No Error. <br/>[1]: `MBOX` write error.  |
-| `0`                | Empty    | R           | `1'b1`      | Attempted read from an empty `MBOX` <br/>[0]: No Error. <br/>[1]: `MBOX` read error. |
+| Bit(s)             | Name        | Access Type | Reset Value | Description                                                                            |
+|:------------------:|:-----------:|:-----------:|:-----------:|:---------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:2` | Reserved    |             |             | Reserved                                                                               |
+| `1`                | Write Error | R           | `1'b0`      | Attempted write to a full mailbox. <br/>[0]: No Error. <br/>[1]: Mailbox write error.  |
+| `0`                | Read Error  | R           | `1'b1`      | Attempted read from an empty mailbox <br/>[0]: No Error. <br/>[1]: Mailbox read error. |
 
 
 ### WIRQT Register
 
-Write interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the usage pointer of the FIFO connected to the W channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the write FIFO is full.
+Write interrupt request threshold register. When the usage pointer of the FIFO connected to the W channel exceeds this value, a write threshold IRQ is triggered and the corresponding [STATUS register](#status-register) bit is set.
+When a value larger than or equal to the `MailboxDepth` parameter is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an IRQ is triggered when the write FIFO is full.
 
-| Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
-|:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
-| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                                     |
-| `$clog2(MailboxDepth)-1:0`            | `WIRQT`  | R/W         | `'0`        | The lower $clog2(MailboxDepth) bits are used |
+| Bit(s)                                | Name     | Access Type | Reset Value | Description               |
+|:-------------------------------------:|:--------:|:-----------:|:-----------:|:--------------------------|
+| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                  |
+| `$clog2(MailboxDepth)-1:0`            | `WIRQT`  | R/W         | `'0`        | Write IRQ threshold level |
 
 
 ### RIRQT Register
 
-Read interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the fill pointer of the FIFO connected to the R channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the read FIFO is full.
+Read interrupt request threshold register. When the fill pointer of the FIFO connected to the R channel exceeds this value, a read threshold IRQ is triggered and the corresponding [STATUS register](#status-register) bit is set.
+When a value larger than or equal to the `MailboxDepth` parameter is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an IRQ is triggered when the read FIFO is full.
 
-| Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
-|:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
-| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                                     |
-| `$clog2(MailboxDepth)-1:0`            | `RIRQT`  | R/W         | `'0`        | The lower $clog2(MailboxDepth) bits are used |
+| Bit(s)                                | Name     | Access Type | Reset Value | Description              |
+|:-------------------------------------:|:--------:|:-----------:|:-----------:|:-------------------------|
+| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                 |
+| `$clog2(MailboxDepth)-1:0`            | `RIRQT`  | R/W         | `'0`        | Read IRQ threshold level |
+
 
 ### IRQS Register
 
-Interrupt request status register. This register holds the current interrupt status of this slave port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also fire, when the respective interrupt is not enabled.
-* `EIRQ`:  Error interrupt request, is set to high, when there was an attempted read from an empty `MBOX` or to write on a full `MBOX`.
+Interrupt request status register. This register holds the current interrupt status of this slave port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also get updated when the respective interrupt is not enabled.
+* `EIRQ`:  Error interrupt request, is set to high when there was a read from an empty mailbox or a write to a full mailbox.
 * `RTIRQ`: Read threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the R channel is higher than the threshold set in `RIRQT`.
-* `WEIRQ`: Write error interrupt request, is set to high, when there was an attempted write to a full write FIFO. Will not change when the interrupt is not enabled in `IRQEN`.
-This register allows acknowledgment of the respective interrupts. To acknowledge an interrupt request write a `1'b1` to the corresponding bit described in following table.
+* `WTIRQ`: Write threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the W channel is higher than the threshold set in `WIRQT`.
+To acknowledge an interrupt request write a `1'b1` to the corresponding bit described in following table.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                     |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                                                                                                                        |
-| `2`                | `EIRQ`   | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Error on MBOX access                <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
-| `1`                | `RTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in read MBOX  <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
-| `0`                | `WTIRQ`  | R/W         | 1'b0        | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in write MBOX <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                                                                                                                                                 |
+|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                                                                                                                                    |
+| `2`                | `EIRQ`   | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Error on mailbox access                        <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request  |
+| `1`                | `RTIRQ`  | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in read mailbox exceeded  <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
+| `0`                | `WTIRQ`  | R/W         | `1'b0`      | On read: <br/>[0]: No interrupt request <br/>[1]: Usage level threshold in write mailbox exceeded <br/>On write: <br/>[0]: No acknowledge <br/>[1]: Acknowledge and clear interrupt request |
+
 
 ### IRQEN Register
 
-Interrupt request enable register. Here the four interrupts from [IRQS](#irqs-register) can be enabled by writing to the corresponding bit in following table.
+Interrupt request enable register. Here the interrupts from [IRQS](#irqs-register) can be enabled by setting the corresponding bit in the following table.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                         |
-|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------|
-| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                            |
-| `2`                | `EIRQ`   | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
-| `1`                | `RTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
-| `0`                | `WTIRQ`  | R/W         | 1'b0        | [0]: Interrupt request disabled <br/>[1]: Interrupt request enabled |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                             |
+|:------------------:|:--------:|:-----------:|:-----------:|:------------------------------------------------------------------------|
+| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                |
+| `2`                | `EIRQ`   | R/W         | `1'b0`      | [0]: Error IRQ disabled <br/>[1]: Error IRQ enabled                     |
+| `1`                | `RTIRQ`  | R/W         | `1'b0`      | [0]: Read threshold IRQ disabled <br/>[1]: Read threshold IRQ enabled   |
+| `0`                | `WTIRQ`  | R/W         | `1'b0`      | [0]: Write threshold IRQ disabled <br/>[1]: Write threshold IRQ enabled |
+
 
 ### IRQP Register
 
-Interrupt request pending register. This register holds the pending interrupts for this slave port and is read only. It is generated by the bitwise and of the [IRQS](#irqs-register) and [IRQEN](#irqen-register) registers.
+Interrupt request pending register. This read-only register holds the pending interrupts for this slave port. It is generated by the bitwise AND of the [IRQS](#irqs-register) and [IRQEN](#irqen-register) registers.
 An interrupt gets triggered by the OR of the bits of this register.
 
-| Bit(s)             | Name     | Access Type | Reset Value | Description                                                           |
-|:------------------:|:--------:|:-----------:|:-----------:|:----------------------------------------------------------------------|
-| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                              |
-| `2`                | `EIRQ`   | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: Error pending                |
-| `1`                | `RTIRQ`  | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: MBOX read threshold pending  |
-| `0`                | `WTIRQ`  | R           | 1'b0        | [0]: Interrupt request pending <br/>[1]: MBOX write threshold pending |
+| Bit(s)             | Name     | Access Type | Reset Value | Description                                                               |
+|:------------------:|:--------:|:-----------:|:-----------:|:--------------------------------------------------------------------------|
+| `AxiDataWidth-1:3` | Reserved |             |             | Reserved                                                                  |
+| `2`                | `EIRQ`   | R           | `1'b0`      | [0]: No error IRQ pending <br/>[1]: Error IRQ pending                     |
+| `1`                | `RTIRQ`  | R           | `1'b0`      | [0]: No read threshold IRQ pending <br/>[1]: Read threshold IRQ pending   |
+| `0`                | `WTIRQ`  | R           | `1'b0`      | [0]: No write threshold IRQ pending <br/>[1]: Write threshold IRQ pending |
+
 
 ### CTRL Register
 
-Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal at each FIFO is the OR combination of the respective bits of this register at each slave port. On register write, the FIFO is cleared and the register is reset.
+Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal of each FIFO is the OR combination of the respective bit of this register at each slave port. On register write, the FIFO is cleared and the register is reset.
 
 | Bit(s)             | Name     | Access Type | Reset Value | Description                                  |
 |:------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
 | `AxiDataWidth-1:2` | Reserved |             |             | Reserved                                     |
-| `1`                | `RTIRQ`  | W           | 1'b0        | Flush the read MBOX FIFO for this port       |
-| `0`                | `WTIRQ`  | W           | 1'b0        | Flush the write MBOX FIFO for this port      |
+| `1`                | `RTIRQ`  | W           | `1'b0`      | Flush the read FIFO for this port            |
+| `0`                | `WTIRQ`  | W           | `1'b0`      | Flush the write FIFO for this port           |
