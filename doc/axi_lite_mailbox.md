@@ -104,13 +104,14 @@ When a value larger than or equal to the `MailboxDepth` parameter is written to 
 
 ### RIRQT Register
 
-Read interrupt request threshold register for a slave port. The corresponding [STATUS register](#status-register) bit is set, when the fill pointer of the FIFO connected to the R channel passes this value.
-When a value larger or equal than the parameter `MailboxDepth` is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an interrupt request trigger on FIFO usage, when the read FIFO is full.
+Read interrupt request threshold register. When the fill pointer of the FIFO connected to the R channel exceeds this value, a read threshold IRQ is triggered and the corresponding [STATUS register](#status-register) bit is set.
+When a value larger than or equal to the `MailboxDepth` parameter is written to this register, it gets reduced to `MailboxDepth - 1` to ensure an IRQ is triggered when the read FIFO is full.
 
-| Bit(s)                                | Name     | Access Type | Reset Value | Description                                  |
-|:-------------------------------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|
-| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                                     |
-| `$clog2(MailboxDepth)-1:0`            | `RIRQT`  | R/W         | `'0`        | The lower $clog2(MailboxDepth) bits are used |
+| Bit(s)                                | Name     | Access Type | Reset Value | Description              |
+|:-------------------------------------:|:--------:|:-----------:|:-----------:|:-------------------------|
+| `AxiDataWidth-1:$clog2(MailboxDepth)` | Reserved |             |             | Reserved                 |
+| `$clog2(MailboxDepth)-1:0`            | `RIRQT`  | R/W         | `'0`        | Read IRQ threshold level |
+
 
 ### IRQS Register
 
