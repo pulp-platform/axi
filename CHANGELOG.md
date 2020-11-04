@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+
+### Fixed
+
+
+## 0.24.1 - 2020-11-04
+
+### Changed
 - Update `common_cells` dependency to `1.20.0` to fix file order in IPApproX.
 
 ### Fixed
