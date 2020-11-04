@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
-- Bump `common_cells` to `1.20.0`
+- Update `common_cells` dependency to `1.20.0` to fix file order in IPApproX.
 
 ### Fixed
 - `doc/axi_lite_mailbox`: Fix position of `RFIFOL` and `WFIFOL` in `STATUS` register.
+- IPApproX:
+  - Add missing link against `common_cells_lib`.
+  - Fix include path for `common_cells`.
+  - Fix version specification of `common_verification`.
 
 
 ## 0.24.0 - 2020-10-27
