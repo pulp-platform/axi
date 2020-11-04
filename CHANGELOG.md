@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- Bump `common_cells` to `1.20.0`
 
 ### Fixed
 - `doc/axi_lite_mailbox`: Fix position of `RFIFOL` and `WFIFOL` in `STATUS` register.
