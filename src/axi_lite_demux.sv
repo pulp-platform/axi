@@ -48,6 +48,18 @@ module axi_lite_demux #(
   input  resp_t [NoMstPorts-1:0] mst_resps_i
 );
 
+  //--------------------------------------
+  // Typedefs for the spill registers
+  //--------------------------------------
+  typedef struct packed {
+    aw_chan_t aw;
+    select_t  select;
+  } aw_chan_select_t;
+  typedef struct packed {
+    ar_chan_t ar;
+    select_t  select;
+  } ar_chan_select_t;
+
   if (NoMstPorts == 32'd1) begin : gen_no_demux
     // degenerate case, connect slave to master port
     // AW channel
@@ -56,17 +68,6 @@ module axi_lite_demux #(
   end else begin : gen_demux
     // normal non degenerate case
 
-    //--------------------------------------
-    // Typedefs for the spill registers
-    //--------------------------------------
-    typedef struct packed {
-      aw_chan_t aw;
-      select_t  select;
-    } aw_chan_select_t;
-    typedef struct packed {
-      ar_chan_t ar;
-      select_t  select;
-    } ar_chan_select_t;
 
     //--------------------------------------
     //--------------------------------------
