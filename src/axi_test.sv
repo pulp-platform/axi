@@ -1487,11 +1487,11 @@ package axi_test;
 
   class rand_axi_lite_slave #(
     // AXI interface parameters
-    parameter int   AW,
-    parameter int   DW,
+    parameter int   AW = 0,
+    parameter int   DW = 0,
     // Stimuli application and test time
-    parameter time  TA,
-    parameter time  TT,
+    parameter time  TA = 2ns,
+    parameter time  TT = 8ns,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
     parameter int   AX_MAX_WAIT_CYCLES = 100,
@@ -1523,6 +1523,8 @@ package axi_test;
     );
       this.drv = new(axi);
       this.name = name;
+      assert(AW != 0) else $fatal(1, "Address width must be non-zero!");
+      assert(DW != 0) else $fatal(1, "Data width must be non-zero!");
     endfunction
 
     function void reset();
