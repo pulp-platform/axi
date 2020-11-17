@@ -1487,8 +1487,8 @@ package axi_test;
 
   class rand_axi_lite_slave #(
     // AXI interface parameters
-    parameter int   AW = 0,
-    parameter int   DW = 0,
+    parameter int unsigned AW = 0,
+    parameter int unsigned DW = 0,
     // Stimuli application and test time
     parameter time  TA = 2ns,
     parameter time  TT = 8ns,
