@@ -1318,11 +1318,11 @@ package axi_test;
   // AXI4-Lite random master and slave
   class rand_axi_lite_master #(
     // AXI interface parameters
-    parameter int   AW,
-    parameter int   DW,
+    parameter int   AW = 0,
+    parameter int   DW = 0,
     // Stimuli application and test time
-    parameter time  TA,
-    parameter time  TT,
+    parameter time  TA = 2ns,
+    parameter time  TT = 8ns,
     parameter int unsigned MIN_ADDR = 32'h0000_0000,
     parameter int unsigned MAX_ADDR = 32'h1000_0000,
     // Maximum number of open transactions
@@ -1360,6 +1360,8 @@ package axi_test;
     );
       this.drv  = new(axi);
       this.name = name;
+      assert(AW != 0) else $fatal(1, "Address width must be non-zero!");
+      assert(DW != 0) else $fatal(1, "Data width must be non-zero!");
     endfunction
 
     function void reset();
