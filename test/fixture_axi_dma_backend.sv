@@ -23,7 +23,7 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // Parameters
-    //-------------------------------------- 
+    //--------------------------------------
     localparam TA          = 0.2ns;  // must be nonzero to avoid Snitch load fifo double pop glitch
     localparam TT          = 0.8ns;
     localparam HalfPeriod  = 50ns;
@@ -58,21 +58,22 @@ module fixture_axi_dma_backend();
         axi_pkg::burst_t    burst_src, burst_dst;
         logic               decouple_rw;
         logic               deburst;
+        logic               serialize;
     } burst_req_t;
 
     `AXI_TYPEDEF_AW_CHAN_T(aw_chan_dma_t, addr_t, axi_id_t, user_t)
     `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
     `AXI_TYPEDEF_B_CHAN_T(b_chan_dma_t, axi_id_t, user_t)
-    
+
     `AXI_TYPEDEF_AR_CHAN_T(ar_chan_dma_t, addr_t, axi_id_t, user_t)
     `AXI_TYPEDEF_R_CHAN_T(r_chan_dma_t, data_t, axi_id_t, user_t)
-    
+
     `AXI_TYPEDEF_REQ_T(dma_req_t, aw_chan_dma_t, w_chan_t, ar_chan_dma_t)
     `AXI_TYPEDEF_RESP_T(dma_resp_t, b_chan_dma_t, r_chan_dma_t)
-    
+
     //--------------------------------------
     // Clock and Reset
-    //-------------------------------------- 
+    //--------------------------------------
     logic clk;
     initial begin
         forever begin
@@ -97,40 +98,40 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // DUT Axi busses
-    //-------------------------------------- 
+    //--------------------------------------
     dma_req_t  axi_dma_req;
     dma_resp_t axi_dma_res;
-    
+
     AXI_BUS_DV #(
         .AXI_ADDR_WIDTH  ( AddrWidth   ),
         .AXI_DATA_WIDTH  ( DataWidth   ),
         .AXI_ID_WIDTH    ( IdWidth     ),
         .AXI_USER_WIDTH  ( 1           )
     ) dma (clk);
-    
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH  ( AddrWidth   ),
         .AXI_DATA_WIDTH  ( DataWidth   ),
         .AXI_ID_WIDTH    ( IdWidth     ),
         .AXI_USER_WIDTH  ( 1           )
     ) mem ();
-    
+
     `AXI_ASSIGN (dma, mem)
     `AXI_ASSIGN_FROM_REQ(mem, axi_dma_req)
     `AXI_ASSIGN_TO_RESP(axi_dma_res, mem)
 
     //--------------------------------------
     // DUT AXI Memory System
-    //-------------------------------------- 
+    //--------------------------------------
     // lfsr
     logic [784:0] lfsr_dut_q, lfsr_dut_d;
 
     // transaction id
     logic [  7:0] transaction_id = 0;
-    
+
     // Memory
     block_t dma_memory [bit [64-$clog2($bits(block_t))-1:0]];
-    
+
     // Handle the data output from dma. Model of the memory acting as AXI slave.
     typedef axi_test::axi_driver #(.AW(AddrWidth), .DW(DataWidth), .IW(IdWidth), .UW(1), .TA(0.1*2*HalfPeriod), .TT(0.9*2*HalfPeriod)) driver_dma_t;
     driver_dma_t driver_dma = new(dma);
@@ -138,22 +139,22 @@ module fixture_axi_dma_backend();
         automatic driver_dma_t::ax_beat_t aw_dma_queue[$], ar_dma_queue[$];
         automatic driver_dma_t::b_beat_t b_dma_queue[$];
         automatic string sb = "";
-        
+
         event ar_dma_received, aw_dma_received, b_dma_ready;
         event lfsr_dut_read;
         event lfsr_dut_read_completed;
-        
+
         driver_dma.reset_slave();
         @(posedge rst_n);
         $display("AXI reset done");
-        
+
         fork
             // AW
             forever begin
                 automatic driver_dma_t::ax_beat_t dma_tx;
                 driver_dma.recv_aw(dma_tx);
 `ifdef MEM_DEBUG
-                $display("%d: AW - id: %4d - addr: %d - len: %4d - size: %4d - burst: %b", 
+                $display("%d: AW - id: %4d - addr: %d - len: %4d - size: %4d - burst: %b",
                              $time(), dma_tx.ax_id, dma_tx.ax_addr, dma_tx.ax_len, dma_tx.ax_size, dma_tx.ax_burst );
 `endif
                 aw_dma_queue.push_back(dma_tx);
@@ -164,7 +165,7 @@ module fixture_axi_dma_backend();
                 automatic driver_dma_t::ax_beat_t dma_tx;
                 driver_dma.recv_ar(dma_tx);
 `ifdef MEM_DEBUG
-                $display("%d: AR - id: %4d - addr: %d - len: %4d - size: %4d - burst: %b", 
+                $display("%d: AR - id: %4d - addr: %d - len: %4d - size: %4d - burst: %b",
                             $time(), dma_tx.ax_id, dma_tx.ax_addr, dma_tx.ax_len, dma_tx.ax_size, dma_tx.ax_burst );
 `endif
                 ar_dma_queue.push_back(dma_tx);
@@ -189,12 +190,12 @@ module fixture_axi_dma_backend();
                         lfsr_dut_d[692] = lfsr_dut_q[0] ^ lfsr_dut_q[693];
                         lfsr_dut_q      = lfsr_dut_d;
                     end
-                end 
+                end
                 dma_tx.r_data = dma_memory[word].data;
                 dma_tx.r_resp = axi_pkg::RESP_OKAY;
                 dma_tx.r_last = (dma_ax.ax_len == 0);
 `ifdef MEM_DEBUG
-                $display("%d:  R - id: %4d - data: %x - resp: %x                - last: %b (0x%x)", 
+                $display("%d:  R - id: %4d - data: %x - resp: %x                - last: %b (0x%x)",
                         $time(), dma_tx.r_id, dma_tx.r_data, dma_tx.r_resp, dma_tx.r_last, word << 6);
 `endif
                 dma_ax.ax_addr >>= dma_ax.ax_size;
@@ -223,7 +224,7 @@ module fixture_axi_dma_backend();
                     end
                 end
 `ifdef MEM_DEBUG
-                $display("%d:  W -            data: %x - strb: %x - last: %b (0x%x)", 
+                $display("%d:  W -            data: %x - strb: %x - last: %b (0x%x)",
                        $time(), dma_tx.w_data, dma_tx.w_strb, dma_tx.w_last, word << 6);
 `endif
                 dma_ax.ax_addr >>= dma_ax.ax_size;
@@ -251,7 +252,7 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // DMA instantiation
-    //-------------------------------------- 
+    //--------------------------------------
     burst_req_t burst_req;
     logic burst_req_valid;
     logic burst_req_ready;
@@ -284,13 +285,14 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // DMA DUT tasks
-    //-------------------------------------- 
+    //--------------------------------------
     task oned_dut_launch (
         input logic [   IdWidth-1:0] transf_id_i,
         input logic [ AddrWidth-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
         input logic [           1:0] src_burst_i, dst_burst_i,
         input logic [           3:0] src_cache_i, dst_cache_i,
         input logic                  decouple_rw_i,
+        input logic                  serialize_i,
         input logic                  deburst_i
     );
         burst_req_valid        <= 1'b0;
@@ -308,6 +310,7 @@ module fixture_axi_dma_backend();
         burst_req.burst_dst    <= dst_burst_i;
         burst_req.decouple_rw  <= decouple_rw_i;
         burst_req.deburst      <= deburst_i;
+        burst_req.serialize    <= serialize_i;
         burst_req_valid        <= 1'b1;
         // wait and set to 0
         @(posedge clk);
@@ -336,7 +339,7 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // Osmium Model
-    //-------------------------------------- 
+    //--------------------------------------
     // Memory
     block_t osmium_memory [bit [64-$clog2($bits(block_t))-1:0]];
     // lfsr
@@ -348,7 +351,8 @@ module fixture_axi_dma_backend();
         input logic [           1:0] src_burst_i, dst_burst_i,
         input logic [           3:0] src_cache_i, dst_cache_i,
         input logic                  decouple_rw_i,
-        input logic                  deburst_i
+        input logic                  deburst_i,
+        input logic                  serialize_i
     );
         logic [63:0] read_addr,   write_addr;
         logic [63:0] read_word,   write_word;
@@ -377,8 +381,8 @@ module fixture_axi_dma_backend();
             // do the write
             osmium_memory[write_word].bytes[write_offset] = osmium_memory[read_word].bytes[read_offset];
             // $display("W: %d - %d    R: %d - %d", write_word, write_offset, read_word, read_offset);
-        end 
-        
+        end
+
     endtask
 
     task clear_osmium_memory ();
@@ -391,14 +395,14 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // Compare Memory content
-    //-------------------------------------- 
+    //--------------------------------------
     task compare_memories ();
 
-        // go through osmium memory and compare contents 
+        // go through osmium memory and compare contents
         foreach(osmium_memory[i]) begin
             if (osmium_memory[i] !== dma_memory[i]) $fatal("Memory mismatch @ %x\nexpect: %x\ngot   :%x\n", i << 6, osmium_memory[i], dma_memory[i]);
         end
-        // go through dma memory and compare contents 
+        // go through dma memory and compare contents
         foreach(dma_memory[i]) begin
             if (osmium_memory[i] !== dma_memory[i]) $fatal("Memory mismatch @ %x\nexpect: %x\ngot   :%x\n", i << 6, osmium_memory[i], dma_memory[i]);
         end
@@ -410,7 +414,7 @@ module fixture_axi_dma_backend();
 
     //--------------------------------------
     // Master tasks
-    //-------------------------------------- 
+    //--------------------------------------
 
     task clear_memory ();
         clear_dut_memory();
@@ -427,22 +431,23 @@ module fixture_axi_dma_backend();
         input logic [ AddrWidth-1:0] src_addr_i,  dst_addr_i,  num_bytes_i,
         input logic                  decouple_rw_i,
         input logic                  deburst_i,
+        input logic                  serialize_i,
         input logic                  wait_for_completion_i
-    );  
+    );
         // keep a log file
         int my_file;
         my_file = $fopen("dma_transfers.txt", "a+");
-        $write("ID: %d  SRC: 0x%x  DST: 0x%x  LEN: %d  DECOUPLE: %1b DEBURST: %1b ", transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, decouple_rw_i, deburst_i );
-        $fwrite (my_file, "ID: %d  SRC: 0x%x  DST: 0x%x  LEN: %d  DECOUPLE: %1b DEBURST: %1b\n", transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, decouple_rw_i, deburst_i );
+        $write("ID: %d  SRC: 0x%x  DST: 0x%x  LEN: %d  DECOUPLE: %1b DEBURST: %1b SERIALIZE: %1b", transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, decouple_rw_i, deburst_i, serialize_i );
+        $fwrite (my_file, "ID: %d  SRC: 0x%x  DST: 0x%x  LEN: %d  DECOUPLE: %1b DEBURST: %1b SERIALIZE: %1b\n", transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, decouple_rw_i, deburst_i, serialize_i );
         $fclose(my_file);
-        
-        // cache and burst is ignored 
-        oned_dut_launch(transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, 2'b01, 2'b01, 4'h0, 4'h0, decouple_rw_i, deburst_i);
+
+        // cache and burst is ignored
+        oned_dut_launch(transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, 2'b01, 2'b01, 4'h0, 4'h0, decouple_rw_i, deburst_i, serialize_i);
         // wait if requested
         if (wait_for_completion_i)
             wait_for_dut_completion();
         // run model
-        oned_osmium_launch(transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, 2'b01, 2'b01, 4'h0, 4'h0, decouple_rw_i, deburst_i);
+        oned_osmium_launch(transf_id_i, src_addr_i, dst_addr_i, num_bytes_i, 2'b01, 2'b01, 4'h0, 4'h0, decouple_rw_i, deburst_i, serialize_i);
     endtask
 
     task reset ();
@@ -464,6 +469,7 @@ module fixture_axi_dma_backend();
         logic [ AddrWidth-1:0] src_addr,  dst_addr,  num_bytes;
         logic                  decouple_rw;
         logic                  deburst;
+        logic                  serialize;
 
         transf_id         = $urandom();
         // transf_id         = transaction_id;
@@ -475,11 +481,12 @@ module fixture_axi_dma_backend();
         num_bytes[15: 0]  = $urandom_range(max_len, 1);
         decouple_rw       = $urandom();
         deburst           = $urandom();
+        serialize         = $urandom();
 
         // transaction_id    = transaction_id + 1;
 
-        oned_launch(transf_id, src_addr, dst_addr, num_bytes, decouple_rw, deburst, wait_for_completion);
+        oned_launch(transf_id, src_addr, dst_addr, num_bytes, decouple_rw, deburst, serialize, wait_for_completion);
 
     endtask
-    
+
 endmodule : fixture_axi_dma_backend
