@@ -13,38 +13,89 @@
 // axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
 // See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar #(
-  parameter axi_pkg::xbar_cfg_t Cfg = '0,
-  parameter bit  ATOPs              = 1'b1,
-  parameter type slv_aw_chan_t      = logic,
-  parameter type mst_aw_chan_t      = logic,
-  parameter type w_chan_t           = logic,
-  parameter type slv_b_chan_t       = logic,
-  parameter type mst_b_chan_t       = logic,
-  parameter type slv_ar_chan_t      = logic,
-  parameter type mst_ar_chan_t      = logic,
-  parameter type slv_r_chan_t       = logic,
-  parameter type mst_r_chan_t       = logic,
-  parameter type slv_req_t          = logic,
-  parameter type slv_resp_t         = logic,
-  parameter type mst_req_t          = logic,
-  parameter type mst_resp_t         = logic,
-  parameter type rule_t             = axi_pkg::xbar_rule_64_t
+  /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
+  parameter axi_pkg::xbar_cfg_t Cfg = '0, 
+  /// Enable atomic operations support.
+  parameter bit ATOPs = 1'b1,
+  /// AXI4+ATOP AW channel struct type for the slave ports.
+  parameter type slv_aw_chan_t = logic,
+  /// AXI4+ATOP AW channel struct type for the master ports.
+  parameter type mst_aw_chan_t = logic,
+  /// AXI4+ATOP W channel struct type for all ports.
+  parameter type w_chan_t = logic,
+  /// AXI4+ATOP B channel struct type for the slave ports.
+  parameter type slv_b_chan_t = logic,
+  /// AXI4+ATOP B channel struct type for the master ports.
+  parameter type mst_b_chan_t = logic,
+  /// AXI4+ATOP AR channel struct type for the slave ports.
+  parameter type slv_ar_chan_t = logic,
+  /// AXI4+ATOP AR channel struct type for the master ports.
+  parameter type mst_ar_chan_t = logic,
+  /// AXI4+ATOP R channel struct type for the slave ports.
+  parameter type slv_r_chan_t = logic,
+  /// AXI4+ATOP R channel struct type for the master ports.
+  parameter type mst_r_chan_t = logic,
+  /// AXI4+ATOP request struct type for the slave ports.
+  parameter type slv_req_t = logic,
+  /// AXI4+ATOP response struct type for the slave ports.
+  parameter type slv_resp_t = logic,
+  /// AXI4+ATOP request struct type for the master ports.
+  parameter type mst_req_t = logic,
+  /// AXI4+ATOP response struct type for the master ports.
+  parameter type mst_resp_t = logic,
+  /// Address rule type for the address decoders from `common_cells:addr_decode`.
+  ///
+  /// Example types are provided in `axi_pkg`.
+  ///
+  /// Required struct fields:
+  ///
+  /// typedef struct packed {
+  ///   int unsigned idx;
+  ///   axi_addr_t   start_addr;
+  ///   axi_addr_t   end_addr;
+  /// } rule_t;
+  parameter type rule_t = axi_pkg::xbar_rule_64_t,
+  /// Dependent parameter, do **not** override!
+  /// Width of the index specifying a master port.
+  parameter int unsigned DefaultIdxWidth = cf_math_pkg::idx_width(Cfg.NoMstPorts),
+  /// Dependent parameter, do **not** override!
+  /// Type of index for a default master port.
+  parameter type default_idx_t = logic [DefaultIdxWidth-1:0]
 ) (
-  input  logic                                                       clk_i,
-  input  logic                                                       rst_ni,
-  input  logic                                                       test_i,
-  input  slv_req_t  [Cfg.NoSlvPorts-1:0]                             slv_ports_req_i,
-  output slv_resp_t [Cfg.NoSlvPorts-1:0]                             slv_ports_resp_o,
-  output mst_req_t  [Cfg.NoMstPorts-1:0]                             mst_ports_req_o,
-  input  mst_resp_t [Cfg.NoMstPorts-1:0]                             mst_ports_resp_i,
-  input  rule_t     [Cfg.NoAddrRules-1:0]                            addr_map_i,
-  input  logic      [Cfg.NoSlvPorts-1:0]                             en_default_mst_port_i,
-  input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
+  /// Clock, positive edge triggered.
+  input  logic clk_i,
+  /// Asynchronous reset, active low.
+  input  logic rst_ni,
+  /// Testmode enable, active high.
+  input  logic test_i,
+  /// AXI4+ATOP requests to the slave ports.
+  input  slv_req_t  [Cfg.NoSlvPorts-1:0] slv_ports_req_i,
+  /// AXI4+ATOP responses of the slave ports.
+  output slv_resp_t [Cfg.NoSlvPorts-1:0] slv_ports_resp_o,
+  /// AXI4+ATOP requests of the master ports.
+  output mst_req_t  [Cfg.NoMstPorts-1:0] mst_ports_req_o,
+  /// AXI4+ATOP responses to the master ports.
+  input  mst_resp_t [Cfg.NoMstPorts-1:0] mst_ports_resp_i,
+  /// Address map array input for the crossbar. This map is global for the whole module.
+  /// It is used for routing the transactions to the respective master ports.
+  /// Each master port can have multiple different rules.
+  input  rule_t [Cfg.NoAddrRules-1:0] addr_map_i,
+  /// Enables a default master port for each slave port. When this is enabled unmapped
+  /// transactions get issued at the master port given by `default_mst_port_i`.
+  ///
+  /// When not used, tie to `'0`.
+  input  logic [Cfg.NoSlvPorts-1:0] en_default_mst_port_i,
+  /// For each slave port the default index where the transaction should be routed, if
+  /// for this slave port the default index functionality is enabled by setting the
+  /// bit `en_default_mst_port_i[slave_port_idx]` to `'1`.
+  ///
+  /// When not used, tie to `'0`.
+  input  default_idx_t [Cfg.NoSlvPorts-1:0] default_mst_port_i
 );
 
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
   // to account for the decoding error slave
-  typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
+  typedef logic [cf_math_pkg::idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 
   // signals from the axi_demuxes, one index more for decode error
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
