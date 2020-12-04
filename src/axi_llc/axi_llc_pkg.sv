@@ -226,6 +226,9 @@ package axi_llc_pkg;
     cb_filter_pkg::cb_seed_t'{PermuteSeed: 32'd294388,    XorSeed: 32'd65146511 }
   };
 
+  /// Depth of the W channel pipeline inside the write unit to reduce W stalling
+  /// as long as the corresponding AW is still in lookup.
+  parameter int unsigned WChanBufferDepth = 32'd6;
   /// Number of simultaneous eviction transactions.
   parameter int unsigned EvictFifoDepth   = 32'd4;
   /// Number of descriptors between eviction and refill.
