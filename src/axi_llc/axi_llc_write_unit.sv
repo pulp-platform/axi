@@ -83,9 +83,35 @@ module axi_llc_write_unit #(
   desc_t         desc_d,      desc_q;
   logic          busy_d,      busy_q;
   logic          load_desc,   load_busy;
+
+  // W channel FIFO signals
+  w_chan_t       w_chan;
+  logic          w_valid, w_ready;
+
   // B spill register signals
   b_chan_t       b_chan;
   logic          b_valid, b_ready;
+
+  // W channel pipeline FIFO
+  // This FIFO buffers W beats as long as the corresponding AW
+  // vector goes through the pipeline for lookup etc.
+  stream_fifo #(
+    .FALL_THROUGH ( 1'b0                          ),
+    .DEPTH        ( axi_llc_pkg::WChanBufferDepth ),
+    .T            ( w_chan_t                      )
+  ) i_w_stream_fifo (
+    .clk_i,
+    .rst_ni,
+    .flush_i    ( 1'b0           ),
+    .testmode_i ( test_i         ),
+    .usage_o    ( /*not used*/   ),
+    .data_i     ( w_chan_slv_i   ),
+    .valid_i    ( w_chan_valid_i ),
+    .ready_o    ( w_chan_ready_o ),
+    .data_o     ( w_chan         ),
+    .valid_o    ( w_valid        ),
+    .ready_i    ( w_ready        )
+  );
 
   // way_inp assignments
   assign way_inp_o = '{
@@ -94,8 +120,8 @@ module axi_llc_write_unit #(
     line_addr:  desc_q.a_x_addr[(Cfg.ByteOffsetLength + Cfg.BlockOffsetLength) +: Cfg.IndexLength],
     blk_offset: desc_q.a_x_addr[ Cfg.ByteOffsetLength +: Cfg.BlockOffsetLength],
     we:         1'b1,
-    data:       w_chan_slv_i.data,
-    strb:       w_chan_slv_i.strb
+    data:       w_chan.data,
+    strb:       w_chan.strb
   };
 
   // assignment of the write unlock fields, which are not set with the control below
@@ -112,7 +138,7 @@ module axi_llc_write_unit #(
     load_busy        = 1'b0;
     // handshaking signals
     desc_ready_o     = 1'b0;
-    w_chan_ready_o   = 1'b0;
+    w_ready          = 1'b0;
     way_inp_valid_o  = 1'b0;
     // unlock signal
     w_unlock_req_o   = 1'b0;
@@ -128,15 +154,15 @@ module axi_llc_write_unit #(
         // as the W beat handshaking gets set here
         if (desc_q.x_resp != axi_pkg::RESP_SLVERR) begin
           // connect the handshaking
-          way_inp_valid_o = w_chan_valid_i;
-          w_chan_ready_o  = way_inp_ready_i;
+          way_inp_valid_o = w_valid;
+          w_ready         = way_inp_ready_i;
         end else begin
           // Error, eat the W beats and continue
-          w_chan_ready_o = 1'b1;
+          w_ready         = 1'b1;
         end
 
         // when a transfer occurs, look at the length field or update the descriptor
-        if (w_chan_valid_i && w_chan_ready_o) begin
+        if (w_valid && w_ready) begin
           if (desc_q.a_x_len == '0) begin
             // should a B be sent?
             if (desc_q.x_last) begin
