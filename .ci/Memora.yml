@@ -204,6 +204,22 @@ artifacts:
     outputs:
       - build/axi_lite_xbar-%.tested
 
+  axi_llc-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_llc
+      - src/axi_demux.sv
+      - src/axi_lite_regs.sv
+      - src/axi_mux.sv
+      - test/tb_axi_llc.sv
+    outputs:
+      - build/axi_llc-%.tested
+
   axi_modify_address-%:
     inputs:
       - Bender.yml
