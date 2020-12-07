@@ -30,6 +30,10 @@ module tb_axi_llc #(
   parameter int unsigned TbAxiAddrWidthLite = 32'd32,
   /// Data width of the AXI configuration port
   parameter int unsigned TbAxiDataWidthLite = 32'd32,
+  /// Number of random write transactions in a testblock.
+  parameter int unsigned TbNumWrites        = 32'd1100,
+  /// Number of random read transactions in a testblock.
+  parameter int unsigned TbNumReads         = 32'd1500,
   /// Cycle time for the TB clock generator
   parameter time         TbCyclTime         = 10ns,
   /// Application time to the DUT
@@ -188,10 +192,7 @@ module tb_axi_llc #(
   req_lite_t     axi_cfg_req;
   resp_lite_t    axi_cfg_res;
   // Tb signals
-  logic enable_counters, print_counters;
-  assign enable_counters = 1'b0;
-  assign print_counters  = 1'b0;
-
+  logic enable_counters, print_counters, enable_progress;
 
   ///////////////////////
   // AXI DV interfaces //
@@ -288,6 +289,9 @@ module tb_axi_llc #(
     mem_scoreboard.reset();
     axi_master.reset();
     axi_lite_master.reset();
+    enable_counters = 1'b0;
+    print_counters  = 1'b0;
+    enable_progress = 1'b0;
 
     // Set some mem regions for rand axi master
     axi_master.add_memory_region(CachedRegionStart, CachedRegionStart + 2*CachedRegionLength,
@@ -301,7 +305,8 @@ module tb_axi_llc #(
     @(posedge rst_n);
     cpu_scoreboard.monitor();
     mem_scoreboard.monitor();
-
+    enable_counters = 1'b1;
+    enable_progress = 1'b1;
 
     $info("Read all Cfg registers.");
     axi_lite_master.read(CfgSpm,    lite_prot, lite_rdata, lite_resp);
@@ -314,17 +319,17 @@ module tb_axi_llc #(
     axi_lite_master.read(Version,   lite_prot, lite_rdata, lite_resp);
 
     $info("Random read and write");
-    axi_master.run(5000, 5000);
+    axi_master.run(TbNumReads, TbNumWrites);
     flush_all(axi_lite_master);
     compare_mems(cpu_scoreboard, mem_scoreboard);
     clear_spm_cpu(cpu_scoreboard);
 
     $info("Enable lower half SPM");
     lite_addr  = CfgSpm;
-    lite_wdata = axi_lite_data_t'({(TbSetAssociativity/2){1'b1}});
+    lite_wdata = axi_lite_data_t'({((TbSetAssociativity == 32'd1) ? 32'd1 : (TbSetAssociativity/2)){1'b1}});
     lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
     axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
-    axi_master.run(5000, 5000);
+    axi_master.run(TbNumReads, TbNumWrites);
     flush_all(axi_lite_master);
     compare_mems(cpu_scoreboard, mem_scoreboard);
     clear_spm_cpu(cpu_scoreboard);
@@ -334,7 +339,7 @@ module tb_axi_llc #(
     lite_wdata = axi_lite_data_t'({TbSetAssociativity{1'b1}});
     lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
     axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
-    axi_master.run(5000, 5000);
+    axi_master.run(TbNumReads, TbNumWrites);
     flush_all(axi_lite_master);
     compare_mems(cpu_scoreboard, mem_scoreboard);
     clear_spm_cpu(cpu_scoreboard);
@@ -344,10 +349,14 @@ module tb_axi_llc #(
     lite_wdata = axi_lite_data_t'({TbSetAssociativity{1'b0}});
     lite_wstrb = axi_lite_strb_t'({TbAxiStrbWidthLite{1'b1}});
     axi_lite_master.write(lite_addr, lite_prot, lite_wdata, lite_wstrb, lite_resp);
-    axi_master.run(5000, 5000);
+    axi_master.run(TbNumReads, TbNumWrites);
+
+    print_perf_couters();
+
     flush_all(axi_lite_master);
     compare_mems(cpu_scoreboard, mem_scoreboard);
     clear_spm_cpu(cpu_scoreboard);
+
 
     $display("Tests ended!");
     $stop();
@@ -395,6 +404,13 @@ module tb_axi_llc #(
     $info("Finished flushing the cache!");
   endtask : flush_all
 
+  task print_perf_couters();
+    @(negedge clk);
+    print_counters = 1'b1;
+    @(negedge clk);
+    print_counters = 1'b0;
+  endtask : print_perf_couters
+
 
   ///////////////////////
   // Design under test //
@@ -436,6 +452,7 @@ module tb_axi_llc #(
   // `Perf Counter` process //
   ////////////////////////////
   localparam int unsigned NumCounters = 32'd52;
+  localparam int unsigned PrintCycles = 32'd100;
   initial begin : proc_counters
     automatic longint unsigned count [0:NumCounters-1];
     automatic longint unsigned cycle_count = 0;
@@ -454,10 +471,16 @@ module tb_axi_llc #(
         if (llc_events.aw_slv_transfer.active) begin
           count[0] = count[0] + llc_events.aw_slv_transfer.num_bytes;
           count[1] = count[1] + 64'd1;
+          if ((count[1]%PrintCycles == 0) && enable_progress) begin
+            $display("%0t> AW transaction: %d", $time(), count[1]);
+          end
         end
         if (llc_events.ar_slv_transfer.active) begin
           count[2] = count[2] + llc_events.ar_slv_transfer.num_bytes;
           count[3] = count[3] + 64'd1;
+          if ((count[3]%PrintCycles == 0) && enable_progress) begin
+            $display("%0t> AR transaction: %d", $time(), count[3]);
+          end
         end
         if (llc_events.aw_bypass_transfer.active) begin
           count[4] = count[4] + llc_events.aw_bypass_transfer.num_bytes;
