@@ -108,7 +108,6 @@ sources:
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
-      - test/tb_axi_llc_pkg.sv
       - test/tb_axi_llc.sv
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
