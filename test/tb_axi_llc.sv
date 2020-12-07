@@ -587,58 +587,58 @@ module tb_axi_llc #(
       if (print_counters) begin
         $display("##################################################################");
         $display("LLC: Performance");
-        $display("Max Bandwidth of one AXI channel: %f MiB/sec", (real'(llc_axi::DataWidth)
-            / real'(8)) * (real'(1000000000) /  real'(tb_axi_llc_pkg::clockPeriod)) / 1024 / 1024);
+        $display("Max Bandwidth of one AXI channel: %f MiB/sec", (real'(TbAxiDataWidthFull)
+            / real'(8)) * (real'(1000000000) /  real'(TbCyclTime)) / 1024 / 1024);
         $display("##################################################################");
         $display("Bandwidths:");
         $display("aw_slv_transfer:    %f MiB/sec", real'(count[0] ) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("ar_slv_transfer:    %f MiB/sec", real'(count[2] ) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("aw_bypass_transfer: %f MiB/sec", real'(count[4] ) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("ar_bypass_transfer: %f MiB/sec", real'(count[6] ) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("aw_mst_transfer:    %f MiB/sec", real'(count[8] ) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("ar_mst_transfer:    %f MiB/sec", real'(count[10]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("aw_desc_spm:        %f MiB/sec", real'(count[12]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("ar_desc_spm:        %f MiB/sec", real'(count[14]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("aw_desc_cache:      %f MiB/sec", real'(count[16]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("ar_desc_cache:      %f MiB/sec", real'(count[18]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("config_desc:        %f MiB/sec", real'(count[20]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("hit_write_spm:      %f MiB/sec", real'(count[22]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("hit_read_spm:       %f MiB/sec", real'(count[24]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("miss_write_spm:     %f MiB/sec", real'(count[26]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("miss_read_spm:      %f MiB/sec", real'(count[28]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("hit_write_cache:    %f MiB/sec", real'(count[30]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("hit_read_cache:     %f MiB/sec", real'(count[32]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("miss_write_cache:   %f MiB/sec", real'(count[34]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("miss_read_cache:    %f MiB/sec", real'(count[36]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("refill_write:       %f MiB/sec", real'(count[38]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("refill_read:        %f MiB/sec", real'(count[40]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("evict_write:        %f MiB/sec", real'(count[42]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("evict_read:         %f MiB/sec", real'(count[44]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("evict_flush:        %f MiB/sec", real'(count[46]) / real'(cycle_count)
-            / real'(tb_axi_llc_pkg::clockPeriod) * real'(1000000000) / 1024 / 1024);
+            / real'(TbCyclTime) * real'(1000000000) / 1024 / 1024);
         $display("##################################################################");
         $display("Utilization:");
         $display("aw_slv_transfer:    %f", real'(count[1] ) / real'(cycle_count));
