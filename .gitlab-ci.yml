@@ -125,6 +125,11 @@ axi_lite_xbar:
   variables:
     TEST_MODULE: axi_lite_xbar
 
+axi_llc:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_llc
+
 axi_modify_address:
   <<: *run_vsim
   variables:

@@ -93,6 +93,24 @@ exec_test() {
                 done
             done
             ;;
+        axi_llc)
+            for SET_ASSOCIATIVITY in 1 3 8; do
+                for NUM_LINES in 128 512; do
+                    for NUM_BLOCKS in 2 8; do
+                        for AXI_ADDR_WIDTH in 32 64; do
+                            for AXI_DATA_WIDTH in 64 128; do
+                                call_vsim tb_axi_llc -t 1ns -voptargs="+acc +cover=bcesfx" \
+                                    -gTbSetAssociativity=$SET_ASSOCIATIVITY \
+                                    -gTbNumLines=$NUM_LINES                 \
+                                    -gTbNumBlocks=$NUM_BLOCKS               \
+                                    -gTbAxiAddrWidthFull=$AXI_ADDR_WIDTH    \
+                                    -gTbAxiDataWidthFull=$AXI_DATA_WIDTH
+                            done
+                        done
+                    done
+                done
+            done
+            ;;
         axi_xbar)
             for GEN_ATOP in 0 1; do
                 for NUM_MST in 1 6; do
