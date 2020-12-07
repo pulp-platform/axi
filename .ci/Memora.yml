@@ -258,6 +258,20 @@ artifacts:
     outputs:
       - build/axi_to_axi_lite-%.tested
 
+  axi_to_mem_banked-%:
+    inputs:
+      - Bender.yml
+      - include
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_demux.sv
+      - src/axi_to_mem.sv
+      - src/axi_to_mem_banked.sv
+      - test/tb_axi_to_mem_banked.sv
+    outputs:
+      - build/axi_to_mem_banked-%.tested
+
   axi_xbar-%:
     inputs:
       - Bender.yml
