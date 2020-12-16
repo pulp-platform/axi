@@ -497,6 +497,7 @@ module axi_demux #(
 // Validate parameters.
 // pragma translate_off
 `ifndef VERILATOR
+`ifndef XSIM
     initial begin: validate_params
       no_mst_ports: assume (NoMstPorts > 0) else
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
@@ -523,6 +524,7 @@ module axi_demux #(
     ar_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_ar_chan_select)) else
       $fatal(1, "slv_aw_chan_select unstable with valid set.");
+`endif
 `endif
 // pragma translate_on
   end
@@ -637,11 +639,13 @@ module axi_demux_id_counters #(
 
 // pragma translate_off
 `ifndef VERILATOR
+`ifndef XSIM
     // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
         $fatal(1, "axi_demux_id_counters > Counter: %0d underflowed.\
                    The reason is probably a faulty AXI response.", i);
+`endif
 `endif
 // pragma translate_on
   end

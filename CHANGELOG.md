@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_xbar`: Improve compatibility with vsim version 10.6c (and earlier) by introducing a
   workaround for a tool limitation (#133).
 - `tb_axi_lite_regs`: Removed superfluous hardcoded assertion.
+- Improve compatibility with Vivado XSim by disabling formal properties in `axi_demux`,
+  `axi_err_slv`, and `axi_xbar` if `XSIM` is defined.
 
 
 ## 0.24.2 - 2021-01-11
