@@ -409,6 +409,7 @@ class AxiIntercon:
         self.verilog_writer.raw = raw
         parameters = [
             Parameter('Cfg'          , 'xbar_cfg' ),
+            Parameter('ATOPs'        , "1'b"+str(int(self.atop))),
             Parameter('slv_aw_chan_t', 'aw_chan_mst_t'),
             Parameter('mst_aw_chan_t', 'aw_chan_slv_t'),
             Parameter('w_chan_t'     , 'w_chan_t'     ),

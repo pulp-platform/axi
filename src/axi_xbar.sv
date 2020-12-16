@@ -14,6 +14,7 @@
 // See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0,
+  parameter bit  ATOPs              = 1'b1,
   parameter type slv_aw_chan_t      = logic,
   parameter type mst_aw_chan_t      = logic,
   parameter type w_chan_t           = logic,
@@ -158,7 +159,7 @@ module axi_xbar #(
       .req_t       ( slv_req_t              ),
       .resp_t      ( slv_resp_t             ),
       .Resp        ( axi_pkg::RESP_DECERR   ),
-      .ATOPs       ( 1'b1                   ),
+      .ATOPs       ( ATOPs                  ),
       .MaxTrans    ( 4                      )   // Transactions terminate at this slave, so minimize
                                                 // resource consumption by accepting only a few
                                                 // transactions at a time.
