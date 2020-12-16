@@ -1,0 +1,104 @@
+CAPI=2:
+
+name : pulp-platform.org::axi:0.24.1
+
+filesets:
+  rtl:
+    files:
+      - include/axi/assign.svh :  {is_include_file : true, include_path : include}
+      - include/axi/typedef.svh :  {is_include_file : true, include_path : include}
+        # Source files grouped in levels. Files in level 0 have no dependencies on files in this
+      # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
+      # levels 1 and 0, etc. Files within a level are ordered alphabetically.
+      # Level 0
+      - src/axi_pkg.sv
+      # Level 1
+      - src/axi_intf.sv
+      # Level 2
+      - src/axi_atop_filter.sv
+      - src/axi_burst_splitter.sv
+      - src/axi_cdc.sv
+      - src/axi_cut.sv
+      - src/axi_delayer.sv
+      - src/axi_demux.sv
+      - src/axi_dw_downsizer.sv
+      - src/axi_dw_upsizer.sv
+      - src/axi_id_prepend.sv
+      - src/axi_isolate.sv
+      - src/axi_join.sv
+      - src/axi_lite_demux.sv
+      - src/axi_lite_join.sv
+      - src/axi_lite_mailbox.sv
+      - src/axi_lite_mux.sv
+      - src/axi_lite_regs.sv
+      - src/axi_lite_to_apb.sv
+      - src/axi_lite_to_axi.sv
+      - src/axi_modify_address.sv
+      - src/axi_mux.sv
+      - src/axi_serializer.sv
+      # Level 3
+      - src/axi_err_slv.sv
+      - src/axi_dw_converter.sv
+      - src/axi_multicut.sv
+      - src/axi_to_axi_lite.sv
+      # Level 4
+      - src/axi_lite_xbar.sv
+      - src/axi_xbar.sv
+    file_type : systemVerilogSource
+    depend :
+      - ">=pulp-platform.org::common_cells:1.16.4"
+
+generators:
+  axi_intercon_gen:
+    interpreter: python3
+    command: scripts/axi_intercon_gen.py
+    description: Generate a wrapper around PULP AXI xbar interconnect
+    usage: |
+      axi_intercon_gen wraps axi_xbar by expanding arrays of signals into
+      human-readable buses. Memory map can be set with generator parameters.
+      It will also generate a verilog include file containing the wire
+      definitions and module instantiation which can be `included in the
+      module where the interconnect wrapper is intended to be used.
+
+      Parameters:
+        masters: A dictionary where each key names a master interface connecting
+                 to the interconnect and the associated value contains
+                 configuration for that interface.
+
+                   id_width (int): Width of the id signals for the master
+
+        slaves: A dictionary  where each key names a slave interface connecting
+                 to the interconnect and the associated value contains
+                 configuration for that interface. The following configuration
+                 keys are defined
+
+                   offset (int): Base address for the slave
+                   size   (int): Size of the allocated memory map for the slave
+
+      Example usage:
+        The following config will generate an interconnect wrapper to which two
+        AXI4 master interfaces (dma and ibus) with different id widths are
+        connected, and connects downstream to three AXI4 slaves (rom, gpio, ram)
+
+        soc_intercon:
+          generator: axi_intercon_gen
+          parameters:
+            masters:
+              dma:
+                id_width : 1
+              ibus:
+                id_width : 2
+            slaves:
+              ram:
+                offset : 0
+                size: 0x10000000
+              gpio:
+                offset: 0x91000000
+                size: 0x1000
+              rom:
+                offset : 0xffff0000
+                size : 32768
+
+targets:
+  default:
+    filesets : [rtl]
