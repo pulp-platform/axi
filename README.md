@@ -17,6 +17,8 @@ The **design and microarchitecture** of the modules in this repository is descri
 
 ## List of Modules
 
+In addition to the documents linked in the following table, we are setting up [documentation auto-generated from inline docstrings](https://pulp-platform.github.io/axi/master).  (Replace `master` in that URL with a tag to get the documentation for a specific version.)
+
 | Name                                                 | Description                                                                                       | Doc                            |
 |------------------------------------------------------|---------------------------------------------------------------------------------------------------|--------------------------------|
 | [`axi_atop_filter`](src/axi_atop_filter.sv)          | Filters atomic operations (ATOPs), i.e., write transactions that have a non-zero `aw_atop` value. |                                |
