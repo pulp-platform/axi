@@ -60,7 +60,7 @@ jobs:
             echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
             exit 1
           fi
-          echo "::set-env name=DOC_TARGET::$DOC_TARGET"
+          echo "DOC_TARGET=$DOC_TARGET" >> $GITHUB_ENV
 
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@releases/v3
