@@ -5,63 +5,22 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_xbar_intf</a></h1>
 <div class="docblock">
-<p>Interface wrapper for <code>axi_xbar</code>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.NUM_SLV_PORTS" class="impl"><code class="in-band">NUM_SLV_PORTS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.NumSlvPorts</code>.</p>
-</div><h3 id="parameter.NUM_MST_PORTS" class="impl"><code class="in-band">NUM_MST_PORTS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.NumMstPorts</code>.</p>
-</div><h3 id="parameter.MAX_MST_TRANS" class="impl"><code class="in-band">MAX_MST_TRANS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.MaxMstTrans</code>.</p>
-</div><h3 id="parameter.MAX_SLV_TRANS" class="impl"><code class="in-band">MAX_SLV_TRANS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.MaxSlvTrans</code>.</p>
-</div><h3 id="parameter.FALL_THROUGH" class="impl"><code class="in-band">FALL_THROUGH<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.FallThrough</code>.</p>
-</div><h3 id="parameter.LATENCY_MODE" class="impl"><code class="in-band">LATENCY_MODE<span class="type-annotation">: axi_pkg::xbar_latency_e</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.LatencyMode</code>.</p>
-</div><h3 id="parameter.PIPELINE_STAGES" class="impl"><code class="in-band">PIPELINE_STAGES<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.PipelineStages</code>.</p>
-</div><h3 id="parameter.AXI_ID_WIDTH_SLV_PORTS" class="impl"><code class="in-band">AXI_ID_WIDTH_SLV_PORTS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.AxiIdWidthSlvPorts</code>.</p>
-</div><h3 id="parameter.AXI_ID_USED_SLV_PORTS" class="impl"><code class="in-band">AXI_ID_USED_SLV_PORTS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.AxiIdUsedSlvPorts</code>.</p>
-</div><h3 id="parameter.AXI_ADDR_WIDTH" class="impl"><code class="in-band">AXI_ADDR_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP address field width.</p>
-</div><h3 id="parameter.AXI_DATA_WIDTH" class="impl"><code class="in-band">AXI_DATA_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP data field width.</p>
-</div><h3 id="parameter.AXI_USER_WIDTH" class="impl"><code class="in-band">AXI_USER_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP user field width.</p>
-</div><h3 id="parameter.NUM_ADDR_RULES" class="impl"><code class="in-band">NUM_ADDR_RULES<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>The number of address rules defined for routing of the transactions.
-Each master port can have multiple rules, should have however at least one.
-If a transaction can not be routed the xbar will answer with an <code>axi_pkg::RESP_DECERR</code>.</p>
-</div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>See <code>axi_xbar.rule_t</code>.</p>
-</div><h3 id="parameter.DefaultIdxWidth" class="impl"><code class="in-band">DefaultIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Dependent parameter, do <strong>not</strong> override!
-Width of the index specifying a master port.</p>
-</div><h3 id="parameter.default_idx_t" class="impl"><code class="in-band">default_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Dependent parameter, do <strong>not</strong> override!
-See <code>axi_xbar.default_idx_t</code></p>
-</div><h3 id="parameter.AXI_ID_WIDTH_MST_PORTS" class="impl"><code class="in-band">AXI_ID_WIDTH_MST_PORTS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+<h3 id="parameter.AXI_USER_WIDTH" class="impl"><code class="in-band">AXI_USER_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.Cfg" class="impl"><code class="in-band">Cfg<span class="type-annotation">: axi_pkg::xbar_cfg_t</span></code></h3><div class="docblock"
+></div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AxiIdWidthMstPorts" class="impl"><code class="in-band">AxiIdWidthMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Clock, positive edge triggered.</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low.</p>
-</div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.slv_ports" class="impl"><code class="in-band">slv_ports<span class="type-annotation">: AXI_BUS.Slave</span></code></h3><div class="docblock"
-><p>AXI4+ATOP slave port interfaces.</p>
-</div><h3 id="port.mst_ports" class="impl"><code class="in-band">mst_ports<span class="type-annotation">: AXI_BUS.Master</span></code></h3><div class="docblock"
-><p>AXI4+ATOP master port interfaces.</p>
-</div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t [NUM_ADDR_RULES-1:0]</span></code></h3><div class="docblock"
-><p>Address map input. See <code>axi_xbar.addr_map_i</code>.</p>
-</div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic  [NUM_SLV_PORTS-1:0]</span></code></h3><div class="docblock"
-><p>Default master port enable input. See <code>axi_xbar.en_default_mst_port_i</code>.</p>
-</div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  default_idx_t [NUM_SLV_PORTS-1:0]</span></code></h3><div class="docblock"
-><p>Default master port indexes. See <code>axi_xbar.en_default_mst_port_i</code>.</p>
-</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+></div><h3 id="port.mst_ports" class="impl"><code class="in-band">mst_ports<span class="type-annotation">: AXI_BUS.Master</span></code></h3><div class="docblock"
+></div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t [Cfg.NoAddrRules-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic  [Cfg.NoSlvPorts-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  logic  [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0]</span></code></h3><div class="docblock"
+></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.id_mst_t.html">id_mst_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_slv_t.html">id_slv_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_aw_chan_t.html">mst_aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_aw_chan_t.html">slv_aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_chan_t.html">w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_b_chan_t.html">mst_b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_b_chan_t.html">slv_b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_ar_chan_t.html">mst_ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_ar_chan_t.html">slv_ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_r_chan_t.html">mst_r_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_r_chan_t.html">slv_r_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_req_t.html">mst_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_req_t.html">slv_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_resp_t.html">mst_resp_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_resp_t.html">slv_resp_t</a></td><td></td></tr></table>
 </section>
