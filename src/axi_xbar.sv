@@ -49,6 +49,9 @@ module axi_xbar #(
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
   slv_resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_resps;
 
+  // workaround for issue #133 (problem with vsim 10.6c)
+  localparam int unsigned cfg_NoMstPorts = Cfg.NoMstPorts;
+
   // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
   slv_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
   slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
@@ -165,7 +168,7 @@ module axi_xbar #(
       .test_i,  // Testmode enable
       // slave port
       .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
-      .slv_resp_o ( slv_resps[i][Cfg.NoMstPorts]  )
+      .slv_resp_o ( slv_resps[i][cfg_NoMstPorts]  )
     );
   end
 
