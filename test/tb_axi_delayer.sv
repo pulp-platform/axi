@@ -78,11 +78,12 @@ module tb_axi_delayer;
     automatic axi_test::axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat = new;
     automatic axi_test::axi_w_beat #(.DW(DW), .UW(UW)) w_beat = new;
     automatic axi_test::axi_b_beat  #(.IW(IW), .UW(UW)) b_beat;
+    automatic logic rand_success;
     axi_master_drv.reset_master();
     @(posedge clk);
     repeat (200) begin
         @(posedge clk);
-        void'(ax_beat.randomize());
+        rand_success = ax_beat.randomize(); assert(rand_success);
         axi_master_drv.send_aw(ax_beat);
         w_beat.w_data = 'hcafebabe;
         axi_master_drv.send_w(w_beat);
