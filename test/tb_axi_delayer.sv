@@ -82,7 +82,7 @@ module tb_axi_delayer;
     @(posedge clk);
     repeat (200) begin
         @(posedge clk);
-        void'(randomize(ax_beat));
+        void'(ax_beat.randomize());
         axi_master_drv.send_aw(ax_beat);
         w_beat.w_data = 'hcafebabe;
         axi_master_drv.send_w(w_beat);
