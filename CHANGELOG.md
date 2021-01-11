@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+
+### Fixed
+
+
+## 0.24.2 - 2021-01-11
+
+### Changed
 - `axi_test::rand_axi_lite_master` and `axi_test::rand_axi_lite_slave`: Specify default values for
   parameters to improve compatibility with tools that require a default value for every parameter.
 
