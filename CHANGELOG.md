@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_test::rand_axi_lite_master` and `axi_test::rand_axi_lite_slave`: Specify default values for
+  parameters to improve compatibility with tools that require a default value for every parameter.
 
 ### Fixed
+- `axi_lite_demux`: Move `typedef` out of `generate` block to improve compatibility with VCS.
 - `axi_test::rand_axi_master` and `axi_test::rand_axi_slave`: Fix call to `randomize` function for
   class variables.  Prior to this fix, the `std::randomize()` function was used for three class
   variables, but class variables must use the `.randomize()` member function.
