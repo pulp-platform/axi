@@ -61,7 +61,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
             DOC_TARGET="$GITHUB_HEAD_REF"
           elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
-            if echo $GITHUB_REF | grep -qE '^refs/heads'; then
+            if echo $GITHUB_REF | grep -qE '^refs/(head|tag)s'; then
               DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
             else
               echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
