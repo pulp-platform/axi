@@ -187,8 +187,8 @@ module tb_axi_xbar;
   // -------------------------------
   // Masters control simulation run time
   for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
-    initial begin
       static rand_axi_master_t rand_axi_master = new ( master_dv[i] );
+    initial begin
       end_of_sim[i] <= 1'b0;
       rand_axi_master.add_memory_region(AddrMap[0].start_addr,
                                       AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
@@ -201,8 +201,8 @@ module tb_axi_xbar;
   end
 
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
-    initial begin
       static rand_axi_slave_t rand_axi_slave = new( slave_dv[i] );
+    initial begin
       rand_axi_slave.reset();
       @(posedge rst_n);
       rand_axi_slave.run();
