@@ -4,6 +4,10 @@ on:
     branches-ignore:
       - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
       - v**       # such branch names conflict with tags
+  pull_request:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
 
 jobs:
   gitlab-ci:
@@ -28,10 +32,17 @@ jobs:
 
       - name: Obtain CI result
         run: |
-          if echo $GITHUB_REF | grep -qE '^refs/heads'; then
-            BRANCH_NAME="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+            BRANCH_NAME="$GITHUB_HEAD_REF"
+          elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
+            if echo $GITHUB_REF | grep -qE '^refs/heads'; then
+              BRANCH_NAME="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+            else
+              echo "Error: Could not derive branch name from ref '$GITHUB_REF'!"
+              exit 1
+            fi
           else
-            echo "Error: Could not derive branch name from ref '$GITHUB_REF'!"
+            echo "Error: Unsupported event: '$GITHUB_EVENT_NAME'!"
             exit 1
           fi
           while true; do

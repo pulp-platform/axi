@@ -6,6 +6,10 @@ on:
       - v**       # such branch names conflict with tags
     tags:
       - v**
+  pull_request:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
 
 jobs:
   build-and-deploy:
@@ -54,10 +58,17 @@ jobs:
 
       - name: Determine documentation target folder
         run: |
-          if echo $GITHUB_REF | grep -qE '^refs/(heads|tags)'; then
-            DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+            DOC_TARGET="$GITHUB_HEAD_REF"
+          elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
+            if echo $GITHUB_REF | grep -qE '^refs/heads'; then
+              DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+            else
+              echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
+              exit 1
+            fi
           else
-            echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
+            echo "Error: Unsupported event: '$GITHUB_EVENT_NAME'!"
             exit 1
           fi
           echo "DOC_TARGET=$DOC_TARGET" >> $GITHUB_ENV
