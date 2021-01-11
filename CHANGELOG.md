@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_test::rand_axi_master` and `axi_test::rand_axi_slave`: Fix call to `randomize` function for
+  class variables.  Prior to this fix, the `std::randomize()` function was used for three class
+  variables, but class variables must use the `.randomize()` member function.
 
 
 ## 0.24.1 - 2020-11-04

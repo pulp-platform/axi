@@ -1104,7 +1104,7 @@ package axi_test;
           automatic w_beat_t w_beat = new;
           automatic int unsigned begin_byte, end_byte, n_bytes;
           automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
-          rand_success = std::randomize(w_beat); assert (rand_success);
+          rand_success = w_beat.randomize(); assert (rand_success);
           // Determine strobe.
           w_beat.w_strb = '0;
           n_bytes = 2**aw_beat.ax_size;
@@ -1242,7 +1242,7 @@ package axi_test;
         automatic r_beat_t r_beat = new;
         wait (!ar_queue.empty());
         ar_beat = ar_queue.peek();
-        rand_success = std::randomize(r_beat); assert(rand_success);
+        rand_success = r_beat.randomize(); assert(rand_success);
         r_beat.r_id = ar_beat.ax_id;
         if (ar_beat.ax_lock)
           r_beat.r_resp[0]= $random();
@@ -1292,7 +1292,7 @@ package axi_test;
         automatic logic rand_success;
         wait (b_wait_cnt > 0 && (aw_queue.size() != 0));
         aw_beat = aw_queue.pop_front();
-        rand_success = std::randomize(b_beat); assert(rand_success);
+        rand_success = b_beat.randomize(); assert(rand_success);
         b_beat.b_id = aw_beat.ax_id;
         if (aw_beat.ax_lock) begin
           b_beat.b_resp[0]= $random();
