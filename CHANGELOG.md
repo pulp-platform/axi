@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `AXI_BUS`, `AXI_BUS_ASYNC`, `AXI_BUS_DV`, `AXI_LITE`, and `AXI_LITE_DV`: Change type of every
+  parameter from `int` to `int unsigned`.  An unsigned type is more appropriate, because none of
+  those parameters can actually take a negative value, and it improves compatibility with some
+  tools.
+- `axi_test::rand_axi_lite_slave` and `axi_test::rand_axi_lite_master`: Change type of address and
+  data width parameters (`AW` and `DW`) from `int` to `int unsigned`.  Same rationale as for
+  `AXI_BUS` (et al.) above.
 
 ### Fixed
 
