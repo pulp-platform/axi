@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `AXI_BUS` (et al.) above.
 
 ### Fixed
+- `axi_xbar`: Improve compatibility with vsim version 10.6c (and earlier) by introducing a
+  workaround for a tool limitation (#133).
 
 
 ## 0.24.2 - 2021-01-11
