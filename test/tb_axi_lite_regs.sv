@@ -120,8 +120,7 @@ module tb_axi_lite_regs #(
     end else begin
       assert (resp == axi_pkg::RESP_OKAY) else
           $fatal(1, "Access should be granted.");
-      assert (data == axi_data_t'(64'hDEADBEEFDEADBEEF)) else
-          $fatal(1, "Data is unexpected, should be axi_data_t'(64'hDEADBEEFDEADBEEF).");
+      // Checking of the expecetd read data is handled in `proc_check_read_data`.
     end
 
     // Let random stimuli application checking is separate.
