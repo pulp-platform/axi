@@ -19,7 +19,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b']
+      - VSIM_VER: ['10.6b', '10.7b']
 
 synopsys_dc:
   stage: build
@@ -45,7 +45,7 @@ synopsys_dc:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b']
+      - VSIM_VER: ['10.6b', '10.7b']
 
 axi_addr_test:
   <<: *run_vsim
