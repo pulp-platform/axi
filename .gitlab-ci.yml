@@ -19,7 +19,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.6b', '10.7b']
+      - VSIM_VER: ['10.7b']
         DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 synopsys_dc:
@@ -46,7 +46,7 @@ synopsys_dc:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.6b', '10.7b']
+      - VSIM_VER: ['10.7b']
         DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 axi_addr_test:
