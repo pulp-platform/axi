@@ -9,9 +9,18 @@ vsim:
   stage: build
   script:
     - export ARTIFACT="vsim-$VSIM_VER"
-    - export VSIM="vsim-$VSIM_VER -64"
-    - export VLIB="vlib-$VSIM_VER"
-    - export VLOG="vlog-$VSIM_VER -64"
+    - >
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        export VLIB="questa-$VSIM_VER vlib";
+        export VLOG="questa-$VSIM_VER vlog -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        export VLIB="vlib-$VSIM_VER";
+        export VLOG="vlog-$VSIM_VER -64";
+        ;;
+      esac
     - >
       if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
         cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
@@ -19,7 +28,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e']
+      - VSIM_VER: ['10.7b', '10.7e', '2020.1']
         DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 synopsys_dc:
@@ -35,7 +44,14 @@ synopsys_dc:
   stage: test
   script:
     - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
-    - export VSIM="vsim-$VSIM_VER -64"
+    - >
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        ;;
+      esac
     - >
       if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
@@ -46,7 +62,7 @@ synopsys_dc:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e']
+      - VSIM_VER: ['10.7b', '10.7e', '2020.1']
         DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 axi_addr_test:
