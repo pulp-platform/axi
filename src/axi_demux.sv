@@ -523,6 +523,12 @@ module axi_demux #(
     ar_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_ar_chan_select)) else
       $fatal(1, "slv_aw_chan_select unstable with valid set.");
+    internal_ar_select: assert property( @(posedge clk_i)
+        (ar_valid |-> slv_ar_chan_select.ar_select < NoMstPorts))
+      else $fatal(1, "slv_ar_chan_select.ar_select illegal while ar_valid.");
+    internal_aw_select: assert property( @(posedge clk_i)
+        (aw_valid |-> slv_aw_chan_select.aw_select < NoMstPorts))
+      else $fatal(1, "slv_aw_chan_select.aw_select illegal while aw_valid.");
 `endif
 `endif
 // pragma translate_on
