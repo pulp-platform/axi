@@ -1,7 +1,4 @@
 variables:
-  VSIM: vsim-10.7b -64
-  VLIB: vlib-10.7b
-  VLOG: vlog-10.7b -64
   SYNOPSYS_DC: synopsys-2019.12 dc_shell -64bit
 
 before_script:
@@ -11,11 +8,28 @@ before_script:
 vsim:
   stage: build
   script:
+    - export ARTIFACT="vsim-$VSIM_VER"
     - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup vsim; then
-        cd build && ../scripts/compile_vsim.sh
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert vsim
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        export VLIB="questa-$VSIM_VER vlib";
+        export VLOG="questa-$VSIM_VER vlog -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        export VLIB="vlib-$VSIM_VER";
+        export VLOG="vlog-$VSIM_VER -64";
+        ;;
+      esac
+    - >
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
+        cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
       fi
+  parallel:
+    matrix:
+      - VSIM_VER: ['10.7b', '10.7e', '2020.1']
+        DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 synopsys_dc:
   stage: build
@@ -26,92 +40,107 @@ synopsys_dc:
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
       fi
 
-.test_module: &test_module
+.run_vsim: &run_vsim
   stage: test
   script:
+    - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
     - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $TEST_MODULE; then
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim
-        cd build && ../scripts/run_vsim.sh $TEST_MODULE
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $TEST_MODULE
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        ;;
+      esac
+    - >
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
+        cd build
+        mv work{-$VSIM_VER,}
+        ../scripts/run_vsim.sh $TEST_MODULE && touch $ARTIFACT.tested
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
       fi
+  parallel:
+    matrix:
+      - VSIM_VER: ['10.7b', '10.7e', '2020.1']
+        DUMMY: 'ignored' # workaround for GitLab 13.4; remove for newer versions
 
 axi_addr_test:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_addr_test
 
 axi_atop_filter:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_atop_filter
 
 axi_cdc:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_cdc
 
 axi_delayer:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_delayer
 
 axi_dw_downsizer:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_dw_downsizer
 
 axi_dw_upsizer:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_dw_upsizer
 
 axi_isolate:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_isolate
 
 axi_lite_regs:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_regs
 
 axi_lite_to_apb:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_to_apb
 
 axi_lite_to_axi:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_to_axi
 
 axi_lite_mailbox:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_mailbox
 
 axi_lite_xbar:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_lite_xbar
 
 axi_modify_address:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_modify_address
 
 axi_serializer:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_serializer
 
 axi_to_axi_lite:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_to_axi_lite
 
 axi_xbar:
-  <<: *test_module
+  <<: *run_vsim
   variables:
     TEST_MODULE: axi_xbar

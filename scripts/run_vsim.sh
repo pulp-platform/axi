@@ -71,7 +71,6 @@ exec_test() {
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
     esac
-    touch "$1.tested"
 }
 
 if [ "$#" -eq 0 ]; then
