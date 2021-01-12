@@ -27,7 +27,7 @@ echo 'return 0' >> compile.tcl
 # Add `-lint -pendanticerrors` flags only for the files in this repository.
 # Patching the compile script in this way is quite ugly, maybe there should be a Bender command to
 # add arguments just for certain targets.
-for x in axi_pkg axi_test; do
+for x in axi_pkg; do
   # Adapted from https://unix.stackexchange.com/a/200610.
   POSIXLY_CORRECT=1 awk -v N=6 "
     BEGIN{N--}
