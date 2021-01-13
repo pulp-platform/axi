@@ -42,15 +42,25 @@ exec_test() {
             ;;
         axi_dw_downsizer)
             for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
-                for (( AxiMstPortDataWidth = 8; AxiMstPortDataWidth < $AxiSlvPortDataWidth; AxiMstPortDataWidth *= 2 )); do
-                    call_vsim tb_axi_dw_downsizer -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
+                for (( AxiMstPortDataWidth = 8; \
+                        AxiMstPortDataWidth < $AxiSlvPortDataWidth; \
+                        AxiMstPortDataWidth *= 2 )); \
+                do
+                    call_vsim tb_axi_dw_downsizer \
+                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
                 done
             done
             ;;
         axi_dw_upsizer)
             for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
-                for (( AxiMstPortDataWidth = $AxiSlvPortDataWidth*2; AxiMstPortDataWidth <= 1024; AxiMstPortDataWidth *= 2 )); do
-                    call_vsim tb_axi_dw_upsizer -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
+                for (( AxiMstPortDataWidth = $AxiSlvPortDataWidth*2; \
+                        AxiMstPortDataWidth <= 1024; \
+                        AxiMstPortDataWidth *= 2 )); \
+                do
+                    call_vsim tb_axi_dw_upsizer \
+                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
                 done
             done
             ;;
@@ -67,7 +77,8 @@ exec_test() {
             for PRIV in 0 1; do
                 for SECU in 0 1; do
                     for BYTES in 42 200 369; do
-                        call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU -gRegNumBytes=$BYTES -t 1ps -c
+                        call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU \
+                                -gRegNumBytes=$BYTES -t 1ps -c
                     done
                 done
             done
