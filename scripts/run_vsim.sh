@@ -20,8 +20,9 @@ if test -z ${VSIM+x}; then
     VSIM=vsim
 fi
 
-# Seed values for `sv_seed`; can be extended with specific values on a per-TB basis.  The default
-# value, 0, is always included to stay regression-consistent.
+# Seed values for `sv_seed`; can be extended with specific values on a per-TB basis, as well as with
+# a random number by passing the `--random` flag.  The default value, 0, is always included to stay
+# regression-consistent.
 SEEDS=(0)
 
 call_vsim() {
@@ -90,6 +91,23 @@ exec_test() {
             ;;
     esac
 }
+
+# Parse flags.
+PARAMS=""
+while (( "$#" )); do
+    case "$1" in
+        --random-seed)
+            SEEDS+=(random)
+            shift;;
+        -*--*) # unsupported flag
+            echo "Error: Unsupported flag '$1'." >&2
+            exit 1;;
+        *) # preserve positional arguments
+            PARAMS="$PARAMS $1"
+            shift;;
+    esac
+done
+eval set -- "$PARAMS"
 
 if [ "$#" -eq 0 ]; then
     tests=()
