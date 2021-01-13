@@ -13,7 +13,20 @@ filesets:
       # Level 0
       - src/axi_pkg.sv
       # Level 1
+      - src/axi_llc/axi_llc_pkg.sv
       - src/axi_intf.sv
+      - src/axi_llc/axi_llc_burst_cutter.sv
+      - src/axi_llc/axi_llc_data_way.sv
+      - src/axi_llc/axi_llc_merge_unit.sv
+      - src/axi_llc/axi_llc_read_unit.sv
+      - src/axi_llc/axi_llc_write_unit.sv
+      - src/axi_llc/eviction_refill/axi_llc_ax_master.sv
+      - src/axi_llc/eviction_refill/axi_llc_r_master.sv
+      - src/axi_llc/eviction_refill/axi_llc_w_master.sv
+      - src/axi_llc/hit_miss_detect/axi_llc_evict_box.sv
+      - src/axi_llc/hit_miss_detect/axi_llc_lock_box_bloom.sv
+      - src/axi_llc/hit_miss_detect/axi_llc_miss_counters.sv
+      - src/axi_llc/hit_miss_detect/axi_llc_tag_pattern_gen.sv
       # Level 2
       - src/axi_atop_filter.sv
       - src/axi_burst_splitter.sv
@@ -35,6 +48,11 @@ filesets:
       - src/axi_lite_regs.sv
       - src/axi_lite_to_apb.sv
       - src/axi_lite_to_axi.sv
+      - src/axi_llc/axi_llc_chan_splitter.sv
+      - src/axi_llc/axi_llc_evict_unit.sv
+      - src/axi_llc/axi_llc_refill_unit.sv
+      - src/axi_llc/axi_llc_ways.sv
+      - src/axi_llc/hit_miss_detect/axi_llc_tag_store.sv
       - src/axi_modify_address.sv
       - src/axi_mux.sv
       - src/axi_serializer.sv
@@ -43,11 +61,14 @@ filesets:
       - src/axi_err_slv.sv
       - src/axi_dw_converter.sv
       - src/axi_id_serialize.sv
+      - src/axi_llc/axi_llc_config.sv
+      - src/axi_llc/axi_llc_hit_miss.sv
       - src/axi_multicut.sv
       - src/axi_to_axi_lite.sv
       # Level 4
       - src/axi_iw_converter.sv
       - src/axi_lite_xbar.sv
+      - src/axi_llc/axi_llc_top.sv
       - src/axi_xbar.sv
     file_type : systemVerilogSource
     depend :
