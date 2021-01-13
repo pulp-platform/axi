@@ -442,15 +442,16 @@ module axi_demux #(
       .idx_o  (               )
     );
 
+   assign ar_ready = ar_valid & mst_resps_i[slv_ar_chan_select.ar_select].ar_ready;
+   assign aw_ready = aw_valid & mst_resps_i[slv_aw_chan_select.aw_select].aw_ready;
+
     // process that defines the individual demuxes and assignments for the arbitration
     // as mst_reqs_o has to be drivem from the same always comb block!
     always_comb begin
       // default assignments
       mst_reqs_o  = '0;
-      aw_ready    = 1'b0;
       slv_w_ready = 1'b0;
       w_fifo_pop  = 1'b0;
-      ar_ready    = 1'b0;
 
       for (int unsigned i = 0; i < NoMstPorts; i++) begin
         // AW channel
@@ -458,7 +459,6 @@ module axi_demux #(
         mst_reqs_o[i].aw_valid = 1'b0;
         if (aw_valid && (slv_aw_chan_select.aw_select == i)) begin
           mst_reqs_o[i].aw_valid = 1'b1;
-          aw_ready               = mst_resps_i[i].aw_ready;
         end
 
         //  W channel
@@ -478,7 +478,6 @@ module axi_demux #(
         mst_reqs_o[i].ar_valid = 1'b0;
         if (ar_valid && (slv_ar_chan_select.ar_select == i)) begin
           mst_reqs_o[i].ar_valid = 1'b1;
-          ar_ready               = mst_resps_i[i].ar_ready;
         end
 
         //  R channel
@@ -497,6 +496,7 @@ module axi_demux #(
 // Validate parameters.
 // pragma translate_off
 `ifndef VERILATOR
+`ifndef XSIM
     initial begin: validate_params
       no_mst_ports: assume (NoMstPorts > 0) else
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
@@ -523,6 +523,13 @@ module axi_demux #(
     ar_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_ar_chan_select)) else
       $fatal(1, "slv_aw_chan_select unstable with valid set.");
+    internal_ar_select: assert property( @(posedge clk_i)
+        (ar_valid |-> slv_ar_chan_select.ar_select < NoMstPorts))
+      else $fatal(1, "slv_ar_chan_select.ar_select illegal while ar_valid.");
+    internal_aw_select: assert property( @(posedge clk_i)
+        (aw_valid |-> slv_aw_chan_select.aw_select < NoMstPorts))
+      else $fatal(1, "slv_aw_chan_select.aw_select illegal while aw_valid.");
+`endif
 `endif
 // pragma translate_on
   end
@@ -637,11 +644,13 @@ module axi_demux_id_counters #(
 
 // pragma translate_off
 `ifndef VERILATOR
+`ifndef XSIM
     // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
         $fatal(1, "axi_demux_id_counters > Counter: %0d underflowed.\
                    The reason is probably a faulty AXI response.", i);
+`endif
 `endif
 // pragma translate_on
   end

@@ -14,6 +14,7 @@
 // See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0,
+  parameter bit  ATOPs              = 1'b1,
   parameter type slv_aw_chan_t      = logic,
   parameter type mst_aw_chan_t      = logic,
   parameter type w_chan_t           = logic,
@@ -100,6 +101,7 @@ module axi_xbar #(
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
     `ifndef VERILATOR
+    `ifndef XSIM
     default disable iff (~rst_ni);
     default_aw_mst_port_en: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
@@ -121,6 +123,7 @@ module axi_xbar #(
           |=> $stable(default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Ar beat. Slave Port: %0d", i));
+    `endif
     `endif
     // pragma translate_on
     axi_demux #(
@@ -158,7 +161,7 @@ module axi_xbar #(
       .req_t       ( slv_req_t              ),
       .resp_t      ( slv_resp_t             ),
       .Resp        ( axi_pkg::RESP_DECERR   ),
-      .ATOPs       ( 1'b1                   ),
+      .ATOPs       ( ATOPs                  ),
       .MaxTrans    ( 4                      )   // Transactions terminate at this slave, so minimize
                                                 // resource consumption by accepting only a few
                                                 // transactions at a time.
@@ -217,12 +220,14 @@ module axi_xbar #(
 
   // pragma translate_off
   `ifndef VERILATOR
+  `ifndef XSIM
   initial begin : check_params
     id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
   end
+  `endif
   `endif
   // pragma translate_on
 endmodule
