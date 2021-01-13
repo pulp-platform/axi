@@ -57,7 +57,7 @@ synopsys_dc:
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
         cd build
         mv work{-$VSIM_VER,}
-        ../scripts/run_vsim.sh $TEST_MODULE && touch $ARTIFACT.tested
+        ../scripts/run_vsim.sh --random-seed $TEST_MODULE && touch $ARTIFACT.tested
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
       fi
   parallel:
