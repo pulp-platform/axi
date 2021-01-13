@@ -54,8 +54,14 @@ jobs:
             fi
             status="$(echo $resp | jq -r .message)"
             if [ "$status" == "passing" ]; then
-              echo "CI passed."
-              exit 0
+              sha="$(echo $resp | jq -r .sha)"
+              if [ "$sha" == "$GITHUB_SHA" ]; then
+                echo "CI passed."
+                exit 0
+              else
+                echo "Error: CI passed, but on a different SHA: '$sha'!"
+                exit 1
+              fi
             elif [ "$status" == "running" ]; then
               echo "CI is running, waiting .."
             else
