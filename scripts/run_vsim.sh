@@ -13,7 +13,7 @@
 # Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 # Andreas Kurth  <akurth@iis.ee.ethz.ch>
 
-set -e
+set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 [ ! -z "$VSIM" ] || VSIM=vsim
