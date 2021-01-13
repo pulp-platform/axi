@@ -18,9 +18,15 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 [ ! -z "$VSIM" ] || VSIM=vsim
 
+# Seed values for `sv_seed`; can be extended with specific values on a per-TB basis.  The default
+# value, 0, is always included to stay regression-consistent.
+SEEDS=(0)
+
 call_vsim() {
-    echo "run -all" | $VSIM "$@" | tee vsim.log 2>&1
-    grep "Errors: 0," vsim.log
+    for seed in ${SEEDS[@]}; do
+        echo "run -all" | $VSIM -sv_seed $seed "$@" | tee vsim.log 2>&1
+        grep "Errors: 0," vsim.log
+    done
 }
 
 exec_test() {
@@ -57,12 +63,11 @@ exec_test() {
             done
             ;;
         axi_lite_regs)
+            SEEDS+=(10 42)
             for PRIV in 0 1; do
                 for SECU in 0 1; do
                     for BYTES in 42 200 369; do
-                        for SEED in 0 10 42; do
-                            call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU -gRegNumBytes=$BYTES -sv_seed $SEED -t 1ps -c
-                        done
+                        call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU -gRegNumBytes=$BYTES -t 1ps -c
                     done
                 done
             done
