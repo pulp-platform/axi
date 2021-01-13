@@ -48,7 +48,7 @@ exec_test() {
                 do
                     call_vsim tb_axi_dw_downsizer \
                             -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
+                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
                 done
             done
             ;;
@@ -60,7 +60,7 @@ exec_test() {
                 do
                     call_vsim tb_axi_dw_upsizer \
                             -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps -c
+                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
                 done
             done
             ;;
@@ -78,7 +78,7 @@ exec_test() {
                 for SECU in 0 1; do
                     for BYTES in 42 200 369; do
                         call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU \
-                                -gRegNumBytes=$BYTES -t 1ps -c
+                                -gRegNumBytes=$BYTES -t 1ps
                     done
                 done
             done
