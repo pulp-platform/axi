@@ -9,6 +9,8 @@
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.Cfg" class="impl"><code class="in-band">Cfg<span class="type-annotation">: axi_pkg::xbar_cfg_t</span></code></h3><div class="docblock"
 ><p>Configuration struct for the crossbar see <code>axi_pkg</code> for fields and definitions.</p>
+</div><h3 id="parameter.ATOPs" class="impl"><code class="in-band">ATOPs<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Enable atomic operations support.</p>
 </div><h3 id="parameter.slv_aw_chan_t" class="impl"><code class="in-band">slv_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>AXI4+ATOP AW channel struct type for the slave ports.</p>
 </div><h3 id="parameter.mst_aw_chan_t" class="impl"><code class="in-band">mst_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
@@ -50,7 +52,8 @@ Width of the index specifying a master port.</p>
 </div><h3 id="parameter.default_idx_t" class="impl"><code class="in-band">default_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Dependent parameter, do <strong>not</strong> override!
 Type of index for a default master port.</p>
-</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+</div><h3 id="parameter.cfg_NoMstPorts" class="impl"><code class="in-band">cfg_NoMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Clock, positive edge triggered.</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
