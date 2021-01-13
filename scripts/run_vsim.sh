@@ -16,7 +16,9 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-[ ! -z "$VSIM" ] || VSIM=vsim
+if test -z ${VSIM+x}; then
+    VSIM=vsim
+fi
 
 # Seed values for `sv_seed`; can be extended with specific values on a per-TB basis.  The default
 # value, 0, is always included to stay regression-consistent.
