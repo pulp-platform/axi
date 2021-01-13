@@ -10,7 +10,7 @@ Our **design goals** are:
 - **Modularity**: We favor design by composition over design by configuration where possible.  We strive to apply the *Unix philosophy* to hardware: make each module do one thing well.  This means you will more often instantiate our modules back-to-back than change a parameter value to build more specialized networks.
 - **Fit for Heterogeneous Networks**: Our modules are parametrizable in terms of data width and transaction concurrency.  This allows to create optimized networks for a wide range of performance (e.g., bandwidth, concurrency, timing), power, and area requirements.  We provide modules such as [data width converters](src/axi_dw_converter.sv) that allow to join subnetworks with different properties, creating heterogeneous on-chip networks.
 - **Full AXI Standard Compliance**.
-- **Compatibility** with a wide range of (recent versions of) EDA tools and implementation in standardized synthesizable SystemVerilog.
+- **Compatibility** with a [wide range of (recent versions of) EDA tools](#which-eda-tools-are-supported) and implementation in standardized synthesizable SystemVerilog.
 
 The **design and microarchitecture** of the modules in this repository is described in [**this paper**](https://arxiv.org/abs/2009.05334).  If you use our work in your research, please cite it.
 
@@ -66,4 +66,18 @@ AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as d
 Masters and slaves that do support ATOPs must adhere to Section E2.1 of the AMBA5 specification.
 
 
+## Which EDA Tools Are Supported?
+
+Our code is written in standard SystemVerilog ([IEEE 1800-2012][], to be precise), so the more important question is: Which subset of SystemVerilog does your EDA tool support?
+
+We aim to be compatible with a wide range of EDA tools.  For this reason, we strive to use as simple language constructs as possible, especially for our synthesizable modules.  We encourage contributions that further simplify our code to make it compatible with even more EDA tools.  We also welcome contributions that work around problems that specific EDA tools may have with our code, as long as:
+- the EDA tool is reasonably widely used,
+- recent versions of the EDA tool are affected,
+- the workaround does not break functionality in other tools, and
+- the workaround does not significantly complicate code or add maintenance overhead.
+
+All code in each release and on the default branch is tested on a recent version of at least one industry-standard RTL simulator and synthesizer.  You can examine the [CI settings](./.gitlab-ci.yml) to find out which version of which tool we are running.
+
+
+[IEEE 1800-2012]: https://standards.ieee.org/standard/1800-2012.html
 [doc.axi_lite_regs]: https://pulp-platform.github.io/axi/master/module.axi_lite_regs
