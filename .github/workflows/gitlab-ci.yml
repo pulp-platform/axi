@@ -19,6 +19,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+          # Checkout pull request HEAD commit instead of merge commit, because CI runs against HEAD
+          # commit.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Wait for synchronization (every 5 minutes)
         run: |
