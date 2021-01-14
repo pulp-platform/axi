@@ -15,17 +15,6 @@
 
 `include "axi/assign.svh"
 
-import axi_pkg::ATOP_ATOMICCMP;
-import axi_pkg::ATOP_ATOMICLOAD;
-import axi_pkg::ATOP_ATOMICSTORE;
-import axi_pkg::BURST_FIXED;
-import axi_pkg::BURST_INCR;
-import axi_pkg::BURST_WRAP;
-import axi_pkg::RESP_OKAY;
-import axi_pkg::RESP_SLVERR;
-import rand_id_queue_pkg::rand_id_queue;
-import rand_verif_pkg::rand_wait;
-
 module tb_axi_atop_filter #(
   // AXI Parameters
   parameter int unsigned AXI_ADDR_WIDTH = 32,
@@ -47,6 +36,17 @@ module tb_axi_atop_filter #(
 
   timeunit 1ns;
   timeprecision 10ps;
+
+  import axi_pkg::ATOP_ATOMICCMP;
+  import axi_pkg::ATOP_ATOMICLOAD;
+  import axi_pkg::ATOP_ATOMICSTORE;
+  import axi_pkg::BURST_FIXED;
+  import axi_pkg::BURST_INCR;
+  import axi_pkg::BURST_WRAP;
+  import axi_pkg::RESP_OKAY;
+  import axi_pkg::RESP_SLVERR;
+  import rand_id_queue_pkg::rand_id_queue;
+  import rand_verif_pkg::rand_wait;
 
   localparam int unsigned AXI_STRB_WIDTH  = AXI_DATA_WIDTH / 8;
   localparam int unsigned NUM_AXI_IDS     = 2**AXI_ID_WIDTH;
