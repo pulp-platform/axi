@@ -11,7 +11,7 @@ set -euo pipefail
 readonly THIS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 readonly REPO_ROOT="$(readlink -f "$THIS_DIR/..")"
 
-## Settings
+### Settings #######################################################################################
 # Changelog
 readonly CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
 # FuseSoC
@@ -22,8 +22,12 @@ readonly GIT_MAIN_BRANCH='master'
 readonly GIT_REMOTE='origin'
 # Version file
 readonly VERSION_FILE="$REPO_ROOT/VERSION"
+####################################################################################################
 
-# Define some helper functions.
+### Generic helper functions #######################################################################
+git_cur_ver_tag() {
+    git describe --match 'v*' --abbrev=0
+}
 semver_major() {
     echo "$1" | cut -d. -f1
 }
@@ -36,6 +40,10 @@ semver_noprerel() {
 semver_patch() {
     echo "$1" | cut -d. -f3
 }
+git_cur_semver_noprerel() {
+    local -r GIT_CUR_VER_TAG="$(git_cur_ver_tag)"
+    semver_noprerel "${GIT_CUR_VER_TAG:1}"
+}
 stderr() {
     echo "$@" >&2
 }
@@ -46,6 +54,8 @@ confirm() {
         *) exit 1;;
     esac
 }
+####################################################################################################
+
 usage() {
     stderr "Do a release: update version numbers in files, update Changelog, and publish on GitHub."
     stderr -e "\nUsage:"
@@ -86,37 +96,62 @@ case "$1" in
         exit 1
 esac
 
-# Determine the current version from latest Git tag.
-readonly CUR_GIT_VER_TAG=$(git describe --match 'v*' --abbrev=0)
-readonly CUR_NO_PREREL=$(semver_noprerel "${CUR_GIT_VER_TAG:1}")
-readonly CUR_MAJOR=$(semver_major $CUR_NO_PREREL)
-readonly CUR_MINOR=$(semver_minor $CUR_NO_PREREL)
-readonly CUR_PATCH=$(semver_patch $CUR_NO_PREREL)
+### Implementation functions #######################################################################
+# Update FuseSoC core description.
+fusesoc() {
+    sed -i -e "s/name\s*:\s*$FUSESOC_IP_VLN.*/name : $FUSESOC_IP_VLN:$1/" "$FUSESOC_FILE"
+    git add "$FUSESOC_FILE"
+}
 
-# Calculate the next version.
-case $REL_TYPE in
-    major)
-        readonly NEW_MAJOR=$(($CUR_MAJOR + 1))
-        readonly NEW_MINOR=0
-        readonly NEW_PATCH=0
-        ;;
-    minor)
-        readonly NEW_MAJOR=$CUR_MAJOR
-        readonly NEW_MINOR=$(($CUR_MINOR + 1))
-        readonly NEW_PATCH=0
-        ;;
-    patch)
-        readonly NEW_MAJOR=$CUR_MAJOR
-        readonly NEW_MINOR=$CUR_MINOR
-        readonly NEW_PATCH=$(($CUR_PATCH + 1))
-        ;;
-    *)
-        stderr "Fatal: unreachable code reached!"
-        exit 1
-        ;;
-esac
-readonly NEW_VER="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
-readonly NEW_GIT_VER_TAG="v$NEW_VER"
+# Update `VERSION` file.
+version_file() {
+    echo "$1" > "$VERSION_FILE"
+    git add "$VERSION_FILE"
+}
+
+# Calculate the next SemVer.
+# First argument: current SemVer (without pre-release suffixes).
+# Second argument: type of increment (major|minor|patch).
+semver_next() {
+    local -r CUR_MAJOR=$(semver_major $1)
+    local -r CUR_MINOR=$(semver_minor $1)
+    local -r CUR_PATCH=$(semver_patch $1)
+    case $2 in
+        major)
+            local -r NEW_MAJOR=$(($CUR_MAJOR + 1))
+            local -r NEW_MINOR=0
+            local -r NEW_PATCH=0
+            ;;
+        minor)
+            local -r NEW_MAJOR=$CUR_MAJOR
+            local -r NEW_MINOR=$(($CUR_MINOR + 1))
+            local -r NEW_PATCH=0
+            ;;
+        patch)
+            local -r NEW_MAJOR=$CUR_MAJOR
+            local -r NEW_MINOR=$CUR_MINOR
+            local -r NEW_PATCH=$(($CUR_PATCH + 1))
+            ;;
+        *)
+            stderr "Fatal: unreachable code reached!"
+            exit 1
+            ;;
+    esac
+    echo "$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+}
+
+# Increment development version
+incr_dev_ver() {
+    local -r DEV_VER="$(semver_next "$(git_cur_semver_noprerel)" "$1")-dev"
+    fusesoc "$DEV_VER"
+    version_file "$DEV_VER"
+    git commit -m "Increment development version towards next $1 release"
+    stderr
+    git show
+    stderr 'Updated files to increment development version and created commit shown above.'
+    confirm 'Is this commit correct?'
+}
+####################################################################################################
 
 # Make sure there are no staged changes.
 if ! git diff --staged --quiet; then
@@ -135,6 +170,10 @@ ensure_clean() {
 for f in "$CHANGELOG_FILE" "$FUSESOC_FILE" "$VERSION_FILE"; do
     ensure_clean "$f"
 done
+
+# Calculate the next version.
+readonly NEW_VER="$(semver_next "$(git_cur_semver_noprerel)" "$REL_TYPE")"
+readonly NEW_GIT_VER_TAG="v$NEW_VER"
 
 # Create release branch.
 readonly NEW_BRANCH="release-$NEW_VER"
@@ -219,18 +258,8 @@ sed -i -e "s/Unreleased/$NEW_VER - $(date -u --iso-8601=date)/" "$CHANGELOG_FILE
 # Finally, stage Changelog modifications.
 git add "$CHANGELOG_FILE"
 
-# Update FuseSoC core description.
-fusesoc() {
-    sed -i -e "s/name\s*:\s*$FUSESOC_IP_VLN.*/name : $FUSESOC_IP_VLN:$1/" "$FUSESOC_FILE"
-    git add "$FUSESOC_FILE"
-}
+# Update other files for release.
 fusesoc $NEW_VER
-
-# Update `VERSION` file.
-version_file() {
-    echo "$1" > "$VERSION_FILE"
-    git add "$VERSION_FILE"
-}
 version_file $NEW_VER
 
 # Create release commit.
@@ -257,14 +286,7 @@ sed -i -e '7a\
 \
 ' "$CHANGELOG_FILE"
 git add "$CHANGELOG_FILE"
-readonly DEV_VER="$NEW_MAJOR.$NEW_MINOR.$(($NEW_PATCH + 1))-dev"
-fusesoc $DEV_VER
-version_file $DEV_VER
-git commit -m "Continue development after v$NEW_VER"
-stderr
-git show
-stderr 'Updated files to continue development and created post-release commit; is is shown above.'
-confirm 'Is the post-release commit correct?'
+incr_dev_ver 'patch'
 
 # Push branch with release and post-release commit and let user review it.
 git push -u "$GIT_REMOTE" "$NEW_BRANCH"
