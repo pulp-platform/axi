@@ -86,6 +86,13 @@ exec_test() {
                 call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps
             done
             ;;
+        axi_sim_mem)
+            for AW in 16 32 64; do
+                for DW in 32 64 128 256 512 1024; do
+                    call_vsim tb_axi_sim_mem -GAddrWidth=$AW -GDataWidth=$DW -t 1ps
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;

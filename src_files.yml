@@ -46,6 +46,7 @@ axi:
 
 axi_sim:
   files:
+    - src/axi_sim_mem.sv
     - src/axi_test.sv
   flags:
     - skip_synthesis
