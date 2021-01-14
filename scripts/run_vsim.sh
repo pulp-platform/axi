@@ -38,10 +38,13 @@ exec_test() {
         exit 1
     fi
     case "$1" in
-        axi_lite_to_axi)
-            for DW in 8 16 32 64 128 256 512 1024; do
-                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
+        axi_atop_filter)
+            for MAX_TXNS in 1 3 12; do
+                call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
+            ;;
+        axi_cdc|axi_delayer)
+            call_vsim tb_$1
             ;;
         axi_dw_downsizer)
             for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
@@ -67,14 +70,6 @@ exec_test() {
                 done
             done
             ;;
-        axi_cdc|axi_delayer)
-            call_vsim tb_$1
-            ;;
-        axi_atop_filter)
-            for MAX_TXNS in 1 3 12; do
-                call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
-            done
-            ;;
         axi_lite_regs)
             SEEDS+=(10 42)
             for PRIV in 0 1; do
@@ -84,6 +79,11 @@ exec_test() {
                                 -gRegNumBytes=$BYTES -t 1ps
                     done
                 done
+            done
+            ;;
+        axi_lite_to_axi)
+            for DW in 8 16 32 64 128 256 512 1024; do
+                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
             done
             ;;
         *)
