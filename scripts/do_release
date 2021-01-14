@@ -63,13 +63,19 @@ usage() {
     stderr -e "\nArguments:"
     stderr -e "\t<major|minor|patch>\tType of release to create"
     stderr -e "\nFlags:"
+    stderr -e "\t    --dev\tIncrement development version but do not create a release"
+    stderr -e "\t\t\tand do not push anything."
     stderr -e "\t-h, --help\tPrint usage information and exit."
 }
 
 # Parse flags.
+DEV_ONLY=false
 PARAMS=""
 while (( "$#" )); do
     case "$1" in
+        --dev)
+            DEV_ONLY=true
+            shift;;
         -h|--help)
             usage
             exit 0;;
@@ -82,6 +88,7 @@ while (( "$#" )); do
     esac
 done
 eval set -- "$PARAMS"
+readonly DEV_ONLY
 
 # Parse positional arguments.
 if test "$#" -ne 1; then
@@ -170,6 +177,12 @@ ensure_clean() {
 for f in "$CHANGELOG_FILE" "$FUSESOC_FILE" "$VERSION_FILE"; do
     ensure_clean "$f"
 done
+
+if $DEV_ONLY; then
+    incr_dev_ver $REL_TYPE
+    # If we only have to increment the development version, we are done.
+    exit 0
+fi
 
 # Calculate the next version.
 readonly NEW_VER="$(semver_next "$(git_cur_semver_noprerel)" "$REL_TYPE")"
