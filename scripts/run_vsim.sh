@@ -83,7 +83,7 @@ exec_test() {
             ;;
         axi_lite_to_axi)
             for DW in 8 16 32 64 128 256 512 1024; do
-                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps -c
+                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps
             done
             ;;
         *)
