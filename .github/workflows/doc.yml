@@ -75,7 +75,9 @@ jobs:
 
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@releases/v3
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: >
+          github.event_name == 'push'
+          || github.event.pull_request.head.repo.full_name == github.repository
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.

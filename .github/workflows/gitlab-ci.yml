@@ -19,6 +19,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+          # Checkout pull request HEAD commit instead of merge commit, because CI runs against HEAD
+          # commit.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Wait for synchronization (every 5 minutes)
         run: |
@@ -55,7 +58,12 @@ jobs:
             status="$(echo $resp | jq -r .message)"
             if [ "$status" == "passing" ]; then
               sha="$(echo $resp | jq -r .sha)"
-              if [ "$sha" == "$GITHUB_SHA" ]; then
+              if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+                github_sha="$(cat "$GITHUB_EVENT_PATH" | jq -r .pull_request.head.sha)"
+              else
+                github_sha="$GITHUB_SHA"
+              fi
+              if [ "$sha" == "$github_sha" ]; then
                 echo "CI passed."
                 exit 0
               else
