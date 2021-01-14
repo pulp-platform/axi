@@ -3,7 +3,7 @@
 # Copyright (c) 2020 ETH Zurich, University of Bologna
 # SPDX-License-Identifier: Apache-2.0
 #
-# Do a release: update version numbers in files, update Changelog, and publish on GitHub.
+# See `usage()` for description, or execute with the `--help` flag.
 #
 # Author: Andreas Kurth
 
@@ -47,8 +47,31 @@ confirm() {
     esac
 }
 usage() {
-    stderr "Usage: $0 major|minor|patch"
+    stderr "Do a release: update version numbers in files, update Changelog, and publish on GitHub."
+    stderr -e "\nUsage:"
+    stderr -e "\t$(basename $0) [flags] <major|minor|patch>"
+    stderr -e "\nArguments:"
+    stderr -e "\t<major|minor|patch>\tType of release to create"
+    stderr -e "\nFlags:"
+    stderr -e "\t-h, --help\tPrint usage information and exit."
 }
+
+# Parse flags.
+PARAMS=""
+while (( "$#" )); do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0;;
+        -*|--*) # unsupported flags
+            stderr "Error: Unsupported flag '$1'"
+            exit 1;;
+        *) # preserve positional arguments
+            PARAMS="$PARAMS $1"
+            shift;;
+    esac
+done
+eval set -- "$PARAMS"
 
 # Parse positional arguments.
 if test "$#" -ne 1; then
