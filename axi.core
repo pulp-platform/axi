@@ -7,7 +7,7 @@ filesets:
     files:
       - include/axi/assign.svh :  {is_include_file : true, include_path : include}
       - include/axi/typedef.svh :  {is_include_file : true, include_path : include}
-        # Source files grouped in levels. Files in level 0 have no dependencies on files in this
+      # Source files grouped in levels. Files in level 0 have no dependencies on files in this
       # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
       # levels 1 and 0, etc. Files within a level are ordered alphabetically.
       # Level 0
