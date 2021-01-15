@@ -591,7 +591,7 @@ package axi_test;
 
   endclass
 
-  class rand_axi_master #(
+  class axi_rand_master #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -1162,7 +1162,7 @@ package axi_test;
 
   endclass
 
-  class rand_axi_slave #(
+  class axi_rand_slave #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -1316,7 +1316,7 @@ package axi_test;
   endclass
 
   // AXI4-Lite random master and slave
-  class rand_axi_lite_master #(
+  class axi_lite_rand_master #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
@@ -1485,7 +1485,7 @@ package axi_test;
     endtask : read
   endclass
 
-  class rand_axi_lite_slave #(
+  class axi_lite_rand_slave #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,

@@ -49,7 +49,7 @@ module tb_axi_lite_regs #(
 
   localparam byte_t [RegNumBytes-1:0] RegRstVal = '0;
 
-  typedef axi_test::rand_axi_lite_master #(
+  typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),

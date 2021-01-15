@@ -35,7 +35,7 @@ module tb_axi_serializer #(
   // Sim print config, how many transactions
   localparam int unsigned PrintTxn = 500;
 
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),
@@ -48,8 +48,8 @@ module tb_axi_serializer #(
     .MAX_READ_TXNS  ( MaxAR  ),
     .MAX_WRITE_TXNS ( MaxAW  ),
     .AXI_ATOPS      ( EnAtop )
-  ) rand_axi_master_t;
-  typedef axi_test::rand_axi_slave #(
+  ) axi_rand_master_t;
+  typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),
@@ -58,7 +58,7 @@ module tb_axi_serializer #(
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
-  ) rand_axi_slave_t;
+  ) axi_rand_slave_t;
 
   // -------------
   // DUT signals
@@ -125,24 +125,24 @@ module tb_axi_serializer #(
   );
 
   initial begin : proc_axi_master
-    automatic rand_axi_master_t rand_axi_master = new(master_dv);
+    automatic axi_rand_master_t axi_rand_master = new(master_dv);
     end_of_sim <= 1'b0;
-    rand_axi_master.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
-    rand_axi_master.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
-    rand_axi_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
-    rand_axi_master.reset();
+    axi_rand_master.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_master.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_master.reset();
     @(posedge rst_n);
-    rand_axi_master.run(NoReads, NoWrites);
+    axi_rand_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
     repeat (100) @(posedge clk);
     $stop();
   end
 
   initial begin : proc_axi_slave
-    automatic rand_axi_slave_t  rand_axi_slave  = new(slave_dv);
-    rand_axi_slave.reset();
+    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
+    axi_rand_slave.reset();
     @(posedge rst_n);
-    rand_axi_slave.run();
+    axi_rand_slave.run();
   end
 
   // Checker

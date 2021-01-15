@@ -78,7 +78,7 @@ module tb_axi_lite_to_apb;
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::rand_axi_lite_master #(
+  typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
     .AW       ( AxiAddrWidth  ),
     .DW       ( AxiDataWidth  ),
@@ -97,7 +97,7 @@ module tb_axi_lite_to_apb;
     .W_MAX_WAIT_CYCLES  (    5 ),
     .RESP_MIN_WAIT_CYCLES (  0 ),
     .RESP_MAX_WAIT_CYCLES ( 20 )
-  ) rand_axi_lite_master_t;
+  ) axi_lite_rand_master_t;
 
   // -------------
   // DUT signals
@@ -135,11 +135,11 @@ module tb_axi_lite_to_apb;
   // -------------------------------
   // Master controls simulation run time
   initial begin : proc_axi_master
-    static rand_axi_lite_master_t rand_axi_lite_master = new ( master_dv , "axi_lite_mst");
+    static axi_lite_rand_master_t axi_lite_rand_master = new ( master_dv , "axi_lite_mst");
     end_of_sim <= 1'b0;
-    rand_axi_lite_master.reset();
+    axi_lite_rand_master.reset();
     @(posedge rst_n);
-    rand_axi_lite_master.run(NoReads, NoWrites);
+    axi_lite_rand_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
   end
 

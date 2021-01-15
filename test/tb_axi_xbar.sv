@@ -91,7 +91,7 @@ module tb_axi_xbar;
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth       ),
     .DW ( AxiDataWidth       ),
@@ -104,8 +104,8 @@ module tb_axi_xbar;
     .MAX_READ_TXNS  ( 20     ),
     .MAX_WRITE_TXNS ( 20     ),
     .AXI_ATOPS      ( EnAtop )
-  ) rand_axi_master_t;
-  typedef axi_test::rand_axi_slave #(
+  ) axi_rand_master_t;
+  typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
     .AW ( AxiAddrWidth     ),
     .DW ( AxiDataWidth     ),
@@ -114,7 +114,7 @@ module tb_axi_xbar;
     // Stimuli application and test time
     .TA ( ApplTime         ),
     .TT ( TestTime         )
-  ) rand_axi_slave_t;
+  ) axi_rand_slave_t;
 
   // -------------
   // DUT signals
@@ -187,25 +187,25 @@ module tb_axi_xbar;
   // -------------------------------
   // Masters control simulation run time
   for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
-      static rand_axi_master_t rand_axi_master = new ( master_dv[i] );
+      static axi_rand_master_t axi_rand_master = new ( master_dv[i] );
     initial begin
       end_of_sim[i] <= 1'b0;
-      rand_axi_master.add_memory_region(AddrMap[0].start_addr,
+      axi_rand_master.add_memory_region(AddrMap[0].start_addr,
                                       AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-      rand_axi_master.reset();
+      axi_rand_master.reset();
       @(posedge rst_n);
-      rand_axi_master.run(NoReads, NoWrites);
+      axi_rand_master.run(NoReads, NoWrites);
       end_of_sim[i] <= 1'b1;
     end
   end
 
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
-      static rand_axi_slave_t rand_axi_slave = new( slave_dv[i] );
+      static axi_rand_slave_t axi_rand_slave = new( slave_dv[i] );
     initial begin
-      rand_axi_slave.reset();
+      axi_rand_slave.reset();
       @(posedge rst_n);
-      rand_axi_slave.run();
+      axi_rand_slave.run();
     end
   end
 

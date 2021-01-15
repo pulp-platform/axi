@@ -111,7 +111,7 @@ module tb_axi_modify_address #(
   );
 
   // Test harness master
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     .AW                   (AXI_SLV_PORT_ADDR_WIDTH),
     .DW                   (AXI_DATA_WIDTH),
     .IW                   (AXI_ID_WIDTH),
@@ -137,7 +137,7 @@ module tb_axi_modify_address #(
   end
 
   // Test harness slave
-  typedef axi_test::rand_axi_slave #(
+  typedef axi_test::axi_rand_slave #(
     .AW                   (AXI_MST_PORT_ADDR_WIDTH),
     .DW                   (AXI_DATA_WIDTH),
     .IW                   (AXI_ID_WIDTH),

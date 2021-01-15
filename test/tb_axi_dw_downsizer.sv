@@ -78,7 +78,7 @@ module tb_axi_dw_downsizer #(
 
   `AXI_ASSIGN(master, master_dv)
 
-  axi_test::rand_axi_master #(
+  axi_test::axi_rand_master #(
     .AW             (AxiAddrWidth       ),
     .DW             (AxiSlvPortDataWidth),
     .IW             (AxiIdWidth         ),
@@ -109,7 +109,7 @@ module tb_axi_dw_downsizer #(
     .AXI_USER_WIDTH(AxiUserWidth       )
   ) slave ();
 
-  axi_test::rand_axi_slave #(
+  axi_test::axi_rand_slave #(
     .AW(AxiAddrWidth       ),
     .DW(AxiMstPortDataWidth),
     .IW(AxiIdWidth         ),

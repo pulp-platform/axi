@@ -51,7 +51,7 @@ module tb_axi_addr_test #(
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
 
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),
@@ -64,8 +64,8 @@ module tb_axi_addr_test #(
     .AXI_BURST_FIXED ( 1'b1 ),
     .AXI_BURST_INCR  ( 1'b1 ),
     .AXI_BURST_WRAP  ( 1'b1 )
-  ) rand_axi_master_t;
-  typedef axi_test::rand_axi_slave #(
+  ) axi_rand_master_t;
+  typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),
@@ -74,7 +74,7 @@ module tb_axi_addr_test #(
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
-  ) rand_axi_slave_t;
+  ) axi_rand_slave_t;
   // -------------
   // DUT signals
   // -------------
@@ -109,24 +109,24 @@ module tb_axi_addr_test #(
   );
 
   initial begin : proc_axi_master
-    automatic rand_axi_master_t rand_axi_master = new(master_dv);
+    automatic axi_rand_master_t axi_rand_master = new(master_dv);
     end_of_sim <= 1'b0;
-    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::DEVICE_NONBUFFERABLE);
-    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WTHRU_NOALLOCATE);
-    rand_axi_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WBACK_RWALLOCATE);
-    rand_axi_master.reset();
+    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_master.reset();
     @(posedge rst_n);
-    rand_axi_master.run(0, NumTests);
+    axi_rand_master.run(0, NumTests);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
   end
 
   initial begin : proc_axi_slave
-    automatic rand_axi_slave_t  rand_axi_slave  = new(slave_dv);
-    rand_axi_slave.reset();
+    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
+    axi_rand_slave.reset();
     @(posedge rst_n);
-    rand_axi_slave.run();
+    axi_rand_slave.run();
   end
 
   initial begin : proc_sim_progress

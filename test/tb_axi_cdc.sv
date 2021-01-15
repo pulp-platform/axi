@@ -131,7 +131,7 @@ module tb_axi_cdc #(
     .dst        (downstream)
   );
 
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     .AW                   (AXI_AW),
     .DW                   (AXI_DW),
     .IW                   (AXI_IW),
@@ -155,7 +155,7 @@ module tb_axi_cdc #(
     axi_master.run(N_RD_TXNS, N_WR_TXNS);
   end
 
-  typedef axi_test::rand_axi_slave #(
+  typedef axi_test::axi_rand_slave #(
     .AW                   (AXI_AW),
     .DW                   (AXI_DW),
     .IW                   (AXI_IW),

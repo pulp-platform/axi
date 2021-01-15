@@ -60,7 +60,7 @@ module tb_axi_lite_mailbox;
     CTRL   = addr_t'(9 * AxiDataWidth/8)
   } reg_addr_e;
 
-  typedef axi_test::rand_axi_lite_master #(
+  typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth        ),
     .DW ( AxiDataWidth        ),

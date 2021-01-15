@@ -72,7 +72,7 @@ module tb_axi_lite_xbar;
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::rand_axi_lite_master #(
+  typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth       ),
     .DW ( AxiDataWidth       ),
@@ -84,7 +84,7 @@ module tb_axi_lite_xbar;
     .MAX_READ_TXNS  ( 10 ),
     .MAX_WRITE_TXNS ( 10 )
   ) rand_lite_master_t;
-  typedef axi_test::rand_axi_lite_slave #(
+  typedef axi_test::axi_lite_rand_slave #(
     // AXI interface parameters
     .AW ( AxiAddrWidth       ),
     .DW ( AxiDataWidth       ),

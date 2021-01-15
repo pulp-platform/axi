@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add infinite, simulation-only memory `axi_sim_mem`.
 
 ### Changed
+- Rename the following classes in `axi_test` to follow the convention that all user-facing objects
+  in this repository start with `axi_`:
+  - `rand_axi_lite_master` to `axi_lite_rand_master`,
+  - `rand_axi_lite_slave` to `axi_lite_rand_slave`,
+  - `rand_axi_master` to `axi_rand_master`, and
+  - `rand_axi_slave` to `axi_rand_slave`.
 
 ### Fixed
 
