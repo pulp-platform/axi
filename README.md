@@ -62,6 +62,7 @@ In addition to the modules above, which are available in synthesis and simulatio
 | [`axi_driver`](src/axi_test.sv)                      | Low-level driver for AXI4(+ATOPs) that can send and receive individual beats on any channel.           |
 | [`axi_lite_driver`](src/axi_test.sv)                 | Low-level driver for AXI4-Lite that can send and receive individual beats on any channel.              |
 | [`axi_scoreboard`](src/axi_test.sv)                  | Scoreboard that models a memory that only gets changed by the monitored AXI4(+ATOPs) port.             |
+| [`axi_sim_mem`](src/axi_sim_mem.sv)                  | Infinite memory with AXI4 slave port.                                                                  |
 | [`rand_axi_lite_master`](src/axi_test.sv)            | AXI4-Lite master component that issues random transactions within user-defined constraints.            |
 | [`rand_axi_lite_slave`](src/axi_test.sv)             | AXI4-Lite slave component that responds to transactions with constrainable random delays and data.     |
 | [`rand_axi_master`](src/axi_test.sv)                 | AXI4(+ATOPs) master component that issues random transactions within user-defined constraints.         |
