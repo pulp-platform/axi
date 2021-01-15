@@ -52,6 +52,22 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)          | AXI4 to AXI4-Lite protocol converter.                                                             |                                |
 | [`axi_xbar`](src/axi_xbar.sv)                        | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.            | [Doc](doc/axi_xbar.md)         |
 
+### Simulation-Only Modules
+
+In addition to the modules above, which are available in synthesis and simulation, the following modules are available only in simulation.  Those modules are widely used in our testbenches, but they are also suitable to build testbenches for AXI modules and systems outside this repository.
+
+| Name                                                 | Description                                                                                            |
+|------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| [`axi_chan_logger`](src/axi_test.sv)                 | Logs the transactions of an AXI4(+ATOPs) port to files.                                                |
+| [`axi_driver`](src/axi_test.sv)                      | Low-level driver for AXI4(+ATOPs) that can send and receive individual beats on any channel.           |
+| [`axi_lite_driver`](src/axi_test.sv)                 | Low-level driver for AXI4-Lite that can send and receive individual beats on any channel.              |
+| [`axi_scoreboard`](src/axi_test.sv)                  | Scoreboard that models a memory that only gets changed by the monitored AXI4(+ATOPs) port.             |
+| [`rand_axi_lite_master`](src/axi_test.sv)            | AXI4-Lite master component that issues random transactions within user-defined constraints.            |
+| [`rand_axi_lite_slave`](src/axi_test.sv)             | AXI4-Lite slave component that responds to transactions with constrainable random delays and data.     |
+| [`rand_axi_master`](src/axi_test.sv)                 | AXI4(+ATOPs) master component that issues random transactions within user-defined constraints.         |
+| [`rand_axi_slave`](src/axi_test.sv)                  | AXI4(+ATOPs) slave component that responds to transactions with constrainable random delays and data.  |
+
+
 
 ## Atomic Operations
 
