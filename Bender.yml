@@ -59,6 +59,7 @@ sources:
 
   - target: simulation
     files:
+      - src/axi_sim_mem.sv
       - src/axi_test.sv
 
   - target: test
@@ -81,5 +82,6 @@ sources:
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
+      - test/tb_axi_sim_mem.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar.sv

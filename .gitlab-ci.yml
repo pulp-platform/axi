@@ -135,6 +135,11 @@ axi_serializer:
   variables:
     TEST_MODULE: axi_serializer
 
+axi_sim_mem:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_sim_mem
+
 axi_to_axi_lite:
   <<: *run_vsim
   variables:

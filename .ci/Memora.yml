@@ -209,6 +209,19 @@ artifacts:
     outputs:
       - build/axi_serializer-%.tested
 
+  axi_sim_mem-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_sim_mem.sv
+      - test/tb_axi_sim_mem.sv
+    outputs:
+      - build/axi_sim_mem-%.tested
+
   axi_to_axi_lite-%:
     inputs:
       - Bender.yml
