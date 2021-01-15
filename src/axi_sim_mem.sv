@@ -39,7 +39,7 @@ module axi_sim_mem #(
 ) (
   /// Rising-edge clock
   input  logic clk_i,
-  /// Active-lew reset
+  /// Active-low reset
   input  logic rst_ni,
   /// AXI4 request struct
   input  req_t axi_req_i,
