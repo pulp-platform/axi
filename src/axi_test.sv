@@ -1177,6 +1177,7 @@ package axi_test;
     // Stimuli application and test time
     parameter time  TA = 0ps,
     parameter time  TT = 0ps,
+    parameter bit   RAND_RESP = 0,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
     parameter int   AX_MAX_WAIT_CYCLES = 100,
@@ -1250,6 +1251,8 @@ package axi_test;
         ar_beat = ar_queue.peek();
         rand_success = r_beat.randomize(); assert(rand_success);
         r_beat.r_id = ar_beat.ax_id;
+        if (RAND_RESP && !ar_beat.ax_atop[axi_pkg::ATOP_R_RESP])
+          r_beat.r_resp[1] = $random();
         if (ar_beat.ax_lock)
           r_beat.r_resp[0]= $random();
         rand_wait(R_MIN_WAIT_CYCLES, R_MAX_WAIT_CYCLES);
@@ -1300,6 +1303,8 @@ package axi_test;
         aw_beat = aw_queue.pop_front();
         rand_success = b_beat.randomize(); assert(rand_success);
         b_beat.b_id = aw_beat.ax_id;
+        if (RAND_RESP && !aw_beat.ax_atop[axi_pkg::ATOP_R_RESP])
+          b_beat.b_resp[1] = $random();
         if (aw_beat.ax_lock) begin
           b_beat.b_resp[0]= $random();
         end

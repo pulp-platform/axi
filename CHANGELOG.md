@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `typedef.svh`: Add `AXI_TYPEDEF_ALL` macro for defining all channels and request/response
   `struct`s in a single macro call.
+- `axi_test::axi_rand_slave`: Add parameter `RAND_RESP`, which enables randomization of the `resp`
+  field in B and R beats.
 
 ### Changed
 - `axi_test::axi_rand_master`: Randomize the QoS field.
