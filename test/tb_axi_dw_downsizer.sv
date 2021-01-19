@@ -7,13 +7,9 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
-// File          : tb_axi_dw_downsizer.sv
-// Author        : Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
-// Created       : 09.02.2019
-
-// Copyright (C) 2020 ETH Zurich, University of Bologna
-// All rights reserved.
+//
+// Authors:
+// - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"

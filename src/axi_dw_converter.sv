@@ -7,8 +7,9 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
-// Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
+//
+// Authors:
+// - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 // NOTE: The upsizer does not support WRAP bursts, and will answer with SLVERR
 // upon receiving a burst of such type. In addition to that, the downsizer also

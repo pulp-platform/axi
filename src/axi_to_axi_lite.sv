@@ -9,12 +9,13 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Authors: Fabian Schuiki      <fschuiki@iis.ee.ethz.ch>
-//          Andreas Kurth       <akurth@iis.ee.ethz.ch>
-//          Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-//
-// Description: An AXI4+ATOP to AXI4-Lite adapter with atomic transaction and burst support.
+// Authors:
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
+/// An AXI4+ATOP to AXI4-Lite converter with atomic transaction and burst support.
 module axi_to_axi_lite #(
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,

@@ -7,8 +7,10 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
-// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+//
+// Authors:
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
 // axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
 // See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.

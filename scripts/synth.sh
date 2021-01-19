@@ -10,8 +10,9 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 #
-# Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-# Andreas Kurth  <akurth@iis.ee.ethz.ch>
+# Authors:
+# - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+# - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 set -e
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

@@ -10,8 +10,10 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 #
-# Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-# Andreas Kurth  <akurth@iis.ee.ethz.ch>
+# Authors:
+# - Andreas Kurth <akurth@iis.ee.ethz.ch>
+# - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+# - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

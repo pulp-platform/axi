@@ -7,8 +7,9 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
-// Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
+//
+// Authors:
+// - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 // `axi_dw_upsizer_monitor` implements an AXI bus monitor that is tuned
 // for the AXI Data Width Converters. It snoops on the slave and master port

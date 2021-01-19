@@ -1,6 +1,8 @@
 // Copyright (c) 2020 ETH Zurich and University of Bologna
 // SPDX-License-Identifier: SHL-0.51
-// Author: Andreas Kurth
+//
+// Authors:
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"

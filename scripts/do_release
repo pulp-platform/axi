@@ -5,7 +5,8 @@
 #
 # See `usage()` for description, or execute with the `--help` flag.
 #
-# Author: Andreas Kurth
+# Authors:
+# - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 set -euo pipefail
 readonly THIS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"

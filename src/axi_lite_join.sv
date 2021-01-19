@@ -9,8 +9,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Andreas Kurth  <akurth@iis.ee.ethz.ch>
-// Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// Authors:
+// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 
