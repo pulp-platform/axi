@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+#
+# Copyright (c) 2021 ETH Zurich, University of Bologna
+# SPDX-License-Identifier: Apache-2.0
+#
+# Authors:
+# - Andreas Kurth <akurth@iis.ee.ethz.ch>
+
+set -euo pipefail
+
+stderr() {
+    printf "$@" >&2
+}
+
+# Some authors prefer to not appear with real name and email address in author lists.
+declare -A hide=( \
+)
+
+# Map each author name to an email address.
+declare -A emails=( \
+    ["Andreas Kurth"]="akurth@iis.ee.ethz.ch" \
+    ["Fabian Schuiki"]="fschuiki@iis.ee.ethz.ch" \
+    ["Florian Zaruba"]="zarubaf@iis.ee.ethz.ch" \
+    ["Matheus Cavalcante"]="matheusd@iis.ee.ethz.ch" \
+    ["Samuel Riedel"]="sriedel@iis.ee.ethz.ch" \
+    ["Stefan Mach"]="smach@iis.ee.ethz.ch" \
+    ["Wolfgang Rönninger"]="wroennin@iis.ee.ethz.ch" \
+)
+
+# Iterate over source files (see `done` line for which files are included).
+while IFS= read -r -d $'\0' file; do
+    if $(echo "$file" | grep -q '\.svh\?$'); then # SystemVerilog file
+        comment_lead='//'
+        comment_lead_escaped='\/\/'
+    else
+        comment_lead='#'
+        comment_lead_escaped='#'
+    fi
+    re_authors="^\\s*${comment_lead}\\s*Authors:\$"
+
+    # If the file does not contain an 'Authors:' paragraph, create one.
+    if ! grep -q "$re_authors" "$file"; then
+        # Find first line after copyright header.
+        copyright_end=$(awk "BEGIN {newparagraph=1;}
+        {
+            if (newparagraph) {
+                if (\$0 ~ /^${comment_lead_escaped}\\s*[cC]opyright/) {
+                    newparagraph=0;
+                    next
+                } else {
+                    print NR;
+                    exit
+                }
+            } else if (\$0 ~ /^\\/*$/) {
+                newparagraph=1;
+                next
+            }
+        }" "$file")
+        # Insert 'Authors:' header.
+        sed -i -e "${copyright_end}a${comment_lead} Authors:" "$file"
+    fi
+
+    # Find line before and after authors list.
+    authors_begin=$(grep -n -m 1 "$re_authors" $file | sed 's/\([0-9]\+\).*/\1/')
+    authors_end=$(awk "{if (NR > $authors_begin && \$0 ~ /^\$/) {print NR; exit}}" "$file")
+
+    # Replace author list with information from `git log`.
+    tmpfile=$(mktemp)
+    {
+        sed -n "1,${authors_begin}p" "$file"
+        readarray -t changes <<<"$(git log --follow --numstat --format='%an' "$file" | awk '
+        BEGIN {totalchange=0; }
+        {
+            if (NR % 3 == 1) {
+                author=$0;
+            } else if (NR % 3 == 0) {
+                if (!change[author]) {
+                    change[author]=0;
+                }
+                change[author]+=$1;
+                totalchange+=$1
+                change[author]+=$2;
+                totalchange+=$2;
+            }
+        }
+        END {
+            print totalchange;
+            for (author in change) {
+                print change[author] " " author;
+            }
+        }')"
+        totalchange="${changes[0]}"
+        authorchanges=()
+        for authorchange in "${changes[@]:1}"; do
+            name="$(echo "$authorchange" | cut -d' ' -f 2-)"
+            change="$(echo "$authorchange" | cut -d' ' -f 1)"
+            # Only list authors who have contributed to more than 5% of the changes in the file.
+            if test $(( $change * 100 / $totalchange )) -ge 5; then
+                authorchanges+=("$change $name")
+            fi
+        done
+        # Sort author with most changes first.
+        readarray -t authors < <(printf '%s\n' "${authorchanges[@]}" | sort -nr)
+        stderr "$file\n"
+        stderr '%s\n' "${authors[@]}"
+        stderr '\n'
+        readarray -t authors < <(printf '%s\n' "${authors[@]}" | cut -d' ' -f2-)
+        for author in "${authors[@]}"; do
+            if ! "${hide[$author]:-false}"; then
+                if ! test ${emails[$author]+_}; then
+                    stderr "Error: Email address of author '$author' unknown!\n"
+                    exit 1
+                fi
+                email="${emails[$author]}"
+                author_ascii=$(echo "$author" | sed 's/ö/oe/g')
+                if $(echo "$author_ascii" | grep -q -P '[^[:ascii:]]'); then
+                    stderr "Author name '$author_ascii' contains a non-ASCII character!\n"
+                    exit 1
+                fi
+                echo "$comment_lead - $author_ascii <$email>"
+            fi
+        done
+        sed -n "$authors_end,\$p" "$file"
+    } > "$tmpfile"
+    chmod --reference="$file" "$tmpfile" # retain file permissions
+    mv "$tmpfile" "$file"
+
+done < <(git ls-tree -r -z --name-only HEAD -- 'include' 'scripts' 'src' 'test' \
+    | grep -z -P '\.s(?:vh?|h)$|^(?!.+\.)')
+    # left alternative matches files with .sh, .sv, and .svh extensions;
+    # right alternative matches files with no extension
