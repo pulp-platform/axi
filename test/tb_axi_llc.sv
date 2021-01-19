@@ -111,7 +111,7 @@ module tb_axi_llc #(
   ////////////////////////////////
   // Stimuli generator typedefs //
   ////////////////////////////////
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     .AW                   ( TbAxiAddrWidthFull ),
     .DW                   ( TbAxiDataWidthFull ),
     .IW                   ( TbAxiIdWidthFull   ),
@@ -129,9 +129,9 @@ module tb_axi_llc #(
     .AXI_BURST_FIXED      ( 1'b0               ),
     .AXI_BURST_INCR       ( 1'b1               ),
     .AXI_BURST_WRAP       ( 1'b0               )
-  ) rand_axi_master_t;
+  ) axi_rand_master_t;
 
-  typedef axi_test::rand_axi_slave #(
+  typedef axi_test::axi_rand_slave #(
     .AW                   ( TbAxiAddrWidthFull        ),
     .DW                   ( TbAxiDataWidthFull        ),
     .IW                   ( TbAxiIdWidthFull + 32'd1  ),
@@ -145,14 +145,14 @@ module tb_axi_llc #(
     .RESP_MIN_WAIT_CYCLES ( 10                        ),
     .RESP_MAX_WAIT_CYCLES ( 20                        ),
     .MAPPED               ( 1'b1                      )
-  ) rand_axi_slave_t;
+  ) axi_rand_slave_t;
 
-  typedef axi_test::rand_axi_lite_master #(
+  typedef axi_test::axi_lite_rand_master #(
     .AW ( TbAxiAddrWidthLite ),
     .DW ( TbAxiDataWidthLite ),
     .TA ( TbApplTime         ),
     .TT ( TbTestTime         )
-  ) rand_axi_lite_master_t;
+  ) axi_lite_rand_master_t;
 
   typedef axi_test::axi_scoreboard #(
     .IW( TbAxiIdWidthFull   ),
@@ -267,15 +267,15 @@ module tb_axi_llc #(
   ////////////////////////////////////////
   // Scoreboards and simulation control //
   ////////////////////////////////////////
-  rand_axi_master_t axi_master;
-  rand_axi_slave_t  axi_slave;
+  //axi_rand_master_t axi_master;
+  //axi_rand_slave_t  axi_slave;
 
 
   initial begin : proc_sim_crtl
     automatic axi_scoreboard_cpu_t   cpu_scoreboard  = new( score_cpu_intf_dv             );
     automatic axi_scoreboard_mem_t   mem_scoreboard  = new( score_mem_intf_dv             );
-    automatic rand_axi_master_t      axi_master      = new( axi_cpu_intf_dv               );
-    automatic rand_axi_lite_master_t axi_lite_master = new( axi_cfg_intf_dv , "CfgMaster" );
+    automatic axi_rand_master_t      axi_master      = new( axi_cpu_intf_dv               );
+    automatic axi_lite_rand_master_t axi_lite_master = new( axi_cfg_intf_dv , "CfgMaster" );
     // Variables for the LITE config thingy.
     automatic axi_lite_addr_t lite_addr  = axi_lite_addr_t'(0);
     automatic axi_pkg::prot_t lite_prot  = axi_pkg::prot_t'(0);
@@ -363,7 +363,7 @@ module tb_axi_llc #(
   end
 
   initial begin : proc_sim_mem
-    automatic rand_axi_slave_t axi_slave = new( axi_mem_intf_dv );
+    automatic axi_rand_slave_t axi_slave = new( axi_mem_intf_dv );
     axi_slave.reset();
     @(posedge rst_n);
     axi_slave.run();
@@ -390,7 +390,7 @@ module tb_axi_llc #(
     cpu_scoreboard.clear_range(SpmRegionStart, SpmRegionStart + SpmRegionLength);
   endtask : clear_spm_cpu
 
-  task flush_all(rand_axi_lite_master_t axi_lite_master);
+  task flush_all(axi_lite_rand_master_t axi_lite_master);
     automatic axi_pkg::resp_t l_resp;
     automatic axi_lite_data_t data = {TbSetAssociativity{1'b1}};
     $info("Flushing the cache!");
