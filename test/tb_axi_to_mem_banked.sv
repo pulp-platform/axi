@@ -29,9 +29,9 @@ module tb_axi_to_mem_banked #(
   /// Latancy in cycles of a memory bank.
   parameter int unsigned TbMemLatency   = 32'd2,
   /// Number of writes performed by the testbench.
-  parameter int unsigned NumWrites      = 32'd10000,
+  parameter int unsigned TbNumWrites    = 32'd10000,
   /// Number of writes performed by the testbench.
-  parameter int unsigned NumReads       = 32'd10000
+  parameter int unsigned TbNumReads     = 32'd10000
 );
   // test bench params
   localparam time CyclTime = 10ns;
@@ -47,7 +47,7 @@ module tb_axi_to_mem_banked #(
   typedef logic [AxiAddrWidth-1:0] axi_addr_t;
 
   // AXI test defines
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( TbAxiDataWidth ),
@@ -74,7 +74,7 @@ module tb_axi_to_mem_banked #(
     .AXI_BURST_FIXED      ( 1'b0 ),
     .AXI_BURST_INCR       ( 1'b1 ),
     .AXI_BURST_WRAP       ( 1'b0 )
-  ) rand_axi_master_t;
+  ) axi_rand_master_t;
 
   // memory defines
   localparam int unsigned MemAddrWidth = $clog2(TbNumWords);
@@ -84,8 +84,8 @@ module tb_axi_to_mem_banked #(
   localparam axi_addr_t StartAddr = axi_addr_t'(64'h0);
   localparam axi_addr_t EndAddr   = axi_addr_t'(StartAddr + 32'd2 * TbNumWords * TbAxiDataWidth/32'd8);
 
-  typedef logic [MemAddrWidth-1:0]   mem_addr_t;
-  typedef logic [5:0]                mem_atop_t;
+  typedef logic [MemAddrWidth-1:0]     mem_addr_t;
+  typedef logic [5:0]                  mem_atop_t;
   typedef logic [TbMemDataWidth-1:0]   mem_data_t;
   typedef logic [TbMemDataWidth/8-1:0] mem_strb_t;
 
@@ -95,7 +95,7 @@ module tb_axi_to_mem_banked #(
   // dut signals
   logic clk, rst_n, one_dut_active;
 
-  logic      [1:0]          dut_busy;
+  logic      [1:0]            dut_busy;
   logic      [TbNumBanks-1:0] mem_req;
   logic      [TbNumBanks-1:0] mem_gnt;
   mem_addr_t [TbNumBanks-1:0] mem_addr;
@@ -109,31 +109,31 @@ module tb_axi_to_mem_banked #(
   assign one_dut_active = |dut_busy;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
     .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ID_WIDTH   ( AxiIdWidth     ),
+    .AXI_USER_WIDTH ( AxiUserWidth   )
   ) mem_axi_dv (clk);
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
     .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ID_WIDTH   ( AxiIdWidth     ),
+    .AXI_USER_WIDTH ( AxiUserWidth   )
   ) mem_axi ();
   `AXI_ASSIGN(mem_axi, mem_axi_dv)
 
   // stimuli generation
   initial begin : proc_axi_master
-    static rand_axi_master_t rand_axi_master = new ( mem_axi_dv );
+    static axi_rand_master_t axi_rand_master = new ( mem_axi_dv );
     end_of_sim <= 1'b0;
-    rand_axi_master.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
-    rand_axi_master.reset();
+    axi_rand_master.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_master.reset();
     @(posedge rst_n);
     @(posedge clk);
     @(posedge clk);
 
-    rand_axi_master.run(NumReads, NumWrites);
+    axi_rand_master.run(TbNumReads, TbNumWrites);
     end_of_sim <= 1'b1;
   end
 
@@ -373,13 +373,13 @@ module tb_axi_to_mem_banked #(
 
       if (aw_beat) begin
         if (ActAwTnx % PrintInterv == 0) begin
-          $display("%t > AW Transaction %d of %d ", $time(), ActAwTnx, NumWrites);
+          $display("%t > AW Transaction %d of %d ", $time(), ActAwTnx, TbNumWrites);
         end
         ActAwTnx++;
       end
       if (ar_beat) begin
         if (ActArTnx % PrintInterv == 0) begin
-          $display("%t > AR Transaction %d of %d ", $time(), ActArTnx, NumReads);
+          $display("%t > AR Transaction %d of %d ", $time(), ActArTnx, TbNumReads);
         end
         ActArTnx++;
       end
