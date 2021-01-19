@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `typedef.svh`: Add `AXI_TYPEDEF_ALL` macro for defining all channels and request/response
+  `struct`s in a single macro call.
 
 ### Changed
 
