@@ -93,6 +93,68 @@ exec_test() {
                 done
             done
             ;;
+        axi_llc)
+            for SET_ASSOCIATIVITY in 1 3 8; do
+                for NUM_LINES in 128 512; do
+                    for NUM_BLOCKS in 2 8; do
+                        for AXI_ADDR_WIDTH in 32 64; do
+                            for AXI_DATA_WIDTH in 64 128; do
+                                call_vsim tb_axi_llc -t 1ns -voptargs="+acc +cover=bcesfx" \
+                                    -gTbSetAssociativity=$SET_ASSOCIATIVITY \
+                                    -gTbNumLines=$NUM_LINES                 \
+                                    -gTbNumBlocks=$NUM_BLOCKS               \
+                                    -gTbAxiAddrWidthFull=$AXI_ADDR_WIDTH    \
+                                    -gTbAxiDataWidthFull=$AXI_DATA_WIDTH
+                            done
+                        done
+                    done
+                done
+            done
+            ;;
+        axi_xbar)
+            for GEN_ATOP in 0 1; do
+                for NUM_MST in 1 6; do
+                    for NUM_SLV in 2 9; do
+                        for MST_ID_USE in 3 5; do
+                            MST_ID=5
+                            for DATA_WIDTH in 64 256; do
+                                for PIPE in 0 1; do
+                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
+                                        -gTbNumMasters=$NUM_MST       \
+                                        -gTbNumSlaves=$NUM_SLV        \
+                                        -gTbAxiIdWidthMasters=$MST_ID \
+                                        -gTbAxiIdUsed=$MST_ID_USE     \
+                                        -gTbAxiDataWidth=$DATA_WIDTH  \
+                                        -gTbPipeline=$PIPE            \
+                                        -gTbEnAtop=$GEN_ATOP
+                                done
+                            done
+                        done
+                    done
+                done
+            done
+            ;;
+        axi_to_mem_banked)
+            for MEM_LAT in 1 2; do
+                for BANK_FACTOR in 1 2; do
+                    for NUM_BANKS in 1 2 4 ; do
+                        for AXI_DATA_WIDTH in 64 256 ; do
+                            for NUM_WORDS in 512 2048; do
+                                ACT_BANKS=$((2*$BANK_FACTOR*$NUM_BANKS))
+                                MEM_DATA_WIDTH=$(($AXI_DATA_WIDTH/$NUM_BANKS))
+                                call_vsim tb_axi_to_mem_banked \
+                                    -voptargs="+acc +cover=bcesfx" \
+                                    -gTbAxiDataWidth=$AXI_DATA_WIDTH \
+                                    -gTbNumWords=$NUM_WORDS \
+                                    -gTbNumBanks=$ACT_BANKS \
+                                    -gTbMemDataWidth=$MEM_DATA_WIDTH \
+                                    -gTbMemLatency=$MEM_LAT
+                            done
+                        done
+                    done
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;

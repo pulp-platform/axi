@@ -10,8 +10,6 @@
 
 // Author: Wolfgang Roenninger <wroennin@ethz.ch>
 
-`include "axi/typedef.svh"
-`include "common_cells/registers.svh"
 
 /// AXI4-Lite registers with optional read-only and protection features.
 ///
@@ -126,6 +124,8 @@ module axi_lite_regs #(
   /// The registered value of each byte.
   output byte_t [RegNumBytes-1:0] reg_q_o
 );
+  `include "axi/typedef.svh"
+  `include "common_cells/registers.svh"
 
   // Define the number of register chunks needed to map all `RegNumBytes` to the AXI channel.
   // Eg: `AxiDataWidth == 32'd32`
@@ -140,7 +140,7 @@ module axi_lite_regs #(
   //           | chunk_2 | chunk_1 | chunk_0 |
   localparam int unsigned AxiStrbWidth  = AxiDataWidth / 32'd8;
   localparam int unsigned NumChunks     = cf_math_pkg::ceil_div(RegNumBytes, AxiStrbWidth);
-  localparam int unsigned ChunkIdxWidth = (NumChunks > 32'd1) ? $clog2(NumChunks) : 32'd1;
+  localparam int unsigned ChunkIdxWidth = cf_math_pkg::idx_width(NumChunks);
   // Type of the index to identify a specific register chunk.
   typedef logic [ChunkIdxWidth-1:0] chunk_idx_t;
 
@@ -148,20 +148,26 @@ module axi_lite_regs #(
   // Look at the `AddrWidth` number of LSBs to calculate the multiplexer index of the AXI.
   localparam int unsigned AddrWidth = (RegNumBytes > 32'd1) ? ($clog2(RegNumBytes)+1) : 32'd2;
   typedef logic [AddrWidth-1:0] addr_t;
+  // Separate type for int unsigned as some tools are not capable to size according to the standard.
+  typedef logic [31:0] rule_idx_t;
 
   // Define the address map which maps each register chunk onto an AXI address.
   typedef struct packed {
-    int unsigned idx;
-    addr_t       start_addr;
-    addr_t       end_addr;
+    rule_idx_t idx;
+    addr_t     start_addr;
+    addr_t     end_addr;
   } axi_rule_t;
   axi_rule_t    [NumChunks-1:0] addr_map;
-  for (genvar i = 0; i < NumChunks; i++) begin : gen_addr_map
-    assign addr_map[i] = axi_rule_t'{
-      idx:        i,
-      start_addr: addr_t'( i   * AxiStrbWidth),
-      end_addr:   addr_t'((i+1)* AxiStrbWidth)
-    };
+
+  always_comb begin
+    addr_map = '0;
+    for (int unsigned i = 0; i < NumChunks; i++) begin
+      addr_map[i] = axi_rule_t'{
+        idx:        rule_idx_t'(i),
+        start_addr: addr_t'( i   * AxiStrbWidth),
+        end_addr:   addr_t'((i+1)* AxiStrbWidth)
+      };
+    end
   end
 
   // Channel definitions for spill register
@@ -191,7 +197,7 @@ module axi_lite_regs #(
   addr_t byte_w_addr;
   assign byte_w_addr = addr_t'(aw_chunk_idx * AxiStrbWidth);
 
-  for (genvar i = 0; i < AxiStrbWidth; i++) begin : gen_load_assign
+  for (genvar i = 0; unsigned'(i) < AxiStrbWidth; i++) begin : gen_load_assign
     // Indexed byte address
     addr_t reg_w_idx;
     assign reg_w_idx = byte_w_addr + addr_t'(i);
@@ -310,7 +316,7 @@ module axi_lite_regs #(
   assign axi_resp_o.ar_ready = r_ready;            // from spill register
 
   // Register array mapping, even read only register can be loaded over `reg_load_i`.
-  for (genvar i = 0; i < RegNumBytes; i++) begin : gen_rw_regs
+  for (genvar i = 0; unsigned'(i) < RegNumBytes; i++) begin : gen_rw_regs
     `FFLARN(reg_q[i], reg_d[i], reg_update[i], RegRstVal[i], clk_i, rst_ni)
     assign reg_q_o[i] = reg_q[i];
   end
@@ -395,7 +401,7 @@ module axi_lite_regs #(
           $fatal(1, "Each register needs a `ReadOnly` flag!");
     end
     default disable iff (~rst_ni);
-    for (genvar i = 0; i < RegNumBytes; i++) begin
+    for (genvar i = 0; unsigned'(i) < RegNumBytes; i++) begin : gen_load_assert
       assert property (@(posedge clk_i) (!reg_load_i[i] && AxiReadOnly[i] |=> $stable(reg_q_o[i])))
           else $fatal(1, "Read-only register at `byte_index: %0d` was changed by AXI!", i);
     end
