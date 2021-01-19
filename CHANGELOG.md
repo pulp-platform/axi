@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `struct`s in a single macro call.
 
 ### Changed
+- `axi_test::axi_rand_master`: Randomize the QoS field.
 
 ### Fixed
 

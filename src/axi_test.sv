@@ -236,7 +236,7 @@ package axi_test;
     logic               ax_lock   = '0;
     logic [3:0]         ax_cache  = '0;
     logic [2:0]         ax_prot   = '0;
-    logic [3:0]         ax_qos    = '0;
+    rand logic [3:0]    ax_qos    = '0;
     logic [3:0]         ax_region = '0;
     logic [5:0]         ax_atop   = '0; // Only defined on the AW channel.
     rand logic [UW-1:0] ax_user   = '0;
@@ -732,6 +732,7 @@ package axi_test;
       automatic burst_t burst;
       automatic cache_t cache;
       automatic id_t id;
+      automatic qos_t qos;
       automatic len_t len;
       automatic size_t size;
       automatic int unsigned mem_region_idx;
@@ -835,13 +836,16 @@ package axi_test;
 
       ax_beat.ax_addr = addr;
       rand_success = std::randomize(id); assert(rand_success);
+      rand_success = std::randomize(qos); assert(rand_success);
       ax_beat.ax_id = id;
+      ax_beat.ax_qos = qos;
       return ax_beat;
     endfunction
 
     task rand_atop_burst(inout ax_beat_t beat);
       automatic logic rand_success;
       automatic id_t id;
+      automatic qos_t qos;
       beat.ax_atop[5:4] = $random();
       if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
         // Determine `ax_atop`.
@@ -934,6 +938,8 @@ package axi_test;
         end
       end
       beat.ax_id = id;
+      rand_success = std::randomize(qos); assert(rand_success);
+      beat.ax_qos = qos;
       w_flight_cnt[id]++;
       cnt_sem.put();
     endtask
