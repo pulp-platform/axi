@@ -1,0 +1,23 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">xbar_cfg_t</a></h1>
+<pre>typedef struct packed {
+    int unsigned   NoSlvPorts;
+    int unsigned   NoMstPorts;
+    int unsigned   MaxMstTrans;
+    int unsigned   MaxSlvTrans;
+    bit            FallThrough;
+    xbar_latency_e LatencyMode;
+    int unsigned   AxiIdWidthSlvPorts;
+    int unsigned   AxiIdUsedSlvPorts;
+    int unsigned   AxiAddrWidth;
+    int unsigned   AxiDataWidth;
+    int unsigned   NoAddrRules;
+  } xbar_cfg_t;</pre>
+<p>Configuration for <code>axi_xbar</code>.</p>
+</section>
+</body>
+</html>
