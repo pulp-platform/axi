@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## 0.26.0 - 2021-01-19
 
 ### Added
 - Add infinite, simulation-only memory `axi_sim_mem`.
@@ -22,8 +22,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `rand_axi_lite_slave` to `axi_lite_rand_slave`,
   - `rand_axi_master` to `axi_rand_master`, and
   - `rand_axi_slave` to `axi_rand_slave`.
-
-### Fixed
 
 
 ## 0.25.0 - 2021-01-14
