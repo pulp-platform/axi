@@ -36,6 +36,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_intf`](src/axi_intf.sv)                        | This file defines the interfaces we support.                                                      |                                |
 | [`axi_isolate`](src/axi_isolate.sv)                  | A module that can isolate downstream slaves from receiving new AXI4 transactions.                 |                                |
 | [`axi_iw_converter`](src/axi_iw_converter.sv)        | This module converts between different AXI ID widths.                                             |                                |
+| [`axi_iw_downsizer`](src/axi_iw_downsizer.sv)        | This module downsizes the AXI ID width between slave and master port.                             |                                |
 | [`axi_join`](src/axi_join.sv)                        | A connector that joins two AXI interfaces.                                                        |                                |
 | [`axi_lite_demux`](src/axi_lite_demux.sv)            | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                      | [Doc](doc/axi_lite_demux.md)   |
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
