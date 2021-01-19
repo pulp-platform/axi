@@ -349,6 +349,8 @@ module axi_id_remap #(
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
       else $fatal(1, "AXI W data widths are not equal!");
+    assert($bits(slv_req_i.w.user) == $bits(mst_req_o.w.user))
+      else $fatal(1, "AXI W user widths are not equal!");
     assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
     assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
