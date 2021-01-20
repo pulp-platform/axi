@@ -48,9 +48,11 @@ sources:
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
   - src/axi_multicut.sv
+  - src/axi_tlb_l1.sv
   - src/axi_to_axi_lite.sv
   # Level 4
   - src/axi_lite_xbar.sv
+  - src/axi_tlb.sv
   - src/axi_xbar.sv
 
   - target: synth_test
@@ -83,5 +85,6 @@ sources:
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
+      - test/tb_axi_tlb.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar.sv
