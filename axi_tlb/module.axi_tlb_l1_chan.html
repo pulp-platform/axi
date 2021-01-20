@@ -1,0 +1,51 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_tlb_l1_chan</a></h1>
+<div class="docblock">
+<p>Internal module of <a href="module.axi_tlb_l1"><code>axi_tlb_l1</code></a>: Channel handler.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.NumEntries" class="impl"><code class="in-band">NumEntries<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of entries in translation table</p>
+</div><h3 id="parameter.IsWriteChannel" class="impl"><code class="in-band">IsWriteChannel<span class="type-annotation">: logic</span></code></h3><div class="docblock"
+><p>Is this channel is used for writes?</p>
+</div><h3 id="parameter.req_addr_t" class="impl"><code class="in-band">req_addr_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Type of request address</p>
+</div><h3 id="parameter.entry_t" class="impl"><code class="in-band">entry_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Type of a translation table entry</p>
+</div><h3 id="parameter.res_t" class="impl"><code class="in-band">res_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Type of translation result</p>
+</div><h3 id="parameter.EntryIdxWidth" class="impl"><code class="in-band">EntryIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Rising-edge clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low</p>
+</div><h3 id="port.test_en_i" class="impl"><code class="in-band">test_en_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Test mode enable</p>
+</div><h3 id="port.entries_i" class="impl"><code class="in-band">entries_i<span class="type-annotation">: input  entry_t [NumEntries-1:0]</span></code></h3><div class="docblock"
+><p>Translation table entries</p>
+</div><h3 id="port.req_addr_i" class="impl"><code class="in-band">req_addr_i<span class="type-annotation">: input  req_addr_t</span></code></h3><div class="docblock"
+><p>Request address</p>
+</div><h3 id="port.req_valid_i" class="impl"><code class="in-band">req_valid_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Request valid</p>
+</div><h3 id="port.req_ready_o" class="impl"><code class="in-band">req_ready_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Request ready</p>
+</div><h3 id="port.res_o" class="impl"><code class="in-band">res_o<span class="type-annotation">: output res_t</span></code></h3><div class="docblock"
+><p>Translation result</p>
+</div><h3 id="port.res_valid_o" class="impl"><code class="in-band">res_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Translation result valid</p>
+</div><h3 id="port.res_ready_i" class="impl"><code class="in-band">res_ready_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Translation result ready</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.entry_idx_t.html">entry_idx_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.match_idx" class="impl"><code class="in-band">match_idx<span class="type-annotation">: entry_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.res" class="impl"><code class="in-band">res<span class="type-annotation">: res_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>
