@@ -11,6 +11,8 @@
 // Authors:
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
+`include "axi/assign.svh"
+
 module tb_axi_dw_upsizer #(
     // AXI Parameters
     parameter int unsigned AxiAddrWidth        = 64  ,
@@ -23,13 +25,6 @@ module tb_axi_dw_upsizer #(
     parameter time ApplTime                    = 2ns ,
     parameter time TestTime                    = 8ns
   );
-
-  /****************
-   *  PARAMETERS  *
-   ****************/
-
-  `include "axi/assign.svh"
-  `include "axi/typedef.svh"
 
   /*********************
    *  CLOCK GENERATOR  *

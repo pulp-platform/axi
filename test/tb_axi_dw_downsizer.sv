@@ -12,7 +12,6 @@
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
-`include "axi/typedef.svh"
 
 module tb_axi_dw_downsizer #(
     // AXI Parameters
@@ -26,13 +25,6 @@ module tb_axi_dw_downsizer #(
     parameter time ApplTime                    = 2ns ,
     parameter time TestTime                    = 8ns
   );
-
-  /****************
-   *  PARAMETERS  *
-   ****************/
-
-  `include "axi/assign.svh"
-  `include "axi/typedef.svh"
 
   /*********************
    *  CLOCK GENERATOR  *
