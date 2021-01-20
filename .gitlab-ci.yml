@@ -145,6 +145,11 @@ axi_to_axi_lite:
   variables:
     TEST_MODULE: axi_to_axi_lite
 
+axi_to_mem_banked:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_to_mem_banked
+
 axi_xbar:
   <<: *run_vsim
   variables:
