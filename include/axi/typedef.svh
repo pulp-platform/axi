@@ -185,4 +185,27 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// All AXI4-Lite Channels and Request/Response Structs in One Macro
+//
+// This can be used whenever the user is not interested in "precise" control of the naming of the
+// individual channels.
+//
+// Usage Example:
+// `AXI_LITE_TYPEDEF_ALL(axi_lite, addr_t, data_t, strb_t)
+//
+// This defines `axi_lite_req_t` and `axi_lite_resp_t` request/response structs as well as
+// `axi_lite_aw_chan_t`, `axi_lite_w_chan_t`, `axi_lite_b_chan_t`, `axi_lite_ar_chan_t`, and
+// `axi_lite_r_chan_t` channel structs.
+`define AXI_LITE_TYPEDEF_ALL(__name, __addr_t, __data_t, __strb_t)                                    \
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(__name``_aw_chan_t, __addr_t)                                           \
+  `AXI_LITE_TYPEDEF_W_CHAN_T(__name``_w_chan_t, __data_t, __strb_t)                                   \
+  `AXI_LITE_TYPEDEF_B_CHAN_T(__name``_b_chan_t)                                                       \
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(__name``_ar_chan_t, __addr_t)                                           \
+  `AXI_LITE_TYPEDEF_R_CHAN_T(__name``_r_chan_t, __data_t)                                             \
+  `AXI_LITE_TYPEDEF_REQ_T(__name``_req_t, __name``_aw_chan_t, __name``_w_chan_t, __name``_ar_chan_t)  \
+  `AXI_LITE_TYPEDEF_RESP_T(__name``_resp_t, __name``_b_chan_t, __name``_r_chan_t)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 `endif

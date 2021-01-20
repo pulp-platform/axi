@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `typedef.svh`: Add `AXI_TYPEDEF_ALL` macro for defining all channels and request/response
-  `struct`s in a single macro call.
+- `typedef.svh`: Add `AXI_TYPEDEF_ALL` and `AXI_LITE_TYPEDEF_ALL` macros for defining all channels
+  and request/response `struct`s of an AXI4+ATOPs and an AXI4-Lite interface, respectively, in a
+  single macro call.
 - `axi_test::axi_rand_slave`: Add parameter `RAND_RESP`, which enables randomization of the `resp`
   field in B and R beats.
 
