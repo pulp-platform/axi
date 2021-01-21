@@ -441,51 +441,50 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Internal implementation for assigning to Lite structs from interfaces, allows for standalone
-// assignments (with `opt_as = assign`) and assignments inside processes (with `opt_as` void) with
-// the same code.
-`define AXI_LITE_TO_AW(opt_as, aw_lite_struct, axi_lite_if) \
-  opt_as aw_lite_struct = '{                                \
-    addr: axi_lite_if.aw_addr,                              \
-    prot: axi_lite_if.aw_prot                               \
+// Internal implementation for assigning to Lite structs from anything (as defined by `__sep`),
+// allows for standalone assignments (with `opt_as = assign`) and assignments inside processes (with
+// `opt_as` void) with the same code.
+`define AXI_LITE_TO_AW(__opt_as, __lhs, __rhs, __sep) \
+  __opt_as __lhs = '{                                 \
+    addr: __rhs``__sep``addr,                         \
+    prot: __rhs``__sep``prot                          \
   };
-  // prot not in interface!
-`define AXI_LITE_TO_W(opt_as, w_lite_struct, axi_lite_if) \
-  opt_as w_lite_struct = '{                               \
-    data: axi_lite_if.w_data,                             \
-    strb: axi_lite_if.w_strb                              \
+`define AXI_LITE_TO_W(__opt_as, __lhs, __rhs, __sep)  \
+  opt_as w_lite_struct = '{                           \
+    data: __rhs``__sep``data,                         \
+    strb: __rhs``__sep``strb                          \
   };
-`define AXI_LITE_TO_B(opt_as, b_lite_struct, axi_lite_if) \
-  opt_as b_lite_struct = '{                               \
-    resp: axi_lite_if.b_resp                              \
+`define AXI_LITE_TO_B(__opt_as, __lhs, __rhs, __sep)  \
+  opt_as b_lite_struct = '{                           \
+    resp: __rhs``__sep``resp                          \
   };
-`define AXI_LITE_TO_AR(opt_as, ar_lite_struct, axi_lite_if) \
-  opt_as ar_lite_struct = '{                                \
-    addr: axi_lite_if.ar_addr,                              \
-    prot: axi_lite_if.ar_prot                               \
+`define AXI_LITE_TO_AR(__opt_as, __lhs, __rhs, __sep) \
+  opt_as ar_lite_struct = '{                          \
+    addr: __rhs``__sep``addr,                         \
+    prot: __rhs``__sep``prot                          \
   };
-`define AXI_LITE_TO_R(opt_as, r_lite_struct, axi_lite_if) \
-  opt_as r_lite_struct = '{                               \
-    data: axi_lite_if.r_data,                             \
-    resp: axi_lite_if.r_resp                              \
+`define AXI_LITE_TO_R(__opt_as, __lhs, __rhs, __sep)  \
+  opt_as r_lite_struct = '{                           \
+    data: __rhs``__sep``data,                         \
+    resp: __rhs``__sep``resp                          \
   };
-`define AXI_LITE_TO_REQ(opt_as, req_lite_struct, axi_lite_if) \
-  `AXI_LITE_TO_AW(opt_as, req_lite_struct.aw, axi_lite_if)    \
-  opt_as req_lite_struct.aw_valid = axi_lite_if.aw_valid;     \
-  `AXI_LITE_TO_W(opt_as, req_lite_struct.w, axi_lite_if)      \
-  opt_as req_lite_struct.w_valid = axi_lite_if.w_valid;       \
-  opt_as req_lite_struct.b_ready = axi_lite_if.b_ready;       \
-  `AXI_LITE_TO_AR(opt_as, req_lite_struct.ar, axi_lite_if)    \
-  opt_as req_lite_struct.ar_valid = axi_lite_if.ar_valid;     \
-  opt_as req_lite_struct.r_ready = axi_lite_if.r_ready;
-`define AXI_LITE_TO_RESP(opt_as, resp_lite_struct, axi_lite_if) \
-  opt_as resp_lite_struct.aw_ready = axi_lite_if.aw_ready;      \
-  opt_as resp_lite_struct.ar_ready = axi_lite_if.ar_ready;      \
-  opt_as resp_lite_struct.w_ready = axi_lite_if.w_ready;        \
-  opt_as resp_lite_struct.b_valid = axi_lite_if.b_valid;        \
-  `AXI_LITE_TO_B(opt_as, resp_lite_struct.b, axi_lite_if)       \
-  opt_as resp_lite_struct.r_valid = axi_lite_if.r_valid;        \
-  `AXI_LITE_TO_R(opt_as, resp_lite_struct.r, axi_lite_if)
+`define AXI_LITE_TO_REQ(__opt_as, __lhs, __rhs, __sep)  \
+  `AXI_LITE_TO_AW(__opt_as, __lhs.aw, __rhs.aw, __sep)  \
+  __opt_as __lhs.aw_valid = __rhs.aw_valid;             \
+  `AXI_LITE_TO_W(__opt_as, __lhs.w, __rhs.w, __sep)     \
+  __opt_as __lhs.w_valid = __rhs.w_valid;               \
+  __opt_as __lhs.b_ready = __rhs.b_ready;               \
+  `AXI_LITE_TO_AR(__opt_as, __lhs.ar, __rhs.ar, __sep)  \
+  __opt_as __lhs.ar_valid = __rhs.ar_valid;             \
+  __opt_as __lhs.r_ready = __rhs.r_ready;
+`define AXI_LITE_TO_RESP(__opt_as, __lhs, __rhs, __sep) \
+  __opt_as __lhs.aw_ready = __rhs.aw_ready;             \
+  __opt_as __lhs.ar_ready = __rhs.ar_ready;             \
+  __opt_as __lhs.w_ready = __rhs.w_ready;               \
+  __opt_as __lhs.b_valid = __rhs.b_valid;               \
+  `AXI_LITE_TO_B(__opt_as, __lhs.b, __rhs.b, __sep)     \
+  __opt_as __lhs.r_valid = __rhs.r_valid;               \
+  `AXI_LITE_TO_R(__opt_as, __lhs.r, __rhs.r, __sep)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -506,13 +505,13 @@
 // always_comb begin
 //   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(, aw_struct, axi_if)
-`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(, w_struct, axi_if)
-`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(, b_struct, axi_if)
-`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(, ar_struct, axi_if)
-`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(, r_struct, axi_if)
-`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(, req_struct, axi_if)
-`define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(, resp_struct, axi_if)
+`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(, aw_struct, axi_if.aw, _)
+`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(, w_struct, axi_if.w, _)
+`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(, b_struct, axi_if.b, _)
+`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(, ar_struct, axi_if.ar, _)
+`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(, r_struct, axi_if.r, _)
+`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(, req_struct, axi_if, _)
+`define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(, resp_struct, axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -531,13 +530,13 @@
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(assign, aw_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(assign, w_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(assign, b_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(assign, ar_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(assign, r_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(assign, req_struct, axi_if)
-`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(assign, resp_struct, axi_if)
+`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `AXI_LITE_TO_AW(assign, aw_struct, axi_if.aw, _)
+`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `AXI_LITE_TO_W(assign, w_struct, axi_if.w, _)
+`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `AXI_LITE_TO_B(assign, b_struct, axi_if.b, _)
+`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `AXI_LITE_TO_AR(assign, ar_struct, axi_if.ar, _)
+`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `AXI_LITE_TO_R(assign, r_struct, axi_if.r, _)
+`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `AXI_LITE_TO_REQ(assign, req_struct, axi_if, _)
+`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `AXI_LITE_TO_RESP(assign, resp_struct, axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
