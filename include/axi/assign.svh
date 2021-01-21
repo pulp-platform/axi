@@ -486,4 +486,56 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setting channel or request/response structs from another struct inside a process.
+//
+// The channel macros `AXI_LITE_SET_XX_STRUCT(lhs, rhs)` set the fields of the `lhs` channel struct
+// to the fields of the `rhs` channel struct.  They do not set the handshake signals, which are not
+// part of channel structs.
+// The request macro `AXI_LITE_SET_REQ_STRUCT(lhs, rhs)` sets all fields of the `lhs` request struct
+// to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR) payload
+// and request-side handshake signals (AW, W, and AR valid and B and R ready).
+// The response macro `AXI_LITE_SET_RESP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response
+// struct to the fields of the `rhs` response struct.  This includes all response channel (B and R)
+// payload and response-side handshake signals (B and R valid and AW, W, and R ready).
+//
+// Usage Example:
+// always_comb begin
+//   `AXI_LITE_SET_REQ_STRUCT(my_req_struct, another_req_struct)
+// end
+`define AXI_LITE_SET_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(, lhs, ., rhs, .)
+`define AXI_LITE_SET_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(, lhs, ., rhs, .)
+`define AXI_LITE_SET_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(, lhs, ., rhs, .)
+`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
+`define AXI_LITE_SET_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(, lhs, ., rhs, .)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from another struct outside a process.
+//
+// The channel macros `AXI_LITE_ASSIGN_XX_STRUCT(lhs, rhs)` assign the fields of the `lhs` channel
+// struct to the fields of the `rhs` channel struct.  They do not assign the handshake signals,
+// which are not part of the channel structs.
+// The request macro `AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)` assigns all fields of the `lhs` request
+// struct to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR)
+// payload and request-side handshake signals (AW, W, and AR valid and B and R ready).
+// The response macro `AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs)` assigns all fields of the `lhs`
+// response struct to the fields of the `rhs` response struct.  This includes all response channel
+// (B and R) payload and response-side handshake signals (B and R valid and AW, W, and R ready).
+//
+// Usage Example:
+// `AXI_LITE_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
+`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(assign, lhs, ., rhs, .)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 `endif
