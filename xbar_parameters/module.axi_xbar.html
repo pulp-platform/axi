@@ -5,20 +5,118 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_xbar</a></h1>
 <div class="docblock">
+<h1>AXI4+ATOP Fully-Connected Crossbar</h1>
+<p><code>axi_xbar</code> is a fully-connected crossbar that implements the full AXI4 specification plus atomic
+operations (ATOPs) from AXI5 (E1.1).</p>
+<h2>Design Overview</h2>
+<p><code>axi_xbar</code> is a fully-connected crossbar, which means that each master module that is connected
+to a <em>slave port</em> for of the crossbar has direct wires to all slave modules that are connected
+to the <em>master ports</em> of the crossbar.
+A block-diagram of the crossbar is shown below:</p>
+<p><img src="doc/axi_xbar.png" alt="Block-diagram showing the design of the full AXI4 Crossbar." title="Block-diagram showing the design of the full AXI4 Crossbar." /></p>
+<p>The crossbar has a configurable number of slave and master ports.</p>
+<p>The ID width of the master ports is <strong>wider</strong> than that of the slave ports.  The additional ID
+bits are used by the internal multiplexers to route responses.  The ID width of the master ports
+must be <code>AxiIdWidthSlvPorts + $clog_2(NoSlvPorts)</code>.</p>
+<h2>Address Map</h2>
+<p>One address map is shared by all master ports.  The <em>address map</em> contains an arbitrary number
+of rules (but at least one).  Each <em>rule</em> maps one address range to one master port.  Multiple
+rules can map to the same master port.  The address ranges of two rules may overlap: in case two
+address ranges overlap, the rule at the higher (more significant) position in the address map
+prevails.</p>
+<p>Each address range includes the start address but does <strong>not</strong> include the end address.
+That is, an address <em>matches</em> an address range if and only if</p>
+<pre><code>    addr &gt;= start_addr &amp;&amp; addr &lt; end_addr
+</code></pre>
+<p>The start address must be less than or equal to the end address.</p>
+<p>The address map can be defined and changed at run time (it is an input signal to the crossbar).
+However, the address map must not be changed while any AW or AR channel of any slave port is
+valid.</p>
+<p><a href="https://github.com/pulp-platform/common_cells/blob/master/src/addr_decode.sv"><code>addr_decode</code></a>
+module is used for decoding the address map.</p>
+<h2>Decode Errors and Default Slave Port</h2>
+<p>Each slave port has its own internal <em>decode error slave</em> module.  If the address of a
+transaction does not match any rule, the transaction is routed to that decode error slave
+module.  That module absorbs each transaction and responds with a decode error (with the proper
+number of beats).  The data of each read response beat is <code>32'hBADCAB1E</code> (zero-extended or
+truncated to match the data width).</p>
+<p>Each slave port can have a default master port.  If the default master port is enabled for a
+slave port, any address on that slave port that does not match any rule is routed to the default
+master port instead of the decode error slave.  The default master port can be enabled and
+changed at run time (it is an input signal to the crossbar), and the same restrictions as for
+the address map apply.</p>
+<h2>Ordering and Stalls</h2>
+<p>When one slave port receives two transactions with the same ID and direction (i.e., both read or
+both write) but targeting two different master ports, it will not accept the second transaction
+until the first has completed.  During this time, the crossbar stalls the AR or AW channel of
+that slave port.  To determine whether two transactions have the same ID, the
+<code>AxiIdUsedSlvPorts</code> least-significant bits are compared.  That parameter can be set to the full
+<code>AxiIdWidthSlvPorts</code> to avoid false ID conflicts, or it can be set to a lower value to reduce
+area and delay at the cost of more false conflicts.</p>
+<p>The reason for this ordering constraint is that AXI transactions with the same ID and direction
+must remain ordered.  If this crossbar would forward both transactions described above, the
+second master port could get a response before the first one, and the crossbar would have to
+reorder the responses before returning them on the master port.  However, for efficiency
+reasons, this crossbar does not have reorder buffers.</p>
+<h2>Verification Methodology</h2>
+<p>This module has been verified with a directed random verification testbench, described and
+implemented in <a href="module.tb_axi_xbar"><code>tb_axi_xbar</code></a> and
+<a href="package.tb_axi_xbar_pkg"><code>tb_axi_xbar_pkg</code></a>.</p>
+<h2>Design Rationale for No Pipelining Inside Crossbar</h2>
+<p>Inserting spill registers between <a href="module.axi_demux"><code>axi_demux</code></a> and
+<a href="module.axi_mux"><code>axi_mux</code></a> seems attractive to further reduce the length of combinatorial paths
+in the crossbar.  However, this can lead to deadlocks in the W channel where two different
+<a href="module.axi_mux"><code>axi_mux</code></a> at the master ports would circular wait on two different
+<a href="module.axi_demux"><code>axi_demux</code></a>.  In fact, spill registers between the switching modules causes
+all four deadlock criteria to be met.  Recall that the criteria are:</p>
+<ol>
+<li>Mutual Exclusion</li>
+<li>Hold and Wait</li>
+<li>No Preemption</li>
+<li>Circular Wait</li>
+</ol>
+<p>The first criterion is given by the nature of a multiplexer on the W channel: all W beats have
+to arrive in the same order as the AW beats regardless of the ID at the slave module.  Thus, the
+different master ports of the multiplexer exclude each other because the order is given by the
+arbitration tree of the AW channel.</p>
+<p>The second and third criterion are inherent to the AXI protocol:  For (2), the valid signal has
+to be held high until the ready signal goes high.  For (3), AXI does not allow interleaving of
+W beats and requires W bursts to be in the same order as AW beats.</p>
+<p>The fourth criterion is thus the only one that can be broken to prevent deadlocks.  However,
+inserting a spill register between a master port of the <a href="module.axi_demux"><code>axi_demux</code></a> and a
+slave port of the [<a href="module.axi_mux"><code>axi_mux</code></a> can lead to a circular dependency inside the
+W FIFOs.  This comes from the particular way the round robin arbiter from the AW channel in the
+multiplexer defines its priorities.  It is constructed in a way by giving each of its slave
+ports an increasing priority and then comparing pairwise down till a winner is chosen.  When the
+winner gets transferred, the priority state is advanced by one position, preventing starvation.</p>
+<p>The problem can be shown with an example.  Assume an arbitration tree with 10 inputs.  Two
+requests want to be served in the same clock cycle.  The one with the higher priority wins and
+the priority state advances.  In the next cycle again the same two inputs have a request
+waiting.  Again it is possible that the same port as last time wins as the priority shifted only
+one position further.  This can lead in conjunction with the other arbitration trees in the
+other muxes of the crossbar to the circular dependencies inside the FIFOs.  Removing the spill
+register between the demultiplexer and multiplexer forces the switching decision into the
+W FIFOs in the same clock cycle.  This leads to a strict ordering of the switching decision,
+thus preventing the circular wait.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.NumSlvPorts" class="impl"><code class="in-band">NumSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Number of slave ports of the crossbar.
-This many master modules are connected to it.</p>
+><p>The number of AXI slave ports of the crossbar.
+(In other words, how many AXI master modules can be attached).</p>
 </div><h3 id="parameter.NumMstPorts" class="impl"><code class="in-band">NumMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Number of master ports of the crossbar.
-This many slave modules are connected to it.</p>
+><p>The number of AXI master ports of the crossbar.
+(In other words, how many AXI slave modules can be attached).</p>
 </div><h3 id="parameter.SlvPortIdWidth" class="impl"><code class="in-band">SlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI ID width of the slave ports. The ID width of the master ports is determined
-Automatically. See <code>axi_mux</code> for details.</p>
+><p>AXI ID width of the slave ports.</p>
+<p>This parameter also determines the corresponding value for <code>MstPortIdWidth</code> .
+Routing of responses is done by extending the ID by the index of the slave port witch accepted
+the transaction.  See <a href="module.axi_mux"><code>axi_mux</code></a> for details.</p>
 </div><h3 id="parameter.SlvPortIdWidthUsed" class="impl"><code class="in-band">SlvPortIdWidthUsed<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>The used ID portion to determine if a different salve is used for the same ID.
-See <code>axi_demux</code> for details.</p>
+><p>The number of slave port ID bits (starting at the least significant) the crossbar uses to
+determine the uniqueness of an AXI ID (see section <em>Ordering and Stalls</em> above).</p>
+<p>This value <em>must</em> follow <code>SlvPortIdWidth &gt;= SlvPortIdWidthUsed &amp;&amp; SlvPortIdWidthUsed &gt; 0</code>.</p>
+<p>Setting this to small values leads to less area, however on an increased stalling rate
+due to ID collisions.</p>
 </div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>AXI4+ATOP address field width.</p>
 </div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
@@ -26,22 +124,40 @@ See <code>axi_demux</code> for details.</p>
 </div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>AXI4+ATOP user field width.</p>
 </div><h3 id="parameter.SlvPortMaxTxns" class="impl"><code class="in-band">SlvPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of open transactions each master connected to the crossbar can have in
-flight at the same time.</p>
+><p>Maximum number of open transactions each master connected to the crossbar can have
+<a href="doc/#in-flight">in flight</a> at the same time.</p>
 </div><h3 id="parameter.MstPortMaxTxns" class="impl"><code class="in-band">MstPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of open transactions each slave connected to the crossbar can have in
-flight at the same time.</p>
+><p>Maximum number of open transactions each slave connected to the crossbar can have
+<a href="../doc#in-flight">in flight</a> per ID at the same time.</p>
 </div><h3 id="parameter.FallThrough" class="impl"><code class="in-band">FallThrough<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Determine if the internal FIFOs of the crossbar are instantiated in fallthrough mode.
-0: No fallthrough
+><p>Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the
+crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases
+the combinatorial path of the W channel with logic from the AW channel.</p>
+<p>Setting this to <code>0</code> prevents logic on the AW channel from extending into the W channel.</p>
+<p>0: No fallthrough
 1: Fallthrough</p>
 </div><h3 id="parameter.LatencyMode" class="impl"><code class="in-band">LatencyMode<span class="type-annotation">: axi_pkg::xbar_latency_e</span></code></h3><div class="docblock"
-><p>The Latency mode of the xbar. This determines if the channels on the ports have
-a spill register instantiated.
-Example configurations are provided with the enum <code>xbar_latency_e</code>.</p>
+><p>The <code>LatencyMode</code> parameter allows to insert spill registers after each channel
+(AW, W, B, AR, and R) of each master port (i.e., each <a href="module.axi_mux"><code>axi_mux</code></a>) and before
+each channel of each slave port (i.e., each <a href="module.axi_demux"><code>axi_demux</code></a>).
+Spill registers cut combinatorial paths, so this parameter reduces the length of combinatorial
+paths through the crossbar.</p>
+<p>Some common configurations are given in the <a href="package.axi_pkg"><code>xbar_latency_e</code> <code>enum</code></a>.
+The recommended configuration (<code>axi_pkg::CUT_ALL_AX</code>) is to have a latency of 2 on the AW and
+AR channels because these channels have the most combinatorial logic on them.
+Additionally, <code>FallThrough</code> should be set to <code>0</code> to prevent logic on the AW channel from
+extending combinatorial paths on the W channel.  However, it is possible to run the crossbar
+in a fully combinatorial configuration by setting <code>LatencyMode</code> to <code>NO_LATENCY</code> and
+<code>FallThrough</code> to <code>1</code>.</p>
+<p>If two crossbars are connected in both directions, meaning both have one of their master ports
+connected to a slave port of the other, the <code>LatencyMode</code> of both crossbars must be set to
+either <code>CUT_SLV_PORTS</code>, <code>CUT_MST_PORTS</code>, or <code>CUT_ALL_PORTS</code>.  Any other latency mode will lead
+to timing loops on the uncut channels between the two crossbars.  The latency mode of the two
+crossbars does not have to be identical.</p>
 </div><h3 id="parameter.NumAddrRules" class="impl"><code class="in-band">NumAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>The number of address rules defined for routing of the transactions.
-Each master port can have multiple rules, should have however at least one.
+Each master port can have multiple rules, should have however at least one or be the
+<em>default master port</em> of at least one slave port.
 If a transaction can not be routed the xbar will answer with an <code>axi_pkg::RESP_DECERR</code>.</p>
 </div><h3 id="parameter.EnableAtops" class="impl"><code class="in-band">EnableAtops<span class="type-annotation">: bit</span></code></h3><div class="docblock"
 ><p>Enable atomic operations support.</p>
@@ -55,7 +171,7 @@ If a transaction can not be routed the xbar will answer with an <code>axi_pkg::R
 ><p>AXI4+ATOP response struct type for a single master port.</p>
 </div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Address rule type for the address decoders from <code>common_cells:addr_decode</code>.</p>
-<p>Example types are provided in <code>axi_pkg</code>.</p>
+<p>Example types are provided in <a href="package.axi_pkg"><code>axi_pkg</code></a>.</p>
 <p>Required struct fields:</p>
 <p>typedef struct packed {
 int unsigned idx;
@@ -74,6 +190,7 @@ Type of index for a default master port.</p>
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Clock, positive edge triggered.</p>
+<p>All other signals (except <code>rst_ni</code>) are synchronous to this signal.</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low.</p>
 </div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
@@ -92,7 +209,8 @@ It is used for routing the transactions to the respective master ports.
 Each master port can have multiple different rules.</p>
 </div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
 ><p>Enables a default master port for each slave port. When this is enabled unmapped
-transactions get issued at the master port given by <code>default_mst_port_i</code>.</p>
+transactions get issued at the master port given by <code>default_mst_port_i</code>.
+Each bit index corresponds to the index of a master port and is ordered little-endian (downto).</p>
 <p>When not used, tie to <code>'0</code>.</p>
 </div><h3 id="port.default_mst_ports_i" class="impl"><code class="in-band">default_mst_ports_i<span class="type-annotation">: input  default_mst_port_idx_t [NumSlvPorts-1:0]</span></code></h3><div class="docblock"
 ><p>For each slave port the default index where the transaction should be routed, if
