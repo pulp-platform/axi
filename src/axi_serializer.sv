@@ -13,7 +13,12 @@
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "common_cells/registers.svh"
+
 /// Serialize all AXI transactions to a single ID (zero).
+///
+/// This module contains one queue with slave port IDs for the read direction and one for the write
+/// direction.  These queues are used to reconstruct the ID of responses at the slave port.  The
+/// depth of each queue is defined by `MaxReadTxns` and `MaxWriteTxns`, respectively.
 module axi_serializer #(
   /// Maximum number of in flight read transactions.
   parameter int unsigned MaxReadTxns  = 32'd0,

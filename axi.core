@@ -23,6 +23,7 @@ filesets:
       - src/axi_demux.sv
       - src/axi_dw_downsizer.sv
       - src/axi_dw_upsizer.sv
+      - src/axi_id_remap.sv
       - src/axi_id_prepend.sv
       - src/axi_isolate.sv
       - src/axi_join.sv
@@ -39,14 +40,16 @@ filesets:
       # Level 3
       - src/axi_err_slv.sv
       - src/axi_dw_converter.sv
+      - src/axi_id_serialize.sv
       - src/axi_multicut.sv
       - src/axi_to_axi_lite.sv
       # Level 4
+      - src/axi_iw_converter.sv
       - src/axi_lite_xbar.sv
       - src/axi_xbar.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_cells:1.16.4"
+      - ">=pulp-platform.org::common_cells:1.20.0"
 
 generators:
   axi_intercon_gen:

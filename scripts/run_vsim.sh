@@ -42,7 +42,7 @@ exec_test() {
     case "$1" in
         axi_atop_filter)
             for MAX_TXNS in 1 3 12; do
-                call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
+                call_vsim tb_axi_atop_filter -GTB_N_TXNS=1000 -GTB_AXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
         axi_cdc|axi_delayer)
@@ -55,8 +55,8 @@ exec_test() {
                         AxiMstPortDataWidth *= 2 )); \
                 do
                     call_vsim tb_axi_dw_downsizer \
-                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
+                            -GTbAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -GTbAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
                 done
             done
             ;;
@@ -67,8 +67,53 @@ exec_test() {
                         AxiMstPortDataWidth *= 2 )); \
                 do
                     call_vsim tb_axi_dw_upsizer \
-                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
+                            -GTbAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -GTbAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
+                done
+            done
+            ;;
+        axi_iw_converter)
+            for SLV_PORT_IW in 1 2 3 4 8; do
+                MAX_SLV_PORT_IDS=$((2**SLV_PORT_IW))
+                MAX_UNIQ_SLV_PORT_IDS_OPTS=(1 2)
+                if [ $MAX_SLV_PORT_IDS -gt 2 ]; then
+                    MAX_UNIQ_SLV_PORT_IDS_OPTS+=(3 4)
+                fi
+                if [ $(($MAX_SLV_PORT_IDS/2)) -ge 4 ]; then
+                    MAX_UNIQ_SLV_PORT_IDS_OPTS+=($((MAX_SLV_PORT_IDS/2-1)))
+                fi
+                MAX_UNIQ_SLV_PORT_IDS_OPTS+=($MAX_SLV_PORT_IDS)
+                for MST_PORT_IW in 1 2 3 4; do
+                    if [ $MST_PORT_IW -lt $SLV_PORT_IW ]; then # downsize
+                        for MAX_UNIQ_SLV_PORT_IDS in "${MAX_UNIQ_SLV_PORT_IDS_OPTS[@]}"; do
+                            MAX_MST_PORT_IDS=$((2**MST_PORT_IW))
+                            if [ $MAX_UNIQ_SLV_PORT_IDS -le $MAX_MST_PORT_IDS ]; then
+                                call_vsim tb_axi_iw_converter \
+                                        -t 1ns -coverage -classdebug \
+                                        -voptargs="+acc +cover=bcesfx" \
+                                        -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                        -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                        -GTbAxiSlvPortMaxUniqIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                        -GTbAxiSlvPortMaxTxnsPerId=5
+                            else
+                                call_vsim tb_axi_iw_converter \
+                                        -t 1ns -coverage -classdebug \
+                                        -voptargs="+acc +cover=bcesfx" \
+                                        -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                        -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                        -GTbAxiSlvPortMaxUniqIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                        -GTbAxiSlvPortMaxTxns=31 \
+                                        -GTbAxiMstPortMaxUniqIds=$((2**MST_PORT_IW)) \
+                                        -GTbAxiMstPortMaxTxnsPerId=7
+                            fi
+                        done
+                    else
+                        call_vsim tb_axi_iw_converter \
+                                -t 1ns -coverage -classdebug -voptargs="+acc +cover=bcesfx" \
+                                -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                -GTbAxiSlvPortMaxTxnsPerId=3
+                    fi
                 done
             done
             ;;

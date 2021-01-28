@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `struct`s in a single macro call.
 - `axi_test::axi_rand_slave`: Add parameter `RAND_RESP`, which enables randomization of the `resp`
   field in B and R beats.
+- Add three modules to convert between two AXI ID widths under many different concurrency
+  requirements:
+  - `axi_iw_converter` is the top-level module that converts between any two AXI ID widths with all
+    supported parameters.  It upsizes IDs by extending the MSBs with zeros and joins two interfaces
+    with identical ID widths.  For downsizing IDs, it instantiates one of the following two modules:
+  - `axi_id_remap` remaps AXI IDs from wide IDs at the slave port to narrower IDs at the master
+    port without serializing transactions.
+  - `axi_id_serialize` reduces AXI IDs by serializing transactions when necessary.
 
 ### Changed
 - `axi_test::axi_rand_master`: Randomize the QoS field.
