@@ -35,8 +35,8 @@ module tb_axi_dw_upsizer #(
   logic eos;
 
   clk_rst_gen #(
-    .CLK_PERIOD    (CyclTime),
-    .RST_CLK_CYCLES(5       )
+    .ClkPeriod    (CyclTime),
+    .RstClkCycles (5       )
   ) i_clk_rst_gen (
     .clk_o (clk  ),
     .rst_no(rst_n)

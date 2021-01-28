@@ -51,16 +51,16 @@ module tb_axi_cdc #(
         downstream_rst_n;
 
   clk_rst_gen #(
-    .CLK_PERIOD     (TCLK_UPSTREAM),
-    .RST_CLK_CYCLES (5)
+    .ClkPeriod    (TCLK_UPSTREAM),
+    .RstClkCycles (5)
   ) i_clk_rst_gen_upstream (
     .clk_o  (upstream_clk),
     .rst_no (upstream_rst_n)
   );
 
   clk_rst_gen #(
-    .CLK_PERIOD     (TCLK_DOWNSTREAM),
-    .RST_CLK_CYCLES (5)
+    .ClkPeriod    (TCLK_DOWNSTREAM),
+    .RstClkCycles (5)
   ) i_clk_rst_gen_downstream (
     .clk_o  (downstream_clk),
     .rst_no (downstream_rst_n)
