@@ -17,21 +17,21 @@
 
 module tb_axi_atop_filter #(
   // AXI Parameters
-  parameter int unsigned AXI_ADDR_WIDTH = 32,
-  parameter int unsigned AXI_DATA_WIDTH = 64,
-  parameter int unsigned AXI_ID_WIDTH = 4,
-  parameter int unsigned AXI_USER_WIDTH = 2,
-  parameter int unsigned AXI_MAX_READ_TXNS = 10,
-  parameter int unsigned AXI_MAX_WRITE_TXNS = 12,
+  parameter int unsigned TB_AXI_ADDR_WIDTH = 32,
+  parameter int unsigned TB_AXI_DATA_WIDTH = 64,
+  parameter int unsigned TB_AXI_ID_WIDTH = 4,
+  parameter int unsigned TB_AXI_USER_WIDTH = 2,
+  parameter int unsigned TB_AXI_MAX_READ_TXNS = 10,
+  parameter int unsigned TB_AXI_MAX_WRITE_TXNS = 12,
   // TB Parameters
-  parameter time TCLK = 10ns,
-  parameter time TA = TCLK * 1/4,
-  parameter time TT = TCLK * 3/4,
-  parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
-  parameter int unsigned REQ_MAX_WAIT_CYCLES = 10,
-  parameter int unsigned RESP_MIN_WAIT_CYCLES = 0,
-  parameter int unsigned RESP_MAX_WAIT_CYCLES = REQ_MAX_WAIT_CYCLES/2,
-  parameter int unsigned N_TXNS = 1000
+  parameter time TB_TCLK = 10ns,
+  parameter time TB_TA = TB_TCLK * 1/4,
+  parameter time TB_TT = TB_TCLK * 3/4,
+  parameter int unsigned TB_REQ_MIN_WAIT_CYCLES = 0,
+  parameter int unsigned TB_REQ_MAX_WAIT_CYCLES = 10,
+  parameter int unsigned TB_RESP_MIN_WAIT_CYCLES = 0,
+  parameter int unsigned TB_RESP_MAX_WAIT_CYCLES = TB_REQ_MAX_WAIT_CYCLES/2,
+  parameter int unsigned TB_N_TXNS = 1000
 );
 
   import axi_pkg::ATOP_ATOMICCMP;
@@ -45,14 +45,14 @@ module tb_axi_atop_filter #(
   import rand_id_queue_pkg::rand_id_queue;
   import rand_verif_pkg::rand_wait;
 
-  localparam int unsigned AXI_STRB_WIDTH  = AXI_DATA_WIDTH / 8;
-  localparam int unsigned NUM_AXI_IDS     = 2**AXI_ID_WIDTH;
+  localparam int unsigned AXI_STRB_WIDTH  = TB_AXI_DATA_WIDTH / 8;
+  localparam int unsigned NUM_AXI_IDS     = 2**TB_AXI_ID_WIDTH;
 
   logic clk,
         rst_n;
 
   clk_rst_gen #(
-    .ClkPeriod    (TCLK),
+    .ClkPeriod    (TB_TCLK),
     .RstClkCycles (5)
   ) i_clk_rst_gen (
     .clk_o  (clk),
@@ -60,47 +60,47 @@ module tb_axi_atop_filter #(
   );
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
   ) upstream_dv (
     .clk_i  (clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
   ) upstream ();
 
   `AXI_ASSIGN(upstream, upstream_dv)
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
   ) downstream_dv (
     .clk_i  (clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
   ) downstream ();
 
   `AXI_ASSIGN(downstream_dv, downstream)
 
   axi_atop_filter_intf #(
-    .AXI_ID_WIDTH       (AXI_ID_WIDTH),
-    .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS),
-    .AXI_ADDR_WIDTH     (AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH     (AXI_DATA_WIDTH),
-    .AXI_USER_WIDTH     (AXI_USER_WIDTH)
+    .AXI_ID_WIDTH       (TB_AXI_ID_WIDTH),
+    .AXI_MAX_WRITE_TXNS (TB_AXI_MAX_WRITE_TXNS),
+    .AXI_ADDR_WIDTH     (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH     (TB_AXI_DATA_WIDTH),
+    .AXI_USER_WIDTH     (TB_AXI_USER_WIDTH)
   ) dut (
     .clk_i  (clk),
     .rst_ni (rst_n),
@@ -108,28 +108,28 @@ module tb_axi_atop_filter #(
     .mst    (downstream)
   );
 
-  typedef logic [AXI_ID_WIDTH-1:0]  axi_id_t;
+  typedef logic [TB_AXI_ID_WIDTH-1:0] axi_id_t;
 
   // AXI Master
   logic mst_done = 1'b0;
   axi_test::axi_rand_master #(
-    .AW(AXI_ADDR_WIDTH), .DW(AXI_DATA_WIDTH), .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH),
-    .TA(TA), .TT(TT),
-    .MAX_READ_TXNS        (AXI_MAX_READ_TXNS),
-    .MAX_WRITE_TXNS       (AXI_MAX_WRITE_TXNS+2), // master is not required to comply
-    .AX_MIN_WAIT_CYCLES   (REQ_MIN_WAIT_CYCLES),
-    .AX_MAX_WAIT_CYCLES   (REQ_MAX_WAIT_CYCLES),
-    .W_MIN_WAIT_CYCLES    (REQ_MIN_WAIT_CYCLES),
-    .W_MAX_WAIT_CYCLES    (REQ_MAX_WAIT_CYCLES),
-    .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
-    .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES),
+    .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
+    .TA(TB_TA), .TT(TB_TT),
+    .MAX_READ_TXNS        (TB_AXI_MAX_READ_TXNS),
+    .MAX_WRITE_TXNS       (TB_AXI_MAX_WRITE_TXNS+2), // master is not required to comply
+    .AX_MIN_WAIT_CYCLES   (TB_REQ_MIN_WAIT_CYCLES),
+    .AX_MAX_WAIT_CYCLES   (TB_REQ_MAX_WAIT_CYCLES),
+    .W_MIN_WAIT_CYCLES    (TB_REQ_MIN_WAIT_CYCLES),
+    .W_MAX_WAIT_CYCLES    (TB_REQ_MAX_WAIT_CYCLES),
+    .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
+    .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES),
     .AXI_ATOPS            (1'b1)
   ) axi_master = new(upstream_dv);
   initial begin
     axi_master.reset();
     wait(rst_n);
-    axi_master.add_memory_region({AXI_ADDR_WIDTH{1'b0}}, {AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
-    axi_master.run(N_TXNS, N_TXNS);
+    axi_master.add_memory_region({TB_AXI_ADDR_WIDTH{1'b0}}, {TB_AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    axi_master.run(TB_N_TXNS, TB_N_TXNS);
     mst_done = 1'b1;
   end
 
@@ -140,14 +140,14 @@ module tb_axi_atop_filter #(
 
   // AXI Slave
   axi_test::axi_rand_slave #(
-    .AW(AXI_ADDR_WIDTH), .DW(AXI_DATA_WIDTH), .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH),
-    .TA(TA), .TT(TT),
-    .AX_MIN_WAIT_CYCLES   (RESP_MIN_WAIT_CYCLES),
-    .AX_MAX_WAIT_CYCLES   (RESP_MAX_WAIT_CYCLES),
-    .R_MIN_WAIT_CYCLES    (RESP_MIN_WAIT_CYCLES),
-    .R_MAX_WAIT_CYCLES    (RESP_MAX_WAIT_CYCLES),
-    .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
-    .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES)
+    .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
+    .TA(TB_TA), .TT(TB_TT),
+    .AX_MIN_WAIT_CYCLES   (TB_RESP_MIN_WAIT_CYCLES),
+    .AX_MAX_WAIT_CYCLES   (TB_RESP_MAX_WAIT_CYCLES),
+    .R_MIN_WAIT_CYCLES    (TB_RESP_MIN_WAIT_CYCLES),
+    .R_MAX_WAIT_CYCLES    (TB_RESP_MAX_WAIT_CYCLES),
+    .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
+    .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES)
   ) axi_slave = new(downstream_dv);
   initial begin
     axi_slave.reset();
@@ -161,16 +161,16 @@ module tb_axi_atop_filter #(
   } w_cmd_t;
 
   typedef axi_test::axi_ax_beat #(
-    .AW(AXI_ADDR_WIDTH), .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH)
+    .AW(TB_AXI_ADDR_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
   ) ax_beat_t;
   typedef axi_test::axi_b_beat #(
-    .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH)
+    .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
   ) b_beat_t;
   typedef axi_test::axi_r_beat #(
-    .DW(AXI_DATA_WIDTH), .IW(AXI_ID_WIDTH), .UW(AXI_USER_WIDTH)
+    .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
   ) r_beat_t;
   typedef axi_test::axi_w_beat #(
-    .DW(AXI_DATA_WIDTH), .UW(AXI_USER_WIDTH)
+    .DW(TB_AXI_DATA_WIDTH), .UW(TB_AXI_USER_WIDTH)
   ) w_beat_t;
 
   // Put W beats into transfer queue or drop them and inject B responses based on W command.
@@ -206,7 +206,7 @@ module tb_axi_atop_filter #(
                       w_xfer_queue[$];
     forever begin
       @(posedge clk);
-      #(TT);
+      #(TB_TT);
       // Ensure that downstream never sees an `aw_atop`.
       if (downstream.aw_valid) begin
         assert (downstream.aw_atop == '0);

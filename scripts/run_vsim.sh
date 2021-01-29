@@ -42,7 +42,7 @@ exec_test() {
     case "$1" in
         axi_atop_filter)
             for MAX_TXNS in 1 3 12; do
-                call_vsim tb_axi_atop_filter -GN_TXNS=1000 -GAXI_MAX_WRITE_TXNS=$MAX_TXNS
+                call_vsim tb_axi_atop_filter -gTB_N_TXNS=1000 -gTB_AXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
         axi_cdc|axi_delayer)
@@ -55,8 +55,8 @@ exec_test() {
                         AxiMstPortDataWidth *= 2 )); \
                 do
                     call_vsim tb_axi_dw_downsizer \
-                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
+                            -gTbAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -gTbAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
                 done
             done
             ;;
@@ -67,8 +67,8 @@ exec_test() {
                         AxiMstPortDataWidth *= 2 )); \
                 do
                     call_vsim tb_axi_dw_upsizer \
-                            -GAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
-                            -GAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
+                            -gTbAxiSlvPortDataWidth=$AxiSlvPortDataWidth \
+                            -gTbAxiMstPortDataWidth=$AxiMstPortDataWidth -t 1ps
                 done
             done
             ;;
@@ -77,21 +77,21 @@ exec_test() {
             for PRIV in 0 1; do
                 for SECU in 0 1; do
                     for BYTES in 42 200 369; do
-                        call_vsim tb_axi_lite_regs -gPrivProtOnly=$PRIV -gSecuProtOnly=$SECU \
-                                -gRegNumBytes=$BYTES -t 1ps
+                        call_vsim tb_axi_lite_regs -gTbPrivProtOnly=$PRIV -gTbSecuProtOnly=$SECU \
+                                -gTbRegNumBytes=$BYTES -t 1ps
                     done
                 done
             done
             ;;
         axi_lite_to_axi)
             for DW in 8 16 32 64 128 256 512 1024; do
-                call_vsim tb_axi_lite_to_axi -GDW=$DW -t 1ps
+                call_vsim tb_axi_lite_to_axi -gTB_DW=$DW -t 1ps
             done
             ;;
         axi_sim_mem)
             for AW in 16 32 64; do
                 for DW in 32 64 128 256 512 1024; do
-                    call_vsim tb_axi_sim_mem -GAddrWidth=$AW -GDataWidth=$DW -t 1ps
+                    call_vsim tb_axi_sim_mem -gTbAddrWidth=$AW -gTbDataWidth=$DW -t 1ps
                 done
             done
             ;;
