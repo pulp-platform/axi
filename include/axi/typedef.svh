@@ -127,7 +127,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// AXI-Lite (4+Prot) Channel and Request/Response Structs
+// AXI4-Lite Channel and Request/Response Structs
 //
 // Usage Example:
 // `AXI_LITE_TYPEDEF_AW_CHAN_T(axi_lite_aw_t, axi_lite_addr_t)
