@@ -15,11 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - `axi_test::axi_rand_master`: Randomize the QoS field.
-- Update `common_cells` dependency to `1.20.1` to fix out-of-bounds index in `axi_burst_splitter`
-  (#150).
-- Update `common_verification` dependency to `0.2.0` for compatibility, accordingly modify modules.
-- Update `common_cells` dependency to `1.21.0` for `common_verification` update.
-- remove `timeunit/timeprecision` arguments
+- Update `common_verification` dependency to `0.2.0`, which has been released for more than a year.
+- Update `common_cells` dependency to `1.21.0` to align on version `0.2.0` of the
+  `common_verification` dependency.  This includes version `1.20.1` of `common_cells`, which fixes
+  an out-of-bounds index in `axi_burst_splitter` (#150).
 
 ### Fixed
 
