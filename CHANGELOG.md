@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   (#150).
 - Update `common_verification` dependency to `0.2.0` for compatibility, accordingly modify modules.
 - Update `common_cells` dependency to `1.21.0` for `common_verification` update.
+- remove `timeunit/timeprecision` arguments
 
 ### Fixed
 

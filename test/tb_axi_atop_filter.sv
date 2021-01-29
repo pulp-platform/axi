@@ -34,9 +34,6 @@ module tb_axi_atop_filter #(
   parameter int unsigned N_TXNS = 1000
 );
 
-  timeunit 1ns;
-  timeprecision 10ps;
-
   import axi_pkg::ATOP_ATOMICCMP;
   import axi_pkg::ATOP_ATOMICLOAD;
   import axi_pkg::ATOP_ATOMICSTORE;

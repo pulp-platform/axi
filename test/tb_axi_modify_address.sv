@@ -33,9 +33,6 @@ module tb_axi_modify_address #(
   parameter int unsigned N_TXNS = 1000
 );
 
-  timeunit 1ns;
-  timeprecision 10ps;
-
   localparam int unsigned N_RD_TXNS = N_TXNS / 2;
   localparam int unsigned N_WR_TXNS = N_TXNS / 2;
 
