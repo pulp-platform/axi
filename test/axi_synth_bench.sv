@@ -14,7 +14,7 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 /// A synthesis test bench which instantiates various adapter variants.
-module synth_bench (
+module axi_synth_bench (
   input logic clk_i,
   input logic rst_ni
 );
