@@ -55,7 +55,7 @@ sources:
 
   - target: synth_test
     files:
-      - test/synth_bench.sv
+      - test/axi_synth_bench.sv
 
   - target: simulation
     files:

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2014-2018 ETH Zurich, University of Bologna
+# Copyright (c) 2021 ETH Zurich, University of Bologna
 #
 # Copyright and related rights are licensed under the Solderpad Hardware
 # License, Version 0.51 (the "License"); you may not use this file except in
@@ -9,22 +9,15 @@
 # this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-#
-# Authors:
-# - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-# - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 set -e
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-[ ! -z "$SYNOPSYS_DC" ] || SYNOPSYS_DC="synopsys dc_shell -64"
+[ ! -z "$VERILATOR" ] || VERILATOR="verilator"
 
-echo 'remove_design -all' > ./synth.tcl
-bender script synopsys -t synth_test >> ./synth.tcl
-echo 'elaborate axi_synth_bench' >> ./synth.tcl
+bender script verilator -t synthesis -t synth_test > ./verilator.f
 
-cat ./synth.tcl | $SYNOPSYS_DC | tee synth.log 2>&1
-grep -i "warning:" synth.log || true
-grep -i "error:" synth.log && false
+VERILATOR_FLAGS=()
+VERILATOR_FLAGS+=(-Wno-fatal)
 
-touch synth.completed
+$VERILATOR --top-module axi_synth_bench --lint-only -f verilator.f ${VERILATOR_FLAGS[@]}

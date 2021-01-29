@@ -14,14 +14,14 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 /// A synthesis test bench which instantiates various adapter variants.
-module synth_bench (
+module axi_synth_bench (
   input logic clk_i,
   input logic rst_ni
 );
 
-  localparam int AXI_ADDR_WIDTH[6] = {32, 64, 1, 2, 42, 129};
-  localparam int AXI_ID_USER_WIDTH[3] = {0, 1, 8};
-  localparam int NUM_SLAVE_MASTER[3] = {1, 2, 4};
+  localparam int AXI_ADDR_WIDTH[6] = '{32, 64, 1, 2, 42, 129};
+  localparam int AXI_ID_USER_WIDTH[3] = '{0, 1, 8};
+  localparam int NUM_SLAVE_MASTER[3] = '{1, 2, 4};
 
   // AXI_DATA_WIDTH = {8, 16, 32, 64, 128, 256, 512, 1024}
   for (genvar i = 0; i < 8; i++) begin
@@ -145,7 +145,7 @@ module synth_bench (
 
   // AXI4-Lite Registers
   for (genvar i = 0; i < 6; i++) begin
-    localparam int unsigned NUM_BYTES[6] = {1, 4, 42, 64, 129, 512};
+    localparam int unsigned NUM_BYTES[6] = '{1, 4, 42, 64, 129, 512};
     synth_axi_lite_regs #(
       .REG_NUM_BYTES  ( NUM_BYTES[i]      ),
       .AXI_ADDR_WIDTH ( 32'd32            ),
