@@ -33,9 +33,6 @@ module tb_axi_modify_address #(
   parameter int unsigned N_TXNS = 1000
 );
 
-  timeunit 1ns;
-  timeprecision 10ps;
-
   localparam int unsigned N_RD_TXNS = N_TXNS / 2;
   localparam int unsigned N_WR_TXNS = N_TXNS / 2;
 
@@ -43,8 +40,8 @@ module tb_axi_modify_address #(
   logic clk,
         rst_n;
   clk_rst_gen #(
-    .CLK_PERIOD     (TCLK),
-    .RST_CLK_CYCLES (5)
+    .ClkPeriod     (TCLK),
+    .RstClkCycles  (5)
   ) i_clk_rst_gen (
     .clk_o  (clk),
     .rst_no (rst_n)

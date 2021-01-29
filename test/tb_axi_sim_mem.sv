@@ -24,8 +24,8 @@ module tb_axi_sim_mem #(
   logic clk,
         rst_n;
   clk_rst_gen #(
-    .CLK_PERIOD     (Tclk),
-    .RST_CLK_CYCLES (5)
+    .ClkPeriod    (Tclk),
+    .RstClkCycles (5)
   ) i_clk_rst_gen (
     .clk_o  (clk),
     .rst_no (rst_n)

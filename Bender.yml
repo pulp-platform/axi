@@ -8,8 +8,8 @@ package:
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.20.1 }
-  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.1.1 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
+  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.0 }
 
 export_include_dirs:
   - include
