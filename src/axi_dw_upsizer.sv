@@ -241,6 +241,20 @@ module axi_dw_upsizer #(
     R_INCR_UPSIZE
   } r_state_e;
 
+  // Write-related type, but w_req_q is referenced from Read logic
+  typedef struct packed {
+    aw_chan_t aw                  ;
+    logic aw_valid                ;
+    logic aw_throw_error          ;
+    burst_len_t burst_len         ;
+    axi_pkg::len_t orig_aw_len    ;
+    axi_pkg::burst_t orig_aw_burst;
+    axi_pkg::resp_t burst_resp    ;
+    axi_pkg::size_t orig_aw_size  ;
+  } w_req_t;
+
+  w_req_t   w_req_d, w_req_q;
+
   // Decide which upsizer will handle the incoming AXI transaction
   logic     [AxiMaxReads-1:0] idle_read_upsizer;
   tran_id_t                   idx_ar_upsizer ;
@@ -529,18 +543,7 @@ module axi_dw_upsizer #(
     W_INCR_UPSIZE
   } w_state_e;
 
-  typedef struct packed {
-    aw_chan_t aw                ;
-    logic aw_valid              ;
-    logic aw_throw_error        ;
-    mst_w_chan_t w              ;
-    logic w_valid               ;
-    axi_pkg::len_t burst_len    ;
-    axi_pkg::size_t orig_aw_size;
-  } w_req_t;
-
   w_state_e w_state_d, w_state_q;
-  w_req_t   w_req_d , w_req_q ;
 
   always_comb begin
     inject_aw_into_ar_req = 1'b0;
