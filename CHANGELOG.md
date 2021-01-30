@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `assign.svh`: Add macros for assigning between AXI-Lite `struct`s, both inside a process
+  (`AXI_LITE_SET_*_STRUCT`) and outside a process (`AXI_LITE_ASSIGN_*_STRUCT`).  This is safer than
+  assigning `struct`s with a simple `=`, because the macros assign individual fields.
 - `typedef.svh`: Add `AXI_TYPEDEF_ALL` and `AXI_LITE_TYPEDEF_ALL` macros for defining all channels
   and request/response `struct`s of an AXI4+ATOPs and an AXI4-Lite interface, respectively, in a
   single macro call.
