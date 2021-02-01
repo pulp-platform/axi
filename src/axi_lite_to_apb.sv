@@ -10,6 +10,7 @@
 //
 // Authors:
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Samuel Riedel <sriedel@iis.ee.ethz.ch>
 
 // Description: AXI4-Lite to APB4 bridge
@@ -51,6 +52,8 @@ module axi_lite_to_apb #(
   parameter int unsigned NoRules     = 32'd1,  // Number of APB address rules
   parameter int unsigned AddrWidth   = 32'd32, // Address width
   parameter int unsigned DataWidth   = 32'd32, // Data width
+  parameter bit PipelineRequest      = 1'b0,   // Pipeline request path
+  parameter bit PipelineResponse     = 1'b0,   // Pipeline response path
   parameter type      axi_lite_req_t = logic,  // AXI4-Lite request struct
   parameter type     axi_lite_resp_t = logic,  // AXI4-Lite response sruct
   parameter type           apb_req_t = logic,  // APB4 request struct
@@ -163,47 +166,94 @@ module axi_lite_to_apb #(
     .idx_o   ( /*not used*/  )
   );
 
-  spill_register #(
-    .T      ( int_req_t ),
-    .Bypass ( 1'b0      )
-  ) i_req_spill (
-    .clk_i,
-    .rst_ni,
-    .valid_i ( arb_req_valid ),
-    .ready_o ( arb_req_ready ),
-    .data_i  ( arb_req       ),
-    .valid_o ( apb_req_valid ),
-    .ready_i ( apb_req_ready ),
-    .data_o  ( apb_req       )
-  );
+  if (PipelineRequest) begin : gen_req_spill
+    spill_register #(
+      .T      ( int_req_t ),
+      .Bypass ( 1'b0      )
+    ) i_req_spill (
+      .clk_i,
+      .rst_ni,
+      .valid_i ( arb_req_valid ),
+      .ready_o ( arb_req_ready ),
+      .data_i  ( arb_req       ),
+      .valid_o ( apb_req_valid ),
+      .ready_i ( apb_req_ready ),
+      .data_o  ( apb_req       )
+    );
+  end else begin : gen_req_ft_reg
+    fall_through_register #(
+      .T  ( int_req_t )
+    ) i_req_ft_reg (
+      .clk_i,
+      .rst_ni,
+      .clr_i      ( 1'b0          ),
+      .testmode_i ( 1'b0          ),
+      .valid_i    ( arb_req_valid ),
+      .ready_o    ( arb_req_ready ),
+      .data_i     ( arb_req       ),
+      .valid_o    ( apb_req_valid ),
+      .ready_i    ( apb_req_ready ),
+      .data_o     ( apb_req       )
+    );
+  end
 
-  spill_register #(
-    .T      ( axi_pkg::resp_t ),
-    .Bypass ( 1'b0            )
-  ) i_write_resp_spill (
-    .clk_i,
-    .rst_ni,
-    .valid_i ( apb_wresp_valid        ),
-    .ready_o ( apb_wresp_ready        ),
-    .data_i  ( apb_wresp              ),
-    .valid_o ( axi_bresp_valid        ),
-    .ready_i ( axi_lite_req_i.b_ready ),
-    .data_o  ( axi_bresp              )
-  );
-
-  spill_register #(
-    .T      ( int_resp_t ),
-    .Bypass ( 1'b0       )
-  ) i_read_resp_spill (
-    .clk_i,
-    .rst_ni,
-    .valid_i ( apb_rresp_valid        ),
-    .ready_o ( apb_rresp_ready        ),
-    .data_i  ( apb_rresp              ),
-    .valid_o ( axi_rresp_valid        ),
-    .ready_i ( axi_lite_req_i.r_ready ),
-    .data_o  ( axi_rresp              )
-  );
+  if (PipelineResponse) begin : gen_resp_spill
+    spill_register #(
+      .T      ( axi_pkg::resp_t ),
+      .Bypass ( 1'b0            )
+    ) i_write_resp_spill (
+      .clk_i,
+      .rst_ni,
+      .valid_i ( apb_wresp_valid        ),
+      .ready_o ( apb_wresp_ready        ),
+      .data_i  ( apb_wresp              ),
+      .valid_o ( axi_bresp_valid        ),
+      .ready_i ( axi_lite_req_i.b_ready ),
+      .data_o  ( axi_bresp              )
+    );
+    spill_register #(
+      .T      ( int_resp_t  ),
+      .Bypass ( 1'b0        )
+    ) i_read_resp_spill (
+      .clk_i,
+      .rst_ni,
+      .valid_i ( apb_rresp_valid        ),
+      .ready_o ( apb_rresp_ready        ),
+      .data_i  ( apb_rresp              ),
+      .valid_o ( axi_rresp_valid        ),
+      .ready_i ( axi_lite_req_i.r_ready ),
+      .data_o  ( axi_rresp              )
+    );
+  end else begin : gen_resp_ft_reg
+    fall_through_register #(
+      .T  ( axi_pkg::resp_t )
+    ) i_write_resp_ft_reg (
+      .clk_i,
+      .rst_ni,
+      .clr_i      ( 1'b0                    ),
+      .testmode_i ( 1'b0                    ),
+      .valid_i    ( apb_wresp_valid         ),
+      .ready_o    ( apb_wresp_ready         ),
+      .data_i     ( apb_wresp               ),
+      .valid_o    ( axi_bresp_valid         ),
+      .ready_i    ( axi_lite_req_i.b_ready  ),
+      .data_o     ( axi_bresp               )
+    );
+    fall_through_register #(
+      .T  ( int_resp_t )
+    ) i_read_resp_ft_reg (
+      .clk_i,
+      .rst_ni,
+      .clr_i      ( 1'b0                    ),
+      .testmode_i ( 1'b0                    ),
+      .valid_i    ( apb_rresp_valid         ),
+      .ready_o    ( apb_rresp_ready         ),
+      .data_i     ( apb_rresp               ),
+      .valid_o    ( axi_rresp_valid         ),
+      .ready_i    ( axi_lite_req_i.r_ready  ),
+      .data_o     ( axi_rresp               )
+    );
+  end
 
   // -----------------------------------------------------------------------------------------------
   // APB master FSM
