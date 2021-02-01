@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## 0.27.0 - 2021-02-01
 
 ### Added
 - `assign.svh`: Add macros for assigning between AXI-Lite `struct`s, both inside a process
@@ -23,8 +23,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update `common_cells` dependency to `1.21.0` to align on version `0.2.0` of the
   `common_verification` dependency.  This includes version `1.20.1` of `common_cells`, which fixes
   an out-of-bounds index in `axi_burst_splitter` (#150).
-
-### Fixed
 
 
 ## 0.26.0 - 2021-01-19
