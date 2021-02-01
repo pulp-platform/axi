@@ -15,20 +15,17 @@
 
 `include "axi/typedef.svh"
 
-/// # AXI4+ATOP Fully-Connected Crossbar
-///
-/// `axi_xbar` is a fully-connected crossbar that implements the full AXI4 specification plus atomic
-/// operations (ATOPs) from AXI5 (E1.1).
+/// Fully-connected crossbar that implements AXI4 plus atomic operations (ATOPs) from AXI5 (E1.1).
 ///
 ///
-/// ## Design Overview
+/// # Design Overview
 ///
 /// `axi_xbar` is a fully-connected crossbar, which means that each master module that is connected
 /// to a *slave port* for of the crossbar has direct wires to all slave modules that are connected
 /// to the *master ports* of the crossbar.
 /// A block-diagram of the crossbar is shown below:
 ///
-/// ![Block-diagram showing the design of the full AXI4 Crossbar.](doc/axi_xbar.png
+/// ![Block-diagram showing the design of the full AXI4 Crossbar.](docs/axi_xbar.png
 /// "Block-diagram showing the design of the full AXI4 Crossbar.")
 ///
 /// The crossbar has a configurable number of slave and master ports.
@@ -38,7 +35,7 @@
 /// must be `AxiIdWidthSlvPorts + $clog_2(NoSlvPorts)`.
 ///
 ///
-/// ## Address Map
+/// # Address Map
 ///
 /// One address map is shared by all master ports.  The *address map* contains an arbitrary number
 /// of rules (but at least one).  Each *rule* maps one address range to one master port.  Multiple
@@ -49,7 +46,7 @@
 /// Each address range includes the start address but does **not** include the end address.
 /// That is, an address *matches* an address range if and only if
 /// ```
-///     addr >= start_addr && addr < end_addr
+/// addr >= start_addr && addr < end_addr
 /// ```
 /// The start address must be less than or equal to the end address.
 ///
@@ -61,7 +58,7 @@
 /// module is used for decoding the address map.
 ///
 ///
-/// ## Decode Errors and Default Slave Port
+/// # Decode Errors and Default Slave Port
 ///
 /// Each slave port has its own internal *decode error slave* module.  If the address of a
 /// transaction does not match any rule, the transaction is routed to that decode error slave
@@ -76,7 +73,7 @@
 /// the address map apply.
 ///
 ///
-/// ## Ordering and Stalls
+/// # Ordering and Stalls
 ///
 /// When one slave port receives two transactions with the same ID and direction (i.e., both read or
 /// both write) but targeting two different master ports, it will not accept the second transaction
@@ -93,14 +90,14 @@
 /// reasons, this crossbar does not have reorder buffers.
 ///
 ///
-/// ## Verification Methodology
+/// # Verification Methodology
 ///
 /// This module has been verified with a directed random verification testbench, described and
 /// implemented in [`tb_axi_xbar`](module.tb_axi_xbar) and
 /// [`tb_axi_xbar_pkg`](package.tb_axi_xbar_pkg).
 ///
 ///
-/// ## Design Rationale for No Pipelining Inside Crossbar
+/// # Design Rationale for No Pipelining Inside Crossbar
 ///
 /// Inserting spill registers between [`axi_demux`](module.axi_demux) and
 /// [`axi_mux`](module.axi_mux) seems attractive to further reduce the length of combinatorial paths
@@ -125,7 +122,7 @@
 ///
 /// The fourth criterion is thus the only one that can be broken to prevent deadlocks.  However,
 /// inserting a spill register between a master port of the [`axi_demux`](module.axi_demux) and a
-/// slave port of the [[`axi_mux`](module.axi_mux) can lead to a circular dependency inside the
+/// slave port of the [`axi_mux`](module.axi_mux) can lead to a circular dependency inside the
 /// W FIFOs.  This comes from the particular way the round robin arbiter from the AW channel in the
 /// multiplexer defines its priorities.  It is constructed in a way by giving each of its slave
 /// ports an increasing priority and then comparing pairwise down till a winner is chosen.  When the
@@ -168,10 +165,10 @@ module axi_xbar #(
   parameter int unsigned DataWidth = 32'd0,
   /// AXI4+ATOP user field width.
   parameter int unsigned UserWidth = 32'd0,
-  /// Maximum number of open transactions each master connected to the crossbar can have
+  /// Maximum number of open transactions each slave port of the crossbar can have
   /// [in flight](doc/#in-flight) at the same time.
   parameter int unsigned SlvPortMaxTxns = 32'd0,
-  /// Maximum number of open transactions each slave connected to the crossbar can have
+  /// Maximum number of open transactions each master port the crossbar can have
   /// [in flight](../doc#in-flight) per ID at the same time.
   parameter int unsigned MstPortMaxTxns = 32'd0,
   /// Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the
@@ -224,20 +221,22 @@ module axi_xbar #(
   ///
   /// Required struct fields:
   ///
+  /// ```systemverilog
   /// typedef struct packed {
   ///   int unsigned idx;
   ///   axi_addr_t   start_addr;
   ///   axi_addr_t   end_addr;
   /// } rule_t;
+  /// ```
   parameter type rule_t = axi_pkg::xbar_rule_64_t,
   /// Dependent parameter, do **not** override!
   /// Width of the index specifying a master port.
   parameter int unsigned DefaultMstPortIdxWidth = cf_math_pkg::idx_width(NumMstPorts),
-  /// Dependent parameter, do **not**parameter override!
+  /// Dependent parameter, do **not** override!
   /// Type of index for a default master port.
   parameter type default_mst_port_idx_t = logic [DefaultMstPortIdxWidth-1:0]
 ) (
-  /// Clock, positive edge triggered.
+  /// Clock, rising edge triggered.
   ///
   /// All other signals (except `rst_ni`) are synchronous to this signal.
   input  logic clk_i,
@@ -265,7 +264,7 @@ module axi_xbar #(
   input  logic [NumSlvPorts-1:0] en_default_mst_port_i,
   /// For each slave port the default index where the transaction should be routed, if
   /// for this slave port the default index functionality is enabled by setting the
-  /// bit `en_default_mst_ports_i[slave_port_idx]` to `'1`.
+  /// bit `en_default_mst_ports_i[slave_port_idx]` to `1'b1`.
   ///
   /// When not used, tie to `'0`.
   input  default_mst_port_idx_t [NumSlvPorts-1:0] default_mst_ports_i
@@ -488,54 +487,34 @@ endmodule
 ///
 /// The indexing of the master and slave port interface arrays is big-endian.
 module axi_xbar_intf #(
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            NumSlvPorts        = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            NumMstPorts        = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            SlvPortIdWidth     = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            SlvPortIdWidthUsed = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            AddrWidth          = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            DataWidth          = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            UserWidth          = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            SlvPortMaxTxns     = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            MstPortMaxTxns     = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter bit                     FallThrough        = 32'd1,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter axi_pkg::xbar_latency_e LatencyMode        = axi_pkg::CUT_ALL_AX,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter int unsigned            NumAddrRules       = 32'd0,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter bit                     EnableAtops        = 1'b1,
-  /// See [`axi_xbar`](module.axi_xbar).
   parameter type rule_t = axi_pkg::xbar_rule_64_t,
   /// Dependent parameter, do **not** override!
   parameter int unsigned DefaultMstPortIdxWidth = cf_math_pkg::idx_width(NumMstPorts),
   /// Dependent parameter, do **not**parameter override!
   parameter type default_mst_port_idx_t = logic [DefaultMstPortIdxWidth-1:0]
 ) (
-  /// See [`axi_xbar`](module.axi_xbar).
   input logic                                     clk_i,
-  /// See [`axi_xbar`](module.axi_xbar).
   input logic                                     rst_ni,
-  /// See [`axi_xbar`](module.axi_xbar).
   input logic                                     test_i,
   /// Unpacked, big-endian (upto) array of slave port interfaces.
   AXI_BUS.Slave                                   slv_ports[NumSlvPorts],
   /// Unpacked, big-endian (upto) array of master port interfaces.
   AXI_BUS.Master                                  mst_ports[NumMstPorts],
-  /// See [`axi_xbar`](module.axi_xbar).
   input rule_t                 [NumAddrRules-1:0] addr_map_i,
-  /// See [`axi_xbar`](module.axi_xbar).
   input logic                  [NumSlvPorts -1:0] en_default_mst_port_i,
-  /// See [`axi_xbar`](module.axi_xbar).
   input default_mst_port_idx_t [NumSlvPorts -1:0] default_mst_ports_i
 );
 
