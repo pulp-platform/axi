@@ -285,7 +285,7 @@ module axi_lite_to_apb #(
           pstrb:   apb_req.strb
         };
         if (apb_resp_i[apb_sel_idx].pready) begin
-          // transfer, pop the request, genereate response and update state
+          // transfer, pop the request, generate response and update state
           apb_req_ready = 1'b1;
           // we are only in this state if the response spill registers are ready anyway
           if (apb_req.write) begin
