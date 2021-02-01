@@ -83,6 +83,14 @@ exec_test() {
                 done
             done
             ;;
+        axi_lite_to_apb)
+            for PIPE_REQ in 0 1; do
+                for PIPE_RESP in 0 1; do
+                    call_vsim tb_axi_lite_to_apb -gTbPipelineRequest=$PIPE_REQ \
+                            -gTbPipelineResponse=$PIPE_RESP
+                done
+            done
+            ;;
         axi_lite_to_axi)
             for DW in 8 16 32 64 128 256 512 1024; do
                 call_vsim tb_axi_lite_to_axi -gTB_DW=$DW -t 1ps

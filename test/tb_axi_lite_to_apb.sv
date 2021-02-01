@@ -19,7 +19,10 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module tb_axi_lite_to_apb;
+module tb_axi_lite_to_apb #(
+  parameter bit TbPipelineRequest = 1'b0,
+  parameter bit TbPipelineResponse = 1'b0
+);
   // Dut parameters
   localparam int unsigned NoApbSlaves = 8;    // How many APB Slaves  there are
   localparam int unsigned NoAddrRules = 9;    // How many address rules for the APB slaves
@@ -225,15 +228,17 @@ module tb_axi_lite_to_apb;
   // DUT
   //-----------------------------------
   axi_lite_to_apb #(
-    .NoApbSlaves    ( NoApbSlaves  ),
-    .NoRules        ( NoAddrRules  ),
-    .AddrWidth      ( AxiAddrWidth ),
-    .DataWidth      ( AxiDataWidth ),
-    .axi_lite_req_t ( axi_req_t    ),
-    .axi_lite_resp_t( axi_resp_t   ),
-    .apb_req_t      ( apb_req_t    ),
-    .apb_resp_t     ( apb_resp_t   ),
-    .rule_t         ( rule_t       )
+    .NoApbSlaves      ( NoApbSlaves         ),
+    .NoRules          ( NoAddrRules         ),
+    .AddrWidth        ( AxiAddrWidth        ),
+    .DataWidth        ( AxiDataWidth        ),
+    .PipelineRequest  ( TbPipelineRequest   ),
+    .PipelineResponse ( TbPipelineResponse  ),
+    .axi_lite_req_t   ( axi_req_t           ),
+    .axi_lite_resp_t  ( axi_resp_t          ),
+    .apb_req_t        ( apb_req_t           ),
+    .apb_resp_t       ( apb_resp_t          ),
+    .rule_t           ( rule_t              )
   ) i_axi_lite_to_apb_dut (
     .clk_i           ( clk          ),
     .rst_ni          ( rst_n        ),

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_lite_to_apb`: Make pipeline registers on request and response path optional (can be enabled
+  with the new `PipelineRequest` and `PipelineResponse` `parameter`s), and disable those pipeline
+  registers by default.
 
 ### Fixed
 
