@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- FuseSoC: Fix version of `common_cells` (`1.21.0`).
 
 
 ## 0.27.0 - 2021-02-01

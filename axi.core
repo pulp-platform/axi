@@ -46,7 +46,7 @@ filesets:
       - src/axi_xbar.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_cells:1.16.4"
+      - ">=pulp-platform.org::common_cells:1.21.0"
 
 generators:
   axi_intercon_gen:
