@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_dw_downsizer` and `axi_dw_upsizer` (part of `axi_dw_converter`): Fix declaration order of
+  `w_req_t`, `w_req_d`, and `w_req_q` to remove problematic forward references.
 - FuseSoC: Fix version of `common_cells` (`1.21.0`).
 
 
