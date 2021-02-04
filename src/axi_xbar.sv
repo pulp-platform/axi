@@ -25,7 +25,7 @@
 /// to the *master ports* of the crossbar.
 /// A block-diagram of the crossbar is shown below:
 ///
-/// ![Block-diagram showing the design of the full AXI4 Crossbar.](docs/axi_xbar.png
+/// ![Block-diagram showing the design of the full AXI4 Crossbar.](axi_xbar.png
 /// "Block-diagram showing the design of the full AXI4 Crossbar.")
 ///
 /// The crossbar has a configurable number of slave and master ports.
