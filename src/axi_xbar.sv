@@ -374,33 +374,31 @@ module axi_xbar #(
     `endif
     // pragma translate_on
     axi_demux #(
-      .AxiIdWidth     ( SlvPortIdWidth      ),  // ID Width
-      .aw_chan_t      ( slv_port_axi_aw_t   ),  // AW Channel Type
-      .w_chan_t       ( axi_w_t             ),  //  W Channel Type
-      .b_chan_t       ( slv_port_axi_b_t    ),  //  B Channel Type
-      .ar_chan_t      ( slv_port_axi_ar_t   ),  // AR Channel Type
-      .r_chan_t       ( slv_port_axi_r_t    ),  //  R Channel Type
-      .req_t          ( slv_port_axi_req_t  ),
-      .resp_t         ( slv_port_axi_rsp_t  ),
-      .NoMstPorts     ( NumMstPorts + 32'd1 ),
-      .MaxTrans       ( SlvPortMaxTxns      ),
-      .AxiLookBits    ( SlvPortIdWidthUsed  ),
-      .FallThrough    ( FallThrough         ),
-      .SpillAw        ( LatencyMode[9]      ),
-      .SpillW         ( LatencyMode[8]      ),
-      .SpillB         ( LatencyMode[7]      ),
-      .SpillAr        ( LatencyMode[6]      ),
-      .SpillR         ( LatencyMode[5]      )
+      .NumMstPorts ( NumMstPorts + 32'd1 ),
+      .IdWidth     ( SlvPortIdWidth      ),
+      .IdWidthUsed ( SlvPortIdWidthUsed  ),
+      .AddrWidth   ( AddrWidth           ),
+      .DataWidth   ( DataWidth           ),
+      .UserWidth   ( UserWidth           ),
+      .MaxTxns     ( SlvPortMaxTxns      ),
+      .FallThrough ( FallThrough         ),
+      .SpillAw     ( LatencyMode[9]      ),
+      .SpillW      ( LatencyMode[8]      ),
+      .SpillB      ( LatencyMode[7]      ),
+      .SpillAr     ( LatencyMode[6]      ),
+      .SpillR      ( LatencyMode[5]      ),
+      .axi_req_t   ( slv_port_axi_req_t  ),
+      .axi_rsp_t   ( slv_port_axi_rsp_t  )
     ) i_axi_demux (
-      .clk_i,   // Clock
-      .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
-      .slv_req_i       ( slv_ports_req_i[i] ),
-      .slv_aw_select_i ( slv_aw_select      ),
-      .slv_ar_select_i ( slv_ar_select      ),
-      .slv_resp_o      ( slv_ports_rsp_o[i] ),
-      .mst_reqs_o      ( slv_reqs[i]        ),
-      .mst_resps_i     ( slv_rsps[i]        )
+      .clk_i,
+      .rst_ni,
+      .test_i,
+      .slv_port_req_i       ( slv_ports_req_i[i] ),
+      .slv_port_aw_select_i ( slv_aw_select      ),
+      .slv_port_ar_select_i ( slv_ar_select      ),
+      .slv_port_rsp_o       ( slv_ports_rsp_o[i] ),
+      .mst_ports_req_o      ( slv_reqs[i]        ),
+      .mst_ports_rsp_i      ( slv_rsps[i]        )
     );
 
     axi_err_slv #(
