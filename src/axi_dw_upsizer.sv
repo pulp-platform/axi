@@ -224,7 +224,7 @@ module axi_dw_upsizer #(
     .SpillR      ( 1'b0                ),
     .axi_req_t   ( axi_mst_req_t       ),
     .axi_rsp_t   ( axi_mst_resp_t      )
-) i_axi_demux (
+  ) i_axi_demux (
     .clk_i,
     .rst_ni,
     .test_i               ( 1'b0                        ),
