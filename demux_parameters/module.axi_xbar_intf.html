@@ -1,0 +1,50 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_xbar_intf</a></h1>
+<div class="docblock">
+<p>This is the interface wrapper for <code>axi_xbar</code>. Ports and parameters are analog to <code>axi_xbar</code>,
+see <a href="module.axi_xbar"><code>axi_xbar</code> documentation</a>.
+The AXI4+ATOP master and slave ports are structured here as interfaces.</p>
+<p>The indexing of the master and slave port interface arrays is big-endian.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.NumSlvPorts" class="impl"><code class="in-band">NumSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.NumMstPorts" class="impl"><code class="in-band">NumMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.SlvPortIdWidth" class="impl"><code class="in-band">SlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.SlvPortIdWidthUsed" class="impl"><code class="in-band">SlvPortIdWidthUsed<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.SlvPortMaxTxns" class="impl"><code class="in-band">SlvPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MstPortMaxTxns" class="impl"><code class="in-band">MstPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.FallThrough" class="impl"><code class="in-band">FallThrough<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.LatencyMode" class="impl"><code class="in-band">LatencyMode<span class="type-annotation">: axi_pkg::xbar_latency_e</span></code></h3><div class="docblock"
+></div><h3 id="parameter.NumAddrRules" class="impl"><code class="in-band">NumAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.EnableAtops" class="impl"><code class="in-band">EnableAtops<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DefaultMstPortIdxWidth" class="impl"><code class="in-band">DefaultMstPortIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong> override!</p>
+</div><h3 id="parameter.default_mst_port_idx_t" class="impl"><code class="in-band">default_mst_port_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong>parameter override!</p>
+</div><h3 id="parameter.MstPortIdWidth" class="impl"><code class="in-band">MstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band">StrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
+></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
+></div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
+></div><h3 id="port.slv_ports" class="impl"><code class="in-band">slv_ports<span class="type-annotation">: AXI_BUS.Slave</span></code></h3><div class="docblock"
+><p>Unpacked, big-endian (upto) array of slave port interfaces.</p>
+</div><h3 id="port.mst_ports" class="impl"><code class="in-band">mst_ports<span class="type-annotation">: AXI_BUS.Master</span></code></h3><div class="docblock"
+><p>Unpacked, big-endian (upto) array of master port interfaces.</p>
+</div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input rule_t                 [NumAddrRules-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input logic                  [NumSlvPorts -1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.default_mst_ports_i" class="impl"><code class="in-band">default_mst_ports_i<span class="type-annotation">: input default_mst_port_idx_t [NumSlvPorts -1:0]</span></code></h3><div class="docblock"
+></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.slv_port_axi_id_t.html">slv_port_axi_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_id_t.html">mst_port_axi_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_addr_t.html">axi_addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_data_t.html">axi_data_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_strb_t.html">axi_strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_user_t.html">axi_user_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_aw_t.html">slv_port_axi_aw_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_aw_t.html">mst_port_axi_aw_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_w_t.html">axi_w_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_b_t.html">slv_port_axi_b_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_b_t.html">mst_port_axi_b_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_ar_t.html">slv_port_axi_ar_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_ar_t.html">mst_port_axi_ar_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_r_t.html">slv_port_axi_r_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_r_t.html">mst_port_axi_r_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_req_t.html">slv_port_axi_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_req_t.html">mst_port_axi_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.slv_port_axi_rsp_t.html">slv_port_axi_rsp_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_axi_rsp_t.html">mst_port_axi_rsp_t</a></td><td></td></tr></table>
+</section>
+</body>
+</html>

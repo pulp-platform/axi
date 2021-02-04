@@ -1,0 +1,155 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_demux</a></h1>
+<div class="docblock">
+<p>Demultiplex an AXI4 + ATOPs bus from one slave port to multiple master ports.</p>
+<h1>Design Overview</h1>
+<p>The demultiplexer has one <em>slave port</em> and a configurable number of <em>master ports</em>.
+A block diagram is shown below:</p>
+<p><img src="axi_demux.png" alt="Block diagram of the AXI demultiplexer" title="Block diagram of the AXI demultiplexer" /></p>
+<p>The AW and AR channels each have a <em>select</em> input, to determine the master port to which they
+are sent.  The select can, for example, be driven by an (external) address decoder to map
+address ranges to different AXI slaves.</p>
+<p>Beats on the W channel are routed by demultiplexer according to the selection for the
+corresponding AW beat.  This relies on the AXI property that W bursts must be sent in the same
+order as AW beats and beats from different W bursts may not be interleaved.</p>
+<p>Beats on the B and R channel are multiplexed from the master ports to the slave port with a
+round-robin arbitration tree.</p>
+<h1>Pipelining and Latency</h1>
+<p>The <code>SpillXX</code> parameters allow to insert spill register before each channel of the
+demultiplexer.  Spill registers cut all combinatorial paths of a channel (i.e., both payload and
+handshake).  Thus, they add one cycle of latency per channel but do not impair throughput.</p>
+<p>If all <code>SpillXX</code> and <code>FallThrough</code> are disabled, all paths through this multiplexer are
+combinatorial (i.e., have zero sequential latency).</p>
+<h1>Ordering and Stalls</h1>
+<p>When the demultiplexer receives two transactions with the same ID and direction (i.e., both read
+or both write) but targeting two different master ports, it will not accept the second
+transaction until the first has completed.  During this time, the demultiplexer stalls the AR or
+AW channel, respectively.  To determine whether two transactions have the same ID, the
+<code>IdWidthUsed</code> least-significant bits are compared.  That parameter can be set to the full
+<code>IdWidth</code> to avoid false ID conflicts, or it can be set to a lower value to reduce area and
+delay at the cost of more false conflicts.</p>
+<p>The reason for this behavior are AXI ordering constraints, see the <a href="module.axi_xbar.md">documentation of the
+crossbar</a> for details.</p>
+<h2>Implementation</h2>
+<p><code>2 * 2^AxiLookBits</code> counters track the number of <a href="doc#in-flight">in-flight</a> transactions.
+That is, for each ID in the (potentially) reduced set of IDs of <code>IdWidthUsed</code> bits, there is one
+counter for write transactions and one for read transactions.  Each counter can count up to (and
+including) <code>MaxTxns</code>, and there is a register that holds the index of the master port to which a
+counter is assigned (see <a href="module.axi_demux_id_counters"><code>axi_demux_id_counters</code></a>).</p>
+<p>When the demultiplexer gets an AW or an AR, it indexes the counters with the AXI ID.  If the
+indexed counter has a value greater than zero and its master port index register is not equal to
+the index to which the AW or AR is to be sent, a transaction with the same direction and ID is
+already in flight to another master port.  The demultiplexer then stalls the AW or AR.  In all
+other cases, the demultiplexer forwards the AW or AR, increments the value of the indexed
+counter, and sets the master port index of the counter.  A counter is decremented upon a
+handshake a B respectively last R beat at a slave port.</p>
+<p>W beats are routed to the master port defined by the value of <code>slv_aw_select_i</code> for the
+corresponding AW.  As the order of the W bursts is given by the order of the AWs, the select
+signals are stored in a FIFO queue.  This FIFO is pushed upon a handshake on the AW slave
+channel and popped upon a handshake of the last W beat of a burst on a W master channel.</p>
+<h1>Atomic Transactions</h1>
+<p>The demultiplexer also supports AXI atomic transactions (initiated by an AW with <code>atop</code> field
+not equal to zero).  A part of AXI atomic transactions, namely atomic loads, require a response
+on the B <em>and</em> the R channel.</p>
+<h2>Implementation</h2>
+<p>Atomic loads introduce a dependency between the read and write channels that otherwise does not
+exist in AXI.  In this demultiplexer, the ID counters of the read channel must be aware of R
+beats without a corresponding AR.  Otherwise, they would underflow upon atomic loads.  To
+prevent this, the AW channel of the demultiplexer can &quot;inject&quot; the ID of an atomic load to the
+ID counter of the AR channel.  This is possible because atomic transactions must have an ID that
+is unique with respect to <em>all</em> other transactions (i.e., reads <em>and</em> writes) currently in
+flight.</p>
+<p>As only a part of the AXI ID is compared to determine whether two transactions have the same ID
+(see section <em>Ordering and Stalls</em>), atomic loads can lead to additional false conflict stalls
+on the read channel.  However, atomic transactions are short bursts and thus usually complete
+relatively fast, so this should not reduce throughput under non-degenerate conditions.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.NumMstPorts" class="impl"><code class="in-band">NumMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The number of AXI master ports of the module.
+(In other words, how many AXI slave modules can be attached).</p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI ID width of all ports.</p>
+</div><h3 id="parameter.IdWidthUsed" class="impl"><code class="in-band">IdWidthUsed<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The number of slave port ID bits (starting at the least significant) the crossbar uses to
+determine the uniqueness of an AXI ID (see section <em>Ordering and Stalls</em> above).</p>
+<p>This value <em>must</em> follow <code>IdWidth &gt;= IdWidthUsed &amp;&amp; IdWidthUsed &gt; 0</code>.</p>
+<p>Setting this to small values leads to less area, however on an increased stalling rate
+due to ID collisions.</p>
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP address field width.</p>
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP data field width.</p>
+</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP user field width.</p>
+</div><h3 id="parameter.MaxTxns" class="impl"><code class="in-band">MaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of open transactions that can be <a href="doc/#in-flight">in flight</a> at the same time.</p>
+</div><h3 id="parameter.FallThrough" class="impl"><code class="in-band">FallThrough<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>The internal FIFO from the AW channel to the W channel is in FallThrough mode.</p>
+</div><h3 id="parameter.SpillAw" class="impl"><code class="in-band">SpillAw<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Ass a spill register on the <code>AW</code> channel of the slave port.</p>
+</div><h3 id="parameter.SpillW" class="impl"><code class="in-band">SpillW<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Ass a spill register on the <code>W</code> channel of the slave port.</p>
+</div><h3 id="parameter.SpillB" class="impl"><code class="in-band">SpillB<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Ass a spill register on the <code>B</code> channel of the slave port.</p>
+</div><h3 id="parameter.SpillAr" class="impl"><code class="in-band">SpillAr<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Ass a spill register on the <code>AR</code> channel of the slave port.</p>
+</div><h3 id="parameter.SpillR" class="impl"><code class="in-band">SpillR<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Ass a spill register on the <code>R</code> channel of the slave port.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP request struct type for a single port.</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP response struct type for a single port.</p>
+</div><h3 id="parameter.SelectWidth" class="impl"><code class="in-band">SelectWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong> override!
+Width of the selection signal specifying a master port.</p>
+</div><h3 id="parameter.select_t" class="impl"><code class="in-band">select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Dependent parameter, do <strong>not</strong> override!
+Selection signal data type.</p>
+</div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band">StrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IdCounterWidth" class="impl"><code class="in-band">IdCounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock, rising edge triggered.</p>
+<p>All other signals (except <code>rst_ni</code>) are synchronous to this signal.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low.</p>
+</div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Testmode enable, active high.</p>
+</div><h3 id="port.slv_port_req_i" class="impl"><code class="in-band">slv_port_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP requests to the slave port.</p>
+</div><h3 id="port.slv_port_aw_select_i" class="impl"><code class="in-band">slv_port_aw_select_i<span class="type-annotation">: input  select_t</span></code></h3><div class="docblock"
+><p>Selection signal to which master port a write transaction should be routed.</p>
+<p>This signal has to be viewed as part of an <code>AW</code> beat. It has to be stable as long as
+<code>slv_port_req_i.aw_valid</code> is <code>1</code>.</p>
+</div><h3 id="port.slv_port_ar_select_i" class="impl"><code class="in-band">slv_port_ar_select_i<span class="type-annotation">: input  select_t</span></code></h3><div class="docblock"
+><p>Selection signal to which master port a read transaction should be routed.</p>
+<p>This signal has to be viewed as part of an <code>AR</code> beat. It has to be stable as long as
+<code>slv_port_req_i.ar_valid</code> is <code>1</code>.</p>
+</div><h3 id="port.slv_port_rsp_o" class="impl"><code class="in-band">slv_port_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP responses of the slave port.</p>
+</div><h3 id="port.mst_ports_req_o" class="impl"><code class="in-band">mst_ports_req_o<span class="type-annotation">: output axi_req_t [NumMstPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP requests of the master ports.</p>
+</div><h3 id="port.mst_ports_rsp_i" class="impl"><code class="in-band">mst_ports_rsp_i<span class="type-annotation">: input  axi_rsp_t [NumMstPorts-1:0]</span></code></h3><div class="docblock"
+><p>AXI4+ATOP responses to the master ports.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.axi_id_t.html">axi_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_addr_t.html">axi_addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_data_t.html">axi_data_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_strb_t.html">axi_strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_user_t.html">axi_user_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_aw_t.html">axi_aw_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_w_t.html">axi_w_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_b_t.html">axi_b_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_ar_t.html">axi_ar_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_r_t.html">axi_r_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_select_t.html">aw_select_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_select_t.html">ar_select_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.slv_aw_chan_select" class="impl"><code class="in-band">slv_aw_chan_select<span class="type-annotation">: aw_select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.lookup_aw_select" class="impl"><code class="in-band">lookup_aw_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.w_select" class="impl"><code class="in-band">w_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_w_chan" class="impl"><code class="in-band">slv_w_chan<span class="type-annotation">: axi_w_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_b_chan" class="impl"><code class="in-band">slv_b_chan<span class="type-annotation">: axi_b_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_ar_chan_select" class="impl"><code class="in-band">slv_ar_chan_select<span class="type-annotation">: ar_select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.lookup_ar_select" class="impl"><code class="in-band">lookup_ar_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_r_chan" class="impl"><code class="in-band">slv_r_chan<span class="type-annotation">: axi_r_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_aw_chan_select_in" class="impl"><code class="in-band">slv_aw_chan_select_in<span class="type-annotation">: aw_select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.slv_ar_chan_select_in" class="impl"><code class="in-band">slv_ar_chan_select_in<span class="type-annotation">: ar_select_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>

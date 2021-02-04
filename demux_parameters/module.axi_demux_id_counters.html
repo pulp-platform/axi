@@ -1,0 +1,60 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_demux_id_counters</a></h1>
+<div class="docblock">
+<p>Internal ID counter module of <code>axi_demux</code>.</p>
+<p>There needs to be kept track of which IDs are currently in-flight at a given master port of the
+module so that the AXI ordering requirements are not violated.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.AxiIdBits" class="impl"><code class="in-band">AxiIdBits<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters.</p>
+</div><h3 id="parameter.CounterWidth" class="impl"><code class="in-band">CounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>The width of each instantiated counter. This equates to the maximum number of transactions
+which can be in flight of a given ID.</p>
+</div><h3 id="parameter.mst_port_select_t" class="impl"><code class="in-band">mst_port_select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>The type of the selection signal to indicate on which master port the ID is transmitted.</p>
+</div><h3 id="parameter.NumCounters" class="impl"><code class="in-band">NumCounters<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock, rising edge triggered.</p>
+<p>All other signals (except <code>rst_ni</code>) are synchronous to this signal.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low.</p>
+</div><h3 id="port.lookup_axi_id_i" class="impl"><code class="in-band">lookup_axi_id_i<span class="type-annotation">: input  logic [AxiIdBits-1:0]</span></code></h3><div class="docblock"
+><p>The new ID that should be looked up for if it is already in-flight.</p>
+</div><h3 id="port.lookup_mst_select_o" class="impl"><code class="in-band">lookup_mst_select_o<span class="type-annotation">: output mst_port_select_t</span></code></h3><div class="docblock"
+><p>The master port where the looked up transaction is currently in-flight if
+<code>lookup_mst_select_occupied_o</code> is <code>1</code>.</p>
+</div><h3 id="port.lookup_mst_select_occupied_o" class="impl"><code class="in-band">lookup_mst_select_occupied_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>When <code>1</code>, the looked up ID is currently in-flight on master port indicated by
+<code>lookup_mst_select_o</code>.</p>
+</div><h3 id="port.full_o" class="impl"><code class="in-band">full_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>The counter selected by <code>push_axi_id_i</code> is currently full.</p>
+</div><h3 id="port.push_axi_id_i" class="impl"><code class="in-band">push_axi_id_i<span class="type-annotation">: input  logic [AxiIdBits-1:0]</span></code></h3><div class="docblock"
+><p>The ID that selects the counter.</p>
+</div><h3 id="port.push_mst_select_i" class="impl"><code class="in-band">push_mst_select_i<span class="type-annotation">: input  mst_port_select_t</span></code></h3><div class="docblock"
+><p>Specify the master port where the ID is transmitted.</p>
+</div><h3 id="port.push_i" class="impl"><code class="in-band">push_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Increment the counter.</p>
+</div><h3 id="port.inject_axi_id_i" class="impl"><code class="in-band">inject_axi_id_i<span class="type-annotation">: input  logic [AxiIdBits-1:0]</span></code></h3><div class="docblock"
+><p>Inject the ATOP id in AR channel.
+This port should only be used on the AR channel, tie to <code>0</code> in AW channel.</p>
+</div><h3 id="port.inject_i" class="impl"><code class="in-band">inject_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Push the ID, this increments the counter selected by <code>inject_axi_id_i</code> by an additional <code>+1</code>.</p>
+</div><h3 id="port.pop_axi_id_i" class="impl"><code class="in-band">pop_axi_id_i<span class="type-annotation">: input  logic [AxiIdBits-1:0]</span></code></h3><div class="docblock"
+><p>The ID of the counter that should be decremented on transaction completion.</p>
+</div><h3 id="port.pop_i" class="impl"><code class="in-band">pop_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Decrement the counter selected with <code>pop_axi_id_i</code>.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.cnt_t.html">cnt_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.cnt_delta" class="impl"><code class="in-band">cnt_delta<span class="type-annotation">: cnt_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.in_flight" class="impl"><code class="in-band">in_flight<span class="type-annotation">: cnt_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>
