@@ -67,33 +67,31 @@ module axi_burst_splitter #(
   logic   sel_aw_unsupported, sel_ar_unsupported;
   localparam int unsigned MaxTxns = (MaxReadTxns > MaxWriteTxns) ? MaxReadTxns : MaxWriteTxns;
   axi_demux #(
-    .AxiIdWidth   ( IdWidth   ),
-    .aw_chan_t    ( aw_chan_t ),
-    .w_chan_t     ( w_chan_t  ),
-    .b_chan_t     ( b_chan_t  ),
-    .ar_chan_t    ( ar_chan_t ),
-    .r_chan_t     ( r_chan_t  ),
-    .req_t        ( req_t     ),
-    .resp_t       ( resp_t    ),
-    .NoMstPorts   ( 2         ),
-    .MaxTrans     ( MaxTxns   ),
-    .AxiLookBits  ( IdWidth   ),
-    .FallThrough  ( 1'b1      ),
-    .SpillAw      ( 1'b0      ),
-    .SpillW       ( 1'b0      ),
-    .SpillB       ( 1'b0      ),
-    .SpillAr      ( 1'b0      ),
-    .SpillR       ( 1'b0      )
+    .NumMstPorts ( 32'd2     ),
+    .IdWidth     ( IdWidth   ),
+    .IdWidthUsed ( IdWidth   ),
+    .AddrWidth   ( AddrWidth ),
+    .DataWidth   ( DataWidth ),
+    .UserWidth   ( UserWidth ),
+    .MaxTxns     ( MaxTxns   ),
+    .FallThrough ( 1'b1      ),
+    .SpillAw     ( 1'b0      ),
+    .SpillW      ( 1'b0      ),
+    .SpillB      ( 1'b0      ),
+    .SpillAr     ( 1'b0      ),
+    .SpillR      ( 1'b0      ),
+    .axi_req_t   ( req_t     ),
+    .axi_rsp_t   ( resp_t    )
   ) i_demux_supported_vs_unsupported (
     .clk_i,
     .rst_ni,
-    .test_i           ( 1'b0                          ),
-    .slv_req_i,
-    .slv_aw_select_i  ( sel_aw_unsupported            ),
-    .slv_ar_select_i  ( sel_ar_unsupported            ),
-    .slv_resp_o,
-    .mst_reqs_o       ( {unsupported_req,  act_req}   ),
-    .mst_resps_i      ( {unsupported_resp, act_resp}  )
+    .test_i               ( 1'b0                          ),
+    .slv_port_req_i       ( slv_req_i                     ),
+    .slv_port_aw_select_i ( sel_aw_unsupported            ),
+    .slv_port_ar_select_i ( sel_ar_unsupported            ),
+    .slv_port_rsp_o       ( slv_resp_o                    ),
+    .mst_ports_req_o      ( {unsupported_req,  act_req}   ),
+    .mst_ports_rsp_i      ( {unsupported_resp, act_resp}  )
   );
   // Define supported transactions.
   function bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
