@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_xbar`: Flatten and update parameter and ports according to (#153). Add inline documentation.
   - Remove `doc/axi_xbar.md`.
   - Move `doc/svg/axi_xbar.svg` and `doc/axi_xbar.png` to `docs/`.
+- `axi_demux`: Flatten and update parameter and ports according to (#153). Add inline documentation.
+  - Remove `doc/axi_demux.md`.
+  - Move `doc/svg/axi_demux.svg` and `doc/axi_demux.png` to `docs/`.
 
 ### Fixed
 
