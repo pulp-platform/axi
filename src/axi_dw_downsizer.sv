@@ -25,6 +25,7 @@ module axi_dw_downsizer #(
     parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
     parameter int unsigned AxiAddrWidth        = 1    , // Address width
     parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter int unsigned UserWidth           = 32'd1, // User width of all ports
     parameter type aw_chan_t                   = logic, // AW Channel Type
     parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
     parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port
@@ -209,28 +210,31 @@ module axi_dw_downsizer #(
   logic                   mst_req_aw_err;
 
   axi_demux #(
-    .AxiIdWidth (AxiIdWidth    ),
-    .AxiLookBits(AxiIdWidth    ),
-    .aw_chan_t  (aw_chan_t     ),
-    .w_chan_t   (mst_w_chan_t  ),
-    .b_chan_t   (b_chan_t      ),
-    .ar_chan_t  (ar_chan_t     ),
-    .r_chan_t   (mst_r_chan_t  ),
-    .req_t      (axi_mst_req_t ),
-    .resp_t     (axi_mst_resp_t),
-    .NoMstPorts (2             ),
-    .MaxTrans   (AxiMaxReads   ),
-    .SpillAw    (1'b1          ) // Required to break dependency between AW and W channels
+    .NumMstPorts ( 32'd2               ),
+    .IdWidth     ( AxiIdWidth          ),
+    .IdWidthUsed ( AxiIdWidth          ),
+    .AddrWidth   ( AxiAddrWidth        ),
+    .DataWidth   ( AxiMstPortDataWidth ),
+    .UserWidth   ( UserWidth           ),
+    .MaxTxns     ( AxiMaxReads         ),
+    .FallThrough ( 1'b1                ),
+    .SpillAw     ( 1'b1                ), // Required to break dependency between AW and W channels
+    .SpillW      ( 1'b0                ),
+    .SpillB      ( 1'b0                ),
+    .SpillAr     ( 1'b1                ),
+    .SpillR      ( 1'b0                ),
+    .axi_req_t   ( axi_mst_req_t       ),
+    .axi_rsp_t   ( axi_mst_resp_t      )
   ) i_axi_demux (
-    .clk_i          (clk_i                      ),
-    .rst_ni         (rst_ni                     ),
-    .test_i         (1'b0                       ),
-    .mst_reqs_o     ({axi_err_req, mst_req_o}   ),
-    .mst_resps_i    ({axi_err_resp, mst_resp_i} ),
-    .slv_ar_select_i(mst_req_ar_err[mst_req_idx]),
-    .slv_aw_select_i(mst_req_aw_err             ),
-    .slv_req_i      (mst_req                    ),
-    .slv_resp_o     (mst_resp                   )
+    .clk_i,
+    .rst_ni,
+    .test_i               ( 1'b0                        ),
+    .slv_port_req_i       ( mst_req                     ),
+    .slv_port_aw_select_i ( mst_req_aw_err              ),
+    .slv_port_ar_select_i ( mst_req_ar_err[mst_req_idx] ),
+    .slv_port_rsp_o       ( mst_resp                    ),
+    .mst_ports_req_o      ({axi_err_req,  mst_req_o }   ),
+    .mst_ports_rsp_i      ({axi_err_resp, mst_resp_i}   )
   );
 
   /**********

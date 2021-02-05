@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_to_apb`: Make pipeline registers on request and response path optional (can be enabled
   with the new `PipelineRequest` and `PipelineResponse` `parameter`s), and disable those pipeline
   registers by default.
+- `axi_xbar`: Flatten and update parameter and ports according to (#153). Add inline documentation.
+  - Remove `doc/axi_xbar.md`.
+  - Move `doc/svg/axi_xbar.svg` and `doc/axi_xbar.png` to `docs/`.
+- `axi_demux`: Flatten and update parameter and ports according to (#153). Add inline documentation.
+  - Remove `doc/axi_demux.md`.
+  - Move `doc/svg/axi_demux.svg` and `doc/axi_demux.png` to `docs/`.
 
 ### Fixed
 
