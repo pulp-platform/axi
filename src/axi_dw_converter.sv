@@ -21,6 +21,7 @@ module axi_dw_converter #(
     parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
     parameter int unsigned AxiAddrWidth        = 1    , // Address width
     parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter int unsigned UserWidth           = 32'd1, // User signal width.
     parameter type aw_chan_t                   = logic, // AW Channel Type
     parameter type mst_w_chan_t                = logic, //  W Channel Type for the mst port
     parameter type slv_w_chan_t                = logic, //  W Channel Type for the slv port
@@ -55,6 +56,7 @@ module axi_dw_converter #(
       .AxiMstPortDataWidth(AxiMstPortDataWidth),
       .AxiAddrWidth       (AxiAddrWidth       ),
       .AxiIdWidth         (AxiIdWidth         ),
+      .UserWidth          ( UserWidth         ),
       .aw_chan_t          (aw_chan_t          ),
       .mst_w_chan_t       (mst_w_chan_t       ),
       .slv_w_chan_t       (slv_w_chan_t       ),
@@ -85,6 +87,7 @@ module axi_dw_converter #(
       .AxiMstPortDataWidth(AxiMstPortDataWidth),
       .AxiAddrWidth       (AxiAddrWidth       ),
       .AxiIdWidth         (AxiIdWidth         ),
+      .UserWidth          ( UserWidth         ),
       .aw_chan_t          (aw_chan_t          ),
       .mst_w_chan_t       (mst_w_chan_t       ),
       .slv_w_chan_t       (slv_w_chan_t       ),
@@ -165,6 +168,7 @@ module axi_dw_converter_intf #(
     .AxiMstPortDataWidth( AXI_MST_PORT_DATA_WIDTH ),
     .AxiAddrWidth       ( AXI_ADDR_WIDTH          ),
     .AxiIdWidth         ( AXI_ID_WIDTH            ),
+    .UserWidth          ( AXI_USER_WIDTH          ),
     .aw_chan_t          ( aw_chan_t               ),
     .mst_w_chan_t       ( mst_w_chan_t            ),
     .slv_w_chan_t       ( slv_w_chan_t            ),

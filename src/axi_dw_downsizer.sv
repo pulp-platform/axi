@@ -25,6 +25,7 @@ module axi_dw_downsizer #(
     parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
     parameter int unsigned AxiAddrWidth        = 1    , // Address width
     parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter int unsigned UserWidth           = 32'd1, // User width of all ports
     parameter type aw_chan_t                   = logic, // AW Channel Type
     parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
     parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port
@@ -54,9 +55,6 @@ module axi_dw_downsizer #(
   import axi_pkg::modifiable  ;
 
   import cf_math_pkg::idx_width;
-
-  // TODO for (#153): Add these to the module parameters.
-  localparam int unsigned UserWidth        = unsigned'($bits(mst_req_o.w.user));
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
