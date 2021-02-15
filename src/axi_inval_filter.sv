@@ -29,6 +29,7 @@ module axi_inval_filter #(
 ) (
   input  logic  clk_i,
   input  logic  rst_ni,
+  input  logic  en_i,
 
   // Input / Slave Port
   input  req_t  slv_req_i,
@@ -49,7 +50,7 @@ module axi_inval_filter #(
   logic aw_fifo_push, aw_fifo_pop;
   aw_chan_t aw_fifo_data;
 
-  assign aw_fifo_push = slv_req_i.aw_valid & slv_resp_o.aw_ready;
+  assign aw_fifo_push = en_i & slv_req_i.aw_valid & slv_resp_o.aw_ready;
 
   // Invalidation requests
   logic [AddrWidth-1:0] inval_offset_d, inval_offset_q;
