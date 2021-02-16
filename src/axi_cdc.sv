@@ -1,4 +1,4 @@
-// Copyright (c) 20192-2020 ETH Zurich, University of Bologna
+// Copyright (c) 2019-2020 ETH Zurich, University of Bologna
 //
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
@@ -14,6 +14,7 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Luca Valente <luca.valente2@unibo.it>
 
 `include "axi/assign.svh"
 
@@ -45,86 +46,80 @@ module axi_cdc #(
   input  axi_resp_t dst_resp_i
 );
 
-    cdc_fifo_gray #(
-        //  We need to cast to bits here because of some arbitrary bug in Synopsys.
-        .WIDTH       ( $bits(aw_chan_t)    ),
-        .LOG_DEPTH   ( LogDepth            )
-    ) i_cdc_fifo_gray_aw (
-        .src_rst_ni,
-        .src_clk_i,
-        .src_data_i  ( src_req_i.aw        ),
-        .src_valid_i ( src_req_i.aw_valid  ),
-        .src_ready_o ( src_resp_o.aw_ready ),
-        .dst_rst_ni,
-        .dst_clk_i,
-        .dst_data_o  ( dst_req_o.aw        ),
-        .dst_valid_o ( dst_req_o.aw_valid  ),
-        .dst_ready_i ( dst_resp_i.aw_ready )
-    );
+  aw_chan_t [2**LogDepth-1:0] async_data_aw_data;
+  w_chan_t  [2**LogDepth-1:0] async_data_w_data;
+  b_chan_t  [2**LogDepth-1:0] async_data_b_data;
+  ar_chan_t [2**LogDepth-1:0] async_data_ar_data;
+  r_chan_t  [2**LogDepth-1:0] async_data_r_data;
+  logic          [LogDepth:0] async_data_aw_wptr, async_data_aw_rptr,
+                              async_data_w_wptr,  async_data_w_rptr,
+                              async_data_b_wptr,  async_data_b_rptr,
+                              async_data_ar_wptr, async_data_ar_rptr,
+                              async_data_r_wptr,  async_data_r_rptr;
 
-    cdc_fifo_gray #(
-        .WIDTH       ( $bits(w_chan_t)    ),
-        .LOG_DEPTH   ( LogDepth           )
-    ) i_cdc_fifo_gray_w (
-        .src_rst_ni,
-        .src_clk_i,
-        .src_data_i  ( src_req_i.w        ),
-        .src_valid_i ( src_req_i.w_valid  ),
-        .src_ready_o ( src_resp_o.w_ready ),
-        .dst_rst_ni,
-        .dst_clk_i,
-        .dst_data_o  ( dst_req_o.w        ),
-        .dst_valid_o ( dst_req_o.w_valid  ),
-        .dst_ready_i ( dst_resp_i.w_ready )
-    );
+  axi_cdc_src #(
+    .aw_chan_t  ( aw_chan_t   ),
+    .w_chan_t   ( w_chan_t    ),
+    .b_chan_t   ( b_chan_t    ),
+    .ar_chan_t  ( ar_chan_t   ),
+    .r_chan_t   ( r_chan_t    ),
+    .axi_req_t  ( axi_req_t   ),
+    .axi_resp_t ( axi_resp_t  ),
+    .LogDepth   ( LogDepth    )
+  ) i_axi_cdc_src (
+                .src_clk_i,
+                .src_rst_ni,
+                .isolate_i                    ( 1'b0                ),
+                .src_req_i,
+                .src_resp_o,
+    (* async *) .async_data_master_aw_data_o  ( async_data_aw_data  ),
+    (* async *) .async_data_master_aw_wptr_o  ( async_data_aw_wptr  ),
+    (* async *) .async_data_master_aw_rptr_i  ( async_data_aw_rptr  ),
+    (* async *) .async_data_master_w_data_o   ( async_data_w_data   ),
+    (* async *) .async_data_master_w_wptr_o   ( async_data_w_wptr   ),
+    (* async *) .async_data_master_w_rptr_i   ( async_data_w_rptr   ),
+    (* async *) .async_data_master_b_data_i   ( async_data_b_data   ),
+    (* async *) .async_data_master_b_wptr_i   ( async_data_b_wptr   ),
+    (* async *) .async_data_master_b_rptr_o   ( async_data_b_rptr   ),
+    (* async *) .async_data_master_ar_data_o  ( async_data_ar_data  ),
+    (* async *) .async_data_master_ar_wptr_o  ( async_data_ar_wptr  ),
+    (* async *) .async_data_master_ar_rptr_i  ( async_data_ar_rptr  ),
+    (* async *) .async_data_master_r_data_i   ( async_data_r_data   ),
+    (* async *) .async_data_master_r_wptr_i   ( async_data_r_wptr   ),
+    (* async *) .async_data_master_r_rptr_o   ( async_data_r_rptr   )
+  );
 
-    cdc_fifo_gray #(
-        .WIDTH       ( $bits(b_chan_t)    ),
-        .LOG_DEPTH   ( LogDepth           )
-    ) i_cdc_fifo_gray_b (
-        .src_rst_ni  ( dst_rst_ni         ),
-        .src_clk_i   ( dst_clk_i          ),
-        .src_data_i  ( dst_resp_i.b       ),
-        .src_valid_i ( dst_resp_i.b_valid ),
-        .src_ready_o ( dst_req_o.b_ready  ),
-        .dst_rst_ni  ( src_rst_ni         ),
-        .dst_clk_i   ( src_clk_i          ),
-        .dst_data_o  ( src_resp_o.b       ),
-        .dst_valid_o ( src_resp_o.b_valid ),
-        .dst_ready_i ( src_req_i.b_ready  )
-    );
-
-    cdc_fifo_gray #(
-        .WIDTH       ( $bits(ar_chan_t)    ),
-        .LOG_DEPTH   ( LogDepth            )
-    ) i_cdc_fifo_gray_ar (
-        .src_rst_ni,
-        .src_clk_i,
-        .src_data_i  ( src_req_i.ar        ),
-        .src_valid_i ( src_req_i.ar_valid  ),
-        .src_ready_o ( src_resp_o.ar_ready ),
-        .dst_rst_ni,
-        .dst_clk_i,
-        .dst_data_o  ( dst_req_o.ar        ),
-        .dst_valid_o ( dst_req_o.ar_valid  ),
-        .dst_ready_i ( dst_resp_i.ar_ready )
-    );
-
-    cdc_fifo_gray #(
-        .WIDTH       ( $bits(r_chan_t)    ),
-        .LOG_DEPTH   ( LogDepth           )
-    ) i_cdc_fifo_gray_r (
-        .src_rst_ni  ( dst_rst_ni         ),
-        .src_clk_i   ( dst_clk_i          ),
-        .src_data_i  ( dst_resp_i.r       ),
-        .src_valid_i ( dst_resp_i.r_valid ),
-        .src_ready_o ( dst_req_o.r_ready  ),
-        .dst_rst_ni  ( src_rst_ni         ),
-        .dst_clk_i   ( src_clk_i          ),
-        .dst_data_o  ( src_resp_o.r       ),
-        .dst_valid_o ( src_resp_o.r_valid ),
-        .dst_ready_i ( src_req_i.r_ready  )
-    );
+  axi_cdc_dst #(
+    .aw_chan_t  ( aw_chan_t   ),
+    .w_chan_t   ( w_chan_t    ),
+    .b_chan_t   ( b_chan_t    ),
+    .ar_chan_t  ( ar_chan_t   ),
+    .r_chan_t   ( r_chan_t    ),
+    .axi_req_t  ( axi_req_t   ),
+    .axi_resp_t ( axi_resp_t  ),
+    .LogDepth   ( LogDepth    )
+  ) i_axi_cdc_dst (
+                .dst_clk_i,
+                .dst_rst_ni,
+                .isolate_i                  ( 1'b0                ),
+                .dst_req_o,
+                .dst_resp_i,
+    (* async *) .async_data_slave_aw_wptr_i ( async_data_aw_wptr  ),
+    (* async *) .async_data_slave_aw_rptr_o ( async_data_aw_rptr  ),
+    (* async *) .async_data_slave_aw_data_i ( async_data_aw_data  ),
+    (* async *) .async_data_slave_w_wptr_i  ( async_data_w_wptr   ),
+    (* async *) .async_data_slave_w_rptr_o  ( async_data_w_rptr   ),
+    (* async *) .async_data_slave_w_data_i  ( async_data_w_data   ),
+    (* async *) .async_data_slave_b_wptr_o  ( async_data_b_wptr   ),
+    (* async *) .async_data_slave_b_rptr_i  ( async_data_b_rptr   ),
+    (* async *) .async_data_slave_b_data_o  ( async_data_b_data   ),
+    (* async *) .async_data_slave_ar_wptr_i ( async_data_ar_wptr  ),
+    (* async *) .async_data_slave_ar_rptr_o ( async_data_ar_rptr  ),
+    (* async *) .async_data_slave_ar_data_i ( async_data_ar_data  ),
+    (* async *) .async_data_slave_r_wptr_o  ( async_data_r_wptr   ),
+    (* async *) .async_data_slave_r_rptr_i  ( async_data_r_rptr   ),
+    (* async *) .async_data_slave_r_data_o  ( async_data_r_data   )
+);
 
 endmodule
 

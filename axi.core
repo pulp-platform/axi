@@ -17,7 +17,8 @@ filesets:
       # Level 2
       - src/axi_atop_filter.sv
       - src/axi_burst_splitter.sv
-      - src/axi_cdc.sv
+      - src/axi_cdc_dst.sv
+      - src/axi_cdc_src.sv
       - src/axi_cut.sv
       - src/axi_delayer.sv
       - src/axi_demux.sv
@@ -37,6 +38,7 @@ filesets:
       - src/axi_mux.sv
       - src/axi_serializer.sv
       # Level 3
+      - src/axi_cdc.sv
       - src/axi_err_slv.sv
       - src/axi_dw_converter.sv
       - src/axi_multicut.sv

@@ -55,6 +55,8 @@ artifacts:
       - src/axi_pkg.sv
       - src/axi_intf.sv
       - src/axi_test.sv
+      - src/axi_cdc_dst.sv
+      - src/axi_cdc_src.sv
       - src/axi_cdc.sv
       - test/tb_axi_cdc.sv
     outputs:
