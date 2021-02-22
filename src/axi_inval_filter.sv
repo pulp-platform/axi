@@ -1,22 +1,12 @@
-// Copyright (c) 2020 ETH Zurich, University of Bologna
-//
-// Copyright and related rights are licensed under the Solderpad Hardware
-// License, Version 0.51 (the "License"); you may not use this file except in
-// compliance with the License.  You may obtain a copy of the License at
-// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
-// or agreed to in writing, software, hardware and materials distributed under
-// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
+// Copyright 2021 ETH Zurich and University of Bologna.
+// Solderpad Hardware License, Version 0.51, see LICENSE for details.
+// SPDX-License-Identifier: SHL-0.51
 //
 // Authors: Nils Wistoff <nwistoff@iis.ee.ethz.ch>
+// Description:
+// Listens to AXI4 AW channel and issue single cacheline invalidations.
+// All other channels are passed through.
 
-`include "axi/typedef.svh"
-`include "common_cells/registers.svh"
-
-/// Listen to AXI4 AW channel and issue single cacheline invalidations.
-/// All other channels are passed through.
-///
 module axi_inval_filter #(
   // Maximum number of AXI write bursts outstanding at the same time
   parameter int unsigned MaxTxns      = 32'd0,
@@ -44,6 +34,10 @@ module axi_inval_filter #(
   output logic inval_valid_o,
   input  logic inval_ready_i
 );
+
+  // Includes
+  `include "axi/typedef.svh"
+  `include "common_cells/registers.svh"
 
   // AW FIFO
   logic aw_fifo_full, aw_fifo_empty;
