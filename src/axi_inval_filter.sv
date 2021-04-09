@@ -8,40 +8,40 @@
 // All other channels are passed through.
 
 module axi_inval_filter #(
-  // Maximum number of AXI write bursts outstanding at the same time
-  parameter int unsigned MaxTxns      = 32'd0,
-  // AXI Bus Types
-  parameter int unsigned AddrWidth    = 32'd0,
-  parameter int unsigned L1LineWidth  = 32'd0,
-  parameter type         aw_chan_t    = logic,
-  parameter type         req_t        = logic,
-  parameter type         resp_t       = logic
-) (
-  input  logic  clk_i,
-  input  logic  rst_ni,
-  input  logic  en_i,
+    // Maximum number of AXI write bursts outstanding at the same time
+    parameter int  unsigned MaxTxns     = 32'd0,
+    // AXI Bus Types
+    parameter int  unsigned AddrWidth   = 32'd0,
+    parameter int  unsigned L1LineWidth = 32'd0,
+    parameter type          aw_chan_t   = logic,
+    parameter type          req_t       = logic,
+    parameter type          resp_t      = logic
+  ) (
+    input logic clk_i,
+    input logic rst_ni,
+    input logic en_i,
 
-  // Input / Slave Port
-  input  req_t  slv_req_i,
-  output resp_t slv_resp_o,
+    // Input / Slave Port
+    input  req_t  slv_req_i,
+    output resp_t slv_resp_o,
 
-  // Output / Master Port
-  output req_t  mst_req_o,
-  input  resp_t mst_resp_i,
+    // Output / Master Port
+    output req_t  mst_req_o,
+    input  resp_t mst_resp_i,
 
-  // Output / Cache invalidation requests
-  output logic [AddrWidth-1:0] inval_addr_o,
-  output logic inval_valid_o,
-  input  logic inval_ready_i
-);
+    // Output / Cache invalidation requests
+    output logic [AddrWidth-1:0] inval_addr_o,
+    output logic                 inval_valid_o,
+    input  logic                 inval_ready_i
+  );
 
   // Includes
   `include "axi/typedef.svh"
   `include "common_cells/registers.svh"
 
   // AW FIFO
-  logic aw_fifo_full, aw_fifo_empty;
-  logic aw_fifo_push, aw_fifo_pop;
+  logic     aw_fifo_full, aw_fifo_empty;
+  logic     aw_fifo_push, aw_fifo_pop;
   aw_chan_t aw_fifo_data;
 
   assign aw_fifo_push = en_i & slv_req_i.aw_valid & slv_resp_o.aw_ready;
@@ -52,9 +52,9 @@ module axi_inval_filter #(
   assign inval_addr_o  = aw_fifo_data.addr + inval_offset_q;
   assign inval_valid_o = ~aw_fifo_empty;
 
-  // ------------
-  // AXI Handling
-  // ------------
+  //////////////////
+  // AXI Handling //
+  //////////////////
 
   always_comb begin : axi
     // Default: Feed through
@@ -65,9 +65,9 @@ module axi_inval_filter #(
     if (aw_fifo_full) slv_resp_o.aw_ready = 1'b0;
   end
 
-  // ----------------
-  // Invalidation FSM
-  // ----------------
+  ///////////////////////
+  // Invalidation FSM  //
+  ///////////////////////
 
   enum logic { Idle, Invalidating } state_d, state_q;
 
