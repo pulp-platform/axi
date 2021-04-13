@@ -4,7 +4,10 @@
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">w_chan_t</a></h1>
-<pre>typedef logic [1+$bits(user_t)+$bits(strb_t)+$bits(data_t)-1:0] w_chan_t;</pre>
+<pre>typedef struct packed {                                         
+    data_t   data;                                                
+    strb_t   strb;                                                
+  } w_chan_t;</pre>
 </section>
 </body>
 </html>

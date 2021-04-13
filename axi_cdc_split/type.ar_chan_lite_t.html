@@ -4,7 +4,10 @@
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">ar_chan_lite_t</a></h1>
-<pre>typedef logic [$bits(addr_t)+$bits(axi_pkg::prot_t)-1:0] ar_chan_lite_t;</pre>
+<pre>typedef struct packed {                                   
+    addr_t          addr;                                   
+    axi_pkg::prot_t prot;                                   
+  } ar_chan_lite_t;</pre>
 </section>
 </body>
 </html>
