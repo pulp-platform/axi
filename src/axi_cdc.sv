@@ -69,7 +69,6 @@ module axi_cdc #(
   ) i_axi_cdc_src (
                 .src_clk_i,
                 .src_rst_ni,
-                .isolate_i                    ( 1'b0                ),
                 .src_req_i,
                 .src_resp_o,
     (* async *) .async_data_master_aw_data_o  ( async_data_aw_data  ),
@@ -101,7 +100,6 @@ module axi_cdc #(
   ) i_axi_cdc_dst (
                 .dst_clk_i,
                 .dst_rst_ni,
-                .isolate_i                  ( 1'b0                ),
                 .dst_req_o,
                 .dst_resp_i,
     (* async *) .async_data_slave_aw_wptr_i ( async_data_aw_wptr  ),

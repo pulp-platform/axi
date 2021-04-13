@@ -53,7 +53,6 @@ module axi_cdc_dst #(
   // synchronous master port - clocked by `dst_clk_i`
   input  logic                        dst_clk_i,
   input  logic                        dst_rst_ni,
-  input  logic                        isolate_i,
   output axi_req_t                    dst_req_o,
   input  axi_resp_t                   dst_resp_i
 );
@@ -62,42 +61,42 @@ module axi_cdc_dst #(
     .T          ( logic [$bits(aw_chan_t)-1:0]  ),
     .LOG_DEPTH  ( LogDepth                      )
   ) i_cdc_fifo_gray_dst_aw (
-    .async_data_i ( async_data_slave_aw_data_i        ),
-    .async_wptr_i ( async_data_slave_aw_wptr_i        ),
-    .async_rptr_o ( async_data_slave_aw_rptr_o        ),
+    .async_data_i ( async_data_slave_aw_data_i  ),
+    .async_wptr_i ( async_data_slave_aw_wptr_i  ),
+    .async_rptr_o ( async_data_slave_aw_rptr_o  ),
     .dst_clk_i,
     .dst_rst_ni,
-    .dst_data_o   ( dst_req_o.aw                      ),
-    .dst_valid_o  ( dst_req_o.aw_valid                ),
-    .dst_ready_i  ( dst_resp_i.aw_ready & ~isolate_i  )
+    .dst_data_o   ( dst_req_o.aw                ),
+    .dst_valid_o  ( dst_req_o.aw_valid          ),
+    .dst_ready_i  ( dst_resp_i.aw_ready         )
   );
 
   cdc_fifo_gray_dst #(
     .T          ( logic [$bits(w_chan_t)-1:0] ),
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_dst_w (
-    .async_data_i ( async_data_slave_w_data_i       ),
-    .async_wptr_i ( async_data_slave_w_wptr_i       ),
-    .async_rptr_o ( async_data_slave_w_rptr_o       ),
+    .async_data_i ( async_data_slave_w_data_i ),
+    .async_wptr_i ( async_data_slave_w_wptr_i ),
+    .async_rptr_o ( async_data_slave_w_rptr_o ),
     .dst_clk_i,
     .dst_rst_ni,
-    .dst_data_o   ( dst_req_o.w                     ),
-    .dst_valid_o  ( dst_req_o.w_valid               ),
-    .dst_ready_i  ( dst_resp_i.w_ready & ~isolate_i )
+    .dst_data_o   ( dst_req_o.w               ),
+    .dst_valid_o  ( dst_req_o.w_valid         ),
+    .dst_ready_i  ( dst_resp_i.w_ready        )
   );
 
   cdc_fifo_gray_src #(
     .T          ( logic [$bits(b_chan_t)-1:0] ),
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_src_b (
-    .src_clk_i    ( dst_clk_i                       ),
-    .src_rst_ni   ( dst_rst_ni                      ),
-    .src_data_i   ( dst_resp_i.b                    ),
-    .src_valid_i  ( dst_resp_i.b_valid & ~isolate_i ),
-    .src_ready_o  ( dst_req_o.b_ready               ),
-    .async_data_o ( async_data_slave_b_data_o       ),
-    .async_wptr_o ( async_data_slave_b_wptr_o       ),
-    .async_rptr_i ( async_data_slave_b_rptr_i       )
+    .src_clk_i    ( dst_clk_i                 ),
+    .src_rst_ni   ( dst_rst_ni                ),
+    .src_data_i   ( dst_resp_i.b              ),
+    .src_valid_i  ( dst_resp_i.b_valid        ),
+    .src_ready_o  ( dst_req_o.b_ready         ),
+    .async_data_o ( async_data_slave_b_data_o ),
+    .async_wptr_o ( async_data_slave_b_wptr_o ),
+    .async_rptr_i ( async_data_slave_b_rptr_i )
   );
 
   cdc_fifo_gray_dst #(
@@ -106,26 +105,26 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_dst_ar (
     .dst_clk_i,
     .dst_rst_ni,
-    .dst_data_o   ( dst_req_o.ar                     ),
-    .dst_valid_o  ( dst_req_o.ar_valid               ),
-    .dst_ready_i  ( dst_resp_i.ar_ready & ~isolate_i ),
-    .async_data_i ( async_data_slave_ar_data_i       ),
-    .async_wptr_i ( async_data_slave_ar_wptr_i       ),
-    .async_rptr_o ( async_data_slave_ar_rptr_o       )
+    .dst_data_o   ( dst_req_o.ar                ),
+    .dst_valid_o  ( dst_req_o.ar_valid          ),
+    .dst_ready_i  ( dst_resp_i.ar_ready         ),
+    .async_data_i ( async_data_slave_ar_data_i  ),
+    .async_wptr_i ( async_data_slave_ar_wptr_i  ),
+    .async_rptr_o ( async_data_slave_ar_rptr_o  )
   );
 
   cdc_fifo_gray_src #(
     .T          ( logic [$bits(r_chan_t)-1:0] ),
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_src_r (
-    .src_clk_i    ( dst_clk_i                       ),
-    .src_rst_ni   ( dst_rst_ni                      ),
-    .src_data_i   ( dst_resp_i.r                    ),
-    .src_valid_i  ( dst_resp_i.r_valid & ~isolate_i ),
-    .src_ready_o  ( dst_req_o.r_ready               ),
-    .async_data_o ( async_data_slave_r_data_o       ),
-    .async_wptr_o ( async_data_slave_r_wptr_o       ),
-    .async_rptr_i ( async_data_slave_r_rptr_i       )
+    .src_clk_i    ( dst_clk_i                 ),
+    .src_rst_ni   ( dst_rst_ni                ),
+    .src_data_i   ( dst_resp_i.r              ),
+    .src_valid_i  ( dst_resp_i.r_valid        ),
+    .src_ready_o  ( dst_req_o.r_ready         ),
+    .async_data_o ( async_data_slave_r_data_o ),
+    .async_wptr_o ( async_data_slave_r_wptr_o ),
+    .async_rptr_i ( async_data_slave_r_rptr_i )
   );
 
 endmodule
