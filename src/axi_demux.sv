@@ -56,7 +56,6 @@ module axi_demux #(
   //--------------------------------------
   // Typedefs for the FIFOs / Queues
   //--------------------------------------
-  typedef logic [AxiIdWidth-1:0] axi_id_t;
   typedef struct packed {
     aw_chan_t aw_chan;
     select_t  aw_select;
