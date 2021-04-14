@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add source- and destination-clock-domain "halves" for the clock domain crossing (CDC):
+  `axi_cdc_src` and `axi_cdc_dst`.  This is implemented by refactoring the `axi_cdc` module, so the
+  implementation is reused from the existing `axi_cdc` module.  To avoid code duplication, `axi_cdc`
+  now instantiates an `axi_cdc_src` connected to an `axi_cdc_dst`.
 
 ### Changed
 - `axi_lite_to_apb`: Make pipeline registers on request and response path optional (can be enabled

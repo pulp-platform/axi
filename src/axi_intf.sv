@@ -246,6 +246,7 @@ interface AXI_BUS_DV #(
 
 endinterface
 
+
 /// An asynchronous AXI4 interface.
 interface AXI_BUS_ASYNC
 #(
@@ -334,6 +335,59 @@ interface AXI_BUS_ASYNC
 endinterface
 
 
+`include "axi/typedef.svh"
+
+/// An asynchronous AXI4 interface for Gray CDCs.
+interface AXI_BUS_ASYNC_GRAY #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned LOG_DEPTH = 0
+);
+
+  localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
+
+  typedef logic [AXI_ID_WIDTH-1:0]   id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+
+  aw_chan_t  [2**LOG_DEPTH-1:0] aw_data;
+  w_chan_t   [2**LOG_DEPTH-1:0] w_data;
+  b_chan_t   [2**LOG_DEPTH-1:0] b_data;
+  ar_chan_t  [2**LOG_DEPTH-1:0] ar_data;
+  r_chan_t   [2**LOG_DEPTH-1:0] r_data;
+  logic           [LOG_DEPTH:0] aw_wptr,  aw_rptr,
+                                w_wptr,   w_rptr,
+                                b_wptr,   b_rptr,
+                                ar_wptr,  ar_rptr,
+                                r_wptr,   r_rptr;
+
+  modport Master (
+    output aw_data, aw_wptr, input aw_rptr,
+    output w_data, w_wptr, input w_rptr,
+    input b_data, b_wptr, output b_rptr,
+    output ar_data, ar_wptr, input ar_rptr,
+    input r_data, r_wptr, output r_rptr);
+
+  modport Slave (
+    input aw_data, aw_wptr, output aw_rptr,
+    input w_data, w_wptr, output w_rptr,
+    output b_data, b_wptr, input b_rptr,
+    input ar_data, ar_wptr, output ar_rptr,
+    output r_data, r_wptr, input r_rptr);
+
+endinterface
+
+
 /// An AXI4-Lite interface.
 interface AXI_LITE #(
   parameter int unsigned AXI_ADDR_WIDTH = 0,
@@ -389,6 +443,7 @@ interface AXI_LITE #(
 
 endinterface
 
+
 /// A clocked AXI4-Lite interface for use in design verification.
 interface AXI_LITE_DV #(
   parameter int unsigned AXI_ADDR_WIDTH = 0,
@@ -443,5 +498,52 @@ interface AXI_LITE_DV #(
     input ar_addr, ar_prot, ar_valid, output ar_ready,
     output r_data, r_resp, r_valid, input r_ready
   );
+
+endinterface
+
+
+/// An asynchronous AXI4-Lite interface for Gray CDCs.
+interface AXI_LITE_ASYNC_GRAY #(
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned LOG_DEPTH = 0
+);
+
+  localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8;
+
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
+  typedef logic [AXI_STRB_WIDTH-1:0] strb_t;
+
+  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+
+  aw_chan_t  [2**LOG_DEPTH-1:0] aw_data;
+  w_chan_t   [2**LOG_DEPTH-1:0] w_data;
+  b_chan_t   [2**LOG_DEPTH-1:0] b_data;
+  ar_chan_t  [2**LOG_DEPTH-1:0] ar_data;
+  r_chan_t   [2**LOG_DEPTH-1:0] r_data;
+  logic           [LOG_DEPTH:0] aw_wptr,  aw_rptr,
+                                w_wptr,   w_rptr,
+                                b_wptr,   b_rptr,
+                                ar_wptr,  ar_rptr,
+                                r_wptr,   r_rptr;
+
+  modport Master (
+    output aw_data, aw_wptr, input aw_rptr,
+    output w_data, w_wptr, input w_rptr,
+    input b_data, b_wptr, output b_rptr,
+    output ar_data, ar_wptr, input ar_rptr,
+    input r_data, r_wptr, output r_rptr);
+
+  modport Slave (
+    input aw_data, aw_wptr, output aw_rptr,
+    input w_data, w_wptr, output w_rptr,
+    output b_data, b_wptr, input b_rptr,
+    input ar_data, ar_wptr, output ar_rptr,
+    output r_data, r_wptr, input r_rptr);
 
 endinterface
