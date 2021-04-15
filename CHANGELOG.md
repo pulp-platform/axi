@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   registers by default.
 
 ### Fixed
+- `axi_demux`: Improve compatibility with new version of QuestaSim's optimizer (`vopt`) (#169).
+  Before this workaround, QuestaSim 2020.2 and 2021.1 could segfault on instances of `axi_demux`.
 
 
 ## 0.27.1 - 2021-02-01
