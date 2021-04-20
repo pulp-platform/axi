@@ -141,6 +141,7 @@ module axi_xbar #(
       .NoMstPorts     ( Cfg.NoMstPorts + 1     ),
       .MaxTrans       ( Cfg.MaxMstTrans        ),
       .AxiLookBits    ( Cfg.AxiIdUsedSlvPorts  ),
+      .UniqueIds      ( Cfg.UniqueIds          ),
       .FallThrough    ( Cfg.FallThrough        ),
       .SpillAw        ( Cfg.LatencyMode[9]     ),
       .SpillW         ( Cfg.LatencyMode[8]     ),

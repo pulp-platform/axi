@@ -351,6 +351,7 @@ class AxiIntercon:
     LatencyMode:        axi_pkg::CUT_ALL_AX,
     AxiIdWidthSlvPorts: AxiIdWidthMasters,
     AxiIdUsedSlvPorts:  AxiIdUsed,
+    UniqueIds:          1'b0,
     AxiAddrWidth:       AxiAddrWidth,
     AxiDataWidth:       AxiDataWidth,
     NoAddrRules:        NoSlaves
