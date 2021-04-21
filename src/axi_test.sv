@@ -849,6 +849,11 @@ package axi_test;
       automatic id_t id;
       automatic qos_t qos;
       beat.ax_atop[5:4] = $random();
+      if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
+        // We can emit ATOPs only if INCR bursts are allowed.
+        $warning("ATOP suppressed because INCR bursts are disabled!");
+        beat.ax_atop[5:4] = 2'b00;
+      end
       if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
         // Determine `ax_atop`.
         if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
@@ -1072,12 +1077,7 @@ package axi_test;
             w_flight_cnt[aw_beat.ax_id]++;
             cnt_sem.put();
           end else begin
-            if (AXI_BURST_INCR) begin
-              // We can emit ATOPs only if INCR bursts are allowed.
-              rand_atop_burst(aw_beat);
-            end else begin
-              $warning("ATOP suppressed because INCR bursts are disabled!");
-            end
+            rand_atop_burst(aw_beat);
           end
         end else begin
           cnt_sem.get();
