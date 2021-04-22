@@ -103,6 +103,11 @@ exec_test() {
                 done
             done
             ;;
+        axi_xbar)
+            for Exclusive in 0 1; do
+                call_vsim tb_axi_xbar -gTbEnExcl=$Exclusive
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;

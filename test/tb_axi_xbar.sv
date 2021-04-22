@@ -22,13 +22,15 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module tb_axi_xbar;
+module tb_axi_xbar #(
+  parameter bit TbEnExcl = 1'b0  // enable exclusive accesses
+);
   // Dut parameters
   localparam int unsigned NoMasters   = 6;    // How many Axi Masters there are
   localparam int unsigned NoSlaves    = 8;    // How many Axi Slaves  there are
   // Random master no Transactions
-  localparam int unsigned NoWrites   = 1000;  // How many writes per master
-  localparam int unsigned NoReads    = 1000;  // How many reads per master
+  localparam int unsigned NoWrites   = 500;   // How many writes per master
+  localparam int unsigned NoReads    = 500;   // How many reads per master
   // Random Master Atomics
   localparam bit          EnAtop     = 1'b1;
   // timing parameters
@@ -105,6 +107,7 @@ module tb_axi_xbar;
     // Maximum number of read and write transactions in flight
     .MAX_READ_TXNS  ( 20     ),
     .MAX_WRITE_TXNS ( 20     ),
+    .AXI_EXCLS      ( TbEnExcl ),
     .AXI_ATOPS      ( EnAtop )
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave #(
