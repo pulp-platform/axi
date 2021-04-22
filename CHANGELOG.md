@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_xbar` and `axi_demux`: Add support for unique IDs by adding a `UniqueIds` parameter to both
+  modules (#172).  If you can guarantee that the ID of each transaction is always unique among all
+  in-flight transactions in the same direction, setting the `UniqueIds` parameter to `1'b1`
+  simplifies the demultiplexer (see documentation of `axi_demux` for details).  This change is
+  backward-compatible on `axi_demux` (because the default value of the new parameter is `1'b0`).
+  As `axi_xbar` is configured with the `xbar_cfg_t` `struct`, this change is *not
+  backward-compatible* for `axi_xbar` (except for `xbar_cfg_t`s initialized with a `default` part).
 
 ### Fixed
 - `axi_test::axi_rand_master`: Refactor ID legalization into common function to simplify the
