@@ -104,8 +104,10 @@ exec_test() {
             done
             ;;
         axi_xbar)
-            for Exclusive in 0 1; do
-                call_vsim tb_axi_xbar -gTbEnExcl=$Exclusive
+            for Atop in 0 1; do
+                for Exclusive in 0 1; do
+                    call_vsim tb_axi_xbar -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive
+                done
             done
             ;;
         *)
