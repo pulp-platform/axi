@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_test::axi_rand_master`: Refactor ID legalization into common function to simplify the
+  implementation and remove redundant code.  No known functional bug was fixed, but the correctness
+  of the refactored code can be asserted more easily.
 
 
 ## 0.28.0 - 2021-04-15
