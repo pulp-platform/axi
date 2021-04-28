@@ -60,7 +60,7 @@ The reason for this behavior are AXI ordering constraints, see the [documentatio
 There are use cases that do not require the demultiplexer to keep track of and enforce this ordering, and the `UniqueIds` parameter can be set to specialize the demultiplexer for these cases:
 `UniqueIds` may be set to `1'b1` if and only if
 - each transaction has an ID that is unique among all in-flight transactions in the same direction;
-- or for any ID, all transactions with that ID target the same master port as all other transactions with the same ID and direction;
+- or for any ID, all transactions with that ID target the same master port as all other in-flight transactions with the same ID and direction;
 - or both.
 
 Setting the `UniqueIds` parameter to `1'b1` when those conditions are not always met leads to undefined behavior.
