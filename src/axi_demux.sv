@@ -28,6 +28,7 @@ module axi_demux #(
   parameter int unsigned NoMstPorts     = 32'd0,
   parameter int unsigned MaxTrans       = 32'd8,
   parameter int unsigned AxiLookBits    = 32'd3,
+  parameter bit          UniqueIds      = 1'b0,
   parameter bit          FallThrough    = 1'b0,
   parameter bit          SpillAw        = 1'b1,
   parameter bit          SpillW         = 1'b0,
@@ -223,26 +224,37 @@ module axi_demux #(
     // prevent further pushing
     `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
-    axi_demux_id_counters #(
-      .AxiIdBits         ( AxiLookBits    ),
-      .CounterWidth      ( IdCounterWidth ),
-      .mst_port_select_t ( select_t       )
-    ) i_aw_id_counter (
-      .clk_i                        ( clk_i                                         ),
-      .rst_ni                       ( rst_ni                                        ),
-      .lookup_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
-      .lookup_mst_select_o          ( lookup_aw_select                              ),
-      .lookup_mst_select_occupied_o ( aw_select_occupied                            ),
-      .full_o                       ( aw_id_cnt_full                                ),
-      .inject_axi_id_i              ( '0                                            ),
-      .inject_i                     ( 1'b0                                          ),
-      .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
-      .push_mst_select_i            ( slv_aw_chan_select.aw_select                  ),
-      .push_i                       ( aw_push                                       ),
-      .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
-      .pop_i                        ( slv_b_valid & slv_b_ready                     )
-    );
-    // pop from ID counter on outward transaction
+    if (UniqueIds) begin : gen_unique_ids_aw
+      // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
+      // all in-flight write transactions, or all write transactions with a given ID target the same
+      // master port as all write transactions with the same ID, or both.  This means that the
+      // signals that are driven by the ID counters if this parameter is not set can instead be
+      // derived from existing signals.  The ID counters can therefore be omitted.
+      assign lookup_aw_select = slv_aw_chan_select.aw_select;
+      assign aw_select_occupied = 1'b0;
+      assign aw_id_cnt_full = 1'b0;
+    end else begin : gen_aw_id_counter
+      axi_demux_id_counters #(
+        .AxiIdBits         ( AxiLookBits    ),
+        .CounterWidth      ( IdCounterWidth ),
+        .mst_port_select_t ( select_t       )
+      ) i_aw_id_counter (
+        .clk_i                        ( clk_i                                         ),
+        .rst_ni                       ( rst_ni                                        ),
+        .lookup_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+        .lookup_mst_select_o          ( lookup_aw_select                              ),
+        .lookup_mst_select_occupied_o ( aw_select_occupied                            ),
+        .full_o                       ( aw_id_cnt_full                                ),
+        .inject_axi_id_i              ( '0                                            ),
+        .inject_i                     ( 1'b0                                          ),
+        .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+        .push_mst_select_i            ( slv_aw_chan_select.aw_select                  ),
+        .push_i                       ( aw_push                                       ),
+        .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
+        .pop_i                        ( slv_b_valid & slv_b_ready                     )
+      );
+      // pop from ID counter on outward transaction
+    end
 
     // FIFO to save W selection
     fifo_v3 #(
@@ -391,25 +403,36 @@ module axi_demux #(
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
     `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
 
-    axi_demux_id_counters #(
-      .AxiIdBits         ( AxiLookBits    ),
-      .CounterWidth      ( IdCounterWidth ),
-      .mst_port_select_t ( select_t       )
-    ) i_ar_id_counter (
-      .clk_i                        ( clk_i                                         ),
-      .rst_ni                       ( rst_ni                                        ),
-      .lookup_axi_id_i              ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
-      .lookup_mst_select_o          ( lookup_ar_select                              ),
-      .lookup_mst_select_occupied_o ( ar_select_occupied                            ),
-      .full_o                       ( ar_id_cnt_full                                ),
-      .inject_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
-      .inject_i                     ( atop_inject                                   ),
-      .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
-      .push_mst_select_i            ( slv_ar_chan_select.ar_select                  ),
-      .push_i                       ( ar_push                                       ),
-      .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]                 ),
-      .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last   )
-    );
+    if (UniqueIds) begin : gen_unique_ids_ar
+      // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
+      // all in-flight read transactions, or all read transactions with a given ID target the same
+      // master port as all read transactions with the same ID, or both.  This means that the
+      // signals that are driven by the ID counters if this parameter is not set can instead be
+      // derived from existing signals.  The ID counters can therefore be omitted.
+      assign lookup_ar_select = slv_ar_chan_select.ar_select;
+      assign ar_select_occupied = 1'b0;
+      assign ar_id_cnt_full = 1'b0;
+    end else begin : gen_ar_id_counter
+      axi_demux_id_counters #(
+        .AxiIdBits         ( AxiLookBits    ),
+        .CounterWidth      ( IdCounterWidth ),
+        .mst_port_select_t ( select_t       )
+      ) i_ar_id_counter (
+        .clk_i                        ( clk_i                                         ),
+        .rst_ni                       ( rst_ni                                        ),
+        .lookup_axi_id_i              ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
+        .lookup_mst_select_o          ( lookup_ar_select                              ),
+        .lookup_mst_select_occupied_o ( ar_select_occupied                            ),
+        .full_o                       ( ar_id_cnt_full                                ),
+        .inject_axi_id_i              ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
+        .inject_i                     ( atop_inject                                   ),
+        .push_axi_id_i                ( slv_ar_chan_select.ar_chan.id[0+:AxiLookBits] ),
+        .push_mst_select_i            ( slv_ar_chan_select.ar_select                  ),
+        .push_i                       ( ar_push                                       ),
+        .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]                 ),
+        .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last   )
+      );
+    end
 
     //--------------------------------------
     //  R Channel
@@ -674,6 +697,7 @@ module axi_demux_intf #(
   parameter int unsigned NO_MST_PORTS     = 32'd3,
   parameter int unsigned MAX_TRANS        = 32'd8,
   parameter int unsigned AXI_LOOK_BITS    = 32'd3,
+  parameter bit          UNIQUE_IDS       = 1'b0,
   parameter bit          FALL_THROUGH     = 1'b0,
   parameter bit          SPILL_AW         = 1'b1,
   parameter bit          SPILL_W          = 1'b0,
@@ -731,6 +755,7 @@ module axi_demux_intf #(
     .NoMstPorts     ( NO_MST_PORTS  ),
     .MaxTrans       ( MAX_TRANS     ),
     .AxiLookBits    ( AXI_LOOK_BITS ),
+    .UniqueIds      ( UNIQUE_IDS    ),
     .FallThrough    ( FALL_THROUGH  ),
     .SpillAw        ( SPILL_AW      ),
     .SpillW         ( SPILL_W       ),

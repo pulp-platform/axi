@@ -620,6 +620,9 @@ package axi_test;
     parameter bit   AXI_BURST_FIXED   = 1'b1,
     parameter bit   AXI_BURST_INCR    = 1'b1,
     parameter bit   AXI_BURST_WRAP    = 1'b0,
+    parameter bit   UNIQUE_IDS        = 1'b0, // guarantee that the ID of each transaction is
+                                              // unique among all in-flight transactions in the
+                                              // same direction
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW
@@ -967,6 +970,12 @@ package axi_test;
         if (!is_read && beat.ax_atop[5:4] != 2'b00 && (
           r_flight_cnt[beat.ax_id] != 0 || w_flight_cnt[beat.ax_id] !=0
         )) return 1'b0;
+      end
+      if (UNIQUE_IDS) begin
+        // This master may only emit transactions with an ID that is unique among all in-flight
+        // transactions in the same direction.
+        if (is_read && r_flight_cnt[beat.ax_id] != 0) return 1'b0;
+        if (!is_read && w_flight_cnt[beat.ax_id] != 0) return 1'b0;
       end
       // There is no reason why this ID would be illegal, so it is legal.
       return 1'b1;

@@ -26,6 +26,7 @@ This demultiplexer is configured through the parameters listed in the following 
 | `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the demultiplexer (in other words, how many AXI slave modules can be attached). |
 | `MaxTrans`           | `int unsigned`     | The slave port can have at most this many transactions [in flight](../doc#in-flight). |
 | `AxiLookBits`        | `int unsigned`     | The number of ID bits (starting at the least significant) the demultiplexer uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidth`. |
+| `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the demultiplexer (see section *Ordering and Stalls* below).  Defaults to `1'b0`. |
 | `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the demultiplexer to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from `slv_aw_select_i`. |
 | `SpillXX`            | `bit`              | Inserts one spill register on the respective channel (AW, W, B, AR, and R) before the demultiplexer. |
 
@@ -55,6 +56,16 @@ If all `SpillXX` and `FallThrough` are disabled, all paths through this multiple
 When the demultiplexer receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the demultiplexer stalls the AR or AW channel, respectively.  To determine whether two transactions have the same ID, the `AxiLookBits` least-significant bits are compared.  That parameter can be set to the full `AxiIdWidth` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
 
 The reason for this behavior are AXI ordering constraints, see the [documentation of the crossbar](axi_xbar.md#ordering-and-stalls) for details.
+
+There are use cases that do not require the demultiplexer to keep track of and enforce this ordering, and the `UniqueIds` parameter can be set to specialize the demultiplexer for these cases:
+`UniqueIds` may be set to `1'b1` if and only if
+- each transaction has an ID that is unique among all in-flight transactions in the same direction;
+- or for any ID, all transactions with that ID target the same master port as all other in-flight transactions with the same ID and direction;
+- or both.
+
+Setting the `UniqueIds` parameter to `1'b1` when those conditions are not always met leads to undefined behavior.
+
+Setting the `UniqueIds` parameter to `1'b1` reduces the area complexity of the demultiplexer from `O(2^I)` to `O(I)`, where `I` is the ID width.
 
 ### Implementation
 
