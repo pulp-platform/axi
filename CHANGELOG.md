@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_lite_to_apb_intf`: Add missing parameters, which were added to `axi_lite_to_apb` in v0.28.0.
 
 
 ## 0.29.0 - 2021-05-06

@@ -385,6 +385,8 @@ module axi_lite_to_apb_intf #(
   parameter int unsigned NoRules     = 32'd1,  // Number of APB address rules
   parameter int unsigned AddrWidth   = 32'd32, // Address width
   parameter int unsigned DataWidth   = 32'd32, // Data width
+  parameter bit PipelineRequest      = 1'b0,   // Pipeline request path
+  parameter bit PipelineResponse     = 1'b0,   // Pipeline response path
   parameter type         rule_t      = logic,  // Address Decoder rule from `common_cells`
   // DEPENDENT PARAMERETS, DO NOT OVERWRITE!
   parameter type              addr_t = logic [AddrWidth-1:0],
@@ -466,15 +468,17 @@ module axi_lite_to_apb_intf #(
   end
 
   axi_lite_to_apb #(
-    .NoApbSlaves     ( NoApbSlaves ),
-    .NoRules         ( NoRules     ),
-    .AddrWidth       ( AddrWidth   ),
-    .DataWidth       ( DataWidth   ),
-    .axi_lite_req_t  ( axi_req_t   ),
-    .axi_lite_resp_t ( axi_resp_t  ),
-    .apb_req_t       ( apb_req_t   ),
-    .apb_resp_t      ( apb_resp_t  ),
-    .rule_t          ( rule_t      )
+    .NoApbSlaves      ( NoApbSlaves       ),
+    .NoRules          ( NoRules           ),
+    .AddrWidth        ( AddrWidth         ),
+    .DataWidth        ( DataWidth         ),
+    .PipelineRequest  ( PipelineRequest   ),
+    .PipelineResponse ( PipelineResponse  ),
+    .axi_lite_req_t   ( axi_req_t         ),
+    .axi_lite_resp_t  ( axi_resp_t        ),
+    .apb_req_t        ( apb_req_t         ),
+    .apb_resp_t       ( apb_resp_t        ),
+    .rule_t           ( rule_t            )
   ) i_axi_lite_to_apb (
     .clk_i,     // Clock
     .rst_ni,    // Asynchronous reset active low
