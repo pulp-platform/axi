@@ -5,11 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
-
-### Added
-
-### Changed
+## 0.29.1 - 2021-06-02
 
 ### Fixed
 - `axi_lite_to_apb_intf`: Add missing parameters, which were added to `axi_lite_to_apb` in v0.28.0.
