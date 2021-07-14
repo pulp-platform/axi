@@ -66,7 +66,10 @@ module axi_inval_filter #(
     slv_resp_o = mst_resp_i;
 
     // Do not accept new AWs if FIFO is full
-    if (aw_fifo_full) slv_resp_o.aw_ready = 1'b0;
+    if (aw_fifo_full) begin
+      slv_resp_o.aw_ready = 1'b0;
+      mst_req_o.aw_valid  = 1'b0;
+    end
   end
 
   ///////////////////////
