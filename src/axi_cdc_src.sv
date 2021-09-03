@@ -242,8 +242,8 @@ module axi_lite_cdc_src_intf #(
   ) i_axi_cdc_src (
     .src_clk_i,
     .src_rst_ni,
-    .src_req_o                    ( src_req     ),
-    .src_resp_i                   ( src_resp    ),
+    .src_req_i                    ( src_req     ),
+    .src_resp_o                   ( src_resp    ),
     .async_data_master_aw_data_o  ( dst.aw_data ),
     .async_data_master_aw_wptr_o  ( dst.aw_wptr ),
     .async_data_master_aw_rptr_i  ( dst.aw_rptr ),
