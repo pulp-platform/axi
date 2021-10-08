@@ -322,6 +322,9 @@ module axi_dw_upsizer #(
     // Are we idle?
     assign idle_read_upsizer[t] = (r_state_q == R_IDLE) || (r_state_q == R_INJECT_AW);
 
+    // Byte-grouped data signal for the lane steering step
+    slv_data_t r_data;
+
     always_comb begin
       // Maintain state
       r_state_d = r_state_q;
@@ -352,6 +355,9 @@ module axi_dw_upsizer #(
         r_req_d.ar_valid       = 1'b0;
         r_req_d.ar_throw_error = 1'b0;
       end
+
+      // Initialize r_data
+      r_data = '0;
 
       case (r_state_q)
         R_IDLE : begin
@@ -475,8 +481,6 @@ module axi_dw_upsizer #(
               automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
               automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
-              automatic slv_data_t r_data = slv_r_tran[t].data;
-
               // Valid output
               slv_r_valid_tran[t] = 1'b1                                       ;
               slv_r_tran[t].last  = mst_resp.r.last && (r_req_q.burst_len == 0);
@@ -544,6 +548,9 @@ module axi_dw_upsizer #(
 
   w_state_e w_state_d, w_state_q;
 
+  // Byte-grouped data signal for the serialization step
+  mst_data_t w_data;
+
   always_comb begin
     inject_aw_into_ar_req = 1'b0;
 
@@ -564,6 +571,9 @@ module axi_dw_upsizer #(
     mst_req.w_valid    = w_req_q.w_valid;
     slv_resp_o.w_ready = '0             ;
 
+    // Initialize w_data
+    w_data = w_req_q.w.data;
+
     // B Channel (No latency)
     slv_resp_o.b       = mst_resp.b       ;
     slv_resp_o.b_valid = mst_resp.b_valid ;
@@ -579,6 +589,7 @@ module axi_dw_upsizer #(
       W_PASSTHROUGH, W_INCR_UPSIZE: begin
         // Got a grant on the W channel
         if (mst_req.w_valid && mst_resp.w_ready) begin
+          w_data          = '0  ;
           w_req_d.w       = '0  ;
           w_req_d.w_valid = 1'b0;
         end
@@ -591,8 +602,6 @@ module axi_dw_upsizer #(
           if (slv_req_i.w_valid && slv_resp_o.w_ready) begin
             automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
-
-            automatic mst_data_t w_data = w_req_d.w.data;
 
             // Serialization
             for (int b = 0; b < AxiMstPortStrbWidth; b++)
