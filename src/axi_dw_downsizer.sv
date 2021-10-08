@@ -340,6 +340,9 @@ module axi_dw_downsizer #(
     // Are we idle?
     assign idle_read_downsizer[t] = (r_state_q == R_IDLE) || (r_state_q == R_INJECT_AW);
 
+    // Byte-grouped data signal for the serialization step
+    slv_data_t r_data;
+
     always_comb begin
       // Maintain state
       r_state_d = r_state_q;
@@ -369,6 +372,9 @@ module axi_dw_downsizer #(
         r_req_d.ar_valid       = 1'b0;
         r_req_d.ar_throw_error = 1'b0;
       end
+
+      // Initialize r_data
+      r_data = r_req_q.r.data;
 
       case (r_state_q)
         R_IDLE : begin
@@ -533,6 +539,7 @@ module axi_dw_downsizer #(
           if (slv_r_valid_tran[t] && slv_r_ready_tran[t]) begin
             r_req_d.r       = '0  ;
             r_req_d.r_valid = 1'b0;
+            r_data          = '0  ;
           end
 
           // Request was accepted
@@ -546,8 +553,6 @@ module axi_dw_downsizer #(
                 if (mst_resp.r_valid) begin
                   automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
                   automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
-
-                  automatic slv_data_t r_data = r_req_d.r.data;
 
                   // Serialization
                   for (int b = 0; b < AxiSlvPortStrbWidth; b++)
@@ -656,6 +661,9 @@ module axi_dw_downsizer #(
     .usage_o   (/* Unused */        )
   );
 
+  // Byte-grouped data signal for the lane steering step
+  mst_data_t w_data;
+
   always_comb begin
     inject_aw_into_ar_req = 1'b0;
 
@@ -680,6 +688,9 @@ module axi_dw_downsizer #(
     mst_req.w          = '0;
     mst_req.w_valid    = '0;
     slv_resp_o.w_ready = '0;
+
+    // Initialize w_data
+    w_data = '0;
 
     // B Channel (No latency)
     if (mst_resp.b_valid) begin
@@ -718,8 +729,6 @@ module axi_dw_downsizer #(
           if (slv_req_i.w_valid) begin
             automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
-
-            automatic mst_data_t w_data = mst_req.w.data;
 
             // Valid output
             mst_req.w_valid = 1'b1               ;
