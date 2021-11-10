@@ -148,11 +148,11 @@ module tb_axi_serializer #(
   end
 
   // Checker
-  typedef logic [AxiIdWidth-1:0] axi_id_t;
-  typedef logic [AxiIdWidth-1:0] axi_addr_t;
-  typedef logic [AxiIdWidth-1:0] axi_data_t;
-  typedef logic [AxiIdWidth-1:0] axi_strb_t;
-  typedef logic [AxiIdWidth-1:0] axi_user_t;
+  typedef logic [AxiIdWidth-1:0]     axi_id_t;
+  typedef logic [AxiAddrWidth-1:0]   axi_addr_t;
+  typedef logic [AxiDataWidth-1:0]   axi_data_t;
+  typedef logic [AxiDataWidth/8-1:0] axi_strb_t;
+  typedef logic [AxiUserWidth-1:0]   axi_user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, axi_addr_t,  axi_id_t,  axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t,  axi_data_t,  axi_strb_t,  axi_user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t,  axi_id_t,  axi_user_t)
