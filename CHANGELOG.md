@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_demux`: Improve compatibility with VCS (#187).  The workaround of #169 was not compatible
+  with VCS 2020.12.  That workaround is now only active if `TARGET_VSIM` is defined.
 - `axi_dw_downsizer` and `axi_dw_upsizer` (part of `axi_dw_converter`): Avoid latch inference on the
   Mentor Precision synthesis tool.
 - `axi_lite_cdc_src_intf`: Fix `_i` and `_o` suffixes in instantiation of `axi_cdc_src`.
