@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - `axi_lite_cdc_src_intf`: Fix `_i` and `_o` suffixes in instantiation of `axi_cdc_src`.
+- `axi_test::axi_scoreboard`: Add default value to parameters to improve compatibility with some
+  tools.
 
 
 ## 0.29.1 - 2021-06-02

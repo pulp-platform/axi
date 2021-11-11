@@ -1647,15 +1647,15 @@ package axi_test;
   /// end
   class axi_scoreboard #(
     /// AXI4+ATOP ID width
-    parameter int unsigned IW,
+    parameter int unsigned IW = 0,
     /// AXI4+ATOP address width
-    parameter int unsigned AW,
+    parameter int unsigned AW = 0,
     /// AXI4+ATOP data width
-    parameter int unsigned DW,
+    parameter int unsigned DW = 0,
     /// AXI4+ATOP user width
-    parameter int unsigned UW,
+    parameter int unsigned UW = 0,
     /// Stimuli test time
-    parameter time TT
+    parameter time TT = 0ns
   );
     // Number of checks
     localparam int unsigned NUM_CHECKS  = 32'd3;
