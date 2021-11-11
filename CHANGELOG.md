@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_dw_downsizer` and `axi_dw_upsizer` (part of `axi_dw_converter`): Avoid latch inference on the
   Mentor Precision synthesis tool.
 - `axi_lite_cdc_src_intf`: Fix `_i` and `_o` suffixes in instantiation of `axi_cdc_src`.
+- `axi_test::axi_rand_slave`: Improve compatibility with VCS (#175).
 - `axi_test::axi_scoreboard`: Add default value to parameters to improve compatibility with some
   tools.
 

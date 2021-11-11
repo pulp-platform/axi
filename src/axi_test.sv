@@ -1244,7 +1244,7 @@ package axi_test;
         automatic logic rand_success;
         automatic ax_beat_t ar_beat;
         automatic r_beat_t r_beat = new;
-        wait (!ar_queue.empty());
+        wait (ar_queue.size > 0);
         ar_beat = ar_queue.peek();
         rand_success = r_beat.randomize(); assert(rand_success);
         r_beat.r_id = ar_beat.ax_id;
