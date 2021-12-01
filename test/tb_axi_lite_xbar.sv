@@ -54,16 +54,6 @@ module tb_axi_lite_xbar;
   typedef logic [AxiDataWidth-1:0]      data_t;
   typedef logic [AxiStrbWidth-1:0]      strb_t;
 
-  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_lite_t, addr_t)
-  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_lite_t, data_t, strb_t)
-  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
-
-  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
-  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
-
-  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
-
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
     '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
@@ -104,14 +94,6 @@ module tb_axi_lite_xbar;
   logic rst_n;
   logic [NoMasters-1:0] end_of_sim;
 
-  // master structs
-  req_lite_t  [NoMasters-1:0] masters_req;
-  resp_lite_t [NoMasters-1:0] masters_resp;
-
-  // slave structs
-  req_lite_t  [NoSlaves-1:0] slaves_req;
-  resp_lite_t [NoSlaves-1:0] slaves_resp;
-
   // -------------------------------
   // AXI Interfaces
   // -------------------------------
@@ -125,8 +107,6 @@ module tb_axi_lite_xbar;
   ) master_dv [NoMasters-1:0] (clk);
   for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
     `AXI_LITE_ASSIGN(master[i], master_dv[i])
-    `AXI_LITE_ASSIGN_TO_REQ(masters_req[i], master[i])
-    `AXI_LITE_ASSIGN_FROM_RESP(master[i], masters_resp[i])
   end
 
   AXI_LITE #(
@@ -139,8 +119,6 @@ module tb_axi_lite_xbar;
   ) slave_dv [NoSlaves-1:0](clk);
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_LITE_ASSIGN(slave_dv[i], slave[i])
-    `AXI_LITE_ASSIGN_FROM_REQ(slave[i], slaves_req[i])
-    `AXI_LITE_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
   end
   // -------------------------------
   // AXI Rand Masters and Slaves
@@ -191,26 +169,17 @@ module tb_axi_lite_xbar;
   //-----------------------------------
   // DUT
   //-----------------------------------
-  axi_lite_xbar #(
-    .Cfg       ( xbar_cfg       ),
-    .aw_chan_t ( aw_chan_lite_t ),
-    .w_chan_t  (  w_chan_lite_t ),
-    .b_chan_t  (  b_chan_lite_t ),
-    .ar_chan_t ( ar_chan_lite_t ),
-    .r_chan_t  (  r_chan_lite_t ),
-    .req_t     (  req_lite_t    ),
-    .resp_t    ( resp_lite_t    ),
-    .rule_t    ( rule_t         )
+  axi_lite_xbar_intf #(
+    .Cfg       ( xbar_cfg ),
+    .rule_t    ( rule_t   )
   ) i_xbar_dut (
-    .clk_i      ( clk      ),
-    .rst_ni     ( rst_n    ),
-    .test_i     ( 1'b0     ),
-    .slv_ports_req_i  ( masters_req  ),
-    .slv_ports_resp_o ( masters_resp ),
-    .mst_ports_req_o  ( slaves_req   ),
-    .mst_ports_resp_i ( slaves_resp  ),
-    .addr_map_i       ( AddrMap      ),
-    .en_default_mst_port_i ( '0      ),
-    .default_mst_port_i    ( '0      )
+    .clk_i                  ( clk     ),
+    .rst_ni                 ( rst_n   ),
+    .test_i                 ( 1'b0    ),
+    .slv_ports              ( master  ),
+    .mst_ports              ( slave   ),
+    .addr_map_i             ( AddrMap ),
+    .en_default_mst_port_i  ( '0      ),
+    .default_mst_port_i     ( '0      )
   );
 endmodule
