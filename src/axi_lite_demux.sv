@@ -123,22 +123,26 @@ module axi_lite_demux #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
-    aw_chan_select_t slv_aw_inp;
-    assign slv_aw_inp.aw     = slv_req_i.aw;
-    assign slv_aw_inp.select = slv_aw_select_i;
+    // Workaround for bug in Questa 2021.1: Flatten the struct into a logic vector before
+    // instantiating `spill_register`.
+    typedef logic [$bits(aw_chan_select_t)-1:0] aw_chan_select_flat_t;
+    aw_chan_select_flat_t slv_aw_chan_select_in_flat,
+                          slv_aw_chan_select_out_flat;
+    assign slv_aw_chan_select_in_flat = {slv_req_i.aw, slv_aw_select_i};
     spill_register #(
-      .T      ( aw_chan_select_t ),
-      .Bypass ( ~SpillAw         )
+      .T      ( aw_chan_select_flat_t         ),
+      .Bypass ( ~SpillAw                      )
     ) i_aw_spill_reg (
-      .clk_i   ( clk_i               ),
-      .rst_ni  ( rst_ni              ),
-      .valid_i ( slv_req_i.aw_valid  ),
-      .ready_o ( slv_resp_o.aw_ready ),
-      .data_i  ( slv_aw_inp          ),
-      .valid_o ( slv_aw_valid        ),
-      .ready_i ( slv_aw_ready        ),
-      .data_o  ( slv_aw_chan         )
+      .clk_i   ( clk_i                        ),
+      .rst_ni  ( rst_ni                       ),
+      .valid_i ( slv_req_i.aw_valid           ),
+      .ready_o ( slv_resp_o.aw_ready          ),
+      .data_i  ( slv_aw_chan_select_in_flat   ),
+      .valid_o ( slv_aw_valid                 ),
+      .ready_i ( slv_aw_ready                 ),
+      .data_o  ( slv_aw_chan_select_out_flat  )
     );
+    assign slv_aw_chan = slv_aw_chan_select_out_flat;
 
     // replicate AW channel to the request output
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_aw
@@ -278,22 +282,26 @@ module axi_lite_demux #(
     //--------------------------------------
     // AR Channel
     //--------------------------------------
-    ar_chan_select_t slv_ar_inp;
-    assign slv_ar_inp.ar     = slv_req_i.ar;
-    assign slv_ar_inp.select = slv_ar_select_i;
+    // Workaround for bug in Questa 2021.1: Flatten the struct into a logic vector before
+    // instantiating `spill_register`.
+    typedef logic [$bits(ar_chan_select_t)-1:0] ar_chan_select_flat_t;
+    ar_chan_select_flat_t slv_ar_chan_select_in_flat,
+                          slv_ar_chan_select_out_flat;
+    assign slv_ar_chan_select_in_flat = {slv_req_i.ar, slv_ar_select_i};
     spill_register #(
-      .T      ( ar_chan_select_t ),
-      .Bypass ( ~SpillAr         )
+      .T      ( ar_chan_select_flat_t         ),
+      .Bypass ( ~SpillAr                      )
     ) i_ar_spill_reg (
-      .clk_i   ( clk_i               ),
-      .rst_ni  ( rst_ni              ),
-      .valid_i ( slv_req_i.ar_valid  ),
-      .ready_o ( slv_resp_o.ar_ready ),
-      .data_i  ( slv_ar_inp          ),
-      .valid_o ( slv_ar_valid        ),
-      .ready_i ( slv_ar_ready        ),
-      .data_o  ( slv_ar_chan         )
+      .clk_i   ( clk_i                        ),
+      .rst_ni  ( rst_ni                       ),
+      .valid_i ( slv_req_i.ar_valid           ),
+      .ready_o ( slv_resp_o.ar_ready          ),
+      .data_i  ( slv_ar_chan_select_in_flat   ),
+      .valid_o ( slv_ar_valid                 ),
+      .ready_i ( slv_ar_ready                 ),
+      .data_o  ( slv_ar_chan_select_out_flat  )
     );
+    assign slv_ar_chan = slv_ar_chan_select_out_flat;
 
     // replicate AR channel
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_ar
