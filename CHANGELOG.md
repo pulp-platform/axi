@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_lite_xbar_intf` interface variant of `axi_lite_xbar`.
 
 ### Changed
 
