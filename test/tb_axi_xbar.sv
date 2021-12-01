@@ -257,33 +257,19 @@ module tb_axi_xbar #(
   //-----------------------------------
   // DUT
   //-----------------------------------
-  axi_xbar #(
-    .Cfg          ( xbar_cfg ),
-    .slv_aw_chan_t( aw_chan_mst_t ),
-    .mst_aw_chan_t( aw_chan_slv_t ),
-    .w_chan_t     (  w_chan_t     ),
-    .slv_b_chan_t (  b_chan_mst_t ),
-    .mst_b_chan_t (  b_chan_slv_t ),
-    .slv_ar_chan_t( ar_chan_mst_t ),
-    .mst_ar_chan_t( ar_chan_slv_t ),
-    .slv_r_chan_t (  r_chan_mst_t ),
-    .mst_r_chan_t (  r_chan_slv_t ),
-    .slv_req_t    ( mst_req_t     ),
-    .slv_resp_t   ( mst_resp_t    ),
-    .mst_req_t    ( slv_req_t     ),
-    .mst_resp_t   ( slv_resp_t    ),
-    .rule_t       (rule_t         )
+  axi_xbar_intf #(
+    .AXI_USER_WIDTH ( AxiUserWidth  ),
+    .Cfg            ( xbar_cfg      ),
+    .rule_t         ( rule_t        )
   ) i_xbar_dut (
-    .clk_i      ( clk      ),
-    .rst_ni     ( rst_n    ),
-    .test_i     ( 1'b0     ),
-    .slv_ports_req_i  ( masters_req  ),
-    .slv_ports_resp_o ( masters_resp ),
-    .mst_ports_req_o  ( slaves_req   ),
-    .mst_ports_resp_i ( slaves_resp  ),
-    .addr_map_i       ( AddrMap      ),
-    .en_default_mst_port_i ( '0      ),
-    .default_mst_port_i    ( '0      )
+    .clk_i                  ( clk     ),
+    .rst_ni                 ( rst_n   ),
+    .test_i                 ( 1'b0    ),
+    .slv_ports              ( master  ),
+    .mst_ports              ( slave   ),
+    .addr_map_i             ( AddrMap ),
+    .en_default_mst_port_i  ( '0      ),
+    .default_mst_port_i     ( '0      )
   );
 
   // logger for master modules
