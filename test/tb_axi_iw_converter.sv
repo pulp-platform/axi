@@ -29,7 +29,8 @@ module tb_axi_iw_converter #(
   // TB Parameters
   parameter int unsigned TbNumReadTxns = 32'd100,
   parameter int unsigned TbNumWriteTxns = 32'd200,
-  parameter bit          TbEnAtop = 1'b1
+  parameter bit          TbEnAtop = 1'b1,
+  parameter bit          TbEnExcl = 1'b0
 );
   // AXI4+ATOP channel parameter
 
@@ -39,7 +40,7 @@ module tb_axi_iw_converter #(
   localparam time TestTime = 8ns;
 
   // Driver definitions
-  typedef axi_test::rand_axi_master #(
+  typedef axi_test::axi_rand_master #(
     // AXI interface parameters
     .AW ( TbAxiAddrWidth       ),
     .DW ( TbAxiDataWidth       ),
@@ -51,9 +52,10 @@ module tb_axi_iw_converter #(
     // Maximum number of read and write transactions in flight
     .MAX_READ_TXNS  ( 20     ),
     .MAX_WRITE_TXNS ( 20     ),
+    .AXI_EXCLS      ( TbEnExcl ),
     .AXI_ATOPS      ( TbEnAtop )
   ) rand_axi_master_t;
-  typedef axi_test::rand_axi_slave #(
+  typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
     .AW ( TbAxiAddrWidth      ),
     .DW ( TbAxiDataWidth      ),
