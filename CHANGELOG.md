@@ -5,12 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## 0.30.0 - 2021-12-01
 
 ### Added
 - Add `axi_lite_xbar_intf` interface variant of `axi_lite_xbar`.
-
-### Changed
 
 ### Fixed
 - `axi_lite_demux`: Improve compatibility with new version of QuestaSim's optimizer (`vopt`).
