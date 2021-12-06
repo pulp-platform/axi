@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add three modules to convert between two AXI ID widths under many different concurrency
+- Add three modules to convert between any two AXI ID widths under many different concurrency
   requirements:
   - `axi_iw_converter` is the top-level module that converts between any two AXI ID widths with all
     supported parameters.  It upsizes IDs by extending the MSBs with zeros and joins two interfaces

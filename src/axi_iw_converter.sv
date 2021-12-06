@@ -15,7 +15,7 @@
 
 `include "axi/typedef.svh"
 
-/// Convert between two AXI ID widths.
+/// Convert between any two AXI ID widths.
 ///
 /// Any combination of slave and master port ID width is valid.  When the master port ID width is
 /// larger than or equal to the slave port ID width, slave port IDs are simply prepended with zeros
