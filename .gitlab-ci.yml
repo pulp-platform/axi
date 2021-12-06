@@ -98,6 +98,11 @@ axi_isolate:
   variables:
     TEST_MODULE: axi_isolate
 
+axi_iw_converter:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_iw_converter
+
 axi_lite_regs:
   <<: *run_vsim
   variables:
