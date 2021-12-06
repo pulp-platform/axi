@@ -503,7 +503,11 @@ module axi_id_remap_table #(
   );
 
   // Determine the input ID for a given output ID.
-  assign pop_inp_id_o = table_q[pop_oup_id_i].inp_id;
+  if (MaxUniqInpIds == 1) begin : gen_pop_for_single_unique_inp_id
+    assign pop_inp_id_o = table_q[0].inp_id;
+  end else begin : gen_pop_for_multiple_unique_inp_ids
+    assign pop_inp_id_o = table_q[pop_oup_id_i].inp_id;
+  end
 
   // Determine if given output ID is already used and, if it is, by which input ID.
   field_t match;
@@ -520,7 +524,11 @@ module axi_id_remap_table #(
       .empty_o  ( no_match        )
   );
   assign exists_o      = ~no_match;
-  assign exists_full_o = table_q[exists_oup_id_o].cnt == MaxTxnsPerId;
+  if (MaxUniqInpIds == 1) begin : gen_exists_full_for_single_unique_inp_id
+    assign exists_full_o = table_q[0].cnt == MaxTxnsPerId;
+  end else begin : gen_exists_full_for_multiple_unique_inp_ids
+    assign exists_full_o = table_q[exists_oup_id_o].cnt == MaxTxnsPerId;
+  end
 
   // Push and pop table entries.
   always_comb begin
