@@ -153,6 +153,27 @@ module axi_synth_bench (
     ) i_axi_lite_regs (.*);
   end
 
+  // AXI ID width converter
+  for (genvar i_iwus = 0; i_iwus < 3; i_iwus++) begin : gen_iw_upstream
+    localparam int unsigned AxiIdWidthUs = AXI_ID_USER_WIDTH[i_iwus] + 1;
+    for (genvar i_iwds = 0; i_iwds < 3; i_iwds++) begin : gen_iw_downstream
+      localparam int unsigned AxiIdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
+      localparam int unsigned TableSize    = 2**AxiIdWidthDs;
+      synth_axi_iw_converter # (
+        .AxiSlvPortIdWidth      ( AxiIdWidthUs    ),
+        .AxiMstPortIdWidth      ( AxiIdWidthDs    ),
+        .AxiSlvPortMaxUniqIds   ( 2**AxiIdWidthUs ),
+        .AxiSlvPortMaxTxnsPerId ( 13              ),
+        .AxiSlvPortMaxTxns      ( 81              ),
+        .AxiMstPortMaxUniqIds   ( 2**AxiIdWidthDs ),
+        .AxiMstPortMaxTxnsPerId ( 11              ),
+        .AxiAddrWidth           ( 32'd64          ),
+        .AxiDataWidth           ( 32'd512         ),
+        .AxiUserWidth           ( 32'd10          )
+      ) i_synth_axi_iw_converter (.*);
+    end
+  end
+
 endmodule
 
 
@@ -589,5 +610,52 @@ module synth_axi_lite_regs #(
     .reg_d_i     ( reg_d       ),
     .reg_load_i  ( reg_load    ),
     .reg_q_o     ( reg_q       )
+  );
+endmodule
+
+module synth_axi_iw_converter # (
+  parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+  parameter int unsigned AxiMstPortIdWidth = 32'd0,
+  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
+  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned AxiUserWidth = 32'd0
+) (
+  input logic clk_i,
+  input logic rst_ni
+);
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      ),
+    .AXI_ID_WIDTH   ( AxiSlvPortIdWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth      )
+  ) upstream ();
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( AxiDataWidth      ),
+    .AXI_ID_WIDTH   ( AxiMstPortIdWidth ),
+    .AXI_USER_WIDTH ( AxiUserWidth      )
+  ) downstream ();
+
+  axi_iw_converter_intf #(
+    .AXI_SLV_PORT_ID_WIDTH        (AxiSlvPortIdWidth      ),
+    .AXI_MST_PORT_ID_WIDTH        (AxiMstPortIdWidth      ),
+    .AXI_SLV_PORT_MAX_UNIQ_IDS    (AxiMstPortIdWidth      ),
+    .AXI_SLV_PORT_MAX_TXNS_PER_ID (AxiSlvPortMaxTxnsPerId ),
+    .AXI_SLV_PORT_MAX_TXNS        (AxiSlvPortMaxTxns      ),
+    .AXI_MST_PORT_MAX_UNIQ_IDS    (AxiMstPortMaxUniqIds   ),
+    .AXI_MST_PORT_MAX_TXNS_PER_ID (AxiMstPortMaxTxnsPerId ),
+    .AXI_ADDR_WIDTH               (AxiAddrWidth           ),
+    .AXI_DATA_WIDTH               (AxiDataWidth           ),
+    .AXI_USER_WIDTH               (AxiUserWidth           )
+  ) i_axi_iw_converter_dut (
+    .clk_i,
+    .rst_ni,
+    .slv     ( upstream   ),
+    .mst     ( downstream )
   );
 endmodule

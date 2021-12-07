@@ -32,8 +32,11 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)            | A data width converter between a narrow AXI master and a wider AXI slave.                         |                                |
 | [`axi_err_slv`](src/axi_err_slv.sv)                  | Always responds with an AXI decode/slave error for transactions which are sent to it.             |                                |
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                             |                                |
+| [`axi_id_remap`](src/axi_id_remap.sv)                | Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.                 | [Doc][doc.axi_id_remap]        |
+| [`axi_id_serialize`](src/axi_id_serialize.sv)        | Reduce AXI IDs by serializing transactions when necessary.                                        | [Doc][doc.axi_id_serialize]    |
 | [`axi_intf`](src/axi_intf.sv)                        | This file defines the interfaces we support.                                                      |                                |
 | [`axi_isolate`](src/axi_isolate.sv)                  | A module that can isolate downstream slaves from receiving new AXI4 transactions.                 |                                |
+| [`axi_iw_converter`](src/axi_iw_converter.sv)        | Convert between any two AXI ID widths.                                                            | [Doc][doc.axi_iw_converter]    |
 | [`axi_join`](src/axi_join.sv)                        | A connector that joins two AXI interfaces.                                                        |                                |
 | [`axi_lite_demux`](src/axi_lite_demux.sv)            | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                      | [Doc](doc/axi_lite_demux.md)   |
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                   |                                |
@@ -97,4 +100,7 @@ All code in each release and on the default branch is tested on a recent version
 
 
 [IEEE 1800-2012]: https://standards.ieee.org/standard/1800-2012.html
+[doc.axi_id_remap]: https://pulp-platform.github.io/axi/master/module.axi_id_remap
+[doc.axi_id_serialize]: https://pulp-platform.github.io/axi/master/module.axi_id_serialize
+[doc.axi_iw_converter]: https://pulp-platform.github.io/axi/master/module.axi_iw_converter
 [doc.axi_lite_regs]: https://pulp-platform.github.io/axi/master/module.axi_lite_regs

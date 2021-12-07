@@ -72,6 +72,62 @@ exec_test() {
                 done
             done
             ;;
+        axi_iw_converter)
+            for SLV_PORT_IW in 1 2 3 4 8; do
+                MAX_SLV_PORT_IDS=$((2**SLV_PORT_IW))
+                MAX_UNIQ_SLV_PORT_IDS_OPTS=(1 2)
+                EXCL_OPTS=(0)
+                if [ $SLV_PORT_IW -eq 3 ]; then
+                    # Save time by not testing exclusive accesses for every parametrization.
+                    EXCL_OPTS+=(1)
+                fi
+                for EXCL in "${EXCL_OPTS[@]}"; do
+                    if [ $MAX_SLV_PORT_IDS -gt 2 ]; then
+                        MAX_UNIQ_SLV_PORT_IDS_OPTS+=(3 4)
+                    fi
+                    if [ $(($MAX_SLV_PORT_IDS/2)) -ge 4 ]; then
+                        MAX_UNIQ_SLV_PORT_IDS_OPTS+=($((MAX_SLV_PORT_IDS/2-1)))
+                    fi
+                    MAX_UNIQ_SLV_PORT_IDS_OPTS+=($MAX_SLV_PORT_IDS)
+                    for MST_PORT_IW in 1 2 3 4; do
+                        if [ $MST_PORT_IW -lt $SLV_PORT_IW ]; then # downsize
+                            for MAX_UNIQ_SLV_PORT_IDS in "${MAX_UNIQ_SLV_PORT_IDS_OPTS[@]}"; do
+                                MAX_MST_PORT_IDS=$((2**MST_PORT_IW))
+                                if [ $MAX_UNIQ_SLV_PORT_IDS -le $MAX_MST_PORT_IDS ]; then
+                                    call_vsim tb_axi_iw_converter \
+                                            -t 1ns -coverage -classdebug \
+                                            -voptargs="+acc +cover=bcesfx" \
+                                            -GTbEnExcl=$EXCL \
+                                            -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                            -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                            -GTbAxiSlvPortMaxUniqIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                            -GTbAxiSlvPortMaxTxnsPerId=5
+                                else
+                                    call_vsim tb_axi_iw_converter \
+                                            -t 1ns -coverage -classdebug \
+                                            -voptargs="+acc +cover=bcesfx" \
+                                            -GTbEnExcl=$EXCL \
+                                            -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                            -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                            -GTbAxiSlvPortMaxUniqIds=$MAX_UNIQ_SLV_PORT_IDS \
+                                            -GTbAxiSlvPortMaxTxns=31 \
+                                            -GTbAxiMstPortMaxUniqIds=$((2**MST_PORT_IW)) \
+                                            -GTbAxiMstPortMaxTxnsPerId=7
+                                fi
+                            done
+                        else
+                            call_vsim tb_axi_iw_converter \
+                                    -t 1ns -coverage -classdebug \
+                                    -voptargs="+acc +cover=bcesfx" \
+                                    -GTbEnExcl=$EXCL \
+                                    -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
+                                    -GTbAxiMstPortIdWidth=$MST_PORT_IW \
+                                    -GTbAxiSlvPortMaxTxnsPerId=3
+                        fi
+                    done
+                done
+            done
+            ;;
         axi_lite_regs)
             SEEDS+=(10 42)
             for PRIV in 0 1; do

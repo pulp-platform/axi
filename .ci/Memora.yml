@@ -116,6 +116,25 @@ artifacts:
     outputs:
       - build/axi_isolate-%.tested
 
+  axi_iw_converter-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_id_prepend.sv
+      - src/axi_id_remap.sv
+      - src/axi_demux.sv
+      - src/axi_serializer.sv
+      - src/axi_mux.sv
+      - src/axi_id_serialize.sv
+      - src/axi_iw_converter.sv
+      - test/tb_axi_iw_converter.sv
+    outputs:
+      - build/axi_iw_converter-%.tested
+
   axi_lite_regs-%:
     inputs:
       - Bender.yml
