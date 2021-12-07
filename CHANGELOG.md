@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## 0.31.0 - 2021-12-07
 
 ### Added
 - Add three modules to convert between any two AXI ID widths under many different concurrency
@@ -16,10 +16,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `axi_id_remap` remaps AXI IDs from wide IDs at the slave port to narrower IDs at the master
     port without serializing transactions.
   - `axi_id_serialize` reduces AXI IDs by serializing transactions when necessary.
-
-### Changed
-
-### Fixed
 
 
 ## 0.30.0 - 2021-12-01
