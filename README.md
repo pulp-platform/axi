@@ -3,7 +3,7 @@
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
-This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards](https://developer.arm.com/documentation/ihi0022/f-b).  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
+This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards](https://developer.arm.com/documentation/ihi0022/hc).  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
 
 Our **design goals** are:
 - **Topology Independence**: We provide elementary building blocks such as protocol [multiplexers](src/axi_mux.sv) and [demultiplexers](src/axi_demux.sv) that allow users to implement any network topology.  We also provide commonly used interconnecting components such as a [crossbar](src/axi_xbar.sv).
