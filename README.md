@@ -3,7 +3,7 @@
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
-This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards](https://developer.arm.com/documentation/ihi0022/f-b).  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
+This repository provides modules to build on-chip communication networks adhering to the [AXI4 or AXI4-Lite standards][AMBA 5 Spec].  For high-performance communication, we implement AXI4[+ATOPs from AXI5](#atomic-operations).  For lightweight communication, we implement AXI4-Lite.  We aim to provide a complete end-to-end communication platform, including endpoints such as DMA engines and on-chip memory controllers.
 
 Our **design goals** are:
 - **Topology Independence**: We provide elementary building blocks such as protocol [multiplexers](src/axi_mux.sv) and [demultiplexers](src/axi_demux.sv) that allow users to implement any network topology.  We also provide commonly used interconnecting components such as a [crossbar](src/axi_xbar.sv).
@@ -75,7 +75,7 @@ In addition to the modules above, which are available in synthesis and simulatio
 
 ## Atomic Operations
 
-AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as defined in Section E2.1 of the AMBA5 specification. This has the following implications for modules that do not implement ATOPs and systems that include such modules:
+AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as defined in Section E1.1 of the [AMBA 5 specification][AMBA 5 Spec]. This has the following implications for modules that do not implement ATOPs and systems that include such modules:
 
 - Masters that do not issue ATOPs must set `aw_atop` to `'0`.
 - Slaves that do not support ATOPs must specify this in their interface documentation and can ignore the `aw_atop` signal.
@@ -83,7 +83,7 @@ AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as d
   1. slaves that do not support ATOPs are behind an [`axi_atop_filter`](src/axi_atop_filter.sv) if any master could issue an ATOP to such slaves and
   2. the `aw_atop` signal is well-defined at the input of any (non-AXI4-Lite) module in this repository.
 
-Masters and slaves that do support ATOPs must adhere to Section E2.1 of the AMBA5 specification.
+Masters and slaves that do support ATOPs must adhere to Section E1.1 of the [AMBA 5 specification][AMBA 5 Spec].
 
 
 ## Which EDA Tools Are Supported?
@@ -99,6 +99,7 @@ We aim to be compatible with a wide range of EDA tools.  For this reason, we str
 All code in each release and on the default branch is tested on a recent version of at least one industry-standard RTL simulator and synthesizer.  You can examine the [CI settings](./.gitlab-ci.yml) to find out which version of which tool we are running.
 
 
+[AMBA 5 Spec]: https://developer.arm.com/documentation/ihi0022/hc
 [IEEE 1800-2012]: https://standards.ieee.org/standard/1800-2012.html
 [doc.axi_id_remap]: https://pulp-platform.github.io/axi/master/module.axi_id_remap
 [doc.axi_id_serialize]: https://pulp-platform.github.io/axi/master/module.axi_id_serialize

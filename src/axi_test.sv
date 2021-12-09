@@ -871,7 +871,7 @@ package axi_test;
         end
         // Determine `ax_size` and `ax_len`.
         if (2**beat.ax_size < AXI_STRB_WIDTH) begin
-          // Transaction does *not* occupy full data bus, so we must send just one beat. [E2.1.3]
+          // Transaction does *not* occupy full data bus, so we must send just one beat. [E1.1.3]
           beat.ax_len = '0;
         end else begin
           automatic int unsigned bytes;
@@ -897,10 +897,10 @@ package axi_test;
         end
         // Determine `ax_addr` and `ax_burst`.
         if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
-          // The address must be aligned to half the outbound data size. [E2-337]
+          // The address must be aligned to half the outbound data size. [E1.1.3]
           beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
           // If the address is aligned to the total size of outgoing data, the burst type must be
-          // INCR. Otherwise, it must be WRAP. [E2-338]
+          // INCR. Otherwise, it must be WRAP. [E1.1.3]
           beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
               axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
           // If we are not allowed to emit WRAP bursts, align the address to the total size of
@@ -910,7 +910,7 @@ package axi_test;
             beat.ax_burst = axi_pkg::BURST_INCR;
           end
         end else begin
-          // The address must be aligned to the data size. [E2-337]
+          // The address must be aligned to the data size. [E1.1.3]
           beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
           // Only INCR allowed.
           beat.ax_burst = axi_pkg::BURST_INCR;
