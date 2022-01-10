@@ -30,8 +30,8 @@ module tb_axi_xbar #(
   parameter int unsigned TbNumSlv = 32'd8   // how many AXI slaves there are
 );
   // Random master no Transactions
-  localparam int unsigned NoWrites = 125;   // How many writes per master
-  localparam int unsigned NoReads  = 125;   // How many reads per master
+  localparam int unsigned NoWrites = 80;   // How many writes per master
+  localparam int unsigned NoReads  = 80;   // How many reads per master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
