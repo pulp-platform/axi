@@ -495,6 +495,9 @@ package tb_axi_xbar_pkg;
       if(tests_failed > 0) begin
         $error("Simulation encountered unexpected Transactions!!!!!!");
       end
+      if(tests_conducted == 0) begin
+        $error("Simulation did not conduct any tests!");
+      end
     endtask : print_result
   endclass : axi_xbar_monitor
 endpackage
