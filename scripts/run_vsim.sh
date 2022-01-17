@@ -160,11 +160,16 @@ exec_test() {
             done
             ;;
         axi_xbar)
-            for Atop in 0 1; do
-                for Exclusive in 0 1; do
-                    for UniqueIds in 0 1; do
-                        call_vsim tb_axi_xbar -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive \
-                                -gTbUniqueIds=$UniqueIds
+            for NumMst in 1 6; do
+                for NumSlv in 1 8; do
+                    for Atop in 0 1; do
+                        for Exclusive in 0 1; do
+                            for UniqueIds in 0 1; do
+                                call_vsim tb_axi_xbar -gTbNumMst=$NumMst -gTbNumSlv=$NumSlv \
+                                        -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive \
+                                        -gTbUniqueIds=$UniqueIds
+                            done
+                        done
                     done
                 done
             done

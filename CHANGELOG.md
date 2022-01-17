@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_xbar`: Fix signal width for single master port.  Before this fix, a crossbar instantiated
+  with a single master port would contain arrays with incorrect dimensions.
 
 
 ## 0.31.0 - 2021-12-07

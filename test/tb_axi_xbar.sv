@@ -23,16 +23,15 @@
 `include "axi/assign.svh"
 
 module tb_axi_xbar #(
-  parameter bit TbEnAtop = 1'b1,    // enable atomic operations (ATOPs)
-  parameter bit TbEnExcl = 1'b0,    // enable exclusive accesses
-  parameter bit TbUniqueIds = 1'b0  // restrict to only unique IDs
+  parameter bit TbEnAtop = 1'b1,            // enable atomic operations (ATOPs)
+  parameter bit TbEnExcl = 1'b0,            // enable exclusive accesses
+  parameter bit TbUniqueIds = 1'b0,         // restrict to only unique IDs
+  parameter int unsigned TbNumMst = 32'd6,  // how many AXI masters there are
+  parameter int unsigned TbNumSlv = 32'd8   // how many AXI slaves there are
 );
-  // Dut parameters
-  localparam int unsigned NoMasters   = 6;    // How many Axi Masters there are
-  localparam int unsigned NoSlaves    = 8;    // How many Axi Slaves  there are
   // Random master no Transactions
-  localparam int unsigned NoWrites   = 125;   // How many writes per master
-  localparam int unsigned NoReads    = 125;   // How many reads per master
+  localparam int unsigned NoWrites = 80;   // How many writes per master
+  localparam int unsigned NoReads  = 80;   // How many reads per master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -41,15 +40,15 @@ module tb_axi_xbar #(
   // axi configuration
   localparam int unsigned AxiIdWidthMasters =  4;
   localparam int unsigned AxiIdUsed         =  3; // Has to be <= AxiIdWidthMasters
-  localparam int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoMasters);
+  localparam int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(TbNumMst);
   localparam int unsigned AxiAddrWidth      =  32;    // Axi Address Width
   localparam int unsigned AxiDataWidth      =  64;    // Axi Data Width
   localparam int unsigned AxiStrbWidth      =  AxiDataWidth / 8;
   localparam int unsigned AxiUserWidth      =  5;
   // in the bench can change this variables which are set here freely
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NoSlvPorts:         NoMasters,
-    NoMstPorts:         NoSlaves,
+    NoSlvPorts:         TbNumMst,
+    NoMstPorts:         TbNumSlv,
     MaxMstTrans:        10,
     MaxSlvTrans:        6,
     FallThrough:        1'b0,
@@ -86,14 +85,14 @@ module tb_axi_xbar #(
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
-    '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
-    '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
-    '{idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
-    '{idx: 32'd4, start_addr: 32'h0000_7000, end_addr: 32'h0000_8000},
-    '{idx: 32'd3, start_addr: 32'h0000_6300, end_addr: 32'h0000_7000},
-    '{idx: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6300},
-    '{idx: 32'd1, start_addr: 32'h0000_3000, end_addr: 32'h0000_4000},
-    '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
+    '{idx: 32'd7 % TbNumSlv, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
+    '{idx: 32'd6 % TbNumSlv, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
+    '{idx: 32'd5 % TbNumSlv, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
+    '{idx: 32'd4 % TbNumSlv, start_addr: 32'h0000_7000, end_addr: 32'h0000_8000},
+    '{idx: 32'd3 % TbNumSlv, start_addr: 32'h0000_6300, end_addr: 32'h0000_7000},
+    '{idx: 32'd2 % TbNumSlv, start_addr: 32'h0000_4000, end_addr: 32'h0000_6300},
+    '{idx: 32'd1 % TbNumSlv, start_addr: 32'h0000_3000, end_addr: 32'h0000_4000},
+    '{idx: 32'd0 % TbNumSlv, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
   typedef axi_test::axi_rand_master #(
@@ -129,15 +128,15 @@ module tb_axi_xbar #(
   logic clk;
   // DUT signals
   logic rst_n;
-  logic [NoMasters-1:0] end_of_sim;
+  logic [TbNumMst-1:0] end_of_sim;
 
   // master structs
-  mst_req_t  [NoMasters-1:0] masters_req;
-  mst_resp_t [NoMasters-1:0] masters_resp;
+  mst_req_t  [TbNumMst-1:0] masters_req;
+  mst_resp_t [TbNumMst-1:0] masters_resp;
 
   // slave structs
-  slv_req_t  [NoSlaves-1:0] slaves_req;
-  slv_resp_t [NoSlaves-1:0] slaves_resp;
+  slv_req_t  [TbNumSlv-1:0] slaves_req;
+  slv_resp_t [TbNumSlv-1:0] slaves_resp;
 
   // -------------------------------
   // AXI Interfaces
@@ -147,20 +146,20 @@ module tb_axi_xbar #(
     .AXI_DATA_WIDTH ( AxiDataWidth      ),
     .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
     .AXI_USER_WIDTH ( AxiUserWidth      )
-  ) master [NoMasters-1:0] ();
+  ) master [TbNumMst-1:0] ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
     .AXI_DATA_WIDTH ( AxiDataWidth      ),
     .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
     .AXI_USER_WIDTH ( AxiUserWidth      )
-  ) master_dv [NoMasters-1:0] (clk);
+  ) master_dv [TbNumMst-1:0] (clk);
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
     .AXI_DATA_WIDTH ( AxiDataWidth      ),
     .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
     .AXI_USER_WIDTH ( AxiUserWidth      )
-  ) master_monitor_dv [NoMasters-1:0] (clk);
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
+  ) master_monitor_dv [TbNumMst-1:0] (clk);
+  for (genvar i = 0; i < TbNumMst; i++) begin : gen_conn_dv_masters
     `AXI_ASSIGN (master[i], master_dv[i])
     `AXI_ASSIGN_TO_REQ(masters_req[i], master[i])
     `AXI_ASSIGN_FROM_RESP(master[i], masters_resp[i])
@@ -171,20 +170,20 @@ module tb_axi_xbar #(
     .AXI_DATA_WIDTH ( AxiDataWidth     ),
     .AXI_ID_WIDTH   ( AxiIdWidthSlaves ),
     .AXI_USER_WIDTH ( AxiUserWidth     )
-  ) slave [NoSlaves-1:0] ();
+  ) slave [TbNumSlv-1:0] ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
     .AXI_DATA_WIDTH ( AxiDataWidth     ),
     .AXI_ID_WIDTH   ( AxiIdWidthSlaves ),
     .AXI_USER_WIDTH ( AxiUserWidth     )
-  ) slave_dv [NoSlaves-1:0](clk);
+  ) slave_dv [TbNumSlv-1:0](clk);
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
     .AXI_DATA_WIDTH ( AxiDataWidth     ),
     .AXI_ID_WIDTH   ( AxiIdWidthSlaves ),
     .AXI_USER_WIDTH ( AxiUserWidth     )
-  ) slave_monitor_dv [NoSlaves-1:0](clk);
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
+  ) slave_monitor_dv [TbNumSlv-1:0](clk);
+  for (genvar i = 0; i < TbNumSlv; i++) begin : gen_conn_dv_slaves
     `AXI_ASSIGN(slave_dv[i], slave[i])
     `AXI_ASSIGN_FROM_REQ(slave[i], slaves_req[i])
     `AXI_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
@@ -193,7 +192,7 @@ module tb_axi_xbar #(
   // AXI Rand Masters and Slaves
   // -------------------------------
   // Masters control simulation run time
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
+  for (genvar i = 0; i < TbNumMst; i++) begin : gen_rand_master
       static axi_rand_master_t axi_rand_master = new ( master_dv[i] );
     initial begin
       end_of_sim[i] <= 1'b0;
@@ -207,7 +206,7 @@ module tb_axi_xbar #(
     end
   end
 
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
+  for (genvar i = 0; i < TbNumSlv; i++) begin : gen_rand_slave
       static axi_rand_slave_t axi_rand_slave = new( slave_dv[i] );
     initial begin
       axi_rand_slave.reset();
@@ -223,8 +222,8 @@ module tb_axi_xbar #(
       .AxiIdWidthMasters ( AxiIdWidthMasters    ),
       .AxiIdWidthSlaves  ( AxiIdWidthSlaves     ),
       .AxiUserWidth      ( AxiUserWidth         ),
-      .NoMasters         ( NoMasters            ),
-      .NoSlaves          ( NoSlaves             ),
+      .NoMasters         ( TbNumMst            ),
+      .NoSlaves          ( TbNumSlv             ),
       .NoAddrRules       ( xbar_cfg.NoAddrRules ),
       .rule_t            ( rule_t               ),
       .AddrMap           ( AddrMap              ),
@@ -273,7 +272,7 @@ module tb_axi_xbar #(
   );
 
   // logger for master modules
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_master_logger
+  for (genvar i = 0; i < TbNumMst; i++) begin : gen_master_logger
     axi_chan_logger #(
       .TestTime  ( TestTime      ), // Time after clock, where sampling happens
       .LoggerName( $sformatf("axi_logger_master_%0d", i)),
@@ -309,7 +308,7 @@ module tb_axi_xbar #(
     );
   end
   // logger for slave modules
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_slave_logger
+  for (genvar i = 0; i < TbNumSlv; i++) begin : gen_slave_logger
     axi_chan_logger #(
       .TestTime  ( TestTime      ), // Time after clock, where sampling happens
       .LoggerName( $sformatf("axi_logger_slave_%0d",i)),
@@ -346,7 +345,7 @@ module tb_axi_xbar #(
   end
 
 
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_connect_master_monitor
+  for (genvar i = 0; i < TbNumMst; i++) begin : gen_connect_master_monitor
     assign master_monitor_dv[i].aw_id     = master[i].aw_id    ;
     assign master_monitor_dv[i].aw_addr   = master[i].aw_addr  ;
     assign master_monitor_dv[i].aw_len    = master[i].aw_len   ;
@@ -393,7 +392,7 @@ module tb_axi_xbar #(
     assign master_monitor_dv[i].r_valid   = master[i].r_valid  ;
     assign master_monitor_dv[i].r_ready   = master[i].r_ready  ;
   end
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_connect_slave_monitor
+  for (genvar i = 0; i < TbNumSlv; i++) begin : gen_connect_slave_monitor
     assign slave_monitor_dv[i].aw_id     = slave[i].aw_id    ;
     assign slave_monitor_dv[i].aw_addr   = slave[i].aw_addr  ;
     assign slave_monitor_dv[i].aw_len    = slave[i].aw_len   ;
