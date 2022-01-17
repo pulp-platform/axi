@@ -34,7 +34,7 @@
 ></div><h3 id="port.mst_ports_resp_i" class="impl"><code class="in-band">mst_ports_resp_i<span class="type-annotation">: input  mst_resp_t [Cfg.NoMstPorts-1:0]</span></code></h3><div class="docblock"
 ></div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t     [Cfg.NoAddrRules-1:0]</span></code></h3><div class="docblock"
 ></div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0]</span></code></h3><div class="docblock"
 ></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.mst_port_idx_t.html">mst_port_idx_t</a></td><td></td></tr></table>
