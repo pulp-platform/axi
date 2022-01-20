@@ -37,16 +37,16 @@ transaction with the same ID completes.</p>
 because IDs at the master port must be wide enough to represent IDs up to
 <code>AxiSlvPortMaxUniqIds-1</code>.</p>
 <p>If master IDs are wider than the minimum, they are extended by prepending zeros.</p>
-</div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band">slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+</div><h3 id="parameter.slv_port_axi_req_t" class="impl"><code class="in-band">slv_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct type of the AXI4+ATOP slave port.</p>
 <p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band">slv_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+</div><h3 id="parameter.slv_port_axi_rsp_t" class="impl"><code class="in-band">slv_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Response struct type of the AXI4+ATOP slave port.</p>
 <p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band">mst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+</div><h3 id="parameter.mst_port_axi_req_t" class="impl"><code class="in-band">mst_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct type of the AXI4+ATOP master port</p>
 <p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
-</div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band">mst_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+</div><h3 id="parameter.mst_port_axi_rsp_t" class="impl"><code class="in-band">mst_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Response struct type of the AXI4+ATOP master port</p>
 <p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
 </div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band">IdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
@@ -56,13 +56,13 @@ because IDs at the master port must be wide enough to represent IDs up to
 ><p>Rising-edge clock of all ports</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  slv_req_t</span></code></h3><div class="docblock"
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  slv_port_axi_req_t</span></code></h3><div class="docblock"
 ><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output slv_resp_t</span></code></h3><div class="docblock"
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output slv_port_axi_rsp_t</span></code></h3><div class="docblock"
 ><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock"
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output mst_port_axi_req_t</span></code></h3><div class="docblock"
 ><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  mst_resp_t</span></code></h3><div class="docblock"
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  mst_port_axi_rsp_t</span></code></h3><div class="docblock"
 ><p>Master port response</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>

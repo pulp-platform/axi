@@ -72,7 +72,7 @@ AXI4-Lite port.</p>
 assigned its value from this array.</p>
 </div><h3 id="parameter.axi_lite_req_t" class="impl"><code class="in-band">axi_lite_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct of the AXI4-Lite port.</p>
-</div><h3 id="parameter.axi_lite_resp_t" class="impl"><code class="in-band">axi_lite_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+</div><h3 id="parameter.axi_lite_rsp_t" class="impl"><code class="in-band">axi_lite_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Response struct of the AXI4-Lite port.</p>
 </div><h3 id="parameter.AxiStrbWidth" class="impl"><code class="in-band">AxiStrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.NumChunks" class="impl"><code class="in-band">NumChunks<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
@@ -85,7 +85,7 @@ assigned its value from this array.</p>
 ><p>Asynchronous reset, active low</p>
 </div><h3 id="port.axi_req_i" class="impl"><code class="in-band">axi_req_i<span class="type-annotation">: input  axi_lite_req_t</span></code></h3><div class="docblock"
 ><p>AXI4-Lite slave request</p>
-</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output axi_lite_resp_t</span></code></h3><div class="docblock"
+</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output axi_lite_rsp_t</span></code></h3><div class="docblock"
 ><p>AXI4-Lite slave response</p>
 </div><h3 id="port.wr_active_o" class="impl"><code class="in-band">wr_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This

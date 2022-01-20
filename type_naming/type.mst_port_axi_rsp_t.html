@@ -3,16 +3,16 @@
 <link rel="stylesheet" type="text/css" href="static/light.css">
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
-<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">slv_resp_t</a></h1>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mst_port_axi_rsp_t</a></h1>
 <pre>typedef struct packed {                               
     logic     aw_ready;                                 
     logic     ar_ready;                                 
     logic     w_ready;                                  
     logic     b_valid;                                  
-    slv_b_chan_t  b;                                        
+    mst_b_chan_t  b;                                        
     logic     r_valid;                                  
-    slv_r_chan_t  r;                                        
-  } slv_resp_t;</pre>
+    mst_r_chan_t  r;                                        
+  } mst_port_axi_rsp_t;</pre>
 </section>
 </body>
 </html>
