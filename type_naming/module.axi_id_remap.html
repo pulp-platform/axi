@@ -11,44 +11,44 @@ used ID space.  This scenario occurs, for example, when an AXI master has wide I
 effectively only uses a (not necessarily contiguous) subset of IDs.</p>
 <p>This module retains the independence of IDs.  That is, if two transactions have different IDs at
 the slave port of this module, they are guaranteed to have different IDs at the master port of
-this module.  This implies a lower bound on the <a href="#parameter.AxiMstPortIdWidth">width of IDs on the master
+this module.  This implies a lower bound on the <a href="#parameter.MstPortIdWidth">width of IDs on the master
 port</a>.  If you require narrower master port IDs and can forgo ID
 independence, use <a href="module.axi_id_serialize"><code>axi_id_serialize</code></a> instead.</p>
 <p>Internally, a <a href="module.axi_id_remap_table">table is used for remapping IDs</a>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AxiSlvPortIdWidth" class="impl"><code class="in-band">AxiSlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+<h3 id="parameter.SlvPortIdWidth" class="impl"><code class="in-band">SlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>ID width of the AXI4+ATOP slave port.</p>
-</div><h3 id="parameter.AxiSlvPortMaxUniqIds" class="impl"><code class="in-band">AxiSlvPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+</div><h3 id="parameter.SlvPortMaxUniqIds" class="impl"><code class="in-band">SlvPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
 counted separately (except for ATOPs, which count as both read and write).</p>
 <p>It is legal for upstream to have transactions with more unique IDs than the maximum given by
 this parameter in flight, but a transaction exceeding the maximum will be stalled until all
 transactions of another ID complete.</p>
-<p>The maximum value of this parameter is <code>2**AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.AxiMaxTxnsPerId" class="impl"><code class="in-band">AxiMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+<p>The maximum value of this parameter is <code>2**SlvPortIdWidth</code>.</p>
+</div><h3 id="parameter.MaxTxnsPerId" class="impl"><code class="in-band">MaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Maximum number of in-flight transactions with the same ID.</p>
 <p>It is legal for upstream to have more transactions than the maximum given by this parameter in
 flight for any ID, but a transaction exceeding the maximum will be stalled until another
 transaction with the same ID completes.</p>
-</div><h3 id="parameter.AxiMstPortIdWidth" class="impl"><code class="in-band">AxiMstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+</div><h3 id="parameter.MstPortIdWidth" class="impl"><code class="in-band">MstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>ID width of the AXI4+ATOP master port.</p>
-<p>The minimum value of this parameter is the ceiled binary logarithm of <code>AxiSlvPortMaxUniqIds</code>,
+<p>The minimum value of this parameter is the ceiled binary logarithm of <code>SlvPortMaxUniqIds</code>,
 because IDs at the master port must be wide enough to represent IDs up to
-<code>AxiSlvPortMaxUniqIds-1</code>.</p>
+<code>SlvPortMaxUniqIds-1</code>.</p>
 <p>If master IDs are wider than the minimum, they are extended by prepending zeros.</p>
 </div><h3 id="parameter.slv_port_axi_req_t" class="impl"><code class="in-band">slv_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct type of the AXI4+ATOP slave port.</p>
-<p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
+<p>The width of all IDs in this struct must match <code>SlvPortIdWidth</code>.</p>
 </div><h3 id="parameter.slv_port_axi_rsp_t" class="impl"><code class="in-band">slv_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Response struct type of the AXI4+ATOP slave port.</p>
-<p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
+<p>The width of all IDs in this struct must match <code>SlvPortIdWidth</code>.</p>
 </div><h3 id="parameter.mst_port_axi_req_t" class="impl"><code class="in-band">mst_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Request struct type of the AXI4+ATOP master port</p>
-<p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
+<p>The width of all IDs in this struct must match <code>MstPortIdWidth</code>.</p>
 </div><h3 id="parameter.mst_port_axi_rsp_t" class="impl"><code class="in-band">mst_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ><p>Response struct type of the AXI4+ATOP master port</p>
-<p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
+<p>The width of all IDs in this struct must match <code>MstPortIdWidth</code>.</p>
 </div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band">IdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.ZeroWidth" class="impl"><code class="in-band">ZeroWidth<span class="type-annotation">: </span></code></h3><div class="docblock"
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
