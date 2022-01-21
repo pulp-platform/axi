@@ -5,8 +5,8 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">xbar_cfg_t</a></h1>
 <pre>typedef struct packed {
-    int unsigned   NoSlvPorts;
-    int unsigned   NoMstPorts;
+    int unsigned   NumSlvPorts;
+    int unsigned   NumMstPorts;
     int unsigned   MaxMstTrans;
     int unsigned   MaxSlvTrans;
     bit            FallThrough;
@@ -16,7 +16,7 @@
     bit            UniqueIds;
     int unsigned   AddrWidth;
     int unsigned   DataWidth;
-    int unsigned   NoAddrRules;
+    int unsigned   NumAddrRules;
   } xbar_cfg_t;</pre>
 <p>Configuration for <code>axi_xbar</code>.</p>
 </section>
