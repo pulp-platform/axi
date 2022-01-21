@@ -177,8 +177,8 @@ module tb_axi_to_mem_banked #(
 
   // Clock generator
   clk_rst_gen #(
-    .CLK_PERIOD     ( CyclTime ),
-    .RST_CLK_CYCLES ( 5        )
+    .ClkPeriod    ( CyclTime ),
+    .RstClkCycles ( 5        )
   ) i_clk_rst_gen (
     .clk_o  ( clk   ),
     .rst_no ( rst_n )
