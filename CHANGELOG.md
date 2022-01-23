@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_atop_filter`, `axi_burst_splitter`, `axi_cut`, `axi_delayer`, `axi_demux`, `axi_err_slv`,
+  `axi_isolate`, `axi_lite_demux`, `axi_lite_mux`, `axi_lite_to_axi`, and `axi_lite_xbar`,
+  `axi_multicut`, `axi_serializer`, `axi_sim_mem`:  Prefix `req_t` and `resp_t` type parameters with
+  `axi_`.  This prevents type collisions in tools that have problems with correct type resolution
+  and isolation.  This change is **backward-incompatible** for all instances of the listed modules
+  outside this repository.  Users must update all instances of the listed modules in their code.
+  Interface variants are not affected and remain backward-compatible.
 
 ### Fixed
 

@@ -32,17 +32,17 @@
 
 module axi_isolate #(
   parameter int unsigned NumPending = 32'd16, // Number of pending requests per channel
-  parameter type         req_t      = logic,  // AXI request struct definition
-  parameter type         resp_t     = logic   // AXI response struct definition
+  parameter type         axi_req_t  = logic,  // AXI request struct definition
+  parameter type         axi_resp_t = logic   // AXI response struct definition
 ) (
-  input  logic  clk_i,      // clock
-  input  logic  rst_ni,     // reset
-  input  req_t  slv_req_i,  // slave port request struct
-  output resp_t slv_resp_o, // slave port response struct
-  output req_t  mst_req_o,  // master port request struct
-  input  resp_t mst_resp_i, // master port response struct
-  input  logic  isolate_i,  // isolate master port from slave port
-  output logic  isolated_o  // master port is isolated from slave port
+  input  logic      clk_i,      // clock
+  input  logic      rst_ni,     // reset
+  input  axi_req_t  slv_req_i,  // slave port request struct
+  output axi_resp_t slv_resp_o, // slave port response struct
+  output axi_req_t  mst_req_o,  // master port request struct
+  input  axi_resp_t mst_resp_i, // master port response struct
+  input  logic      isolate_i,  // isolate master port from slave port
+  output logic      isolated_o  // master port is isolated from slave port
 );
   // plus 1 in clog for accouning no open transaction, plus one bit for atomic injection
   localparam int unsigned CounterWidth = $clog2(NumPending + 32'd1) + 32'd1;
@@ -305,11 +305,11 @@ module axi_isolate_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
-  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
-  req_t  slv_req,  mst_req;
-  resp_t slv_resp, mst_resp;
+  axi_req_t  slv_req,  mst_req;
+  axi_resp_t slv_resp, mst_resp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
   `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
@@ -319,8 +319,8 @@ module axi_isolate_intf #(
 
   axi_isolate #(
     .NumPending ( NUM_PENDING ), // Number of pending requests per channel
-    .req_t      ( req_t       ), // AXI request struct definition
-    .resp_t     ( resp_t      )  // AXI response struct definition
+    .axi_req_t  ( axi_req_t   ), // AXI request struct definition
+    .axi_resp_t ( axi_resp_t  )  // AXI response struct definition
   ) i_axi_isolate (
     .clk_i,                   // clock
     .rst_ni,                  // reset

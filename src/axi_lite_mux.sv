@@ -27,8 +27,8 @@ module axi_lite_mux #(
   parameter type           b_chan_t  = logic, //  B LITE Channel Type
   parameter type          ar_chan_t  = logic, // AR LITE Channel Type
   parameter type           r_chan_t  = logic, //  R LITE Channel Type
-  parameter type              req_t  = logic, // AXI4-Lite request type
-  parameter type             resp_t  = logic, // AXI4-Lite response type
+  parameter type          axi_req_t  = logic, // AXI4-Lite request type
+  parameter type         axi_resp_t  = logic, // AXI4-Lite response type
   parameter int unsigned NoSlvPorts  = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write or read
   parameter int unsigned MaxTrans    = 32'd0,
@@ -42,15 +42,15 @@ module axi_lite_mux #(
   parameter bit          SpillAr     = 1'b1,
   parameter bit          SpillR      = 1'b0
 ) (
-  input  logic                   clk_i,    // Clock
-  input  logic                   rst_ni,   // Asynchronous reset active low
-  input  logic                   test_i,   // Test Mode enable
+  input  logic                       clk_i,    // Clock
+  input  logic                       rst_ni,   // Asynchronous reset active low
+  input  logic                       test_i,   // Test Mode enable
   // slave ports (AXI4-Lite inputs), connect master modules here
-  input  req_t  [NoSlvPorts-1:0] slv_reqs_i,
-  output resp_t [NoSlvPorts-1:0] slv_resps_o,
+  input  axi_req_t  [NoSlvPorts-1:0] slv_reqs_i,
+  output axi_resp_t [NoSlvPorts-1:0] slv_resps_o,
   // master port (AXI4-Lite output), connect slave module here
-  output req_t                   mst_req_o,
-  input  resp_t                  mst_resp_i
+  output axi_req_t                   mst_req_o,
+  input  axi_resp_t                  mst_resp_i
 );
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
@@ -422,13 +422,13 @@ module axi_lite_mux_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
-  req_t     [NoSlvPorts-1:0] slv_reqs;
-  resp_t    [NoSlvPorts-1:0] slv_resps;
-  req_t                      mst_req;
-  resp_t                     mst_resp;
+  axi_req_t     [NoSlvPorts-1:0] slv_reqs;
+  axi_resp_t    [NoSlvPorts-1:0] slv_resps;
+  axi_req_t                      mst_req;
+  axi_resp_t                     mst_resp;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
     `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])

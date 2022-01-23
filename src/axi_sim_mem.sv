@@ -29,9 +29,9 @@ module axi_sim_mem #(
   /// AXI User Width.
   parameter int unsigned UserWidth = 32'd0,
   /// AXI4 request struct definition
-  parameter type req_t = logic,
+  parameter type axi_req_t = logic,
   /// AXI4 response struct definition
-  parameter type rsp_t = logic,
+  parameter type axi_rsp_t = logic,
   /// Warn on accesses to uninitialized bytes
   parameter bit WarnUninitialized = 1'b0,
   /// Application delay (measured after rising clock edge)
@@ -44,9 +44,9 @@ module axi_sim_mem #(
   /// Active-low reset
   input  logic rst_ni,
   /// AXI4 request struct
-  input  req_t axi_req_i,
+  input  axi_req_t axi_req_i,
   /// AXI4 response struct
-  output rsp_t axi_rsp_o
+  output axi_rsp_t axi_rsp_o
 );
 
   localparam int unsigned StrbWidth = DataWidth / 8;
