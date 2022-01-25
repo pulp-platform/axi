@@ -5,9 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
-
-### Added
+## 0.32.0 - 2022-01-25
 
 ### Changed
 - `axi_atop_filter`, `axi_burst_splitter`, `axi_cut`, `axi_delayer`, `axi_demux`, `axi_err_slv`,
@@ -17,8 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   and isolation.  This change is **backward-incompatible** for all instances of the listed modules
   outside this repository.  Users must update all instances of the listed modules in their code.
   Interface variants are not affected and remain backward-compatible.
-
-### Fixed
 
 
 ## 0.31.1 - 2022-01-17
