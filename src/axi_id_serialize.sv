@@ -156,8 +156,8 @@ module axi_id_serialize #(
     .b_chan_t    ( slv_b_t              ),
     .ar_chan_t   ( slv_ar_t             ),
     .r_chan_t    ( slv_r_t              ),
-    .req_t       ( slv_req_t            ),
-    .resp_t      ( slv_resp_t           ),
+    .axi_req_t   ( slv_req_t            ),
+    .axi_resp_t  ( slv_resp_t           ),
     .NoMstPorts  ( AxiMstPortMaxUniqIds ),
     .MaxTrans    ( AxiSlvPortMaxTxns    ),
     .AxiLookBits ( AxiSlvPortIdWidth    ),
@@ -189,8 +189,8 @@ module axi_id_serialize #(
       .MaxReadTxns  ( AxiMstPortMaxTxnsPerId  ),
       .MaxWriteTxns ( AxiMstPortMaxTxnsPerId  ),
       .AxiIdWidth   ( AxiSlvPortIdWidth       ),
-      .req_t        ( slv_req_t               ),
-      .resp_t       ( slv_resp_t              )
+      .axi_req_t    ( slv_req_t               ),
+      .axi_resp_t   ( slv_resp_t              )
     ) i_axi_serializer (
       .clk_i,
       .rst_ni,
