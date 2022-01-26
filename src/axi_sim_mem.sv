@@ -210,24 +210,24 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_sim_mem_intf #(
-  parameter int unsigned AddrWidth = 32'd0,
-  parameter int unsigned DataWidth = 32'd0,
-  parameter int unsigned IdWidth = 32'd0,
-  parameter int unsigned UserWidth = 32'd0,
-  parameter bit WarnUninitialized = 1'b0,
-  parameter time ApplDelay = 0ps,
-  parameter time AcqDelay = 0ps
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  parameter bit WARN_UNINITIALIZED = 1'b0,
+  parameter time APPL_DELAY = 0ps,
+  parameter time ACQ_DELAY = 0ps
 ) (
   input  logic  clk_i,
   input  logic  rst_ni,
   AXI_BUS.Slave axi_slv
 );
 
-  typedef logic [AddrWidth-1:0]   axi_addr_t;
-  typedef logic [DataWidth-1:0]   axi_data_t;
-  typedef logic [IdWidth-1:0]     axi_id_t;
-  typedef logic [DataWidth/8-1:0] axi_strb_t;
-  typedef logic [UserWidth-1:0]   axi_user_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]   axi_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   axi_data_t;
+  typedef logic [AXI_ID_WIDTH-1:0]     axi_id_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] axi_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   axi_user_t;
   `AXI_TYPEDEF_ALL(axi, axi_addr_t, axi_id_t, axi_data_t, axi_strb_t, axi_user_t)
 
   axi_req_t   axi_req;
@@ -237,15 +237,15 @@ module axi_sim_mem_intf #(
   `AXI_ASSIGN_FROM_RESP(axi_slv, axi_rsp)
 
   axi_sim_mem #(
-    .AddrWidth          (AddrWidth),
-    .DataWidth          (DataWidth),
-    .IdWidth            (IdWidth),
-    .UserWidth          (UserWidth),
+    .AddrWidth          (AXI_ADDR_WIDTH),
+    .DataWidth          (AXI_DATA_WIDTH),
+    .IdWidth            (AXI_ID_WIDTH),
+    .UserWidth          (AXI_USER_WIDTH),
     .axi_req_t          (axi_req_t),
     .axi_rsp_t          (axi_resp_t),
-    .WarnUninitialized  (WarnUninitialized),
-    .ApplDelay          (ApplDelay),
-    .AcqDelay           (AcqDelay)
+    .WarnUninitialized  (WARN_UNINITIALIZED),
+    .ApplDelay          (APPL_DELAY),
+    .AcqDelay           (ACQ_DELAY)
   ) i_sim_mem (
     .clk_i,
     .rst_ni,
