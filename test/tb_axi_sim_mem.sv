@@ -37,32 +37,13 @@ module tb_axi_sim_mem #(
   typedef logic [TbIdWidth-1:0]   id_t;
   typedef logic [StrbWidth-1:0] strb_t;
   typedef logic [TbUserWidth-1:0] user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_t, w_t, ar_t)
-  `AXI_TYPEDEF_RESP_T(axi_rsp_t, b_t, r_t)
 
-  axi_req_t req;
-  axi_rsp_t rsp;
-  axi_sim_mem #(
-    .AddrWidth          (TbAddrWidth),
-    .DataWidth          (TbDataWidth),
-    .IdWidth            (TbIdWidth),
-    .UserWidth          (TbUserWidth),
-    .axi_req_t          (axi_req_t),
-    .axi_rsp_t          (axi_rsp_t),
-    .WarnUninitialized  (TbWarnUninitialized),
-    .ApplDelay          (TbApplDelay),
-    .AcqDelay           (TbAcqDelay)
-  ) i_sim_mem (
-    .clk_i      (clk),
-    .rst_ni     (rst_n),
-    .axi_req_i  (req),
-    .axi_rsp_o  (rsp)
-  );
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH (TbAddrWidth),
+    .AXI_DATA_WIDTH (TbDataWidth),
+    .AXI_ID_WIDTH   (TbIdWidth),
+    .AXI_USER_WIDTH (TbUserWidth)
+  ) axi ();
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH (TbAddrWidth),
@@ -70,13 +51,27 @@ module tb_axi_sim_mem #(
     .AXI_ID_WIDTH   (TbIdWidth),
     .AXI_USER_WIDTH (TbUserWidth)
   ) axi_dv (clk);
-  `AXI_ASSIGN_TO_REQ(req, axi_dv)
-  `AXI_ASSIGN_FROM_RESP(axi_dv, rsp)
   typedef axi_test::axi_driver #(
     .AW(TbAddrWidth), .DW(TbDataWidth), .IW(TbIdWidth), .UW(TbUserWidth),
     .TA(1ns), .TT(6ns)
   ) drv_t;
   drv_t drv = new(axi_dv);
+
+  `AXI_ASSIGN (axi, axi_dv)
+
+  axi_sim_mem_intf #(
+    .AXI_ADDR_WIDTH      (TbAddrWidth),
+    .AXI_DATA_WIDTH      (TbDataWidth),
+    .AXI_ID_WIDTH        (TbIdWidth),
+    .AXI_USER_WIDTH      (TbUserWidth),
+    .WARN_UNINITIALIZED  (TbWarnUninitialized),
+    .APPL_DELAY          (TbApplDelay),
+    .ACQ_DELAY           (TbAcqDelay)
+  ) i_sim_mem (
+    .clk_i   (clk),
+    .rst_ni  (rst_n),
+    .axi_slv (axi)
+  );
 
   // Simply read and write a random memory region.
   initial begin

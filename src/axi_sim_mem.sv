@@ -202,3 +202,55 @@ module axi_sim_mem #(
   end
 
 endmodule
+
+
+`include "axi/assign.svh"
+
+/// Interface variant of [`axi_sim_mem`](module.axi_sim_mem).
+///
+/// See the documentation of the main module for the definition of ports and parameters.
+module axi_sim_mem_intf #(
+  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  parameter bit WARN_UNINITIALIZED = 1'b0,
+  parameter time APPL_DELAY = 0ps,
+  parameter time ACQ_DELAY = 0ps
+) (
+  input  logic  clk_i,
+  input  logic  rst_ni,
+  AXI_BUS.Slave axi_slv
+);
+
+  typedef logic [AXI_ADDR_WIDTH-1:0]   axi_addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]   axi_data_t;
+  typedef logic [AXI_ID_WIDTH-1:0]     axi_id_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0] axi_strb_t;
+  typedef logic [AXI_USER_WIDTH-1:0]   axi_user_t;
+  `AXI_TYPEDEF_ALL(axi, axi_addr_t, axi_id_t, axi_data_t, axi_strb_t, axi_user_t)
+
+  axi_req_t   axi_req;
+  axi_resp_t  axi_rsp;
+
+  `AXI_ASSIGN_TO_REQ(axi_req, axi_slv)
+  `AXI_ASSIGN_FROM_RESP(axi_slv, axi_rsp)
+
+  axi_sim_mem #(
+    .AddrWidth          (AXI_ADDR_WIDTH),
+    .DataWidth          (AXI_DATA_WIDTH),
+    .IdWidth            (AXI_ID_WIDTH),
+    .UserWidth          (AXI_USER_WIDTH),
+    .axi_req_t          (axi_req_t),
+    .axi_rsp_t          (axi_resp_t),
+    .WarnUninitialized  (WARN_UNINITIALIZED),
+    .ApplDelay          (APPL_DELAY),
+    .AcqDelay           (ACQ_DELAY)
+  ) i_sim_mem (
+    .clk_i,
+    .rst_ni,
+    .axi_req_i  (axi_req),
+    .axi_rsp_o  (axi_rsp)
+  );
+
+endmodule
