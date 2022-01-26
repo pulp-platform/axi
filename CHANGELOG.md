@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_iw_converter_flat` flat ports variant of `axi_iw_converter`.
 
 ### Changed
 
