@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `axi_sim_mem_intf` interface variant of `axi_sim_mem`.
 
 ### Changed
-- `axi_demux`: Use flat select signal independent of tool-specific defines, to further improve
-  compatibility with known EDA tool bugs (see #202).
 
 ### Fixed
+- `axi_lite_demux`: Improve compatibility with VCS (issue #187 reported for `axi_demux`, which was
+  fixed in v0.29.2).
 
 
 ## 0.32.0 - 2022-01-25
