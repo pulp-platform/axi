@@ -130,10 +130,12 @@ module axi_lite_demux #(
     // AW Channel
     //--------------------------------------
     `ifdef TARGET_VSIM
-    // Workaround for bug in Questa 2021.1: Flatten the struct into a logic vector before
+    // Workaround for bug in Questa 2020.2 and 2021.1: Flatten the struct into a logic vector before
     // instantiating `spill_register`.
     typedef logic [$bits(aw_chan_select_t)-1:0] aw_chan_select_flat_t;
     `else
+    // Other tools, such as VCS, have problems with `$bits()`, so the workaround cannot be used
+    // generally.
     typedef aw_chan_select_t aw_chan_select_flat_t;
     `endif
     aw_chan_select_flat_t slv_aw_chan_select_in_flat,
@@ -292,9 +294,8 @@ module axi_lite_demux #(
     //--------------------------------------
     // AR Channel
     //--------------------------------------
+    // Workaround for bug in Questa (see comments on AW channel for details).
     `ifdef TARGET_VSIM
-    // Workaround for bug in Questa 2021.1: Flatten the struct into a logic vector before
-    // instantiating `spill_register`.
     typedef logic [$bits(ar_chan_select_t)-1:0] ar_chan_select_flat_t;
     `else
     typedef ar_chan_select_t ar_chan_select_flat_t;
