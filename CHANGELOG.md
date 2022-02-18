@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_cdc`: Improve compatibility with VCS by restricting a QuestaSim workaround to be used only
+  for QuestaSim (issue #207).
 - `axi_id_remap`: Improve compatibility with Verilator by excluding `assert`s for that tool.
 - `axi_lite_demux`: Improve compatibility with VCS (issue #187 reported for `axi_demux`, which was
   fixed in v0.29.2).

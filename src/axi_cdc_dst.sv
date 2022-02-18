@@ -58,7 +58,13 @@ module axi_cdc_dst #(
 );
 
   cdc_fifo_gray_dst #(
+`ifdef QUESTA
+    // Workaround for a bug in Questa: Pass flat logic vector instead of struct to type parameter.
     .T          ( logic [$bits(aw_chan_t)-1:0]  ),
+`else
+    // Other tools, such as VCS, have problems with type parameters constructed through `$bits()`.
+    .T          ( aw_chan_t                     ),
+`endif
     .LOG_DEPTH  ( LogDepth                      )
   ) i_cdc_fifo_gray_dst_aw (
     .async_data_i ( async_data_slave_aw_data_i  ),
@@ -72,7 +78,11 @@ module axi_cdc_dst #(
   );
 
   cdc_fifo_gray_dst #(
+`ifdef QUESTA
     .T          ( logic [$bits(w_chan_t)-1:0] ),
+`else
+    .T          ( w_chan_t                    ),
+`endif
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_dst_w (
     .async_data_i ( async_data_slave_w_data_i ),
@@ -86,7 +96,11 @@ module axi_cdc_dst #(
   );
 
   cdc_fifo_gray_src #(
+`ifdef QUESTA
     .T          ( logic [$bits(b_chan_t)-1:0] ),
+`else
+    .T          ( b_chan_t                    ),
+`endif
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_src_b (
     .src_clk_i    ( dst_clk_i                 ),
@@ -100,7 +114,11 @@ module axi_cdc_dst #(
   );
 
   cdc_fifo_gray_dst #(
+`ifdef QUESTA
     .T          ( logic [$bits(ar_chan_t)-1:0]  ),
+`else
+    .T          ( ar_chan_t                     ),
+`endif
     .LOG_DEPTH  ( LogDepth                      )
   ) i_cdc_fifo_gray_dst_ar (
     .dst_clk_i,
@@ -114,7 +132,11 @@ module axi_cdc_dst #(
   );
 
   cdc_fifo_gray_src #(
+`ifdef QUESTA
     .T          ( logic [$bits(r_chan_t)-1:0] ),
+`else
+    .T          ( r_chan_t                    ),
+`endif
     .LOG_DEPTH  ( LogDepth                    )
   ) i_cdc_fifo_gray_src_r (
     .src_clk_i    ( dst_clk_i                 ),
