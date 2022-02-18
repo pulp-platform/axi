@@ -14,6 +14,12 @@
 
 `include "common_cells/registers.svh"
 
+`ifdef QUESTA
+// Derive `TARGET_VSIM`, which is used for tool-specific workarounds in this file, from `QUESTA`,
+// which is automatically set in Questa.
+`define TARGET_VSIM
+`endif
+
 // axi_demux: Demultiplex an AXI bus from one slave port to multiple master ports.
 // See `doc/axi_demux.md` for the documentation, including the definition of parameters and ports.
 module axi_demux #(

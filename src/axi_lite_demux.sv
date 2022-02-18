@@ -14,6 +14,12 @@
 
 `include "common_cells/registers.svh"
 
+`ifdef QUESTA
+// Derive `TARGET_VSIM`, which is used for tool-specific workarounds in this file, from `QUESTA`,
+// which is automatically set in Questa.
+`define TARGET_VSIM
+`endif
+
 // axi_lite_demux: Demultiplex an AXI4-Lite bus from one slave port to multiple master ports.
 //                 The selection signal at the AW and AR channel has to follow the same
 //                 stability rules as the corresponding AXI4-Lite channel.
