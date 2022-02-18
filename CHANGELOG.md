@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_lite_demux`: Improve compatibility with VCS (issue #187 reported for `axi_demux`, which was
+  fixed in v0.29.2).
 
 
 ## 0.32.0 - 2022-01-25
