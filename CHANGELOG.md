@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_id_remap`: Improve compatibility with Verilator by excluding `assert`s for that tool.
 - `axi_lite_demux`: Improve compatibility with VCS (issue #187 reported for `axi_demux`, which was
   fixed in v0.29.2).
+- `axi_xbar`: Improve compatibility with VCS by adding VCS-specific code that does not use constant
+  function calls (#208).
 
 
 ## 0.32.0 - 2022-01-25

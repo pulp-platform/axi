@@ -34,6 +34,10 @@ import cf_math_pkg::idx_width;
   parameter type mst_req_t          = logic,
   parameter type mst_resp_t         = logic,
   parameter type rule_t             = axi_pkg::xbar_rule_64_t
+`ifdef VCS
+  , localparam int unsigned MstPortsIdxWidth =
+      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+`endif
 ) (
   input  logic                                                          clk_i,
   input  logic                                                          rst_ni,
@@ -44,12 +48,22 @@ import cf_math_pkg::idx_width;
   input  mst_resp_t [Cfg.NoMstPorts-1:0]                                mst_ports_resp_i,
   input  rule_t     [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic      [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
+`ifdef VCS
+  input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
+`else
   input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
+`endif
 );
 
   typedef logic [Cfg.AxiAddrWidth-1:0]           addr_t;
   // to account for the decoding error slave
+`ifdef VCS
+  localparam int unsigned MstPortsIdxWidthOne =
+      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts + 1));
+  typedef logic [MstPortsIdxWidthOne-1:0]           mst_port_idx_t;
+`else
   typedef logic [idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
+`endif
 
   // signals from the axi_demuxes, one index more for decode error
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
@@ -63,7 +77,11 @@ import cf_math_pkg::idx_width;
   slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
+`ifdef VCS
+    logic [MstPortsIdxWidth-1:0]          dec_aw,        dec_ar;
+`else
     logic [idx_width(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
+`endif
     mst_port_idx_t                        slv_aw_select, slv_ar_select;
     logic                                 dec_aw_valid,  dec_aw_error;
     logic                                 dec_ar_valid,  dec_ar_error;
@@ -247,6 +265,10 @@ import cf_math_pkg::idx_width;
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
+`ifdef VCS
+  , localparam int unsigned MstPortsIdxWidth =
+        (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+`endif
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
@@ -255,7 +277,11 @@ import cf_math_pkg::idx_width;
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
+`ifdef VCS
+  input  logic  [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
+`else
   input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
+`endif
 );
 
   localparam int unsigned AxiIdWidthMstPorts = Cfg.AxiIdWidthSlvPorts + $clog2(Cfg.NoSlvPorts);
