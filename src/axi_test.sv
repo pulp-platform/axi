@@ -591,6 +591,92 @@ package axi_test;
       axi.r_ready <= #TA 0;
     endtask
 
+    /// Monitor the AW channel and return the next beat.
+    task mon_aw (
+      output ax_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.aw_valid && axi.aw_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.ax_id     = axi.aw_id;
+      beat.ax_addr   = axi.aw_addr;
+      beat.ax_len    = axi.aw_len;
+      beat.ax_size   = axi.aw_size;
+      beat.ax_burst  = axi.aw_burst;
+      beat.ax_lock   = axi.aw_lock;
+      beat.ax_cache  = axi.aw_cache;
+      beat.ax_prot   = axi.aw_prot;
+      beat.ax_qos    = axi.aw_qos;
+      beat.ax_region = axi.aw_region;
+      beat.ax_atop   = axi.aw_atop;
+      beat.ax_user   = axi.aw_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the W channel and return the next beat.
+    task mon_w (
+      output w_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.w_valid && axi.w_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.w_data = axi.w_data;
+      beat.w_strb = axi.w_strb;
+      beat.w_last = axi.w_last;
+      beat.w_user = axi.w_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the B channel and return the next beat.
+    task mon_b (
+      output b_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.b_valid && axi.b_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.b_id   = axi.b_id;
+      beat.b_resp = axi.b_resp;
+      beat.b_user = axi.b_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the AR channel and return the next beat.
+    task mon_ar (
+      output ax_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.ar_valid && axi.ar_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.ax_id     = axi.ar_id;
+      beat.ax_addr   = axi.ar_addr;
+      beat.ax_len    = axi.ar_len;
+      beat.ax_size   = axi.ar_size;
+      beat.ax_burst  = axi.ar_burst;
+      beat.ax_lock   = axi.ar_lock;
+      beat.ax_cache  = axi.ar_cache;
+      beat.ax_prot   = axi.ar_prot;
+      beat.ax_qos    = axi.ar_qos;
+      beat.ax_region = axi.ar_region;
+      beat.ax_atop   = 'X;  // Not defined on the AR channel.
+      beat.ax_user   = axi.ar_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the R channel and return the next beat.
+    task mon_r (
+      output r_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.r_valid && axi.r_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.r_id   = axi.r_id;
+      beat.r_data = axi.r_data;
+      beat.r_resp = axi.r_resp;
+      beat.r_last = axi.r_last;
+      beat.r_user = axi.r_user;
+      cycle_end();
+    endtask
+
   endclass
 
   class axi_rand_master #(
