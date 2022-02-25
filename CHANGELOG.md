@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_xbar`: Add `Connectivity` parameter to enable the implementation of partially-connected
+  crossbars.  This parameter defaults to `'1`, i.e., every slave port is connected to every master
+  port.  Therefore, this change is backward-compatible.
 - `axi_test`: Add monitor class `axi_monitor`.
 - `axi_test::axi_driver`: Add monitor tasks.
 
