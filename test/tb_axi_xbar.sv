@@ -162,7 +162,7 @@ module tb_axi_xbar #(
   for (genvar i = 0; i < TbNumMst; i++) begin : gen_conn_dv_masters
     `AXI_ASSIGN (master[i], master_dv[i])
     `AXI_ASSIGN_TO_REQ(masters_req[i], master[i])
-    `AXI_ASSIGN_FROM_RESP(master[i], masters_resp[i])
+    `AXI_ASSIGN_TO_RESP(masters_resp[i], master[i])
   end
 
   AXI_BUS #(
@@ -185,7 +185,7 @@ module tb_axi_xbar #(
   ) slave_monitor_dv [TbNumSlv-1:0](clk);
   for (genvar i = 0; i < TbNumSlv; i++) begin : gen_conn_dv_slaves
     `AXI_ASSIGN(slave_dv[i], slave[i])
-    `AXI_ASSIGN_FROM_REQ(slave[i], slaves_req[i])
+    `AXI_ASSIGN_TO_REQ(slaves_req[i], slave[i])
     `AXI_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
   end
   // -------------------------------
