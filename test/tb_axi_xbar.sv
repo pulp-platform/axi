@@ -192,26 +192,28 @@ module tb_axi_xbar #(
   // AXI Rand Masters and Slaves
   // -------------------------------
   // Masters control simulation run time
+  axi_rand_master_t axi_rand_master [TbNumMst];
   for (genvar i = 0; i < TbNumMst; i++) begin : gen_rand_master
-      static axi_rand_master_t axi_rand_master = new ( master_dv[i] );
     initial begin
+      axi_rand_master[i] = new( master_dv[i] );
       end_of_sim[i] <= 1'b0;
-      axi_rand_master.add_memory_region(AddrMap[0].start_addr,
+      axi_rand_master[i].add_memory_region(AddrMap[0].start_addr,
                                       AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-      axi_rand_master.reset();
+      axi_rand_master[i].reset();
       @(posedge rst_n);
-      axi_rand_master.run(NoReads, NoWrites);
+      axi_rand_master[i].run(NoReads, NoWrites);
       end_of_sim[i] <= 1'b1;
     end
   end
 
+  axi_rand_slave_t axi_rand_slave [TbNumSlv];
   for (genvar i = 0; i < TbNumSlv; i++) begin : gen_rand_slave
-      static axi_rand_slave_t axi_rand_slave = new( slave_dv[i] );
     initial begin
-      axi_rand_slave.reset();
+      axi_rand_slave[i] = new( slave_dv[i] );
+      axi_rand_slave[i].reset();
       @(posedge rst_n);
-      axi_rand_slave.run();
+      axi_rand_slave[i].run();
     end
   end
 
