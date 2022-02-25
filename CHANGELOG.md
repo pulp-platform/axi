@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_demux`: Add parameter `AtopSupport` to optionally disable the support for atomic operations
-  (ATOPs).  This parameter defaults to `1'b1`, i.e., ATOPs are supported.  Therefore, this change is
-  backward-compatible.
+- `axi_demux` and `axi_isolate`: Add parameter `AtopSupport` to optionally disable the support for
+  atomic operations (ATOPs).  This parameter defaults to `1'b1`, i.e., ATOPs are supported.
+  Therefore, this change is backward-compatible.
 - `axi_isolate`: Add parameter `TerminateTransaction` to optionally respond to transactions during
   isolation.  This parameter defaults to `1'b0`, i.e., transactions do not get responses.
   Therefore, this change is backward-compatible.

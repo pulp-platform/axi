@@ -43,6 +43,8 @@ module axi_isolate #(
   /// Gracefully terminate all incoming transactions in case of isolation by returning proper error
   /// responses.
   parameter bit TerminateTransaction = 1'b0,
+  /// Support atomic operations (ATOPs)
+  parameter bit AtopSupport = 1'b1,
   /// Address width of all AXI4+ATOP ports
   parameter int unsigned AxiAddrWidth = 32'd0,
   /// Data width of all AXI4+ATOP ports
@@ -92,7 +94,7 @@ module axi_isolate #(
   if (TerminateTransaction) begin
     axi_demux #(
       .AxiIdWidth     ( AxiIdWidth  ),
-      .AtopSupport    ( 1'b1        ),
+      .AtopSupport    ( AtopSupport ),
       .aw_chan_t      ( aw_chan_t   ),
       .w_chan_t       ( w_chan_t    ),
       .b_chan_t       ( b_chan_t    ),
@@ -129,7 +131,7 @@ module axi_isolate #(
       .axi_resp_t  ( axi_resp_t           ),
       .Resp        ( axi_pkg::RESP_DECERR ),
       .RespData    ( 'h1501A7ED           ),
-      .ATOPs       ( 1'b1                 ),
+      .ATOPs       ( AtopSupport          ),
       .MaxTrans    ( 1                    )
     ) i_axi_err_slv (
       .clk_i,
@@ -413,6 +415,7 @@ endmodule
 module axi_isolate_intf #(
   parameter int unsigned NUM_PENDING    = 32'd16,
   parameter bit TERMINATE_TRANSACTION   = 1'b0,
+  parameter bit ATOP_SUPPORT            = 1'b1,
   parameter int unsigned AXI_ID_WIDTH   = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
@@ -453,6 +456,7 @@ module axi_isolate_intf #(
   axi_isolate #(
     .NumPending           ( NUM_PENDING           ),
     .TerminateTransaction ( TERMINATE_TRANSACTION ),
+    .AtopSupport          ( ATOP_SUPPORT          ),
     .AxiAddrWidth         ( AXI_ADDR_WIDTH        ),
     .AxiDataWidth         ( AXI_DATA_WIDTH        ),
     .AxiIdWidth           ( AXI_ID_WIDTH          ),
