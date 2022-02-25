@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_demux`: Add parameter `AtopSupport` to optionally disable the support for atomic operations
+  (ATOPs).  This parameter defaults to `1'b1`, i.e., ATOPs are supported.  Therefore, this change is
+  backward-compatible.
 - `axi_xbar`: Add `Connectivity` parameter to enable the implementation of partially-connected
   crossbars.  This parameter defaults to `'1`, i.e., every slave port is connected to every master
   port.  Therefore, this change is backward-compatible.

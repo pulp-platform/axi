@@ -152,6 +152,7 @@ import cf_math_pkg::idx_width;
     // pragma translate_on
     axi_demux #(
       .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
+      .AtopSupport    ( ATOPs                  ),
       .aw_chan_t      ( slv_aw_chan_t          ),  // AW Channel Type
       .w_chan_t       ( w_chan_t               ),  //  W Channel Type
       .b_chan_t       ( slv_b_chan_t           ),  //  B Channel Type
