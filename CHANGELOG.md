@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_xbar_intf`: Add missing `ATOPS` parameter to optionally disable the support of atomic
+  operations (introduced in v0.25.0 for `axi_xbar`).  The default value of the added parameter makes
+  this fix backward-compatible.
 
 
 ## 0.33.0 - 2022-02-21

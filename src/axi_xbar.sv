@@ -263,6 +263,7 @@ module axi_xbar_intf
 import cf_math_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
+  parameter bit ATOPS                   = 1'b1,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 `ifdef VCS
@@ -324,6 +325,7 @@ import cf_math_pkg::idx_width;
 
   axi_xbar #(
     .Cfg  (Cfg),
+    .ATOPs          ( ATOPS         ),
     .slv_aw_chan_t  ( slv_aw_chan_t ),
     .mst_aw_chan_t  ( mst_aw_chan_t ),
     .w_chan_t       ( w_chan_t      ),
