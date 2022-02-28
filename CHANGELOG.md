@@ -8,8 +8,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_demux` and `axi_isolate`: Add parameter `AtopSupport` to optionally disable the support for
+  atomic operations (ATOPs).  This parameter defaults to `1'b1`, i.e., ATOPs are supported.
+  Therefore, this change is backward-compatible.
+- `axi_isolate`: Add parameter `TerminateTransaction` to optionally respond to transactions during
+  isolation.  This parameter defaults to `1'b0`, i.e., transactions do not get responses.
+  Therefore, this change is backward-compatible.
+- `axi_xbar`: Add `Connectivity` parameter to enable the implementation of partially-connected
+  crossbars.  This parameter defaults to `'1`, i.e., every slave port is connected to every master
+  port.  Therefore, this change is backward-compatible.
+- `axi_test`: Add monitor class `axi_monitor`.
+- `axi_test::axi_driver`: Add monitor tasks.
 
 ### Changed
+- `axi_isolate`: Add parameters for the address, data, ID, and user signal width.  This is required
+  for the implementation of the `TerminateTransaction` parameter (see *Added* section).  This change
+  is **backward-incompatible** for all instances of `axi_isolate` outside this repository.  Users
+  must update all instances of `axi_isolate` in their code.  The interface variant is not affected
+  and remains backward-compatible.
 
 ### Fixed
 

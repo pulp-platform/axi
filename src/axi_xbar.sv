@@ -18,22 +18,23 @@
 module axi_xbar
 import cf_math_pkg::idx_width;
 #(
-  parameter axi_pkg::xbar_cfg_t Cfg = '0,
-  parameter bit  ATOPs              = 1'b1,
-  parameter type slv_aw_chan_t      = logic,
-  parameter type mst_aw_chan_t      = logic,
-  parameter type w_chan_t           = logic,
-  parameter type slv_b_chan_t       = logic,
-  parameter type mst_b_chan_t       = logic,
-  parameter type slv_ar_chan_t      = logic,
-  parameter type mst_ar_chan_t      = logic,
-  parameter type slv_r_chan_t       = logic,
-  parameter type mst_r_chan_t       = logic,
-  parameter type slv_req_t          = logic,
-  parameter type slv_resp_t         = logic,
-  parameter type mst_req_t          = logic,
-  parameter type mst_resp_t         = logic,
-  parameter type rule_t             = axi_pkg::xbar_rule_64_t
+  parameter axi_pkg::xbar_cfg_t Cfg                                   = '0,
+  parameter bit  ATOPs                                                = 1'b1,
+  parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] Connectivity = '1,
+  parameter type slv_aw_chan_t                                        = logic,
+  parameter type mst_aw_chan_t                                        = logic,
+  parameter type w_chan_t                                             = logic,
+  parameter type slv_b_chan_t                                         = logic,
+  parameter type mst_b_chan_t                                         = logic,
+  parameter type slv_ar_chan_t                                        = logic,
+  parameter type mst_ar_chan_t                                        = logic,
+  parameter type slv_r_chan_t                                         = logic,
+  parameter type mst_r_chan_t                                         = logic,
+  parameter type slv_req_t                                            = logic,
+  parameter type slv_resp_t                                           = logic,
+  parameter type mst_req_t                                            = logic,
+  parameter type mst_resp_t                                           = logic,
+  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t
 `ifdef VCS
   , localparam int unsigned MstPortsIdxWidth =
       (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
@@ -151,6 +152,7 @@ import cf_math_pkg::idx_width;
     // pragma translate_on
     axi_demux #(
       .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
+      .AtopSupport    ( ATOPs                  ),
       .aw_chan_t      ( slv_aw_chan_t          ),  // AW Channel Type
       .w_chan_t       ( w_chan_t               ),  //  W Channel Type
       .b_chan_t       ( slv_b_chan_t           ),  //  B Channel Type
@@ -202,8 +204,27 @@ import cf_math_pkg::idx_width;
   // cross all channels
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_xbar_slv_cross
     for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
-      assign mst_reqs[j][i]  = slv_reqs[i][j];
-      assign slv_resps[i][j] = mst_resps[j][i];
+      if (Connectivity[i][j]) begin : gen_connection
+        assign mst_reqs[j][i]  = slv_reqs[i][j];
+        assign slv_resps[i][j] = mst_resps[j][i];
+
+      end else begin : gen_no_connection
+        assign mst_reqs[j][i] = '0;
+        axi_err_slv #(
+          .AxiIdWidth ( Cfg.AxiIdWidthSlvPorts  ),
+          .axi_req_t  ( slv_req_t               ),
+          .axi_resp_t ( slv_resp_t              ),
+          .Resp       ( axi_pkg::RESP_DECERR    ),
+          .ATOPs      ( ATOPs                   ),
+          .MaxTrans   ( 1                       )
+        ) i_axi_err_slv (
+          .clk_i,
+          .rst_ni,
+          .test_i,
+          .slv_req_i  ( slv_reqs[i][j]  ),
+          .slv_resp_o ( slv_resps[i][j] )
+        );
+      end
     end
   end
 
@@ -264,6 +285,7 @@ import cf_math_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter bit ATOPS                   = 1'b1,
+  parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 `ifdef VCS
@@ -326,6 +348,7 @@ import cf_math_pkg::idx_width;
   axi_xbar #(
     .Cfg  (Cfg),
     .ATOPs          ( ATOPS         ),
+    .Connectivity   ( CONNECTIVITY  ),
     .slv_aw_chan_t  ( slv_aw_chan_t ),
     .mst_aw_chan_t  ( mst_aw_chan_t ),
     .w_chan_t       ( w_chan_t      ),

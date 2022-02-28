@@ -591,6 +591,92 @@ package axi_test;
       axi.r_ready <= #TA 0;
     endtask
 
+    /// Monitor the AW channel and return the next beat.
+    task mon_aw (
+      output ax_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.aw_valid && axi.aw_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.ax_id     = axi.aw_id;
+      beat.ax_addr   = axi.aw_addr;
+      beat.ax_len    = axi.aw_len;
+      beat.ax_size   = axi.aw_size;
+      beat.ax_burst  = axi.aw_burst;
+      beat.ax_lock   = axi.aw_lock;
+      beat.ax_cache  = axi.aw_cache;
+      beat.ax_prot   = axi.aw_prot;
+      beat.ax_qos    = axi.aw_qos;
+      beat.ax_region = axi.aw_region;
+      beat.ax_atop   = axi.aw_atop;
+      beat.ax_user   = axi.aw_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the W channel and return the next beat.
+    task mon_w (
+      output w_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.w_valid && axi.w_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.w_data = axi.w_data;
+      beat.w_strb = axi.w_strb;
+      beat.w_last = axi.w_last;
+      beat.w_user = axi.w_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the B channel and return the next beat.
+    task mon_b (
+      output b_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.b_valid && axi.b_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.b_id   = axi.b_id;
+      beat.b_resp = axi.b_resp;
+      beat.b_user = axi.b_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the AR channel and return the next beat.
+    task mon_ar (
+      output ax_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.ar_valid && axi.ar_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.ax_id     = axi.ar_id;
+      beat.ax_addr   = axi.ar_addr;
+      beat.ax_len    = axi.ar_len;
+      beat.ax_size   = axi.ar_size;
+      beat.ax_burst  = axi.ar_burst;
+      beat.ax_lock   = axi.ar_lock;
+      beat.ax_cache  = axi.ar_cache;
+      beat.ax_prot   = axi.ar_prot;
+      beat.ax_qos    = axi.ar_qos;
+      beat.ax_region = axi.ar_region;
+      beat.ax_atop   = 'X;  // Not defined on the AR channel.
+      beat.ax_user   = axi.ar_user;
+      cycle_end();
+    endtask
+
+    /// Monitor the R channel and return the next beat.
+    task mon_r (
+      output r_beat_t beat
+    );
+      cycle_start();
+      while (!(axi.r_valid && axi.r_ready)) begin cycle_end(); cycle_start(); end
+      beat = new;
+      beat.r_id   = axi.r_id;
+      beat.r_data = axi.r_data;
+      beat.r_resp = axi.r_resp;
+      beat.r_last = axi.r_last;
+      beat.r_user = axi.r_user;
+      cycle_end();
+    endtask
+
   endclass
 
   class axi_rand_master #(
@@ -1619,6 +1705,80 @@ package axi_test;
         recv_aws();
         recv_ws();
         send_bs();
+      join
+    endtask
+  endclass
+
+  /// AXI Monitor.
+  class axi_monitor #(
+    /// AXI4+ATOP ID width
+    parameter int unsigned IW = 0,
+    /// AXI4+ATOP address width
+    parameter int unsigned AW = 0,
+    /// AXI4+ATOP data width
+    parameter int unsigned DW = 0,
+    /// AXI4+ATOP user width
+    parameter int unsigned UW = 0,
+    /// Stimuli test time
+    parameter time TT = 0ns
+  );
+
+    typedef axi_test::axi_driver #(
+      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TT), .TT(TT)
+    ) axi_driver_t;
+
+    typedef axi_driver_t::ax_beat_t ax_beat_t;
+    typedef axi_driver_t::w_beat_t w_beat_t;
+    typedef axi_driver_t::b_beat_t b_beat_t;
+    typedef axi_driver_t::r_beat_t r_beat_t;
+
+    axi_driver_t          drv;
+    mailbox aw_mbx = new, w_mbx = new, b_mbx = new,
+            ar_mbx = new, r_mbx = new;
+
+    function new(
+      virtual AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_USER_WIDTH(UW)
+      ) axi
+    );
+      this.drv = new(axi);
+    endfunction
+
+    task monitor;
+      fork
+        // AW
+        forever begin
+          automatic ax_beat_t ax;
+          this.drv.mon_aw(ax);
+          aw_mbx.put(ax);
+        end
+        // W
+        forever begin
+          automatic w_beat_t w;
+          this.drv.mon_w(w);
+          w_mbx.put(w);
+        end
+        // B
+        forever begin
+          automatic b_beat_t b;
+          this.drv.mon_b(b);
+          b_mbx.put(b);
+        end
+        // AR
+        forever begin
+          automatic ax_beat_t ax;
+          this.drv.mon_ar(ax);
+          ar_mbx.put(ax);
+        end
+        // R
+        forever begin
+          automatic r_beat_t r;
+          this.drv.mon_r(r);
+          r_mbx.put(r);
+        end
       join
     endtask
   endclass
