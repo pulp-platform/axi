@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## 0.34.0 - 2022-03-09
 
 ### Added
 - `axi_demux` and `axi_isolate`: Add parameter `AtopSupport` to optionally disable the support for
@@ -26,8 +26,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   is **backward-incompatible** for all instances of `axi_isolate` outside this repository.  Users
   must update all instances of `axi_isolate` in their code.  The interface variant is not affected
   and remains backward-compatible.
-
-### Fixed
 
 
 ## 0.33.1 - 2022-02-26
