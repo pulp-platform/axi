@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_sim_mem`: Add monitoring interface to observe the point of coherency between the write and
+  the read channel.
 
 ### Changed
 
