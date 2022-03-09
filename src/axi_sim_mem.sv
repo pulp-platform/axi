@@ -180,13 +180,15 @@ module axi_sim_mem #(
           axi_rsp_o.r = r_beat;
           axi_rsp_o.r_valid = 1'b1;
           #(AcqDelay - ApplDelay);
-          if (axi_req_i.r_ready) begin
-            if (r_beat.last) begin
-              r_cnt = 0;
-              void'(ar_queue.pop_front());
-            end else begin
-              r_cnt++;
-            end
+          while (!axi_req_i.r_ready) begin
+            @(posedge clk_i);
+            #(AcqDelay);
+          end
+          if (r_beat.last) begin
+            r_cnt = 0;
+            void'(ar_queue.pop_front());
+          end else begin
+            r_cnt++;
           end
         end
       end
