@@ -46,33 +46,33 @@ end
 </div><h3 id="port.axi_rsp_o" class="impl"><code class="in-band">axi_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
 ><p>AXI4 response struct</p>
 </div><h3 id="port.mon_w_valid_o" class="impl"><code class="in-band">mon_w_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory Monitor Write Valid</p>
+><p>Memory monitor write valid.  All <code>mon_w_*</code> outputs are only valid if this signal is high.</p>
 </div><h3 id="port.mon_w_addr_o" class="impl"><code class="in-band">mon_w_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Write Address</p>
+><p>Memory monitor write address</p>
 </div><h3 id="port.mon_w_data_o" class="impl"><code class="in-band">mon_w_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Write Data</p>
+><p>Memory monitor write data</p>
 </div><h3 id="port.mon_w_id_o" class="impl"><code class="in-band">mon_w_id_o<span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Write ID</p>
+><p>Memory monitor write ID</p>
 </div><h3 id="port.mon_w_user_o" class="impl"><code class="in-band">mon_w_user_o<span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Write User</p>
+><p>Memory monitor write user</p>
 </div><h3 id="port.mon_w_beat_count_o" class="impl"><code class="in-band">mon_w_beat_count_o<span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock"
-><p>Memory Monitor Write Beat Count</p>
+><p>Memory monitor write beat count</p>
 </div><h3 id="port.mon_w_last_o" class="impl"><code class="in-band">mon_w_last_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory Monitor Write Last</p>
+><p>Memory monitor write last</p>
 </div><h3 id="port.mon_r_valid_o" class="impl"><code class="in-band">mon_r_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory Monitor Read Valid</p>
+><p>Memory monitor read valid.  All <code>mon_r_*</code> outputs are only valid if this signal is high.</p>
 </div><h3 id="port.mon_r_addr_o" class="impl"><code class="in-band">mon_r_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Read Address</p>
+><p>Memory monitor read address</p>
 </div><h3 id="port.mon_r_data_o" class="impl"><code class="in-band">mon_r_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Read Data</p>
+><p>Memory monitor read data</p>
 </div><h3 id="port.mon_r_id_o" class="impl"><code class="in-band">mon_r_id_o<span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Read ID</p>
+><p>Memory monitor read ID</p>
 </div><h3 id="port.mon_r_user_o" class="impl"><code class="in-band">mon_r_user_o<span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory Monitor Read User</p>
+><p>Memory monitor read user</p>
 </div><h3 id="port.mon_r_beat_count_o" class="impl"><code class="in-band">mon_r_beat_count_o<span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock"
-><p>Memory Monitor Read Beat Count</p>
+><p>Memory monitor read beat count</p>
 </div><h3 id="port.mon_r_last_o" class="impl"><code class="in-band">mon_r_last_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory Monitor Read Last</p>
+><p>Memory monitor read last</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_t.html">aw_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_t.html">w_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_t.html">b_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_t.html">ar_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_t.html">r_t</a></td><td></td></tr><tr><td><a class="type" href="type.monitor_t.html">monitor_t</a></td><td></td></tr></table>
