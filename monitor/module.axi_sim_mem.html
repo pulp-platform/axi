@@ -46,7 +46,9 @@ end
 </div><h3 id="port.axi_rsp_o" class="impl"><code class="in-band">axi_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
 ><p>AXI4 response struct</p>
 </div><h3 id="port.mon_w_valid_o" class="impl"><code class="in-band">mon_w_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor write valid.  All <code>mon_w_*</code> outputs are only valid if this signal is high.</p>
+><p>Memory monitor write valid.  All <code>mon_w_*</code> outputs are only valid if this signal is high.
+A write to the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has
+happened.</p>
 </div><h3 id="port.mon_w_addr_o" class="impl"><code class="in-band">mon_w_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
 ><p>Memory monitor write address</p>
 </div><h3 id="port.mon_w_data_o" class="impl"><code class="in-band">mon_w_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
@@ -60,7 +62,9 @@ end
 </div><h3 id="port.mon_w_last_o" class="impl"><code class="in-band">mon_w_last_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
 ><p>Memory monitor write last</p>
 </div><h3 id="port.mon_r_valid_o" class="impl"><code class="in-band">mon_r_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor read valid.  All <code>mon_r_*</code> outputs are only valid if this signal is high.</p>
+><p>Memory monitor read valid.  All <code>mon_r_*</code> outputs are only valid if this signal is high.
+A read from the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has
+happened.</p>
 </div><h3 id="port.mon_r_addr_o" class="impl"><code class="in-band">mon_r_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
 ><p>Memory monitor read address</p>
 </div><h3 id="port.mon_r_data_o" class="impl"><code class="in-band">mon_r_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
