@@ -1097,7 +1097,7 @@ package axi_test;
         if (beat.ax_atop != 2'b00) begin
           // This is an ATOP, so it gives rise to a write response.
           atop_resp_b[beat.ax_id] = 1'b1;
-          if (beat.ax_atop[5]) begin
+          if (beat.ax_atop[axi_pkg::ATOP_R_RESP]) begin
             // This ATOP type additionally gives rise to a read response.
             atop_resp_r[beat.ax_id] = 1'b1;
           end
@@ -1357,7 +1357,7 @@ package axi_test;
         drv.recv_aw(aw_beat);
         aw_queue.push_back(aw_beat);
         // Atomic{Load,Swap,Compare}s require an R response.
-        if (aw_beat.ax_atop[5]) begin
+        if (aw_beat.ax_atop[axi_pkg::ATOP_R_RESP]) begin
           ar_queue.push(aw_beat.ax_id, aw_beat);
         end
       end
@@ -2255,7 +2255,7 @@ module axi_chan_logger #(
         end
 
         // inject AR into queue, if there is an atomic
-        if (aw_chan_i.atop[5]) begin
+        if (aw_chan_i.atop[axi_pkg::ATOP_R_RESP]) begin
           $display("Atomic detected with response");
           ar_beat.id     = aw_chan_i.id;
           ar_beat.addr   = aw_chan_i.addr;
