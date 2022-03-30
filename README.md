@@ -83,7 +83,9 @@ AXI4+ATOPs means the full AXI4 specification plus atomic operations (ATOPs) as d
   1. slaves that do not support ATOPs are behind an [`axi_atop_filter`](src/axi_atop_filter.sv) if any master could issue an ATOP to such slaves and
   2. the `aw_atop` signal is well-defined at the input of any (non-AXI4-Lite) module in this repository.
 
-Masters and slaves that do support ATOPs must adhere to Section E1.1 of the [AMBA 5 specification][AMBA 5 Spec].
+Masters and slaves that do support ATOPs must adhere to Section E1.1 of the [AMBA 5 specification][AMBA 5 Spec].  In particular:
+- ATOPs that have the `aw_atop[axi_pkg::ATOP_R_RESP]` bit set generate a write response (B channel) beat and at least one read response (R channel) beat.  All modules for which the `aw_atop[axi_pkg::ATOP_R_RESP]` bit could be set at their master port must be able to handle both B and R beats (in any order and without requiring a simultaneous handshake) for each such ATOP request.  All modules for which the `aw_atop[axi_pkg::ATOP_R_RESP]` bit could be set at their slave port must respond with the appropriate number of B and R beats for each such ATOP request.
+- ATOPs must not use the same AXI ID as any other transaction that is outstanding at the same time.
 
 
 ## Which EDA Tools Are Supported?

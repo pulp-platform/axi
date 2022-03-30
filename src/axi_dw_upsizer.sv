@@ -656,7 +656,7 @@ module axi_dw_upsizer #(
       w_req_d.w              = '0  ;
       w_req_d.w_valid        = 1'b0;
 
-      if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
+      if (slv_req_i.aw_valid && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin // ATOP with an R response
         inject_aw_into_ar_req = 1'b1                 ;
         slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
       end else begin // Regular AW

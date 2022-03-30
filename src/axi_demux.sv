@@ -208,7 +208,7 @@ module axi_demux #(
           lock_aw_valid_d = 1'b0;
           load_aw_lock    = 1'b1;
           // inject the ATOP if necessary
-          atop_inject     = slv_aw_chan_select.aw_chan.atop[5] & AtopSupport;
+          atop_inject     = slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
         end
       end else begin
         // Process can start handling a transaction if its `i_aw_id_counter` and `w_fifo` have
@@ -225,7 +225,7 @@ module axi_demux #(
             // on AW transaction
             if (aw_ready) begin
               slv_aw_ready = 1'b1;
-              atop_inject  = slv_aw_chan_select.aw_chan.atop[5] & AtopSupport;
+              atop_inject  = slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
             // no AW transaction this cycle, lock the decision
             end else begin
               lock_aw_valid_d = 1'b1;

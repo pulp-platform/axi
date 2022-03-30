@@ -238,7 +238,7 @@ module axi_id_remap #(
         if (slv_req_i.aw_valid) begin
           // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
           // on the write direction.
-          if (!slv_req_i.aw.atop[5]) begin
+          if (!slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
             // If a burst with the same input ID is already in flight or there are free output IDs:
             if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
               // Determine the output ID: if another in-flight burst had the same input ID, we must

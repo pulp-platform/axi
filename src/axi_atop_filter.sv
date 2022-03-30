@@ -137,8 +137,8 @@ module axi_atop_filter #(
           mst_req_o.aw_valid  = 1'b0; // Do not let AW pass to master port.
           slv_resp_o.aw_ready = 1'b1; // Absorb AW on slave port.
           id_d = slv_req_i.aw.id; // Store ID for B response.
-          // All atomic operations except atomic stores require a response on the R channel.
-          if (slv_req_i.aw.atop[5:4] != axi_pkg::ATOP_ATOMICSTORE) begin
+          // Some atomic operations require a response on the R channel.
+          if (slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
             // Push R response command.  We do not have to wait for the ready of the register
             // because we know it is ready: we are its only master and will wait for the register to
             // be emptied before going back to the `W_FEEDTHROUGH` state.

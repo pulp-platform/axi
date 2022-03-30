@@ -800,7 +800,7 @@ module axi_dw_downsizer #(
       w_req_d.burst_resp     = axi_pkg::RESP_OKAY;
 
       if (!forward_b_beat_full) begin
-        if (slv_req_i.aw_valid && slv_req_i.aw.atop[5]) begin // ATOP with an R response
+        if (slv_req_i.aw_valid && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin // ATOP with an R response
           inject_aw_into_ar_req = 1'b1                 ;
           slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
         end else begin // Regular AW
