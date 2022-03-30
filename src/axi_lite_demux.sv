@@ -70,9 +70,72 @@ module axi_lite_demux #(
 
   if (NoMstPorts == 32'd1) begin : gen_no_demux
     // degenerate case, connect slave to master port
-    // AW channel
-    assign mst_reqs_o[0] = slv_req_i;
-    assign slv_resp_o    = mst_resps_i[0];
+    spill_register #(
+      .T       ( aw_chan_t  ),
+      .Bypass  ( ~SpillAw   )
+    ) i_aw_spill_reg (
+      .clk_i   ( clk_i                    ),
+      .rst_ni  ( rst_ni                   ),
+      .valid_i ( slv_req_i.aw_valid       ),
+      .ready_o ( slv_resp_o.aw_ready      ),
+      .data_i  ( slv_req_i.aw             ),
+      .valid_o ( mst_reqs_o[0].aw_valid   ),
+      .ready_i ( mst_resps_i[0].aw_ready  ),
+      .data_o  ( mst_reqs_o[0].aw         )
+    );
+    spill_register #(
+      .T       ( w_chan_t  ),
+      .Bypass  ( ~SpillW   )
+    ) i_w_spill_reg (
+      .clk_i   ( clk_i                   ),
+      .rst_ni  ( rst_ni                  ),
+      .valid_i ( slv_req_i.w_valid       ),
+      .ready_o ( slv_resp_o.w_ready      ),
+      .data_i  ( slv_req_i.w             ),
+      .valid_o ( mst_reqs_o[0].w_valid   ),
+      .ready_i ( mst_resps_i[0].w_ready  ),
+      .data_o  ( mst_reqs_o[0].w         )
+    );
+    spill_register #(
+      .T       ( b_chan_t ),
+      .Bypass  ( ~SpillB      )
+    ) i_b_spill_reg (
+      .clk_i   ( clk_i                  ),
+      .rst_ni  ( rst_ni                 ),
+      .valid_i ( mst_resps_i[0].b_valid ),
+      .ready_o ( mst_reqs_o[0].b_ready  ),
+      .data_i  ( mst_resps_i[0].b       ),
+      .valid_o ( slv_resp_o.b_valid     ),
+      .ready_i ( slv_req_i.b_ready      ),
+      .data_o  ( slv_resp_o.b           )
+    );
+    spill_register #(
+      .T       ( ar_chan_t  ),
+      .Bypass  ( ~SpillAr   )
+    ) i_ar_spill_reg (
+      .clk_i   ( clk_i                    ),
+      .rst_ni  ( rst_ni                   ),
+      .valid_i ( slv_req_i.ar_valid       ),
+      .ready_o ( slv_resp_o.ar_ready      ),
+      .data_i  ( slv_req_i.ar             ),
+      .valid_o ( mst_reqs_o[0].ar_valid   ),
+      .ready_i ( mst_resps_i[0].ar_ready  ),
+      .data_o  ( mst_reqs_o[0].ar         )
+    );
+    spill_register #(
+      .T       ( r_chan_t ),
+      .Bypass  ( ~SpillR      )
+    ) i_r_spill_reg (
+      .clk_i   ( clk_i                  ),
+      .rst_ni  ( rst_ni                 ),
+      .valid_i ( mst_resps_i[0].r_valid ),
+      .ready_o ( mst_reqs_o[0].r_ready  ),
+      .data_i  ( mst_resps_i[0].r       ),
+      .valid_o ( slv_resp_o.r_valid     ),
+      .ready_i ( slv_req_i.r_ready      ),
+      .data_o  ( slv_resp_o.r           )
+    );
+
   end else begin : gen_demux
     // normal non degenerate case
 

@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
-- `axi_demux`: Add missing spill registers for configurations with a single master port.
+- `axi_demux` and `axi_lite_demux`: Add missing spill registers for configurations with a single
+  master port.
 - `axi_demux_intf`: Add missing parameter (`ATOP_SUPPORT`) to optionally disable support for atomic
   operations.
 - `axi_mux` and `axi_lite_mux`: Add missing spill registers for configurations with a single slave
