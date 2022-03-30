@@ -54,8 +54,72 @@ module axi_lite_mux #(
 );
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
-    assign mst_req_o = slv_reqs_i[0];
-    assign slv_resps_o[0] = mst_resp_i;
+    spill_register #(
+      .T       ( aw_chan_t  ),
+      .Bypass  ( ~SpillAw   )
+    ) i_aw_spill_reg (
+      .clk_i   ( clk_i                    ),
+      .rst_ni  ( rst_ni                   ),
+      .valid_i ( slv_reqs_i[0].aw_valid   ),
+      .ready_o ( slv_resps_o[0].aw_ready  ),
+      .data_i  ( slv_reqs_i[0].aw         ),
+      .valid_o ( mst_req_o.aw_valid       ),
+      .ready_i ( mst_resp_i.aw_ready      ),
+      .data_o  ( mst_req_o.aw             )
+    );
+    spill_register #(
+      .T       ( w_chan_t ),
+      .Bypass  ( ~SpillW  )
+    ) i_w_spill_reg (
+      .clk_i   ( clk_i                   ),
+      .rst_ni  ( rst_ni                  ),
+      .valid_i ( slv_reqs_i[0].w_valid   ),
+      .ready_o ( slv_resps_o[0].w_ready  ),
+      .data_i  ( slv_reqs_i[0].w         ),
+      .valid_o ( mst_req_o.w_valid       ),
+      .ready_i ( mst_resp_i.w_ready      ),
+      .data_o  ( mst_req_o.w             )
+    );
+    spill_register #(
+      .T       ( b_chan_t ),
+      .Bypass  ( ~SpillB  )
+    ) i_b_spill_reg (
+      .clk_i   ( clk_i                  ),
+      .rst_ni  ( rst_ni                 ),
+      .valid_i ( mst_resp_i.b_valid     ),
+      .ready_o ( mst_req_o.b_ready      ),
+      .data_i  ( mst_resp_i.b           ),
+      .valid_o ( slv_resps_o[0].b_valid ),
+      .ready_i ( slv_reqs_i[0].b_ready  ),
+      .data_o  ( slv_resps_o[0].b       )
+    );
+    spill_register #(
+      .T       ( ar_chan_t ),
+      .Bypass  ( ~SpillAr  )
+    ) i_ar_spill_reg (
+      .clk_i   ( clk_i                    ),
+      .rst_ni  ( rst_ni                   ),
+      .valid_i ( slv_reqs_i[0].ar_valid   ),
+      .ready_o ( slv_resps_o[0].ar_ready  ),
+      .data_i  ( slv_reqs_i[0].ar         ),
+      .valid_o ( mst_req_o.ar_valid       ),
+      .ready_i ( mst_resp_i.ar_ready      ),
+      .data_o  ( mst_req_o.ar             )
+    );
+    spill_register #(
+      .T       ( r_chan_t ),
+      .Bypass  ( ~SpillR  )
+    ) i_r_spill_reg (
+      .clk_i   ( clk_i                  ),
+      .rst_ni  ( rst_ni                 ),
+      .valid_i ( mst_resp_i.r_valid     ),
+      .ready_o ( mst_req_o.r_ready      ),
+      .data_i  ( mst_resp_i.r           ),
+      .valid_o ( slv_resps_o[0].r_valid ),
+      .ready_i ( slv_reqs_i[0].r_ready  ),
+      .data_o  ( slv_resps_o[0].r       )
+    );
+
   // other non degenerate cases
   end else begin : gen_mux
     // typedef for the FIFO types
