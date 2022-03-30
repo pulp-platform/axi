@@ -22,6 +22,7 @@
 // a response with ID `6'b100110` will be forwarded to slave port 2 (`2'b10`).
 
 // register macros
+`include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 
 module axi_mux #(
@@ -134,6 +135,17 @@ module axi_mux #(
       .ready_i ( slv_reqs_i[0].r_ready  ),
       .data_o  ( slv_resps_o[0].r       )
     );
+// Validate parameters.
+// pragma translate_off
+    `ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvB, $bits(slv_resps_o[0].b.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvAr, $bits(slv_reqs_i[0].ar.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvR, $bits(slv_resps_o[0].r.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstAw, $bits(mst_req_o.aw.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstB, $bits(mst_resp_i.b.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstAr, $bits(mst_req_o.ar.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstR, $bits(mst_resp_i.r.id) == SlvAxiIDWidth)
+// pragma translate_on
 
   // other non degenerate cases
   end else begin : gen_mux
