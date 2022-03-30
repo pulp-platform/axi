@@ -239,7 +239,7 @@ module axi_sim_mem #(
           mon_r.addr = addr;
           mon_r.data = r_beat.data;
           mon_r.id = r_beat.id;
-          mon_r.user = r_beat.user;
+          mon_r.user = ar_queue[0].user;
           mon_r.beat_count = r_cnt;
           #(AcqDelay - ApplDelay);
           while (!axi_req_i.r_ready) begin
