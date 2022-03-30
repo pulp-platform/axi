@@ -444,6 +444,8 @@ module axi_lite_mux_intf #(
     .b_chan_t      (  b_chan_t     ), //  B Channel Type
     .ar_chan_t     ( ar_chan_t     ), // AR Channel Type
     .r_chan_t      (  r_chan_t     ), //  R Channel Type
+    .axi_req_t     ( axi_req_t     ),
+    .axi_resp_t    ( axi_resp_t    ),
     .NoSlvPorts    ( NoSlvPorts    ), // Number of slave ports
     .MaxTrans      ( MaxTrans      ),
     .FallThrough   ( FallThrough   ),

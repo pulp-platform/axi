@@ -711,6 +711,7 @@ endmodule
 `include "axi/typedef.svh"
 module axi_demux_intf #(
   parameter int unsigned AXI_ID_WIDTH     = 32'd0, // Synopsys DC requires default value for params
+  parameter bit          ATOP_SUPPORT     = 1'b1,
   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
   parameter int unsigned AXI_USER_WIDTH   = 32'd0,
@@ -765,6 +766,7 @@ module axi_demux_intf #(
 
   axi_demux #(
     .AxiIdWidth     ( AXI_ID_WIDTH  ), // ID Width
+    .AtopSupport    ( ATOP_SUPPORT  ),
     .aw_chan_t      (  aw_chan_t    ), // AW Channel Type
     .w_chan_t       (   w_chan_t    ), //  W Channel Type
     .b_chan_t       (   b_chan_t    ), //  B Channel Type

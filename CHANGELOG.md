@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_demux_intf`: Add missing parameter (`ATOP_SUPPORT`) to optionally disable support for atomic
+  operations.
+- `axi_lite_mux_intf`: Add missing parameter values on the internal `axi_lite_mux` instance
+  (`axi_req_t` and `axi_resp_t`).
 - `axi_sim_mem`: Propagate the AR channel's user signal correctly to the monitor.
 
 
