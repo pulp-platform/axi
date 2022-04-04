@@ -43,11 +43,11 @@ module axi_dumper #(
   end
 
   always_ff @(posedge clk_i) begin : proc_tracer
-    automatic longint aw_data [string];
-    automatic longint ar_data [string];
-    automatic longint  w_data [string];
-    automatic longint  b_data [string];
-    automatic longint  r_data [string];
+    automatic string aw_data [string];
+    automatic string ar_data [string];
+    automatic string  w_data [string];
+    automatic string  b_data [string];
+    automatic string  r_data [string];
 
     automatic string aw_string;
     automatic string ar_string;
@@ -58,90 +58,90 @@ module axi_dumper #(
     if (rst_ni) begin
       aw_data = '{
         "type"   : "AW",
-        "time"   : $time(),
-        "id"     : axi_req_i.aw.id,
-        "addr"   : axi_req_i.aw.addr,
-        "len"    : axi_req_i.aw.len,
-        "size"   : axi_req_i.aw.size,
-        "burst"  : axi_req_i.aw.burst,
-        "lock"   : axi_req_i.aw.lock,
-        "cache"  : axi_req_i.aw.cache,
-        "prot"   : axi_req_i.aw.prot,
-        "qos"    : axi_req_i.aw.qos,
-        "region" : axi_req_i.aw.region,
-        "atop"   : axi_req_i.aw.atop,
-        "user"   : axi_req_i.aw.user
+        "time"   : $sformatf("%d", $time()),
+        "id"     : $sformatf("0x%0x", axi_req_i.aw.id),
+        "addr"   : $sformatf("0x%0x", axi_req_i.aw.addr),
+        "len"    : $sformatf("0x%0x", axi_req_i.aw.len),
+        "size"   : $sformatf("0x%0x", axi_req_i.aw.size),
+        "burst"  : $sformatf("0x%0x", axi_req_i.aw.burst),
+        "lock"   : $sformatf("0x%0x", axi_req_i.aw.lock),
+        "cache"  : $sformatf("0x%0x", axi_req_i.aw.cache),
+        "prot"   : $sformatf("0x%0x", axi_req_i.aw.prot),
+        "qos"    : $sformatf("0x%0x", axi_req_i.aw.qos),
+        "region" : $sformatf("0x%0x", axi_req_i.aw.region),
+        "atop"   : $sformatf("0x%0x", axi_req_i.aw.atop),
+        "user"   : $sformatf("0x%0x", axi_req_i.aw.user)
       };
       ar_data = '{
         "type"   : "AR",
-        "time"   : $time(),
-        "id"     : axi_req_i.ar.id,
-        "addr"   : axi_req_i.ar.addr,
-        "len"    : axi_req_i.ar.len,
-        "size"   : axi_req_i.ar.size,
-        "burst"  : axi_req_i.ar.burst,
-        "lock"   : axi_req_i.ar.lock,
-        "cache"  : axi_req_i.ar.cache,
-        "prot"   : axi_req_i.ar.prot,
-        "qos"    : axi_req_i.ar.qos,
-        "region" : axi_req_i.ar.region,
-        "user"   : axi_req_i.ar.user
+        "time"   : $sformatf("%d", $time()),
+        "id"     : $sformatf("0x%0x", axi_req_i.ar.id),
+        "addr"   : $sformatf("0x%0x", axi_req_i.ar.addr),
+        "len"    : $sformatf("0x%0x", axi_req_i.ar.len),
+        "size"   : $sformatf("0x%0x", axi_req_i.ar.size),
+        "burst"  : $sformatf("0x%0x", axi_req_i.ar.burst),
+        "lock"   : $sformatf("0x%0x", axi_req_i.ar.lock),
+        "cache"  : $sformatf("0x%0x", axi_req_i.ar.cache),
+        "prot"   : $sformatf("0x%0x", axi_req_i.ar.prot),
+        "qos"    : $sformatf("0x%0x", axi_req_i.ar.qos),
+        "region" : $sformatf("0x%0x", axi_req_i.ar.region),
+        "user"   : $sformatf("0x%0x", axi_req_i.ar.user)
       };
       w_data = '{
-        "type"   : "W",
-        "time" : $time(),
-        "data" : axi_req_i.w.data,
-        "strb" : axi_req_i.w.strb,
-        "last" : axi_req_i.w.last,
-        "user" : axi_req_i.w.user
+        "type" : "W",
+        "time" : $sformatf("%d", $time()),
+        "data" : $sformatf("0x%0x", axi_req_i.w.data),
+        "strb" : $sformatf("0x%0x", axi_req_i.w.strb),
+        "last" : $sformatf("0x%0x", axi_req_i.w.last),
+        "user" : $sformatf("0x%0x", axi_req_i.w.user)
       };
       b_data = '{
-        "type"   : "B",
-        "time" : $time(),
-        "id"   : axi_resp_i.b.id,
-        "resp" : axi_resp_i.b.resp,
-        "user" : axi_resp_i.b.user
+        "type" : "B",
+        "time" : $sformatf("%d", $time()),
+        "id"   : $sformatf("0x%0x", axi_resp_i.b.id),
+        "resp" : $sformatf("0x%0x", axi_resp_i.b.resp),
+        "user" : $sformatf("0x%0x", axi_resp_i.b.user)
       };
       r_data = '{
-        "type"   : "R",
-        "time" : $time(),
-        "id"   : axi_resp_i.r.id,
-        "data" : axi_resp_i.r.data,
-        "resp" : axi_resp_i.r.resp,
-        "last" : axi_resp_i.r.last,
-        "user" : axi_resp_i.r.user
+        "type" : "R",
+        "time" : $sformatf("%d", $time()),
+        "id"   : $sformatf("0x%0x", axi_resp_i.r.id),
+        "data" : $sformatf("0x%0x", axi_resp_i.r.data),
+        "resp" : $sformatf("0x%0x", axi_resp_i.r.resp),
+        "last" : $sformatf("0x%0x", axi_resp_i.r.last),
+        "user" : $sformatf("0x%0x", axi_resp_i.r.user)
       };
       if (LogAW && axi_req_i.aw_valid && axi_resp_i.aw_ready) begin
         aw_string = "{";
-        foreach(aw_data[key]) aw_string = $sformatf("%s'%s': 0x%0x, ", aw_string, key, aw_data[key]);
+        foreach(aw_data[key]) aw_string = $sformatf("%s'%s': %s, ", aw_string, key, aw_data[key]);
         aw_string = $sformatf("%s}", aw_string);
         $fwrite(f, aw_string);
         $fwrite(f, "\n");
       end
       if (LogAR && axi_req_i.ar_valid && axi_resp_i.ar_ready) begin
         ar_string = "{";
-        foreach(ar_data[key]) ar_string = $sformatf("%s'%s': 0x%0x, ", ar_string, key, ar_data[key]);
+        foreach(ar_data[key]) ar_string = $sformatf("%s'%s': %s, ", ar_string, key, ar_data[key]);
         ar_string = $sformatf("%s}", ar_string);
         $fwrite(f, ar_string);
         $fwrite(f, "\n");
       end
       if (LogW && axi_req_i.w_valid && axi_resp_i.w_ready) begin
         w_string = "{";
-        foreach(w_data[key]) w_string = $sformatf("%s'%s': 0x%0x, ", w_string, key, w_data[key]);
+        foreach(w_data[key]) w_string = $sformatf("%s'%s': %s, ", w_string, key, w_data[key]);
         w_string = $sformatf("%s}", w_string);
         $fwrite(f, w_string);
         $fwrite(f, "\n");
       end
       if (LogB && axi_resp_i.b_valid && axi_req_i.b_ready) begin
         b_string = "{";
-        foreach(b_data[key]) b_string = $sformatf("%s'%s': 0x%0x, ", b_string, key, b_data[key]);
+        foreach(b_data[key]) b_string = $sformatf("%s'%s': %s, ", b_string, key, b_data[key]);
         b_string = $sformatf("%s}", b_string);
         $fwrite(f, b_string);
         $fwrite(f, "\n");
       end
       if (LogR && axi_resp_i.r_valid && axi_req_i.r_ready) begin
         r_string = "{";
-        foreach(r_data[key]) r_string = $sformatf("%s'%s': 0x%0x, ", r_string, key, r_data[key]);
+        foreach(r_data[key]) r_string = $sformatf("%s'%s': %s, ", r_string, key, r_data[key]);
         r_string = $sformatf("%s}", r_string);
         $fwrite(f, r_string);
         $fwrite(f, "\n");
