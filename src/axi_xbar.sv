@@ -125,7 +125,7 @@ import cf_math_pkg::idx_width;
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
     `ifndef VERILATOR
-    `ifndef XSIM
+    `ifndef XILINX_SIMULATOR
     default disable iff (~rst_ni);
     default_aw_mst_port_en: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
@@ -265,7 +265,7 @@ import cf_math_pkg::idx_width;
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XXILINX_SIMULATOR
   initial begin : check_params
     id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
@@ -283,10 +283,10 @@ endmodule
 module axi_xbar_intf
 import cf_math_pkg::idx_width;
 #(
+  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 `ifdef VCS
   , localparam int unsigned MstPortsIdxWidth =

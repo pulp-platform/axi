@@ -862,7 +862,13 @@ package axi_test;
         for (int i = 0; i < traffic_shape.size(); i++)
           if (traffic_shape[i].cprob > cprob) begin
             len = traffic_shape[i].len;
+`ifdef XILINX_SIMULATOR
+            if (ax_beat.ax_burst == BURST_WRAP) begin
+              assert ( len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
+            end;
+`else
             assert (ax_beat.ax_burst == BURST_WRAP -> len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
+`endif
             break;
           end
 
@@ -1193,7 +1199,11 @@ package axi_test;
           automatic w_beat_t w_beat = new;
           automatic int unsigned begin_byte, end_byte, n_bytes;
           automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
+`ifdef XILINX_SIMULATOR
+	  rand_success = std::randomize(w_beat); assert (rand_success);
+`else
           rand_success = w_beat.randomize(); assert (rand_success);
+`endif
           // Determine strobe.
           w_beat.w_strb = '0;
           n_bytes = 2**aw_beat.ax_size;
@@ -1332,7 +1342,11 @@ package axi_test;
         automatic r_beat_t r_beat = new;
         wait (ar_queue.size > 0);
         ar_beat = ar_queue.peek();
-        rand_success = r_beat.randomize(); assert(rand_success);
+`ifdef XILINX_SIMULATOR
+	rand_success = std::randomize(r_beat); assert (rand_success);
+`else
+        rand_success = r_beat.randomize(); assert (rand_success);
+`endif
         r_beat.r_id = ar_beat.ax_id;
         if (RAND_RESP && !ar_beat.ax_atop[axi_pkg::ATOP_R_RESP])
           r_beat.r_resp[1] = $random();
@@ -1384,7 +1398,11 @@ package axi_test;
         automatic logic rand_success;
         wait (b_wait_cnt > 0 && (aw_queue.size() != 0));
         aw_beat = aw_queue.pop_front();
-        rand_success = b_beat.randomize(); assert(rand_success);
+`ifdef XILINX_SIMULATOR
+	rand_success = std::randomize(b_beat); assert (rand_success);
+`else
+        rand_success = b_beat.randomize(); assert (rand_success);
+`endif
         b_beat.b_id = aw_beat.ax_id;
         if (RAND_RESP && !aw_beat.ax_atop[axi_pkg::ATOP_R_RESP])
           b_beat.b_resp[1] = $random();
