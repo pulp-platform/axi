@@ -1445,7 +1445,11 @@ package axi_test;
         automatic logic rand_success;
         wait (b_wait_cnt > 0 && (aw_queue.size() != 0));
         aw_beat = aw_queue.pop_front();
-        rand_success = b_beat.randomize(); assert(rand_success);
+`ifdef XILINX_SIMULATOR
+	rand_success = std::randomize(b_beat); assert (rand_success);
+`else
+        rand_success = b_beat.randomize(); assert (rand_success);
+`endif
         b_beat.b_id = aw_beat.ax_id;
         if (RAND_RESP && !aw_beat.ax_atop[axi_pkg::ATOP_R_RESP])
           b_beat.b_resp[1] = $random();

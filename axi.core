@@ -58,6 +58,35 @@ filesets:
     file_type : systemVerilogSource
     depend :
       - ">=pulp-platform.org::common_cells:1.26.0"
+  benchs:
+    files:
+      - src/axi_test.sv
+      - test/tb_axi_dw_pkg.sv
+      - test/tb_axi_xbar_pkg.sv
+      - test/axi_synth_bench.sv
+      - test/tb_axi_addr_test.sv
+      - test/tb_axi_atop_filter.sv
+      - test/tb_axi_cdc.sv
+      - test/tb_axi_delayer.sv
+      - test/tb_axi_dw_downsizer.sv
+      - test/tb_axi_dw_upsizer.sv
+      - test/tb_axi_fifo.sv
+      - test/tb_axi_isolate.sv
+      - test/tb_axi_iw_converter.sv
+      - test/tb_axi_lite_mailbox.sv
+      - test/tb_axi_lite_regs.sv
+      - test/tb_axi_lite_to_apb.sv
+      - test/tb_axi_lite_to_axi.sv
+      - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_modify_address.sv
+      - test/tb_axi_serializer.sv
+      - test/tb_axi_sim_mem.sv
+      - test/tb_axi_to_axi_lite.sv
+      - test/tb_axi_to_mem_banked.sv
+      - test/tb_axi_xbar.sv
+    file_type : systemVerilogSource
+    depend :
+      - ">=pulp-platform.org::common_verification:0.2.1"
 
 generators:
   axi_intercon_gen:
@@ -113,3 +142,7 @@ generators:
 targets:
   default:
     filesets : [rtl]
+  sim:
+    filesets : [rtl,benchs]
+    description: Simulate the design
+    toplevel: tb_axi_dw_downsizer

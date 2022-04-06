@@ -625,7 +625,7 @@ module axi_demux #(
 // Validate parameters.
 // pragma translate_off
 `ifndef VERILATOR
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
     initial begin: validate_params
       no_mst_ports: assume (NoMstPorts > 0) else
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
@@ -774,7 +774,7 @@ module axi_demux_id_counters #(
 
 // pragma translate_off
 `ifndef VERILATOR
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
     // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else

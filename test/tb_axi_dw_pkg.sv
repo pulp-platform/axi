@@ -413,7 +413,7 @@ package tb_axi_dw_pkg       ;
         axi_b_id = slv_port_axi.b_id;
         $display("%0tns > Master: Got last B with ID: %b",
           $time, axi_b_id);
-        if (this.exp_slv_port_b_queue.empty()) begin
+        if (this.exp_slv_port_b_queue.is_empty()) begin
           incr_failed_tests(1)                                                 ;
           $warning("Master: unexpected B beat with ID: %b detected!", axi_b_id);
         end else begin
