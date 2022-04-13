@@ -470,11 +470,11 @@ module axi_lite_mux_intf #(
   parameter bit          SpillAr       = 1'b1,
   parameter bit          SpillR        = 1'b0
 ) (
-  input  logic   clk_i,                // Clock
-  input  logic   rst_ni,               // Asynchronous reset active low
-  input  logic   test_i,               // Testmode enable
-  AXI_BUS.Slave  slv [NoSlvPorts-1:0], // slave ports
-  AXI_BUS.Master mst                   // master port
+  input  logic    clk_i,                // Clock
+  input  logic    rst_ni,               // Asynchronous reset active low
+  input  logic    test_i,               // Testmode enable
+  AXI_LITE.Slave  slv [NoSlvPorts-1:0], // slave ports
+  AXI_LITE.Master mst                   // master port
 );
 
   typedef logic [AxiAddrWidth-1:0]   addr_t;
