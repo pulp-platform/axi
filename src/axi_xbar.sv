@@ -284,9 +284,9 @@ module axi_xbar_intf
 import cf_math_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
+  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 `ifdef VCS
   , localparam int unsigned MstPortsIdxWidth =
