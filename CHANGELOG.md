@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_lite_mux_intf`: Fix type of `slv` and `mst` interface ports; they were `AXI_BUS` instead of
   `AXI_LITE`.
 - `axi_xbar_intf`: Fix order of parameters.  Prior to this fix, the `CONNECTIVITY` parameter was
-  defined using the the `Cfg` parameter before the `Cfg` parameter was defined.
+  defined using the `Cfg` parameter before the `Cfg` parameter was defined.
 - `axi_test::axi_rand_master`: Improve compatibility with simulators by changing an implication
   inside an assertion to a conditional assertion.
 
