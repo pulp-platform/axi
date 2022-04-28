@@ -72,6 +72,14 @@ exec_test() {
                 done
             done
             ;;
+        axi_fifo)
+            for DEPTH in 0 1 16; do
+                for FALL_THROUGH in 0 1; do
+                    call_vsim tb_axi_fifo -gDepth=$DEPTH \
+                            -gFallThrough=$FALL_THROUGH
+                done
+            done
+            ;;
         axi_iw_converter)
             for SLV_PORT_IW in 1 2 3 4 8; do
                 MAX_SLV_PORT_IDS=$((2**SLV_PORT_IW))
