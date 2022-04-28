@@ -31,6 +31,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_dw_downsizer`](src/axi_dw_downsizer.sv)        | A data width converter between a wide AXI master and a narrower AXI slave.                           |                                |
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)            | A data width converter between a narrow AXI master and a wider AXI slave.                            |                                |
 | [`axi_err_slv`](src/axi_err_slv.sv)                  | Always responds with an AXI decode/slave error for transactions which are sent to it.                |                                |
+| [`axi_fifo`](src/axi_fifo.sv)                        | A Fifo for each AXI4 channel to buffer requests.                                                     |                                |
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                                |                                |
 | [`axi_id_remap`](src/axi_id_remap.sv)                | Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.                    | [Doc][doc.axi_id_remap]        |
 | [`axi_id_serialize`](src/axi_id_serialize.sv)        | Reduce AXI IDs by serializing transactions when necessary.                                           | [Doc][doc.axi_id_serialize]    |
