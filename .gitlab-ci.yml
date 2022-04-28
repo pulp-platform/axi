@@ -93,6 +93,11 @@ axi_dw_upsizer:
   variables:
     TEST_MODULE: axi_dw_upsizer
 
+axi_fifo:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_fifo
+
 axi_isolate:
   <<: *run_vsim
   variables:
