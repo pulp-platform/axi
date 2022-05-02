@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_demux`: Eliminate unnecessary stalls of AW channel when the AR channel has reached its
+  maximum number of transactions.  Prior to this fix, `axi_demux` would always stall AWs while read
+  transactions were at their maximum (that is, while `MaxTrans` read transactions were outstanding).
+  However, this stall is only required when the AW that is being handled by `axi_demux` is an atomic
+  operation (ATOP) that entails an R response.  This fix therefore removes unnecessary stalls as
+  well as an unnecessary dependency between reads and writes.  The integrity of data or transactions
+  was not affected by this problem.
 
 
 ## 0.35.2 - 2022-04-14
