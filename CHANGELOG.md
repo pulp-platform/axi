@@ -5,11 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
-
-### Added
-
-### Changed
+## 0.35.3 - 2022-05-03
 
 ### Fixed
 - `axi_demux`: Eliminate unnecessary stalls of AW channel when the AR channel has reached its
