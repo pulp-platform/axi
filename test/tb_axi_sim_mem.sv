@@ -84,7 +84,11 @@ module tb_axi_sim_mem #(
     drv.reset_master();
     wait (rst_n);
     // AW
-    rand_success = aw_beat.randomize(); assert(rand_success);
+`ifdef XILINX_SIMULATOR
+    rand_success = std::randomize(aw_beat); assert (rand_success);
+`else
+    rand_success = aw_beat.randomize(); assert (rand_success);
+`endif
     aw_beat.ax_addr >>= $clog2(StrbWidth); // align address with data width
     aw_beat.ax_addr <<= $clog2(StrbWidth);
     aw_beat.ax_len = $urandom();
@@ -93,7 +97,11 @@ module tb_axi_sim_mem #(
     drv.send_aw(aw_beat);
     // W beats
     for (int unsigned i = 0; i <= aw_beat.ax_len; i++) begin
-      rand_success = w_beat.randomize(); assert(rand_success);
+`ifdef XILINX_SIMULATOR
+      rand_success = std::randomize(w_beat); assert (rand_success);
+`else
+      rand_success = w_beat.randomize(); assert (rand_success);
+`endif
       w_beat.w_strb = '1;
       if (i == aw_beat.ax_len) begin
         w_beat.w_last = 1'b1;

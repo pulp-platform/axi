@@ -49,12 +49,13 @@ filesets:
       - src/axi_iw_converter.sv
       - src/axi_lite_xbar.sv
       - src/axi_xbar.sv
+      - src/axi_sim_mem.sv
+      - src/axi_test.sv
     file_type : systemVerilogSource
     depend :
       - ">=pulp-platform.org::common_cells:1.24.0"
   benchs:
     files:
-      - src/axi_test.sv
       - test/tb_axi_dw_pkg.sv
       - test/tb_axi_xbar_pkg.sv
       - test/axi_synth_bench.sv
@@ -134,7 +135,29 @@ generators:
 targets:
   default:
     filesets : [rtl]
-  sim:
+  sim: &sim
     filesets : [rtl,benchs]
     description: Simulate the design
+    toplevel: tb_axi_delayer
+  sim_dw_downsizer:
+    <<: *sim
     toplevel: tb_axi_dw_downsizer
+  sim_addr_test     : { filesets : [rtl,benchs] , toplevel: tb_axi_addr_test      }
+  sim_atop_filter   : { filesets : [rtl,benchs] , toplevel: tb_axi_atop_filter    }
+  sim_cdc           : { filesets : [rtl,benchs] , toplevel: tb_axi_cdc            }
+  sim_delayer       : { filesets : [rtl,benchs] , toplevel: tb_axi_delayer        }
+  sim_dw_pkg        : { filesets : [rtl,benchs] , toplevel: tb_axi_dw_pkg         }
+  sim_dw_upsizer    : { filesets : [rtl,benchs] , toplevel: tb_axi_dw_upsizer     }
+  sim_isolate       : { filesets : [rtl,benchs] , toplevel: tb_axi_isolate        }
+  sim_iw_converter  : { filesets : [rtl,benchs] , toplevel: tb_axi_iw_converter   }
+  sim_lite_mailbox  : { filesets : [rtl,benchs] , toplevel: tb_axi_lite_mailbox   }
+  sim_lite_regs     : { filesets : [rtl,benchs] , toplevel: tb_axi_lite_regs      }
+  sim_lite_to_apb   : { filesets : [rtl,benchs] , toplevel: tb_axi_lite_to_apb    }
+  sim_lite_to_axi   : { filesets : [rtl,benchs] , toplevel: tb_axi_lite_to_axi    }
+  sim_lite_xbar     : { filesets : [rtl,benchs] , toplevel: tb_axi_lite_xbar      }
+  sim_modify_address: { filesets : [rtl,benchs] , toplevel: tb_axi_modify_address }
+  sim_serializer    : { filesets : [rtl,benchs] , toplevel: tb_axi_serializer     }
+  sim_sim_mem       : { filesets : [rtl,benchs] , toplevel: tb_axi_sim_mem        }
+  sim_to_axi_lite   : { filesets : [rtl,benchs] , toplevel: tb_axi_to_axi_lite    }
+  sim_xbar          : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar           }
+  sim_xbar_pkg      : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar_pkg       }
