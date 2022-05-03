@@ -862,13 +862,9 @@ package axi_test;
         for (int i = 0; i < traffic_shape.size(); i++)
           if (traffic_shape[i].cprob > cprob) begin
             len = traffic_shape[i].len;
-`ifdef XILINX_SIMULATOR
             if (ax_beat.ax_burst == BURST_WRAP) begin
-              assert ( len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
-            end;
-`else
-            assert (ax_beat.ax_burst == BURST_WRAP -> len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
-`endif
+              assert (len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
+            end
             break;
           end
 
