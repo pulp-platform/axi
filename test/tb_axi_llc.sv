@@ -256,8 +256,8 @@ module tb_axi_llc #(
   // Clock and Reset gen //
   /////////////////////////
   clk_rst_gen #(
-    .CLK_PERIOD     ( TbCyclTime ),
-    .RST_CLK_CYCLES ( 32'd5    )
+    .ClkPeriod     ( TbCyclTime ),
+    .RstClkCycles  ( 32'd5    )
   ) i_clk_rst_gen (
     .clk_o  ( clk   ),
     .rst_no ( rst_n )
