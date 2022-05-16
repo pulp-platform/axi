@@ -313,7 +313,8 @@ module axi_llc_config #(
   } union_reg_strb_t;
 
   // define the reset value for the configuration registers.
-  localparam union_reg_data_t CfgRstValue = struct_reg_data_t'{
+
+  localparam struct_reg_data_t CfgRstValueStruct = struct_reg_data_t'{
     Version:   data_cfg_t'(axi_llc_pkg::AxiLlcVersion),
     NumBlocks: data_cfg_t'(Cfg.NumBlocks),
     NumLines:  data_cfg_t'(Cfg.NumLines),
@@ -321,8 +322,10 @@ module axi_llc_config #(
     default:   '0
   };
 
+  localparam union_reg_data_t CfgRstValue = CfgRstValueStruct;
+
   // define the read-only values for the individual aligned registers
-  localparam union_reg_strb_t CfgReadOnly = struct_reg_strb_t'{
+  localparam struct_reg_strb_t CfgReadOnlyStruct = struct_reg_strb_t'{
     Version:   {AlignToBytes{1'b1}}, // read-only
     NumBlocks: {AlignToBytes{1'b1}}, // read-only
     NumLines:  {AlignToBytes{1'b1}}, // read-only
@@ -333,6 +336,8 @@ module axi_llc_config #(
     CfgSpm:    {AlignToBytes{1'b0}}  // read and write
   };
 
+  localparam union_reg_strb_t CfgReadOnly = CfgReadOnlyStruct;
+   
   localparam int unsigned FlushIdxWidth = cf_math_pkg::idx_width(Cfg.SetAssociativity);
   typedef logic [FlushIdxWidth-1:0] flush_idx_t;
 
