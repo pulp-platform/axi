@@ -275,10 +275,12 @@ module axi_demux #(
           atop_inject     = slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
         end
       end else begin
-        // Process can start handling a transaction if its `i_aw_id_counter` and `w_fifo` have
-        // space in them. Further check if we could inject something on the AR channel (only if
-        // ATOPs are supported).
-        if (!aw_id_cnt_full && !w_fifo_full && (!ar_id_cnt_full || !AtopSupport)) begin
+        // An AW can be handled if `i_aw_id_counter` and `i_w_fifo` are not full.  An ATOP that
+        // requires an R response can be handled if additionally `i_ar_id_counter` is not full (this
+        // only applies if ATOPs are supported at all).
+        if (!aw_id_cnt_full && !w_fifo_full &&
+            (!(ar_id_cnt_full && slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP]) ||
+             !AtopSupport)) begin
           // there is a valid AW vector make the id lookup and go further, if it passes
           if (slv_aw_valid && (!aw_select_occupied ||
              (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
