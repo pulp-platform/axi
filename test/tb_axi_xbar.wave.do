@@ -5,11 +5,11 @@ add wave -noupdate -label Clock /tb_axi_xbar/i_xbar_dut/clk_i
 add wave -noupdate -label Reset /tb_axi_xbar/i_xbar_dut/rst_ni
 add wave -noupdate -label {Test Mode} /tb_axi_xbar/i_xbar_dut/test_i
 add wave -noupdate -divider {Slave Ports}
-add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_ports_req_i
-add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_ports_resp_o
+add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_reqs
+add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_resps
 add wave -noupdate -divider {Master Ports}
-add wave -noupdate /tb_axi_xbar/i_xbar_dut/mst_ports_req_o
-add wave -noupdate /tb_axi_xbar/i_xbar_dut/mst_ports_resp_i
+add wave -noupdate /tb_axi_xbar/i_xbar_dut/mst_reqs
+add wave -noupdate /tb_axi_xbar/i_xbar_dut/mst_resps
 add wave -noupdate -divider {Address Mapping}
 add wave -noupdate /tb_axi_xbar/i_xbar_dut/addr_map_i
 add wave -noupdate /tb_axi_xbar/i_xbar_dut/en_default_mst_port_i
