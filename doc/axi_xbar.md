@@ -5,7 +5,7 @@
 
 ## Design Overview
 
-`axi_xbar` is a fully-connected crossbar, which means that each master module that is connected to a *slave port* for of the crossbar has direct wires to all slave modules that are connected to the *master ports* of the crossbar.
+`axi_xbar` is a fully-connected crossbar, which means that each master module that is connected to a *slave port* of the crossbar has direct wires to all slave modules that are connected to the *master ports* of the crossbar.
 A block-diagram of the crossbar is shown below:
 
 ![Block-diagram showing the design of the full AXI4 Crossbar.](axi_xbar.png  "Block-diagram showing the design of the full AXI4 Crossbar.")
@@ -49,7 +49,7 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 | `LatencyMode`        | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
 | `AxiIdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
 | `AxiIdUsedSlvPorts`  | `int unsigned`     | The number of slave port ID bits (starting at the least significant) the crossbar uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidthSlvPorts`. |
-| `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the crossbar.  See the [`axi_demux` documentation](axi_demux#ordering-and-stalls) for details. |
+| `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the crossbar.  See the [`axi_demux` documentation](axi_demux.md#ordering-and-stalls) for details. |
 | `AxiAddrWidth`       | `int unsigned`     | The AXI address width. |
 | `AxiDataWidth`       | `int unsigned`     | The AXI data width. |
 | `NoAddrRules`        | `int unsigned`     | The number of address map rules. |
