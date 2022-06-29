@@ -797,26 +797,27 @@ endmodule
 
 
 module synth_axi_xbar #(
-  parameter int unsigned NoSlvMst          = 32'd8, // Max 16, as the addr rules defined below 
-  parameter bit EnableMulticast            = 0,
-  parameter bit UniqueIds                  = 0,
-  parameter axi_pkg::xbar_latency_e LatencyMode = axi_pkg::NO_LATENCY,
+  parameter int unsigned NoSlvMst               = 32'd8, // Max 16, as the addr rules defined below 
+  parameter bit EnableMulticast                 = 0,
+  parameter bit UniqueIds                       = 0,
+  parameter axi_pkg::xbar_latency_e LatencyMode = axi_pkg::NO_LATENCY, 
   // axi configuration
-  parameter int unsigned AxiIdWidthMasters =  4,
-  parameter int unsigned AxiIdUsed         =  3, // Has to be <= AxiIdWidthMasters
-  parameter int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoSlvMst),
-  parameter int unsigned AxiAddrWidth      =  32,    // Axi Address Width
-  parameter int unsigned AxiDataWidth      =  32,    // Axi Data Width
-  parameter int unsigned AxiStrbWidth      =  AxiDataWidth / 8,
-  parameter int unsigned AxiUserWidth      =  1,
+  parameter int unsigned AxiIdWidthMasters      =  4,
+  parameter int unsigned AxiIdUsed              =  3, // Has to be <= AxiIdWidthMasters
+  parameter int unsigned AxiIdWidthSlaves       =  AxiIdWidthMasters + $clog2(NoSlvMst),
+  parameter int unsigned AxiAddrWidth           =  32,    // Axi Address Width
+  parameter int unsigned AxiDataWidth           =  32,    // Axi Data Width
+  parameter int unsigned AxiStrbWidth           =  AxiDataWidth / 8,
+  parameter int unsigned AxiUserWidth           =  1,
+  parameter int unsigned AxiAwUserWidth         =  EnableMulticast ? AxiAddrWidth : 1,
   // axi types
-  parameter type id_mst_t                  = logic [AxiIdWidthSlaves-1:0],
-  parameter type id_slv_t                  = logic [AxiIdWidthMasters-1:0],
-  parameter type addr_t                    = logic [AxiAddrWidth-1:0],
-  parameter type rule_t                    = axi_pkg::xbar_rule_32_t, // Has to be the same width as axi addr
-  parameter type data_t                    = logic [AxiDataWidth-1:0],
-  parameter type strb_t                    = logic [AxiStrbWidth-1:0],
-  parameter type user_t                    = logic [AxiUserWidth-1:0]
+  parameter type id_mst_t                       = logic [AxiIdWidthSlaves-1:0],
+  parameter type id_slv_t                       = logic [AxiIdWidthMasters-1:0],
+  parameter type addr_t                         = logic [AxiAddrWidth-1:0],
+  parameter type data_t                         = logic [AxiDataWidth-1:0],
+  parameter type strb_t                         = logic [AxiStrbWidth-1:0],
+  parameter type user_t                         = logic [AxiUserWidth-1:0],
+  parameter type aw_user_t                      = struct packed {logic [AxiAwUserWidth-1:0] mcast;}
 ) (
   input  logic                     clk_i,
   input  logic                     rst_ni,
@@ -837,7 +838,7 @@ module synth_axi_xbar #(
   input axi_pkg::qos_t    [NoSlvMst-1:0] slv_aw_qos,
   input axi_pkg::region_t [NoSlvMst-1:0] slv_aw_region,
   input axi_pkg::atop_t   [NoSlvMst-1:0] slv_aw_atop,
-  input user_t            [NoSlvMst-1:0] slv_aw_user,
+  input aw_user_t         [NoSlvMst-1:0] slv_aw_user,
   input logic             [NoSlvMst-1:0] slv_aw_valid,
   // W
   input data_t            [NoSlvMst-1:0] slv_w_data,
@@ -902,7 +903,7 @@ module synth_axi_xbar #(
   output axi_pkg::qos_t    [NoSlvMst-1:0] mst_aw_qos,
   output axi_pkg::region_t [NoSlvMst-1:0] mst_aw_region,
   output axi_pkg::atop_t   [NoSlvMst-1:0] mst_aw_atop,
-  output user_t            [NoSlvMst-1:0] mst_aw_user,
+  output aw_user_t         [NoSlvMst-1:0] mst_aw_user,
   output logic             [NoSlvMst-1:0] mst_aw_valid,
   // W
   output data_t            [NoSlvMst-1:0] mst_w_data,
@@ -969,8 +970,11 @@ module synth_axi_xbar #(
     NoAddrRules:        NoSlvMst
   };
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  typedef axi_pkg::xbar_mask_rule_32_t aw_rule_t; // Has to be the same width as axi addr
+  typedef axi_pkg::xbar_rule_32_t      ar_rule_t; // Has to be the same width as axi addr
+
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, aw_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
@@ -985,26 +989,30 @@ module synth_axi_xbar #(
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
-  // TODO colluca: Can the next code block become a one-liner?
-  localparam rule_t [15:0] full_addr_map = {
-    rule_t'{idx: 32'd15, start_addr: 32'h0001_E000, end_addr: 32'h0002_0000},
-    rule_t'{idx: 32'd14, start_addr: 32'h0001_C000, end_addr: 32'h0001_E000},
-    rule_t'{idx: 32'd13, start_addr: 32'h0001_A000, end_addr: 32'h0001_C000},
-    rule_t'{idx: 32'd12, start_addr: 32'h0001_8000, end_addr: 32'h0001_A000},
-    rule_t'{idx: 32'd11, start_addr: 32'h0001_6000, end_addr: 32'h0001_8000},
-    rule_t'{idx: 32'd10, start_addr: 32'h0001_4000, end_addr: 32'h0001_6000},
-    rule_t'{idx: 32'd9, start_addr: 32'h0001_2000, end_addr: 32'h0001_4000},
-    rule_t'{idx: 32'd8, start_addr: 32'h0001_0000, end_addr: 32'h0001_2000},
-    rule_t'{idx: 32'd7, start_addr: 32'h0000_E000, end_addr: 32'h0001_0000},
-    rule_t'{idx: 32'd6, start_addr: 32'h0000_C000, end_addr: 32'h0000_E000},
-    rule_t'{idx: 32'd5, start_addr: 32'h0000_A000, end_addr: 32'h0000_C000},
-    rule_t'{idx: 32'd4, start_addr: 32'h0000_8000, end_addr: 32'h0000_A000},
-    rule_t'{idx: 32'd3, start_addr: 32'h0000_6000, end_addr: 32'h0000_8000},
-    rule_t'{idx: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6000},
-    rule_t'{idx: 32'd1, start_addr: 32'h0000_2000, end_addr: 32'h0000_4000},
-    rule_t'{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_2000}
-  };
-  localparam rule_t [xbar_cfg.NoAddrRules-1:0] addr_map = full_addr_map[xbar_cfg.NoAddrRules-1:0];
+  // Each slave has its own address range:
+  localparam ar_rule_t [xbar_cfg.NoAddrRules-1:0] ar_addr_map = ar_addr_map_gen();
+  localparam aw_rule_t [xbar_cfg.NoAddrRules-1:0] aw_addr_map = aw_addr_map_gen();
+
+  function ar_rule_t [xbar_cfg.NoAddrRules-1:0] ar_addr_map_gen ();
+    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
+      ar_addr_map_gen[i] = ar_rule_t'{
+        idx:        unsigned'(i),
+        start_addr:  i    * 32'h0000_2000,
+        end_addr:   (i+1) * 32'h0000_2000,
+        default:    '0
+      };
+    end
+  endfunction
+
+  function aw_rule_t [xbar_cfg.NoAddrRules-1:0] aw_addr_map_gen ();
+    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
+      aw_addr_map_gen[i] = aw_rule_t'{
+        addr:    i * 32'h0000_2000,
+        mask:    32'h0000_1FFF,
+        default: '0
+      };
+    end
+  endfunction
 
   slv_req_t  [NoSlvMst-1:0] slv_reqs;
   mst_req_t  [NoSlvMst-1:0] mst_reqs;
@@ -1130,7 +1138,8 @@ module synth_axi_xbar #(
       .slv_resp_t   (slv_resp_t),
       .mst_req_t    (mst_req_t),
       .mst_resp_t   (mst_resp_t),
-      .rule_t       (rule_t)
+      .ar_rule_t    (ar_rule_t),
+      .aw_rule_t    (aw_rule_t)
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
@@ -1139,7 +1148,8 @@ module synth_axi_xbar #(
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
       .mst_ports_resp_i     (mst_resps),
-      .addr_map_i           (addr_map      )
+      .ar_addr_map_i        (ar_addr_map),
+      .aw_addr_map_i        (aw_addr_map)
     );
   end else begin : g_no_multicast
     axi_xbar #(
@@ -1157,7 +1167,7 @@ module synth_axi_xbar #(
       .slv_resp_t   (slv_resp_t),
       .mst_req_t    (mst_req_t),
       .mst_resp_t   (mst_resp_t),
-      .rule_t       (rule_t)
+      .rule_t       (ar_rule_t)
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
@@ -1166,7 +1176,7 @@ module synth_axi_xbar #(
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
       .mst_ports_resp_i     (mst_resps),
-      .addr_map_i           (addr_map),
+      .addr_map_i           (ar_addr_map),
       .en_default_mst_port_i('0),
       .default_mst_port_i   ('0)
     );
@@ -1463,7 +1473,6 @@ module synth_axi_demux import axi_pkg::*; #(
     .MaxTrans   (10),
     .AxiLookBits(AxiIdUsed),
     .UniqueIds  (UniqueIds),
-    .FallThrough(1'b0),
     .SpillAw    (LatencyMode[9]),
     .SpillW     (LatencyMode[8]),
     .SpillB     (LatencyMode[7]),
@@ -1502,16 +1511,19 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   // select signal types
   parameter int unsigned IdxSelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
   parameter type idx_select_t              = logic [IdxSelectWidth-1:0],
-  parameter type mask_select_t             = logic [NoMstPorts-1:0]
+  parameter type mask_select_t             = logic [NoMstPorts-1:0],
+  parameter type multi_addr_t              = struct packed {
+                                               addr_t aw_addr;
+                                               addr_t aw_mask;
+                                             }
 ) (
   input logic clk_i,
   input logic rst_ni,
 
   // Address decoder signals
-  input mask_select_t slv_aw_select_i,
-  input idx_select_t  slv_ar_select_i,
-  input addr_t [NoMstPorts-1:0] slv_aw_out_addr_i,
-  input addr_t [NoMstPorts-1:0] slv_aw_out_mask_i,
+  input mask_select_t                 slv_aw_select_i,
+  input idx_select_t                  slv_ar_select_i,
+  input multi_addr_t [NoMstPorts-1:0] slv_aw_mcast_i,
 
   /***********************************
   /* Slave ports request inputs
@@ -1785,7 +1797,6 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
     .MaxTrans   (10),
     .AxiLookBits(AxiIdUsed),
     .UniqueIds  (UniqueIds),
-    .FallThrough(1'b0),
     .SpillAw    (LatencyMode[9]),
     .SpillW     (LatencyMode[8]),
     .SpillB     (LatencyMode[7]),
@@ -1798,8 +1809,7 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
     .slv_req_i      (slv_req),
     .slv_aw_select_i(slv_aw_select_i),
     .slv_ar_select_i(slv_ar_select_i),
-    .slv_aw_addr_i  (slv_aw_out_addr_i),
-    .slv_aw_mask_i  (slv_aw_out_mask_i),
+    .slv_aw_mcast_i (slv_aw_mcast_i),
     .slv_resp_o     (slv_resp),
     .mst_reqs_o     (mst_reqs),
     .mst_resps_i    (mst_resps)

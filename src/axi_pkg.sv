@@ -525,6 +525,12 @@ package axi_pkg;
     logic [63:0] end_addr;
   } xbar_rule_64_t;
 
+  /// Commonly used rule types for `axi_xbar` (64-bit addresses).
+  typedef struct packed {
+    logic [63:0] addr;
+    logic [63:0] mask;
+  } xbar_mask_rule_64_t;
+
   /// Commonly used rule types for `axi_xbar` (32-bit addresses).
   typedef struct packed {
     int unsigned idx;
@@ -532,4 +538,9 @@ package axi_pkg;
     logic [31:0] end_addr;
   } xbar_rule_32_t;
 
+  /// Commonly used rule types for `axi_xbar` (32-bit addresses).
+  typedef struct packed {
+    logic [31:0] addr;
+    logic [31:0] mask;
+  } xbar_mask_rule_32_t;
 endpackage

@@ -19,7 +19,7 @@ package:
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.31.1 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: "multicast-xbar" }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.3 }
   tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
 
@@ -112,6 +112,7 @@ sources:
       # Level 0
       - test/tb_axi_dw_pkg.sv
       - test/tb_axi_xbar_pkg.sv
+      - test/tb_axi_mcast_xbar_pkg.sv
       # Level 1
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
@@ -136,3 +137,4 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
+      - test/tb_axi_mcast_xbar.sv
