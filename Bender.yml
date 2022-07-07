@@ -62,6 +62,7 @@ sources:
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
+  - src/axi_mcast_mux.sv
   - src/axi_rw_join.sv
   - src/axi_rw_split.sv
   - src/axi_serializer.sv
@@ -71,6 +72,7 @@ sources:
   # Level 3
   - src/axi_cdc.sv
   - src/axi_demux.sv
+  - src/axi_mcast_demux.sv
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
   - src/axi_from_mem.sv
@@ -83,6 +85,7 @@ sources:
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
   - src/axi_xbar.sv
+  - src/axi_mcast_xbar.sv
   - src/axi_to_mem_banked.sv
   - src/axi_to_mem_interleaved.sv
   - src/axi_to_mem_split.sv
@@ -90,6 +93,10 @@ sources:
   - src/axi_xp.sv
 
   - target: synth_test
+    files:
+      - test/axi_synth_bench.sv
+
+  - target: gf12
     files:
       - test/axi_synth_bench.sv
 

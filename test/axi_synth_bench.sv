@@ -13,6 +13,7 @@
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
 
 /// A synthesis test bench which instantiates various adapter variants.
 module axi_synth_bench (
@@ -790,6 +791,1018 @@ module synth_axi_lite_dw_converter #(
     .rst_ni,
     .slv    ( slv_intf ),
     .mst    ( mst_intf )
+  );
+
+endmodule
+
+
+module synth_axi_xbar #(
+  parameter int unsigned NoSlvMst          = 32'd8, // Max 16, as the addr rules defined below 
+  parameter bit EnableMulticast            = 0,
+  parameter bit UniqueIds                  = 0,
+  parameter axi_pkg::xbar_latency_e LatencyMode = axi_pkg::NO_LATENCY,
+  // axi configuration
+  parameter int unsigned AxiIdWidthMasters =  4,
+  parameter int unsigned AxiIdUsed         =  3, // Has to be <= AxiIdWidthMasters
+  parameter int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoSlvMst),
+  parameter int unsigned AxiAddrWidth      =  32,    // Axi Address Width
+  parameter int unsigned AxiDataWidth      =  32,    // Axi Data Width
+  parameter int unsigned AxiStrbWidth      =  AxiDataWidth / 8,
+  parameter int unsigned AxiUserWidth      =  1,
+  // axi types
+  parameter type id_mst_t                  = logic [AxiIdWidthSlaves-1:0],
+  parameter type id_slv_t                  = logic [AxiIdWidthMasters-1:0],
+  parameter type addr_t                    = logic [AxiAddrWidth-1:0],
+  parameter type rule_t                    = axi_pkg::xbar_rule_32_t, // Has to be the same width as axi addr
+  parameter type data_t                    = logic [AxiDataWidth-1:0],
+  parameter type strb_t                    = logic [AxiStrbWidth-1:0],
+  parameter type user_t                    = logic [AxiUserWidth-1:0]
+) (
+  input  logic                     clk_i,
+  input  logic                     rst_ni,
+
+  /***********************************
+  /* Slave ports request inputs
+  ***********************************/
+
+  // AW
+  input id_slv_t          [NoSlvMst-1:0] slv_aw_id,
+  input addr_t            [NoSlvMst-1:0] slv_aw_addr,
+  input axi_pkg::len_t    [NoSlvMst-1:0] slv_aw_len,
+  input axi_pkg::size_t   [NoSlvMst-1:0] slv_aw_size,
+  input axi_pkg::burst_t  [NoSlvMst-1:0] slv_aw_burst,
+  input logic             [NoSlvMst-1:0] slv_aw_lock,
+  input axi_pkg::cache_t  [NoSlvMst-1:0] slv_aw_cache,
+  input axi_pkg::prot_t   [NoSlvMst-1:0] slv_aw_prot,
+  input axi_pkg::qos_t    [NoSlvMst-1:0] slv_aw_qos,
+  input axi_pkg::region_t [NoSlvMst-1:0] slv_aw_region,
+  input axi_pkg::atop_t   [NoSlvMst-1:0] slv_aw_atop,
+  input user_t            [NoSlvMst-1:0] slv_aw_user,
+  input logic             [NoSlvMst-1:0] slv_aw_valid,
+  // W
+  input data_t            [NoSlvMst-1:0] slv_w_data,
+  input strb_t            [NoSlvMst-1:0] slv_w_strb,
+  input logic             [NoSlvMst-1:0] slv_w_last,
+  input user_t            [NoSlvMst-1:0] slv_w_user,
+  input logic             [NoSlvMst-1:0] slv_w_valid,
+  // B
+  input logic             [NoSlvMst-1:0] slv_b_ready,
+  // AR
+  input id_slv_t          [NoSlvMst-1:0] slv_ar_id,
+  input addr_t            [NoSlvMst-1:0] slv_ar_addr,
+  input axi_pkg::len_t    [NoSlvMst-1:0] slv_ar_len,
+  input axi_pkg::size_t   [NoSlvMst-1:0] slv_ar_size,
+  input axi_pkg::burst_t  [NoSlvMst-1:0] slv_ar_burst,
+  input logic             [NoSlvMst-1:0] slv_ar_lock,
+  input axi_pkg::cache_t  [NoSlvMst-1:0] slv_ar_cache,
+  input axi_pkg::prot_t   [NoSlvMst-1:0] slv_ar_prot,
+  input axi_pkg::qos_t    [NoSlvMst-1:0] slv_ar_qos,
+  input axi_pkg::region_t [NoSlvMst-1:0] slv_ar_region,
+  input user_t            [NoSlvMst-1:0] slv_ar_user,
+  input logic             [NoSlvMst-1:0] slv_ar_valid,
+  // R
+  input logic             [NoSlvMst-1:0] slv_r_ready,
+
+  /***********************************
+  /* Slave ports response outputs
+  ***********************************/
+
+  // AW
+  output logic           [NoSlvMst-1:0] slv_aw_ready,
+  // AR
+  output logic           [NoSlvMst-1:0] slv_ar_ready,
+  // W
+  output logic           [NoSlvMst-1:0] slv_w_ready,
+  // B
+  output logic           [NoSlvMst-1:0] slv_b_valid,
+  output id_slv_t        [NoSlvMst-1:0] slv_b_id,
+  output axi_pkg::resp_t [NoSlvMst-1:0] slv_b_resp,
+  output user_t          [NoSlvMst-1:0] slv_b_user,
+  // R
+  output logic           [NoSlvMst-1:0] slv_r_valid,
+  output id_slv_t        [NoSlvMst-1:0] slv_r_id,
+  output data_t          [NoSlvMst-1:0] slv_r_data,
+  output axi_pkg::resp_t [NoSlvMst-1:0] slv_r_resp,
+  output logic           [NoSlvMst-1:0] slv_r_last,
+  output user_t          [NoSlvMst-1:0] slv_r_user,
+
+  /***********************************
+  /* Master ports request outputs
+  ***********************************/
+
+  // AW
+  output id_mst_t          [NoSlvMst-1:0] mst_aw_id,
+  output addr_t            [NoSlvMst-1:0] mst_aw_addr,
+  output axi_pkg::len_t    [NoSlvMst-1:0] mst_aw_len,
+  output axi_pkg::size_t   [NoSlvMst-1:0] mst_aw_size,
+  output axi_pkg::burst_t  [NoSlvMst-1:0] mst_aw_burst,
+  output logic             [NoSlvMst-1:0] mst_aw_lock,
+  output axi_pkg::cache_t  [NoSlvMst-1:0] mst_aw_cache,
+  output axi_pkg::prot_t   [NoSlvMst-1:0] mst_aw_prot,
+  output axi_pkg::qos_t    [NoSlvMst-1:0] mst_aw_qos,
+  output axi_pkg::region_t [NoSlvMst-1:0] mst_aw_region,
+  output axi_pkg::atop_t   [NoSlvMst-1:0] mst_aw_atop,
+  output user_t            [NoSlvMst-1:0] mst_aw_user,
+  output logic             [NoSlvMst-1:0] mst_aw_valid,
+  // W
+  output data_t            [NoSlvMst-1:0] mst_w_data,
+  output strb_t            [NoSlvMst-1:0] mst_w_strb,
+  output logic             [NoSlvMst-1:0] mst_w_last,
+  output user_t            [NoSlvMst-1:0] mst_w_user,
+  output logic             [NoSlvMst-1:0] mst_w_valid,
+  // B
+  output logic             [NoSlvMst-1:0] mst_b_ready,
+  // AR
+  output id_mst_t          [NoSlvMst-1:0] mst_ar_id,
+  output addr_t            [NoSlvMst-1:0] mst_ar_addr,
+  output axi_pkg::len_t    [NoSlvMst-1:0] mst_ar_len,
+  output axi_pkg::size_t   [NoSlvMst-1:0] mst_ar_size,
+  output axi_pkg::burst_t  [NoSlvMst-1:0] mst_ar_burst,
+  output logic             [NoSlvMst-1:0] mst_ar_lock,
+  output axi_pkg::cache_t  [NoSlvMst-1:0] mst_ar_cache,
+  output axi_pkg::prot_t   [NoSlvMst-1:0] mst_ar_prot,
+  output axi_pkg::qos_t    [NoSlvMst-1:0] mst_ar_qos,
+  output axi_pkg::region_t [NoSlvMst-1:0] mst_ar_region,
+  output user_t            [NoSlvMst-1:0] mst_ar_user,
+  output logic             [NoSlvMst-1:0] mst_ar_valid,
+  // R
+  output logic             [NoSlvMst-1:0] mst_r_ready,
+
+  /***********************************
+  /* Master ports response inputs
+  ***********************************/
+
+  // AW
+  input logic           [NoSlvMst-1:0] mst_aw_ready,
+  // AR
+  input logic           [NoSlvMst-1:0] mst_ar_ready,
+  // W
+  input logic           [NoSlvMst-1:0] mst_w_ready,
+  // B
+  input logic           [NoSlvMst-1:0] mst_b_valid,
+  input id_mst_t        [NoSlvMst-1:0] mst_b_id,
+  input axi_pkg::resp_t [NoSlvMst-1:0] mst_b_resp,
+  input user_t          [NoSlvMst-1:0] mst_b_user,
+  // R
+  input logic           [NoSlvMst-1:0] mst_r_valid,
+  input id_mst_t        [NoSlvMst-1:0] mst_r_id,
+  input data_t          [NoSlvMst-1:0] mst_r_data,
+  input axi_pkg::resp_t [NoSlvMst-1:0] mst_r_resp,
+  input logic           [NoSlvMst-1:0] mst_r_last,
+  input user_t          [NoSlvMst-1:0] mst_r_user
+
+);
+
+  localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
+    NoSlvPorts:         NoSlvMst,
+    NoMstPorts:         NoSlvMst,
+    MaxMstTrans:        10,
+    MaxSlvTrans:        6,
+    FallThrough:        1'b0,
+    LatencyMode:        LatencyMode,
+    PipelineStages:     0,
+    AxiIdWidthSlvPorts: AxiIdWidthMasters,
+    AxiIdUsedSlvPorts:  AxiIdUsed,
+    UniqueIds:          UniqueIds,
+    AxiAddrWidth:       AxiAddrWidth,
+    AxiDataWidth:       AxiDataWidth,
+    NoAddrRules:        NoSlvMst
+  };
+
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
+
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_slv_t, user_t)
+
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+
+  // TODO colluca: Can the next code block become a one-liner?
+  localparam rule_t [15:0] full_addr_map = {
+    rule_t'{idx: 32'd15, start_addr: 32'h0001_E000, end_addr: 32'h0002_0000},
+    rule_t'{idx: 32'd14, start_addr: 32'h0001_C000, end_addr: 32'h0001_E000},
+    rule_t'{idx: 32'd13, start_addr: 32'h0001_A000, end_addr: 32'h0001_C000},
+    rule_t'{idx: 32'd12, start_addr: 32'h0001_8000, end_addr: 32'h0001_A000},
+    rule_t'{idx: 32'd11, start_addr: 32'h0001_6000, end_addr: 32'h0001_8000},
+    rule_t'{idx: 32'd10, start_addr: 32'h0001_4000, end_addr: 32'h0001_6000},
+    rule_t'{idx: 32'd9, start_addr: 32'h0001_2000, end_addr: 32'h0001_4000},
+    rule_t'{idx: 32'd8, start_addr: 32'h0001_0000, end_addr: 32'h0001_2000},
+    rule_t'{idx: 32'd7, start_addr: 32'h0000_E000, end_addr: 32'h0001_0000},
+    rule_t'{idx: 32'd6, start_addr: 32'h0000_C000, end_addr: 32'h0000_E000},
+    rule_t'{idx: 32'd5, start_addr: 32'h0000_A000, end_addr: 32'h0000_C000},
+    rule_t'{idx: 32'd4, start_addr: 32'h0000_8000, end_addr: 32'h0000_A000},
+    rule_t'{idx: 32'd3, start_addr: 32'h0000_6000, end_addr: 32'h0000_8000},
+    rule_t'{idx: 32'd2, start_addr: 32'h0000_4000, end_addr: 32'h0000_6000},
+    rule_t'{idx: 32'd1, start_addr: 32'h0000_2000, end_addr: 32'h0000_4000},
+    rule_t'{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_2000}
+  };
+  localparam rule_t [xbar_cfg.NoAddrRules-1:0] addr_map = full_addr_map[xbar_cfg.NoAddrRules-1:0];
+
+  slv_req_t  [NoSlvMst-1:0] slv_reqs;
+  mst_req_t  [NoSlvMst-1:0] mst_reqs;
+  slv_resp_t [NoSlvMst-1:0] slv_resps;
+  mst_resp_t [NoSlvMst-1:0] mst_resps;
+
+  // Connect XBAR interfaces
+  generate
+    for (genvar i = 0; i < NoSlvMst; i++) begin : g_connect_slv_port
+      // Request
+      assign slv_reqs[i].aw.id     = slv_aw_id[i];
+      assign slv_reqs[i].aw.addr   = slv_aw_addr[i];
+      assign slv_reqs[i].aw.len    = slv_aw_len[i];
+      assign slv_reqs[i].aw.size   = slv_aw_size[i];
+      assign slv_reqs[i].aw.burst  = slv_aw_burst[i];
+      assign slv_reqs[i].aw.lock   = slv_aw_lock[i];
+      assign slv_reqs[i].aw.cache  = slv_aw_cache[i];
+      assign slv_reqs[i].aw.prot   = slv_aw_prot[i];
+      assign slv_reqs[i].aw.qos    = slv_aw_qos[i];
+      assign slv_reqs[i].aw.region = slv_aw_region[i];
+      assign slv_reqs[i].aw.atop   = slv_aw_atop[i];
+      assign slv_reqs[i].aw.user   = slv_aw_user[i];
+      assign slv_reqs[i].aw_valid  = slv_aw_valid[i];
+      assign slv_reqs[i].w.data    = slv_w_data[i];
+      assign slv_reqs[i].w.strb    = slv_w_strb[i];
+      assign slv_reqs[i].w.last    = slv_w_last[i];
+      assign slv_reqs[i].w.user    = slv_w_user[i];
+      assign slv_reqs[i].w_valid   = slv_w_valid[i];
+      assign slv_reqs[i].b_ready   = slv_b_ready[i];
+      assign slv_reqs[i].ar.id     = slv_ar_id[i];
+      assign slv_reqs[i].ar.addr   = slv_ar_addr[i];
+      assign slv_reqs[i].ar.len    = slv_ar_len[i];
+      assign slv_reqs[i].ar.size   = slv_ar_size[i];
+      assign slv_reqs[i].ar.burst  = slv_ar_burst[i];
+      assign slv_reqs[i].ar.lock   = slv_ar_lock[i];
+      assign slv_reqs[i].ar.cache  = slv_ar_cache[i];
+      assign slv_reqs[i].ar.prot   = slv_ar_prot[i];
+      assign slv_reqs[i].ar.qos    = slv_ar_qos[i];
+      assign slv_reqs[i].ar.region = slv_ar_region[i];
+      assign slv_reqs[i].ar.user   = slv_ar_user[i];
+      assign slv_reqs[i].ar_valid  = slv_ar_valid[i];
+      assign slv_reqs[i].r_ready   = slv_r_ready[i];
+      // Response
+      assign slv_aw_ready[i] = slv_resps[i].aw_ready;
+      assign slv_ar_ready[i] = slv_resps[i].ar_ready;
+      assign slv_w_ready[i]  = slv_resps[i].w_ready;
+      assign slv_b_valid[i]  = slv_resps[i].b_valid;
+      assign slv_b_id[i]     = slv_resps[i].b.id;
+      assign slv_b_resp[i]   = slv_resps[i].b.resp;
+      assign slv_b_user[i]   = slv_resps[i].b.user;
+      assign slv_r_valid[i]  = slv_resps[i].r_valid;
+      assign slv_r_id[i]     = slv_resps[i].r.id;
+      assign slv_r_data[i]   = slv_resps[i].r.data;
+      assign slv_r_resp[i]   = slv_resps[i].r.resp;
+      assign slv_r_last[i]   = slv_resps[i].r.last;
+      assign slv_r_user[i]   = slv_resps[i].r.user;
+    end
+
+    for (genvar i = 0; i < NoSlvMst; i++) begin : g_connect_mst_port
+      // Request
+      assign mst_aw_id[i]     = mst_reqs[i].aw.id;
+      assign mst_aw_addr[i]   = mst_reqs[i].aw.addr;
+      assign mst_aw_len[i]    = mst_reqs[i].aw.len;
+      assign mst_aw_size[i]   = mst_reqs[i].aw.size;
+      assign mst_aw_burst[i]  = mst_reqs[i].aw.burst;
+      assign mst_aw_lock[i]   = mst_reqs[i].aw.lock;
+      assign mst_aw_cache[i]  = mst_reqs[i].aw.cache;
+      assign mst_aw_prot[i]   = mst_reqs[i].aw.prot;
+      assign mst_aw_qos[i]    = mst_reqs[i].aw.qos;
+      assign mst_aw_region[i] = mst_reqs[i].aw.region;
+      assign mst_aw_atop[i]   = mst_reqs[i].aw.atop;
+      assign mst_aw_user[i]   = mst_reqs[i].aw.user;
+      assign mst_aw_valid[i]  = mst_reqs[i].aw_valid;
+      assign mst_w_data[i]    = mst_reqs[i].w.data;
+      assign mst_w_strb[i]    = mst_reqs[i].w.strb;
+      assign mst_w_last[i]    = mst_reqs[i].w.last;
+      assign mst_w_user[i]    = mst_reqs[i].w.user;
+      assign mst_w_valid[i]   = mst_reqs[i].w_valid;
+      assign mst_b_ready[i]   = mst_reqs[i].b_ready;
+      assign mst_ar_id[i]     = mst_reqs[i].ar.id;
+      assign mst_ar_addr[i]   = mst_reqs[i].ar.addr;
+      assign mst_ar_len[i]    = mst_reqs[i].ar.len;
+      assign mst_ar_size[i]   = mst_reqs[i].ar.size;
+      assign mst_ar_burst[i]  = mst_reqs[i].ar.burst;
+      assign mst_ar_lock[i]   = mst_reqs[i].ar.lock;
+      assign mst_ar_cache[i]  = mst_reqs[i].ar.cache;
+      assign mst_ar_prot[i]   = mst_reqs[i].ar.prot;
+      assign mst_ar_qos[i]    = mst_reqs[i].ar.qos;
+      assign mst_ar_region[i] = mst_reqs[i].ar.region;
+      assign mst_ar_user[i]   = mst_reqs[i].ar.user;
+      assign mst_ar_valid[i]  = mst_reqs[i].ar_valid;
+      assign mst_r_ready[i]   = mst_reqs[i].r_ready;
+      // Response
+      assign mst_resps[i].aw_ready = mst_aw_ready[i];
+      assign mst_resps[i].ar_ready = mst_ar_ready[i];
+      assign mst_resps[i].w_ready  = mst_w_ready[i];
+      assign mst_resps[i].b_valid  = mst_b_valid[i];
+      assign mst_resps[i].b.id     = mst_b_id[i];
+      assign mst_resps[i].b.resp   = mst_b_resp[i];
+      assign mst_resps[i].b.user   = mst_b_user[i];
+      assign mst_resps[i].r_valid  = mst_r_valid[i];
+      assign mst_resps[i].r.id     = mst_r_id[i];
+      assign mst_resps[i].r.data   = mst_r_data[i];
+      assign mst_resps[i].r.resp   = mst_r_resp[i];
+      assign mst_resps[i].r.last   = mst_r_last[i];
+      assign mst_resps[i].r.user   = mst_r_user[i];
+    end
+  endgenerate
+
+  if (EnableMulticast) begin : g_multicast
+    axi_mcast_xbar #(
+      .Cfg          (xbar_cfg),
+      .slv_aw_chan_t(slv_aw_chan_t),
+      .mst_aw_chan_t(mst_aw_chan_t),
+      .w_chan_t     (w_chan_t),
+      .slv_b_chan_t (slv_b_chan_t),
+      .mst_b_chan_t (mst_b_chan_t),
+      .slv_ar_chan_t(slv_ar_chan_t),
+      .mst_ar_chan_t(mst_ar_chan_t),
+      .slv_r_chan_t (slv_r_chan_t),
+      .mst_r_chan_t (mst_r_chan_t),
+      .slv_req_t    (slv_req_t),
+      .slv_resp_t   (slv_resp_t),
+      .mst_req_t    (mst_req_t),
+      .mst_resp_t   (mst_resp_t),
+      .rule_t       (rule_t)
+    ) i_xbar_dut (
+      .clk_i                (clk_i),
+      .rst_ni               (rst_ni),
+      .test_i               ('0),
+      .slv_ports_req_i      (slv_reqs),
+      .slv_ports_resp_o     (slv_resps),
+      .mst_ports_req_o      (mst_reqs),
+      .mst_ports_resp_i     (mst_resps),
+      .addr_map_i           (addr_map      )
+    );
+  end else begin : g_no_multicast
+    axi_xbar #(
+      .Cfg          (xbar_cfg),
+      .slv_aw_chan_t(slv_aw_chan_t),
+      .mst_aw_chan_t(mst_aw_chan_t),
+      .w_chan_t     (w_chan_t),
+      .slv_b_chan_t (slv_b_chan_t),
+      .mst_b_chan_t (mst_b_chan_t),
+      .slv_ar_chan_t(slv_ar_chan_t),
+      .mst_ar_chan_t(mst_ar_chan_t),
+      .slv_r_chan_t (slv_r_chan_t),
+      .mst_r_chan_t (mst_r_chan_t),
+      .slv_req_t    (slv_req_t),
+      .slv_resp_t   (slv_resp_t),
+      .mst_req_t    (mst_req_t),
+      .mst_resp_t   (mst_resp_t),
+      .rule_t       (rule_t)
+    ) i_xbar_dut (
+      .clk_i                (clk_i),
+      .rst_ni               (rst_ni),
+      .test_i               ('0),
+      .slv_ports_req_i      (slv_reqs),
+      .slv_ports_resp_o     (slv_resps),
+      .mst_ports_req_o      (mst_reqs),
+      .mst_ports_resp_i     (mst_resps),
+      .addr_map_i           (addr_map),
+      .en_default_mst_port_i('0),
+      .default_mst_port_i   ('0)
+    );
+  end
+
+endmodule
+
+module synth_axi_demux import axi_pkg::*; #(
+  parameter int unsigned   NoMstPorts      = 32'd8,
+  parameter bit            UniqueIds       = 0,
+  parameter xbar_latency_e LatencyMode     = NO_LATENCY,
+  // axi configuration
+  parameter int unsigned AxiIdWidthMasters =  4,
+  parameter int unsigned AxiIdUsed         =  3, // Has to be <= AxiIdWidthMasters
+  parameter int unsigned AxiAddrWidth      =  32,    // Axi Address Width
+  parameter int unsigned AxiDataWidth      =  32,    // Axi Data Width
+  parameter int unsigned AxiStrbWidth      =  AxiDataWidth / 8,
+  parameter int unsigned AxiUserWidth      =  1,
+  // axi types
+  parameter type id_t                      = logic [AxiIdWidthMasters-1:0],
+  parameter type addr_t                    = logic [AxiAddrWidth-1:0],
+  parameter type data_t                    = logic [AxiDataWidth-1:0],
+  parameter type strb_t                    = logic [AxiStrbWidth-1:0],
+  parameter type user_t                    = logic [AxiUserWidth-1:0],
+  // select signal types
+  parameter int unsigned SelectWidth       = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type         select_t          = logic [SelectWidth-1:0]
+) (
+  input  logic clk_i,
+  input  logic rst_ni,
+
+  // Select signals
+  input  select_t slv_aw_select_i,
+  input  select_t slv_ar_select_i,
+
+  /***********************************
+  /* Slave ports request inputs
+  ***********************************/
+
+  // AW
+  input id_t              slv_aw_id,
+  input addr_t            slv_aw_addr,
+  input axi_pkg::len_t    slv_aw_len,
+  input axi_pkg::size_t   slv_aw_size,
+  input axi_pkg::burst_t  slv_aw_burst,
+  input logic             slv_aw_lock,
+  input axi_pkg::cache_t  slv_aw_cache,
+  input axi_pkg::prot_t   slv_aw_prot,
+  input axi_pkg::qos_t    slv_aw_qos,
+  input axi_pkg::region_t slv_aw_region,
+  input axi_pkg::atop_t   slv_aw_atop,
+  input user_t            slv_aw_user,
+  input logic             slv_aw_valid,
+  // W
+  input data_t            slv_w_data,
+  input strb_t            slv_w_strb,
+  input logic             slv_w_last,
+  input user_t            slv_w_user,
+  input logic             slv_w_valid,
+  // B
+  input logic             slv_b_ready,
+  // AR
+  input id_t              slv_ar_id,
+  input addr_t            slv_ar_addr,
+  input axi_pkg::len_t    slv_ar_len,
+  input axi_pkg::size_t   slv_ar_size,
+  input axi_pkg::burst_t  slv_ar_burst,
+  input logic             slv_ar_lock,
+  input axi_pkg::cache_t  slv_ar_cache,
+  input axi_pkg::prot_t   slv_ar_prot,
+  input axi_pkg::qos_t    slv_ar_qos,
+  input axi_pkg::region_t slv_ar_region,
+  input user_t            slv_ar_user,
+  input logic             slv_ar_valid,
+  // R
+  input logic             slv_r_ready,
+
+  /***********************************
+  /* Slave ports response outputs
+  ***********************************/
+
+  // AW
+  output logic           slv_aw_ready,
+  // AR
+  output logic           slv_ar_ready,
+  // W
+  output logic           slv_w_ready,
+  // B
+  output logic           slv_b_valid,
+  output id_t            slv_b_id,
+  output axi_pkg::resp_t slv_b_resp,
+  output user_t          slv_b_user,
+  // R
+  output logic           slv_r_valid,
+  output id_t            slv_r_id,
+  output data_t          slv_r_data,
+  output axi_pkg::resp_t slv_r_resp,
+  output logic           slv_r_last,
+  output user_t          slv_r_user,
+
+  /***********************************
+  /* Master ports request outputs
+  ***********************************/
+
+  // AW
+  output id_t              [NoMstPorts-1:0] mst_aw_id,
+  output addr_t            [NoMstPorts-1:0] mst_aw_addr,
+  output axi_pkg::len_t    [NoMstPorts-1:0] mst_aw_len,
+  output axi_pkg::size_t   [NoMstPorts-1:0] mst_aw_size,
+  output axi_pkg::burst_t  [NoMstPorts-1:0] mst_aw_burst,
+  output logic             [NoMstPorts-1:0] mst_aw_lock,
+  output axi_pkg::cache_t  [NoMstPorts-1:0] mst_aw_cache,
+  output axi_pkg::prot_t   [NoMstPorts-1:0] mst_aw_prot,
+  output axi_pkg::qos_t    [NoMstPorts-1:0] mst_aw_qos,
+  output axi_pkg::region_t [NoMstPorts-1:0] mst_aw_region,
+  output axi_pkg::atop_t   [NoMstPorts-1:0] mst_aw_atop,
+  output user_t            [NoMstPorts-1:0] mst_aw_user,
+  output logic             [NoMstPorts-1:0] mst_aw_valid,
+  // W
+  output data_t            [NoMstPorts-1:0] mst_w_data,
+  output strb_t            [NoMstPorts-1:0] mst_w_strb,
+  output logic             [NoMstPorts-1:0] mst_w_last,
+  output user_t            [NoMstPorts-1:0] mst_w_user,
+  output logic             [NoMstPorts-1:0] mst_w_valid,
+  // B
+  output logic             [NoMstPorts-1:0] mst_b_ready,
+  // AR
+  output id_t              [NoMstPorts-1:0] mst_ar_id,
+  output addr_t            [NoMstPorts-1:0] mst_ar_addr,
+  output axi_pkg::len_t    [NoMstPorts-1:0] mst_ar_len,
+  output axi_pkg::size_t   [NoMstPorts-1:0] mst_ar_size,
+  output axi_pkg::burst_t  [NoMstPorts-1:0] mst_ar_burst,
+  output logic             [NoMstPorts-1:0] mst_ar_lock,
+  output axi_pkg::cache_t  [NoMstPorts-1:0] mst_ar_cache,
+  output axi_pkg::prot_t   [NoMstPorts-1:0] mst_ar_prot,
+  output axi_pkg::qos_t    [NoMstPorts-1:0] mst_ar_qos,
+  output axi_pkg::region_t [NoMstPorts-1:0] mst_ar_region,
+  output user_t            [NoMstPorts-1:0] mst_ar_user,
+  output logic             [NoMstPorts-1:0] mst_ar_valid,
+  // R
+  output logic             [NoMstPorts-1:0] mst_r_ready,
+
+  /***********************************
+  /* Master ports response inputs
+  ***********************************/
+
+  // AW
+  input logic           [NoMstPorts-1:0] mst_aw_ready,
+  // AR
+  input logic           [NoMstPorts-1:0] mst_ar_ready,
+  // W
+  input logic           [NoMstPorts-1:0] mst_w_ready,
+  // B
+  input logic           [NoMstPorts-1:0] mst_b_valid,
+  input id_t            [NoMstPorts-1:0] mst_b_id,
+  input axi_pkg::resp_t [NoMstPorts-1:0] mst_b_resp,
+  input user_t          [NoMstPorts-1:0] mst_b_user,
+  // R
+  input logic           [NoMstPorts-1:0] mst_r_valid,
+  input id_t            [NoMstPorts-1:0] mst_r_id,
+  input data_t          [NoMstPorts-1:0] mst_r_data,
+  input axi_pkg::resp_t [NoMstPorts-1:0] mst_r_resp,
+  input logic           [NoMstPorts-1:0] mst_r_last,
+  input user_t          [NoMstPorts-1:0] mst_r_user
+
+);
+
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+
+  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+
+  req_t                   slv_req;
+  req_t  [NoMstPorts-1:0] mst_reqs;
+  resp_t                  slv_resp;
+  resp_t [NoMstPorts-1:0] mst_resps;
+
+  // Connect XBAR interfaces
+  assign slv_req.aw.id     = slv_aw_id;
+  assign slv_req.aw.addr   = slv_aw_addr;
+  assign slv_req.aw.len    = slv_aw_len;
+  assign slv_req.aw.size   = slv_aw_size;
+  assign slv_req.aw.burst  = slv_aw_burst;
+  assign slv_req.aw.lock   = slv_aw_lock;
+  assign slv_req.aw.cache  = slv_aw_cache;
+  assign slv_req.aw.prot   = slv_aw_prot;
+  assign slv_req.aw.qos    = slv_aw_qos;
+  assign slv_req.aw.region = slv_aw_region;
+  assign slv_req.aw.atop   = slv_aw_atop;
+  assign slv_req.aw.user   = slv_aw_user;
+  assign slv_req.aw_valid  = slv_aw_valid;
+  assign slv_req.w.data    = slv_w_data;
+  assign slv_req.w.strb    = slv_w_strb;
+  assign slv_req.w.last    = slv_w_last;
+  assign slv_req.w.user    = slv_w_user;
+  assign slv_req.w_valid   = slv_w_valid;
+  assign slv_req.b_ready   = slv_b_ready;
+  assign slv_req.ar.id     = slv_ar_id;
+  assign slv_req.ar.addr   = slv_ar_addr;
+  assign slv_req.ar.len    = slv_ar_len;
+  assign slv_req.ar.size   = slv_ar_size;
+  assign slv_req.ar.burst  = slv_ar_burst;
+  assign slv_req.ar.lock   = slv_ar_lock;
+  assign slv_req.ar.cache  = slv_ar_cache;
+  assign slv_req.ar.prot   = slv_ar_prot;
+  assign slv_req.ar.qos    = slv_ar_qos;
+  assign slv_req.ar.region = slv_ar_region;
+  assign slv_req.ar.user   = slv_ar_user;
+  assign slv_req.ar_valid  = slv_ar_valid;
+  assign slv_req.r_ready   = slv_r_ready;
+  // Response
+  assign slv_aw_ready = slv_resp.aw_ready;
+  assign slv_ar_ready = slv_resp.ar_ready;
+  assign slv_w_ready  = slv_resp.w_ready;
+  assign slv_b_valid  = slv_resp.b_valid;
+  assign slv_b_id     = slv_resp.b.id;
+  assign slv_b_resp   = slv_resp.b.resp;
+  assign slv_b_user   = slv_resp.b.user;
+  assign slv_r_valid  = slv_resp.r_valid;
+  assign slv_r_id     = slv_resp.r.id;
+  assign slv_r_data   = slv_resp.r.data;
+  assign slv_r_resp   = slv_resp.r.resp;
+  assign slv_r_last   = slv_resp.r.last;
+  assign slv_r_user   = slv_resp.r.user;
+
+  generate
+    for (genvar i = 0; i < NoMstPorts; i++) begin : g_connect_mst_port
+      // Request
+      assign mst_aw_id[i]     = mst_reqs[i].aw.id;
+      assign mst_aw_addr[i]   = mst_reqs[i].aw.addr;
+      assign mst_aw_len[i]    = mst_reqs[i].aw.len;
+      assign mst_aw_size[i]   = mst_reqs[i].aw.size;
+      assign mst_aw_burst[i]  = mst_reqs[i].aw.burst;
+      assign mst_aw_lock[i]   = mst_reqs[i].aw.lock;
+      assign mst_aw_cache[i]  = mst_reqs[i].aw.cache;
+      assign mst_aw_prot[i]   = mst_reqs[i].aw.prot;
+      assign mst_aw_qos[i]    = mst_reqs[i].aw.qos;
+      assign mst_aw_region[i] = mst_reqs[i].aw.region;
+      assign mst_aw_atop[i]   = mst_reqs[i].aw.atop;
+      assign mst_aw_user[i]   = mst_reqs[i].aw.user;
+      assign mst_aw_valid[i]  = mst_reqs[i].aw_valid;
+      assign mst_w_data[i]    = mst_reqs[i].w.data;
+      assign mst_w_strb[i]    = mst_reqs[i].w.strb;
+      assign mst_w_last[i]    = mst_reqs[i].w.last;
+      assign mst_w_user[i]    = mst_reqs[i].w.user;
+      assign mst_w_valid[i]   = mst_reqs[i].w_valid;
+      assign mst_b_ready[i]   = mst_reqs[i].b_ready;
+      assign mst_ar_id[i]     = mst_reqs[i].ar.id;
+      assign mst_ar_addr[i]   = mst_reqs[i].ar.addr;
+      assign mst_ar_len[i]    = mst_reqs[i].ar.len;
+      assign mst_ar_size[i]   = mst_reqs[i].ar.size;
+      assign mst_ar_burst[i]  = mst_reqs[i].ar.burst;
+      assign mst_ar_lock[i]   = mst_reqs[i].ar.lock;
+      assign mst_ar_cache[i]  = mst_reqs[i].ar.cache;
+      assign mst_ar_prot[i]   = mst_reqs[i].ar.prot;
+      assign mst_ar_qos[i]    = mst_reqs[i].ar.qos;
+      assign mst_ar_region[i] = mst_reqs[i].ar.region;
+      assign mst_ar_user[i]   = mst_reqs[i].ar.user;
+      assign mst_ar_valid[i]  = mst_reqs[i].ar_valid;
+      assign mst_r_ready[i]   = mst_reqs[i].r_ready;
+      // Response
+      assign mst_resps[i].aw_ready = mst_aw_ready[i];
+      assign mst_resps[i].ar_ready = mst_ar_ready[i];
+      assign mst_resps[i].w_ready  = mst_w_ready[i];
+      assign mst_resps[i].b_valid  = mst_b_valid[i];
+      assign mst_resps[i].b.id     = mst_b_id[i];
+      assign mst_resps[i].b.resp   = mst_b_resp[i];
+      assign mst_resps[i].b.user   = mst_b_user[i];
+      assign mst_resps[i].r_valid  = mst_r_valid[i];
+      assign mst_resps[i].r.id     = mst_r_id[i];
+      assign mst_resps[i].r.data   = mst_r_data[i];
+      assign mst_resps[i].r.resp   = mst_r_resp[i];
+      assign mst_resps[i].r.last   = mst_r_last[i];
+      assign mst_resps[i].r.user   = mst_r_user[i];
+    end
+  endgenerate
+
+  axi_demux #(
+    .AxiIdWidth (AxiIdWidthMasters),
+    .AtopSupport(1'b0),
+    .aw_chan_t  (aw_chan_t),
+    .w_chan_t   (w_chan_t),
+    .b_chan_t   (b_chan_t),
+    .ar_chan_t  (ar_chan_t),
+    .r_chan_t   (r_chan_t),
+    .axi_req_t  (req_t),
+    .axi_resp_t (resp_t),
+    .NoMstPorts (NoMstPorts),
+    .MaxTrans   (10),
+    .AxiLookBits(AxiIdUsed),
+    .UniqueIds  (UniqueIds),
+    .FallThrough(1'b0),
+    .SpillAw    (LatencyMode[9]),
+    .SpillW     (LatencyMode[8]),
+    .SpillB     (LatencyMode[7]),
+    .SpillAr    (LatencyMode[6]),
+    .SpillR     (LatencyMode[5])
+  ) i_axi_demux (
+    .clk_i          (clk_i),
+    .rst_ni         (rst_ni),
+    .test_i         ('0),
+    .slv_req_i      (slv_req),
+    .slv_aw_select_i(slv_aw_select_i),
+    .slv_ar_select_i(slv_ar_select_i),
+    .slv_resp_o     (slv_resp),
+    .mst_reqs_o     (mst_reqs),
+    .mst_resps_i    (mst_resps)
+  );
+endmodule
+
+module synth_axi_mcast_demux import axi_pkg::*; #(
+  parameter int unsigned   NoMstPorts      = 32'd8,
+  parameter bit            UniqueIds       = 0,
+  parameter xbar_latency_e LatencyMode     = NO_LATENCY,
+  // axi configuration
+  parameter int unsigned AxiIdWidthMasters =  4,
+  parameter int unsigned AxiIdUsed         =  3, // Has to be <= AxiIdWidthMasters
+  parameter int unsigned AxiAddrWidth      =  32,    // Axi Address Width
+  parameter int unsigned AxiDataWidth      =  32,    // Axi Data Width
+  parameter int unsigned AxiStrbWidth      =  AxiDataWidth / 8,
+  parameter int unsigned AxiUserWidth      =  32,
+  // axi types
+  parameter type id_t                      = logic [AxiIdWidthMasters-1:0],
+  parameter type addr_t                    = logic [AxiAddrWidth-1:0],
+  parameter type data_t                    = logic [AxiDataWidth-1:0],
+  parameter type strb_t                    = logic [AxiStrbWidth-1:0],
+  parameter type user_t                    = logic [AxiUserWidth-1:0],
+  // select signal types
+  parameter int unsigned IdxSelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type idx_select_t              = logic [IdxSelectWidth-1:0],
+  parameter type mask_select_t             = logic [NoMstPorts-1:0]
+) (
+  input logic clk_i,
+  input logic rst_ni,
+
+  // Address decoder signals
+  input mask_select_t slv_aw_select_i,
+  input idx_select_t  slv_ar_select_i,
+  input addr_t [NoMstPorts-1:0] slv_aw_out_addr_i,
+  input addr_t [NoMstPorts-1:0] slv_aw_out_mask_i,
+
+  /***********************************
+  /* Slave ports request inputs
+  ***********************************/
+
+  // AW
+  input id_t              slv_aw_id,
+  input addr_t            slv_aw_addr,
+  input axi_pkg::len_t    slv_aw_len,
+  input axi_pkg::size_t   slv_aw_size,
+  input axi_pkg::burst_t  slv_aw_burst,
+  input logic             slv_aw_lock,
+  input axi_pkg::cache_t  slv_aw_cache,
+  input axi_pkg::prot_t   slv_aw_prot,
+  input axi_pkg::qos_t    slv_aw_qos,
+  input axi_pkg::region_t slv_aw_region,
+  input axi_pkg::atop_t   slv_aw_atop,
+  input user_t            slv_aw_user,
+  input logic             slv_aw_valid,
+  // W
+  input data_t            slv_w_data,
+  input strb_t            slv_w_strb,
+  input logic             slv_w_last,
+  input user_t            slv_w_user,
+  input logic             slv_w_valid,
+  // B
+  input logic             slv_b_ready,
+  // AR
+  input id_t              slv_ar_id,
+  input addr_t            slv_ar_addr,
+  input axi_pkg::len_t    slv_ar_len,
+  input axi_pkg::size_t   slv_ar_size,
+  input axi_pkg::burst_t  slv_ar_burst,
+  input logic             slv_ar_lock,
+  input axi_pkg::cache_t  slv_ar_cache,
+  input axi_pkg::prot_t   slv_ar_prot,
+  input axi_pkg::qos_t    slv_ar_qos,
+  input axi_pkg::region_t slv_ar_region,
+  input user_t            slv_ar_user,
+  input logic             slv_ar_valid,
+  // R
+  input logic             slv_r_ready,
+
+  /***********************************
+  /* Slave ports response outputs
+  ***********************************/
+
+  // AW
+  output logic           slv_aw_ready,
+  // AR
+  output logic           slv_ar_ready,
+  // W
+  output logic           slv_w_ready,
+  // B
+  output logic           slv_b_valid,
+  output id_t            slv_b_id,
+  output axi_pkg::resp_t slv_b_resp,
+  output user_t          slv_b_user,
+  // R
+  output logic           slv_r_valid,
+  output id_t            slv_r_id,
+  output data_t          slv_r_data,
+  output axi_pkg::resp_t slv_r_resp,
+  output logic           slv_r_last,
+  output user_t          slv_r_user,
+
+  /***********************************
+  /* Master ports request outputs
+  ***********************************/
+
+  // AW
+  output id_t              [NoMstPorts-1:0] mst_aw_id,
+  output addr_t            [NoMstPorts-1:0] mst_aw_addr,
+  output axi_pkg::len_t    [NoMstPorts-1:0] mst_aw_len,
+  output axi_pkg::size_t   [NoMstPorts-1:0] mst_aw_size,
+  output axi_pkg::burst_t  [NoMstPorts-1:0] mst_aw_burst,
+  output logic             [NoMstPorts-1:0] mst_aw_lock,
+  output axi_pkg::cache_t  [NoMstPorts-1:0] mst_aw_cache,
+  output axi_pkg::prot_t   [NoMstPorts-1:0] mst_aw_prot,
+  output axi_pkg::qos_t    [NoMstPorts-1:0] mst_aw_qos,
+  output axi_pkg::region_t [NoMstPorts-1:0] mst_aw_region,
+  output axi_pkg::atop_t   [NoMstPorts-1:0] mst_aw_atop,
+  output user_t            [NoMstPorts-1:0] mst_aw_user,
+  output logic             [NoMstPorts-1:0] mst_aw_valid,
+  // W
+  output data_t            [NoMstPorts-1:0] mst_w_data,
+  output strb_t            [NoMstPorts-1:0] mst_w_strb,
+  output logic             [NoMstPorts-1:0] mst_w_last,
+  output user_t            [NoMstPorts-1:0] mst_w_user,
+  output logic             [NoMstPorts-1:0] mst_w_valid,
+  // B
+  output logic             [NoMstPorts-1:0] mst_b_ready,
+  // AR
+  output id_t              [NoMstPorts-1:0] mst_ar_id,
+  output addr_t            [NoMstPorts-1:0] mst_ar_addr,
+  output axi_pkg::len_t    [NoMstPorts-1:0] mst_ar_len,
+  output axi_pkg::size_t   [NoMstPorts-1:0] mst_ar_size,
+  output axi_pkg::burst_t  [NoMstPorts-1:0] mst_ar_burst,
+  output logic             [NoMstPorts-1:0] mst_ar_lock,
+  output axi_pkg::cache_t  [NoMstPorts-1:0] mst_ar_cache,
+  output axi_pkg::prot_t   [NoMstPorts-1:0] mst_ar_prot,
+  output axi_pkg::qos_t    [NoMstPorts-1:0] mst_ar_qos,
+  output axi_pkg::region_t [NoMstPorts-1:0] mst_ar_region,
+  output user_t            [NoMstPorts-1:0] mst_ar_user,
+  output logic             [NoMstPorts-1:0] mst_ar_valid,
+  // R
+  output logic             [NoMstPorts-1:0] mst_r_ready,
+
+  /***********************************
+  /* Master ports response inputs
+  ***********************************/
+
+  // AW
+  input logic           [NoMstPorts-1:0] mst_aw_ready,
+  // AR
+  input logic           [NoMstPorts-1:0] mst_ar_ready,
+  // W
+  input logic           [NoMstPorts-1:0] mst_w_ready,
+  // B
+  input logic           [NoMstPorts-1:0] mst_b_valid,
+  input id_t            [NoMstPorts-1:0] mst_b_id,
+  input axi_pkg::resp_t [NoMstPorts-1:0] mst_b_resp,
+  input user_t          [NoMstPorts-1:0] mst_b_user,
+  // R
+  input logic           [NoMstPorts-1:0] mst_r_valid,
+  input id_t            [NoMstPorts-1:0] mst_r_id,
+  input data_t          [NoMstPorts-1:0] mst_r_data,
+  input axi_pkg::resp_t [NoMstPorts-1:0] mst_r_resp,
+  input logic           [NoMstPorts-1:0] mst_r_last,
+  input user_t          [NoMstPorts-1:0] mst_r_user
+
+);
+
+  typedef struct packed {
+    logic [AxiUserWidth-1:0] mcast;
+  } aw_user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_t, user_t)
+
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_t, user_t)
+
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+
+  slv_req_t                   slv_req;
+  mst_req_t  [NoMstPorts-1:0] mst_reqs;
+  slv_resp_t                  slv_resp;
+  mst_resp_t [NoMstPorts-1:0] mst_resps;
+
+  // Connect XBAR interfaces
+  assign slv_req.aw.id     = slv_aw_id;
+  assign slv_req.aw.addr   = slv_aw_addr;
+  assign slv_req.aw.len    = slv_aw_len;
+  assign slv_req.aw.size   = slv_aw_size;
+  assign slv_req.aw.burst  = slv_aw_burst;
+  assign slv_req.aw.lock   = slv_aw_lock;
+  assign slv_req.aw.cache  = slv_aw_cache;
+  assign slv_req.aw.prot   = slv_aw_prot;
+  assign slv_req.aw.qos    = slv_aw_qos;
+  assign slv_req.aw.region = slv_aw_region;
+  assign slv_req.aw.atop   = slv_aw_atop;
+  assign slv_req.aw.user   = slv_aw_user;
+  assign slv_req.aw_valid  = slv_aw_valid;
+  assign slv_req.w.data    = slv_w_data;
+  assign slv_req.w.strb    = slv_w_strb;
+  assign slv_req.w.last    = slv_w_last;
+  assign slv_req.w.user    = slv_w_user;
+  assign slv_req.w_valid   = slv_w_valid;
+  assign slv_req.b_ready   = slv_b_ready;
+  assign slv_req.ar.id     = slv_ar_id;
+  assign slv_req.ar.addr   = slv_ar_addr;
+  assign slv_req.ar.len    = slv_ar_len;
+  assign slv_req.ar.size   = slv_ar_size;
+  assign slv_req.ar.burst  = slv_ar_burst;
+  assign slv_req.ar.lock   = slv_ar_lock;
+  assign slv_req.ar.cache  = slv_ar_cache;
+  assign slv_req.ar.prot   = slv_ar_prot;
+  assign slv_req.ar.qos    = slv_ar_qos;
+  assign slv_req.ar.region = slv_ar_region;
+  assign slv_req.ar.user   = slv_ar_user;
+  assign slv_req.ar_valid  = slv_ar_valid;
+  assign slv_req.r_ready   = slv_r_ready;
+  // Response
+  assign slv_aw_ready = slv_resp.aw_ready;
+  assign slv_ar_ready = slv_resp.ar_ready;
+  assign slv_w_ready  = slv_resp.w_ready;
+  assign slv_b_valid  = slv_resp.b_valid;
+  assign slv_b_id     = slv_resp.b.id;
+  assign slv_b_resp   = slv_resp.b.resp;
+  assign slv_b_user   = slv_resp.b.user;
+  assign slv_r_valid  = slv_resp.r_valid;
+  assign slv_r_id     = slv_resp.r.id;
+  assign slv_r_data   = slv_resp.r.data;
+  assign slv_r_resp   = slv_resp.r.resp;
+  assign slv_r_last   = slv_resp.r.last;
+  assign slv_r_user   = slv_resp.r.user;
+
+  generate
+    for (genvar i = 0; i < NoMstPorts; i++) begin : g_connect_mst_port
+      // Request
+      assign mst_aw_id[i]     = mst_reqs[i].aw.id;
+      assign mst_aw_addr[i]   = mst_reqs[i].aw.addr;
+      assign mst_aw_len[i]    = mst_reqs[i].aw.len;
+      assign mst_aw_size[i]   = mst_reqs[i].aw.size;
+      assign mst_aw_burst[i]  = mst_reqs[i].aw.burst;
+      assign mst_aw_lock[i]   = mst_reqs[i].aw.lock;
+      assign mst_aw_cache[i]  = mst_reqs[i].aw.cache;
+      assign mst_aw_prot[i]   = mst_reqs[i].aw.prot;
+      assign mst_aw_qos[i]    = mst_reqs[i].aw.qos;
+      assign mst_aw_region[i] = mst_reqs[i].aw.region;
+      assign mst_aw_atop[i]   = mst_reqs[i].aw.atop;
+      assign mst_aw_user[i]   = mst_reqs[i].aw.user;
+      assign mst_aw_valid[i]  = mst_reqs[i].aw_valid;
+      assign mst_w_data[i]    = mst_reqs[i].w.data;
+      assign mst_w_strb[i]    = mst_reqs[i].w.strb;
+      assign mst_w_last[i]    = mst_reqs[i].w.last;
+      assign mst_w_user[i]    = mst_reqs[i].w.user;
+      assign mst_w_valid[i]   = mst_reqs[i].w_valid;
+      assign mst_b_ready[i]   = mst_reqs[i].b_ready;
+      assign mst_ar_id[i]     = mst_reqs[i].ar.id;
+      assign mst_ar_addr[i]   = mst_reqs[i].ar.addr;
+      assign mst_ar_len[i]    = mst_reqs[i].ar.len;
+      assign mst_ar_size[i]   = mst_reqs[i].ar.size;
+      assign mst_ar_burst[i]  = mst_reqs[i].ar.burst;
+      assign mst_ar_lock[i]   = mst_reqs[i].ar.lock;
+      assign mst_ar_cache[i]  = mst_reqs[i].ar.cache;
+      assign mst_ar_prot[i]   = mst_reqs[i].ar.prot;
+      assign mst_ar_qos[i]    = mst_reqs[i].ar.qos;
+      assign mst_ar_region[i] = mst_reqs[i].ar.region;
+      assign mst_ar_user[i]   = mst_reqs[i].ar.user;
+      assign mst_ar_valid[i]  = mst_reqs[i].ar_valid;
+      assign mst_r_ready[i]   = mst_reqs[i].r_ready;
+      // Response
+      assign mst_resps[i].aw_ready = mst_aw_ready[i];
+      assign mst_resps[i].ar_ready = mst_ar_ready[i];
+      assign mst_resps[i].w_ready  = mst_w_ready[i];
+      assign mst_resps[i].b_valid  = mst_b_valid[i];
+      assign mst_resps[i].b.id     = mst_b_id[i];
+      assign mst_resps[i].b.resp   = mst_b_resp[i];
+      assign mst_resps[i].b.user   = mst_b_user[i];
+      assign mst_resps[i].r_valid  = mst_r_valid[i];
+      assign mst_resps[i].r.id     = mst_r_id[i];
+      assign mst_resps[i].r.data   = mst_r_data[i];
+      assign mst_resps[i].r.resp   = mst_r_resp[i];
+      assign mst_resps[i].r.last   = mst_r_last[i];
+      assign mst_resps[i].r.user   = mst_r_user[i];
+    end
+  endgenerate
+
+  axi_mcast_demux #(
+    .AxiIdWidth (AxiIdWidthMasters),
+    .AtopSupport(1'b0),
+    .aw_addr_t  (addr_t),
+    .aw_chan_t  (slv_aw_chan_t),
+    .w_chan_t   (w_chan_t),
+    .b_chan_t   (slv_b_chan_t),
+    .ar_chan_t  (slv_ar_chan_t),
+    .r_chan_t   (slv_r_chan_t),
+    .axi_req_t  (slv_req_t),
+    .axi_resp_t (slv_resp_t),
+    .NoMstPorts (NoMstPorts),
+    .MaxTrans   (10),
+    .AxiLookBits(AxiIdUsed),
+    .UniqueIds  (UniqueIds),
+    .FallThrough(1'b0),
+    .SpillAw    (LatencyMode[9]),
+    .SpillW     (LatencyMode[8]),
+    .SpillB     (LatencyMode[7]),
+    .SpillAr    (LatencyMode[6]),
+    .SpillR     (LatencyMode[5])
+  ) i_axi_mcast_demux (
+    .clk_i          (clk_i),
+    .rst_ni         (rst_ni),
+    .test_i         ('0),
+    .slv_req_i      (slv_req),
+    .slv_aw_select_i(slv_aw_select_i),
+    .slv_ar_select_i(slv_ar_select_i),
+    .slv_aw_addr_i  (slv_aw_out_addr_i),
+    .slv_aw_mask_i  (slv_aw_out_mask_i),
+    .slv_resp_o     (slv_resp),
+    .mst_reqs_o     (mst_reqs),
+    .mst_resps_i    (mst_resps)
   );
 
 endmodule
