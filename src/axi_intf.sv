@@ -515,6 +515,14 @@ interface AXI_LITE_DV #(
     output r_data, r_resp, r_valid, input r_ready
   );
 
+  modport Monitor (
+    input aw_addr, aw_prot, aw_valid, aw_ready,
+          w_data, w_strb, w_valid, w_ready,
+          b_resp, b_valid, b_ready,
+          ar_addr, ar_prot, ar_valid, ar_ready,
+          r_data, r_resp, r_valid, r_ready
+  );
+
 endinterface
 
 

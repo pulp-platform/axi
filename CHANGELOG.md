@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add Monitor modport to `AXI_BUS` and `AXI_LITE` interfaces.
+- Add Monitor modport to `AXI_BUS`, `AXI_LITE`, and `AXI_LITE_DV` interfaces.
 
 ### Changed
 
