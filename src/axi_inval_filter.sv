@@ -35,6 +35,8 @@ module axi_inval_filter #(
     input  logic                 inval_ready_i
   );
 
+  import cf_math_pkg::idx_width;
+
   // Includes
   `include "axi/typedef.svh"
   `include "common_cells/registers.svh"
@@ -51,10 +53,6 @@ module axi_inval_filter #(
 
   assign inval_addr_o  = aw_fifo_data.addr + inval_offset_q;
   assign inval_valid_o = ~aw_fifo_empty;
-
-  // Misaligned-address flag
-  logic addr_misaligned;
-  assign addr_misaligned = |aw_fifo_data.addr[$clog2(L1LineWidth)-1:0];
 
   //////////////////
   // AXI Handling //
@@ -92,10 +90,10 @@ module axi_inval_filter #(
           // Wait for the L1 to accept a new invalidation request
           if (inval_ready_i) begin
             // Continue if we are not done yet
-            // If the address is misaligned, invalidate one additional cache line
-            if (L1LineWidth < ((aw_fifo_data.len + 1 + addr_misaligned) << aw_fifo_data.size)) begin
+            // If the addr is misaligned wrt the cache line, we should invalidate one line more
+            if ((L1LineWidth - aw_fifo_data.addr[idx_width(L1LineWidth)-1:0]) < ((aw_fifo_data.len + 1) << aw_fifo_data.size)) begin
               state_d        = Invalidating;
-              inval_offset_d = L1LineWidth;
+              inval_offset_d = L1LineWidth - aw_fifo_data.addr[idx_width(L1LineWidth)-1:0];
             end else begin
               aw_fifo_pop = 1'b1;
             end
@@ -109,8 +107,7 @@ module axi_inval_filter #(
         if (inval_ready_i) begin
           inval_offset_d = inval_offset_q + L1LineWidth;
           // Are we done?
-          // If the address is misaligned, invalidate one additional cache line
-          if (inval_offset_d >= ((aw_fifo_data.len + 1 + addr_misaligned) << aw_fifo_data.size)) begin
+          if (inval_offset_d >= ((aw_fifo_data.len + 1) << aw_fifo_data.size)) begin
             state_d        = Idle;
             inval_offset_d = '0;
             aw_fifo_pop    = 1'b1;
