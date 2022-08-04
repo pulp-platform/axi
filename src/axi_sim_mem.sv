@@ -14,6 +14,8 @@
 /// axi_sim_mem #( ... ) i_sim_mem ( ... );
 /// initial begin
 ///   $readmemh("file_with_memory_addrs_and_data.mem", i_sim_mem.mem);
+///   $readmemh("file_with_memory_addrs_and_read_errors.mem", i_sim_mem.rerr);
+///   $readmemh("file_with_memory_addrs_and_write_errors.mem", i_sim_mem.werr);
 /// end
 /// ```
 /// `mem` is addressed (or indexed) byte-wise with `AddrWidth`-wide addresses.
@@ -34,6 +36,8 @@ module axi_sim_mem #(
   parameter type axi_rsp_t = logic,
   /// Warn on accesses to uninitialized bytes
   parameter bit WarnUninitialized = 1'b0,
+  /// Clear error on access
+  parameter bit ClearErrOnAccess = 1'b0,
   /// Application delay (measured after rising clock edge)
   parameter time ApplDelay = 0ps,
   /// Acquisition delay (measured after rising clock edge)
@@ -104,7 +108,12 @@ module axi_sim_mem #(
   } monitor_t;
 
   monitor_t mon_w, mon_r;
-  logic [7:0] mem[addr_t];
+  logic [7:0]     mem[addr_t];
+  axi_pkg::resp_t rerr[addr_t] = '{default: axi_pkg::BURST_FIXED};
+  axi_pkg::resp_t werr[addr_t] = '{default: axi_pkg::BURST_FIXED};
+
+  // error happened in write burst
+  axi_pkg::resp_t error_happened = axi_pkg::RESP_OKAY;
 
   initial begin
     automatic ar_t ar_queue[$];
@@ -156,16 +165,20 @@ module axi_sim_mem #(
               if (axi_req_i.w.strb[i_byte]) begin
                 automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
                 mem[byte_addr] = axi_req_i.w.data[i_byte*8+:8];
+                error_happened = error_happened | werr[byte_addr];
+                if (ClearErrOnAccess)
+                  werr[byte_addr] = axi_pkg::RESP_OKAY;
               end
             end
             if (w_cnt == aw_queue[0].len) begin
               automatic b_t b_beat = '0;
               assert (axi_req_i.w.last) else $error("Expected last beat of W burst!");
               b_beat.id = aw_queue[0].id;
-              b_beat.resp = axi_pkg::RESP_OKAY;
+              b_beat.resp = error_happened;
               b_queue.push_back(b_beat);
               w_cnt = 0;
-              mon_w.last = 1'b1;
+	      mon_w.last = 1'b1;
+              error_happened = axi_pkg::RESP_OKAY;
               void'(aw_queue.pop_front());
             end else begin
               assert (!axi_req_i.w.last) else $error("Did not expect last beat of W burst!");
@@ -211,6 +224,7 @@ module axi_sim_mem #(
           automatic axi_pkg::size_t size = ar_queue[0].size;
           automatic addr_t addr = axi_pkg::beat_addr(ar_queue[0].addr, size, len, burst, r_cnt);
           automatic r_t r_beat = '0;
+          automatic data_t r_data = 'x; // compatibility reasons
           r_beat.data = 'x;
           r_beat.id = ar_queue[0].id;
           r_beat.resp = axi_pkg::RESP_OKAY;
@@ -224,11 +238,16 @@ module axi_sim_mem #(
                 $warning("Access to non-initialized byte at address 0x%016x by ID 0x%x.", byte_addr,
                     r_beat.id);
               end
-              r_beat.data[i_byte*8+:8] = 'x;
+              r_data[i_byte*8+:8] = 'x;
             end else begin
-              r_beat.data[i_byte*8+:8] = mem[byte_addr];
+              r_data[i_byte*8+:8] = mem[byte_addr];
+            end
+            r_beat.resp = r_beat.resp | rerr[byte_addr];
+            if (ClearErrOnAccess & axi_req_i.r_ready) begin
+              rerr[byte_addr] = axi_pkg::RESP_OKAY;
             end
           end
+          r_beat.data = r_data;
           if (r_cnt == ar_queue[0].len) begin
             r_beat.last = 1'b1;
             mon_r.last = 1'b1;
@@ -320,6 +339,7 @@ module axi_sim_mem_intf #(
   parameter int unsigned AXI_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_USER_WIDTH = 32'd0,
   parameter bit WARN_UNINITIALIZED = 1'b0,
+  parameter bit ClearErrOnAccess = 1'b0,
   parameter time APPL_DELAY = 0ps,
   parameter time ACQ_DELAY = 0ps
 ) (
@@ -363,6 +383,7 @@ module axi_sim_mem_intf #(
     .axi_req_t          (axi_req_t),
     .axi_rsp_t          (axi_resp_t),
     .WarnUninitialized  (WARN_UNINITIALIZED),
+    .ClearErrOnAccess   (ClearErrOnAccess),
     .ApplDelay          (APPL_DELAY),
     .AcqDelay           (ACQ_DELAY)
   ) i_sim_mem (
