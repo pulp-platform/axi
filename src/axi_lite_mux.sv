@@ -283,7 +283,7 @@ module axi_lite_mux #(
     // W Channel
     //--------------------------------------
     // multiplexer
-    assign mst_w_chan      = (!w_fifo_empty && !b_fifo_full) ? slv_reqs_i[w_select].w        :   '0;
+    assign mst_w_chan      = slv_reqs_i[w_select].w;
     assign mst_w_valid     = (!w_fifo_empty && !b_fifo_full) ? slv_reqs_i[w_select].w_valid  : 1'b0;
     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_w_ready
       assign slv_resps_o[i].w_ready =  mst_w_ready & ~w_fifo_empty &
