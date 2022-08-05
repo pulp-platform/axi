@@ -26,7 +26,9 @@
 </td></tr><tr><td><a class="module" href="module.axi_id_remap_intf.html">axi_id_remap_intf</a></td><td><p>Interface variant of <a href="module.axi_id_remap"><code>axi_id_remap</code></a>.</p>
 </td></tr><tr><td><a class="module" href="module.axi_id_serialize.html">axi_id_serialize</a></td><td><p>Reduce AXI IDs by serializing transactions when necessary.</p>
 </td></tr><tr><td><a class="module" href="module.axi_id_serialize_intf.html">axi_id_serialize_intf</a></td><td><p>Interface variant of <a href="module.axi_id_serialize"><code>axi_id_serialize</code></a>.</p>
-</td></tr><tr><td><a class="module" href="module.axi_isolate.html">axi_isolate</a></td><td></td></tr><tr><td><a class="module" href="module.axi_isolate_intf.html">axi_isolate_intf</a></td><td></td></tr><tr><td><a class="module" href="module.axi_iw_converter.html">axi_iw_converter</a></td><td><p>Convert between any two AXI ID widths.</p>
+</td></tr><tr><td><a class="module" href="module.axi_isolate.html">axi_isolate</a></td><td><p>This module can isolate the AXI4+ATOPs bus on the master port from the slave port.  When the</p>
+</td></tr><tr><td><a class="module" href="module.axi_isolate_inner.html">axi_isolate_inner</a></td><td></td></tr><tr><td><a class="module" href="module.axi_isolate_intf.html">axi_isolate_intf</a></td><td><p>Interface variant of <a href="module.axi_isolate"><code>axi_isolate</code></a>.</p>
+</td></tr><tr><td><a class="module" href="module.axi_iw_converter.html">axi_iw_converter</a></td><td><p>Convert between any two AXI ID widths.</p>
 </td></tr><tr><td><a class="module" href="module.axi_iw_converter_intf.html">axi_iw_converter_intf</a></td><td><p>Interface variant of <a href="module.axi_iw_converter"><code>axi_iw_converter</code></a>.</p>
 </td></tr><tr><td><a class="module" href="module.axi_join_intf.html">axi_join_intf</a></td><td><p>A connector that joins two AXI interfaces.</p>
 </td></tr><tr><td><a class="module" href="module.axi_lite_demux.html">axi_lite_demux</a></td><td></td></tr><tr><td><a class="module" href="module.axi_lite_demux_intf.html">axi_lite_demux_intf</a></td><td></td></tr><tr><td><a class="module" href="module.axi_lite_join_intf.html">axi_lite_join_intf</a></td><td><p>A connector that joins two AXI-Lite interfaces.</p>
@@ -45,6 +47,9 @@
 </td></tr><tr><td><a class="module" href="module.mem_to_banks.html">mem_to_banks</a></td><td><p>Split memory access over multiple parallel banks, where each bank has its own req/gnt</p>
 </td></tr><tr><td><a class="module" href="module.axi_to_mem_banked.html">axi_to_mem_banked</a></td><td><p>AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.</p>
 </td></tr><tr><td><a class="module" href="module.axi_to_mem_banked_intf.html">axi_to_mem_banked_intf</a></td><td><p>AXI4+ATOP interface wrapper for <code>axi_to_mem</code></p>
+</td></tr><tr><td><a class="module" href="module.axi_to_mem_interleaved.html">axi_to_mem_interleaved</a></td><td><p>AXI4+ATOP to SRAM memory slave. Allows for parallel read and write transactions.</p>
+</td></tr><tr><td><a class="module" href="module.axi_to_mem_split.html">axi_to_mem_split</a></td><td><p>AXI4+ATOP to memory-protocol interconnect. Completely separates the read and write channel to</p>
+</td></tr><tr><td><a class="module" href="module.axi_to_mem_split_intf.html">axi_to_mem_split_intf</a></td><td><p>AXI4+ATOP interface wrapper for <code>axi_to_mem_split</code></p>
 </td></tr><tr><td><a class="module" href="module.axi_xbar.html">axi_xbar</a></td><td></td></tr><tr><td><a class="module" href="module.axi_xbar_intf.html">axi_xbar_intf</a></td><td></td></tr></table>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.AXI_ADDR_WIDTH" class="impl"><code class="in-band">AXI_ADDR_WIDTH<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
