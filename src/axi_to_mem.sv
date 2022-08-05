@@ -33,6 +33,8 @@ module axi_to_mem #(
   parameter int unsigned NumBanks   = 0,
   /// Depth of memory response buffer. This should be equal to the memory response latency.
   parameter int unsigned BufDepth   = 1,
+  /// Hide write requests if the strb == '0
+  parameter bit          HideStrb   = 1'b0,
   /// Dependent parameter, do not override. Memory address type.
   localparam type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -349,7 +351,9 @@ module axi_to_mem #(
   mem_to_banks #(
     .AddrWidth  ( AddrWidth ),
     .DataWidth  ( DataWidth ),
-    .NumBanks   ( NumBanks  )
+    .NumBanks   ( NumBanks  ),
+    .HideStrb   ( HideStrb  ),
+    .MaxTrans   ( BufDepth  )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
@@ -471,6 +475,8 @@ module axi_to_mem_intf #(
   parameter int unsigned NUM_BANKS  = 32'd0,
   /// See `axi_to_mem`, parameter `BufDepth`.
   parameter int unsigned BUF_DEPTH  = 32'd1,
+  /// Hide write requests if the strb == '0
+  parameter bit          HIDE_STRB  = 1'b0,
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `addr_t`.
   localparam type addr_t     = logic [ADDR_WIDTH-1:0],
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_data_t`.
@@ -527,7 +533,8 @@ module axi_to_mem_intf #(
     .DataWidth  ( DATA_WIDTH ),
     .IdWidth    ( ID_WIDTH   ),
     .NumBanks   ( NUM_BANKS  ),
-    .BufDepth   ( BUF_DEPTH  )
+    .BufDepth   ( BUF_DEPTH  ),
+    .HideStrb   ( HIDE_STRB  )
   ) i_axi_to_mem (
     .clk_i,
     .rst_ni,
@@ -555,6 +562,10 @@ module mem_to_banks #(
   parameter int unsigned DataWidth = 32'd0,
   /// Number of banks at output, must evenly divide `DataWidth`.
   parameter int unsigned NumBanks  = 32'd0,
+  /// Remove transactions that have zero strobe
+  parameter bit          HideStrb  = 1'b0,
+  /// Number of outstanding transactions
+  parameter int unsigned MaxTrans  = 32'b1,
   /// Dependent parameter, do not override! Address type.
   localparam type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override! Input data type.
@@ -625,6 +636,8 @@ module mem_to_banks #(
                         resp_valid, resp_ready;
   req_t [NumBanks-1:0]  bank_req,
                         bank_oup;
+  logic [NumBanks-1:0]  bank_req_internal, bank_gnt_internal, zero_strobe, dead_response;
+  logic                 dead_write_fifo_full;
 
   function automatic addr_t align_addr(input addr_t addr);
     return (addr >> $clog2(DataBytes)) << $clog2(DataBytes);
@@ -648,8 +661,8 @@ module mem_to_banks #(
       .valid_i    ( req_valid     ),
       .ready_o    ( req_ready[i]  ),
       .data_i     ( bank_req[i]   ),
-      .valid_o    ( bank_req_o[i] ),
-      .ready_i    ( bank_gnt_i[i] ),
+      .valid_o    ( bank_req_internal[i] ),
+      .ready_i    ( bank_gnt_internal[i] ),
       .data_o     ( bank_oup[i]   )
     );
     assign bank_addr_o[i]  = bank_oup[i].addr;
@@ -657,10 +670,42 @@ module mem_to_banks #(
     assign bank_strb_o[i]  = bank_oup[i].strb;
     assign bank_atop_o[i]  = bank_oup[i].atop;
     assign bank_we_o[i]    = bank_oup[i].we;
+
+    assign zero_strobe[i] = (bank_oup[i].strb == '0);
+
+    if (HideStrb) begin
+      assign bank_req_o[i] = (bank_oup[i].we && zero_strobe[i]) ? 1'b0 : bank_req_internal[i];
+      assign bank_gnt_internal[i] = (bank_oup[i].we && zero_strobe[i]) ? 1'b1 : bank_gnt_i[i];
+    end else begin
+      assign bank_req_o[i] = bank_req_internal[i];
+      assign bank_gnt_internal[i] = bank_gnt_i[i];
+    end
   end
 
   // Grant output if all our requests have been granted.
-  assign gnt_o = (&req_ready) & (&resp_ready);
+  assign gnt_o = (&req_ready) & (&resp_ready) & !dead_write_fifo_full;
+
+  if (HideStrb) begin : gen_dead_write_fifo
+    fifo_v3 #(
+      .FALL_THROUGH ( 1'b1     ),
+      .DEPTH        ( MaxTrans+1 ),
+      .DATA_WIDTH   ( NumBanks )
+    ) i_dead_write_fifo (
+      .clk_i,
+      .rst_ni,
+      .flush_i    ( 1'b0                    ),
+      .testmode_i ( 1'b0                    ),
+      .full_o     ( dead_write_fifo_full    ),
+      .empty_o    (),
+      .usage_o    (),
+      .data_i     ( bank_we_o & zero_strobe ),
+      .push_i     ( req_i & gnt_o           ),
+      .data_o     ( dead_response           ),
+      .pop_i      ( rvalid_o                )
+    );
+  end else begin
+    assign dead_response = '0;
+  end
 
   // Handle responses.
   for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
@@ -675,11 +720,11 @@ module mem_to_banks #(
       .ready_o    ( resp_ready[i]                       ),
       .data_i     ( bank_rdata_i[i]                     ),
       .data_o     ( rdata_o[i*BitsPerBank+:BitsPerBank] ),
-      .ready_i    ( rvalid_o                            ),
+      .ready_i    ( rvalid_o & !dead_response[i]        ),
       .valid_o    ( resp_valid[i]                       )
     );
   end
-  assign rvalid_o = &resp_valid;
+  assign rvalid_o = &(resp_valid | dead_response);
 
   // Assertions
   // pragma translate_off

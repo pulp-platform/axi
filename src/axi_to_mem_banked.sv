@@ -50,6 +50,8 @@ module axi_to_mem_banked #(
   parameter int unsigned                  MemDataWidth  = 32'd32,
   /// Read latency of the connected memory in cycles
   parameter int unsigned                  MemLatency    = 32'd1,
+  /// Hide write requests if the strb == '0
+  parameter bit                           HideStrb      = 1'b0,
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Address type of the memory request.
   parameter type mem_addr_t = logic [MemAddrWidth-1:0],
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Atomic operation type for the memory request.
@@ -185,7 +187,8 @@ module axi_to_mem_banked #(
       .DataWidth ( AxiDataWidth       ),
       .IdWidth   ( AxiIdWidth         ),
       .NumBanks  ( BanksPerAxiChannel ),
-      .BufDepth  ( MemLatency         )
+      .BufDepth  ( MemLatency         ),
+      .HideStrb  ( HideStrb           )
     ) i_axi_to_mem (
       .clk_i,
       .rst_ni,
@@ -324,6 +327,8 @@ module axi_to_mem_banked_intf #(
   parameter int unsigned                  MEM_DATA_WIDTH = 32'd32,
   /// Read latency of the connected memory in cycles
   parameter int unsigned                  MEM_LATENCY    = 32'd1,
+  /// Hide write requests if the strb == '0
+  parameter bit                           HIDE_STRB      = 1'b0,
   // DEPENDENT PARAMETERS, DO NOT OVERWRITE!
   parameter type mem_addr_t = logic [MEM_ADDR_WIDTH-1:0],
   parameter type mem_atop_t = logic [5:0],
@@ -390,7 +395,8 @@ module axi_to_mem_banked_intf #(
     .MemNumBanks   ( MEM_NUM_BANKS              ),
     .MemAddrWidth  ( MEM_ADDR_WIDTH             ),
     .MemDataWidth  ( MEM_DATA_WIDTH             ),
-    .MemLatency    ( MEM_LATENCY                )
+    .MemLatency    ( MEM_LATENCY                ),
+    .HideStrb      ( HIDE_STRB                  )
   ) i_axi_to_mem_banked (
     .clk_i,
     .rst_ni,
