@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 ### Fixed
+- `axi_lite_mux`: Reduce complexity of W channel at master port by removing an unnecessary
+  multiplexer.
 
 
 ## 0.36.0 - 2022-07-07
