@@ -109,8 +109,8 @@ module axi_sim_mem #(
 
   monitor_t mon_w, mon_r;
   logic [7:0]     mem[addr_t];
-  axi_pkg::resp_t rerr[addr_t] = '{default: axi_pkg::BURST_FIXED};
-  axi_pkg::resp_t werr[addr_t] = '{default: axi_pkg::BURST_FIXED};
+  axi_pkg::resp_t rerr[addr_t] = '{default: axi_pkg::RESP_OKAY};
+  axi_pkg::resp_t werr[addr_t] = '{default: axi_pkg::RESP_OKAY};
 
   // error happened in write burst
   axi_pkg::resp_t error_happened = axi_pkg::RESP_OKAY;
@@ -177,7 +177,7 @@ module axi_sim_mem #(
               b_beat.resp = error_happened;
               b_queue.push_back(b_beat);
               w_cnt = 0;
-	      mon_w.last = 1'b1;
+              mon_w.last = 1'b1;
               error_happened = axi_pkg::RESP_OKAY;
               void'(aw_queue.pop_front());
             end else begin
