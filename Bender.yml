@@ -57,6 +57,7 @@ sources:
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
   - src/axi_to_mem_banked.sv
+  - src/axi_to_mem_interleaved.sv
   # Level 4
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
