@@ -174,6 +174,27 @@ exec_test() {
                 done
             done
             ;;
+        axi_to_mem_banked)
+            for MEM_LAT in 1 2; do
+                for BANK_FACTOR in 1 2; do
+                    for NUM_BANKS in 1 2 ; do
+                        for AXI_DATA_WIDTH in 64 256 ; do
+                            ACT_BANKS=$((2*$BANK_FACTOR*$NUM_BANKS))
+                            MEM_DATA_WIDTH=$(($AXI_DATA_WIDTH/$NUM_BANKS))
+                            call_vsim tb_axi_to_mem_banked \
+                                -voptargs="+acc +cover=bcesfx" \
+                                -gTbAxiDataWidth=$AXI_DATA_WIDTH \
+                                -gTbNumWords=2048 \
+                                -gTbNumBanks=$ACT_BANKS \
+                                -gTbMemDataWidth=$MEM_DATA_WIDTH \
+                                -gTbMemLatency=$MEM_LAT \
+                                -gTbNumWrites=2000 \
+                                -gTbNumReads=2000
+                        done
+                    done
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;

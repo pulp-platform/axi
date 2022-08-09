@@ -28,7 +28,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e', '2020.1', '2021.1']
+      - VSIM_VER: ['10.7b', '10.7e', '2021.3']
 
 synopsys_dc:
   stage: build
@@ -61,7 +61,7 @@ synopsys_dc:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e', '2020.1', '2021.1']
+      - VSIM_VER: ['10.7b', '10.7e', '2021.3']
 
 axi_addr_test:
   <<: *run_vsim
@@ -147,6 +147,11 @@ axi_to_axi_lite:
   <<: *run_vsim
   variables:
     TEST_MODULE: axi_to_axi_lite
+
+axi_to_mem_banked:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_to_mem_banked
 
 axi_xbar:
   <<: *run_vsim
