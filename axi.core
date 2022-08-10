@@ -59,6 +59,8 @@ filesets:
       - src/axi_xbar.sv
       - src/axi_sim_mem.sv
       - src/axi_test.sv
+      # Level 5
+      - src/axi_xp.sv
     file_type : systemVerilogSource
     depend :
       - ">=pulp-platform.org::common_cells:1.26.0"

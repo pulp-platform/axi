@@ -56,6 +56,8 @@ axi:
     - src/axi_iw_converter.sv
     - src/axi_lite_xbar.sv
     - src/axi_xbar.sv
+    # Level 5
+    - src/axi_xp.sv
 
 axi_sim:
   files:

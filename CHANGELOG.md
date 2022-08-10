@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add FuseSoC and Vivado XSIM limited test to CI
 - `assign.svh`: Add macros to assign flat buses using the Vivado naming style.
 - `axi_lfsr` and `axi_lite_lfsr`: Add AXI4 and AXI4 Lite LFSR Subordinate devices.
+- `axi_xp`: Crosspoint with homomorphous slave and master ports.
 
 ### Changed
 - Improve compatibility with FuseSoC
