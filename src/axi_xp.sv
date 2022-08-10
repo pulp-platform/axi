@@ -11,11 +11,14 @@
 //
 // Authors:
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Vikram Jain <jvikram@iis.ee.ethz.ch>
 
 `include "axi/typedef.svh"
 
 /// AXI Crosspoint (XP) with homomorphous slave and master ports.
 module axi_xp #(
+  // Atomic operations settings
+  parameter bit  ATOPs = 1'b1,
   /// Number of slave ports.
   parameter int unsigned NumSlvPorts = 32'd0,
   /// Number of master ports.
@@ -123,6 +126,7 @@ module axi_xp #(
 
   axi_xbar #(
     .Cfg            ( xbar_cfg      ),
+    .ATOPs          ( ATOPs         ),
     .Connectivity   ( Connectivity  ),
     .slv_aw_chan_t  ( aw_t          ),
     .mst_aw_chan_t  ( xbar_aw_t     ),
