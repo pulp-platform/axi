@@ -165,7 +165,7 @@ module axi_sim_mem #(
               if (axi_req_i.w.strb[i_byte]) begin
                 automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
                 mem[byte_addr] = axi_req_i.w.data[i_byte*8+:8];
-                error_happened = error_happened | werr[byte_addr];
+                error_happened = axi_pkg::resp_precedence(werr[byte_addr], error_happened);
                 if (ClearErrOnAccess)
                   werr[byte_addr] = axi_pkg::RESP_OKAY;
               end
@@ -242,7 +242,7 @@ module axi_sim_mem #(
             end else begin
               r_data[i_byte*8+:8] = mem[byte_addr];
             end
-            r_beat.resp = r_beat.resp | rerr[byte_addr];
+            r_beat.resp = axi_pkg::resp_precedence(rerr[byte_addr], r_beat.resp);
             if (ClearErrOnAccess & axi_req_i.r_ready) begin
               rerr[byte_addr] = axi_pkg::RESP_OKAY;
             end
