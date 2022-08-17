@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_to_mem`: AXI4+ATOP slave to control on chip memory.
+- `axi_test`: Add `mapped` mode to the random classes as well as additional functionality to the
+  scoreboard class.
 
 ### Changed
 
