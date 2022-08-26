@@ -4,14 +4,14 @@
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">resp_t</a></h1>
-<pre>typedef struct packed {                                                   
-    logic          aw_ready;                                                
-    logic          w_ready;                                                 
-    b_chan_t  b;                                                       
-    logic          b_valid;                                                 
-    logic          ar_ready;                                                
-    r_chan_t  r;                                                       
-    logic          r_valid;                                                 
+<pre>typedef struct packed {                               
+    logic     aw_ready;                                 
+    logic     ar_ready;                                 
+    logic     w_ready;                                  
+    logic     b_valid;                                  
+    b_chan_t  b;                                        
+    logic     r_valid;                                  
+    r_chan_t  r;                                        
   } resp_t;</pre>
 </section>
 </body>
