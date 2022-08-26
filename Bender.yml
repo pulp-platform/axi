@@ -46,6 +46,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
+  - src/axi_to_mem.sv
   # Level 3
   - src/axi_cdc.sv
   - src/axi_err_slv.sv
