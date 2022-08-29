@@ -56,7 +56,6 @@ filesets:
       - src/axi_lite_xbar.sv
       - src/axi_xbar.sv
       - src/axi_sim_mem.sv
-      - src/axi_test.sv
     file_type : systemVerilogSource
     depend :
       - ">=pulp-platform.org::common_cells:1.26.0"
