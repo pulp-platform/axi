@@ -53,6 +53,8 @@ jobs:
       - name: Build documentation
         run: |
           mkdir -p docs
+          cp doc/axi_demux.png docs/module.axi_demux.png
+          cp doc/svg/axi_id_remap_table.svg docs/axi_id_remap_table.svg
           morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
         shell: bash
 

@@ -21,8 +21,22 @@
 `define TARGET_VSIM
 `endif
 
-// axi_demux: Demultiplex an AXI bus from one slave port to multiple master ports.
-// See `doc/axi_demux.md` for the documentation, including the definition of parameters and ports.
+/// Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.
+///
+/// The AW and AR slave channels each have a `select` input to determine to which master port the
+/// current request is sent.  The `select` can, for example, be driven by an address decoding module
+/// to map address ranges to different AXI slaves.
+///
+/// ## Design overview
+///
+/// ![Block diagram](module.axi_demux.png "Block diagram")
+///
+/// Beats on the W channel are routed by demultiplexer according to the selection for the
+/// corresponding AW beat.  This relies on the AXI property that W bursts must be sent in the same
+/// order as AW beats and beats from different W bursts may not be interleaved.
+///
+/// Beats on the B and R channel are multiplexed from the master ports to the slave port with
+/// a round-robin arbitration tree.
 module axi_demux #(
   parameter int unsigned AxiIdWidth     = 32'd0,
   parameter bit          AtopSupport    = 1'b1,
