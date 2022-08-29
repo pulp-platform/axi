@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_to_mem`: AXI4+ATOP slave to control on chip memory.
 - `axi_test`: Add `mapped` mode to the random classes as well as additional functionality to the
   scoreboard class.
+- `axi_throttle`: Add a module that limits the maximum number of outstanding transfers sent to the
+  downstream logic.
 
 ### Changed
 
