@@ -38,6 +38,7 @@ filesets:
       - src/axi_modify_address.sv
       - src/axi_mux.sv
       - src/axi_serializer.sv
+      - src/axi_throttle.sv
       - src/axi_to_mem.sv
       # Level 3
       - src/axi_cdc.sv
@@ -52,7 +53,7 @@ filesets:
       - src/axi_xbar.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_cells:1.21.0"
+      - ">=pulp-platform.org::common_cells:1.26.0"
 
 generators:
   axi_intercon_gen:

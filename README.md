@@ -51,6 +51,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_mux`](src/axi_mux.sv)                          | Multiplexes the AXI4 slave ports down to one master port.                                         | [Doc](doc/axi_mux.md)          |
 | [`axi_pkg`](src/axi_pkg.sv)                          | Contains AXI definitions, common structs, and useful helper functions.                            |                                |
 | [`axi_serializer`](src/axi_serializer.sv)            | Serializes transactions with different IDs to the same ID.                                        |                                |
+| [`axi_throttle`](src/axi_throttle.sv)                | Limits the maximum number of outstanding transfers sent to the downstream logic.                  |                                |
 | [`axi_test`](src/axi_test.sv)                        | A set of testbench utilities for AXI interfaces.                                                  |                                |
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)          | AXI4 to AXI4-Lite protocol converter.                                                             |                                |
 | [`axi_to_mem`](src/axi_to_mem.sv)                    | AXI4 to memory protocol (req, gnt, rvalid) converter.                                             |                                |

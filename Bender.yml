@@ -8,7 +8,7 @@ package:
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.26.0 }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.0 }
 
 export_include_dirs:
@@ -46,6 +46,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
+  - src/axi_throttle.sv
   - src/axi_to_mem.sv
   # Level 3
   - src/axi_cdc.sv
