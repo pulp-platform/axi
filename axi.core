@@ -31,6 +31,7 @@ filesets:
       - src/axi_join.sv
       - src/axi_lite_demux.sv
       - src/axi_lite_join.sv
+      - src/axi_lite_lfsr.sv
       - src/axi_lite_mailbox.sv
       - src/axi_lite_mux.sv
       - src/axi_lite_regs.sv
@@ -46,6 +47,7 @@ filesets:
       - src/axi_err_slv.sv
       - src/axi_dw_converter.sv
       - src/axi_id_serialize.sv
+      - src/axi_lfsr.sv
       - src/axi_multicut.sv
       - src/axi_to_axi_lite.sv
       - src/axi_to_mem_banked.sv
