@@ -426,8 +426,15 @@ module axi_lite_demux #(
     );
 
     // connect the response if the FIFO has valid data in it
-    assign slv_r_chan      = (!r_fifo_empty) ? mst_resps_i[r_select].r : '0;
-    assign slv_r_valid     =  ~r_fifo_empty  & mst_resps_i[r_select].r_valid;
+    always_comb begin
+       slv_r_chan  = '0;
+       slv_r_valid = '0;
+       if (!r_fifo_empty) begin
+          slv_r_chan  = mst_resps_i[r_select].r;
+          slv_r_valid = mst_resps_i[r_select].r_valid;
+       end
+    end
+
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_r
       assign mst_reqs_o[i].r_ready = ~r_fifo_empty & slv_r_ready & (r_select == select_t'(i));
     end
