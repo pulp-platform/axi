@@ -74,7 +74,8 @@ module axi_demux #(
   input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
 );
 
-  localparam int unsigned IdCounterWidth = MaxTrans > 1 ? $clog2(MaxTrans) : 1;
+  localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
+  typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
   //--------------------------------------
   // Typedefs for the FIFOs / Queues
@@ -175,14 +176,14 @@ module axi_demux #(
     // AW ID counter
     select_t                  lookup_aw_select;
     logic                     aw_select_occupied, aw_id_cnt_full;
-    logic                     aw_push;
     // Upon an ATOP load, inject IDs from the AW into the AR channel
     logic                     atop_inject;
 
-    // W FIFO: stores the decision to which master W beats should go
-    logic                     w_fifo_pop;
-    logic                     w_fifo_full,        w_fifo_empty;
-    select_t                  w_select;
+    // W select counter: stores the decision to which master W beats should go
+    select_t                  w_select,           w_select_q;
+    logic                     w_select_valid;
+    id_cnt_t                  w_open;
+    logic                     w_cnt_up,           w_cnt_down;
 
     // Register which locks the AW valid signal
     logic                     lock_aw_valid_d,    lock_aw_valid_q, load_aw_lock;
@@ -274,9 +275,9 @@ module axi_demux #(
       lock_aw_valid_d = lock_aw_valid_q;
       load_aw_lock    = 1'b0;
       // AW ID counter and W FIFO
-      aw_push      = 1'b0;
+      w_cnt_up        = 1'b0;
       // ATOP injection into ar counter
-      atop_inject  = 1'b0;
+      atop_inject     = 1'b0;
       // we had an arbitration decision, the valid is locked, wait for the transaction
       if (lock_aw_valid_q) begin
         aw_valid = 1'b1;
@@ -289,19 +290,23 @@ module axi_demux #(
           atop_inject     = slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
         end
       end else begin
-        // An AW can be handled if `i_aw_id_counter` and `i_w_fifo` are not full.  An ATOP that
+        // An AW can be handled if `i_aw_id_counter` and `i_counter_open_w` are not full.  An ATOP that
         // requires an R response can be handled if additionally `i_ar_id_counter` is not full (this
         // only applies if ATOPs are supported at all).
-        if (!aw_id_cnt_full && !w_fifo_full &&
+        if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) &&
             (!(ar_id_cnt_full && slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP]) ||
              !AtopSupport)) begin
-          // there is a valid AW vector make the id lookup and go further, if it passes
-          if (slv_aw_valid && (!aw_select_occupied ||
-             (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
+          /// There is a valid AW vector make the id lookup and go further, if it passes.
+          /// Also stall if previous transmitted AWs still have active W's in flight.
+          /// This prevents deadlocking of the W channel. The counters are there for the
+          /// Handling of the B responses.
+          if (slv_aw_valid &&
+                ((w_open == '0) || (w_select == slv_aw_chan_select.aw_select)) &&
+                (!aw_select_occupied || (slv_aw_chan_select.aw_select == lookup_aw_select))) begin
             // connect the handshake
             aw_valid     = 1'b1;
             // push arbitration to the W FIFO regardless, do not wait for the AW transaction
-            aw_push      = 1'b1;
+            w_cnt_up     = 1'b1;
             // on AW transaction
             if (aw_ready) begin
               slv_aw_ready = 1'b1;
@@ -345,31 +350,35 @@ module axi_demux #(
         .inject_i                     ( 1'b0                                          ),
         .push_axi_id_i                ( slv_aw_chan_select.aw_chan.id[0+:AxiLookBits] ),
         .push_mst_select_i            ( slv_aw_chan_select.aw_select                  ),
-        .push_i                       ( aw_push                                       ),
+        .push_i                       ( w_cnt_up                                      ),
         .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
         .pop_i                        ( slv_b_valid & slv_b_ready                     )
       );
       // pop from ID counter on outward transaction
     end
 
-    // FIFO to save W selection
-    fifo_v3 #(
-      .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxTrans    ),
-      .dtype        ( select_t    )
-    ) i_w_fifo (
-      .clk_i     ( clk_i                        ),
-      .rst_ni    ( rst_ni                       ),
-      .flush_i   ( 1'b0                         ),
-      .testmode_i( test_i                       ),
-      .full_o    ( w_fifo_full                  ),
-      .empty_o   ( w_fifo_empty                 ),
-      .usage_o   (                              ),
-      .data_i    ( slv_aw_chan_select.aw_select ),
-      .push_i    ( aw_push                      ), // controlled from proc_aw_chan
-      .data_o    ( w_select                     ), // where the w beat should go
-      .pop_i     ( w_fifo_pop                   )  // controlled from proc_w_chan
+    // This counter steers the demultiplexer of the W channel.
+    // `w_select` determines, which handshaking is connected.
+    // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
+    // `slv_aw_chan_select.aw_select`.
+    counter #(
+      .WIDTH           ( IdCounterWidth ),
+      .STICKY_OVERFLOW ( 1'b0           )
+    ) i_counter_open_w (
+      .clk_i,
+      .rst_ni,
+      .clear_i    ( 1'b0                  ),
+      .en_i       ( w_cnt_up ^ w_cnt_down ),
+      .load_i     ( 1'b0                  ),
+      .down_i     ( w_cnt_down            ),
+      .d_i        ( '0                    ),
+      .q_o        ( w_open                ),
+      .overflow_o ( /*not used*/          )
     );
+
+    `FFLARN(w_select_q, slv_aw_chan_select.aw_select, w_cnt_up, select_t'(0), clk_i, rst_ni)
+    assign w_select       = (|w_open) ? w_select_q : slv_aw_chan_select.aw_select;
+    assign w_select_valid = w_cnt_up | (|w_open);
 
     //--------------------------------------
     //  W Channel
@@ -571,8 +580,8 @@ module axi_demux #(
       .idx_o  (               )
     );
 
-   assign ar_ready = ar_valid & mst_resps_i[slv_ar_chan_select.ar_select].ar_ready;
-   assign aw_ready = aw_valid & mst_resps_i[slv_aw_chan_select.aw_select].aw_ready;
+    assign ar_ready = ar_valid & mst_resps_i[slv_ar_chan_select.ar_select].ar_ready;
+    assign aw_ready = aw_valid & mst_resps_i[slv_aw_chan_select.aw_select].aw_ready;
 
     // process that defines the individual demuxes and assignments for the arbitration
     // as mst_reqs_o has to be drivem from the same always comb block!
@@ -580,7 +589,7 @@ module axi_demux #(
       // default assignments
       mst_reqs_o  = '0;
       slv_w_ready = 1'b0;
-      w_fifo_pop  = 1'b0;
+      w_cnt_down  = 1'b0;
 
       for (int unsigned i = 0; i < NoMstPorts; i++) begin
         // AW channel
@@ -593,10 +602,10 @@ module axi_demux #(
         //  W channel
         mst_reqs_o[i].w       = slv_w_chan;
         mst_reqs_o[i].w_valid = 1'b0;
-        if (!w_fifo_empty && (w_select == i)) begin
+        if (w_select_valid && (w_select == select_t'(i))) begin
           mst_reqs_o[i].w_valid = slv_w_valid;
           slv_w_ready           = mst_resps_i[i].w_ready;
-          w_fifo_pop            = slv_w_valid & mst_resps_i[i].w_ready & slv_w_chan.last;
+          w_cnt_down            = slv_w_valid & mst_resps_i[i].w_ready & slv_w_chan.last;
         end
 
         //  B channel
@@ -658,6 +667,9 @@ module axi_demux #(
     internal_aw_select: assert property( @(posedge clk_i)
         (aw_valid |-> slv_aw_chan_select.aw_select < NoMstPorts))
       else $fatal(1, "slv_aw_chan_select.aw_select illegal while aw_valid.");
+    w_underflow: assert property( @(posedge clk_i)
+        ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
+        $fatal(1, "W counter underflowed!");
     `ASSUME(NoAtopAllowed, !AtopSupport && slv_req_i.aw_valid |-> slv_req_i.aw.atop == '0)
 `endif
 `endif

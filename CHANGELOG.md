@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- `axi_demux`: Replace write FIFO (`w_fifo`) with a write credit counter.
 
 ### Fixed
 
