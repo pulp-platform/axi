@@ -107,7 +107,6 @@ module axi_to_mem_banked #(
     WriteAccess = 1'b1
   } access_type_e;
   typedef logic [AxiAddrWidth-1:0] axi_addr_t;
-  // typedef logic [TcdmDataWidth-1:0] tcdm_data_t;
 
   /// Payload definition which is sent over the xbar between the macros and the read/write unit.
   typedef struct packed {
@@ -146,7 +145,7 @@ module axi_to_mem_banked #(
     .axi_req_t   ( axi_req_t     ),
     .axi_resp_t  ( axi_resp_t    ),
     .NoMstPorts  ( 32'd2         ),
-    .MaxTrans    ( 32'd4         ), // allow multiple Ax vectors to not starve W channel
+    .MaxTrans    ( MemLatency+2  ), // allow multiple Ax vectors to not starve W channel
     .AxiLookBits ( 32'd1         ), // select is fixed, do not need it
     .UniqueIds   ( 1'b0          ),
     .FallThrough ( 1'b1          ),
