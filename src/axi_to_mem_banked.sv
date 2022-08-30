@@ -53,6 +53,8 @@ module axi_to_mem_banked #(
   parameter int unsigned                  MemLatency    = 32'd1,
   /// Hide write requests if the strb == '0
   parameter bit                           HideStrb      = 1'b0,
+  /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
+  parameter int unsigned                  OutFifoDepth = 1,
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Address type of the memory request.
   parameter type mem_addr_t = logic [MemAddrWidth-1:0],
   /// DEPENDENT PARAMETER, DO NOT OVERWRITE! Atomic operation type for the memory request.
@@ -183,14 +185,15 @@ module axi_to_mem_banked #(
     // Careful, request / grant
     // Only assert grant, if there is a ready
     axi_to_mem #(
-      .axi_req_t ( axi_req_t          ),
-      .axi_resp_t( axi_resp_t         ),
-      .AddrWidth ( AxiAddrWidth       ),
-      .DataWidth ( AxiDataWidth       ),
-      .IdWidth   ( AxiIdWidth         ),
-      .NumBanks  ( BanksPerAxiChannel ),
-      .BufDepth  ( MemLatency         ),
-      .HideStrb  ( HideStrb           )
+      .axi_req_t    ( axi_req_t          ),
+      .axi_resp_t   ( axi_resp_t         ),
+      .AddrWidth    ( AxiAddrWidth       ),
+      .DataWidth    ( AxiDataWidth       ),
+      .IdWidth      ( AxiIdWidth         ),
+      .NumBanks     ( BanksPerAxiChannel ),
+      .BufDepth     ( MemLatency         ),
+      .HideStrb     ( HideStrb           ),
+      .OutFifoDepth ( OutFifoDepth       )
     ) i_axi_to_mem (
       .clk_i,
       .rst_ni,
@@ -331,6 +334,8 @@ module axi_to_mem_banked_intf #(
   parameter int unsigned                  MEM_LATENCY    = 32'd1,
   /// Hide write requests if the strb == '0
   parameter bit                           HIDE_STRB      = 1'b0,
+  /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
+  parameter int unsigned                  OUT_FIFO_DEPTH = 32'd1,
   // DEPENDENT PARAMETERS, DO NOT OVERWRITE!
   parameter type mem_addr_t = logic [MEM_ADDR_WIDTH-1:0],
   parameter type mem_atop_t = logic [5:0],
@@ -398,7 +403,8 @@ module axi_to_mem_banked_intf #(
     .MemAddrWidth  ( MEM_ADDR_WIDTH             ),
     .MemDataWidth  ( MEM_DATA_WIDTH             ),
     .MemLatency    ( MEM_LATENCY                ),
-    .HideStrb      ( HIDE_STRB                  )
+    .HideStrb      ( HIDE_STRB                  ),
+    .OutFifoDepth  ( OUT_FIFO_DEPTH             )
   ) i_axi_to_mem_banked (
     .clk_i,
     .rst_ni,

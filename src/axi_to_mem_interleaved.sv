@@ -34,6 +34,8 @@ module axi_to_mem_interleaved #(
   parameter int unsigned BufDepth   = 1,
   /// Hide write requests if the strb == '0
   parameter bit          HideStrb   = 1'b0,
+  /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
+  parameter int unsigned OutFifoDepth = 1,
   /// Dependent parameter, do not override. Memory address type.
   parameter type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -115,14 +117,15 @@ module axi_to_mem_interleaved #(
   end
 
   axi_to_mem #(
-    .axi_req_t   ( axi_req_t  ),
-    .axi_resp_t  ( axi_resp_t ),
-    .AddrWidth   ( AddrWidth  ),
-    .DataWidth   ( DataWidth  ),
-    .IdWidth     ( IdWidth    ),
-    .NumBanks    ( NumBanks   ),
-    .BufDepth    ( BufDepth   ),
-    .HideStrb    ( HideStrb   )
+    .axi_req_t   ( axi_req_t    ),
+    .axi_resp_t  ( axi_resp_t   ),
+    .AddrWidth   ( AddrWidth    ),
+    .DataWidth   ( DataWidth    ),
+    .IdWidth     ( IdWidth      ),
+    .NumBanks    ( NumBanks     ),
+    .BufDepth    ( BufDepth     ),
+    .HideStrb    ( HideStrb     ),
+    .OutFifoDepth( OutFifoDepth )
   ) i_axi_to_mem_write (
     .clk_i        ( clk_i         ),
     .rst_ni       ( rst_ni        ),
@@ -141,14 +144,15 @@ module axi_to_mem_interleaved #(
   );
 
   axi_to_mem #(
-    .axi_req_t   ( axi_req_t  ),
-    .axi_resp_t  ( axi_resp_t ),
-    .AddrWidth   ( AddrWidth  ),
-    .DataWidth   ( DataWidth  ),
-    .IdWidth     ( IdWidth    ),
-    .NumBanks    ( NumBanks   ),
-    .BufDepth    ( BufDepth   ),
-    .HideStrb    ( HideStrb   )
+    .axi_req_t    ( axi_req_t    ),
+    .axi_resp_t   ( axi_resp_t   ),
+    .AddrWidth    ( AddrWidth    ),
+    .DataWidth    ( DataWidth    ),
+    .IdWidth      ( IdWidth      ),
+    .NumBanks     ( NumBanks     ),
+    .BufDepth     ( BufDepth     ),
+    .HideStrb     ( HideStrb     ),
+    .OutFifoDepth ( OutFifoDepth )
   ) i_axi_to_mem_read (
     .clk_i        ( clk_i         ),
     .rst_ni       ( rst_ni        ),
