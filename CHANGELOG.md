@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   downstream logic.
 - `axi_to_mem_banked`:  AXI4+ATOP slave to control on chip memory, with banking support, higher
                         throughput than `axi_to_mem`.
+- `axi_to_mem_interleaved`: AXI4+ATOP slave to control on chip memory, interleaved to prevent
+                            deadlocks.
+- `axi_to_mem_split`: AXI4+ATOP slave to control memory protocol interconnect.
 - `Bender`: Add dependency `tech_cells_generic` `v0.2.2` for generic SRAM macro for simulation.
 
 ### Changed
