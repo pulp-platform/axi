@@ -57,7 +57,7 @@ module axi_dumper #(
 
     if (rst_ni) begin
       aw_data = '{
-        "type"   : "AW",
+        "type"   : "\"AW\"",
         "time"   : $sformatf("%d", $time()),
         "id"     : $sformatf("0x%0x", axi_req_i.aw.id),
         "addr"   : $sformatf("0x%0x", axi_req_i.aw.addr),
@@ -73,7 +73,7 @@ module axi_dumper #(
         "user"   : $sformatf("0x%0x", axi_req_i.aw.user)
       };
       ar_data = '{
-        "type"   : "AR",
+        "type"   : "\"AR\"",
         "time"   : $sformatf("%d", $time()),
         "id"     : $sformatf("0x%0x", axi_req_i.ar.id),
         "addr"   : $sformatf("0x%0x", axi_req_i.ar.addr),
@@ -88,7 +88,7 @@ module axi_dumper #(
         "user"   : $sformatf("0x%0x", axi_req_i.ar.user)
       };
       w_data = '{
-        "type" : "W",
+        "type" : "\"W\"",
         "time" : $sformatf("%d", $time()),
         "data" : $sformatf("0x%0x", axi_req_i.w.data),
         "strb" : $sformatf("0x%0x", axi_req_i.w.strb),
@@ -96,14 +96,14 @@ module axi_dumper #(
         "user" : $sformatf("0x%0x", axi_req_i.w.user)
       };
       b_data = '{
-        "type" : "B",
+        "type" : "\"B\"",
         "time" : $sformatf("%d", $time()),
         "id"   : $sformatf("0x%0x", axi_resp_i.b.id),
         "resp" : $sformatf("0x%0x", axi_resp_i.b.resp),
         "user" : $sformatf("0x%0x", axi_resp_i.b.user)
       };
       r_data = '{
-        "type" : "R",
+        "type" : "\"R\"",
         "time" : $sformatf("%d", $time()),
         "id"   : $sformatf("0x%0x", axi_resp_i.r.id),
         "data" : $sformatf("0x%0x", axi_resp_i.r.data),
