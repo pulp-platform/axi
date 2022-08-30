@@ -8,25 +8,43 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- `axi_to_mem`: AXI4+ATOP slave to control on chip memory.
-- `axi_test`: Add `mapped` mode to the random classes as well as additional functionality to the
-  scoreboard class.
-- `axi_throttle`: Add a module that limits the maximum number of outstanding transfers sent to the
-  downstream logic.
-- `axi_to_mem_banked`:  AXI4+ATOP slave to control on chip memory, with banking support, higher
-                        throughput than `axi_to_mem`.
-- `axi_to_mem_interleaved`: AXI4+ATOP slave to control on chip memory, interleaved to prevent
-                            deadlocks.
-- `axi_to_mem_split`: AXI4+ATOP slave to control memory protocol interconnect.
-- `Bender`: Add dependency `tech_cells_generic` `v0.2.2` for generic SRAM macro for simulation.
 
 ### Changed
 
 ### Fixed
+
+
+## 0.37.0 - 2022-08-30
+
+### Added
+- `axi_fifo`: Inserts a FIFO into all 5 AXI4 channels; add module and its testbench
+- `axi_test`: Add `mapped` mode to the random classes as well as additional functionality to the
+  scoreboard class.
+- `axi_throttle`: Add a module that limits the maximum number of outstanding transfers sent to the
+  downstream logic.
+- `axi_to_mem`: AXI4+ATOP slave to control on chip memory.
+- `axi_to_mem_banked`:  AXI4+ATOP slave to control on chip memory, with banking support, higher
+  throughput than `axi_to_mem`.
+- `axi_to_mem_interleaved`: AXI4+ATOP slave to control on chip memory, interleaved to prevent
+  deadlocks.
+- `axi_to_mem_split`: AXI4+ATOP slave to control memory protocol interconnect.
+- `Bender`: Add dependency `tech_cells_generic` `v0.2.2` for generic SRAM macro for simulation.
+
+### Changed
+- `axi_demux`: Add module docstring
+- `axi_sim_mem`: Add the capability to emit read and write errors
+- `Bender`: Update dependency `common_cells` to `v1.26.0` from `v1.21.0` (required by
+  `axi_throttle`)
+- Remove `docs` directory, move content to `doc` folder. `docs` is automatically created and
+  populated during the CI run.
+- Update vsim version to `2021.3` in CI, drop test for `2020.1` and `2021.1`
+
+### Fixed
+- `axi_lite_demux`: Improve compatibility with vsim version 10.7b.
 - `axi_lite_mux`: Reduce complexity of W channel at master port by removing an unnecessary
   multiplexer.
-- `axi_lite_demux`: Improve compatibility with vsim version 10.7b.
 
+`v0.37.0` is fully **backward-compatible** to `v0.36.0`.
 
 ## 0.36.0 - 2022-07-07
 
