@@ -352,7 +352,8 @@ module axi_to_mem #(
     .DataWidth  ( DataWidth ),
     .NumBanks   ( NumBanks  ),
     .HideStrb   ( HideStrb  ),
-    .MaxTrans   ( BufDepth  )
+    .MaxTrans   ( BufDepth  ),
+    .FifoDepth  ( 2         )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
@@ -565,6 +566,8 @@ module mem_to_banks #(
   parameter bit          HideStrb  = 1'b0,
   /// Number of outstanding transactions
   parameter int unsigned MaxTrans  = 32'b1,
+  /// FIFO depth, must be >=1
+  parameter int unsigned FifoDepth = 1,
   /// Dependent parameter, do not override! Address type.
   localparam type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override! Input data type.
@@ -650,19 +653,23 @@ module mem_to_banks #(
     assign bank_req[i].strb  = strb_i[i*BytesPerBank+:BytesPerBank];
     assign bank_req[i].atop  = atop_i;
     assign bank_req[i].we    = we_i;
-    fall_through_register #(
-      .T ( req_t )
+    stream_fifo #(
+      .FALL_THROUGH ( 1'b1         ),
+      .DATA_WIDTH   ( $bits(req_t) ),
+      .DEPTH        ( FifoDepth    ),
+      .T            ( req_t        )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
-      .clr_i      ( 1'b0          ),
+      .flush_i    ( 1'b0          ),
       .testmode_i ( 1'b0          ),
+      .usage_o    (),
+      .data_i     ( bank_req[i]   ),
       .valid_i    ( req_valid     ),
       .ready_o    ( req_ready[i]  ),
-      .data_i     ( bank_req[i]   ),
+      .data_o     ( bank_oup[i]   ),
       .valid_o    ( bank_req_internal[i] ),
-      .ready_i    ( bank_gnt_internal[i] ),
-      .data_o     ( bank_oup[i]   )
+      .ready_i    ( bank_gnt_internal[i] )
     );
     assign bank_addr_o[i]  = bank_oup[i].addr;
     assign bank_wdata_o[i] = bank_oup[i].wdata;
@@ -709,19 +716,23 @@ module mem_to_banks #(
 
   // Handle responses.
   for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
-    fall_through_register #(
-      .T ( oup_data_t )
+    stream_fifo #(
+      .FALL_THROUGH ( 1'b1              ),
+      .DATA_WIDTH   ( $bits(oup_data_t) ),
+      .DEPTH        ( FifoDepth         ),
+      .T            ( oup_data_t        )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
-      .clr_i      ( 1'b0                                ),
+      .flush_i    ( 1'b0                                ),
       .testmode_i ( 1'b0                                ),
+      .usage_o    (),
+      .data_i     ( bank_rdata_i[i]                     ),
       .valid_i    ( bank_rvalid_i[i]                    ),
       .ready_o    ( resp_ready[i]                       ),
-      .data_i     ( bank_rdata_i[i]                     ),
       .data_o     ( rdata_o[i*BitsPerBank+:BitsPerBank] ),
-      .ready_i    ( rvalid_o & !dead_response[i]        ),
-      .valid_o    ( resp_valid[i]                       )
+      .valid_o    ( resp_valid[i]                       ),
+      .ready_i    ( rvalid_o & !dead_response[i]        )
     );
   end
   assign rvalid_o = &(resp_valid | dead_response);
