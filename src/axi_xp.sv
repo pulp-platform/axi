@@ -19,6 +19,8 @@
 module axi_xp #(
   // Atomic operations settings
   parameter bit  ATOPs = 1'b1,
+  // xbar configuration
+  parameter axi_pkg::xbar_cfg_t Cfg = '0,
   /// Number of slave ports.
   parameter int unsigned NumSlvPorts = 32'd0,
   /// Number of master ports.
@@ -124,22 +126,8 @@ module axi_xp #(
   xbar_req_t  [NumMstPorts-1:0] xbar_req;
   xbar_resp_t [NumMstPorts-1:0] xbar_resp;
 
-  localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NoSlvPorts:         NumSlvPorts,
-    NoMstPorts:         NumMstPorts,
-    MaxMstTrans:        AxiMaxTxnsPerId,
-    MaxSlvTrans:        AxiSlvPortMaxWriteTxns,
-    FallThrough:        1'b0,
-    LatencyMode:        axi_pkg::CUT_ALL_PORTS,
-    AxiIdWidthSlvPorts: AxiIdWidth,
-    AxiIdUsedSlvPorts:  AxiIdWidth,
-    AxiAddrWidth:       AxiAddrWidth,
-    AxiDataWidth:       AxiDataWidth,
-    NoAddrRules:        NumAddrRules
-  };
-
   axi_xbar #(
-    .Cfg            ( xbar_cfg      ),
+    .Cfg            ( Cfg           ),
     .ATOPs          ( ATOPs         ),
     .Connectivity   ( Connectivity  ),
     .slv_aw_chan_t  ( aw_t          ),
