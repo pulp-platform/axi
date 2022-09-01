@@ -1,0 +1,123 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_dma_data_mover</a></h1>
+<div class="docblock">
+<p>Module, that controls the AXI bus. Takes two configuration structs (R/W) as an
+input. Implements the DMA functionality on the AXI bus.
+R and W config structs need to appear at the input simultaneously; sending a 
+R config w/o the corresponding W could lead to wrong AXI transfers.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Data width of the AXI bus</p>
+</div><h3 id="parameter.ReqFifoDepth" class="impl"><code class="in-band">ReqFifoDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of AX beats that can be in-flight</p>
+</div><h3 id="parameter.BufferDepth" class="impl"><code class="in-band">BufferDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of elements the realignment buffer can hold. To achieve
+full performance a depth of 3 is minimally required.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP request struct definition.</p>
+</div><h3 id="parameter.axi_res_t" class="impl"><code class="in-band">axi_res_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP response struct definition.</p>
+</div><h3 id="parameter.desc_ax_t" class="impl"><code class="in-band">desc_ax_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>ax descriptor</p>
+<ul>
+<li><code>id</code>: AXI id</li>
+<li><code>last</code>: last transaction in burst</li>
+<li><code>address</code>: address of burst</li>
+<li><code>length</code>: burst length</li>
+<li><code>size</code>: bytes in each burst</li>
+<li><code>burst</code>: burst type; only INC supported</li>
+<li><code>cache</code>: cache type</li>
+</ul>
+</div><h3 id="parameter.desc_r_t" class="impl"><code class="in-band">desc_r_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>r descriptor</p>
+<ul>
+<li><code>offset</code>: initial misalignment</li>
+<li><code>tailer</code>: final misalignment</li>
+<li><code>shift</code>: amount the data needs to be shifted to realign it</li>
+</ul>
+</div><h3 id="parameter.desc_w_t" class="impl"><code class="in-band">desc_w_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>w descriptor</p>
+<ul>
+<li><code>offset</code>: initial misalignment</li>
+<li><code>tailer</code>: final misalignment</li>
+<li><code>num_beats</code>: number of beats in the burst</li>
+<li><code>is_single</code>: burst length is 0</li>
+</ul>
+</div><h3 id="parameter.read_req_t" class="impl"><code class="in-band">read_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Read request definition. Includes:</p>
+<ul>
+<li>ax descriptor</li>
+<li><code>id</code>: AXI id</li>
+<li><code>last</code>: last transaction in burst</li>
+<li><code>address</code>: address of burst</li>
+<li><code>length</code>: burst length</li>
+<li><code>size</code>: bytes in each burst</li>
+<li><code>burst</code>: burst type; only INC supported</li>
+<li><code>cache</code>: cache type</li>
+<li>r descriptor</li>
+<li><code>offset</code>: initial misalignment</li>
+<li><code>tailer</code>: final misalignment</li>
+<li><code>shift</code>: amount the data needs to be shifted to realign it</li>
+</ul>
+</div><h3 id="parameter.write_req_t" class="impl"><code class="in-band">write_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Write request definition. Includes:</p>
+<ul>
+<li>ax descriptor</li>
+<li><code>id</code>: AXI id</li>
+<li><code>last</code>: last transaction in burst</li>
+<li><code>address</code>: address of burst</li>
+<li><code>length</code>: burst length</li>
+<li><code>size</code>: bytes in each burst</li>
+<li><code>burst</code>: burst type; only INC supported</li>
+<li><code>cache</code>: cache type</li>
+<li>w descriptor</li>
+<li><code>offset</code>: initial misalignment</li>
+<li><code>tailer</code>: final misalignment</li>
+<li><code>num_beats</code>: number of beats in the burst</li>
+<li><code>is_single</code>: burst length is 0</li>
+</ul>
+</div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band">StrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low</p>
+</div><h3 id="port.axi_dma_req_o" class="impl"><code class="in-band">axi_dma_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP master request</p>
+</div><h3 id="port.axi_dma_res_i" class="impl"><code class="in-band">axi_dma_res_i<span class="type-annotation">: input  axi_res_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP master response</p>
+</div><h3 id="port.read_req_i" class="impl"><code class="in-band">read_req_i<span class="type-annotation">: input read_req_t</span></code></h3><div class="docblock"
+><p>Read transfer request</p>
+</div><h3 id="port.write_req_i" class="impl"><code class="in-band">write_req_i<span class="type-annotation">: input write_req_t</span></code></h3><div class="docblock"
+><p>Write transfer request</p>
+</div><h3 id="port.r_valid_i" class="impl"><code class="in-band">r_valid_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Handshake: read transfer request valid</p>
+</div><h3 id="port.r_ready_o" class="impl"><code class="in-band">r_ready_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Handshake: read transfer request ready</p>
+</div><h3 id="port.w_valid_i" class="impl"><code class="in-band">w_valid_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Handshake: write transfer request valid</p>
+</div><h3 id="port.w_ready_o" class="impl"><code class="in-band">w_ready_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Handshake: write transfer request ready</p>
+</div><h3 id="port.data_mover_idle_o" class="impl"><code class="in-band">data_mover_idle_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>High if the data mover is idle</p>
+</div><h3 id="port.trans_complete_o" class="impl"><code class="in-band">trans_complete_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Event: a transaction has completed</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.current_ar_req" class="impl"><code class="in-band">current_ar_req<span class="type-annotation">: desc_ax_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.current_aw_req" class="impl"><code class="in-band">current_aw_req<span class="type-annotation">: desc_ax_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.current_r_req" class="impl"><code class="in-band">current_r_req<span class="type-annotation">: desc_r_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.current_w_req" class="impl"><code class="in-band">current_w_req<span class="type-annotation">: desc_w_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.r_data" class="impl"><code class="in-band">r_data<span class="type-annotation">: data_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.w_data" class="impl"><code class="in-band">w_data<span class="type-annotation">: data_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.w_strb" class="impl"><code class="in-band">w_strb<span class="type-annotation">: strb_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>

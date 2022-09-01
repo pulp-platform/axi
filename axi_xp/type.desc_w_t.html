@@ -1,0 +1,19 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">desc_w_t</a></h1>
+<pre>typedef struct packed {
+        offset_t       offset;
+        offset_t       tailer;
+        axi_pkg::len_t num_beats;
+        logic          is_single;
+    } desc_w_t;</pre>
+<p>offset: initial misalignment
+tailer: final misalignment
+num_beats: number of beats in the burst
+is_single: burst length is 0</p>
+</section>
+</body>
+</html>

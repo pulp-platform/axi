@@ -1,0 +1,92 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_dma_backend</a></h1>
+<div class="docblock">
+<p>The backend implements the generic 1D data transfer on an AXI BUS</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Data width of the AXI bus</p>
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Address width of the AXI bus</p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>ID width of the AXI bus</p>
+</div><h3 id="parameter.AxReqFifoDepth" class="impl"><code class="in-band">AxReqFifoDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of AX beats that can be in-flight</p>
+</div><h3 id="parameter.TransFifoDepth" class="impl"><code class="in-band">TransFifoDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of generic 1D requests that can be buffered</p>
+</div><h3 id="parameter.BufferDepth" class="impl"><code class="in-band">BufferDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of elements the realignment buffer can hold. To achieve
+full performance a depth of 3 is minimally required.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP request struct definition.</p>
+</div><h3 id="parameter.axi_res_t" class="impl"><code class="in-band">axi_res_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AXI4+ATOP response struct definition.</p>
+</div><h3 id="parameter.burst_req_t" class="impl"><code class="in-band">burst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Arbitrary 1D burst request definition:</p>
+<ul>
+<li><code>id</code>: the AXI id used - this id should be constant, as the DMA does not support reordering</li>
+<li><code>src</code>, <code>dst</code>: source and destination address, same width as the AXI 4 channels</li>
+<li><code>num_bytes</code>: the length of the contiguous 1D transfer requested, can be up to 32/64 bit long
+num_bytes will be interpreted as an unsigned number
+A value of 0 will cause the backend to discard the transfer prematurely</li>
+<li><code>cache_src</code>, <code>cache_dst</code>: the configuration of the cache fields in the AX beats</li>
+<li><code>burst_src</code>, <code>burst_dst</code>: currently only incremental bursts are supported (<code>2'b01</code>)</li>
+<li><code>decouple_rw</code>: if set to true, there is no longer exactly one AXI write_request issued for
+every read request. This mode can improve performance of unaligned transfers when
+crossing the AXI page boundaries.</li>
+<li><code>deburst</code>: if set, the DMA will split all bursts in single transfers</li>
+<li><code>serialize</code>: if set, the DMA will only send AX belonging to a given Arbitrary 1D burst request
+at a time. This is default behavior to prevent deadlocks. Setting <code>serialize</code> to
+zero violates the AXI4+ATOP specification.</li>
+</ul>
+</div><h3 id="parameter.DmaIdWidth" class="impl"><code class="in-band">DmaIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Give each DMA backend a unique id</p>
+</div><h3 id="parameter.DmaTracing" class="impl"><code class="in-band">DmaTracing<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Enable or disable tracing</p>
+</div><h3 id="parameter.StrobeWidth" class="impl"><code class="in-band">StrobeWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of bytes per word</p>
+</div><h3 id="parameter.OffsetWidth" class="impl"><code class="in-band">OffsetWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Offset width</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low</p>
+</div><h3 id="port.axi_dma_req_o" class="impl"><code class="in-band">axi_dma_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP master request</p>
+</div><h3 id="port.axi_dma_res_i" class="impl"><code class="in-band">axi_dma_res_i<span class="type-annotation">: input  axi_res_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP master response</p>
+</div><h3 id="port.burst_req_i" class="impl"><code class="in-band">burst_req_i<span class="type-annotation">: input  burst_req_t</span></code></h3><div class="docblock"
+><p>Arbitrary 1D burst request</p>
+</div><h3 id="port.valid_i" class="impl"><code class="in-band">valid_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Handshake: 1D burst request is valid</p>
+</div><h3 id="port.ready_o" class="impl"><code class="in-band">ready_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Handshake: 1D burst can be accepted</p>
+</div><h3 id="port.backend_idle_o" class="impl"><code class="in-band">backend_idle_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>High if the backend is idle</p>
+</div><h3 id="port.trans_complete_o" class="impl"><code class="in-band">trans_complete_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Event: a 1D burst request has completed</p>
+</div><h3 id="port.dma_id_i" class="impl"><code class="in-band">dma_id_i<span class="type-annotation">: input  logic [DmaIdWidth-1:0]</span></code></h3><div class="docblock"
+><p>unique DMA id</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.offset_t.html">offset_t</a></td><td><p>Offset type</p>
+</td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td><p>Address Type</p>
+</td></tr><tr><td><a class="type" href="type.axi_id_t.html">axi_id_t</a></td><td><p>AXI ID Type</p>
+</td></tr><tr><td><a class="type" href="type.desc_ax_t.html">desc_ax_t</a></td><td><p>id: AXI id</p>
+</td></tr><tr><td><a class="type" href="type.desc_r_t.html">desc_r_t</a></td><td><p>offset: initial misalignment</p>
+</td></tr><tr><td><a class="type" href="type.desc_w_t.html">desc_w_t</a></td><td><p>offset: initial misalignment</p>
+</td></tr><tr><td><a class="type" href="type.write_req_t.html">write_req_t</a></td><td><p>Write request definition</p>
+</td></tr><tr><td><a class="type" href="type.read_req_t.html">read_req_t</a></td><td><p>Read request definition</p>
+</td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.burst_req" class="impl"><code class="in-band">burst_req<span class="type-annotation">: burst_req_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.write_req" class="impl"><code class="in-band">write_req<span class="type-annotation">: write_req_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.read_req" class="impl"><code class="in-band">read_req<span class="type-annotation">: read_req_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>
