@@ -42,18 +42,32 @@ module axi_xp #(
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
   parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
-  /// Maximum number of in-flight write transactions at each slave port.
+  /// Maximum number of in-flight transactions with the same ID at the slave port.
   ///
-  /// It is legal for upstream to have more write transactions than the maximum given by this
-  /// parameter in flight, but a write exceeding the maximum will be stalled until the next write
-  /// at the same slave port completes.
-  parameter int unsigned AxiSlvPortMaxWriteTxns = 32'd0,
-  /// Maximum number of in-flight transactions with the same ID.
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
+  /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
+  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
+  /// Maximum number of in-flight transactions at the slave port.  Reads and writes are counted
+  /// separately (except for ATOPs, which count as both read and write).
   ///
-  /// It is legal for upstream to have more transactions than the maximum given by this parameter in
-  /// flight for any ID, but a transaction exceeding the maximum will be stalled until another
-  /// transaction with the same ID completes.
-  parameter int unsigned AxiMaxTxnsPerId = 32'd0,
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiSlvPortMaxTxns).
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
+  /// Maximum number of different IDs that can be in flight at the master port.  Reads and writes
+  /// are counted separately (except for ATOPs, which count as both read and write).
+  ///
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxUniqIds).
+  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  /// Maximum number of in-flight transactions with the same ID at the master port.
+  ///
+  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// case, this parameter is passed to
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxTxnsPerId).
+  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   /// Number of rules in the address map.
   parameter int unsigned NumAddrRules = 32'd0,
   /// Request struct type of the AXI4+ATOP slave port
