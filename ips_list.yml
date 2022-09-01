@@ -5,3 +5,7 @@ common_cells:
 common_verification:
     commit: v0.2.0
     group: pulp-platform
+
+tech_cells_generic:
+    commit: v0.2.2
+    group: pulp-platform

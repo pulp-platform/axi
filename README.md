@@ -101,6 +101,9 @@ We aim to be compatible with a wide range of EDA tools.  For this reason, we str
 - the workaround does not break functionality in other tools, and
 - the workaround does not significantly complicate code or add maintenance overhead.
 
+In addition, we suggest to report issues with the SystemVerilog language support directly to the EDA vendor. Our code is fully open and
+can / should be shared with the EDA vendor as a testcase for any language problem encountered.
+
 All code in each release and on the default branch is tested on a recent version of at least one industry-standard RTL simulator and synthesizer.  You can examine the [CI settings](./.gitlab-ci.yml) to find out which version of which tool we are running.
 
 
