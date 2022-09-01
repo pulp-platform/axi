@@ -158,8 +158,8 @@ module axi_xp #(
     .mst_ports_req_o        ( xbar_req                                ),
     .mst_ports_resp_i       ( xbar_resp                               ),
     .addr_map_i,
-    .en_default_mst_port_i  ( {NumSlvPorts{1'b0}}                     ),
-    .default_mst_port_i     ( {NumSlvPorts{{$clog2(NumMstPorts){1'b0}}}} )
+    .en_default_mst_port_i  ( '0                                      ),
+    .default_mst_port_i     ( '0                                      )
   );
 
   for (genvar i = 0; i < NumMstPorts; i++) begin : gen_remap
