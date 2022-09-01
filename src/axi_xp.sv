@@ -183,3 +183,115 @@ module axi_xp #(
   end
 
 endmodule
+
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
+
+module axi_xp_intf
+import cf_math_pkg::idx_width;
+#(
+  parameter bit  ATOPs = 1'b1,
+  parameter axi_pkg::xbar_cfg_t Cfg = '0,
+  parameter int unsigned NumSlvPorts = 32'd0,
+  parameter int unsigned NumMstPorts = 32'd0,
+  parameter bit [NumSlvPorts-1:0][NumMstPorts-1:0] Connectivity = '1,
+  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned AxiIdWidth = 32'd0,
+  parameter int unsigned AxiUserWidth = 32'd0,
+  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
+  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned NumAddrRules = 32'd0,
+  parameter type rule_t = axi_pkg::xbar_rule_64_t
+) (
+  input  logic                       clk_i,
+  input  logic                       rst_ni,
+  input  logic                       test_en_i,
+  AXI_BUS.Slave                      slv_ports [NumSlvPorts-1:0],
+  AXI_BUS.Master                     mst_ports [NumMstPorts-1:0],
+  input  rule_t  [NumAddrRules-1:0]  addr_map_i
+);
+
+  // localparam int unsigned AxiIdWidthMstPorts = AxiIdWidth + $clog2(NoSlvPorts);
+
+  typedef logic [AxiIdWidth         -1:0] id_mst_t;
+  typedef logic [AxiIdWidth         -1:0] id_slv_t;
+  typedef logic [AxiAddrWidth       -1:0] addr_t;
+  typedef logic [AxiDataWidth       -1:0] data_t;
+  typedef logic [AxiDataWidth/8     -1:0] strb_t;
+  typedef logic [AxiUserWidth       -1:0] user_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_mst_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+
+  mst_req_t   [NumMstPorts-1:0]  mst_reqs;
+  mst_resp_t  [NumMstPorts-1:0]  mst_resps;
+  slv_req_t   [NumSlvPorts-1:0]  slv_reqs;
+  slv_resp_t  [NumSlvPorts-1:0]  slv_resps;
+
+  for (genvar i = 0; i < NumMstPorts; i++) begin : gen_assign_mst
+    `AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
+    `AXI_ASSIGN_TO_RESP(mst_resps[i], mst_ports[i])
+  end
+
+  for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_assign_slv
+    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
+    `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
+  end
+
+  axi_xp #(
+    .ATOPs                   ( ATOPs         ),
+    .Cfg                     ( Cfg           ),
+    .NumSlvPorts             ( NumSlvPorts    ),
+    .NumMstPorts             ( NumMstPorts    ),
+    .Connectivity            ( Connectivity  ),
+    .AxiAddrWidth            ( AxiAddrWidth  ),
+    .AxiDataWidth            ( AxiDataWidth  ),
+    .AxiIdWidth              ( AxiIdWidth    ),
+    .AxiUserWidth            ( AxiUserWidth  ),
+    .AxiSlvPortMaxUniqIds    ( AxiSlvPortMaxUniqIds   ),
+    .AxiSlvPortMaxTxnsPerId  ( AxiSlvPortMaxTxnsPerId ),
+    .AxiSlvPortMaxTxns       ( AxiSlvPortMaxTxns      ),
+    .AxiMstPortMaxUniqIds    ( AxiMstPortMaxUniqIds   ),
+    .AxiMstPortMaxTxnsPerId  ( AxiMstPortMaxTxnsPerId ),
+    .NumAddrRules            ( NumAddrRules            ),
+    .slv_aw_chan_t  ( slv_aw_chan_t ),
+    .mst_aw_chan_t  ( mst_aw_chan_t ),
+    .w_chan_t       ( w_chan_t      ),
+    .slv_b_chan_t   ( slv_b_chan_t  ),
+    .mst_b_chan_t   ( mst_b_chan_t  ),
+    .slv_ar_chan_t  ( slv_ar_chan_t ),
+    .mst_ar_chan_t  ( mst_ar_chan_t ),
+    .slv_r_chan_t   ( slv_r_chan_t  ),
+    .mst_r_chan_t   ( mst_r_chan_t  ),
+    .slv_req_t      ( slv_req_t     ),
+    .slv_resp_t     ( slv_resp_t    ),
+    .mst_req_t      ( mst_req_t     ),
+    .mst_resp_t     ( mst_resp_t    ),
+    .rule_t         ( rule_t                 )
+  ) i_xp (
+    .clk_i,
+    .rst_ni,
+    .test_en_i,
+    .slv_req_i  (slv_reqs ),
+    .slv_resp_o (slv_resps),
+    .mst_req_o  (mst_reqs ),
+    .mst_resp_i (mst_resps),
+    .addr_map_i
+  );
+
+endmodule
