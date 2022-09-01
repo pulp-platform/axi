@@ -72,14 +72,19 @@ module axi_xp #(
   parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   /// Number of rules in the address map.
   parameter int unsigned NumAddrRules = 32'd0,
-  /// Request struct type of the AXI4+ATOP slave port
-  parameter type slv_req_t = logic,
-  /// Response struct type of the AXI4+ATOP slave port
-  parameter type slv_resp_t = logic,
-  /// Request struct type of the AXI4+ATOP master port
-  parameter type mst_req_t = logic,
-  /// Response struct type of the AXI4+ATOP master port
-  parameter type mst_resp_t = logic,
+  // parameter type slv_aw_chan_t                                        = logic,
+  parameter type mst_aw_chan_t                                        = logic,
+  parameter type w_chan_t                                             = logic,
+  parameter type slv_b_chan_t                                         = logic,
+  parameter type mst_b_chan_t                                         = logic,
+  parameter type slv_ar_chan_t                                        = logic,
+  parameter type mst_ar_chan_t                                        = logic,
+  parameter type slv_r_chan_t                                         = logic,
+  parameter type mst_r_chan_t                                         = logic,
+  /// Request struct type of the AXI4+ATOP
+  parameter type axi_req_t  = logic,
+  /// Response struct type of the AXI4+ATOP
+  parameter type axi_resp_t = logic,
   /// Rule type (see documentation of `axi_xbar` for details).
   parameter type rule_t = axi_pkg::xbar_rule_64_t
 ) (
@@ -90,13 +95,13 @@ module axi_xp #(
   /// Test mode enable
   input  logic                          test_en_i,
   /// Slave ports request
-  input  slv_req_t  [NumSlvPorts-1:0]   slv_req_i,
+  input  axi_req_t  [NumSlvPorts-1:0]   slv_req_i,
   /// Slave ports response
-  output slv_resp_t [NumSlvPorts-1:0]   slv_resp_o,
+  output axi_resp_t [NumSlvPorts-1:0]   slv_resp_o,
   /// Master ports request
-  output mst_req_t  [NumMstPorts-1:0]   mst_req_o,
+  output axi_req_t  [NumMstPorts-1:0]   mst_req_o,
   /// Master ports response
-  input  mst_resp_t [NumMstPorts-1:0]   mst_resp_i,
+  input  axi_resp_t [NumMstPorts-1:0]   mst_resp_i,
   /// Address map for transferring transactions from slave to master ports
   input  rule_t     [NumAddrRules-1:0]  addr_map_i
 );
@@ -139,8 +144,8 @@ module axi_xp #(
     .mst_ar_chan_t  ( xbar_ar_t     ),
     .slv_r_chan_t   ( r_t           ),
     .mst_r_chan_t   ( xbar_r_t      ),
-    .slv_req_t      ( req_t         ),
-    .slv_resp_t     ( resp_t        ),
+    .slv_req_t      ( axi_req_t         ),
+    .slv_resp_t     ( axi_resp_t        ),
     .mst_req_t      ( xbar_req_t    ),
     .mst_resp_t     ( xbar_resp_t   ),
     .rule_t         ( rule_t        )
@@ -159,14 +164,14 @@ module axi_xp #(
 
   for (genvar i = 0; i < NumMstPorts; i++) begin : gen_remap
     axi_id_remap #(
-      .AxiSlvPortIdWidth    ( AxiXbarIdWidth        ),
-      .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds  ),
-      .AxiMaxTxnsPerId      ( AxiMaxTxnsPerId       ),
-      .AxiMstPortIdWidth    ( AxiIdWidth            ),
-      .slv_req_t            ( xbar_req_t            ),
-      .slv_resp_t           ( xbar_resp_t           ),
-      .mst_req_t            ( req_t                 ),
-      .mst_resp_t           ( resp_t                )
+      .AxiSlvPortIdWidth    ( AxiXbarIdWidth         ),
+      .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds   ),
+      .AxiMaxTxnsPerId      ( AxiSlvPortMaxTxnsPerId ),
+      .AxiMstPortIdWidth    ( AxiIdWidth             ),
+      .slv_req_t            ( xbar_req_t             ),
+      .slv_resp_t           ( xbar_resp_t            ),
+      .mst_req_t            ( axi_req_t                  ),
+      .mst_resp_t           ( axi_resp_t                 )
     ) i_axi_id_remap (
       .clk_i,
       .rst_ni,
