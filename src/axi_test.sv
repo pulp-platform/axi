@@ -905,14 +905,9 @@ package axi_test;
             addr + len <= mem_region.addr_end;
           }; assert(rand_success);
 
-          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
-          end else begin // BURST_INCR
-            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
+          if (axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, ax_beat.ax_len) >> 12) begin
+            break;
           end
         end
       end else begin
@@ -937,14 +932,9 @@ package axi_test;
             addr + ((len + 1) << size) <= mem_region.addr_end;
           }; assert(rand_success);
 
-          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
-          end else begin // BURST_INCR, BURST_WRAP
-            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
+          if (axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, ax_beat.ax_len) >> 12) begin
+            break;
           end
         end
       end
