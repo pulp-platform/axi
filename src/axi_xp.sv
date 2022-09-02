@@ -72,15 +72,6 @@ module axi_xp #(
   parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   /// Number of rules in the address map.
   parameter int unsigned NumAddrRules = 32'd0,
-  // parameter type slv_aw_chan_t                                        = logic,
-  parameter type mst_aw_chan_t                                        = logic,
-  parameter type w_chan_t                                             = logic,
-  parameter type slv_b_chan_t                                         = logic,
-  parameter type mst_b_chan_t                                         = logic,
-  parameter type slv_ar_chan_t                                        = logic,
-  parameter type mst_ar_chan_t                                        = logic,
-  parameter type slv_r_chan_t                                         = logic,
-  parameter type mst_r_chan_t                                         = logic,
   /// Request struct type of the AXI4+ATOP
   parameter type axi_req_t  = logic,
   /// Response struct type of the AXI4+ATOP
@@ -106,6 +97,7 @@ module axi_xp #(
   input  rule_t     [NumAddrRules-1:0]  addr_map_i
 );
 
+  // The master port of the Xbar has a different ID width than the slave ports.
   parameter int unsigned AxiXbarIdWidth = AxiIdWidth + $clog2(NumSlvPorts);
   typedef logic [AxiAddrWidth-1:0]    addr_t;
   typedef logic [AxiDataWidth-1:0]    data_t;
@@ -114,41 +106,31 @@ module axi_xp #(
   typedef logic [AxiDataWidth/8-1:0]  strb_t;
   typedef logic [AxiUserWidth-1:0]    user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(aw_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(xbar_aw_t, addr_t, xbar_id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_t, id_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(xbar_b_t, xbar_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(xbar_ar_t, addr_t, xbar_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(xbar_r_t, data_t, xbar_id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(req_t, aw_t, w_t, ar_t)
-  `AXI_TYPEDEF_REQ_T(xbar_req_t, xbar_aw_t, w_t, xbar_ar_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_t, r_t)
-  `AXI_TYPEDEF_RESP_T(xbar_resp_t, xbar_b_t, xbar_r_t)
+
+  `AXI_TYPEDEF_ALL(xp, addr_t, id_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_ALL(xbar, addr_t, xbar_id_t, data_t, strb_t, user_t)
 
   xbar_req_t  [NumMstPorts-1:0] xbar_req;
   xbar_resp_t [NumMstPorts-1:0] xbar_resp;
 
   axi_xbar #(
-    .Cfg            ( Cfg           ),
-    .ATOPs          ( ATOPs         ),
-    .Connectivity   ( Connectivity  ),
-    .slv_aw_chan_t  ( aw_t          ),
-    .mst_aw_chan_t  ( xbar_aw_t     ),
-    .w_chan_t       ( w_t           ),
-    .slv_b_chan_t   ( b_t           ),
-    .mst_b_chan_t   ( xbar_b_t      ),
-    .slv_ar_chan_t  ( ar_t          ),
-    .mst_ar_chan_t  ( xbar_ar_t     ),
-    .slv_r_chan_t   ( r_t           ),
-    .mst_r_chan_t   ( xbar_r_t      ),
-    .slv_req_t      ( axi_req_t         ),
-    .slv_resp_t     ( axi_resp_t        ),
-    .mst_req_t      ( xbar_req_t    ),
-    .mst_resp_t     ( xbar_resp_t   ),
-    .rule_t         ( rule_t        )
+    .Cfg            ( Cfg             ),
+    .ATOPs          ( ATOPs           ),
+    .Connectivity   ( Connectivity    ),
+    .slv_aw_chan_t  ( xp_aw_chan_t    ),
+    .mst_aw_chan_t  ( xbar_aw_chan_t  ),
+    .w_chan_t       ( xp_w_chan_t     ),
+    .slv_b_chan_t   ( xp_b_chan_t     ),
+    .mst_b_chan_t   ( xbar_b_chan_t   ),
+    .slv_ar_chan_t  ( xp_ar_chan_t    ),
+    .mst_ar_chan_t  ( xbar_ar_chan_t  ),
+    .slv_r_chan_t   ( xp_r_chan_t     ),
+    .mst_r_chan_t   ( xbar_r_chan_t   ),
+    .slv_req_t      ( axi_req_t       ),
+    .slv_resp_t     ( axi_resp_t      ),
+    .mst_req_t      ( xbar_req_t      ),
+    .mst_resp_t     ( xbar_resp_t     ),
+    .rule_t         ( rule_t          )
   ) i_xbar (
     .clk_i,
     .rst_ni,
@@ -217,31 +199,18 @@ import cf_math_pkg::idx_width;
 
   // localparam int unsigned AxiIdWidthMstPorts = AxiIdWidth + $clog2(NoSlvPorts);
 
-  typedef logic [AxiIdWidth         -1:0] id_mst_t;
-  typedef logic [AxiIdWidth         -1:0] id_slv_t;
+  typedef logic [AxiIdWidth         -1:0] id_t;
   typedef logic [AxiAddrWidth       -1:0] addr_t;
   typedef logic [AxiDataWidth       -1:0] data_t;
   typedef logic [AxiDataWidth/8     -1:0] strb_t;
   typedef logic [AxiUserWidth       -1:0] user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_slv_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_slv_t, user_t)
-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
-  mst_req_t   [NumMstPorts-1:0]  mst_reqs;
-  mst_resp_t  [NumMstPorts-1:0]  mst_resps;
-  slv_req_t   [NumSlvPorts-1:0]  slv_reqs;
-  slv_resp_t  [NumSlvPorts-1:0]  slv_resps;
+  axi_req_t   [NumMstPorts-1:0]  mst_reqs;
+  axi_resp_t  [NumMstPorts-1:0]  mst_resps;
+  axi_req_t   [NumSlvPorts-1:0]  slv_reqs;
+  axi_resp_t  [NumSlvPorts-1:0]  slv_resps;
 
   for (genvar i = 0; i < NumMstPorts; i++) begin : gen_assign_mst
     `AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
@@ -269,20 +238,9 @@ import cf_math_pkg::idx_width;
     .AxiMstPortMaxUniqIds    ( AxiMstPortMaxUniqIds   ),
     .AxiMstPortMaxTxnsPerId  ( AxiMstPortMaxTxnsPerId ),
     .NumAddrRules            ( NumAddrRules            ),
-    .slv_aw_chan_t  ( slv_aw_chan_t ),
-    .mst_aw_chan_t  ( mst_aw_chan_t ),
-    .w_chan_t       ( w_chan_t      ),
-    .slv_b_chan_t   ( slv_b_chan_t  ),
-    .mst_b_chan_t   ( mst_b_chan_t  ),
-    .slv_ar_chan_t  ( slv_ar_chan_t ),
-    .mst_ar_chan_t  ( mst_ar_chan_t ),
-    .slv_r_chan_t   ( slv_r_chan_t  ),
-    .mst_r_chan_t   ( mst_r_chan_t  ),
-    .slv_req_t      ( slv_req_t     ),
-    .slv_resp_t     ( slv_resp_t    ),
-    .mst_req_t      ( mst_req_t     ),
-    .mst_resp_t     ( mst_resp_t    ),
-    .rule_t         ( rule_t                 )
+    .axi_req_t               ( axi_req_t     ),
+    .axi_resp_t              ( axi_resp_t    ),
+    .rule_t                  ( rule_t        )
   ) i_xp (
     .clk_i,
     .rst_ni,
