@@ -1026,30 +1026,37 @@ package axi_test;
     endtask
 
     function void rand_excl_ar(inout ax_beat_t ar_beat);
-      ar_beat.ax_lock = $random();
-      if (ar_beat.ax_lock) begin
-        automatic logic rand_success;
-        automatic int unsigned n_bytes;
-        automatic size_t size;
-        automatic addr_t addr_mask;
-        // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
-        // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
-        static int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
-        rand_success = std::randomize(n_bytes) with {
-          n_bytes >= 1;
-          n_bytes <= ul;
-        }; assert(rand_success);
-        n_bytes = 2**n_bytes;
-        rand_success = std::randomize(size) with {
-          size >= 0;
-          2**size <= n_bytes;
-          2**size <= AXI_STRB_WIDTH;
-          n_bytes / 2**size <= 16;
-        }; assert(rand_success);
-        ar_beat.ax_size = size;
-        ar_beat.ax_len = n_bytes / 2**size;
-        // The address must be aligned to the total number of bytes in the burst.
-        ar_beat.ax_addr = ar_beat.ax_addr & ~(n_bytes-1);
+      forever begin
+        ar_beat.ax_lock = $random();
+        if (ar_beat.ax_lock) begin
+          automatic logic rand_success;
+          automatic int unsigned n_bytes;
+          automatic size_t size;
+          automatic addr_t addr_mask;
+          // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
+          // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
+          static int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
+          rand_success = std::randomize(n_bytes) with {
+            n_bytes >= 1;
+            n_bytes <= ul;
+          }; assert(rand_success);
+          n_bytes = 2**n_bytes;
+          rand_success = std::randomize(size) with {
+            size >= 0;
+            2**size <= n_bytes;
+            2**size <= AXI_STRB_WIDTH;
+            n_bytes / 2**size <= 16;
+          }; assert(rand_success);
+          ar_beat.ax_size = size;
+          ar_beat.ax_len = n_bytes / 2**size;
+          // The address must be aligned to the total number of bytes in the burst.
+          ar_beat.ax_addr = ar_beat.ax_addr & ~(n_bytes-1);
+        end
+        // Make sure that the burst does not cross a 4KiB boundary.
+        if (axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, 0) >> 12 ==
+            axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, ar_beat.ax_len) >> 12) begin
+          break;
+        end
       end
     endfunction
 
