@@ -958,62 +958,69 @@ package axi_test;
         beat.ax_atop[5:4] = 2'b00;
       end
       if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
-        // Determine `ax_atop`.
-        if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
-            beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
-          // Endianness
-          beat.ax_atop[3] = $random();
-          // Atomic operation
-          beat.ax_atop[2:0] = $random();
-        end else begin // Atomic{Swap,Compare}
-          beat.ax_atop[3:1] = '0;
-          beat.ax_atop[0] = $random();
-        end
-        // Determine `ax_size` and `ax_len`.
-        if (2**beat.ax_size < AXI_STRB_WIDTH) begin
-          // Transaction does *not* occupy full data bus, so we must send just one beat. [E1.1.3]
-          beat.ax_len = '0;
-        end else begin
-          automatic int unsigned bytes;
-          if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
-            // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
-            automatic int unsigned log_bytes;
-            rand_success = std::randomize(log_bytes) with {
-              log_bytes > 0; 2**log_bytes <= 32;
-            }; assert(rand_success);
-            bytes = 2**log_bytes;
-          end else begin
-            // Total data transferred in burst can be 1, 2, 4, or 8 B.
-            if (AXI_STRB_WIDTH >= 8) begin
-              bytes = AXI_STRB_WIDTH;
-            end else begin
-              automatic int unsigned log_bytes;
-              rand_success = std::randomize(log_bytes); assert(rand_success);
-              log_bytes = log_bytes % (4 - $clog2(AXI_STRB_WIDTH)) - $clog2(AXI_STRB_WIDTH);
-              bytes = 2**log_bytes;
-            end
+        forever begin
+          // Determine `ax_atop`.
+          if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
+              beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
+            // Endianness
+            beat.ax_atop[3] = $random();
+            // Atomic operation
+            beat.ax_atop[2:0] = $random();
+          end else begin // Atomic{Swap,Compare}
+            beat.ax_atop[3:1] = '0;
+            beat.ax_atop[0] = $random();
           end
-          beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
-        end
-        // Determine `ax_addr` and `ax_burst`.
-        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
-          // The address must be aligned to half the outbound data size. [E1.1.3]
-          beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
-          // If the address is aligned to the total size of outgoing data, the burst type must be
-          // INCR. Otherwise, it must be WRAP. [E1.1.3]
-          beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
-              axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
-          // If we are not allowed to emit WRAP bursts, align the address to the total size of
-          // outgoing data and fall back to INCR.
-          if (beat.ax_burst == axi_pkg::BURST_WRAP && !AXI_BURST_WRAP) begin
-            beat.ax_addr -= (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size));
+          // Determine `ax_size` and `ax_len`.
+          if (2**beat.ax_size < AXI_STRB_WIDTH) begin
+            // Transaction does *not* occupy full data bus, so we must send just one beat. [E1.1.3]
+            beat.ax_len = '0;
+          end else begin
+            automatic int unsigned bytes;
+            if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+              // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
+              automatic int unsigned log_bytes;
+              rand_success = std::randomize(log_bytes) with {
+                log_bytes > 0; 2**log_bytes <= 32;
+              }; assert(rand_success);
+              bytes = 2**log_bytes;
+            end else begin
+              // Total data transferred in burst can be 1, 2, 4, or 8 B.
+              if (AXI_STRB_WIDTH >= 8) begin
+                bytes = AXI_STRB_WIDTH;
+              end else begin
+                automatic int unsigned log_bytes;
+                rand_success = std::randomize(log_bytes); assert(rand_success);
+                log_bytes = log_bytes % (4 - $clog2(AXI_STRB_WIDTH)) - $clog2(AXI_STRB_WIDTH);
+                bytes = 2**log_bytes;
+              end
+            end
+            beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
+          end
+          // Determine `ax_addr` and `ax_burst`.
+          if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+            // The address must be aligned to half the outbound data size. [E1.1.3]
+            beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
+            // If the address is aligned to the total size of outgoing data, the burst type must be
+            // INCR. Otherwise, it must be WRAP. [E1.1.3]
+            beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
+                axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
+            // If we are not allowed to emit WRAP bursts, align the address to the total size of
+            // outgoing data and fall back to INCR.
+            if (beat.ax_burst == axi_pkg::BURST_WRAP && !AXI_BURST_WRAP) begin
+              beat.ax_addr -= (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size));
+              beat.ax_burst = axi_pkg::BURST_INCR;
+            end
+          end else begin
+            // The address must be aligned to the data size. [E1.1.3]
+            beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
+            // Only INCR allowed.
             beat.ax_burst = axi_pkg::BURST_INCR;
           end
-        end else begin
-          // The address must be aligned to the data size. [E1.1.3]
-          beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
-          // Only INCR allowed.
-          beat.ax_burst = axi_pkg::BURST_INCR;
+          // Make sure that the burst does not cross a 4KiB boundary.
+          if (axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, beat.ax_len) >> 12) begin
+            break;
+          end
         end
       end
     endtask
