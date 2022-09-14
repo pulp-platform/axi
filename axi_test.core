@@ -10,7 +10,7 @@ filesets:
       - src/axi_test.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_verification:0.2.1"
+      - ">=pulp-platform.org::common_verification:0.2.3"
 targets:
   default:
     filesets : [bench]

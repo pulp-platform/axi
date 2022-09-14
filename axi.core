@@ -86,7 +86,7 @@ filesets:
       - test/tb_axi_xbar.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_verification:0.2.1"
+      - ">=pulp-platform.org::common_verification:0.2.3"
 
 generators:
   axi_intercon_gen:
