@@ -84,7 +84,7 @@ module tb_axi_sim_mem #(
     drv.reset_master();
     wait (rst_n);
     // AW
-`ifdef XILINX_SIMULATOR
+`ifdef XSIM
     rand_success = std::randomize(aw_beat); assert (rand_success);
 `else
     rand_success = aw_beat.randomize(); assert (rand_success);
@@ -97,7 +97,7 @@ module tb_axi_sim_mem #(
     drv.send_aw(aw_beat);
     // W beats
     for (int unsigned i = 0; i <= aw_beat.ax_len; i++) begin
-`ifdef XILINX_SIMULATOR
+`ifdef XSIM
       rand_success = std::randomize(w_beat); assert (rand_success);
 `else
       rand_success = w_beat.randomize(); assert (rand_success);
