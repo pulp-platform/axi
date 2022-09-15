@@ -84,6 +84,8 @@ module tb_axi_delayer;
     repeat (200) begin
         @(posedge clk);
 `ifdef XSIM
+        // std::randomize(ax_beat) may behave differently to ax_beat.randomize() wrt. limited ranges
+        // Keeping alternate implementation for XSIM only
         rand_success = std::randomize(ax_beat); assert(rand_success);
 `else
         rand_success = ax_beat.randomize(); assert(rand_success);

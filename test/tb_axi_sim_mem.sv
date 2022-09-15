@@ -85,6 +85,8 @@ module tb_axi_sim_mem #(
     wait (rst_n);
     // AW
 `ifdef XSIM
+    // std::randomize(aw_beat) may behave differently to aw_beat.randomize() wrt. limited ranges
+    // Keeping alternate implementation for XSIM only
     rand_success = std::randomize(aw_beat); assert (rand_success);
 `else
     rand_success = aw_beat.randomize(); assert (rand_success);
@@ -98,6 +100,8 @@ module tb_axi_sim_mem #(
     // W beats
     for (int unsigned i = 0; i <= aw_beat.ax_len; i++) begin
 `ifdef XSIM
+      // std::randomize(w_beat) may behave differently to w_beat.randomize() wrt. limited ranges
+      // Keeping alternate implementation for XSIM only
       rand_success = std::randomize(w_beat); assert (rand_success);
 `else
       rand_success = w_beat.randomize(); assert (rand_success);
