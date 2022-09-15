@@ -43,11 +43,11 @@ fuse_xsim:
   stage: build
   script:
     - bender sources
-    - python3 -m pip install fusesoc
+    - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
     - mkdir fusesoc && cd fusesoc
-    - fusesoc library add axi ..
-    - fusesoc core list
-    - vitis fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION)
+    - $HOME/.local/bin/fusesoc library add axi ..
+    - $HOME/.local/bin/fusesoc core list
+    - vitis $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
 .run_vsim: &run_vsim
   stage: test
