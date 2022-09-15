@@ -39,6 +39,16 @@ synopsys_dc:
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
       fi
 
+fuse_xsim:
+  stage: build
+  script:
+    - bender sources
+    - python3 -m pip install fusesoc
+    - mkdir fusesoc && cd fusesoc
+    - fusesoc library add axi ..
+    - fusesoc core list
+    - vitis fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION)
+
 .run_vsim: &run_vsim
   stage: test
   script:
