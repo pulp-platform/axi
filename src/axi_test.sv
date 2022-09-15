@@ -10,10 +10,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 

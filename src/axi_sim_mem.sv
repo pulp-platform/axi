@@ -3,6 +3,9 @@
 //
 // Authors:
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Samuel Riedel <sriedel@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "axi/typedef.svh"
 

@@ -2,7 +2,8 @@
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
 //
-// Thomas Benz <tbenz@ethz.ch>
+// Authors:
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 /// Throttles an AXI4+ATOP bus. The maximum number of outstanding transfers have to
 /// be set as a compile-time parameter, whereas the number of outstanding transfers can be set

@@ -11,7 +11,6 @@
 //
 // Authors:
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
 // Macros to assign AXI Interfaces and Structs
 

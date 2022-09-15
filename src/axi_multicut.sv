@@ -11,8 +11,8 @@
 //
 // Authors:
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Stefan Mach <smach@iis.ee.ethz.ch>
 
 // Multiple AXI4 cuts.

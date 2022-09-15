@@ -13,7 +13,6 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 
 /// An AXI4+ATOP to AXI4-Lite converter with atomic transaction and burst support.
 module axi_to_axi_lite #(

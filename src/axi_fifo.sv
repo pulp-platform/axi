@@ -10,7 +10,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-// - Noah Huetter <huettern@iis.ee.ethz.ch>
+// - Noah Huetter <huettern@ethz.ch>
+// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 // AXI4 Fifo
 //

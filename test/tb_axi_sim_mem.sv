@@ -3,6 +3,7 @@
 //
 // Authors:
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"

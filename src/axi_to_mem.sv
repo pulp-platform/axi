@@ -9,8 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 // Authors:
-// - Andreas Kurth <akurth@iis.ee.ethz.ch>
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 `include "common_cells/registers.svh"
 /// AXI4+ATOP slave module which translates AXI bursts into a memory stream.

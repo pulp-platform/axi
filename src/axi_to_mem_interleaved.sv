@@ -8,8 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-// Author:
+// Authors:
 // Thomas Benz <tbenz@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 /// AXI4+ATOP to SRAM memory slave. Allows for parallel read and write transactions.
 /// Allows reads to bypass writes, in contrast to `axi_to_mem`, however needs more hardware.

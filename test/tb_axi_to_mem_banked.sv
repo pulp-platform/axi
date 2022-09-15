@@ -9,6 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 // Authors:
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
 `include "axi/typedef.svh"

@@ -9,9 +9,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-// - Andreas Kurth <akurth@iis.ee.ethz.ch>
-// - Noah Huetter <huettern@iis.ee.ethz.ch>
+// - Noah Huetter <huettern@ethz.ch>
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"

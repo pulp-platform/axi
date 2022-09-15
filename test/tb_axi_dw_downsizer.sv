@@ -10,6 +10,7 @@
 //
 // Authors:
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 

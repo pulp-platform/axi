@@ -13,7 +13,6 @@
 # Authors:
 # - Andreas Kurth <akurth@iis.ee.ethz.ch>
 # - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-# - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

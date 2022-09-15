@@ -10,6 +10,7 @@
 //
 // Authors:
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 // Directed Random Verification Testbench for `axi_lite_regs`.
 

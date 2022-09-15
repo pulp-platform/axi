@@ -10,10 +10,8 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
+// - Luca Valente <luca.valente@unibo.it>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
-// - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
-// - Luca Valente <luca.valente2@unibo.it>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
