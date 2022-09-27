@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add `axi_dumper` and `axi_dumper_interpret` script to dump log from an AXI bus for debugging purposes.
 - Add FuseSoC and Vivado XSIM limited test to CI
+- `assign.svh`: Add macros to assign flat buses using the Vivado naming style.
 
 ### Changed
 - Improve compatibility with FuseSoC
