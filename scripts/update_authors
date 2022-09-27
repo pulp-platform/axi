@@ -29,6 +29,8 @@ declare -A emails=( \
     ["Michael Rogenmoser"]="michaero@iis.ee.ethz.ch" \
     ["Luca Valente"]="luca.valente@unibo.it" \
     ["Noah Huetter"]="huettern@ethz.ch" \
+    ["Nils Wistoff"]="nwistoff@iis.ee.ethz.ch" \
+    ["Tim Fischer"]="fischeti@iis.ee.ethz.ch" \
 )
 
 # Iterate over source files (see `done` line for which files are included).

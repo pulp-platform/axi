@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Improve compatibility with FuseSoC
 - Improve compatibility with Vivado XSIM
+- Use `scripts/update_authors` to update authors, slight manual fixes performed.
 
 ### Fixed
 

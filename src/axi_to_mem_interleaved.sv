@@ -9,7 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 // Authors:
-// Thomas Benz <tbenz@iis.ee.ethz.ch>
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 /// AXI4+ATOP to SRAM memory slave. Allows for parallel read and write transactions.

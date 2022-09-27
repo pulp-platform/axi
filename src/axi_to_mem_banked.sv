@@ -9,8 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 // Authors:
-// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 // - Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 /// AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.
 /// Has higher throughput than `axi_to_mem`, however needs more hardware.

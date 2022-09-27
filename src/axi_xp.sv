@@ -10,6 +10,7 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
+// - Tim Fischer <fischeti@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Vikram Jain <jvikram@iis.ee.ethz.ch>
 
