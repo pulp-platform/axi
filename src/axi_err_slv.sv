@@ -244,7 +244,7 @@ module axi_err_slv #(
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   initial begin
     assert (Resp == axi_pkg::RESP_DECERR || Resp == axi_pkg::RESP_SLVERR) else
       $fatal(1, "This module may only generate RESP_DECERR or RESP_SLVERR responses!");

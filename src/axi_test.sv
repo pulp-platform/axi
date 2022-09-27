@@ -1195,7 +1195,7 @@ package axi_test;
           automatic logic [AXI_STRB_WIDTH-1:0] rand_strb, strb_mask;
           addr = axi_pkg::beat_addr(aw_beat.ax_addr, aw_beat.ax_size, aw_beat.ax_len,
                                     aw_beat.ax_burst, i);
-`ifdef XSIM
+`ifdef XILINX_SIMULATOR
           // std::randomize(w_beat) may behave differently to w_beat.randomize() wrt. limited ranges
           // Keeping alternate implementation for XSIM only
           rand_success = std::randomize(w_beat); assert (rand_success);
@@ -1355,7 +1355,7 @@ package axi_test;
         wait (ar_queue.size > 0);
         ar_beat      = ar_queue.peek();
         byte_addr    = axi_pkg::aligned_addr(ar_beat.ax_addr, axi_pkg::size_t'($clog2(DW/8)));
-`ifdef XSIM
+`ifdef XILINX_SIMULATOR
         // std::randomize(r_beat) may behave differently to r_beat.randomize() wrt. limited ranges
         // Keeping alternate implementation for XSIM only
         rand_success = std::randomize(r_beat); assert(rand_success);
@@ -1455,7 +1455,7 @@ package axi_test;
         automatic logic rand_success;
         wait (b_wait_cnt > 0 && (aw_queue.size() != 0));
         aw_beat = aw_queue.pop_front();
-`ifdef XSIM
+`ifdef XILINX_SIMULATOR
         // std::randomize(b_beat) may behave differently to b_beat.randomize() wrt. limited ranges
         // Keeping alternate implementation for XSIM only
         rand_success = std::randomize(b_beat); assert (rand_success);
