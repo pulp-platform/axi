@@ -442,7 +442,9 @@ module axi_lite_demux #(
 
     // pragma translate_off
     `ifndef VERILATOR
+    `ifndef XILINX_SIMULATOR
     default disable iff (!rst_ni);
+    `endif
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
                                                  (slv_aw_select_i < NoMstPorts))) else
       $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\

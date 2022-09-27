@@ -202,7 +202,9 @@ module tb_axi_isolate #(
   end
 
 
+`ifndef XILINX_SIMULATOR
   default disable iff (!rst_n);
+`endif
   aw_unstable: assert property (@(posedge clk)
       (slave.aw_valid && !slave.aw_ready) |=> $stable(slave.aw_addr)) else
       $fatal(1, "AW is unstable.");

@@ -169,8 +169,10 @@ module tb_axi_lite_to_apb #(
 
   // pragma translate_off
   `ifndef VERILATOR
+  `ifndef XILINX_SIMULATOR
   // Assertions to determine correct APB protocol sequencing
   default disable iff (!rst_n);
+  `endif
   for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_assertions
     // when psel is not asserted, the bus is in the idle state
     sequence APB_IDLE;
