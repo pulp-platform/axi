@@ -1,6 +1,6 @@
 CAPI=2:
 
-name : pulp-platform.org::axi:0.37.0
+name : pulp-platform.org::axi:0.38.0
 
 filesets:
   rtl:

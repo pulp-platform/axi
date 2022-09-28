@@ -59,6 +59,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)          | AXI4 to AXI4-Lite protocol converter.                                                                |                                |
 | [`axi_to_mem`](src/axi_to_mem.sv)                    | AXI4 to memory protocol (req, gnt, rvalid) converter. Additional banked, interleaved, split variant. |                                |
 | [`axi_xbar`](src/axi_xbar.sv)                        | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.               | [Doc](doc/axi_xbar.md)         |
+| [`axi_xp`](src/axi_xp.sv)                            | AXI Crosspoint (XP) with homomorphous slave and master ports.                                        |                                |
 
 ### Simulation-Only Modules
 
@@ -68,6 +69,7 @@ In addition to the modules above, which are available in synthesis and simulatio
 |------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
 | [`axi_chan_logger`](src/axi_test.sv)                 | Logs the transactions of an AXI4(+ATOPs) port to files.                                                |
 | [`axi_driver`](src/axi_test.sv)                      | Low-level driver for AXI4(+ATOPs) that can send and receive individual beats on any channel.           |
+| [`axi_dumper`](src/axi_dumper.sv)                    | Dumps log to file to be interpreted by `axi_dumper_interpret` script for debugging purposes.           |
 | [`axi_lite_driver`](src/axi_test.sv)                 | Low-level driver for AXI4-Lite that can send and receive individual beats on any channel.              |
 | [`axi_lite_rand_master`](src/axi_test.sv)            | AXI4-Lite master component that issues random transactions within user-defined constraints.            |
 | [`axi_lite_rand_slave`](src/axi_test.sv)             | AXI4-Lite slave component that responds to transactions with constrainable random delays and data.     |
