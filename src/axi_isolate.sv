@@ -107,7 +107,6 @@ module axi_isolate #(
       // We don't need many bits here as the common case will be to go for the pass-through.
       .AxiLookBits    ( 1           ),
       .UniqueIds      ( 1'b0        ),
-      .FallThrough    ( 1'b1        ),
       .SpillAw        ( 1'b0        ),
       .SpillW         ( 1'b0        ),
       .SpillB         ( 1'b0        ),

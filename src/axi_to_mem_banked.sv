@@ -151,7 +151,6 @@ module axi_to_mem_banked #(
     .MaxTrans    ( MemLatency+2  ), // allow multiple Ax vectors to not starve W channel
     .AxiLookBits ( 32'd1         ), // select is fixed, do not need it
     .UniqueIds   ( 1'b0          ),
-    .FallThrough ( 1'b1          ),
     .SpillAw     ( 1'b1          ),
     .SpillW      ( 1'b1          ),
     .SpillB      ( 1'b1          ),

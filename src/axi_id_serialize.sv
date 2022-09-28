@@ -160,7 +160,6 @@ module axi_id_serialize #(
     .NoMstPorts  ( AxiMstPortMaxUniqIds ),
     .MaxTrans    ( AxiSlvPortMaxTxns    ),
     .AxiLookBits ( AxiSlvPortIdWidth    ),
-    .FallThrough ( 1'b1                 ),
     .SpillAw     ( 1'b1                 ),
     .SpillW      ( 1'b0                 ),
     .SpillB      ( 1'b0                 ),
