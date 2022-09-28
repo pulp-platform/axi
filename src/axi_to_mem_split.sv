@@ -34,6 +34,8 @@ module axi_to_mem_split #(
   parameter int unsigned BufDepth     = 0,
   /// Hide write requests if the strb == '0
   parameter bit          HideStrb   = 1'b0,
+  /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
+  parameter int unsigned OutFifoDepth = 1,
   /// Dependent parameters, do not override. Number of memory ports.
   parameter int unsigned NumMemPorts  = 2*AxiDataWidth/MemDataWidth,
   /// Dependent parameter, do not override. Memory address type.
@@ -104,14 +106,15 @@ module axi_to_mem_split #(
   assign busy_o = read_busy || write_busy;
 
   axi_to_mem #(
-    .axi_req_t  ( axi_req_t     ),
-    .axi_resp_t ( axi_resp_t    ),
-    .AddrWidth  ( AddrWidth     ),
-    .DataWidth  ( AxiDataWidth  ),
-    .IdWidth    ( IdWidth       ),
-    .NumBanks   ( NumMemPorts/2 ),
-    .BufDepth   ( BufDepth      ),
-    .HideStrb   ( 1'b0          )
+    .axi_req_t    ( axi_req_t     ),
+    .axi_resp_t   ( axi_resp_t    ),
+    .AddrWidth    ( AddrWidth     ),
+    .DataWidth    ( AxiDataWidth  ),
+    .IdWidth      ( IdWidth       ),
+    .NumBanks     ( NumMemPorts/2 ),
+    .BufDepth     ( BufDepth      ),
+    .HideStrb     ( 1'b0          ),
+    .OutFifoDepth ( OutFifoDepth  )
   ) i_axi_to_mem_read (
     .clk_i,
     .rst_ni,
@@ -130,14 +133,15 @@ module axi_to_mem_split #(
   );
 
   axi_to_mem #(
-    .axi_req_t  ( axi_req_t     ),
-    .axi_resp_t ( axi_resp_t    ),
-    .AddrWidth  ( AddrWidth     ),
-    .DataWidth  ( AxiDataWidth  ),
-    .IdWidth    ( IdWidth       ),
-    .NumBanks   ( NumMemPorts/2 ),
-    .BufDepth   ( BufDepth      ),
-    .HideStrb   ( HideStrb      )
+    .axi_req_t    ( axi_req_t     ),
+    .axi_resp_t   ( axi_resp_t    ),
+    .AddrWidth    ( AddrWidth     ),
+    .DataWidth    ( AxiDataWidth  ),
+    .IdWidth      ( IdWidth       ),
+    .NumBanks     ( NumMemPorts/2 ),
+    .BufDepth     ( BufDepth      ),
+    .HideStrb     ( HideStrb      ),
+    .OutFifoDepth ( OutFifoDepth  )
   ) i_axi_to_mem_write (
     .clk_i,
     .rst_ni,
@@ -174,6 +178,8 @@ module axi_to_mem_split_intf #(
   parameter int unsigned BUF_DEPTH      = 0,
   /// Hide write requests if the strb == '0
   parameter bit          HIDE_STRB      = 1'b0,
+  /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
+  parameter int unsigned OUT_FIFO_DEPTH = 32'd1,
   /// Dependent parameters, do not override. Number of memory ports.
   parameter int unsigned NUM_MEM_PORTS  = 2*AXI_DATA_WIDTH/MEM_DATA_WIDTH,
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `addr_t`.
@@ -230,7 +236,8 @@ module axi_to_mem_split_intf #(
     .IdWidth      ( AXI_ID_WIDTH   ),
     .MemDataWidth ( MEM_DATA_WIDTH ), // must divide `AxiDataWidth` without remainder
     .BufDepth     ( BUF_DEPTH      ),
-    .HideStrb     ( HIDE_STRB      )
+    .HideStrb     ( HIDE_STRB      ),
+    .OutFifoDepth ( OUT_FIFO_DEPTH )
   ) i_axi_to_mem_split (
     .clk_i,
     .rst_ni,
