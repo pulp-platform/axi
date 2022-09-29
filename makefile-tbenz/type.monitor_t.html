@@ -1,0 +1,18 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">monitor_t</a></h1>
+<pre>typedef struct packed {
+    logic                 valid;
+    logic [AddrWidth-1:0] addr;
+    logic [DataWidth-1:0] data;
+    logic [IdWidth-1:0]   id;
+    logic [UserWidth-1:0] user;
+    axi_pkg::len_t        beat_count;
+    logic                 last;
+  } monitor_t;</pre>
+</section>
+</body>
+</html>
