@@ -292,14 +292,9 @@ module axi_id_remap #(
           state_d = HoldAR;
         end else if ({mst_req_o.aw_valid, mst_resp_i.aw_ready} == 2'b10) begin
           state_d = HoldAW;
-        end else state_d = Ready;
-        // priority casez ({mst_req_o.ar_valid, mst_resp_i.ar_ready,
-        //                  mst_req_o.aw_valid, mst_resp_i.aw_ready})
-        //   4'b1010: state_d = HoldAx;
-        //   4'b10??: state_d = HoldAR;
-        //   4'b??10: state_d = HoldAW;
-        //   default: state_d = Ready;
-        // endcase
+        end else begin
+          state_d = Ready;
+        end
 
         if (mst_req_o.ar_valid && mst_resp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
