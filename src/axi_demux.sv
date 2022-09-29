@@ -240,30 +240,30 @@ module axi_demux #(
     //--------------------------------------
     // spill register at the channel input
     spill_register #(
-      .T       ( aw_chan_t                    ),
-      .Bypass  ( ~SpillAw                     ) // because module param indicates if we want a spill reg
+      .T       ( aw_chan_t          ),
+      .Bypass  ( ~SpillAw           ) // because module param indicates if we want a spill reg
     ) i_aw_channel_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( slv_req_i.aw_valid           ),
-      .ready_o ( slv_aw_ready_chan            ),
-      .data_i  ( slv_req_i.aw                 ),
-      .valid_o ( aw_valid_chan                 ),
-      .ready_i ( slv_aw_ready                 ),
-      .data_o  ( slv_aw_chan  )
+      .clk_i   ( clk_i              ),
+      .rst_ni  ( rst_ni             ),
+      .valid_i ( slv_req_i.aw_valid ),
+      .ready_o ( slv_aw_ready_chan  ),
+      .data_i  ( slv_req_i.aw       ),
+      .valid_o ( aw_valid_chan      ),
+      .ready_i ( slv_aw_ready       ),
+      .data_o  ( slv_aw_chan        )
     );
     spill_register #(
-      .T       ( select_t                     ),
-      .Bypass  ( ~SpillAw                     ) // because module param indicates if we want a spill reg
+      .T       ( select_t           ),
+      .Bypass  ( ~SpillAw           ) // because module param indicates if we want a spill reg
     ) i_aw_select_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( slv_req_i.aw_valid           ),
-      .ready_o ( slv_aw_ready_sel             ),
-      .data_i  ( slv_aw_select_i              ),
-      .valid_o ( aw_valid_sel                 ),
-      .ready_i ( slv_aw_ready                 ),
-      .data_o  ( slv_aw_select  )
+      .clk_i   ( clk_i              ),
+      .rst_ni  ( rst_ni             ),
+      .valid_i ( slv_req_i.aw_valid ),
+      .ready_o ( slv_aw_ready_sel   ),
+      .data_i  ( slv_aw_select_i    ),
+      .valid_o ( aw_valid_sel       ),
+      .ready_i ( slv_aw_ready       ),
+      .data_o  ( slv_aw_select      )
     );
     assign slv_resp_o.aw_ready = slv_aw_ready_chan & slv_aw_ready_sel;
     assign slv_aw_valid = aw_valid_chan & aw_valid_sel;
@@ -347,19 +347,19 @@ module axi_demux #(
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_aw_id_counter (
-        .clk_i                        ( clk_i                                         ),
-        .rst_ni                       ( rst_ni                                        ),
+        .clk_i                        ( clk_i                          ),
+        .rst_ni                       ( rst_ni                         ),
         .lookup_axi_id_i              ( slv_aw_chan.id[0+:AxiLookBits] ),
-        .lookup_mst_select_o          ( lookup_aw_select                              ),
-        .lookup_mst_select_occupied_o ( aw_select_occupied                            ),
-        .full_o                       ( aw_id_cnt_full                                ),
-        .inject_axi_id_i              ( '0                                            ),
-        .inject_i                     ( 1'b0                                          ),
+        .lookup_mst_select_o          ( lookup_aw_select               ),
+        .lookup_mst_select_occupied_o ( aw_select_occupied             ),
+        .full_o                       ( aw_id_cnt_full                 ),
+        .inject_axi_id_i              ( '0                             ),
+        .inject_i                     ( 1'b0                           ),
         .push_axi_id_i                ( slv_aw_chan.id[0+:AxiLookBits] ),
         .push_mst_select_i            ( slv_aw_select                  ),
-        .push_i                       ( w_cnt_up                                       ),
-        .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]                 ),
-        .pop_i                        ( slv_b_valid & slv_b_ready                     )
+        .push_i                       ( w_cnt_up                       ),
+        .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]  ),
+        .pop_i                        ( slv_b_valid & slv_b_ready      )
       );
       // pop from ID counter on outward transaction
     end
@@ -449,30 +449,30 @@ module axi_demux #(
     ar_chan_t slv_ar_chan;
     select_t  slv_ar_select;
     spill_register #(
-      .T       ( ar_chan_t                    ),
-      .Bypass  ( ~SpillAr                     )
+      .T       ( ar_chan_t          ),
+      .Bypass  ( ~SpillAr           )
     ) i_ar_chan_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( slv_req_i.ar_valid           ),
-      .ready_o ( slv_ar_ready_chan            ),
-      .data_i  ( slv_req_i.ar                 ),
-      .valid_o ( ar_valid_chan                ),
-      .ready_i ( slv_ar_ready                 ),
-      .data_o  ( slv_ar_chan                  )
+      .clk_i   ( clk_i              ),
+      .rst_ni  ( rst_ni             ),
+      .valid_i ( slv_req_i.ar_valid ),
+      .ready_o ( slv_ar_ready_chan  ),
+      .data_i  ( slv_req_i.ar       ),
+      .valid_o ( ar_valid_chan      ),
+      .ready_i ( slv_ar_ready       ),
+      .data_o  ( slv_ar_chan        )
     );
     spill_register #(
-      .T       ( select_t                     ),
-      .Bypass  ( ~SpillAr                     )
+      .T       ( select_t           ),
+      .Bypass  ( ~SpillAr           )
     ) i_ar_sel_spill_reg (
-      .clk_i   ( clk_i                        ),
-      .rst_ni  ( rst_ni                       ),
-      .valid_i ( slv_req_i.ar_valid           ),
-      .ready_o ( slv_ar_ready_sel             ),
-      .data_i  ( slv_ar_select_i              ),
-      .valid_o ( ar_valid_sel                 ),
-      .ready_i ( slv_ar_ready                 ),
-      .data_o  ( slv_ar_select                )
+      .clk_i   ( clk_i              ),
+      .rst_ni  ( rst_ni             ),
+      .valid_i ( slv_req_i.ar_valid ),
+      .ready_o ( slv_ar_ready_sel   ),
+      .data_i  ( slv_ar_select_i    ),
+      .valid_o ( ar_valid_sel       ),
+      .ready_i ( slv_ar_ready       ),
+      .data_o  ( slv_ar_select      )
     );
     assign slv_resp_o.ar_ready = slv_ar_ready_chan & slv_ar_ready_sel;
     assign slv_ar_valid = ar_valid_chan & ar_valid_sel;
@@ -542,19 +542,19 @@ module axi_demux #(
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_ar_id_counter (
-        .clk_i                        ( clk_i                                         ),
-        .rst_ni                       ( rst_ni                                        ),
-        .lookup_axi_id_i              ( slv_ar_chan.id[0+:AxiLookBits] ),
-        .lookup_mst_select_o          ( lookup_ar_select                              ),
-        .lookup_mst_select_occupied_o ( ar_select_occupied                            ),
-        .full_o                       ( ar_id_cnt_full                                ),
-        .inject_axi_id_i              ( slv_aw_chan.id[0+:AxiLookBits] ),
-        .inject_i                     ( atop_inject                                   ),
-        .push_axi_id_i                ( slv_ar_chan.id[0+:AxiLookBits] ),
-        .push_mst_select_i            ( slv_ar_select                  ),
-        .push_i                       ( ar_push                                       ),
-        .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]                 ),
-        .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last   )
+        .clk_i                        ( clk_i                                       ),
+        .rst_ni                       ( rst_ni                                      ),
+        .lookup_axi_id_i              ( slv_ar_chan.id[0+:AxiLookBits]              ),
+        .lookup_mst_select_o          ( lookup_ar_select                            ),
+        .lookup_mst_select_occupied_o ( ar_select_occupied                          ),
+        .full_o                       ( ar_id_cnt_full                              ),
+        .inject_axi_id_i              ( slv_aw_chan.id[0+:AxiLookBits]              ),
+        .inject_i                     ( atop_inject                                 ),
+        .push_axi_id_i                ( slv_ar_chan.id[0+:AxiLookBits]              ),
+        .push_mst_select_i            ( slv_ar_select                               ),
+        .push_i                       ( ar_push                                     ),
+        .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]               ),
+        .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last )
       );
     end
 
