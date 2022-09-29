@@ -46,13 +46,13 @@ module axi_isolate #(
   /// Support atomic operations (ATOPs)
   parameter bit AtopSupport = 1'b1,
   /// Address width of all AXI4+ATOP ports
-  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int signed AxiAddrWidth = 32'd0,
   /// Data width of all AXI4+ATOP ports
-  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int signed AxiDataWidth = 32'd0,
   /// ID width of all AXI4+ATOP ports
-  parameter int unsigned AxiIdWidth = 32'd0,
+  parameter int signed AxiIdWidth = 32'd0,
   /// User signal width of all AXI4+ATOP ports
-  parameter int unsigned AxiUserWidth = 32'd0,
+  parameter int signed AxiUserWidth = 32'd0,
   /// Request struct type of all AXI4+ATOP ports
   parameter type         axi_req_t  = logic,
   /// Response struct type of all AXI4+ATOP ports
