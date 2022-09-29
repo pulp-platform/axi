@@ -10,33 +10,79 @@
 # Authors:
 # - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
-VSIM        ?= "vsim"
-SYNOPSYS_DC ?= "dc_shell"
+# select IIS-internal tool commands if we run on IIS machines
+ifneq (,$(wildcard /etc/iis.version))
+	VSIM        ?= questa-2022.3 vsim
+	SYNOPSYS_DC ?= synopsys-2021.03 dcnxt_shell
+else
+	VSIM        ?= vsim
+	SYNOPSYS_DC ?= dc_shell
+endif
 
-TBS ?= sim-axi_addr_test.log sim-axi_atop_filter.log sim-axi_cdc.log sim-axi_delayer.log sim-axi_dw_downsizer.log sim-axi_dw_upsizer.log sim-axi_fifo.log sim-axi_isolate.log sim-axi_iw_converter.log sim-axi_lite_regs.log sim-axi_lite_to_apb.log sim-axi_lite_to_axi.log sim-axi_lite_mailbox.log sim-axi_lite_xbar.log sim-axi_modify_address.log sim-axi_serializer.log sim-axi_sim_mem.log sim-axi_to_axi_lite.log sim-axi_to_mem_banked.log sim-axi_xbar.log
+TBS         ?= axi_addr_test \
+               axi_atop_filter \
+               axi_cdc axi_delayer \
+               axi_dw_downsizer \
+               axi_dw_upsizer \
+               axi_fifo \
+               axi_isolate \
+               axi_iw_converter \
+               axi_lite_regs \
+               axi_lite_to_apb \
+               axi_lite_to_axi \
+               axi_lite_mailbox \
+               axi_lite_xbar \
+               axi_modify_address \
+               axi_serializer \
+               axi_sim_mem \
+               axi_to_axi_lite \
+               axi_to_mem_banked \
+               axi_xbar
+
+SIM_TARGETS := $(addsuffix .log,$(addprefix sim-,$(TBS)))
+
 
 .SHELL: bash
 
-.PHONY: all sim_all clean
+.PHONY: help all sim_all clean
+
+
+help:
+	@echo ""
+	@echo "elab.log:     elaborates all files using Synopsys DC"
+	@echo "compile.log:  compile files using Questasim"
+	@echo "sim-#TB#.log: simulates a given testbench, available TBs are:"
+	@echo "$(addprefix ###############-#,$(TBS))" | sed -e 's/ /\n/g' | sed -e 's/#/ /g'
+	@echo "sim_all:      simulates all available testbenches"
+	@echo ""
+	@echo "clean:        cleans generated files"
+	@echo ""
+
 
 all: compile.log elab.log sim_all
 
-sim_all: $(TBS)
+
+sim_all: $(SIM_TARGETS)
+
 
 build:
 	mkdir -p $@
 
-compile.log: Bender.yml | build
-	export VSIM=$(VSIM); cd build && ../scripts/compile_vsim.sh | tee ../$@
-	(! grep -n "Error:" $@)
 
 elab.log: Bender.yml | build
-	export SYNOPSYS_DC=$(SYNOPSYS_DC); cd build && ../scripts/synth.sh | tee ../$@
+	export SYNOPSYS_DC="$(SYNOPSYS_DC)"; cd build && ../scripts/synth.sh | tee ../$@
+
+
+compile.log: Bender.yml | build
+	export VSIM="$(VSIM)"; cd build && ../scripts/compile_vsim.sh | tee ../$@
+	(! grep -n "Error:" $@)
+
 
 sim-%.log: compile.log
-	export VSIM=$(VSIM); cd build && ../scripts/run_vsim.sh --random-seed $* | tee ../$@
+	export VSIM="$(VSIM)"; cd build && ../scripts/run_vsim.sh --random-seed $* | tee ../$@
 	(! grep -n "Error:" $@)
 	(! grep -n "Fatal:" $@)
+
 
 clean:
 	rm -rf build
