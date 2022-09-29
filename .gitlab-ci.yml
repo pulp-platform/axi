@@ -1,5 +1,5 @@
 variables:
-  SYNOPSYS_DC: synopsys-2019.12 dc_shell -64bit
+  SYNOPSYS_DC: synopsys-2022.03 dc_shell -64bit
 
 before_script:
   - export PATH=~/.cargo/bin:$PATH
