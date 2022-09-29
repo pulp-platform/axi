@@ -26,7 +26,6 @@
 /// This module contains one [`axi_serializer`](module.axi_serializer) per master port ID (given by
 /// the `AxiMstPortMaxUniqIds parameter`).
 module axi_id_serialize #(
-  parameter bit          AtopSupport  = 1'b1,
   /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
   /// Maximum number of transactions that can be in flight at the slave port.  Reads and writes are
@@ -47,6 +46,8 @@ module axi_id_serialize #(
   parameter int unsigned AxiDataWidth = 32'd0,
   /// User width of both AXI4+ATOP ports
   parameter int unsigned AxiUserWidth = 32'd0,
+  /// Enable support for AXI4+ATOP atomics
+  parameter bit          AtopSupport  = 1'b1,
   /// Request struct type of the AXI4+ATOP slave port
   parameter type slv_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
@@ -150,7 +151,6 @@ module axi_id_serialize #(
   slv_resp_t [AxiMstPortMaxUniqIds-1:0] to_serializer_resps;
 
   axi_demux #(
-    .AtopSupport ( AtopSupport          ),
     .AxiIdWidth  ( AxiSlvPortIdWidth    ),
     .aw_chan_t   ( slv_aw_t             ),
     .w_chan_t    ( w_t                  ),
@@ -162,6 +162,7 @@ module axi_id_serialize #(
     .NoMstPorts  ( AxiMstPortMaxUniqIds ),
     .MaxTrans    ( AxiSlvPortMaxTxns    ),
     .AxiLookBits ( AxiSlvPortIdWidth    ),
+    .AtopSupport ( AtopSupport          ),
     .SpillAw     ( 1'b1                 ),
     .SpillW      ( 1'b0                 ),
     .SpillB      ( 1'b0                 ),
