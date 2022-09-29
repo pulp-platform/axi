@@ -26,6 +26,7 @@
 /// This module contains one [`axi_serializer`](module.axi_serializer) per master port ID (given by
 /// the `AxiMstPortMaxUniqIds parameter`).
 module axi_id_serialize #(
+  parameter bit          AtopSupport  = 1'b1,
   /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
   /// Maximum number of transactions that can be in flight at the slave port.  Reads and writes are
@@ -149,6 +150,7 @@ module axi_id_serialize #(
   slv_resp_t [AxiMstPortMaxUniqIds-1:0] to_serializer_resps;
 
   axi_demux #(
+    .AtopSupport ( AtopSupport          ),
     .AxiIdWidth  ( AxiSlvPortIdWidth    ),
     .aw_chan_t   ( slv_aw_t             ),
     .w_chan_t    ( w_t                  ),
