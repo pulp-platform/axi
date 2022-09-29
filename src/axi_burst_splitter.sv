@@ -78,7 +78,6 @@ module axi_burst_splitter #(
     .NoMstPorts   ( 2           ),
     .MaxTrans     ( MaxTxns     ),
     .AxiLookBits  ( IdWidth     ),
-    .FallThrough  ( 1'b1        ),
     .SpillAw      ( 1'b0        ),
     .SpillW       ( 1'b0        ),
     .SpillB       ( 1'b0        ),

@@ -164,7 +164,6 @@ import cf_math_pkg::idx_width;
       .MaxTrans       ( Cfg.MaxMstTrans        ),
       .AxiLookBits    ( Cfg.AxiIdUsedSlvPorts  ),
       .UniqueIds      ( Cfg.UniqueIds          ),
-      .FallThrough    ( Cfg.FallThrough        ),
       .SpillAw        ( Cfg.LatencyMode[9]     ),
       .SpillW         ( Cfg.LatencyMode[8]     ),
       .SpillB         ( Cfg.LatencyMode[7]     ),
