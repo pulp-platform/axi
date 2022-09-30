@@ -249,14 +249,14 @@ import cf_math_pkg::idx_width;
     for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
       if (Connectivity[i][j]) begin : gen_connection
         axi_multicut #(
-          .NoCuts    ( Cfg.PipelineStages ),
-          .aw_chan_t ( slv_aw_chan_t      ),
-          .w_chan_t  ( w_chan_t           ),
-          .b_chan_t  ( slv_b_chan_t       ),
-          .ar_chan_t ( slv_ar_chan_t      ),
-          .r_chan_t  ( slv_r_chan_t       ),
-          .req_t     ( slv_req_t          ),
-          .resp_t    ( slv_resp_t         )
+          .NoCuts     ( Cfg.PipelineStages ),
+          .aw_chan_t  ( slv_aw_chan_t      ),
+          .w_chan_t   ( w_chan_t           ),
+          .b_chan_t   ( slv_b_chan_t       ),
+          .ar_chan_t  ( slv_ar_chan_t      ),
+          .r_chan_t   ( slv_r_chan_t       ),
+          .axi_req_t  ( slv_req_t          ),
+          .axi_resp_t ( slv_resp_t         )
         ) i_axi_multicut_xbar_pipeline (
           .clk_i,
           .rst_ni,

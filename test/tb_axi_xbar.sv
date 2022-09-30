@@ -223,12 +223,12 @@ module tb_axi_xbar #(
                                       axi_pkg::DEVICE_NONBUFFERABLE);
       axi_rand_master[i].reset();
       @(posedge rst_n);
-      axi_rand_master.run(TbNumReads, TbNumWrites);
+      axi_rand_master[i].run(TbNumReads, TbNumWrites);
       end_of_sim[i] <= 1'b1;
     end
   end
 
-  axi_rand_slave_t axi_rand_slave [TbNumSlv];
+  axi_rand_slave_t axi_rand_slave [TbNumSlaves];
   for (genvar i = 0; i < TbNumSlaves; i++) begin : gen_rand_slave
     initial begin
       axi_rand_slave[i] = new( slave_dv[i] );
