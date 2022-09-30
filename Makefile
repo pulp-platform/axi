@@ -13,7 +13,7 @@
 # select IIS-internal tool commands if we run on IIS machines
 ifneq (,$(wildcard /etc/iis.version))
 	VSIM        ?= questa-2022.3 vsim
-	SYNOPSYS_DC ?= synopsys-2021.03 dcnxt_shell
+	SYNOPSYS_DC ?= synopsys-2022.03 dcnxt_shell
 else
 	VSIM        ?= vsim
 	SYNOPSYS_DC ?= dc_shell
@@ -71,6 +71,7 @@ build:
 
 elab.log: Bender.yml | build
 	export SYNOPSYS_DC="$(SYNOPSYS_DC)"; cd build && ../scripts/synth.sh | tee ../$@
+	(! grep -n "Error:" $@)
 
 
 compile.log: Bender.yml | build

@@ -1,5 +1,5 @@
 variables:
-  SYNOPSYS_DC: synopsys-2022.03 dc_shell -64bit
+  SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
 
 before_script:
   - export PATH=~/.cargo/bin:$PATH
@@ -28,7 +28,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e', '2021.3']
+      - VSIM_VER: ['10.7b', '2022.3']
 
 synopsys_dc:
   stage: build
@@ -71,7 +71,7 @@ fuse_xsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '10.7e', '2021.3']
+      - VSIM_VER: ['10.7b', '2022.3']
 
 axi_addr_test:
   <<: *run_vsim
