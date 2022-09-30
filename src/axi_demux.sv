@@ -655,16 +655,16 @@ module axi_demux #(
     ar_valid_stable: assert property( @(posedge clk_i)
                                (ar_valid && !ar_ready) |=> ar_valid) else
       $fatal(1, "ar_valid was deasserted, when ar_ready = 0 in last cycle.");
-    slv_aw_chan: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
+    slv_aw_chan_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
                                |=> $stable(slv_aw_chan)) else
       $fatal(1, "slv_aw_chan unstable with valid set.");
-    slv_aw_select: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
+    slv_aw_select_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
                                |=> $stable(slv_aw_select)) else
       $fatal(1, "slv_aw_select unstable with valid set.");
-    slv_ar_chan: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
+    slv_ar_chan_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_ar_chan)) else
       $fatal(1, "slv_ar_chan unstable with valid set.");
-    slv_ar_select: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
+    slv_ar_select_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_ar_select)) else
       $fatal(1, "slv_ar_select unstable with valid set.");
     internal_ar_select: assert property( @(posedge clk_i)
