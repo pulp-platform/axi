@@ -76,17 +76,6 @@ module axi_demux #(
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
-  //--------------------------------------
-  // Typedefs for the FIFOs / Queues
-  //--------------------------------------
-  typedef struct packed {
-    aw_chan_t aw_chan;
-    select_t  aw_select;
-  } aw_chan_select_t;
-  typedef struct packed {
-    ar_chan_t ar_chan;
-    select_t  ar_select;
-  } ar_chan_select_t;
 
   // pass through if only one master port
   if (NoMstPorts == 32'h1) begin : gen_no_demux
@@ -169,11 +158,10 @@ module axi_demux #(
     // Write Transaction
     //--------------------------------------
     // comes from spill register at input
-    aw_chan_select_t          slv_aw_chan_select;
     aw_chan_t                 slv_aw_chan;
     select_t                  slv_aw_select;
 
-    logic                     slv_aw_valid, aw_valid_chan, aw_valid_sel;
+    logic                     slv_aw_valid, slv_aw_valid_chan, slv_aw_valid_sel;
     logic                     slv_aw_ready, slv_aw_ready_chan, slv_aw_ready_sel;
 
     // AW ID counter
@@ -208,7 +196,6 @@ module axi_demux #(
     // Read Transaction
     //--------------------------------------
     // comes from spill register at input
-    ar_chan_select_t          slv_ar_chan_select;
     logic                     slv_ar_valid, ar_valid_chan, ar_valid_sel;
     logic                     slv_ar_ready, slv_ar_ready_chan, slv_ar_ready_sel;
 
@@ -248,7 +235,7 @@ module axi_demux #(
       .valid_i ( slv_req_i.aw_valid ),
       .ready_o ( slv_aw_ready_chan  ),
       .data_i  ( slv_req_i.aw       ),
-      .valid_o ( aw_valid_chan      ),
+      .valid_o ( slv_aw_valid_chan  ),
       .ready_i ( slv_aw_ready       ),
       .data_o  ( slv_aw_chan        )
     );
@@ -261,13 +248,12 @@ module axi_demux #(
       .valid_i ( slv_req_i.aw_valid ),
       .ready_o ( slv_aw_ready_sel   ),
       .data_i  ( slv_aw_select_i    ),
-      .valid_o ( aw_valid_sel       ),
+      .valid_o ( slv_aw_valid_sel   ),
       .ready_i ( slv_aw_ready       ),
       .data_o  ( slv_aw_select      )
     );
     assign slv_resp_o.aw_ready = slv_aw_ready_chan & slv_aw_ready_sel;
-    assign slv_aw_valid = aw_valid_chan & aw_valid_sel;
-    assign slv_aw_chan_select = {slv_aw_chan, slv_aw_select};
+    assign slv_aw_valid = slv_aw_valid_chan & slv_aw_valid_sel;
 
     // Control of the AW handshake
     always_comb begin
@@ -301,7 +287,7 @@ module axi_demux #(
         // requires an R response can be handled if additionally `i_ar_id_counter` is not full (this
         // only applies if ATOPs are supported at all).
         if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) &&
-            (!(ar_id_cnt_full && slv_aw_chan_select.aw_chan.atop[axi_pkg::ATOP_R_RESP]) ||
+            (!(ar_id_cnt_full && slv_aw_chan.atop[axi_pkg::ATOP_R_RESP]) ||
              !AtopSupport)) begin
           /// There is a valid AW vector make the id lookup and go further, if it passes.
           /// Also stall if previous transmitted AWs still have active W's in flight.
@@ -367,7 +353,7 @@ module axi_demux #(
     // This counter steers the demultiplexer of the W channel.
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
-    // `slv_aw_chan_select.aw_select`.
+    // `slv_aw_select`.
     counter #(
       .WIDTH           ( IdCounterWidth ),
       .STICKY_OVERFLOW ( 1'b0           )
@@ -383,8 +369,8 @@ module axi_demux #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_chan_select.aw_select, w_cnt_up, select_t'(0), clk_i, rst_ni)
-    assign w_select       = (|w_open) ? w_select_q : slv_aw_chan_select.aw_select;
+    `FFLARN(w_select_q, slv_aw_select, w_cnt_up, select_t'(0), clk_i, rst_ni)
+    assign w_select       = (|w_open) ? w_select_q : slv_aw_select;
     assign w_select_valid = w_cnt_up | (|w_open);
 
     //--------------------------------------
@@ -445,7 +431,6 @@ module axi_demux #(
     //--------------------------------------
     //  AR Channel
     //--------------------------------------
-    // Workaround for bug in Questa (see comments on AW channel for details).
     ar_chan_t slv_ar_chan;
     select_t  slv_ar_select;
     spill_register #(
@@ -476,7 +461,6 @@ module axi_demux #(
     );
     assign slv_resp_o.ar_ready = slv_ar_ready_chan & slv_ar_ready_sel;
     assign slv_ar_valid = ar_valid_chan & ar_valid_sel;
-    assign slv_ar_chan_select = {slv_ar_chan, slv_ar_select};
 
     // control of the AR handshake
     always_comb begin
@@ -671,12 +655,18 @@ module axi_demux #(
     ar_valid_stable: assert property( @(posedge clk_i)
                                (ar_valid && !ar_ready) |=> ar_valid) else
       $fatal(1, "ar_valid was deasserted, when ar_ready = 0 in last cycle.");
-    aw_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
-                               |=> $stable(slv_aw_chan_select)) else
-      $fatal(1, "slv_aw_chan_select unstable with valid set.");
-    ar_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
-                               |=> $stable(slv_ar_chan_select)) else
-      $fatal(1, "slv_ar_chan_select unstable with valid set.");
+    slv_aw_chan: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
+                               |=> $stable(slv_aw_chan)) else
+      $fatal(1, "slv_aw_chan unstable with valid set.");
+    slv_aw_select: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
+                               |=> $stable(slv_aw_select)) else
+      $fatal(1, "slv_aw_select unstable with valid set.");
+    slv_ar_chan: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
+                               |=> $stable(slv_ar_chan)) else
+      $fatal(1, "slv_ar_chan unstable with valid set.");
+    slv_ar_select: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
+                               |=> $stable(slv_ar_select)) else
+      $fatal(1, "slv_ar_select unstable with valid set.");
     internal_ar_select: assert property( @(posedge clk_i)
         (ar_valid |-> slv_ar_select < NoMstPorts))
       else $fatal(1, "slv_ar_select illegal while ar_valid.");
