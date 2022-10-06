@@ -12,6 +12,7 @@
 // Authors:
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
+`include "axi/assign.svh"
 /// Synthesizable test module comparing two AXI slaves of the same type.
 /// The reference response is always passed to the master, whereas the test response
 /// is discarded after handshaking.
@@ -123,8 +124,8 @@ module axi_slave_compare #(
   // assemble buses
   always_comb begin
     // request
-    axi_ref_req_in           = axi_mst_req_i;
-    axi_test_req_in          = axi_mst_req_i;
+    `AXI_SET_REQ_STRUCT(axi_ref_req_in, axi_mst_req_i)
+    `AXI_SET_REQ_STRUCT(axi_test_req_in, axi_mst_req_i)
     // overwrite valids in requests
     axi_ref_req_in.aw_valid  = aw_valid_ref;
     axi_ref_req_in.ar_valid  = ar_valid_ref;
@@ -140,7 +141,7 @@ module axi_slave_compare #(
     ar_ready_test = axi_test_rsp_in.ar_ready;
     w_ready_test  = axi_test_rsp_in.w_ready;
     // response
-    axi_mst_rsp_o           = axi_ref_rsp_in;
+    `AXI_SET_RESP_STRUCT(axi_mst_rsp_o, axi_ref_rsp_in)
     // overwrite readies
     axi_mst_rsp_o.aw_ready  = aw_ready_mst;
     axi_mst_rsp_o.w_ready   = w_ready_mst;
@@ -181,4 +182,4 @@ module axi_slave_compare #(
     .axi_b_rsp_i   ( axi_test_rsp_i   )
   );
 
-endmodule : axi_slave_compare
+endmodule

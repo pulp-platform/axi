@@ -236,4 +236,4 @@ module tb_axi_slave_compare #(
     $finish();
   end
 
-endmodule : tb_axi_slave_compare
+endmodule

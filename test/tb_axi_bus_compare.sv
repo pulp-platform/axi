@@ -109,8 +109,8 @@ module tb_axi_bus_compare #(
   // assemble buses
   always_comb begin
     // request
-    axi_req_a_in          = axi_req;
-    axi_req_b_in          = axi_req;
+    `AXI_SET_REQ_STRUCT(axi_req_a_in, axi_req)
+    `AXI_SET_REQ_STRUCT(axi_req_b_in, axi_req)
     // overwrite valids in requests
     axi_req_a_in.aw_valid = aw_valid_a;
     axi_req_a_in.ar_valid = ar_valid_a;
@@ -126,7 +126,7 @@ module tb_axi_bus_compare #(
     ar_ready_b = axi_rsp_b_in.ar_ready;
     w_ready_b  = axi_rsp_b_in.w_ready;
     // response
-    axi_rsp          = axi_rsp_a_in;
+    `AXI_SET_RESP_STRUCT(axi_rsp, axi_rsp_a_in)
     // overwrite readies
     axi_rsp.aw_ready = aw_ready;
     axi_rsp.w_ready  = w_ready;
@@ -307,4 +307,4 @@ module tb_axi_bus_compare #(
     $finish();
   end
 
-endmodule : tb_axi_bus_compare
+endmodule

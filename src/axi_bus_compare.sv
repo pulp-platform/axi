@@ -12,6 +12,7 @@
 // Authors:
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
+`include "axi/assign.svh"
 /// Synthesizable test module comparing two AXI channels of the same type
 /// This module is meant to be used in FPGA-based verification.
 module axi_bus_compare #(
@@ -79,22 +80,23 @@ module axi_bus_compare #(
     // Channel Signals
     //-----------------------------------
     // assign request payload A
-    assign axi_a_req_o.aw = axi_a_req_i.aw;
-    assign axi_a_req_o.w  = axi_a_req_i.w;
-    assign axi_a_req_o.ar = axi_a_req_i.ar;
+
+    `AXI_ASSIGN_AW_STRUCT(axi_a_req_o.aw, axi_a_req_i.aw)
+    `AXI_ASSIGN_W_STRUCT(axi_a_req_o.w, axi_a_req_i.w)
+    `AXI_ASSIGN_AR_STRUCT(axi_a_req_o.ar, axi_a_req_i.ar)
 
     // assign response payload A
-    assign axi_a_rsp_o.r  = axi_a_rsp_i.r;
-    assign axi_a_rsp_o.b  = axi_a_rsp_i.b;
+    `AXI_ASSIGN_R_STRUCT(axi_a_rsp_o.r, axi_a_rsp_i.r)
+    `AXI_ASSIGN_B_STRUCT(axi_a_rsp_o.b, axi_a_rsp_i.b)
 
     // assign request payload B
-    assign axi_b_req_o.aw = axi_b_req_i.aw;
-    assign axi_b_req_o.w  = axi_b_req_i.w;
-    assign axi_b_req_o.ar = axi_b_req_i.ar;
+    `AXI_ASSIGN_AW_STRUCT(axi_b_req_o.aw, axi_b_req_i.aw)
+    `AXI_ASSIGN_W_STRUCT(axi_b_req_o.w, axi_b_req_i.w)
+    `AXI_ASSIGN_AR_STRUCT(axi_b_req_o.ar, axi_b_req_i.ar)
 
     // assign response payload B
-    assign axi_b_rsp_o.r  = axi_b_rsp_i.r;
-    assign axi_b_rsp_o.b  = axi_b_rsp_i.b;
+    `AXI_ASSIGN_R_STRUCT(axi_b_rsp_o.r, axi_b_rsp_i.r)
+    `AXI_ASSIGN_B_STRUCT(axi_b_rsp_o.b, axi_b_rsp_i.b)
 
     // fifo handshaking signals A
     id_t  fifo_valid_aw_a, fifo_ready_aw_a;
@@ -314,40 +316,38 @@ module axi_bus_compare #(
     // Input Handshaking A
     //-----------------------------------
     always_comb begin : gen_handshaking_a
-        for (int id = 0; id < 2**AxiIdWidth; id++) begin
-            // aw
-            // defaults
-            fifo_valid_aw_a     = '0;
-            fifo_sel_ready_aw_a = '0;
-            // assign according id
-            fifo_valid_aw_a [axi_a_req_i.aw.id] = fifo_sel_valid_aw_a;
-            fifo_sel_ready_aw_a                 = fifo_ready_aw_a[axi_a_req_i.aw.id];
+        // aw
+        // defaults
+        fifo_valid_aw_a     = '0;
+        fifo_sel_ready_aw_a = '0;
+        // assign according id
+        fifo_valid_aw_a [axi_a_req_i.aw.id] = fifo_sel_valid_aw_a;
+        fifo_sel_ready_aw_a                 = fifo_ready_aw_a[axi_a_req_i.aw.id];
 
 
-            // b
-            // defaults
-            fifo_valid_b_a      = '0;
-            fifo_sel_ready_b_a  = '0;
-            // assign according id
-            fifo_valid_b_a [axi_a_rsp_i.b.id] = fifo_sel_valid_b_a;
-            fifo_sel_ready_b_a                = fifo_ready_b_a[axi_a_rsp_i.b.id];
+        // b
+        // defaults
+        fifo_valid_b_a      = '0;
+        fifo_sel_ready_b_a  = '0;
+        // assign according id
+        fifo_valid_b_a [axi_a_rsp_i.b.id] = fifo_sel_valid_b_a;
+        fifo_sel_ready_b_a                = fifo_ready_b_a[axi_a_rsp_i.b.id];
 
-            // ar
-            // defaults
-            fifo_valid_ar_a     = '0;
-            fifo_sel_ready_ar_a = '0;
-            // assign according id
-            fifo_valid_ar_a [axi_a_req_i.ar.id] = fifo_sel_valid_ar_a;
-            fifo_sel_ready_ar_a                 = fifo_ready_ar_a[axi_a_req_i.ar.id];
+        // ar
+        // defaults
+        fifo_valid_ar_a     = '0;
+        fifo_sel_ready_ar_a = '0;
+        // assign according id
+        fifo_valid_ar_a [axi_a_req_i.ar.id] = fifo_sel_valid_ar_a;
+        fifo_sel_ready_ar_a                 = fifo_ready_ar_a[axi_a_req_i.ar.id];
 
-            // b
-            // defaults
-            fifo_valid_r_a      = '0;
-            fifo_sel_ready_r_a  = '0;
-            // assign according id
-            fifo_valid_r_a [axi_a_rsp_i.r.id] = fifo_sel_valid_r_a;
-            fifo_sel_ready_r_a                = fifo_ready_r_a[axi_a_rsp_i.r.id];
-        end
+        // b
+        // defaults
+        fifo_valid_r_a      = '0;
+        fifo_sel_ready_r_a  = '0;
+        // assign according id
+        fifo_valid_r_a [axi_a_rsp_i.r.id] = fifo_sel_valid_r_a;
+        fifo_sel_ready_r_a                = fifo_ready_r_a[axi_a_rsp_i.r.id];
     end
 
 
@@ -516,40 +516,38 @@ module axi_bus_compare #(
     // Input Handshaking B
     //-----------------------------------
     always_comb begin : gen_handshaking_b
-        for (int id = 0; id < 2**AxiIdWidth; id++) begin
-            // aw
-            // defaults
-            fifo_valid_aw_b     = '0;
-            fifo_sel_ready_aw_b = '0;
-            // assign according id
-            fifo_valid_aw_b [axi_b_req_i.aw.id] = fifo_sel_valid_aw_b;
-            fifo_sel_ready_aw_b                 = fifo_ready_aw_b[axi_b_req_i.aw.id];
+        // aw
+        // defaults
+        fifo_valid_aw_b     = '0;
+        fifo_sel_ready_aw_b = '0;
+        // assign according id
+        fifo_valid_aw_b [axi_b_req_i.aw.id] = fifo_sel_valid_aw_b;
+        fifo_sel_ready_aw_b                 = fifo_ready_aw_b[axi_b_req_i.aw.id];
 
 
-            // b
-            // defaults
-            fifo_valid_b_b      = '0;
-            fifo_sel_ready_b_b  = '0;
-            // assign according id
-            fifo_valid_b_b [axi_b_rsp_i.b.id] = fifo_sel_valid_b_b;
-            fifo_sel_ready_b_b                = fifo_ready_b_b[axi_b_rsp_i.b.id];
+        // b
+        // defaults
+        fifo_valid_b_b      = '0;
+        fifo_sel_ready_b_b  = '0;
+        // assign according id
+        fifo_valid_b_b [axi_b_rsp_i.b.id] = fifo_sel_valid_b_b;
+        fifo_sel_ready_b_b                = fifo_ready_b_b[axi_b_rsp_i.b.id];
 
-            // ar
-            // defaults
-            fifo_valid_ar_b     = '0;
-            fifo_sel_ready_ar_b = '0;
-            // assign according id
-            fifo_valid_ar_b [axi_b_req_i.ar.id] = fifo_sel_valid_ar_b;
-            fifo_sel_ready_ar_b                 = fifo_ready_ar_b[axi_b_req_i.ar.id];
+        // ar
+        // defaults
+        fifo_valid_ar_b     = '0;
+        fifo_sel_ready_ar_b = '0;
+        // assign according id
+        fifo_valid_ar_b [axi_b_req_i.ar.id] = fifo_sel_valid_ar_b;
+        fifo_sel_ready_ar_b                 = fifo_ready_ar_b[axi_b_req_i.ar.id];
 
-            // b
-            // defaults
-            fifo_valid_r_b      = '0;
-            fifo_sel_ready_r_b  = '0;
-            // assign according id
-            fifo_valid_r_b [axi_b_rsp_i.r.id] = fifo_sel_valid_r_b;
-            fifo_sel_ready_r_b                = fifo_ready_r_b[axi_b_rsp_i.r.id];
-        end
+        // b
+        // defaults
+        fifo_valid_r_b      = '0;
+        fifo_sel_ready_r_b  = '0;
+        // assign according id
+        fifo_valid_r_b [axi_b_rsp_i.r.id] = fifo_sel_valid_r_b;
+        fifo_sel_ready_r_b                = fifo_ready_r_b[axi_b_rsp_i.r.id];
     end
 
 
@@ -584,4 +582,4 @@ module axi_bus_compare #(
     assign mismatch_o = (|aw_mismatch_o) | (|w_mismatch_o) | (|b_mismatch_o) |
                         (|ar_mismatch_o) | (|r_mismatch_o);
 
-endmodule : axi_bus_compare
+endmodule
