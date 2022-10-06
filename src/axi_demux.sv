@@ -289,10 +289,10 @@ module axi_demux #(
         if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) &&
             (!(ar_id_cnt_full && slv_aw_chan.atop[axi_pkg::ATOP_R_RESP]) ||
              !AtopSupport)) begin
-          /// There is a valid AW vector make the id lookup and go further, if it passes.
-          /// Also stall if previous transmitted AWs still have active W's in flight.
-          /// This prevents deadlocking of the W channel. The counters are there for the
-          /// Handling of the B responses.
+          // There is a valid AW vector make the id lookup and go further, if it passes.
+          // Also stall if previous transmitted AWs still have active W's in flight.
+          // This prevents deadlocking of the W channel. The counters are there for the
+          // Handling of the B responses.
           if (slv_aw_valid &&
                 ((w_open == '0) || (w_select == slv_aw_select)) &&
                 (!aw_select_occupied || (slv_aw_select == lookup_aw_select))) begin
@@ -817,7 +817,6 @@ module axi_demux_intf #(
   parameter int unsigned MAX_TRANS        = 32'd8,
   parameter int unsigned AXI_LOOK_BITS    = 32'd3,
   parameter bit          UNIQUE_IDS       = 1'b0,
-  parameter bit          FALL_THROUGH     = 1'b0,
   parameter bit          SPILL_AW         = 1'b1,
   parameter bit          SPILL_W          = 1'b0,
   parameter bit          SPILL_B          = 1'b0,

@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `axi_channel_compare.sv`: Non-synthesizable module comparing two AXI channels of the same type
 
 ### Changed
-- `axi_demux`: Replace write FIFO (`w_fifo`) with a write credit counter.
+- `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
+  AWs from being issued to one master port while Ws from another burst are ongoing to another
+  master port.  This is required to prevents deadlocks due to circular waits downstream.
+- `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
+  in the crossed connections in the xbar between the demuxes and muxes.
+- `axi_pkg`: Add documentation to `xbar_cfg_t`.
 
 ### Fixed
 

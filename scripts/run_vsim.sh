@@ -172,7 +172,7 @@ exec_test() {
                     for Atop in 0 1; do
                         for Exclusive in 0 1; do
                             for UniqueIds in 0 1; do
-                                call_vsim tb_axi_xbar -gTbNumMst=$NumMst -gTbNumSlv=$NumSlv \
+                                call_vsim tb_axi_xbar -gTbNumMasters=$NumMst -gTbNumSlaves=$NumSlv \
                                         -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive \
                                         -gTbUniqueIds=$UniqueIds
                             done
@@ -197,6 +197,29 @@ exec_test() {
                                 -gTbMemLatency=$MEM_LAT \
                                 -gTbNumWrites=2000 \
                                 -gTbNumReads=2000
+                        done
+                    done
+                done
+            done
+            ;;
+        axi_xbar)
+            for GEN_ATOP in 0 1; do
+                for NUM_MST in 1 6; do
+                    for NUM_SLV in 2 9; do
+                        for MST_ID_USE in 3 5; do
+                            MST_ID=5
+                            for DATA_WIDTH in 64 256; do
+                                for PIPE in 0 1; do
+                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
+                                        -gTbNumMasters=$NUM_MST       \
+                                        -gTbNumSlaves=$NUM_SLV        \
+                                        -gTbAxiIdWidthMasters=$MST_ID \
+                                        -gTbAxiIdUsed=$MST_ID_USE     \
+                                        -gTbAxiDataWidth=$DATA_WIDTH  \
+                                        -gTbPipeline=$PIPE            \
+                                        -gTbEnAtop=$GEN_ATOP
+                                done
+                            done
                         done
                     done
                 done
