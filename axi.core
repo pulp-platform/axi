@@ -57,6 +57,8 @@ filesets:
       - src/axi_iw_converter.sv
       - src/axi_lite_xbar.sv
       - src/axi_xbar.sv
+      - src/axi_chan_compare.sv
+      - src/axi_dumper.sv
       - src/axi_sim_mem.sv
       - src/axi_test.sv
       # Level 5

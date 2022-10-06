@@ -61,6 +61,8 @@ axi:
 
 axi_sim:
   files:
+    - src/axi_chan_compare.sv
+    - src/axi_dumper.sv
     - src/axi_sim_mem.sv
     - src/axi_test.sv
   flags:

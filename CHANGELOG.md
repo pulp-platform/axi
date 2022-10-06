@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- Add `axi_channel_compare.sv`: Non-synthesizable module comparing two AXI channels of the same type
 
 ### Changed
 - `axi_demux`: Replace write FIFO (`w_fifo`) with a write credit counter.

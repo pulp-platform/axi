@@ -67,6 +67,7 @@ In addition to the modules above, which are available in synthesis and simulatio
 
 | Name                                                 | Description                                                                                            |
 |------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| [`axi_chan_compare`](src/axi_chan_compare.sv)        | Non-synthesizable module comparing two AXI channels of the same type                                   |
 | [`axi_chan_logger`](src/axi_test.sv)                 | Logs the transactions of an AXI4(+ATOPs) port to files.                                                |
 | [`axi_driver`](src/axi_test.sv)                      | Low-level driver for AXI4(+ATOPs) that can send and receive individual beats on any channel.           |
 | [`axi_dumper`](src/axi_dumper.sv)                    | Dumps log to file to be interpreted by `axi_dumper_interpret` script for debugging purposes.           |
