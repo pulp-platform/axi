@@ -61,6 +61,15 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_xbar`](src/axi_xbar.sv)                        | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.               | [Doc](doc/axi_xbar.md)         |
 | [`axi_xp`](src/axi_xp.sv)                            | AXI Crosspoint (XP) with homomorphous slave and master ports.                                        |                                |
 
+## Synthesizable Verification Modules
+
+The following modules are meant to be used for verification purposes only but are synthesizable to be used in FPGA environments.
+
+| Name                                                 | Description                                                                                             |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| [`axi_bus_compare`](src/axi_bus_compare.sv)          | Compares two buses of the same type (and in the same clock domain), returns events on mismatch.         |
+| [`axi_slave_compare`](src/axi_slave_compare.sv)      | Compares two slave devices of the same type (and in the same clock domain), returns events on mismatch. |
+
 ### Simulation-Only Modules
 
 In addition to the modules above, which are available in synthesis and simulation, the following modules are available only in simulation.  Those modules are widely used in our testbenches, but they are also suitable to build testbenches for AXI modules and systems outside this repository.

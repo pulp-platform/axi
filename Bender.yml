@@ -35,6 +35,7 @@ sources:
   # Level 2
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
+  - src/axi_bus_compare.sv
   - src/axi_cdc_dst.sv
   - src/axi_cdc_src.sv
   - src/axi_cut.sv
@@ -58,6 +59,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   - src/axi_serializer.sv
+  - src/axi_slave_compare.sv
   - src/axi_throttle.sv
   - src/axi_to_mem.sv
   # Level 3
@@ -97,6 +99,7 @@ sources:
       # Level 1
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
+      - test/tb_axi_bus_compare.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_dw_downsizer.sv
@@ -112,6 +115,7 @@ sources:
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
+      - test/tb_axi_slave_compare.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
