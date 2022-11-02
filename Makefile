@@ -14,37 +14,46 @@
 ifneq (,$(wildcard /etc/iis.version))
 	VSIM        ?= questa-2022.3 vsim
 	SYNOPSYS_DC ?= synopsys-2022.03 dcnxt_shell
+	VLOGAN      ?= vcs-2020.12 vlogan
+	VCS         ?= vcs-2020.12 vcs
 else
 	VSIM        ?= vsim
 	SYNOPSYS_DC ?= dc_shell
+	VLOGAN      ?= vlogan
+	VCS         ?= vcs
 endif
 
 TBS         ?= axi_addr_test \
                axi_atop_filter \
-               axi_cdc axi_delayer \
+               axi_bus_compare \
+               axi_cdc \
+               axi_delayer \
                axi_dw_downsizer \
                axi_dw_upsizer \
                axi_fifo \
                axi_isolate \
                axi_iw_converter \
+               axi_lite_mailbox \
                axi_lite_regs \
                axi_lite_to_apb \
                axi_lite_to_axi \
-               axi_lite_mailbox \
                axi_lite_xbar \
                axi_modify_address \
                axi_serializer \
                axi_sim_mem \
+               axi_slave_compare \
                axi_to_axi_lite \
                axi_to_mem_banked \
                axi_xbar
 
-SIM_TARGETS := $(addsuffix .log,$(addprefix sim-,$(TBS)))
+
+SIM_TARGETS     := $(addsuffix .log,$(addprefix sim-,$(TBS)))
+SIMVCS_TARGETS := $(addsuffix .log,$(addprefix sim_vcs-,$(TBS)))
 
 
 .SHELL: bash
 
-.PHONY: help all sim_all clean
+.PHONY: help all sim_all sim_vcs_all clean
 
 
 help:
@@ -65,6 +74,9 @@ all: compile.log elab.log sim_all
 sim_all: $(SIM_TARGETS)
 
 
+sim_vcs_all: $(SIMVCS_TARGETS)
+
+
 build:
 	mkdir -p $@
 
@@ -83,6 +95,17 @@ sim-%.log: compile.log
 	export VSIM="$(VSIM)"; cd build && ../scripts/run_vsim.sh --random-seed $* | tee ../$@
 	(! grep -n "Error:" $@)
 	(! grep -n "Fatal:" $@)
+
+
+compile_vcs.log: Bender.yml | build
+	export VLOGAN="$(VLOGAN)"; cd build && ../scripts/compile_vcs.sh | tee ../$@
+	(! grep -n "Error-" $@)
+
+
+sim_vcs-%.log: compile_vcs.log
+	export VCS="$(VCS)"; cd build && ../scripts/run_vcs.sh --random-seed $* | tee ../$@
+	(! grep -n "Error" $@)
+	(! grep -n "Fatal" $@)
 
 
 clean:

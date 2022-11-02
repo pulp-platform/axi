@@ -164,7 +164,11 @@ module tb_axi_lite_to_apb #(
   initial begin : proc_sim_stop
     @(posedge rst_n);
     wait (end_of_sim);
+    `ifdef TARGET_VCS
+    $finish(1);
+    `else
     $stop();
+    `endif
   end
 
   // pragma translate_off
