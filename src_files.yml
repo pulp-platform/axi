@@ -43,6 +43,7 @@ axi:
     - src/axi_slave_compare.sv
     - src/axi_throttle.sv
     - src/axi_to_mem.sv
+    - src/mem_to_axi_lite.sv
     # Level 3
     - src/axi_cdc.sv
     - src/axi_err_slv.sv
@@ -54,6 +55,7 @@ axi:
     - src/axi_to_mem_banked.sv
     - src/axi_to_mem_interleaved.sv
     - src/axi_to_mem_split.sv
+    - src/mem_to_axi.sv
     # Level 4
     - src/axi_iw_converter.sv
     - src/axi_lite_xbar.sv
