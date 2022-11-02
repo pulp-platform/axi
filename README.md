@@ -32,6 +32,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)            | A data width converter between a narrow AXI master and a wider AXI slave.                            |                                |
 | [`axi_err_slv`](src/axi_err_slv.sv)                  | Always responds with an AXI decode/slave error for transactions which are sent to it.                |                                |
 | [`axi_fifo`](src/axi_fifo.sv)                        | A Fifo for each AXI4 channel to buffer requests.                                                     |                                |
+| [`axi_from_mem`](src/axi_from_mem.sv)                | This module acts like an SRAM and makes AXI4 requests downstream.                                    |                                |
 | [`axi_id_prepend`](src/axi_id_prepend.sv)            | This module prepends/strips the MSB from the AXI IDs.                                                |                                |
 | [`axi_id_remap`](src/axi_id_remap.sv)                | Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.                    | [Doc][doc.axi_id_remap]        |
 | [`axi_id_serialize`](src/axi_id_serialize.sv)        | Reduce AXI IDs by serializing transactions when necessary.                                           | [Doc][doc.axi_id_serialize]    |
@@ -41,6 +42,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_join`](src/axi_join.sv)                        | A connector that joins two AXI interfaces.                                                           |                                |
 | [`axi_lfsr`](src/axi_lfsr.sv)                        | AXI4-attached LFSR; read returns pseudo-random data, writes are compressed into a checksum.          |                                |
 | [`axi_lite_demux`](src/axi_lite_demux.sv)            | Demultiplexes an AXI4-Lite bus from one slave port to multiple master ports.                         | [Doc](doc/axi_lite_demux.md)   |
+| [`axi_lite_from_mem`](src/axi_lite_from_mem.sv)      | This module acts like an SRAM and makes AXI4-Lite requests downstream.                               |                                |
 | [`axi_lite_join`](src/axi_lite_join.sv)              | A connector that joins two AXI-Lite interfaces.                                                      |                                |
 | [`axi_lite_lfsr`](src/axi_lite_lfsr.sv)              | AXI4-Lite-attached LFSR; read returns pseudo-random data, writes are compressed into a checksum.     |                                |
 | [`axi_lite_mailbox`](src/axi_lite_mailbox.sv)        | A AXI4-Lite Mailbox with two slave ports and usage triggered irq.                                    | [Doc](doc/axi_lite_mailbox.md) |
