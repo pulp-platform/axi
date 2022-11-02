@@ -49,6 +49,7 @@ sources:
   - src/axi_isolate.sv
   - src/axi_join.sv
   - src/axi_lite_demux.sv
+  - src/axi_lite_from_mem.sv
   - src/axi_lite_join.sv
   - src/axi_lite_lfsr.sv
   - src/axi_lite_mailbox.sv
@@ -66,6 +67,7 @@ sources:
   - src/axi_cdc.sv
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
+  - src/axi_from_mem.sv
   - src/axi_id_serialize.sv
   - src/axi_lfsr.sv
   - src/axi_multicut.sv
