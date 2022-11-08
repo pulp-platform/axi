@@ -11,6 +11,8 @@ load the memory of this module in simulation with an external <code>$readmem*</c
 <pre><code class="language-sv">axi_sim_mem #( ... ) i_sim_mem ( ... );
 initial begin
   $readmemh(&quot;file_with_memory_addrs_and_data.mem&quot;, i_sim_mem.mem);
+  $readmemh(&quot;file_with_memory_addrs_and_read_errors.mem&quot;, i_sim_mem.rerr);
+  $readmemh(&quot;file_with_memory_addrs_and_write_errors.mem&quot;, i_sim_mem.werr);
 end
 </code></pre>
 <p><code>mem</code> is addressed (or indexed) byte-wise with <code>AddrWidth</code>-wide addresses.</p>
@@ -31,6 +33,8 @@ end
 ><p>AXI4 response struct definition</p>
 </div><h3 id="parameter.WarnUninitialized" class="impl"><code class="in-band">WarnUninitialized<span class="type-annotation">: bit</span></code></h3><div class="docblock"
 ><p>Warn on accesses to uninitialized bytes</p>
+</div><h3 id="parameter.ClearErrOnAccess" class="impl"><code class="in-band">ClearErrOnAccess<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Clear error on access</p>
 </div><h3 id="parameter.ApplDelay" class="impl"><code class="in-band">ApplDelay<span class="type-annotation">: time</span></code></h3><div class="docblock"
 ><p>Application delay (measured after rising clock edge)</p>
 </div><h3 id="parameter.AcqDelay" class="impl"><code class="in-band">AcqDelay<span class="type-annotation">: time</span></code></h3><div class="docblock"
