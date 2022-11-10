@@ -41,6 +41,8 @@ filesets:
       - src/axi_lite_to_axi.sv
       - src/axi_modify_address.sv
       - src/axi_mux.sv
+      - src/axi_rw_join.sv
+      - src/axi_rw_split.sv
       - src/axi_serializer.sv
       - src/axi_slave_compare.sv
       - src/axi_throttle.sv
