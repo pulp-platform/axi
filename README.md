@@ -55,6 +55,8 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_multicut`](src/axi_multicut.sv)                | AXI register which can be used to relax timing pressure on long AXI buses.                           |                                |
 | [`axi_mux`](src/axi_mux.sv)                          | Multiplexes the AXI4 slave ports down to one master port.                                            | [Doc](doc/axi_mux.md)          |
 | [`axi_pkg`](src/axi_pkg.sv)                          | Contains AXI definitions, common structs, and useful helper functions.                               |                                |
+| [`axi_rw_join`](src/axi_rw_join.sv)                  | Joins a read and a write slave into one single read / write master.                                  |                                |
+| [`axi_rw_split`](src/axi_rw_split.sv)                | Splits a single read / write slave into one read and one write master.                               |                                |
 | [`axi_serializer`](src/axi_serializer.sv)            | Serializes transactions with different IDs to the same ID.                                           |                                |
 | [`axi_throttle`](src/axi_throttle.sv)                | Limits the maximum number of outstanding transfers sent to the downstream logic.                     |                                |
 | [`axi_test`](src/axi_test.sv)                        | A set of testbench utilities for AXI interfaces.                                                     |                                |
