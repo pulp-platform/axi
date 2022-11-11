@@ -81,27 +81,19 @@ module axi_to_mem_split #(
 
   logic read_busy, write_busy;
 
-  always_comb begin: proc_axi_rw_split
-    `AXI_SET_R_STRUCT(axi_resp_o.r, axi_read_resp.r)
-    axi_resp_o.r_valid     = axi_read_resp.r_valid;
-    axi_resp_o.ar_ready    = axi_read_resp.ar_ready;
-    `AXI_SET_B_STRUCT(axi_resp_o.b, axi_write_resp.b)
-    axi_resp_o.b_valid     = axi_write_resp.b_valid;
-    axi_resp_o.aw_ready    = axi_write_resp.aw_ready;
-    axi_resp_o.w_ready     = axi_write_resp.w_ready;
-
-    axi_write_req = '0;
-    `AXI_SET_AW_STRUCT(axi_write_req.aw, axi_req_i.aw)
-    axi_write_req.aw_valid = axi_req_i.aw_valid;
-    `AXI_SET_W_STRUCT(axi_write_req.w, axi_req_i.w)
-    axi_write_req.w_valid = axi_req_i.w_valid;
-    axi_write_req.b_ready = axi_req_i.b_ready;
-
-    axi_read_req = '0;
-    `AXI_SET_AR_STRUCT(axi_read_req.ar, axi_req_i.ar)
-    axi_read_req.ar_valid = axi_req_i.ar_valid;
-    axi_read_req.r_ready  = axi_req_i.r_ready;
-  end
+  axi_rw_split #(
+    .axi_req_t  ( axi_req_t  ),
+    .axi_resp_t ( axi_resp_t )
+  ) i_axi_rw_split (
+    .clk_i,
+    .rst_ni,
+    .slv_req_i        ( axi_req_i        ),
+    .slv_resp_o       ( axi_resp_o       ),
+    .mst_read_req_o   ( axi_read_req     ),
+    .mst_read_resp_i  ( axi_read_resp    ),
+    .mst_write_req_o  ( axi_write_req    ),
+    .mst_write_resp_i ( axi_write_resp   )
+  );
 
   assign busy_o = read_busy || write_busy;
 

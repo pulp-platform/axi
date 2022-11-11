@@ -13,6 +13,7 @@
 // - Tobias Senti <tsenti@ethz.ch>
 
 `include "axi/assign.svh"
+`include "common_cells/assertions.svh"
 
 /// Splits a single read / write slave into one read and one write master
 ///
@@ -22,6 +23,8 @@ module axi_rw_split #(
   parameter type axi_req_t  = logic,
   parameter type axi_resp_t = logic
 ) (
+  input  logic      clk_i,
+  input  logic      rst_ni,
   // Read / Write Slave
   input  axi_req_t  slv_req_i,
   output axi_resp_t slv_resp_o,
@@ -65,6 +68,9 @@ module axi_rw_split #(
   assign mst_read_req_o.w_valid   = 1'b0;
   assign mst_read_req_o.b_ready   = 1'b0;
 
+  // check for B never to be valid
+  `ASSERT_NEVER(mst_read_resp_b_valid, mst_read_resp_i.b_valid, clk_i, !rst_ni)
+
 
   //--------------------------------------
   // Write channel data
@@ -76,7 +82,7 @@ module axi_rw_split #(
   `AXI_ASSIGN_B_STRUCT  ( slv_resp_o.b       , mst_write_resp_i.b )
 
   // Write AR channel data
-  assign mst_write_req_o.ar       = 'b0;
+  assign mst_write_req_o.ar       = '0;
 
 
   //--------------------------------------
@@ -86,6 +92,9 @@ module axi_rw_split #(
   // Write AR and R channel handshake
   assign mst_write_req_o.ar_valid = 1'b0;
   assign mst_write_req_o.r_ready  = 1'b0;
+
+  // check for R never to be valid
+  `ASSERT_NEVER(mst_read_resp_r_valid, mst_read_resp_i.r_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
   assign mst_write_req_o.aw_valid = slv_req_i.aw_valid;

@@ -13,6 +13,7 @@
 // - Tobias Senti <tsenti@ethz.ch>
 
 `include "axi/assign.svh"
+`include "common_cells/assertions.svh"
 
 /// Joins a read and a write slave into one single read / write master
 ///
@@ -22,6 +23,8 @@ module axi_rw_join #(
   parameter type axi_req_t  = logic,
   parameter type axi_resp_t = logic
 ) (
+  input  logic      clk_i,
+  input  logic      rst_ni,
   // Read Slave
   input  axi_req_t  slv_read_req_i,
   output axi_resp_t slv_read_resp_o,
@@ -44,7 +47,7 @@ module axi_rw_join #(
   `AXI_ASSIGN_R_STRUCT  ( slv_read_resp_o.r  , mst_resp_i.r       )
 
   // Read B channel data
-  assign slv_read_resp_o.b         = 'b0;
+  assign slv_read_resp_o.b         = '0;
 
 
   //--------------------------------------
@@ -63,6 +66,10 @@ module axi_rw_join #(
   assign slv_read_resp_o.aw_ready  = 1'b0;
   assign slv_read_resp_o.w_ready   = 1'b0;
   assign slv_read_resp_o.b_valid   = 1'b0;
+
+  // check for AW and W never to be valid
+  `ASSERT_NEVER(slv_read_req_aw_valid, slv_read_req_i.aw_valid, clk_i, !rst_ni)
+  `ASSERT_NEVER(slv_read_req_w_valid,  slv_read_req_i.w_valid,  clk_i, !rst_ni)
 
   //--------------------------------------
   // Write channel data
@@ -84,6 +91,9 @@ module axi_rw_join #(
   // Write AR and R channel handshake
   assign slv_write_resp_o.ar_ready = 1'b0;
   assign slv_write_resp_o.r_valid  = 1'b0;
+
+  // check for AR to never be valid
+  `ASSERT_NEVER(slv_write_req_ar_valid, slv_write_req_i.ar_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
   assign mst_req_o.aw_valid        = slv_write_req_i.aw_valid;
