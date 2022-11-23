@@ -174,7 +174,8 @@ module axi_mcast_demux #(
     //--------------------------------------
     // comes from spill register at input
     aw_chan_t                        slv_aw_chan;
-    mask_select_t                    slv_aw_select;
+    idx_select_t                     slv_aw_select;
+    mask_select_t                    slv_aw_select_mask;
     aw_multi_addr_t [NoMstPorts-1:0] slv_aw_mcast;
 
     logic                     slv_aw_valid, slv_aw_valid_chan, slv_aw_valid_sel, slv_aw_valid_mcast;
@@ -185,7 +186,7 @@ module axi_mcast_demux #(
     logic [NoMstPorts-1:0]    mst_aw_valids, mst_aw_readies;
 
     // AW ID counter
-    mask_select_t             lookup_aw_select;
+    idx_select_t              lookup_aw_select;
     logic                     aw_select_occupied, aw_id_cnt_full;
     logic                     aw_any_outstanding_unicast_trx;
     logic                     aw_any_outstanding_trx;
@@ -287,7 +288,7 @@ module axi_mcast_demux #(
       .data_i  ( slv_aw_select_i    ),
       .valid_o ( slv_aw_valid_sel   ),
       .ready_i ( slv_aw_ready       ),
-      .data_o  ( slv_aw_select      )
+      .data_o  ( slv_aw_select_mask )
     );
     spill_register #(
       .T       ( aw_multi_addr_t [NoMstPorts-1:0] ),
@@ -344,7 +345,7 @@ module axi_mcast_demux #(
           // This prevents deadlocking of the W channel. The counters are there for the
           // Handling of the B responses.
           if (slv_aw_valid &&
-                ((w_open == '0) || (w_select == slv_aw_select)) &&
+                ((w_open == '0) || (w_select == slv_aw_select_mask)) &&
                 (!aw_select_occupied || (slv_aw_select == lookup_aw_select)) &&
                 !multicast_stall) begin
             // connect the handshake
@@ -371,9 +372,21 @@ module axi_mcast_demux #(
 
     /// Multicast logic
 
+    // Convert AW select mask to select index since the indices
+    // are smaller than the masks and thus cheaper to store in
+    // the ID counters. We anyways don't use the ID counters on
+    // multicast transactions...
+
+    onehot_to_bin #(
+      .ONEHOT_WIDTH(NoMstPorts)
+    ) i_onehot_to_bin  (
+        .onehot(slv_aw_select_mask),
+        .bin   (slv_aw_select)
+    );
+
     // Popcount to identify multicast requests
     popcount #(NoMstPorts) i_aw_select_popcount (
-        .data_i    (slv_aw_select),
+        .data_i    (slv_aw_select_mask),
         .popcount_o(aw_select_popcount)
     );
 
@@ -412,7 +425,7 @@ module axi_mcast_demux #(
       multicast_select_load = 1'b0;
 
       unique if (aw_is_multicast && aw_valid && aw_ready) begin
-        multicast_select_d    = slv_aw_select;
+        multicast_select_d    = slv_aw_select_mask;
         multicast_select_load = 1'b1;
       end else if (outstanding_multicast && slv_b_valid && slv_b_ready) begin
         multicast_select_d    = '0;
@@ -458,10 +471,10 @@ module axi_mcast_demux #(
     // handshake can now actually take place.
     // Using commit, instead of valid, to this end ensures that we don't have
     // any combinational loops.
-    assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select;
-    assign accept_aw = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select);
+    assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select_mask;
+    assign accept_aw = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select_mask);
     assign aw_ready = aw_is_multicast ? mcast_aw_hs_in_progress : accept_aw;
-    assign mst_aw_commit_o = {NoMstPorts{mcast_aw_hs_in_progress}} & slv_aw_select;
+    assign mst_aw_commit_o = {NoMstPorts{mcast_aw_hs_in_progress}} & slv_aw_select_mask;
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
@@ -473,10 +486,11 @@ module axi_mcast_demux #(
       assign aw_select_occupied = 1'b0;
       assign aw_id_cnt_full = 1'b0;
     end else begin : gen_aw_id_counter
+
       axi_mcast_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
-        .mst_port_select_t ( mask_select_t  )
+        .mst_port_select_t ( idx_select_t   )
       ) i_aw_id_counter (
         .clk_i                        ( clk_i                          ),
         .rst_ni                       ( rst_ni                         ),
@@ -515,8 +529,8 @@ module axi_mcast_demux #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
-    assign w_select       = (|w_open) ? w_select_q : slv_aw_select;
+    `FFLARN(w_select_q, slv_aw_select_mask, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
+    assign w_select       = (|w_open) ? w_select_q : slv_aw_select_mask;
     assign w_select_valid = w_cnt_up | (|w_open);
     assign w_cnt_down     = slv_w_valid & slv_w_ready & slv_w_chan.last;
 
