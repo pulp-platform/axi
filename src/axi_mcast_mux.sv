@@ -58,12 +58,18 @@ module axi_mcast_mux #(
   input  logic                       rst_ni,   // Asynchronous reset active low
   input  logic                       test_i,   // Test Mode enable
   // slave ports (AXI inputs), connect master modules here
+  input  logic      [NoSlvPorts-1:0] slv_is_mcast_i,
+  input  logic      [NoSlvPorts-1:0] slv_aw_commit_i,
   input  slv_req_t  [NoSlvPorts-1:0] slv_reqs_i,
   output slv_resp_t [NoSlvPorts-1:0] slv_resps_o,
   // master port (AXI outputs), connect slave modules here
   output mst_req_t                   mst_req_o,
   input  mst_resp_t                  mst_resp_i
 );
+
+  // TODO colluca: can this be merged with MstIdxBits?
+  localparam int unsigned SlvPortIdxBits = cf_math_pkg::idx_width(NoSlvPorts);
+  typedef logic [SlvPortIdxBits-1:0] mst_idx_t;
 
   localparam int unsigned MstIdxBits    = $clog2(NoSlvPorts);
   localparam int unsigned MstAxiIDWidth = SlvAxiIDWidth + MstIdxBits;
@@ -169,6 +175,15 @@ module axi_mcast_mux #(
     mst_aw_chan_t   mst_aw_chan;
     logic           mst_aw_valid, mst_aw_ready;
 
+    // AW arbiter signals
+    mst_aw_chan_t          ucast_aw_chan, mcast_aw_chan;
+    logic                  ucast_aw_valid, ucast_aw_ready;
+    logic                  mcast_aw_valid, mcast_aw_ready, mcast_aw_commit;
+    logic                  mcast_not_aw_valid;
+    mst_idx_t              mcast_sel;
+    logic [NoSlvPorts-1:0] mcast_sel_mask;
+    logic [NoSlvPorts-1:0] ucast_aw_readies, mcast_aw_readies;
+
     // AW master handshake internal, so that we are able to stall, if w_fifo is full
     logic           aw_valid,     aw_ready;
 
@@ -261,24 +276,52 @@ module axi_mcast_mux #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
+    // Arbitrate unicast requests in round-robin fashion
     rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
       .DataType ( mst_aw_chan_t ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
-    ) i_aw_arbiter (
+    ) i_aw_ucast_arbiter (
       .clk_i  ( clk_i           ),
       .rst_ni ( rst_ni          ),
       .flush_i( 1'b0            ),
       .rr_i   ( '0              ),
-      .req_i  ( slv_aw_valids   ),
-      .gnt_o  ( slv_aw_readies  ),
+      .req_i  ( slv_aw_valids & ~slv_is_mcast_i ),
+      .gnt_o  ( ucast_aw_readies ),
       .data_i ( slv_aw_chans    ),
-      .gnt_i  ( aw_ready        ),
-      .req_o  ( aw_valid        ),
-      .data_o ( mst_aw_chan     ),
+      .gnt_i  ( ucast_aw_ready  ),
+      .req_o  ( ucast_aw_valid  ),
+      .data_o ( ucast_aw_chan   ),
       .idx_o  (                 )
     );
+
+    // Arbitrate multicast requests in priority encoder fashion
+    // TODO colluca: extend lzc to return mask form instead of cnt?
+    lzc #(
+      .WIDTH ( NoSlvPorts ),
+      .MODE  ( 1'b0       ) // Trailing zero mode
+    ) i_aw_mcast_lzc (
+      .in_i    ( slv_aw_valids & slv_is_mcast_i ),
+      .cnt_o   ( mcast_sel                      ),
+      .empty_o ( mcast_not_aw_valid             )
+    );
+    assign mcast_sel_mask = mcast_not_aw_valid ? '0 : 1 << mcast_sel;
+    assign mcast_aw_chan = slv_aw_chans[mcast_sel];
+    assign mcast_aw_valid = !mcast_not_aw_valid;
+    assign mcast_aw_commit = |slv_aw_commit_i;
+    assign mcast_aw_readies = {NoSlvPorts{mcast_aw_ready}} & mcast_sel_mask;
+
+    // Arbitrate "winners" of unicast and multicast arbitrations
+    // giving priority to multicast
+    assign mcast_aw_ready = aw_ready && mcast_aw_valid;
+    assign ucast_aw_ready = aw_ready && !mcast_aw_valid;
+    assign mst_aw_chan = mcast_aw_commit ? mcast_aw_chan : ucast_aw_chan;
+    assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
+    // !!! CAUTION !!! 
+    // This valid depends combinationally on aw_ready (through aw_commit),
+    // hence aw_ready shouldn't depend on aw_valid to avoid combinational loops!
+    assign aw_valid = mcast_aw_commit || (ucast_aw_valid && ucast_aw_ready);
 
     // control of the AW channel
     always_comb begin
@@ -298,15 +341,18 @@ module axi_mcast_mux #(
           load_aw_lock    = 1'b1;
         end
       end else begin
-        if (!w_fifo_full && aw_valid) begin
-          mst_aw_valid = 1'b1;
-          w_fifo_push = 1'b1;
+        if (!w_fifo_full) begin
           if (mst_aw_ready) begin
             aw_ready = 1'b1;
-          end else begin
-            // go to lock if transaction not in this cycle
-            lock_aw_valid_d = 1'b1;
-            load_aw_lock    = 1'b1;
+          end 
+          if (aw_valid) begin
+            mst_aw_valid = 1'b1;
+            w_fifo_push = 1'b1;
+            if (!mst_aw_ready) begin
+              // go to lock if transaction not in this cycle
+              lock_aw_valid_d = 1'b1;
+              load_aw_lock    = 1'b1;
+            end
           end
         end
       end
@@ -494,10 +540,11 @@ module axi_mcast_mux #(
 // pragma translate_on
 endmodule
 
+// TODO colluca: adapt this
 // interface wrap
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
-module axi_mux_intf #(
+module axi_mcast_mux_intf #(
   parameter int unsigned SLV_AXI_ID_WIDTH = 32'd0, // Synopsys DC requires default value for params
   parameter int unsigned MST_AXI_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
