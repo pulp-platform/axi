@@ -114,11 +114,15 @@ import cf_math_pkg::idx_width;
   // signals from the axi_demuxes, one index more for decode error
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
   slv_resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_resps;
+  logic      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_is_mcast;
+  logic      [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_aw_commit;
 
   // workaround for issue #133 (problem with vsim 10.6c)
   localparam int unsigned cfg_NoMstPorts = Cfg.NoMstPorts;
 
   // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
+  logic      [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_is_mcast;
+  logic      [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_commit;
   slv_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
   slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
@@ -210,7 +214,9 @@ import cf_math_pkg::idx_width;
       .slv_aw_mcast_i  ( slv_aw_mcast        ),
       .slv_resp_o      ( slv_ports_resp_o[i] ),
       .mst_reqs_o      ( slv_reqs[i]         ),
-      .mst_resps_i     ( slv_resps[i]        )
+      .mst_resps_i     ( slv_resps[i]        ),
+      .mst_is_mcast_o  ( slv_is_mcast[i]     ),
+      .mst_aw_commit_o ( slv_aw_commit[i]    )
     );
 
     axi_err_slv #(
@@ -236,8 +242,13 @@ import cf_math_pkg::idx_width;
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_xbar_slv_cross
     for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_xbar_mst_cross
       if (Connectivity[i][j]) begin : gen_connection
+
+        assign mst_is_mcast[j][i] = slv_is_mcast[i][j];
+        assign mst_aw_commit[j][i] = slv_aw_commit[i][j];
+
         axi_multicut #(
-          .NoCuts     ( Cfg.PipelineStages ),
+          // Internal pipelining is currently not supported in multicast XBAR
+          .NoCuts     ( 0                  ),
           .aw_chan_t  ( slv_aw_chan_t      ),
           .w_chan_t   ( w_chan_t           ),
           .b_chan_t   ( slv_b_chan_t       ),
@@ -275,7 +286,7 @@ import cf_math_pkg::idx_width;
   end
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
-    axi_mux #(
+    axi_mcast_mux #(
       .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
       .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
       .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
@@ -302,6 +313,8 @@ import cf_math_pkg::idx_width;
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Test Mode enable
+      .slv_is_mcast_i  ( mst_is_mcast[i]     ),
+      .slv_aw_commit_i ( mst_aw_commit[i]    ),
       .slv_reqs_i  ( mst_reqs[i]         ),
       .slv_resps_o ( mst_resps[i]        ),
       .mst_req_o   ( mst_ports_req_o[i]  ),
