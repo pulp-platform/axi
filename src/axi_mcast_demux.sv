@@ -79,7 +79,9 @@ module axi_mcast_demux #(
   output axi_resp_t                  slv_resp_o,
   // Master Ports
   output axi_req_t  [NoMstPorts-1:0] mst_reqs_o,
-  input  axi_resp_t [NoMstPorts-1:0] mst_resps_i
+  input  axi_resp_t [NoMstPorts-1:0] mst_resps_i,
+  output logic      [NoMstPorts-1:0] mst_is_mcast_o,
+  output logic      [NoMstPorts-1:0] mst_aw_commit_o
 );
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
@@ -391,6 +393,8 @@ module axi_mcast_demux #(
     assign outstanding_multicast  = |multicast_select_q;
     assign aw_any_outstanding_trx = aw_any_outstanding_unicast_trx || outstanding_multicast;
     assign multicast_stall        = outstanding_multicast || (aw_is_multicast && aw_any_outstanding_trx);
+    // We can send this signal to all slaves since we will only have one outstanding aw
+    assign mst_is_mcast_o = {NoMstPorts{aw_is_multicast}};
 
     // Keep track of which B responses need to be returned to complete the multicast
     `FFLARN(multicast_select_q, multicast_select_d, multicast_select_load, '0, clk_i, rst_ni)
@@ -415,20 +419,18 @@ module axi_mcast_demux #(
 
     // When a multicast occurs, the upstream valid signals need to
     // be forwarded to multiple master ports.
-    // Proper stream forking is necessary to avoid protocol violations
-    stream_fork_dynamic #(
-      .N_OUP(NoMstPorts)
-    ) i_aw_stream_fork_dynamic (
-      .clk_i      (clk_i),
-      .rst_ni     (rst_ni),
-      .valid_i    (aw_valid),
-      .ready_o    (aw_ready),
-      .sel_i      (slv_aw_select),
-      .sel_valid_i(slv_aw_valid_sel),
-      .sel_ready_o(),
-      .valid_o    (mst_aw_valids),
-      .ready_i    (mst_aw_readies)
-    );
+    // Proper stream forking is necessary to avoid protocol violations.
+    // We must also require that downstream handshakes occur
+    // simultaneously on all addressed master ports, otherwise deadlocks
+    // may occur. To achieve this we modify the ready-valid protocol by adding
+    // a third signal, called commit, which is asserted only when we have all
+    // downstream handshakes. This signal notifies the slaves that the
+    // handshake can now actually take place.
+    // Using commit, instead of valid, to this end ensures that we don't have
+    // any combinational loops.
+    assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select;
+    assign aw_ready = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select);
+    assign mst_aw_commit_o = {NoMstPorts{aw_ready && aw_is_multicast}} & slv_aw_select;
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
@@ -1004,7 +1006,9 @@ module axi_mcast_demux_intf #(
   input  idx_select_t  slv_ar_select_i,  // has to be stable, when ar_valid
   input  aw_multi_addr_t [NO_MST_PORTS-1:0] slv_aw_mcast_i,
   AXI_BUS.Slave   slv,                   // slave port
-  AXI_BUS.Master  mst [NO_MST_PORTS-1:0] // master ports
+  AXI_BUS.Master  mst [NO_MST_PORTS-1:0], // master ports
+  output logic    [NO_MST_PORTS-1:0] mst_is_mcast_o,
+  output logic    [NO_MST_PORTS-1:0] mst_aw_commit_o
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]       id_t;
@@ -1064,6 +1068,8 @@ module axi_mcast_demux_intf #(
     .slv_resp_o      ( slv_resp        ),
     // master port
     .mst_reqs_o      ( mst_req         ),
-    .mst_resps_i     ( mst_resp        )
+    .mst_resps_i     ( mst_resp        ),
+    .mst_is_mcast_o  ( mst_is_mcast_o  ),
+    .mst_aw_commit_o ( mst_aw_commit_o )
   );
 endmodule
