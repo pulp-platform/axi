@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
   in the crossed connections in the xbar between the demuxes and muxes.
 - `axi_pkg`: Add documentation to `xbar_cfg_t`.
+- Move `mem_to_banks` to `common_cells`.
+- Update `common_cells` from version `v1.26.0` to `v1.xx.yy`.
 - `axi_pkg`: Define `localparams` to define AXI type widths.
 
 ### Fixed
