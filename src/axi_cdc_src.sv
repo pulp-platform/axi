@@ -217,6 +217,99 @@ module axi_cdc_src_intf #(
 
 endmodule
 
+/// Source-clock-domain half of the AXI CDC crossing with clock gating features.
+///
+/// For each of the five AXI channels, this module instantiates the source or destination half of
+/// a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through
+/// the FIFO; see the header of `cdc_fifo_gray` for instructions.
+
+module axi_cdc_src_gated #(
+  /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
+  parameter int unsigned LogDepth = 1,
+  parameter type aw_chan_t = logic,
+  parameter type w_chan_t = logic,
+  parameter type b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type r_chan_t = logic,
+  parameter type axi_req_t = logic,
+  parameter type axi_resp_t = logic
+) (
+  // synchronous slave port - clocked by `src_clk_i`
+  input  logic                        src_clk_i,
+  input  logic                        src_rst_ni,
+  input  logic                        isolate_i,
+  input  axi_req_t                    src_req_i,
+  output axi_resp_t                   src_resp_o,
+  // asynchronous master port
+  output aw_chan_t  [2**LogDepth-1:0] async_data_master_aw_data_o,
+  output logic           [LogDepth:0] async_data_master_aw_wptr_o,
+  input  logic           [LogDepth:0] async_data_master_aw_rptr_i,
+  output w_chan_t   [2**LogDepth-1:0] async_data_master_w_data_o,
+  output logic           [LogDepth:0] async_data_master_w_wptr_o,
+  input  logic           [LogDepth:0] async_data_master_w_rptr_i,
+  input  b_chan_t   [2**LogDepth-1:0] async_data_master_b_data_i,
+  input  logic           [LogDepth:0] async_data_master_b_wptr_i,
+  output logic           [LogDepth:0] async_data_master_b_rptr_o,
+  output ar_chan_t  [2**LogDepth-1:0] async_data_master_ar_data_o,
+  output logic           [LogDepth:0] async_data_master_ar_wptr_o,
+  input  logic           [LogDepth:0] async_data_master_ar_rptr_i,
+  input  r_chan_t   [2**LogDepth-1:0] async_data_master_r_data_i,
+  input  logic           [LogDepth:0] async_data_master_r_wptr_i,
+  output logic           [LogDepth:0] async_data_master_r_rptr_o
+);
+
+  axi_req_t  src_req_gated;
+  axi_resp_t src_resp_gated;
+
+  always_comb begin : proc_gate_axi
+    `AXI_SET_REQ_STRUCT(src_req_gated, src_req_i)
+    `AXI_SET_RESP_STRUCT(src_resp_o, src_resp_gated)
+
+    src_req_gated.aw_valid = src_req_i.aw_valid;
+    src_resp_o.aw_ready    = isolate_i ? 1'b0 : src_resp_gated.aw_ready;
+    src_req_gated.w_valid  = src_req_i.w_valid;
+    src_resp_o.w_ready     = isolate_i ? 1'b0 : src_resp_gated.w_ready;
+    src_resp_o.b_valid     = isolate_i ? 1'b0 : src_resp_gated.b_valid;
+    src_req_gated.b_ready  = isolate_i ? 1'b1 : src_req_i.b_ready;
+    src_req_gated.ar_valid = src_req_i.ar_valid;
+    src_resp_o.ar_ready    = isolate_i ? 1'b0 : src_resp_gated.ar_ready;
+    src_resp_o.r_valid     = isolate_i ? 1'b0 : src_resp_gated.r_valid;
+    src_req_gated.r_ready  = isolate_i ? 1'b1 : src_req_i.r_ready;
+  end
+
+  axi_cdc_src #(
+    .LogDepth   ( LogDepth   ),
+    .aw_chan_t  ( aw_chan_t  ),
+    .w_chan_t   ( w_chan_t   ),
+    .b_chan_t   ( b_chan_t   ),
+    .ar_chan_t  ( ar_chan_t  ),
+    .r_chan_t   ( r_chan_t   ),
+    .axi_req_t  ( axi_req_t  ),
+    .axi_resp_t ( axi_resp_t )
+  ) i_axi_cdc_src (
+    .src_clk_i,
+    .src_rst_ni,
+    .src_req_i  ( src_req_gated  ),
+    .src_resp_o ( src_resp_gated ),
+    .async_data_master_aw_data_o,
+    .async_data_master_aw_wptr_o,
+    .async_data_master_aw_rptr_i,
+    .async_data_master_w_data_o,
+    .async_data_master_w_wptr_o,
+    .async_data_master_w_rptr_i,
+    .async_data_master_b_data_i,
+    .async_data_master_b_wptr_i,
+    .async_data_master_b_rptr_o,
+    .async_data_master_ar_data_o,
+    .async_data_master_ar_wptr_o,
+    .async_data_master_ar_rptr_i,
+    .async_data_master_r_data_i,
+    .async_data_master_r_wptr_i,
+    .async_data_master_r_rptr_o
+  );
+
+endmodule
+
 
 module axi_lite_cdc_src_intf #(
   parameter int unsigned AXI_ADDR_WIDTH = 0,

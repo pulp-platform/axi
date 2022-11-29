@@ -149,6 +149,102 @@ module axi_cdc_dst #(
 
 endmodule
 
+/// Destination-clock-domain half of the AXI CDC crossing with clock gating features.
+///
+/// For each of the five AXI channels, this module instantiates the source or destination half of
+/// a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through
+/// the FIFO; see the header of `cdc_fifo_gray` for instructions.
+module axi_cdc_dst_gated #(
+  /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
+  parameter int unsigned LogDepth = 1,
+  parameter type aw_chan_t = logic,
+  parameter type w_chan_t = logic,
+  parameter type b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type r_chan_t = logic,
+  parameter type axi_req_t = logic,
+  parameter type axi_resp_t = logic
+) (
+  // asynchronous slave port
+  input  aw_chan_t  [2**LogDepth-1:0] async_data_slave_aw_data_i,
+  input  logic           [LogDepth:0] async_data_slave_aw_wptr_i,
+  output logic           [LogDepth:0] async_data_slave_aw_rptr_o,
+  input  w_chan_t   [2**LogDepth-1:0] async_data_slave_w_data_i,
+  input  logic           [LogDepth:0] async_data_slave_w_wptr_i,
+  output logic           [LogDepth:0] async_data_slave_w_rptr_o,
+  output b_chan_t   [2**LogDepth-1:0] async_data_slave_b_data_o,
+  output logic           [LogDepth:0] async_data_slave_b_wptr_o,
+  input  logic           [LogDepth:0] async_data_slave_b_rptr_i,
+  input  ar_chan_t  [2**LogDepth-1:0] async_data_slave_ar_data_i,
+  input  logic           [LogDepth:0] async_data_slave_ar_wptr_i,
+  output logic           [LogDepth:0] async_data_slave_ar_rptr_o,
+  output r_chan_t   [2**LogDepth-1:0] async_data_slave_r_data_o,
+  output logic           [LogDepth:0] async_data_slave_r_wptr_o,
+  input  logic           [LogDepth:0] async_data_slave_r_rptr_i,
+  // synchronous master port - clocked by `dst_clk_i`
+  input  logic                        dst_clk_i,
+  input  logic                        dst_rst_ni,
+  input  logic                        clock_down_i,
+  input  logic                        isolate_i,
+  output logic                        incoming_req_o,
+  output axi_req_t                    dst_req_o,
+  input  axi_resp_t                   dst_resp_i
+);
+
+  axi_req_t  dst_req_gated;
+  axi_resp_t dst_resp_gated;
+
+  assign incoming_req_o = dst_req_gated.aw_valid | dst_req_gated.ar_valid | dst_req_gated.w_valid;
+
+  always_comb begin : proc_gate_axi
+    `AXI_SET_REQ_STRUCT(dst_req_o, dst_req_gated)
+    `AXI_SET_RESP_STRUCT(dst_resp_gated, dst_resp_i)
+
+    dst_req_o.aw_valid      = ~isolate_i & ~clock_down_i & dst_req_gated.aw_valid;
+    dst_resp_gated.aw_ready = ~clock_down_i & dst_resp_i.aw_ready;
+    dst_req_o.w_valid       = ~isolate_i & ~clock_down_i & dst_req_gated.w_valid;
+    dst_resp_gated.w_ready  = ~clock_down_i & dst_resp_i.w_ready;
+    dst_resp_gated.b_valid  = dst_resp_i.b_valid;
+    dst_req_o.b_ready       = isolate_i | dst_req_gated.b_ready;
+    dst_req_o.ar_valid      = ~isolate_i & ~clock_down_i & dst_req_gated.ar_valid;
+    dst_resp_gated.ar_ready = ~clock_down_i & dst_resp_i.ar_ready;
+    dst_resp_gated.r_valid  = dst_resp_i.r_valid;
+    dst_req_o.r_ready       = isolate_i | dst_req_gated.r_ready;
+  end
+
+  axi_cdc_dst #(
+    .LogDepth  ( LogDepth   ),
+    .aw_chan_t ( aw_chan_t  ),
+    .w_chan_t  ( w_chan_t   ),
+    .b_chan_t  ( b_chan_t   ),
+    .ar_chan_t ( ar_chan_t  ),
+    .r_chan_t  ( r_chan_t   ),
+    .axi_req_t ( axi_req_t  ),
+    .axi_resp_t( axi_resp_t )
+  ) i_axi_cdc_dst (
+    .async_data_slave_aw_data_i,
+    .async_data_slave_aw_wptr_i,
+    .async_data_slave_aw_rptr_o,
+    .async_data_slave_w_data_i,
+    .async_data_slave_w_wptr_i,
+    .async_data_slave_w_rptr_o,
+    .async_data_slave_b_data_o,
+    .async_data_slave_b_wptr_o,
+    .async_data_slave_b_rptr_i,
+    .async_data_slave_ar_data_i,
+    .async_data_slave_ar_wptr_i,
+    .async_data_slave_ar_rptr_o,
+    .async_data_slave_r_data_o,
+    .async_data_slave_r_wptr_o,
+    .async_data_slave_r_rptr_i,
+    .dst_clk_i,
+    .dst_rst_ni,
+    .dst_req_o  ( dst_req_gated  ),
+    .dst_resp_i ( dst_resp_gated )
+  );
+
+endmodule
+
 
 module axi_cdc_dst_intf #(
   parameter int unsigned AXI_ID_WIDTH = 0,
