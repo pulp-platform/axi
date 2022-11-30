@@ -22,11 +22,12 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 SEEDS=(0)
 
 call_vcs() {
-    $VCS -Mlib=work-"${@: -1}" -Mdir=work-"${@: -1}" -debug_access+r -CFLAGS "-Os" -full64 -xprop=xmerge  "$@"
+    $VCS -Mlib=work-"${@: -1}" -Mdir=work-"${@: -1}" $VCS_OPT  "$@"
     for seed in ${SEEDS[@]}; do
         echo
         echo "----"
         echo "Running with seed: $seed"
+        echo "VCS options: $VCS_OPT"
         ./"${@: -1}" +ntb_random_seed=$seed -exitstatus | tee "${@: -1}"_$seed.log 2>&1
         (! grep -n "Error" "${@: -1}"_$seed.log)
         (! grep -n "Fatal" "${@: -1}"_$seed.log)

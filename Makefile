@@ -23,6 +23,11 @@ else
 	VCS         ?= vcs
 endif
 
+# VCS_DEBUG ?= -debug_access+r
+VCS_DEBUG ?= -debug_access+nomemcbk
+VCS_XPROP ?= -xprop=xmerge
+VCS_OPT   ?= $(VCS_XPROP) $(VCS_DEBUG) -full64 -CFLAGS \"-O4\" -O4 -j9
+
 TBS         ?= axi_addr_test \
                axi_atop_filter \
                axi_bus_compare \
@@ -103,7 +108,7 @@ compile_vcs.log: Bender.yml | build
 
 
 sim_vcs-%.log: compile_vcs.log
-	export VCS="$(VCS)"; cd build && ../scripts/run_vcs.sh --random-seed $* | tee ../$@
+	export VCS="$(VCS)"; export VCS_OPT="$(VCS_OPT)"; cd build && ../scripts/run_vcs.sh --random-seed $* | tee ../$@
 	(! grep -n "Error" $@)
 	(! grep -n "Fatal" $@)
 
