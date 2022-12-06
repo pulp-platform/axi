@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to compare two AXI buses on an FPGA.
 - Add `axi_lite_from_mem` and `axi_from_mem` acting like SRAMs making AXI4 requests downstream.
 - Add `axi_rw_join` and `axi_rw_split` to split/join AXI buses.
+- Add `#_width` functions returning the width of the AXI channels.
 
 ### Changed
 - `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`.  This adds `axi_multicuts`
   in the crossed connections in the xbar between the demuxes and muxes.
 - `axi_pkg`: Add documentation to `xbar_cfg_t`.
+- `axi_pkg`: Define `localparams` to define AXI type widths.
 
 ### Fixed
 
