@@ -434,7 +434,7 @@ module axi_mcast_demux #(
     // any combinational loops.
     assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select;
     assign aw_ready = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select);
-    assign mst_aw_commit_o = {NoMstPorts{aw_ready}} & slv_aw_select;
+    assign mst_aw_commit_o = {NoMstPorts{aw_ready && aw_is_multicast}} & slv_aw_select;
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among

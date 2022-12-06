@@ -176,11 +176,12 @@ module axi_mcast_mux #(
     logic           mst_aw_valid, mst_aw_ready;
 
     // AW arbiter signals
-    mst_aw_chan_t   ucast_aw_chan, mcast_aw_chan;
-    logic           ucast_aw_valid, ucast_aw_ready;
-    logic           mcast_aw_valid, mcast_aw_ready;
-    logic           mcast_not_aw_valid;
-    mst_idx_t       mcast_sel;
+    mst_aw_chan_t          ucast_aw_chan, mcast_aw_chan;
+    logic                  ucast_aw_valid, ucast_aw_ready;
+    logic                  mcast_aw_valid, mcast_aw_ready, mcast_aw_commit;
+    logic                  mcast_not_aw_valid;
+    mst_idx_t              mcast_sel;
+    logic [NoSlvPorts-1:0] mcast_sel_mask;
     logic [NoSlvPorts-1:0] ucast_aw_readies, mcast_aw_readies;
 
     // AW master handshake internal, so that we are able to stall, if w_fifo is full
@@ -276,62 +277,51 @@ module axi_mcast_mux #(
     // AW Channel
     //--------------------------------------
     // Arbitrate unicast requests in round-robin fashion
-    // TODO we have to modify rr_arb_tree to take commit signal
-    // into account... i.e. new handshaking condition
-    // rr_arb_tree #(
-    //   .NumIn    ( NoSlvPorts    ),
-    //   .DataType ( mst_aw_chan_t ),
-    //   .AxiVldRdy( 1'b1          ),
-    //   .LockIn   ( 1'b1          )
-    // ) i_aw_ucast_arbiter (
-    //   .clk_i  ( clk_i           ),
-    //   .rst_ni ( rst_ni          ),
-    //   .flush_i( 1'b0            ),
-    //   .rr_i   ( '0              ),
-    //   .req_i  ( slv_aw_valids & ~slv_is_mcast_i ),
-    //   .gnt_o  ( ucast_aw_readies ),
-    //   .data_i ( slv_aw_chans    ),
-    //   .gnt_i  ( ucast_aw_ready  ),
-    //   .req_o  ( ucast_aw_valid  ),
-    //   .data_o ( ucast_aw_chan   ),
-    //   .idx_o  (                 )
-    // );
+    rr_arb_tree #(
+      .NumIn    ( NoSlvPorts    ),
+      .DataType ( mst_aw_chan_t ),
+      .AxiVldRdy( 1'b1          ),
+      .LockIn   ( 1'b1          )
+    ) i_aw_ucast_arbiter (
+      .clk_i  ( clk_i           ),
+      .rst_ni ( rst_ni          ),
+      .flush_i( 1'b0            ),
+      .rr_i   ( '0              ),
+      .req_i  ( slv_aw_valids & ~slv_is_mcast_i ),
+      .gnt_o  ( ucast_aw_readies ),
+      .data_i ( slv_aw_chans    ),
+      .gnt_i  ( ucast_aw_ready  ),
+      .req_o  ( ucast_aw_valid  ),
+      .data_o ( ucast_aw_chan   ),
+      .idx_o  (                 )
+    );
 
     // Arbitrate multicast requests in priority encoder fashion
+    // TODO colluca: extend lzc to return mask form instead of cnt?
     lzc #(
       .WIDTH ( NoSlvPorts ),
       .MODE  ( 1'b0       ) // Trailing zero mode
     ) i_aw_mcast_lzc (
-      .in_i    ( slv_aw_valids /*& slv_is_mcast_i*/ ),
+      .in_i    ( slv_aw_valids & slv_is_mcast_i ),
       .cnt_o   ( mcast_sel                      ),
       .empty_o ( mcast_not_aw_valid             )
     );
-    // assign mcast_aw_valid = !mcast_not_aw_valid;
-    // assign mcast_aw_chan  = slv_aw_chans[mcast_sel];
-    // always_comb begin
-    //   mcast_aw_readies = '0;
-    //   mcast_aw_readies[mcast_sel] = mcast_aw_ready;
-    // end
+    assign mcast_sel_mask = mcast_not_aw_valid ? '0 : 1 << mcast_sel;
+    assign mcast_aw_chan = slv_aw_chans[mcast_sel];
+    assign mcast_aw_valid = !mcast_not_aw_valid;
+    assign mcast_aw_commit = |slv_aw_commit_i;
+    assign mcast_aw_readies = {NoSlvPorts{mcast_aw_ready}} & mcast_sel_mask;
 
     // Arbitrate "winners" of unicast and multicast arbitrations
     // giving priority to multicast
-    // assign aw_valid = mcast_aw_valid | ucast_aw_valid;
-    // assign mst_aw_chan = mcast_aw_valid ? mcast_aw_chan : ucast_aw_chan;
-    // assign ucast_aw_ready = aw_ready & ~mcast_aw_valid;
-    // assign mcast_aw_ready = aw_ready & mcast_aw_valid;
-    // assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
-
-    // TODO colluca: extend lzc to return mask form instead of cnt?
-    logic [NoSlvPorts-1:0] mask_select;
-    assign mask_select = mcast_not_aw_valid ? '0 : 1 << mcast_sel;
-    assign mst_aw_chan = slv_aw_chans[mcast_sel];
-
-    assign slv_aw_readies = {NoSlvPorts{aw_ready}} & mask_select;
-    // !! CAUTION !! 
-    // This valid depends combinationally on aw_ready,
-    // hence the latter shouldn't depend on the prior to
-    // avoid combinational loops!
-    assign aw_valid = |(slv_aw_commit_i & mask_select);
+    assign mcast_aw_ready = aw_ready && mcast_aw_valid;
+    assign ucast_aw_ready = aw_ready && !mcast_aw_valid;
+    assign mst_aw_chan = mcast_aw_commit ? mcast_aw_chan : ucast_aw_chan;
+    assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
+    // !!! CAUTION !!! 
+    // This valid depends combinationally on aw_ready (through aw_commit),
+    // hence aw_ready shouldn't depend on aw_valid to avoid combinational loops!
+    assign aw_valid = mcast_aw_commit || (ucast_aw_valid && ucast_aw_ready);
 
     // control of the AW channel
     always_comb begin
