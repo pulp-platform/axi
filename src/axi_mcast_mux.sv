@@ -76,13 +76,16 @@ module axi_mcast_mux #(
 
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
+
     spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( slv_reqs_i[0].aw_valid   ),
+      .valid_i ( slv_is_mcast_i[0] ?
+                 slv_aw_commit_i[0] :
+                 slv_reqs_i[0].aw_valid   ),
       .ready_o ( slv_resps_o[0].aw_ready  ),
       .data_i  ( slv_reqs_i[0].aw         ),
       .valid_o ( mst_req_o.aw_valid       ),
@@ -180,7 +183,7 @@ module axi_mcast_mux #(
     logic                  ucast_aw_valid, ucast_aw_ready;
     logic                  mcast_aw_valid, mcast_aw_ready, mcast_aw_commit;
     logic                  mcast_not_aw_valid;
-    mst_idx_t              mcast_sel;
+    mst_idx_t              mcast_sel_q, mcast_sel_d;
     logic [NoSlvPorts-1:0] mcast_sel_mask;
     logic [NoSlvPorts-1:0] ucast_aw_readies, mcast_aw_readies;
 
@@ -303,24 +306,28 @@ module axi_mcast_mux #(
       .MODE  ( 1'b0       ) // Trailing zero mode
     ) i_aw_mcast_lzc (
       .in_i    ( slv_aw_valids & slv_is_mcast_i ),
-      .cnt_o   ( mcast_sel                      ),
+      .cnt_o   ( mcast_sel_d                    ),
       .empty_o ( mcast_not_aw_valid             )
     );
-    assign mcast_sel_mask = mcast_not_aw_valid ? '0 : 1 << mcast_sel;
-    assign mcast_aw_chan = slv_aw_chans[mcast_sel];
+    assign mcast_sel_mask = mcast_not_aw_valid ? '0 : 1 << mcast_sel_d;
+    assign mcast_aw_chan = slv_aw_chans[mcast_sel_q];
     assign mcast_aw_valid = !mcast_not_aw_valid;
     assign mcast_aw_commit = |slv_aw_commit_i;
     assign mcast_aw_readies = {NoSlvPorts{mcast_aw_ready}} & mcast_sel_mask;
 
+    // TODO colluca: change all FFxARN to FFx
+    `FFLARN(mcast_sel_q, mcast_sel_d, mcast_aw_valid && mcast_aw_ready, '0, clk_i, rst_ni)
+
     // Arbitrate "winners" of unicast and multicast arbitrations
     // giving priority to multicast
     assign mcast_aw_ready = aw_ready && mcast_aw_valid;
-    assign ucast_aw_ready = aw_ready && !mcast_aw_valid;
+    assign ucast_aw_ready = aw_ready && !mcast_aw_valid && !mcast_aw_commit;
     assign mst_aw_chan = mcast_aw_commit ? mcast_aw_chan : ucast_aw_chan;
     assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
     // !!! CAUTION !!! 
     // This valid depends combinationally on aw_ready (through aw_commit),
     // hence aw_ready shouldn't depend on aw_valid to avoid combinational loops!
+    // TODO colluca: replace ucast_aw_ready with !mcast_aw_valid to remove combinational loop
     assign aw_valid = mcast_aw_commit || (ucast_aw_valid && ucast_aw_ready);
 
     // control of the AW channel
