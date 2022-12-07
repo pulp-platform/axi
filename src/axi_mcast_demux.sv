@@ -175,6 +175,7 @@ module axi_mcast_demux #(
 
     logic                     slv_aw_valid, slv_aw_valid_chan, slv_aw_valid_sel, slv_aw_valid_mcast;
     logic                     slv_aw_ready, slv_aw_ready_chan, slv_aw_ready_sel, slv_aw_ready_mcast;
+    logic                     accept_aw;
 
     // AW channel to slave ports
     logic [NoMstPorts-1:0]    mst_aw_valids, mst_aw_readies;
@@ -192,7 +193,8 @@ module axi_mcast_demux #(
     logic                     multicast_stall;
     mask_select_t             multicast_select_q, multicast_select_d;
     logic                     multicast_select_load;
-    logic [$clog2(NoMstPorts)+1-1:0] aw_select_popcount;                                                                                  
+    logic [$clog2(NoMstPorts)+1-1:0] aw_select_popcount;
+    logic                     mcast_aw_hs_in_progress;
 
     // W select counter: stores the decision to which masters W beats should go
     mask_select_t             w_select,           w_select_q;
@@ -417,6 +419,31 @@ module axi_mcast_demux #(
       end
     end
 
+    // Multicast AW transaction handshake state
+    typedef enum logic {MCastAwHandshakeIdle, MCastAwHandshakeInProgress} mcast_aw_hs_state_e;
+    mcast_aw_hs_state_e mcast_aw_hs_state_q, mcast_aw_hs_state_d;
+
+    // Update of the multicast AW handshake state
+    always_comb begin
+      mcast_aw_hs_state_d = mcast_aw_hs_state_q;
+      unique case (mcast_aw_hs_state_q)
+        // Waiting for all selected master ports to be ready
+        MCastAwHandshakeIdle:
+          if (accept_aw && aw_is_multicast) begin
+            mcast_aw_hs_state_d = MCastAwHandshakeInProgress;
+          end
+        // Commit is asserted and handshake takes place in the current cycle.
+        // In the next cycle we are again idle
+        MCastAwHandshakeInProgress:
+          mcast_aw_hs_state_d = MCastAwHandshakeIdle;
+        default: ;
+      endcase
+    end
+
+    assign mcast_aw_hs_in_progress = mcast_aw_hs_state_q == MCastAwHandshakeInProgress;
+
+    `FFARN(mcast_aw_hs_state_q, mcast_aw_hs_state_d, MCastAwHandshakeIdle, clk_i, rst_ni)
+
     // When a multicast occurs, the upstream valid signals need to
     // be forwarded to multiple master ports.
     // Proper stream forking is necessary to avoid protocol violations.
@@ -429,8 +456,9 @@ module axi_mcast_demux #(
     // Using commit, instead of valid, to this end ensures that we don't have
     // any combinational loops.
     assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select;
-    assign aw_ready = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select);
-    assign mst_aw_commit_o = {NoMstPorts{aw_ready && aw_is_multicast}} & slv_aw_select;
+    assign accept_aw = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select);
+    assign aw_ready = aw_is_multicast ? mcast_aw_hs_in_progress : accept_aw;
+    assign mst_aw_commit_o = {NoMstPorts{mcast_aw_hs_in_progress}} & slv_aw_select;
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
