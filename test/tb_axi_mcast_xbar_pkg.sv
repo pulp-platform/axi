@@ -236,7 +236,7 @@ package tb_axi_mcast_xbar_pkg;
         // inject expected r beats on this id, if it is an atop
         // throw an error if a multicast atop is attempted (not supported)
         if(masters_axi[i].aw_atop[5]) begin
-          if (num_slaves_matched > 1) $fatal("Multicast ATOPs are not supported");
+          if (num_slaves_matched > 1) $fatal(0, "Multicast ATOPs are not supported");
           // push the required r beats into the right fifo (reuse the exp_b variable)
           $display("        Expect R response, len: %0d.", masters_axi[i].aw_len);
           for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin

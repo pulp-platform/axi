@@ -219,8 +219,7 @@ exec_test() {
             done
             ;;
         axi_mcast_xbar)
-            for GEN_ATOP in 0; do
-            # for GEN_ATOP in 0 1; do
+            for GEN_ATOP in 0 1; do
                 for NUM_MST in 1 6; do
                     for NUM_SLV in 2 9; do
                         for MST_ID_USE in 3 5; do

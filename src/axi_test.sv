@@ -968,6 +968,11 @@ package axi_test;
         $warning("ATOP suppressed because INCR bursts are disabled!");
         beat.ax_atop[5:4] = 2'b00;
       end
+      if (beat.ax_atop[5:4] != 2'b00 && beat.ax_user != '0) begin
+        // We can emit ATOPs only if current burst is not a multicast.
+        $warning("ATOP suppressed because burst is a multicast!");
+        beat.ax_atop[5:4] = 2'b00;
+      end
       if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
         // Determine `ax_atop`.
         if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
@@ -1185,7 +1190,6 @@ package axi_test;
           aw_beat = excl_queue.pop_front();
         end else begin
           aw_beat = new_rand_burst(1'b0);
-          // TODO colluca
           if (AXI_ATOPS) rand_atop_burst(aw_beat);
         end
         while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin

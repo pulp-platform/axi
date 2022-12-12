@@ -13,9 +13,7 @@
 // Based on:
 // - axi_demux.sv
 
-// TODO colluca: handle atops
 // TODO colluca: test UniqueIds, since any_outstanding_trx is not defined in that case
-// TODO colluca: check gen_no_demux case
 
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"

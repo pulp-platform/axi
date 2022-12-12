@@ -240,7 +240,7 @@ module tb_axi_mcast_xbar #(
       axi_rand_master[i].add_memory_region(ArAddrMap[0].start_addr,
                                       ArAddrMap[xbar_cfg.NoAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-      axi_rand_master[i].set_multicast_probability(1);
+      axi_rand_master[i].set_multicast_probability(0.5);
       axi_rand_master[i].reset();
       @(posedge rst_n);
       axi_rand_master[i].run(TbNumReads, TbNumWrites);
