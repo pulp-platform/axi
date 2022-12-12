@@ -104,12 +104,6 @@ import cf_math_pkg::idx_width;
 `else
   typedef logic [idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 `endif
-  typedef logic [(Cfg.NoMstPorts+1)-1:0] mst_port_mask_t;
-
-  typedef struct packed {
-    addr_t addr;
-    addr_t mask;
-  } multi_addr_t;
 
   // signals from the axi_demuxes, one index more for decode error
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
@@ -132,29 +126,8 @@ import cf_math_pkg::idx_width;
 `else
     logic [idx_width(Cfg.NoMstPorts)-1:0] dec_ar_select;
 `endif
-    logic  [Cfg.NoMstPorts-1:0] dec_aw_select;
-    addr_t [Cfg.NoMstPorts-1:0] dec_aw_addr,   dec_aw_mask;
-    logic                       dec_aw_valid,  dec_aw_error;
     logic                       dec_ar_valid,  dec_ar_error;
-    mst_port_mask_t             slv_aw_select;
     mst_port_idx_t              slv_ar_select;
-    addr_t [Cfg.NoMstPorts:0]   slv_aw_addr,   slv_aw_mask;
-    multi_addr_t [Cfg.NoMstPorts:0] slv_aw_mcast;
-
-    multiaddr_decode #(
-      .NoRules(Cfg.NoMstPorts),
-      .addr_t (addr_t),
-      .rule_t (aw_rule_t)
-    ) i_axi_aw_decode (
-      .addr_i     (slv_ports_req_i[i].aw.addr),
-      .mask_i     (slv_ports_req_i[i].aw.user.mcast),
-      .addr_map_i (aw_addr_map_i),
-      .select_o   (dec_aw_select),
-      .addr_o     (dec_aw_addr),
-      .mask_o     (dec_aw_mask),
-      .dec_valid_o(dec_aw_valid),
-      .dec_error_o(dec_aw_error)
-    );
 
     addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
@@ -170,19 +143,8 @@ import cf_math_pkg::idx_width;
       .en_default_idx_i ( '0                         ),
       .default_idx_i    ( '0                         )
     );
-
-    assign slv_aw_select = (dec_aw_error) ?
-        {1'b1, {Cfg.NoMstPorts{1'b0}}} : {1'b0, dec_aw_select};
     assign slv_ar_select = (dec_ar_error) ?
         mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_ar_select);
-    assign slv_aw_addr = {'0, dec_aw_addr};
-    assign slv_aw_mask = {'0, dec_aw_mask};
-
-    // Zip slv_aw_addr and slv_aw_mask into one array of structs
-    for (genvar mst_idx = 0; mst_idx <= Cfg.NoMstPorts; mst_idx++) begin : gen_aw_mcast
-      assign slv_aw_mcast[mst_idx].addr = slv_aw_addr[mst_idx];
-      assign slv_aw_mcast[mst_idx].mask = slv_aw_mask[mst_idx];
-    end
 
     axi_mcast_demux #(
       .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
@@ -203,15 +165,15 @@ import cf_math_pkg::idx_width;
       .SpillW         ( Cfg.LatencyMode[8]     ),
       .SpillB         ( Cfg.LatencyMode[7]     ),
       .SpillAr        ( Cfg.LatencyMode[6]     ),
-      .SpillR         ( Cfg.LatencyMode[5]     )
+      .SpillR         ( Cfg.LatencyMode[5]     ),
+      .aw_rule_t      ( aw_rule_t              )
     ) i_axi_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
+      .slv_aw_addr_map_i( aw_addr_map_i       ),
       .slv_req_i       ( slv_ports_req_i[i]  ),
-      .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
-      .slv_aw_mcast_i  ( slv_aw_mcast        ),
       .slv_resp_o      ( slv_ports_resp_o[i] ),
       .mst_reqs_o      ( slv_reqs[i]         ),
       .mst_resps_i     ( slv_resps[i]        ),
