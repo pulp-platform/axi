@@ -13,8 +13,6 @@
 // Based on:
 // - axi_demux.sv
 
-// TODO colluca: test UniqueIds, since any_outstanding_trx is not defined in that case
-
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 
@@ -472,7 +470,29 @@ module axi_mcast_demux #(
       // derived from existing signals.  The ID counters can therefore be omitted.
       assign lookup_aw_select = slv_aw_select;
       assign aw_select_occupied = 1'b0;
-      assign aw_id_cnt_full = 1'b0;
+
+      // We still need a (single) counter to keep track of any outstanding transactions
+      axi_mcast_demux_id_counters #(
+        .AxiIdBits         ( 0              ),
+        .CounterWidth      ( IdCounterWidth ),
+        .mst_port_select_t ( idx_select_t   )
+      ) i_aw_id_counter (
+        .clk_i                        ( clk_i                          ),
+        .rst_ni                       ( rst_ni                         ),
+        .lookup_axi_id_i              ( '0                             ),
+        .lookup_mst_select_o          ( /* Not used */                 ),
+        .lookup_mst_select_occupied_o ( /* Not used */                 ),
+        .full_o                       ( aw_id_cnt_full                 ),
+        .inject_axi_id_i              ( '0                             ),
+        .inject_i                     ( 1'b0                           ),
+        .push_axi_id_i                ( '0                             ),
+        .push_mst_select_i            ( '0                             ),
+        .push_i                       ( w_cnt_up && !aw_is_multicast   ),
+        .pop_axi_id_i                 ( '0                             ),
+        .pop_i                        ( slv_b_valid & slv_b_ready & ~outstanding_multicast ),
+        .any_outstanding_trx_o        ( aw_any_outstanding_unicast_trx )
+      );
+
     end else begin : gen_aw_id_counter
 
       axi_mcast_demux_id_counters #(

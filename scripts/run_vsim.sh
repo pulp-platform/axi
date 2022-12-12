@@ -225,16 +225,18 @@ exec_test() {
                         for MST_ID_USE in 3 5; do
                             MST_ID=5
                             for DATA_WIDTH in 64 256; do
-                                # for PIPE in 0 1; do
                                 for PIPE in 0; do
-                                    call_vsim tb_axi_mcast_xbar -t 1ns -voptargs="+acc" \
-                                        -gTbNumMasters=$NUM_MST       \
-                                        -gTbNumSlaves=$NUM_SLV        \
-                                        -gTbAxiIdWidthMasters=$MST_ID \
-                                        -gTbAxiIdUsed=$MST_ID_USE     \
-                                        -gTbAxiDataWidth=$DATA_WIDTH  \
-                                        -gTbPipeline=$PIPE            \
-                                        -gTbEnAtop=$GEN_ATOP
+                                    for UNIQUE_IDS in 0 1; do
+                                        call_vsim tb_axi_mcast_xbar -t 1ns -voptargs="+acc" \
+                                            -gTbNumMasters=$NUM_MST       \
+                                            -gTbNumSlaves=$NUM_SLV        \
+                                            -gTbAxiIdWidthMasters=$MST_ID \
+                                            -gTbAxiIdUsed=$MST_ID_USE     \
+                                            -gTbAxiDataWidth=$DATA_WIDTH  \
+                                            -gTbPipeline=$PIPE            \
+                                            -gTbEnAtop=$GEN_ATOP          \
+                                            -gTbUniqueIds=$UNIQUE_IDS
+                                    done
                                 done
                             done
                         done
