@@ -216,6 +216,8 @@ module axi_mcast_demux #(
     // B channels input into the arbitration (unicast transactions)
     // or join module (multicast transactions)
     b_chan_t [NoMstPorts-1:0] mst_b_chans;
+    axi_pkg::resp_t [NoMstPorts-1:0] mst_b_resps;
+    idx_select_t              mst_b_valids_tzc;
     logic    [NoMstPorts-1:0] mst_b_valids,       mst_b_readies;
     logic    [NoMstPorts-1:0] mst_b_readies_arb,  mst_b_readies_join;
 
@@ -623,8 +625,26 @@ module axi_mcast_demux #(
       .oup_valid_o(slv_b_valid_join),
       .oup_ready_i(slv_b_ready)
     );
-    // TODO colluca: merge B channels appropriately
-    assign slv_b_chan_join = mst_b_chans[0];
+    for (genvar i=0; i<NoMstPorts; i++) begin : g_mst_b_resps
+      assign mst_b_resps[i] = multicast_select_q[i] ? mst_b_chans[i].resp : axi_pkg::RESP_OKAY;
+    end
+    // All fields of B other than RESP can be taken from any slave (need not be merged).
+    // We use a priority encoder to take them from the first addressed slave.
+    lzc #(
+      .WIDTH ( NoMstPorts ),
+      .MODE  ( 1'b0       ) // Trailing zero mode
+    ) i_mst_b_valids_tzc (
+      .in_i    ( mst_b_valids & {NoMstPorts{outstanding_multicast}} ),
+      .cnt_o   ( mst_b_valids_tzc                                   ),
+      .empty_o ( /* Not used */                                     )
+    );
+    always_comb begin
+      slv_b_chan_join = mst_b_chans[mst_b_valids_tzc];
+      // If a response to a multicast transaction from any slave is different
+      // from OKAY, we return SLVERR. Note: we assume multicast transactions
+      // cannot be exclusive requests, i.e. the EX_OKAY response is not allowed.
+      slv_b_chan_join.resp = |mst_b_resps ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+    end
 
     // Mux output of arbiter and stream_join_dynamic modules
     assign mst_b_readies = mst_b_readies_arb | mst_b_readies_join;
