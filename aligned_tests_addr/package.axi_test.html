@@ -1,0 +1,120 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Package <a class="package">axi_test</a></h1>
+<div class="docblock">
+<p>A set of testbench utilities for AXI interfaces.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: </span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MAX_READ_TXNS" class="impl"><code class="in-band">MAX_READ_TXNS<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MAX_WRITE_TXNS" class="impl"><code class="in-band">MAX_WRITE_TXNS<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MIN_WAIT_CYCLES" class="impl"><code class="in-band">AX_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MAX_WAIT_CYCLES" class="impl"><code class="in-band">AX_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.W_MIN_WAIT_CYCLES" class="impl"><code class="in-band">W_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.W_MAX_WAIT_CYCLES" class="impl"><code class="in-band">W_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MIN_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MAX_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.SIZE_ALIGN" class="impl"><code class="in-band">SIZE_ALIGN<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_MAX_BURST_LEN" class="impl"><code class="in-band">AXI_MAX_BURST_LEN<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TRAFFIC_SHAPING" class="impl"><code class="in-band">TRAFFIC_SHAPING<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_EXCLS" class="impl"><code class="in-band">AXI_EXCLS<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_ATOPS" class="impl"><code class="in-band">AXI_ATOPS<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_BURST_FIXED" class="impl"><code class="in-band">AXI_BURST_FIXED<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_BURST_INCR" class="impl"><code class="in-band">AXI_BURST_INCR<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_BURST_WRAP" class="impl"><code class="in-band">AXI_BURST_WRAP<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.UNIQUE_IDS" class="impl"><code class="in-band">UNIQUE_IDS<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AXI_STRB_WIDTH" class="impl"><code class="in-band">AXI_STRB_WIDTH<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.N_AXI_IDS" class="impl"><code class="in-band">N_AXI_IDS<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RAND_RESP" class="impl"><code class="in-band">RAND_RESP<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MIN_WAIT_CYCLES" class="impl"><code class="in-band">AX_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MAX_WAIT_CYCLES" class="impl"><code class="in-band">AX_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.R_MIN_WAIT_CYCLES" class="impl"><code class="in-band">R_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.R_MAX_WAIT_CYCLES" class="impl"><code class="in-band">R_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MIN_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MAX_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MIN_ADDR" class="impl"><code class="in-band">MIN_ADDR<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MAX_ADDR" class="impl"><code class="in-band">MAX_ADDR<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MAX_READ_TXNS" class="impl"><code class="in-band">MAX_READ_TXNS<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MAX_WRITE_TXNS" class="impl"><code class="in-band">MAX_WRITE_TXNS<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MIN_WAIT_CYCLES" class="impl"><code class="in-band">AX_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MAX_WAIT_CYCLES" class="impl"><code class="in-band">AX_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.W_MIN_WAIT_CYCLES" class="impl"><code class="in-band">W_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.W_MAX_WAIT_CYCLES" class="impl"><code class="in-band">W_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MIN_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MAX_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TA" class="impl"><code class="in-band">TA<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MIN_WAIT_CYCLES" class="impl"><code class="in-band">AX_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.AX_MAX_WAIT_CYCLES" class="impl"><code class="in-band">AX_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.R_MIN_WAIT_CYCLES" class="impl"><code class="in-band">R_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.R_MAX_WAIT_CYCLES" class="impl"><code class="in-band">R_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MIN_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MIN_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.RESP_MAX_WAIT_CYCLES" class="impl"><code class="in-band">RESP_MAX_WAIT_CYCLES<span class="type-annotation">: int</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP ID width</p>
+</div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP address width</p>
+</div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP data width</p>
+</div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP user width</p>
+</div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+><p>Stimuli test time</p>
+</div><h3 id="parameter.IW" class="impl"><code class="in-band">IW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP ID width</p>
+</div><h3 id="parameter.AW" class="impl"><code class="in-band">AW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP address width</p>
+</div><h3 id="parameter.DW" class="impl"><code class="in-band">DW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP data width</p>
+</div><h3 id="parameter.UW" class="impl"><code class="in-band">UW<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI4+ATOP user width</p>
+</div><h3 id="parameter.TT" class="impl"><code class="in-band">TT<span class="type-annotation">: time</span></code></h3><div class="docblock"
+><p>Stimuli test time</p>
+</div><h3 id="parameter.NUM_CHECKS" class="impl"><code class="in-band">NUM_CHECKS<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.BUS_SIZE" class="impl"><code class="in-band">BUS_SIZE<span class="type-annotation">: axi_pkg::size_t</span></code></h3><div class="docblock"
+></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.ax_beat_t.html">ax_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_beat_t.html">w_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_beat_t.html">b_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_beat_t.html">r_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_driver_t.html">axi_driver_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.burst_t.html">burst_t</a></td><td></td></tr><tr><td><a class="type" href="type.cache_t.html">cache_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.len_t.html">len_t</a></td><td></td></tr><tr><td><a class="type" href="type.size_t.html">size_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.mem_type_t.html">mem_type_t</a></td><td></td></tr><tr><td><a class="type" href="type.ax_beat_t.html">ax_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_beat_t.html">b_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_beat_t.html">r_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_beat_t.html">w_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.mem_region_t.html">mem_region_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_driver_t.html">axi_driver_t</a></td><td></td></tr><tr><td><a class="type" href="type.rand_ax_beat_queue_t.html">rand_ax_beat_queue_t</a></td><td></td></tr><tr><td><a class="type" href="type.ax_beat_t.html">ax_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_beat_t.html">b_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_beat_t.html">r_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_beat_t.html">w_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_driver_t.html">axi_driver_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_driver_t.html">axi_driver_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_driver_t.html">axi_driver_t</a></td><td></td></tr><tr><td><a class="type" href="type.ax_beat_t.html">ax_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_beat_t.html">w_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_beat_t.html">b_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_beat_t.html">r_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.check_e.html">check_e</a></td><td></td></tr><tr><td><a class="type" href="type.byte_t.html">byte_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_id_t.html">axi_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_addr_t.html">axi_addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.ax_beat_t.html">ax_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_beat_t.html">w_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_beat_t.html">b_beat_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_beat_t.html">r_beat_t</a></td><td></td></tr></table>
+</section>
+</body>
+</html>
