@@ -66,6 +66,7 @@ sources:
   - src/axi_slave_compare.sv
   - src/axi_throttle.sv
   - src/axi_to_mem.sv
+  - src/axi_write_buffer.sv
   # Level 3
   - src/axi_cdc.sv
   - src/axi_err_slv.sv
@@ -119,6 +120,7 @@ sources:
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_modify_address.sv
+      - test/tb_axi_rt_unit.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
       - test/tb_axi_slave_compare.sv

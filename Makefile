@@ -33,6 +33,7 @@ TBS         ?= axi_addr_test \
                axi_lite_mailbox \
                axi_lite_xbar \
                axi_modify_address \
+               axi_rt_unit \
                axi_serializer \
                axi_sim_mem \
                axi_to_axi_lite \

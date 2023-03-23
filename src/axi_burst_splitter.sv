@@ -12,6 +12,7 @@
 // Authors:
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "axi/typedef.svh"
 `include "common_cells/registers.svh"
@@ -40,6 +41,9 @@ module axi_burst_splitter #(
 ) (
   input  logic  clk_i,
   input  logic  rst_ni,
+
+  // length
+  input  axi_pkg::len_t len_limit_i,
 
   // Input / Slave Port
   input  axi_req_t  slv_req_i,
@@ -143,6 +147,7 @@ module axi_burst_splitter #(
   ) i_axi_burst_splitter_aw_chan (
     .clk_i,
     .rst_ni,
+    .len_limit_i,
     .ax_i           ( act_req.aw           ),
     .ax_valid_i     ( act_req.aw_valid     ),
     .ax_ready_o     ( act_resp.aw_ready    ),
@@ -161,11 +166,51 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // W Channel
   // --------------------------------------------------
-  // Feed through, except `last`, which is always set.
-  always_comb begin
+  // keep a state where we are in the fragmentation of the w
+  axi_pkg::len_t w_len_d, w_len_q;
+  logic          w_first_d, w_first_q;
+
+  // Feed through, except `last`, which needs to be modified
+  always_comb begin : proc_w_frag
     mst_req_o.w        = act_req.w;
-    mst_req_o.w.last   = 1'b1;        // overwrite last flag
+    w_len_d            = w_len_q;
+    w_first_d          = w_first_q;
+    // the entire detection machine is only required if len_limit > 0
+    if (len_limit_i != 8'h00) begin
+      // only advance the machine if w ready and valid
+      if (act_resp.w_ready & act_req.w_valid)  begin
+        // if the w is the last in the ingress burst, it is in the egress, in this case last is set by
+        // the feed through. We only need to modify if the last is not set upstream
+        if (!act_req.w.last) begin
+          // default here is last = 0
+          mst_req_o.w.last = 1'b0;
+          // we are here meaning there are at least two beats remaining in the w.
+          // first we need to understand if we are first, bc we need to init the counter otherwise
+          if (w_len_q == 8'h00) begin
+            if (w_first_q) begin
+              // we set the counter and the first flag
+              w_len_d   = len_limit_i - 8'h01;
+              w_first_d = 1'b0;
+            end else begin
+              // we are last in sub-burst -> last flag
+              w_len_d   = 8'h00;
+              mst_req_o.w.last = 1'b1;
+            end
+          end else begin
+            // decrement counter
+            w_len_d = w_len_q - 8'h01;
+          end
+        end else begin
+          // we received a last -> reset first flag
+          w_first_d = 1'b1;
+        end
+      end
+    end else begin
+      // we operate in the legacy mode -> every w is last
+      mst_req_o.w.last = 1'b1;
+    end
   end
+
   assign mst_req_o.w_valid  = act_req.w_valid;
   assign act_resp.w_ready   = mst_resp_i.w_ready;
 
@@ -189,7 +234,7 @@ module axi_burst_splitter #(
         if (mst_resp_i.b_valid) begin
           w_cnt_req = 1'b1;
           if (w_cnt_gnt) begin
-            if (w_cnt_len == 8'd0) begin
+            if (w_cnt_len < ({1'b0, len_limit_i} + 9'h001)) begin
               act_resp.b = mst_resp_i.b;
               if (w_cnt_err) begin
                 act_resp.b.resp = axi_pkg::RESP_SLVERR;
@@ -237,6 +282,7 @@ module axi_burst_splitter #(
   ) i_axi_burst_splitter_ar_chan (
     .clk_i,
     .rst_ni,
+    .len_limit_i,
     .ax_i           ( act_req.ar          ),
     .ax_valid_i     ( act_req.ar_valid    ),
     .ax_ready_o     ( act_resp.ar_ready   ),
@@ -273,12 +319,28 @@ module axi_burst_splitter #(
         // If downstream has an R beat and the R counters can give us the remaining length of
         // that burst, ...
         if (mst_resp_i.r_valid) begin
-          r_cnt_req = 1'b1;
-          if (r_cnt_gnt) begin
-            r_last_d = (r_cnt_len == 8'd0);
+          // if downstream is last
+          if (mst_resp_i.r.last) begin
+            r_cnt_req = 1'b1;
+            if (r_cnt_gnt) begin
+              r_last_d = (r_cnt_len < ({1'b0, len_limit_i} + 9'h001));
+              act_resp.r.last   = r_last_d;
+              // Decrement the counter.
+              r_cnt_dec         = 1'b1;
+              // Try to forward the beat upstream.
+              act_resp.r_valid  = 1'b1;
+              if (act_req.r_ready) begin
+                // Acknowledge downstream.
+                mst_req_o.r_ready = 1'b1;
+              end else begin
+                // Wait for upstream to become ready.
+                r_state_d = RWait;
+              end
+            end
+          end else begin
+            // downstream was not last, just a normal read to pass through
+            r_last_d = 1'b0;
             act_resp.r.last   = r_last_d;
-            // Decrement the counter.
-            r_cnt_dec         = 1'b1;
             // Try to forward the beat upstream.
             act_resp.r_valid  = 1'b1;
             if (act_req.r_ready) begin
@@ -310,6 +372,8 @@ module axi_burst_splitter #(
   `FFARN(b_state_q, b_state_d, BReady, clk_i, rst_ni)
   `FFARN(r_last_q, r_last_d, 1'b0, clk_i, rst_ni)
   `FFARN(r_state_q, r_state_d, RFeedthrough, clk_i, rst_ni)
+  `FFARN(w_len_q, w_len_d, 8'h00, clk_i, rst_ni)
+  `FFARN(w_first_q, w_first_d, 1'b1, clk_i, rst_ni)
 
   // --------------------------------------------------
   // Assumptions and assertions
@@ -329,9 +393,9 @@ module axi_burst_splitter #(
     ) else $fatal(1, "Unsupported ATOP that gives rise to a R response received,\
                       cannot respond in protocol-compliant manner!");
   // Outputs
-  assert property (@(posedge clk_i) mst_req_o.aw_valid |-> mst_req_o.aw.len == '0)
+  assert property (@(posedge clk_i) mst_req_o.aw_valid |-> mst_req_o.aw.len <= len_limit_i)
     else $fatal(1, "AW burst longer than a single beat emitted!");
-  assert property (@(posedge clk_i) mst_req_o.ar_valid |-> mst_req_o.ar.len == '0)
+  assert property (@(posedge clk_i) mst_req_o.ar_valid |-> mst_req_o.ar.len <= len_limit_i)
     else $fatal(1, "AR burst longer than a single beat emitted!");
   // pragma translate_on
   `endif
@@ -351,6 +415,9 @@ module axi_burst_splitter_ax_chan #(
   input  logic          clk_i,
   input  logic          rst_ni,
 
+  // length
+  input  axi_pkg::len_t len_limit_i,
+
   input  chan_t         ax_i,
   input  logic          ax_valid_i,
   output logic          ax_ready_o,
@@ -366,7 +433,15 @@ module axi_burst_splitter_ax_chan #(
   input  logic          cnt_req_i,
   output logic          cnt_gnt_o
 );
-  typedef logic[IdWidth-1:0] cnt_id_t;
+  typedef logic[IdWidth-1:0]           cnt_id_t;
+  typedef logic[axi_pkg::LenWidth:0] num_beats_t;
+
+  chan_t      ax_d, ax_q;
+  // keep the number of remaining beats. != len
+  num_beats_t num_beats_d, num_beats_q;
+  // maximum number of beats to subtract in one go
+  num_beats_t max_beats;
+
 
   logic cnt_alloc_req, cnt_alloc_gnt;
   axi_burst_splitter_counters #(
@@ -384,45 +459,55 @@ module axi_burst_splitter_ax_chan #(
     .cnt_set_err_i  ( cnt_set_err_i ),
     .cnt_err_o      ( cnt_err_o     ),
     .cnt_dec_i      ( cnt_dec_i     ),
+    .cnt_delta_i    ( max_beats     ),
     .cnt_req_i      ( cnt_req_i     ),
     .cnt_gnt_o      ( cnt_gnt_o     )
   );
 
-  chan_t ax_d, ax_q;
+  // assign the max_beats depending on the limit value. Limit value is given as an AXI len.
+  // limit = 0 means one beat each AX
+  assign max_beats = {1'b0, len_limit_i} + 9'h001;
 
   enum logic {Idle, Busy} state_d, state_q;
   always_comb begin
     cnt_alloc_req = 1'b0;
     ax_d          = ax_q;
     state_d       = state_q;
+    num_beats_d   = num_beats_q;
     ax_o          = '0;
     ax_valid_o    = 1'b0;
     ax_ready_o    = 1'b0;
     unique case (state_q)
       Idle: begin
         if (ax_valid_i && cnt_alloc_gnt) begin
-          if (ax_i.len == '0) begin // No splitting required -> feed through.
-            ax_o       = ax_i;
-            ax_valid_o = 1'b1;
+
+          // No splitting required -> feed through.
+          if (ax_i.len <= len_limit_i) begin
+            ax_o          = ax_i;
+            ax_valid_o    = 1'b1;
             // As soon as downstream is ready, allocate a counter and acknowledge upstream.
             if (ax_ready_i) begin
               cnt_alloc_req = 1'b1;
               ax_ready_o    = 1'b1;
             end
-          end else begin // Splitting required.
+
+          // Splitting required.
+          end else begin
             // Store Ax, allocate a counter, and acknowledge upstream.
             ax_d          = ax_i;
             cnt_alloc_req = 1'b1;
             ax_ready_o    = 1'b1;
             // Try to feed first burst through.
-            ax_o       = ax_d;
-            ax_o.len   = '0;
-            ax_valid_o = 1'b1;
+            ax_o          = ax_d;
+            // if we are here we can send the length limit once for sure
+            ax_o.len      = len_limit_i;
+            ax_valid_o    = 1'b1;
             if (ax_ready_i) begin
               // Reduce number of bursts still to be sent by one and increment address.
-              ax_d.len--;
+              num_beats_d = ({1'b0, ax_i.len} + 9'h001) - max_beats;
               if (ax_d.burst == axi_pkg::BURST_INCR) begin
-                ax_d.addr += (1 << ax_d.size);
+                // modify the address
+                ax_d.addr += (1 << ax_d.size) * max_beats;
               end
             end
             state_d = Busy;
@@ -432,17 +517,19 @@ module axi_burst_splitter_ax_chan #(
       Busy: begin
         // Sent next burst from split.
         ax_o       = ax_q;
-        ax_o.len   = '0;
         ax_valid_o = 1'b1;
         if (ax_ready_i) begin
-          if (ax_q.len == '0) begin
+          if (num_beats_q <= max_beats) begin
+            // this is the remainder
+            ax_o.len = axi_pkg::len_t'(num_beats_q - 9'h001);
             // If this was the last burst, go back to idle.
             state_d = Idle;
           end else begin
             // Otherwise, continue with the next burst.
-            ax_d.len--;
+            num_beats_d = num_beats_q - max_beats;
+            ax_o.len = len_limit_i;
             if (ax_q.burst == axi_pkg::BURST_INCR) begin
-              ax_d.addr += (1 << ax_q.size);
+              ax_d.addr += (1 << ax_q.size) * max_beats;
             end
           end
         end
@@ -454,13 +541,15 @@ module axi_burst_splitter_ax_chan #(
   // registers
   `FFARN(ax_q, ax_d, '0, clk_i, rst_ni)
   `FFARN(state_q, state_d, Idle, clk_i, rst_ni)
+  `FFARN(num_beats_q, num_beats_d, 9'h000, clk_i, rst_ni)
 endmodule
 
 /// Internal module of [`axi_burst_splitter`](module.axi_burst_splitter) to order transactions.
 module axi_burst_splitter_counters #(
   parameter int unsigned MaxTxns = 0,
   parameter int unsigned IdWidth = 0,
-  parameter type         id_t    = logic [IdWidth-1:0]
+  parameter type         id_t    = logic [IdWidth-1:0],
+  parameter type         cnt_t   = logic [axi_pkg::LenWidth:0]
 ) (
   input  logic          clk_i,
   input  logic          rst_ni,
@@ -475,31 +564,32 @@ module axi_burst_splitter_counters #(
   input  logic          cnt_set_err_i,
   output logic          cnt_err_o,
   input  logic          cnt_dec_i,
+  input  cnt_t          cnt_delta_i,
   input  logic          cnt_req_i,
   output logic          cnt_gnt_o
 );
   localparam int unsigned CntIdxWidth = (MaxTxns > 1) ? $clog2(MaxTxns) : 32'd1;
   typedef logic [CntIdxWidth-1:0]         cnt_idx_t;
-  typedef logic [$bits(axi_pkg::len_t):0] cnt_t;
-  logic [MaxTxns-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q;
+  logic [MaxTxns-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q, cnt_clr;
   cnt_t                cnt_inp;
   cnt_t [MaxTxns-1:0]  cnt_oup;
   cnt_idx_t            cnt_free_idx, cnt_r_idx;
   for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
-    counter #(
+    delta_counter #(
       .WIDTH ( $bits(cnt_t) )
     ) i_cnt (
       .clk_i,
       .rst_ni,
-      .clear_i    ( 1'b0       ),
-      .en_i       ( cnt_dec[i] ),
-      .load_i     ( cnt_set[i] ),
-      .down_i     ( 1'b1       ),
-      .d_i        ( cnt_inp    ),
-      .q_o        ( cnt_oup[i] ),
-      .overflow_o (            )  // not used
+      .clear_i    ( cnt_clr[i]   ),
+      .en_i       ( cnt_dec[i]   ),
+      .load_i     ( cnt_set[i]   ),
+      .down_i     ( 1'b1         ),
+      .delta_i    ( cnt_delta_i  ),
+      .d_i        ( cnt_inp      ),
+      .q_o        ( cnt_oup[i]   ),
+      .overflow_o ( cnt_clr[i]   )
     );
-    assign cnt_free[i] = (cnt_oup[i] == '0);
+    assign cnt_free[i] = (cnt_oup[i] < cnt_delta_i);
   end
   assign cnt_inp = {1'b0, alloc_len_i} + 1;
 
@@ -544,7 +634,7 @@ module axi_burst_splitter_counters #(
   assign read_len    = cnt_oup[cnt_r_idx] - 1;
   assign cnt_len_o   = read_len[7:0];
 
-  assign idq_oup_pop = cnt_req_i & cnt_gnt_o & cnt_dec_i & (cnt_len_o == 8'd0);
+  assign idq_oup_pop = cnt_req_i & cnt_gnt_o & cnt_dec_i & (cnt_len_o < cnt_delta_i);
   always_comb begin
     cnt_dec            = '0;
     cnt_dec[cnt_r_idx] = cnt_req_i & cnt_gnt_o & cnt_dec_i;
