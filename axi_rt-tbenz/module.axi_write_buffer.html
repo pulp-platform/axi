@@ -9,13 +9,14 @@
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.NumOutstanding" class="impl"><code class="in-band">NumOutstanding<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.WBufferDepth" class="impl"><code class="in-band">WBufferDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band">IdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IdxWWidth" class="impl"><code class="in-band">IdxWWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IdxAwWidth" class="impl"><code class="in-band">IdxAwWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band">aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.idx_t" class="impl"><code class="in-band">idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.idx_w_t" class="impl"><code class="in-band">idx_w_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.idx_aw_t" class="impl"><code class="in-band">idx_aw_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
@@ -23,10 +24,11 @@
 ></div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
-></div><h3 id="port.buffer_usage_o" class="impl"><code class="in-band">buffer_usage_o<span class="type-annotation">: output idx_t</span></code></h3><div class="docblock"
+></div><h3 id="port.num_w_stored_o" class="impl"><code class="in-band">num_w_stored_o<span class="type-annotation">: output idx_w_t</span></code></h3><div class="docblock"
+></div><h3 id="port.num_aw_stored_o" class="impl"><code class="in-band">num_aw_stored_o<span class="type-annotation">: output idx_aw_t</span></code></h3><div class="docblock"
 ></div><h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.num_lasts_d" class="impl"><code class="in-band">num_lasts_d<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.num_lasts_q" class="impl"><code class="in-band">num_lasts_q<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
+<h3 id="signal.num_lasts_d" class="impl"><code class="in-band">num_lasts_d<span class="type-annotation">: idx_w_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.num_lasts_q" class="impl"><code class="in-band">num_lasts_q<span class="type-annotation">: idx_w_t</span></code></h3><div class="docblock"
 ></div></section>
 </body>
 </html>
