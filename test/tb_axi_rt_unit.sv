@@ -57,6 +57,22 @@ module tb_axi_rt_unit #(
 
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
+    /// rule type
+  typedef struct packed {
+    logic [7:0] idx;
+    addr_t      start_addr;
+    addr_t      end_addr;
+  } rt_rule_t;
+
+  /// Number of Address Rules
+  localparam int unsigned NumAddrRegions = 32'd2;
+
+  /// example rule
+  localparam rt_rule_t [NumAddrRegions-1:0] RtAddrmap = '{
+    '{ idx: 8'h00, start_addr: 'h00000000, end_addr: 'h80000000 },
+    '{ idx: 8'h01, start_addr: 'h80000000, end_addr: 'hffffffff }
+  };
+
   /// Random AXI slave type
   typedef axi_test::axi_rand_master#(
       .AW                   ( AxiAddrWidth ),
@@ -119,8 +135,6 @@ module tb_axi_rt_unit #(
       .MAPPED               ( 1'b0         )
   ) axi_rand_slave_t;
 
-
-
   // -------------
   // DUT signals
   // -------------
@@ -155,6 +169,7 @@ module tb_axi_rt_unit #(
   `AXI_ASSIGN_FROM_RESP(master, master_rsp)
   `AXI_ASSIGN_FROM_REQ(slave, slave_req)
   `AXI_ASSIGN_TO_RESP(slave_rsp, slave)
+
 
 
 
@@ -198,43 +213,26 @@ module tb_axi_rt_unit #(
   //-----------------------------------
   // DUT
   //-----------------------------------
-  // axi_burst_splitter #(
-  //  .MaxReadTxns  ( SplitterMaxAR ),
-  //  .MaxWriteTxns ( SplitterMaxAW ),
-  //  .AddrWidth    ( AxiAddrWidth  ),
-  //  .DataWidth    ( AxiDataWidth  ),
-  //  .IdWidth      ( AxiIdWidth    ),
-  //  .UserWidth    ( AxiUserWidth  ),
-  //  .axi_req_t    ( axi_req_t     ),
-  //  .axi_resp_t   ( axi_resp_t    )
-  // ) i_axi_burst_splitter (
-  //  .clk_i       ( clk        ),
-  //  .rst_ni      ( rst_n      ),
-  //  .len_limit_i ( 15         ),
-  //  .slv_req_i   ( master_req ),
-  //  .slv_resp_o  ( master_rsp ),
-  //  .mst_req_o   ( slave_req  ),
-  //  .mst_resp_i  ( slave_rsp  )
-  // );
-  // assign slave_req  = master_req;
-  // assign master_rsp = slave_rsp;
-
-  axi_write_buffer #(
-    .NumOutstanding ( 16            ),
-    .WBufferDepth   ( 1024          ),
-    .aw_chan_t      ( axi_aw_chan_t ),
-    .w_chan_t       ( axi_w_chan_t  ),
-    .axi_req_t      ( axi_req_t     ),
-    .axi_resp_t     ( axi_resp_t    )
-  ) i_axi_write_buffer (
+  axi_rt_unit #(
+    .AddrWidth      ( AxiAddrWidth   ),
+    .DataWidth      ( AxiDataWidth   ),
+    .IdWidth        ( AxiIdWidth     ),
+    .UserWidth      ( AxiUserWidth   ),
+    .NumAddrRegions ( NumAddrRegions ),
+    .NumRules       ( NumAddrRegions ),
+    .NumPending     ( 32'd16         ),
+    .rt_rule_t      ( rt_rule_t      ),
+    .addr_t         ( addr_t         ),
+    .axi_req_t      ( axi_req_t      ),
+    .axi_resp_t     ( axi_resp_t     )
+  ) i_axi_rt_unit (
     .clk_i          ( clk            ),
     .rst_ni         ( rst_n          ),
     .slv_req_i      ( master_req     ),
     .slv_resp_o     ( master_rsp     ),
     .mst_req_o      ( slave_req      ),
     .mst_resp_i     ( slave_rsp      ),
-    .num_w_stored_o ( ),
-    .num_aw_stored_o( )
+    .rt_rule_i      ( RtAddrmap      )
   );
 
 

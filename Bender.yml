@@ -75,6 +75,7 @@ sources:
   - src/axi_id_serialize.sv
   - src/axi_lfsr.sv
   - src/axi_multicut.sv
+  - src/axi_rt_unit.sv
   - src/axi_to_axi_lite.sv
   - src/axi_to_mem_banked.sv
   - src/axi_to_mem_interleaved.sv
