@@ -2308,6 +2308,231 @@ package axi_test;
 
   endclass : axi_scoreboard
 
+
+  class axi_file_master #(
+    // AXI interface parameters
+    parameter int   AW = 32,
+    parameter int   DW = 32,
+    parameter int   IW = 8,
+    parameter int   UW = 1,
+    // Stimuli application and test time
+    parameter time  TA = 0ps,
+    parameter time  TT = 0ps
+  );
+
+    typedef axi_test::axi_driver #(
+      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+    ) axi_driver_t;
+
+    typedef axi_driver_t::ax_beat_t ax_beat_t;
+    typedef axi_driver_t::b_beat_t  b_beat_t;
+    typedef axi_driver_t::r_beat_t  r_beat_t;
+    typedef axi_driver_t::w_beat_t  w_beat_t;
+
+    axi_driver_t drv;
+
+    int read_fd, write_fd;
+
+    // store holding read/write transactions between aw-b and ar-r
+    logic b_outst[$];
+    logic r_outst[$];
+
+    // proper decoupling: populate queues from file
+    ax_beat_t aw_queue[$];
+     w_beat_t  w_queue[$];
+    ax_beat_t ar_queue[$];
+
+    // populated by read file function
+    int num_reads;
+    int num_writes;
+
+    function new(
+      virtual AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_USER_WIDTH(UW)
+      ) axi
+    );
+      this.drv = new(axi);
+      this.reset();
+    endfunction
+
+    function void reset();
+      drv.reset_master();
+    endfunction
+
+    function void parse_write();
+      // parsing works
+      int parse_ok;
+
+      // populate according to file
+      while (!$feof(this.write_fd)) begin
+        automatic ax_beat_t current_aw = new;
+        parse_ok = 1;
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_id    ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "0x%x\n", current_aw.ax_addr  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_len   ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_size  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_burst ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_lock  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_cache ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_prot  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_qos   ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_region) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_atop  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.write_fd, "%d\n",   current_aw.ax_user  ) != -1);
+        if (parse_ok) begin
+          this.aw_queue.push_back(current_aw);
+          this.b_outst.push_back(1'b1);
+          // $display("%p", current_aw);
+        end else begin
+          $warning("Issue parsing AW: %p", current_aw);
+        end
+
+        // get write data + strobe
+        for (int i = 0; i <= current_aw.ax_len; i++) begin
+          automatic  w_beat_t current_w  = new;
+          parse_ok = parse_ok & ($fscanf(this.write_fd, "0x%x 0x%x %d\n", current_w.w_data, current_w.w_strb, current_w.w_user) != -1);
+          current_w.w_last = 1'b0;
+          if (i == current_aw.ax_len) begin
+            current_w.w_last = 1'b1;
+          end
+          if (parse_ok) begin
+            this.w_queue.push_back(current_w);
+            // $display("%p", current_w);
+          end else begin
+            $warning("Issue parsing W: %p of AW: %p", current_w, current_aw);
+          end
+        end
+      end
+
+      // debug: print queues
+      // $display("%p", this.aw_queue);
+      // $display("%p", this.w_queue);
+    endfunction
+
+    function void parse_read();
+      // parsing works
+      int parse_ok;
+
+      // populate according to file
+      while (!$feof(this.read_fd)) begin
+        automatic ax_beat_t current_ar = new;
+        parse_ok = 1;
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_id    ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "0x%x\n", current_ar.ax_addr  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_len   ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_size  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_burst ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_lock  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_cache ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_prot  ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_qos   ) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_region) != -1);
+        parse_ok = parse_ok & ($fscanf(this.read_fd, "%d\n",   current_ar.ax_user  ) != -1);
+        if (parse_ok) begin
+          this.ar_queue.push_back(current_ar);
+          this.r_outst.push_back(1'b1);
+          // $display("%p", current_ar);
+        end else begin
+          $warning("Issue parsing AR: %p", current_ar);
+        end
+      end
+
+      // debug: print queues
+      // $display("%p", this.ar_queue);
+    endfunction
+
+    function void load_files(
+      string read_file_name,
+      string write_file_name
+    );
+      this.read_fd = $fopen(read_file_name, "r");
+      this.write_fd = $fopen(write_file_name, "r");
+
+      // check if files are opened
+      if (this.read_fd) begin
+        $info("File %s opened successfully as %d", read_file_name, this.read_fd);
+      end else begin
+        $fatal(1, "File %s not found", read_file_name);
+      end
+      if (this.write_fd) begin
+        $info("File %s opened successfully as %d", write_file_name, this.write_fd);
+      end else begin
+        $fatal(1, "File %s not found", write_file_name);
+      end
+
+      // read files
+      this.parse_read();
+      this.parse_write();
+
+      // update status
+      this.num_reads  = this.ar_queue.size();
+      this.num_writes = this.aw_queue.size();
+    endfunction
+
+    task run_aw();
+      // send aws while there are some left
+      while (this.aw_queue.size() > 0) begin
+        // display("Sending AW: %p", this.aw_queue[0]);
+        drv.send_aw(this.aw_queue[0]);
+        void'(this.aw_queue.pop_front());
+      end
+    endtask
+
+    task run_w();
+      // send ws while there are some left
+      while (this.w_queue.size() > 0) begin
+        // $display("Sending  W: %p", this.w_queue[0]);
+        drv.send_w(this.w_queue[0]);
+        void'(this.w_queue.pop_front());
+      end
+    endtask
+
+    task run_ar();
+      // send ars while there are some left
+      while (this.ar_queue.size() > 0) begin
+        // $display("Sending AR: %p", this.ar_queue[0]);
+        drv.send_ar(this.ar_queue[0]);
+        void'(this.ar_queue.pop_front());
+      end
+    endtask
+
+    task wait_b();
+      automatic b_beat_t b_beat = new;
+      // wait for bs while there are some left
+      while (this.b_outst.size() > 0) begin
+        // $display("Waiting B");
+        drv.recv_b(b_beat);
+        void'(this.b_outst.pop_front());
+      end
+    endtask
+
+    task wait_r();
+      automatic r_beat_t r_beat = new;
+      // wait for rs while there are some left
+      while (this.r_outst.size() > 0) begin
+        // $display("Waiting R");
+        do begin
+          drv.recv_r(r_beat);
+        end while (r_beat.r_last !== 1'b1);
+        void'(this.r_outst.pop_front());
+      end
+    endtask
+
+    task run();
+      fork
+        this.run_aw();
+        this.run_w ();
+        this.run_ar();
+        this.wait_b();
+        this.wait_r();
+      join
+    endtask
+
+  endclass
+
 endpackage
 
 // non synthesisable axi logger module
