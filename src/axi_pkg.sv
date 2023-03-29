@@ -19,49 +19,50 @@
 //! AXI Package
 /// Contains all necessary type definitions, constants, and generally useful functions.
 package axi_pkg;
-    /// AXI Transaction Burst Width.
-  parameter int unsigned BurstWidth  = 32'd2;
+
+  /// AXI Transaction Burst Width.
+  typedef logic [1:0]  burst_t;
+  /// AXI Transaction Response Type.
+  typedef logic [1:0]   resp_t;
+  /// AXI Transaction Cacheability Type.
+  typedef logic [3:0]  cache_t;
+  /// AXI Transaction Protection Type.
+  typedef logic [2:0]   prot_t;
+  /// AXI Transaction Quality of Service Type.
+  typedef logic [3:0]    qos_t;
+  /// AXI Transaction Region Type.
+  typedef logic [3:0] region_t;
+  /// AXI Transaction Length Type.
+  typedef logic [7:0]    len_t;
+  /// AXI Transaction Size Type.
+  typedef logic [2:0]   size_t;
+  /// AXI5 Atomic Operation Type.
+  typedef logic [5:0]   atop_t; // atomic operations
+  /// AXI5 Non-Secure Address Identifier.
+  typedef logic [3:0]  nsaid_t;
+
+  /// AXI Transaction Burst Width.
+  parameter int unsigned BurstWidth  = $size(burst_t);
   /// AXI Transaction Response Width.
-  parameter int unsigned RespWidth   = 32'd2;
+  parameter int unsigned RespWidth   = $size(resp_t);
   /// AXI Transaction Cacheability Width.
-  parameter int unsigned CacheWidth  = 32'd4;
+  parameter int unsigned CacheWidth  = $size(cache_t);
   /// AXI Transaction Protection Width.
-  parameter int unsigned ProtWidth   = 32'd3;
+  parameter int unsigned ProtWidth   = $size(prot_t);
   /// AXI Transaction Quality of Service Width.
-  parameter int unsigned QosWidth    = 32'd4;
+  parameter int unsigned QosWidth    = $size(qos_t);
   /// AXI Transaction Region Width.
-  parameter int unsigned RegionWidth = 32'd4;
+  parameter int unsigned RegionWidth = $size(region_t);
   /// AXI Transaction Length Width.
-  parameter int unsigned LenWidth    = 32'd8;
+  parameter int unsigned LenWidth    = $size(len_t);
   /// AXI Transaction Size Width.
-  parameter int unsigned SizeWidth   = 32'd3;
+  parameter int unsigned SizeWidth   = $size(size_t);
   /// AXI Lock Width.
   parameter int unsigned LockWidth   = 32'd1;
   /// AXI5 Atomic Operation Width.
-  parameter int unsigned AtopWidth   = 32'd6;
+  parameter int unsigned AtopWidth   = $size(atop_t);
   /// AXI5 Non-Secure Address Identifier.
-  parameter int unsigned NsaidWidth  = 32'd4;
-
-  /// AXI Transaction Burst Width.
-  typedef logic [BurstWidth-1:0]  burst_t;
-  /// AXI Transaction Response Type.
-  typedef logic [RespWidth-1:0]   resp_t;
-  /// AXI Transaction Cacheability Type.
-  typedef logic [CacheWidth-1:0]  cache_t;
-  /// AXI Transaction Protection Type.
-  typedef logic [ProtWidth-1:0]   prot_t;
-  /// AXI Transaction Quality of Service Type.
-  typedef logic [QosWidth-1:0]    qos_t;
-  /// AXI Transaction Region Type.
-  typedef logic [RegionWidth-1:0] region_t;
-  /// AXI Transaction Length Type.
-  typedef logic [LenWidth-1:0]    len_t;
-  /// AXI Transaction Size Type.
-  typedef logic [SizeWidth-1:0]   size_t;
-  /// AXI5 Atomic Operation Type.
-  typedef logic [AtopWidth-1:0]   atop_t; // atomic operations
-  /// AXI5 Non-Secure Address Identifier.
-  typedef logic [NsaidWidth-1:0]  nsaid_t;
+  parameter int unsigned NsaidWidth  = $size(nsaid_t);
 
   /// In a fixed burst:
   /// - The address is the same for every transfer in the burst.
