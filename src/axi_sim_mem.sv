@@ -224,10 +224,15 @@ module axi_sim_mem #(
                 $warning("Access to non-initialized byte at address 0x%016x by ID 0x%x.", byte_addr,
                     r_beat.id);
               end
+              // uncomment below line to emulate a initialized memory for the NoC
+              // mem[byte_addr] = byte_addr;
+              // comment below line to emulate a initialized memory for NoC
               r_beat.data[i_byte*8+:8] = 'x;
             end else begin
               r_beat.data[i_byte*8+:8] = mem[byte_addr];
             end
+            // uncomment below line to emulate a initialized memory for the NoC
+            //r_beat.data[i_byte*8+:8] = mem[byte_addr];
           end
           if (r_cnt == ar_queue[0].len) begin
             r_beat.last = 1'b1;
