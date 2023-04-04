@@ -59,6 +59,11 @@ sources:
   - src/axi_xbar.sv
   # Level 5
   - src/axi_xp.sv
+  - src/axi_dma_backend.sv
+  - src/axi_dma_burst_reshaper.sv
+  - src/axi_dma_data_mover.sv
+  - src/axi_dma_data_path.sv
+  - src/axi_aw_w_sync.sv
 
   - target: synth_test
     files:
@@ -74,6 +79,7 @@ sources:
       # Level 0
       - test/tb_axi_dw_pkg.sv
       - test/tb_axi_xbar_pkg.sv
+      - test/tb_axi_xp_pkg.sv
       # Level 1
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
@@ -93,3 +99,6 @@ sources:
       - test/tb_axi_sim_mem.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_xbar.sv
+      - test/tb_axi_xp.sv
+      - test/tb_axi_dma_backend.sv
+      - test/fixture_axi_dma_backend.sv
