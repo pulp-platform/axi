@@ -24,11 +24,11 @@ package tb_axi_xbar_pkg;
     parameter int unsigned IdWidthMasters,
     parameter int unsigned IdWidthSlaves,
     parameter int unsigned UserWidth,
-    parameter int unsigned NoMasters,
-    parameter int unsigned NoSlaves,
-    parameter int unsigned NoAddrRules,
+    parameter int unsigned NumMasters,
+    parameter int unsigned NumSlaves,
+    parameter int unsigned NumAddrRules,
     parameter type         rule_t,
-    parameter rule_t [NoAddrRules-1:0] AddrMap,
+    parameter rule_t [NumAddrRules-1:0] AddrMap,
       // Stimuli application and test time
     parameter time  TimeTest
   );
@@ -36,7 +36,7 @@ package tb_axi_xbar_pkg;
     typedef logic [IdWidthSlaves-1:0]  slv_axi_id_t;
     typedef logic [AddrWidth-1:0]      axi_addr_t;
 
-    typedef logic [$clog2(NoMasters)-1:0] idx_mst_t;
+    typedef logic [$clog2(NumMasters)-1:0] idx_mst_t;
     typedef int unsigned                  idx_slv_t; // from rule_t
 
     typedef struct packed {
@@ -75,25 +75,25 @@ package tb_axi_xbar_pkg;
       .AXI_DATA_WIDTH ( DataWidth      ),
       .AXI_ID_WIDTH   ( IdWidthMasters ),
       .AXI_USER_WIDTH ( UserWidth      )
-    ) masters_axi [NoMasters-1:0];
+    ) masters_axi [NumMasters-1:0];
     virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH ( AddrWidth      ),
       .AXI_DATA_WIDTH ( DataWidth      ),
       .AXI_ID_WIDTH   ( IdWidthSlaves  ),
       .AXI_USER_WIDTH ( UserWidth      )
-    ) slaves_axi [NoSlaves-1:0];
+    ) slaves_axi [NumSlaves-1:0];
     //-----------------------------------------
     // Queues and FIFOs to hold the expected ids
     //-----------------------------------------
     // Write transactions
-    ax_queue_t         exp_aw_queue [NoSlaves-1:0];
-    slave_exp_t        exp_w_fifo   [NoSlaves-1:0][$];
-    slave_exp_t        act_w_fifo   [NoSlaves-1:0][$];
-    master_exp_queue_t exp_b_queue  [NoMasters-1:0];
+    ax_queue_t         exp_aw_queue [NumSlaves-1:0];
+    slave_exp_t        exp_w_fifo   [NumSlaves-1:0][$];
+    slave_exp_t        act_w_fifo   [NumSlaves-1:0][$];
+    master_exp_queue_t exp_b_queue  [NumMasters-1:0];
 
     // Read transactions
-    ax_queue_t            exp_ar_queue  [NoSlaves-1:0];
-    master_exp_queue_t    exp_r_queue  [NoMasters-1:0];
+    ax_queue_t            exp_ar_queue  [NumSlaves-1:0];
+    master_exp_queue_t    exp_r_queue  [NumMasters-1:0];
 
     //-----------------------------------------
     // Bookkeeping
@@ -112,13 +112,13 @@ package tb_axi_xbar_pkg;
         .AXI_DATA_WIDTH ( DataWidth      ),
         .AXI_ID_WIDTH   ( IdWidthMasters ),
         .AXI_USER_WIDTH ( UserWidth      )
-      ) axi_masters_vif [NoMasters-1:0],
+      ) axi_masters_vif [NumMasters-1:0],
       virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH ( AddrWidth      ),
         .AXI_DATA_WIDTH ( DataWidth      ),
         .AXI_ID_WIDTH   ( IdWidthSlaves  ),
         .AXI_USER_WIDTH ( UserWidth      )
-      ) axi_slaves_vif [NoSlaves-1:0]
+      ) axi_slaves_vif [NumSlaves-1:0]
     );
       begin
         this.masters_axi     = axi_masters_vif;
@@ -126,11 +126,11 @@ package tb_axi_xbar_pkg;
         this.tests_expected  = 0;
         this.tests_conducted = 0;
         this.tests_failed    = 0;
-        for (int unsigned i = 0; i < NoMasters; i++) begin
+        for (int unsigned i = 0; i < NumMasters; i++) begin
           this.exp_b_queue[i] = new;
           this.exp_r_queue[i] = new;
         end
-        for (int unsigned i = 0; i < NoSlaves; i++) begin
+        for (int unsigned i = 0; i < NumSlaves; i++) begin
           this.exp_aw_queue[i] = new;
           this.exp_ar_queue[i] = new;
         end
@@ -163,7 +163,7 @@ package tb_axi_xbar_pkg;
       if (masters_axi[i].aw_valid && masters_axi[i].aw_ready) begin
         // check if it should go to a decerror
         decerr = 1'b1;
-        for (int unsigned j = 0; j < NoAddrRules; j++) begin
+        for (int unsigned j = 0; j < NumAddrRules; j++) begin
           if ((masters_axi[i].aw_addr >= AddrMap[j].start_addr) &&
               (masters_axi[i].aw_addr < AddrMap[j].end_addr)) begin
             to_slave_idx = idx_slv_t'(AddrMap[j].idx);
@@ -319,7 +319,7 @@ package tb_axi_xbar_pkg;
         mst_axi_len    = masters_axi[i].ar_len;
         exp_slv_axi_id = {idx_mst_t'(i), mst_axi_id};
         exp_slv_idx    = '0;
-        for (int unsigned j = 0; j < NoAddrRules; j++) begin
+        for (int unsigned j = 0; j < NumAddrRules; j++) begin
           if ((mst_axi_addr >= AddrMap[j].start_addr) && (mst_axi_addr < AddrMap[j].end_addr)) begin
             exp_slv_idx = AddrMap[j].idx;
             exp_decerr  = 1'b0;
@@ -436,48 +436,48 @@ package tb_axi_xbar_pkg;
             // execute all processes that put something into the queues
             PushMon: fork
               proc_mst_aw: begin
-                for (int unsigned i = 0; i < NoMasters; i++) begin
+                for (int unsigned i = 0; i < NumMasters; i++) begin
                   monitor_mst_aw(i);
                 end
               end
               proc_mst_ar: begin
-                for (int unsigned i = 0; i < NoMasters; i++) begin
+                for (int unsigned i = 0; i < NumMasters; i++) begin
                   monitor_mst_ar(i);
                 end
               end
             join : PushMon
             // this one pops and pushes something
             proc_slv_aw: begin
-              for (int unsigned i = 0; i < NoSlaves; i++) begin
+              for (int unsigned i = 0; i < NumSlaves; i++) begin
                 monitor_slv_aw(i);
               end
             end
             proc_slv_w: begin
-              for (int unsigned i = 0; i < NoSlaves; i++) begin
+              for (int unsigned i = 0; i < NumSlaves; i++) begin
                 monitor_slv_w(i);
               end
             end
             // These only pop somethong from the queses
             PopMon: fork
               proc_mst_b: begin
-                for (int unsigned i = 0; i < NoMasters; i++) begin
+                for (int unsigned i = 0; i < NumMasters; i++) begin
                   monitor_mst_b(i);
                 end
               end
               proc_slv_ar: begin
-                for (int unsigned i = 0; i < NoSlaves; i++) begin
+                for (int unsigned i = 0; i < NumSlaves; i++) begin
                   monitor_slv_ar(i);
                 end
               end
               proc_mst_r: begin
-                for (int unsigned i = 0; i < NoMasters; i++) begin
+                for (int unsigned i = 0; i < NumMasters; i++) begin
                   monitor_mst_r(i);
                 end
               end
             join : PopMon
             // check the slave W fifos last
             proc_check_slv_w: begin
-              for (int unsigned i = 0; i < NoSlaves; i++) begin
+              for (int unsigned i = 0; i < NumSlaves; i++) begin
                 check_slv_w(i);
               end
             end

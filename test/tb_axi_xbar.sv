@@ -64,8 +64,8 @@ module tb_axi_xbar #(
   localparam int unsigned TbUserWidth     =  5;
   // In the bench can change this variables which are set here freely,
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NoSlvPorts:      TbNoMasters,
-    NoMstPorts:      TbNoSlaves,
+    NumSlvPorts:     TbNumMasters,
+    NumMstPorts:     TbNumSlaves,
     MaxMstTrans:     10,
     MaxSlvTrans:     6,
     FallThrough:     1'b0,
@@ -76,7 +76,7 @@ module tb_axi_xbar #(
     UniqueIds:       TbUniqueIds,
     AddrWidth:       TbAddrWidth,
     DataWidth:       TbDataWidth,
-    NoAddrRules:     TbNoSlaves
+    NumAddrRules:    TbNumSlaves
   };
   typedef logic [TbIdWidthMasters-1:0] id_mst_t;
   typedef logic [TbIdWidthSlaves-1:0]  id_slv_t;
@@ -103,10 +103,10 @@ module tb_axi_xbar #(
   `AXI_TYPEDEF_RSP_T(slv_rsp_t, b_chan_slv_t, r_chan_slv_t)
 
   // Each slave has its own address range:
-  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = addr_map_gen();
+  localparam rule_t [xbar_cfg.NumAddrRules-1:0] AddrMap = addr_map_gen();
 
-  function rule_t [xbar_cfg.NoAddrRules-1:0] addr_map_gen ();
-    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
+  function rule_t [xbar_cfg.NumAddrRules-1:0] addr_map_gen ();
+    for (int unsigned i = 0; i < xbar_cfg.NumAddrRules; i++) begin
       addr_map_gen[i] = rule_t'{
         idx:        unsigned'(i),
         start_addr:  i    * 32'h0000_2000,
@@ -219,7 +219,7 @@ module tb_axi_xbar #(
       axi_rand_master[i] = new( master_dv[i] );
       end_of_sim[i] <= 1'b0;
       axi_rand_master[i].add_memory_region(AddrMap[0].start_addr,
-                                      AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
+                                      AddrMap[xbar_cfg.NumAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
       axi_rand_master[i].reset();
       @(posedge rst_n);
@@ -245,9 +245,9 @@ module tb_axi_xbar #(
       .IdWidthMasters ( TbIdWidthMasters      ),
       .IdWidthSlaves  ( TbIdWidthSlaves       ),
       .UserWidth      ( TbUserWidth           ),
-      .NoMasters      ( TbNoMasters          ),
-      .NoSlaves       ( TbNoSlaves           ),
-      .NoAddrRules    ( xbar_cfg.NoAddrRules ),
+      .NumMasters     ( TbNumMasters          ),
+      .NumSlaves      ( TbNumSlaves           ),
+      .NumAddrRules   ( xbar_cfg.NumAddrRules ),
       .rule_t         ( rule_t                ),
       .AddrMap        ( AddrMap               ),
       .TimeTest       ( TestTime              )

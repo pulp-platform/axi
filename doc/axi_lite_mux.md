@@ -10,7 +10,7 @@ The following table shows the parameters of the module. The module further requi
 
 | Name          | Type           | Function                                                                                                       |
 |:--------------|:---------------|:---------------------------------------------------------------------------------------------------------------|
-| `NoSlvPorts`  | `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.   |
+| `NumSlvPorts` | `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.   |
 | `MaxWTrans`   | `int unsigned` | The depth of the FIFO holding the highest bits of the ID between the AW and W channel.                         |
 | `FallThrough` | `bit`          | Is the FIFO between the AW and W channel in fall-through mode. Enabling will lead to an additional delay cycle |
 | `SpillXX`     | `bit`          | Enables the optional spill-register on the respective channel.                                                 |

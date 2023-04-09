@@ -2349,14 +2349,14 @@ module axi_chan_logger #(
 );
   // id width from channel
   localparam int unsigned IdWidth = $bits(aw_chan_i.id);
-  localparam int unsigned NoIds   = 2**IdWidth;
+  localparam int unsigned NumIds  = 2**IdWidth;
 
   // queues for writes and reads
   aw_chan_t aw_queue[$];
   w_chan_t  w_queue[$];
   b_chan_t  b_queue[$];
-  aw_chan_t ar_queues[NoIds-1:0][$];
-  r_chan_t  r_queues[NoIds-1:0][$];
+  aw_chan_t ar_queues[NumIds-1:0][$];
+  r_chan_t  r_queues[NumIds-1:0][$];
 
   // channel sampling into queues
   always @(posedge clk_i) #TestTime begin : proc_channel_sample
@@ -2456,11 +2456,11 @@ module axi_chan_logger #(
     automatic b_chan_t     b_beat;
     automatic aw_chan_t    ar_beat;
     automatic r_chan_t     r_beat;
-    automatic int unsigned no_r_beat[NoIds];
+    automatic int unsigned no_r_beat[NumIds];
     automatic int          fd;
 
     // init r counter
-    for (int unsigned i = 0; i < NoIds; i++) begin
+    for (int unsigned i = 0; i < NumIds; i++) begin
       no_r_beat[i] = 0;
     end
 
@@ -2477,7 +2477,7 @@ module axi_chan_logger #(
       $fclose(fd);
     end else
       $display("File was NOT opened successfully : %0d", fd);
-    for (int unsigned i = 0; i < NoIds; i++) begin
+    for (int unsigned i = 0; i < NumIds; i++) begin
       log_name = $sformatf("./axi_log/%s/read_%0h.log", LoggerName, i);
       fd = $fopen(log_name, "w");
       if (fd) begin
@@ -2533,7 +2533,7 @@ module axi_chan_logger #(
       end
 
       // update the read log files
-      for (int unsigned i = 0; i < NoIds; i++) begin
+      for (int unsigned i = 0; i < NumIds; i++) begin
         while (ar_queues[i].size() != 0 && r_queues[i].size() != 0) begin
           ar_beat = ar_queues[i][0];
           r_beat  = r_queues[i].pop_front();

@@ -75,7 +75,7 @@ module axi_burst_splitter #(
     .r_chan_t     ( r_chan_t    ),
     .axi_req_t    ( axi_req_t   ),
     .axi_rsp_t    ( axi_rsp_t   ),
-    .NoMstPorts   ( 2           ),
+    .NumMstPorts  ( 2           ),
     .MaxTrans     ( MaxTxns     ),
     .LookBits     ( IdWidth     ),
     .SpillAw      ( 1'b0        ),

@@ -237,7 +237,7 @@ module axi_lite_mailbox_slave #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
 
-  localparam int unsigned NoRegs = 32'd10;
+  localparam int unsigned NumRegs = 32'd10;
   typedef enum logic [3:0] {
     MBOXW  = 4'd0, // Mailbox write register
     MBOXR  = 4'd1, // Mailbox read register
@@ -257,7 +257,7 @@ module axi_lite_mailbox_slave #(
     addr_t       end_addr;
   } rule_t;
   // output type of the address decoders, to be casted onto the enum type `reg_e`
-  typedef logic [$clog2(NoRegs)-1:0] idx_t;
+  typedef logic [$clog2(NumRegs)-1:0] idx_t;
 
   // LITE response signals, go into the output spill registers to prevent combinational response
   logic         b_valid, b_ready;
@@ -265,8 +265,8 @@ module axi_lite_mailbox_slave #(
   logic         r_valid, r_ready;
   r_chan_lite_t r_chan;
   // address map generation
-  rule_t [NoRegs-1:0] addr_map;
-  for (genvar i = 0; i < NoRegs; i++) begin : gen_addr_map
+  rule_t [NumRegs-1:0] addr_map;
+  for (genvar i = 0; i < NumRegs; i++) begin : gen_addr_map
     assign addr_map[i] = '{
         idx:        i,
         start_addr: base_addr_i +  i      * (DataWidth / 8),
@@ -490,10 +490,10 @@ module axi_lite_mailbox_slave #(
   // address decoder and response FIFOs for the LITE channel, the port can take a new transaction if
   // these FIFOs are not full, not fall through to prevent combinational paths to the return path
   addr_decode #(
-    .NoIndices( NoRegs ),
-    .NoRules  ( NoRegs ),
-    .addr_t   ( addr_t ),
-    .rule_t   ( rule_t )
+    .NoIndices( NumRegs ),
+    .NoRules  ( NumRegs ),
+    .addr_t   ( addr_t  ),
+    .rule_t   ( rule_t  )
   ) i_waddr_decode (
     .addr_i           ( slv_req_i.aw.addr ),
     .addr_map_i       ( addr_map          ),
@@ -516,10 +516,10 @@ module axi_lite_mailbox_slave #(
     .data_o  ( slv_rsp_o.b       )
   );
   addr_decode #(
-    .NoIndices( NoRegs ),
-    .NoRules  ( NoRegs ),
-    .addr_t   ( addr_t ),
-    .rule_t   ( rule_t )
+    .NoIndices( NumRegs ),
+    .NoRules  ( NumRegs ),
+    .addr_t   ( addr_t  ),
+    .rule_t   ( rule_t  )
   ) i_raddr_decode (
     .addr_i           ( slv_req_i.ar.addr ),
     .addr_map_i       ( addr_map          ),

@@ -48,32 +48,32 @@
 `include "common_cells/registers.svh"
 
 module axi_lite_to_apb #(
-  parameter int unsigned NoApbSlaves = 32'd1,  // Number of connected APB slaves
-  parameter int unsigned NoRules     = 32'd1,  // Number of APB address rules
-  parameter int unsigned AddrWidth   = 32'd32, // Address width
-  parameter int unsigned DataWidth   = 32'd32, // Data width
-  parameter bit PipelineRequest      = 1'b0,   // Pipeline request path
-  parameter bit PipelineResponse     = 1'b0,   // Pipeline response path
-  parameter type      axi_lite_req_t = logic,  // AXI4-Lite request struct
-  parameter type      axi_lite_rsp_t = logic,  // AXI4-Lite response sruct
-  parameter type           apb_req_t = logic,  // APB4 request struct
-  parameter type           apb_rsp_t = logic,  // APB4 response struct
-  parameter type              rule_t = logic   // Address Decoder rule from `common_cells`
+  parameter int unsigned NumApbSlaves = 32'd1,  // Number of connected APB slaves
+  parameter int unsigned NumRules     = 32'd1,  // Number of APB address rules
+  parameter int unsigned AddrWidth    = 32'd32, // Address width
+  parameter int unsigned DataWidth    = 32'd32, // Data width
+  parameter bit PipelineRequest       = 1'b0,   // Pipeline request path
+  parameter bit PipelineResponse      = 1'b0,   // Pipeline response path
+  parameter type       axi_lite_req_t = logic,  // AXI4-Lite request struct
+  parameter type       axi_lite_rsp_t = logic,  // AXI4-Lite response sruct
+  parameter type            apb_req_t = logic,  // APB4 request struct
+  parameter type            apb_rsp_t = logic,  // APB4 response struct
+  parameter type               rule_t = logic   // Address Decoder rule from `common_cells`
 ) (
-  input  logic                       clk_i,     // Clock
-  input  logic                       rst_ni,    // Asynchronous reset active low
+  input  logic                        clk_i,     // Clock
+  input  logic                        rst_ni,    // Asynchronous reset active low
   // AXI LITE slave port
-  input  axi_lite_req_t              axi_lite_req_i,
-  output axi_lite_rsp_t              axi_lite_rsp_o,
+  input  axi_lite_req_t               axi_lite_req_i,
+  output axi_lite_rsp_t               axi_lite_rsp_o,
   // APB master port
-  output apb_req_t [NoApbSlaves-1:0] apb_req_o,
-  input  apb_rsp_t [NoApbSlaves-1:0] apb_rsp_i,
+  output apb_req_t [NumApbSlaves-1:0] apb_req_o,
+  input  apb_rsp_t [NumApbSlaves-1:0] apb_rsp_i,
   // APB Slave Address Map
-  input  rule_t    [NoRules-1:0]     addr_map_i
+  input  rule_t    [NumRules-1:0]     addr_map_i
 );
   localparam logic RD = 1'b0; // Encode index of a read request
   localparam logic WR = 1'b1; // Encode index of a write request
-  localparam int unsigned SelIdxWidth = (NoApbSlaves > 32'd1) ? $clog2(NoApbSlaves) : 32'd1;
+  localparam int unsigned SelIdxWidth = (NumApbSlaves > 32'd1) ? $clog2(NumApbSlaves) : 32'd1;
   typedef logic [AddrWidth-1:0]   addr_t;    // AXI4-Lite, APB4 and rule_t addr width
   typedef logic [DataWidth-1:0]   data_t;    // AXI4-Lite and APB4 data width
   typedef logic [DataWidth/8-1:0] strb_t;    // AXI4-Lite and APB4 strb width
@@ -265,10 +265,10 @@ module axi_lite_to_apb #(
   logic     apb_dec_valid;
   sel_idx_t apb_sel_idx;
   addr_decode #(
-    .NoIndices( NoApbSlaves ),
-    .NoRules  ( NoRules     ),
-    .addr_t   ( addr_t      ),
-    .rule_t   ( rule_t      )
+    .NoIndices( NumApbSlaves ),
+    .NoRules  ( NumRules     ),
+    .addr_t   ( addr_t       ),
+    .rule_t   ( rule_t       )
   ) i_apb_decode (
     .addr_i           ( apb_req.addr  ),
     .addr_map_i       ( addr_map_i    ),
@@ -381,38 +381,38 @@ endmodule
 `include "axi/assign.svh"
 
 module axi_lite_to_apb_intf #(
-  parameter int unsigned NoApbSlaves = 32'd1,  // Number of connected APB slaves
-  parameter int unsigned NoRules     = 32'd1,  // Number of APB address rules
-  parameter int unsigned AddrWidth   = 32'd32, // Address width
-  parameter int unsigned DataWidth   = 32'd32, // Data width
-  parameter bit PipelineRequest      = 1'b0,   // Pipeline request path
-  parameter bit PipelineResponse     = 1'b0,   // Pipeline response path
-  parameter type         rule_t      = logic,  // Address Decoder rule from `common_cells`
+  parameter int unsigned NumApbSlaves = 32'd1,  // Number of connected APB slaves
+  parameter int unsigned NumRules     = 32'd1,  // Number of APB address rules
+  parameter int unsigned AddrWidth    = 32'd32, // Address width
+  parameter int unsigned DataWidth    = 32'd32, // Data width
+  parameter bit PipelineRequest       = 1'b0,   // Pipeline request path
+  parameter bit PipelineResponse      = 1'b0,   // Pipeline response path
+  parameter type         rule_t       = logic,  // Address Decoder rule from `common_cells`
   // DEPENDENT PARAMERETS, DO NOT OVERWRITE!
-  parameter type              addr_t = logic [AddrWidth-1:0],
-  parameter type              data_t = logic [DataWidth-1:0],
-  parameter type              strb_t = logic [DataWidth/8-1:0],
-  parameter type              sel_t  = logic [NoApbSlaves-1:0]
+  parameter type               addr_t = logic [AddrWidth-1:0],
+  parameter type               data_t = logic [DataWidth-1:0],
+  parameter type               strb_t = logic [DataWidth/8-1:0],
+  parameter type               sel_t  = logic [NumApbSlaves-1:0]
 ) (
-  input  logic                    clk_i,     // Clock
-  input  logic                    rst_ni,    // Asynchronous reset active low
+  input  logic                     clk_i,     // Clock
+  input  logic                     rst_ni,    // Asynchronous reset active low
   // AXI LITE slave port
-  AXI_LITE.Slave                  slv,
+  AXI_LITE.Slave                   slv,
   // APB master port
-  output addr_t                   paddr_o,
-  output logic  [2:0]             pprot_o,
-  output sel_t                    pselx_o,
-  output logic                    penable_o,
-  output logic                    pwrite_o,
-  output data_t                   pwdata_o,
-  output strb_t                   pstrb_o,
-  input  logic  [NoApbSlaves-1:0] pready_i,
-  input  data_t [NoApbSlaves-1:0] prdata_i,
-  input         [NoApbSlaves-1:0] pslverr_i,
+  output addr_t                    paddr_o,
+  output logic  [2:0]              pprot_o,
+  output sel_t                     pselx_o,
+  output logic                     penable_o,
+  output logic                     pwrite_o,
+  output data_t                    pwdata_o,
+  output strb_t                    pstrb_o,
+  input  logic  [NumApbSlaves-1:0] pready_i,
+  input  data_t [NumApbSlaves-1:0] prdata_i,
+  input         [NumApbSlaves-1:0] pslverr_i,
   // APB Slave Address Map
-  input  rule_t [NoRules-1:0]     addr_map_i
+  input  rule_t [NumRules-1:0]     addr_map_i
 );
-  localparam int unsigned SelIdxWidth = NoApbSlaves > 1 ? $clog2(NoApbSlaves) : 1;
+  localparam int unsigned SelIdxWidth = NumApbSlaves > 1 ? $clog2(NumApbSlaves) : 1;
 
   typedef struct packed {
     addr_t          paddr;   // same as AXI4-Lite
@@ -438,17 +438,17 @@ module axi_lite_to_apb_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t                     axi_req;
-  axi_rsp_t                     axi_rsp;
-  apb_req_t   [NoApbSlaves-1:0] apb_req;
-  apb_rsp_t   [NoApbSlaves-1:0] apb_rsp;
-  logic       [SelIdxWidth-1:0] apb_sel;
+  axi_req_t                      axi_req;
+  axi_rsp_t                      axi_rsp;
+  apb_req_t   [NumApbSlaves-1:0] apb_req;
+  apb_rsp_t   [NumApbSlaves-1:0] apb_rsp;
+  logic       [SelIdxWidth-1:0]  apb_sel;
 
   `AXI_LITE_ASSIGN_TO_REQ(axi_req, slv)
   `AXI_LITE_ASSIGN_FROM_RSP(slv, axi_rsp)
 
   onehot_to_bin #(
-    .ONEHOT_WIDTH ( NoApbSlaves )
+    .ONEHOT_WIDTH ( NumApbSlaves )
   ) i_onehot_to_bin (
     .onehot ( pselx_o ),
     .bin    ( apb_sel )
@@ -460,7 +460,7 @@ module axi_lite_to_apb_intf #(
   assign pwrite_o  = apb_req[apb_sel].pwrite;
   assign pwdata_o  = apb_req[apb_sel].pwdata;
   assign pstrb_o   = apb_req[apb_sel].pstrb;
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_rsp_assign
+  for (genvar i = 0; i < NumApbSlaves; i++) begin : gen_apb_rsp_assign
     assign pselx_o[i]         = apb_req[i].psel;
     assign apb_rsp[i].pready  = pready_i[i];
     assign apb_rsp[i].prdata  = prdata_i[i];
@@ -468,8 +468,8 @@ module axi_lite_to_apb_intf #(
   end
 
   axi_lite_to_apb #(
-    .NoApbSlaves      ( NoApbSlaves       ),
-    .NoRules          ( NoRules           ),
+    .NumApbSlaves     ( NumApbSlaves      ),
+    .NumRules         ( NumRules          ),
     .AddrWidth        ( AddrWidth         ),
     .DataWidth        ( DataWidth         ),
     .PipelineRequest  ( PipelineRequest   ),

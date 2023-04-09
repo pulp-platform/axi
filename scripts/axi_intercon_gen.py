@@ -329,13 +329,13 @@ class AxiIntercon:
         ns = len(self.slaves)
 
         raw += """
-  localparam int unsigned NoMasters   = 32'd{};    // How many Axi Masters there are
-  localparam int unsigned NoSlaves    = 32'd{};    // How many Axi Slaves  there are
+  localparam int unsigned NumMasters  = 32'd{};    // How many Axi Masters there are
+  localparam int unsigned NumSlaves   = 32'd{};    // How many Axi Slaves  there are
 
   // axi configuration
   localparam int unsigned IdWidthMasters =  32'd{};
   localparam int unsigned IdUsed         =  32'd{}; // Has to be <= IdWidthMasters
-  localparam int unsigned IdWidthSlaves  =  IdWidthMasters + $clog2(NoMasters);
+  localparam int unsigned IdWidthSlaves  =  IdWidthMasters + $clog2(NumMasters);
   localparam int unsigned AddrWidth      =  32'd32;    //  Address Width
   localparam int unsigned DataWidth      =  32'd64;    //  Data Width
   localparam int unsigned StrbWidth      =  DataWidth / 8;
@@ -343,8 +343,8 @@ class AxiIntercon:
 """.format(nm, ns, max_idw, max_idw)
         raw += "  localparam axi_pkg::xbar_cfg_t xbar_cfg = '{\n"
         raw += """
-    NoSlvPorts:      NoMasters,
-    NoMstPorts:      NoSlaves,
+    NumSlvPorts:     NumMasters,
+    NumMstPorts:     NumSlaves,
     MaxMstTrans:     10,
     MaxSlvTrans:     6,
     FallThrough:     1'b0,
@@ -354,7 +354,7 @@ class AxiIntercon:
     UniqueIds:       1'b0,
     AddrWidth:       AddrWidth,
     DataWidth:       DataWidth,
-    NoAddrRules:     NoSlaves
+    NumAddrRules:    NumSlaves
 """
         raw += "  };\n"
         raw += """

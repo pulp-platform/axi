@@ -16,11 +16,11 @@
 `include "axi/assign.svh"
 
 module tb_axi_isolate #(
-    parameter int unsigned NoWrites = 50000,  // How many writes per master
-    parameter int unsigned NoReads  = 30000   // How many reads per master
+    parameter int unsigned NumWrites = 50000,  // How many writes per master
+    parameter int unsigned NumReads  = 30000   // How many reads per master
   );
   // Random master no Transactions
-  localparam int unsigned NoPendingDut = 16;
+  localparam int unsigned NumPendingDut = 16;
   // Random Master Atomics
   localparam int unsigned MaxAW      = 32'd30;
   localparam int unsigned MaxAR      = 32'd30;
@@ -116,7 +116,7 @@ module tb_axi_isolate #(
   // DUT
   //-----------------------------------
   axi_isolate_intf #(
-    .NUM_PENDING    ( NoPendingDut ), // number of pending requests
+    .NUM_PENDING    ( NumPendingDut ), // number of pending requests
     .AXI_ID_WIDTH   ( IdWidth      ), // AXI ID width
     .AXI_ADDR_WIDTH ( AddrWidth    ), // AXI address width
     .AXI_DATA_WIDTH ( DataWidth    ), // AXI data width
@@ -138,7 +138,7 @@ module tb_axi_isolate #(
     axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
     axi_rand_master.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NoReads, NoWrites);
+    axi_rand_master.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
@@ -179,11 +179,11 @@ module tb_axi_isolate #(
       end
 
       if ((aw % PrintTnx == 0) && ! aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTnx == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 

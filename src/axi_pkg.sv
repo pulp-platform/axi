@@ -477,10 +477,10 @@ package axi_pkg;
   typedef struct packed {
     /// Number of slave ports of the crossbar.
     /// This many master modules are connected to it.
-    int unsigned   NoSlvPorts;
+    int unsigned   NumSlvPorts;
     /// Number of master ports of the crossbar.
     /// This many slave modules are connected to it.
-    int unsigned   NoMstPorts;
+    int unsigned   NumMstPorts;
     /// Maximum number of open transactions each master connected to the crossbar can have in
     /// flight at the same time.
     int unsigned   MaxMstTrans;
@@ -513,7 +513,7 @@ package axi_pkg;
     /// The number of address rules defined for routing of the transactions.
     /// Each master port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
-    int unsigned   NoAddrRules;
+    int unsigned   NumAddrRules;
   } xbar_cfg_t;
 
   /// Commonly used rule types for `axi_xbar` (64-bit addresses).

@@ -168,7 +168,7 @@ module axi_iw_converter #(
       end
   end else if (MstPortIdWidth > SlvPortIdWidth) begin : gen_upsize
     axi_id_prepend #(
-      .NoBus          ( 32'd1           ),
+      .NumBus         ( 32'd1           ),
       .IdWidthSlvPort ( SlvPortIdWidth  ),
       .IdWidthMstPort ( MstPortIdWidth  ),
       .slv_aw_chan_t  ( slv_aw_t        ),

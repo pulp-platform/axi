@@ -19,7 +19,7 @@
 //
 // These can be used to relax timing pressure on very long AXI busses.
 module axi_multicut #(
-  parameter int unsigned NoCuts = 32'd1, // Number of cuts.
+  parameter int unsigned NumCuts = 32'd1, // Number of cuts.
   // AXI channel structs
   parameter type aw_chan_t = logic,
   parameter type  w_chan_t = logic,
@@ -40,21 +40,21 @@ module axi_multicut #(
   input  axi_rsp_t mst_rsp_i
 );
 
-  if (NoCuts == '0) begin : gen_no_cut
+  if (NumCuts == '0) begin : gen_no_cut
     // degenerate case, connect input to output
     assign mst_req_o = slv_req_i;
     assign slv_rsp_o = mst_rsp_i;
   end else begin : gen_axi_cut
     // instantiate all needed cuts
-    axi_req_t [NoCuts:0] cut_req;
-    axi_rsp_t [NoCuts:0] cut_rsp;
+    axi_req_t [NumCuts:0] cut_req;
+    axi_rsp_t [NumCuts:0] cut_rsp;
 
     // connect slave to the lowest index
     assign cut_req[0] = slv_req_i;
     assign slv_rsp_o  = cut_rsp[0];
 
     // AXI cuts
-    for (genvar i = 0; i < NoCuts; i++) begin : gen_axi_cuts
+    for (genvar i = 0; i < NumCuts; i++) begin : gen_axi_cuts
       axi_cut #(
         .Bypass    (      1'b0 ),
         .aw_chan_t ( aw_chan_t ),
@@ -75,15 +75,15 @@ module axi_multicut #(
     end
 
     // connect master to the highest index
-    assign mst_req_o       = cut_req[NoCuts];
-    assign cut_rsp[NoCuts] = mst_rsp_i;
+    assign mst_req_o        = cut_req[NumCuts];
+    assign cut_rsp[NumCuts] = mst_rsp_i;
   end
 
   // Check the invariants
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assert(NoCuts >= 0);
+    assert(NumCuts >= 0);
   end
   `endif
   // pragma translate_on
@@ -130,7 +130,7 @@ module axi_multicut_intf #(
   `AXI_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_multicut #(
-    .NoCuts    (  NUM_CUTS ),
+    .NumCuts   (  NUM_CUTS ),
     .aw_chan_t ( aw_chan_t ),
     .w_chan_t  (  w_chan_t ),
     .b_chan_t  (  b_chan_t ),
@@ -204,7 +204,7 @@ module axi_lite_multicut_intf #(
   `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_multicut #(
-    .NoCuts    (  NUM_CUTS ),
+    .NumCuts   (  NUM_CUTS ),
     .aw_chan_t ( aw_chan_t ),
     .w_chan_t  (  w_chan_t ),
     .b_chan_t  (  b_chan_t ),

@@ -61,7 +61,7 @@ module axi_synth_bench (
   // AXI4-Lite crossbar
   for (genvar i = 0; i < 3; i++) begin
     synth_axi_lite_xbar #(
-      .NoSlvMst  ( NUM_SLAVE_MASTER[i] )
+      .NumSlvMst  ( NUM_SLAVE_MASTER[i] )
     ) i_lite_xbar (.*);
   end
 
@@ -84,7 +84,7 @@ module axi_synth_bench (
     localparam int unsigned DataWidth = (2**i_data) * 8;
     for (genvar i_slv = 0; i_slv < 3; i_slv++) begin
       synth_axi_lite_to_apb #(
-        .NoApbSlaves ( NUM_SLAVE_MASTER[i_slv] ),
+        .NumApbSlaves ( NUM_SLAVE_MASTER[i_slv] ),
         .DataWidth   ( DataWidth               )
       ) i_axi_lite_to_apb (.*);
     end
@@ -285,8 +285,8 @@ endmodule
 `include "axi/typedef.svh"
 
 module synth_axi_lite_to_apb #(
-  parameter int unsigned NoApbSlaves = 0,
-  parameter int unsigned DataWidth   = 0
+  parameter int unsigned NumApbSlaves = 0,
+  parameter int unsigned DataWidth    = 0
 ) (
   input logic clk_i,  // Clock
   input logic rst_ni  // Asynchronous reset active low
@@ -320,16 +320,16 @@ module synth_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t                   axi_req;
-  axi_rsp_t                   axi_rsp;
-  apb_req_t [NoApbSlaves-1:0] apb_req;
-  apb_rsp_t [NoApbSlaves-1:0] apb_rsp;
+  axi_req_t                    axi_req;
+  axi_rsp_t                    axi_rsp;
+  apb_req_t [NumApbSlaves-1:0] apb_req;
+  apb_rsp_t [NumApbSlaves-1:0] apb_rsp;
 
-  axi_pkg::xbar_rule_32_t [NoApbSlaves-1:0] addr_map;
+  axi_pkg::xbar_rule_32_t [NumApbSlaves-1:0] addr_map;
 
   axi_lite_to_apb #(
-    .NoApbSlaves    ( NoApbSlaves             ),
-    .NoRules        ( NoApbSlaves             ),
+    .NumApbSlaves   ( NumApbSlaves            ),
+    .NumRules       ( NumApbSlaves            ),
     .AddrWidth      ( 32'd32                  ),
     .DataWidth      ( DataWidth               ),
     .axi_lite_req_t ( axi_req_t               ),
@@ -393,7 +393,7 @@ endmodule
 `include "axi/typedef.svh"
 
 module synth_axi_lite_xbar #(
-  parameter int unsigned NoSlvMst = 32'd1
+  parameter int unsigned NumSlvMst = 32'd1
 ) (
   input logic clk_i,  // Clock
   input logic rst_ni  // Asynchronous reset active low
@@ -410,22 +410,22 @@ module synth_axi_lite_xbar #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
   localparam axi_pkg::xbar_cfg_t XbarCfg = '{
-    NoSlvPorts:         NoSlvMst,
-    NoMstPorts:         NoSlvMst,
+    NumSlvPorts:        NumSlvMst,
+    NumMstPorts:        NumSlvMst,
     MaxMstTrans:        32'd5,
     MaxSlvTrans:        32'd5,
     FallThrough:        1'b1,
     LatencyMode:        axi_pkg::CUT_ALL_PORTS,
     AddrWidth:          32'd32,
     DataWidth:          32'd32,
-    NoAddrRules:        NoSlvMst,
+    NumAddrRules:       NumSlvMst,
     default:            '0
   };
 
-  axi_pkg::xbar_rule_32_t [NoSlvMst-1:0] addr_map;
-  logic                                  test;
-  axi_lite_req_t          [NoSlvMst-1:0] mst_reqs, slv_reqs;
-  axi_lite_rsp_t          [NoSlvMst-1:0] mst_rsps, slv_rsps;
+  axi_pkg::xbar_rule_32_t [NumSlvMst-1:0] addr_map;
+  logic                                   test;
+  axi_lite_req_t          [NumSlvMst-1:0] mst_reqs, slv_reqs;
+  axi_lite_rsp_t          [NumSlvMst-1:0] mst_rsps, slv_rsps;
 
   axi_lite_xbar #(
     .Cfg             ( XbarCfg                 ),

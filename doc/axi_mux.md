@@ -7,7 +7,7 @@ The opposite function to the AXI demultiplexer is performed by the AXI Multiplex
 The Multiplexer module is has a simpler structure than the demultiplexer introduced in the previous section. The requests on the AW and AR channels get merged with the same round robin arbitration used for merging the responses in the demultiplexer. One key difference however is the mechanism how the multiplexer determines from which slave port a request came. It uses for this the higher bits of the `axi_id` field of a request. The number of bits can be calculated with:
 
 ```systemverilog
-$clog2(NoSlavePorts)
+$clog2(NumSlavePorts)
 ```
 
 This restricts the type of ID which can be sent through each slave port of the module. When the higher ID bits do not correspond to the index of the port the following response will be sent back through to the wrong master, leading to a breakdown of the functionality. So for using this module it is recommended to extend each AXI ID by the required amount of bits indicating the index of the respective slave port, before being sent over this module.
@@ -25,7 +25,7 @@ The following table shows the parameters of the module. The module further requi
 | Name         | Type           | Function                                                                                                    |
 |:------------ |:-------------- |:----------------------------------------------------------------------------------------------------------- |
 | `IdWidth`    | `int unsigned` | The width of the AXI transaction ID in bits.                                                                |
-| `NoSlvPorts` | `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.|
+| `NumSlvPorts`| `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.|
 | `MaxWTrans`  | `int unsigned` | The depth of the FIFO holding the highest bits of the ID between the AW and W channel.                      |
 | `FallThrough`| `bit`          | Is the FIFO between the AW and W channel in fall-through mode. Enabling will lead to longer cycle delays.   |
 | `SpillXX`    | `bit`          | Enables the optional spill-register on the respective channel.                                              |

@@ -12,7 +12,7 @@ A block-diagram of the crossbar is shown below:
 
 The crossbar has a configurable number of slave and master ports.
 
-The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports must be `IdWidthSlvPorts + $clog_2(NoSlvPorts)`.
+The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports must be `IdWidthSlvPorts + $clog_2(NumSlvPorts)`.
 
 
 ## Address Map
@@ -41,8 +41,8 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 
 | Name              | Type               | Definition |
 |:------------------|:-------------------|:-----------|
-| `NoSlvPorts`      | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
-| `NoMstPorts`      | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
+| `NumSlvPorts`     | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
+| `NumMstPorts`     | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
 | `MaxMstTrans`     | `int unsigned`     | Each slave port can have at most this many transactions [in flight](../doc#in-flight). |
 | `MaxSlvTrans`     | `int unsigned`     | Each master port can have at most this many transactions per ID [in flight](../doc#in-flight). |
 | `FallThrough`     | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from the AW channel. |
@@ -52,7 +52,7 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 | `UniqueIds`       | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the crossbar.  See the [`axi_demux` documentation](axi_demux#ordering-and-stalls) for details. |
 | `AddrWidth`       | `int unsigned`     | The AXI address width. |
 | `DataWidth`       | `int unsigned`     | The AXI data width. |
-| `NoAddrRules`     | `int unsigned`     | The number of address map rules. |
+| `NumAddrRules`    | `int unsigned`     | The number of address map rules. |
 
 The other parameters are types to define the ports of the crossbar.  The `*_chan_t` and `*_req_t`/`*_rsp_t` types must be bound in accordance to the configuration with the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.  The `rule_t` type must be bound to an address decoding rule with the same address width as in the configuration, and `axi_pkg` contains definitions for 64- and 32-bit addresses.
 

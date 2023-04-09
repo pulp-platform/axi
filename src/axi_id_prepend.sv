@@ -16,7 +16,7 @@
 // Constraints enforced through assertions: ID width of slave and master port
 
 module axi_id_prepend #(
-  parameter int unsigned NoBus          = 1,     // Can take multiple axi busses
+  parameter int unsigned NumBus         = 1,     // Can take multiple axi busses
   parameter int unsigned IdWidthSlvPort = 4,     // AXI ID Width of the Slave Ports
   parameter int unsigned IdWidthMstPort = 6,     // AXI ID Width of the Master Ports
   parameter type         slv_aw_chan_t  = logic, // AW Channel Type for slv port
@@ -35,50 +35,50 @@ module axi_id_prepend #(
   input  logic [PreIdWidth-1:0] pre_id_i, // ID to be prepended
   // slave port (input), connect master modules here
   // AW channel
-  input  slv_aw_chan_t [NoBus-1:0] slv_aw_chans_i,
-  input  logic         [NoBus-1:0] slv_aw_valids_i,
-  output logic         [NoBus-1:0] slv_aw_readies_o,
+  input  slv_aw_chan_t [NumBus-1:0] slv_aw_chans_i,
+  input  logic         [NumBus-1:0] slv_aw_valids_i,
+  output logic         [NumBus-1:0] slv_aw_readies_o,
   //  W channel
-  input  slv_w_chan_t  [NoBus-1:0] slv_w_chans_i,
-  input  logic         [NoBus-1:0] slv_w_valids_i,
-  output logic         [NoBus-1:0] slv_w_readies_o,
+  input  slv_w_chan_t  [NumBus-1:0] slv_w_chans_i,
+  input  logic         [NumBus-1:0] slv_w_valids_i,
+  output logic         [NumBus-1:0] slv_w_readies_o,
   //  B channel
-  output slv_b_chan_t  [NoBus-1:0] slv_b_chans_o,
-  output logic         [NoBus-1:0] slv_b_valids_o,
-  input  logic         [NoBus-1:0] slv_b_readies_i,
+  output slv_b_chan_t  [NumBus-1:0] slv_b_chans_o,
+  output logic         [NumBus-1:0] slv_b_valids_o,
+  input  logic         [NumBus-1:0] slv_b_readies_i,
   // AR channel
-  input  slv_ar_chan_t [NoBus-1:0] slv_ar_chans_i,
-  input  logic         [NoBus-1:0] slv_ar_valids_i,
-  output logic         [NoBus-1:0] slv_ar_readies_o,
+  input  slv_ar_chan_t [NumBus-1:0] slv_ar_chans_i,
+  input  logic         [NumBus-1:0] slv_ar_valids_i,
+  output logic         [NumBus-1:0] slv_ar_readies_o,
   //  R channel
-  output slv_r_chan_t  [NoBus-1:0] slv_r_chans_o,
-  output logic         [NoBus-1:0] slv_r_valids_o,
-  input  logic         [NoBus-1:0] slv_r_readies_i,
+  output slv_r_chan_t  [NumBus-1:0] slv_r_chans_o,
+  output logic         [NumBus-1:0] slv_r_valids_o,
+  input  logic         [NumBus-1:0] slv_r_readies_i,
   // master ports (output), connect slave modules here
   // AW channel
-  output mst_aw_chan_t [NoBus-1:0] mst_aw_chans_o,
-  output logic         [NoBus-1:0] mst_aw_valids_o,
-  input  logic         [NoBus-1:0] mst_aw_readies_i,
+  output mst_aw_chan_t [NumBus-1:0] mst_aw_chans_o,
+  output logic         [NumBus-1:0] mst_aw_valids_o,
+  input  logic         [NumBus-1:0] mst_aw_readies_i,
   //  W channel
-  output mst_w_chan_t  [NoBus-1:0] mst_w_chans_o,
-  output logic         [NoBus-1:0] mst_w_valids_o,
-  input  logic         [NoBus-1:0] mst_w_readies_i,
+  output mst_w_chan_t  [NumBus-1:0] mst_w_chans_o,
+  output logic         [NumBus-1:0] mst_w_valids_o,
+  input  logic         [NumBus-1:0] mst_w_readies_i,
   //  B channel
-  input  mst_b_chan_t  [NoBus-1:0] mst_b_chans_i,
-  input  logic         [NoBus-1:0] mst_b_valids_i,
-  output logic         [NoBus-1:0] mst_b_readies_o,
+  input  mst_b_chan_t  [NumBus-1:0] mst_b_chans_i,
+  input  logic         [NumBus-1:0] mst_b_valids_i,
+  output logic         [NumBus-1:0] mst_b_readies_o,
   // AR channel
-  output mst_ar_chan_t [NoBus-1:0] mst_ar_chans_o,
-  output logic         [NoBus-1:0] mst_ar_valids_o,
-  input  logic         [NoBus-1:0] mst_ar_readies_i,
+  output mst_ar_chan_t [NumBus-1:0] mst_ar_chans_o,
+  output logic         [NumBus-1:0] mst_ar_valids_o,
+  input  logic         [NumBus-1:0] mst_ar_readies_i,
   //  R channel
-  input  mst_r_chan_t  [NoBus-1:0] mst_r_chans_i,
-  input  logic         [NoBus-1:0] mst_r_valids_i,
-  output logic         [NoBus-1:0] mst_r_readies_o
+  input  mst_r_chan_t  [NumBus-1:0] mst_r_chans_i,
+  input  logic         [NumBus-1:0] mst_r_valids_i,
+  output logic         [NumBus-1:0] mst_r_readies_o
 );
 
   // prepend the ID
-  for (genvar i = 0; i < NoBus; i++) begin : gen_id_prepend
+  for (genvar i = 0; i < NumBus; i++) begin : gen_id_prepend
     if (PreIdWidth == 0) begin : gen_no_prepend
       assign mst_aw_chans_o[i] = slv_aw_chans_i[i];
       assign mst_ar_chans_o[i] = slv_ar_chans_i[i];
@@ -112,7 +112,7 @@ module axi_id_prepend #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin : p_assert
-    assert(NoBus > 0)
+    assert(NumBus > 0)
       else $fatal(1, "Input must be at least one element wide.");
     assert(PreIdWidth == ($bits(mst_aw_chans_o[0].id) - $bits(slv_aw_chans_i[0].id)))
       else $fatal(1, "Prepend ID Width must be: $bits(mst_aw_chans_o.id)-$bits(slv_aw_chans_i.id)");

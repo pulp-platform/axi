@@ -30,9 +30,9 @@ module tb_axi_addr_test #(
   localparam int unsigned UserWidth = 32'd1;
 
   // Sim print config, how many transactions
-  localparam int unsigned PrintTnx = 1000;
-  localparam int unsigned NoReads  = 0;
-  localparam int unsigned NoWrites = NumTests;
+  localparam int unsigned PrintTnx  = 1000;
+  localparam int unsigned NumReads  = 0;
+  localparam int unsigned NumWrites = NumTests;
 
 
   typedef logic [AddrWidth:0] addr_t;
@@ -46,7 +46,7 @@ module tb_axi_addr_test #(
   endclass
 
   // Random master no Transactions
-  localparam int unsigned NoPendingDut = 16;
+  localparam int unsigned NumPendingDut = 16;
 
   // timing parameters
   localparam time CyclTime = 10ns;
@@ -150,11 +150,11 @@ module tb_axi_addr_test #(
       end
 
       if ((aw % PrintTnx == 0) && ! aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTnx == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 

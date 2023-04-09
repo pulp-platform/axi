@@ -209,18 +209,18 @@ module axi_dw_downsizer #(
   logic                mst_req_aw_err;
 
   axi_demux #(
-    .IdWidth    (IdWidth           ),
-    .LookBits   (IdWidth           ),
-    .aw_chan_t  (aw_chan_t         ),
-    .w_chan_t   (mst_w_chan_t      ),
-    .b_chan_t   (b_chan_t          ),
-    .ar_chan_t  (ar_chan_t         ),
-    .r_chan_t   (mst_r_chan_t      ),
-    .axi_req_t  (mst_port_axi_req_t),
-    .axi_rsp_t  (mst_port_axi_rsp_t),
-    .NoMstPorts (2                 ),
-    .MaxTrans   (MaxReads          ),
-    .SpillAw    (1'b1              ) // Required to break dependency between AW and W channels
+    .IdWidth     (IdWidth           ),
+    .LookBits    (IdWidth           ),
+    .aw_chan_t   (aw_chan_t         ),
+    .w_chan_t    (mst_w_chan_t      ),
+    .b_chan_t    (b_chan_t          ),
+    .ar_chan_t   (ar_chan_t         ),
+    .r_chan_t    (mst_r_chan_t      ),
+    .axi_req_t   (mst_port_axi_req_t),
+    .axi_rsp_t   (mst_port_axi_rsp_t),
+    .NumMstPorts (2                 ),
+    .MaxTrans    (MaxReads          ),
+    .SpillAw     (1'b1              ) // Required to break dependency between AW and W channels
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),

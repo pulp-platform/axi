@@ -23,11 +23,11 @@
 
 module tb_axi_lite_xbar;
   // Dut parameters
-  localparam int unsigned NoMasters   = 32'd6;    // How many Masters there are
-  localparam int unsigned NoSlaves    = 32'd8;    // How many Slaves  there are
+  localparam int unsigned NumMasters   = 32'd6;    // How many Masters there are
+  localparam int unsigned NumSlaves    = 32'd8;    // How many Slaves  there are
   // Random master no Transactions
-  localparam int unsigned NoWrites   = 32'd10000;  // How many writes per master
-  localparam int unsigned NoReads    = 32'd10000;  // How many reads per master
+  localparam int unsigned NumWrites   = 32'd10000;  // How many writes per master
+  localparam int unsigned NumReads    = 32'd10000;  // How many reads per master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -38,15 +38,15 @@ module tb_axi_lite_xbar;
   localparam int unsigned StrbWidth      =  DataWidth / 32'd8;
   // in the bench can change this variables which are set here freely
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NoSlvPorts:         NoMasters,
-    NoMstPorts:         NoSlaves,
+    NumSlvPorts:        NumMasters,
+    NumMstPorts:        NumSlaves,
     MaxMstTrans:        32'd10,
     MaxSlvTrans:        32'd6,
     FallThrough:        1'b0,
     LatencyMode:        axi_pkg::CUT_ALL_AX,
     AddrWidth:          AddrWidth,
     DataWidth:          DataWidth,
-    NoAddrRules:        32'd8,
+    NumAddrRules:       32'd8,
     default:            '0
   };
   typedef logic [AddrWidth-1:0]      addr_t;
@@ -54,7 +54,7 @@ module tb_axi_lite_xbar;
   typedef logic [DataWidth-1:0]      data_t;
   typedef logic [StrbWidth-1:0]      strb_t;
 
-  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
+  localparam rule_t [xbar_cfg.NumAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
     '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
     '{idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
@@ -92,7 +92,7 @@ module tb_axi_lite_xbar;
   logic clk;
   // DUT signals
   logic rst_n;
-  logic [NoMasters-1:0] end_of_sim;
+  logic [NumMasters-1:0] end_of_sim;
 
   // -------------------------------
   // AXI Interfaces
@@ -100,31 +100,31 @@ module tb_axi_lite_xbar;
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master [NoMasters-1:0] ();
+  ) master [NumMasters-1:0] ();
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master_dv [NoMasters-1:0] (clk);
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
+  ) master_dv [NumMasters-1:0] (clk);
+  for (genvar i = 0; i < NumMasters; i++) begin : gen_conn_dv_masters
     `AXI_LITE_ASSIGN(master[i], master_dv[i])
   end
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AddrWidth     ),
     .AXI_DATA_WIDTH ( DataWidth     )
-  ) slave [NoSlaves-1:0] ();
+  ) slave [NumSlaves-1:0] ();
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth     ),
     .AXI_DATA_WIDTH ( DataWidth     )
-  ) slave_dv [NoSlaves-1:0](clk);
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
+  ) slave_dv [NumSlaves-1:0](clk);
+  for (genvar i = 0; i < NumSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_LITE_ASSIGN(slave_dv[i], slave[i])
   end
   // -------------------------------
   // AXI Rand Masters and Slaves
   // -------------------------------
   // Masters control simulation run time
-  for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
+  for (genvar i = 0; i < NumMasters; i++) begin : gen_rand_master
     initial begin : proc_generate_traffic
       automatic rand_lite_master_t lite_axi_master = new ( master_dv[i], $sformatf("MST_%0d", i));
       automatic data_t          data = '0;
@@ -134,12 +134,12 @@ module tb_axi_lite_xbar;
       @(posedge rst_n);
       lite_axi_master.write(32'h0000_1100, axi_pkg::prot_t'('0), 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
       lite_axi_master.read(32'h0000_e100, axi_pkg::prot_t'('0), data, resp);
-      lite_axi_master.run(NoReads, NoWrites);
+      lite_axi_master.run(NumReads, NumWrites);
       end_of_sim[i] <= 1'b1;
     end
   end
 
-  for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
+  for (genvar i = 0; i < NumSlaves; i++) begin : gen_rand_slave
     initial begin : proc_recieve_traffic
       automatic rand_lite_slave_t lite_axi_slave = new( slave_dv[i] , $sformatf("SLV_%0d", i));
       lite_axi_slave.reset();

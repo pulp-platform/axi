@@ -146,8 +146,8 @@ module axi_to_mem_banked #(
     .ar_chan_t   ( axi_ar_chan_t ),
     .r_chan_t    ( axi_r_chan_t  ),
     .axi_req_t   ( axi_req_t     ),
-    .axi_rsp_t   ( axi_rsp_t     ),
-    .NoMstPorts  ( 32'd2         ),
+    .axi_rsp_t   ( axi_rsp_t    ),
+    .NumMstPorts ( 32'd2         ),
     .MaxTrans    ( MemLatency+2  ), // allow multiple Ax vectors to not starve W channel
     .LookBits    ( 32'd1         ), // select is fixed, do not need it
     .UniqueIds   ( 1'b0          ),

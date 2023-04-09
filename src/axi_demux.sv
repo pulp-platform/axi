@@ -47,7 +47,7 @@ module axi_demux #(
   parameter type         r_chan_t       = logic,
   parameter type         axi_req_t      = logic,
   parameter type         axi_rsp_t      = logic,
-  parameter int unsigned NoMstPorts     = 32'd0,
+  parameter int unsigned NumMstPorts    = 32'd0,
   parameter int unsigned MaxTrans       = 32'd8,
   parameter int unsigned LookBits       = 32'd3,
   parameter bit          UniqueIds      = 1'b0,
@@ -57,7 +57,7 @@ module axi_demux #(
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter int unsigned SelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter int unsigned SelectWidth    = (NumMstPorts > 32'd1) ? $clog2(NumMstPorts) : 32'd1,
   parameter type         select_t       = logic [SelectWidth-1:0]
 ) (
   input  logic                          clk_i,
@@ -69,8 +69,8 @@ module axi_demux #(
   input  select_t                       slv_ar_select_i,
   output axi_rsp_t                      slv_rsp_o,
   // Master Ports
-  output axi_req_t    [NoMstPorts-1:0]  mst_reqs_o,
-  input  axi_rsp_t    [NoMstPorts-1:0]  mst_rsps_i
+  output axi_req_t    [NumMstPorts-1:0] mst_reqs_o,
+  input  axi_rsp_t    [NumMstPorts-1:0] mst_rsps_i
 );
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
@@ -78,7 +78,7 @@ module axi_demux #(
 
 
   // pass through if only one master port
-  if (NoMstPorts == 32'h1) begin : gen_no_demux
+  if (NumMstPorts == 32'h1) begin : gen_no_demux
     spill_register #(
       .T       ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   )
@@ -177,20 +177,20 @@ module axi_demux #(
     logic                     w_cnt_up,           w_cnt_down;
 
     // Register which locks the AW valid signal
-    logic                     lock_aw_valid_d,    lock_aw_valid_q, load_aw_lock;
-    logic                     aw_valid,           aw_ready;
+    logic                      lock_aw_valid_d,    lock_aw_valid_q, load_aw_lock;
+    logic                      aw_valid,           aw_ready;
 
     // W channel from spill reg
-    w_chan_t                  slv_w_chan;
-    logic                     slv_w_valid,        slv_w_ready;
+    w_chan_t                   slv_w_chan;
+    logic                      slv_w_valid,        slv_w_ready;
 
     // B channles input into the arbitration
-    b_chan_t [NoMstPorts-1:0] mst_b_chans;
-    logic    [NoMstPorts-1:0] mst_b_valids,       mst_b_readies;
+    b_chan_t [NumMstPorts-1:0] mst_b_chans;
+    logic    [NumMstPorts-1:0] mst_b_valids,       mst_b_readies;
 
     // B channel to spill register
-    b_chan_t                  slv_b_chan;
-    logic                     slv_b_valid,        slv_b_ready;
+    b_chan_t                   slv_b_chan;
+    logic                      slv_b_valid,        slv_b_ready;
 
     //--------------------------------------
     // Read Transaction
@@ -200,21 +200,21 @@ module axi_demux #(
     logic                     slv_ar_ready, slv_ar_ready_chan, slv_ar_ready_sel;
 
     // AR ID counter
-    select_t                  lookup_ar_select;
-    logic                     ar_select_occupied, ar_id_cnt_full;
-    logic                     ar_push;
+    select_t                   lookup_ar_select;
+    logic                      ar_select_occupied, ar_id_cnt_full;
+    logic                      ar_push;
 
     // Register which locks the AR valid signel
-    logic                     lock_ar_valid_d,    lock_ar_valid_q, load_ar_lock;
-    logic                     ar_valid,           ar_ready;
+    logic                      lock_ar_valid_d,    lock_ar_valid_q, load_ar_lock;
+    logic                      ar_valid,           ar_ready;
 
     // R channles input into the arbitration
-    r_chan_t [NoMstPorts-1:0] mst_r_chans;
-    logic    [NoMstPorts-1:0] mst_r_valids, mst_r_readies;
+    r_chan_t [NumMstPorts-1:0] mst_r_chans;
+    logic    [NumMstPorts-1:0] mst_r_valids, mst_r_readies;
 
     // R channel to spill register
-    r_chan_t                  slv_r_chan;
-    logic                     slv_r_valid,        slv_r_ready;
+    r_chan_t                   slv_r_chan;
+    logic                      slv_r_valid,        slv_r_ready;
 
     //--------------------------------------
     //--------------------------------------
@@ -329,7 +329,7 @@ module axi_demux #(
       assign aw_id_cnt_full = 1'b0;
     end else begin : gen_aw_id_counter
       axi_demux_id_counters #(
-        .IdBits            ( LookBits    ),
+        .IdBits            ( LookBits       ),
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_aw_id_counter (
@@ -410,10 +410,10 @@ module axi_demux #(
 
     // Arbitration of the different B responses
     rr_arb_tree #(
-      .NumIn    ( NoMstPorts ),
-      .DataType ( b_chan_t   ),
-      .AxiVldRdy( 1'b1       ),
-      .LockIn   ( 1'b1       )
+      .NumIn    ( NumMstPorts ),
+      .DataType ( b_chan_t    ),
+      .AxiVldRdy( 1'b1        ),
+      .LockIn   ( 1'b1        )
     ) i_b_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
@@ -522,7 +522,7 @@ module axi_demux #(
       assign ar_id_cnt_full = 1'b0;
     end else begin : gen_ar_id_counter
       axi_demux_id_counters #(
-        .IdBits            ( LookBits    ),
+        .IdBits            ( LookBits       ),
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_ar_id_counter (
@@ -562,10 +562,10 @@ module axi_demux #(
 
     // Arbitration of the different r responses
     rr_arb_tree #(
-      .NumIn    ( NoMstPorts ),
-      .DataType ( r_chan_t   ),
-      .AxiVldRdy( 1'b1       ),
-      .LockIn   ( 1'b1       )
+      .NumIn    ( NumMstPorts ),
+      .DataType ( r_chan_t    ),
+      .AxiVldRdy( 1'b1        ),
+      .LockIn   ( 1'b1        )
     ) i_r_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
@@ -591,7 +591,7 @@ module axi_demux #(
       slv_w_ready = 1'b0;
       w_cnt_down  = 1'b0;
 
-      for (int unsigned i = 0; i < NoMstPorts; i++) begin
+      for (int unsigned i = 0; i < NumMstPorts; i++) begin
         // AW channel
         mst_reqs_o[i].aw       = slv_aw_chan;
         mst_reqs_o[i].aw_valid = 1'b0;
@@ -623,7 +623,7 @@ module axi_demux #(
       end
     end
     // unpack the response B and R channels for the arbitration
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_b_channels
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_b_channels
       assign mst_b_chans[i]        = mst_rsps_i[i].b;
       assign mst_b_valids[i]       = mst_rsps_i[i].b_valid;
       assign mst_r_chans[i]        = mst_rsps_i[i].r;
@@ -636,20 +636,20 @@ module axi_demux #(
 `ifndef VERILATOR
 `ifndef XSIM
     initial begin: validate_params
-      no_mst_ports: assume (NoMstPorts > 0) else
-        $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
+      no_mst_ports: assume (NumMstPorts > 0) else
+        $fatal(1, "The Number of slaves (NumMstPorts) has to be at least 1");
       AXI_ID_BITS:  assume (IdWidth >= LookBits) else
         $fatal(1, "IdBits has to be equal or smaller than IdWidth.");
     end
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
-                                                 (slv_aw_select_i < NoMstPorts))) else
+                                                 (slv_aw_select_i < NumMstPorts))) else
       $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\
-                 NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
+                 NumMstPorts: %d", slv_aw_select_i, NumMstPorts);
     ar_select: assume property( @(posedge clk_i) (slv_req_i.ar_valid |->
-                                                 (slv_ar_select_i < NoMstPorts))) else
+                                                 (slv_ar_select_i < NumMstPorts))) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
-                 NoMstPorts: %d", slv_ar_select_i, NoMstPorts);
+                 NumMstPorts: %d", slv_ar_select_i, NumMstPorts);
     aw_valid_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready) |=> aw_valid) else
       $fatal(1, "aw_valid was deasserted, when aw_ready = 0 in last cycle.");
     ar_valid_stable: assert property( @(posedge clk_i)
@@ -668,10 +668,10 @@ module axi_demux #(
                                |=> $stable(slv_ar_select)) else
       $fatal(1, "slv_ar_select unstable with valid set.");
     internal_ar_select: assert property( @(posedge clk_i)
-        (ar_valid |-> slv_ar_select < NoMstPorts))
+        (ar_valid |-> slv_ar_select < NumMstPorts))
       else $fatal(1, "slv_ar_select illegal while ar_valid.");
     internal_aw_select: assert property( @(posedge clk_i)
-        (aw_valid |-> slv_aw_select < NoMstPorts))
+        (aw_valid |-> slv_aw_select < NumMstPorts))
       else $fatal(1, "slv_aw_select illegal while aw_valid.");
     w_underflow: assert property( @(posedge clk_i)
         ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
@@ -707,14 +707,14 @@ module axi_demux_id_counters #(
   input  logic [IdBits-1:0] pop_axi_id_i,
   input  logic              pop_i
 );
-  localparam int unsigned NoCounters = 2**IdBits;
+  localparam int unsigned NumCounters = 2**IdBits;
   typedef logic [CounterWidth-1:0] cnt_t;
 
   // registers, each gets loaded when push_en[i]
-  mst_port_select_t [NoCounters-1:0] mst_select_q;
+  mst_port_select_t [NumCounters-1:0] mst_select_q;
 
   // counter signals
-  logic [NoCounters-1:0] push_en, inject_en, pop_en, occupied, cnt_full;
+  logic [NumCounters-1:0] push_en, inject_en, pop_en, occupied, cnt_full;
 
   //-----------------------------------
   // Lookup
@@ -729,7 +729,7 @@ module axi_demux_id_counters #(
   assign pop_en    = (pop_i)    ? (1 << pop_axi_id_i)    : '0;
   assign full_o    = |cnt_full;
   // counters
-  for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
+  for (genvar i = 0; i < NumCounters; i++) begin : gen_counters
     logic cnt_en, cnt_down, overflow;
     cnt_t cnt_delta, in_flight;
     always_comb begin
@@ -871,7 +871,7 @@ module axi_demux_intf #(
     .r_chan_t       (  r_chan_t     ), //  R Channel Type
     .axi_req_t      ( axi_req_t     ),
     .axi_rsp_t      ( axi_rsp_t     ),
-    .NoMstPorts     ( NO_MST_PORTS  ),
+    .NumMstPorts    ( NO_MST_PORTS  ),
     .MaxTrans       ( MAX_TRANS     ),
     .LookBits       ( AXI_LOOK_BITS ),
     .UniqueIds      ( UNIQUE_IDS    ),

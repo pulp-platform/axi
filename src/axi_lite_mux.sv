@@ -29,7 +29,7 @@ module axi_lite_mux #(
   parameter type           r_chan_t  = logic, //  R LITE Channel Type
   parameter type     axi_lite_req_t  = logic, // AXI4-Lite request type
   parameter type     axi_lite_rsp_t  = logic, // AXI4-Lite response type
-  parameter int unsigned NoSlvPorts  = 32'd0, // Number of slave ports
+  parameter int unsigned NumSlvPorts = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write or read
   parameter int unsigned MaxTrans    = 32'd0,
   // If enabled, this multiplexer is purely combinatorial
@@ -42,18 +42,18 @@ module axi_lite_mux #(
   parameter bit          SpillAr     = 1'b1,
   parameter bit          SpillR      = 1'b0
 ) (
-  input  logic                           clk_i,    // Clock
-  input  logic                           rst_ni,   // Asynchronous reset active low
-  input  logic                           test_i,   // Test Mode enable
+  input  logic                            clk_i,    // Clock
+  input  logic                            rst_ni,   // Asynchronous reset active low
+  input  logic                            test_i,   // Test Mode enable
   // slave ports (AXI4-Lite inputs), connect master modules here
-  input  axi_lite_req_t [NoSlvPorts-1:0] slv_reqs_i,
-  output axi_lite_rsp_t [NoSlvPorts-1:0] slv_rsps_o,
+  input  axi_lite_req_t [NumSlvPorts-1:0] slv_reqs_i,
+  output axi_lite_rsp_t [NumSlvPorts-1:0] slv_rsps_o,
   // master port (AXI4-Lite output), connect slave module here
-  output axi_lite_req_t                  mst_req_o,
-  input  axi_lite_rsp_t                  mst_rsp_i
+  output axi_lite_req_t                   mst_req_o,
+  input  axi_lite_rsp_t                   mst_rsp_i
 );
   // pass through if only one slave port
-  if (NoSlvPorts == 32'h1) begin : gen_no_mux
+  if (NumSlvPorts == 32'h1) begin : gen_no_mux
     spill_register #(
       .T       ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   )
@@ -123,11 +123,11 @@ module axi_lite_mux #(
   // other non degenerate cases
   end else begin : gen_mux
     // typedef for the FIFO types
-    typedef logic [$clog2(NoSlvPorts)-1:0] select_t;
+    typedef logic [$clog2(NumSlvPorts)-1:0] select_t;
 
     // input to the AW arbitration tree, unpacked from request struct
-    aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
-    logic     [NoSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
+    aw_chan_t [NumSlvPorts-1:0] slv_aw_chans;
+    logic     [NumSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
 
     // AW channel arb tree decision
     select_t  aw_select;
@@ -163,8 +163,8 @@ module axi_lite_mux #(
     logic     mst_b_valid,  mst_b_ready;
 
     // input to the AR arbitration tree, unpacked from request struct
-    ar_chan_t [NoSlvPorts-1:0] slv_ar_chans;
-    logic     [NoSlvPorts-1:0] slv_ar_valids, slv_ar_readies;
+    ar_chan_t [NumSlvPorts-1:0] slv_ar_chans;
+    logic     [NumSlvPorts-1:0] slv_ar_valids, slv_ar_readies;
 
     // AR channel for when spill is enabled
     select_t  ar_select;
@@ -189,16 +189,16 @@ module axi_lite_mux #(
     // AW Channel
     //--------------------------------------
     // unpach AW channel from request/response array
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_aw_arb_input
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_aw_arb_input
       assign slv_aw_chans[i]         = slv_reqs_i[i].aw;
       assign slv_aw_valids[i]        = slv_reqs_i[i].aw_valid;
       assign slv_rsps_o[i].aw_ready = slv_aw_readies[i];
     end
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts ),
-      .DataType ( aw_chan_t  ),
-      .AxiVldRdy( 1'b1       ),
-      .LockIn   ( 1'b1       )
+      .NumIn    ( NumSlvPorts ),
+      .DataType ( aw_chan_t   ),
+      .AxiVldRdy( 1'b1        ),
+      .LockIn   ( 1'b1        )
     ) i_aw_arbiter (
       .clk_i  ( clk_i          ),
       .rst_ni ( rst_ni         ),
@@ -285,7 +285,7 @@ module axi_lite_mux #(
     // multiplexer
     assign mst_w_chan      = slv_reqs_i[w_select].w;
     assign mst_w_valid     = (!w_fifo_empty && !b_fifo_full) ? slv_reqs_i[w_select].w_valid  : 1'b0;
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_w_ready
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_slv_w_ready
       assign slv_rsps_o[i].w_ready =  mst_w_ready & ~w_fifo_empty &
                                       ~b_fifo_full & (w_select == select_t'(i));
     end
@@ -327,7 +327,7 @@ module axi_lite_mux #(
     // B Channel
     //--------------------------------------
     // replicate B channels
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_rsps_b
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_slv_rsps_b
       assign slv_rsps_o[i].b       = mst_b_chan;
       assign slv_rsps_o[i].b_valid = mst_b_valid & ~b_fifo_empty & (b_select == select_t'(i));
     end
@@ -352,16 +352,16 @@ module axi_lite_mux #(
     // AR Channel
     //--------------------------------------
     // unpack AR channel from request/response struct
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_ar_arb_input
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_ar_arb_input
       assign slv_ar_chans[i]         = slv_reqs_i[i].ar;
       assign slv_ar_valids[i]        = slv_reqs_i[i].ar_valid;
       assign slv_rsps_o[i].ar_ready = slv_ar_readies[i];
     end
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts ),
-      .DataType ( ar_chan_t  ),
-      .AxiVldRdy( 1'b1       ),
-      .LockIn   ( 1'b1       )
+      .NumIn    ( NumSlvPorts ),
+      .DataType ( ar_chan_t   ),
+      .AxiVldRdy( 1'b1        ),
+      .LockIn   ( 1'b1        )
     ) i_ar_arbiter (
       .clk_i  ( clk_i          ),
       .rst_ni ( rst_ni         ),
@@ -418,7 +418,7 @@ module axi_lite_mux #(
     // R Channel
     //--------------------------------------
     // replicate R channels
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_rsps_r
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_slv_rsps_r
       assign slv_rsps_o[i].r       = mst_r_chan;
       assign slv_rsps_o[i].r_valid = mst_r_valid & ~r_fifo_empty & (r_select == select_t'(i));
     end
@@ -443,8 +443,8 @@ module axi_lite_mux #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      NoPorts:  assert (NoSlvPorts > 0) else $fatal("Number of slave ports must be at least 1!");
-      MaxTnx:   assert (MaxTrans   > 0) else $fatal("Number of transactions must be at least 1!");
+      NumPorts:  assert (NumSlvPorts > 0) else $fatal("Number of slave ports must be at least 1!");
+      MaxTnx:    assert (MaxTrans    > 0) else $fatal("Number of transactions must be at least 1!");
     end
   `endif
   // pragma translate_on
@@ -457,7 +457,7 @@ endmodule
 module axi_lite_mux_intf #(
   parameter int unsigned AddrWidth     = 32'd0,
   parameter int unsigned DataWidth     = 32'd0,
-  parameter int unsigned NoSlvPorts    = 32'd0, // Number of slave ports
+  parameter int unsigned NumSlvPorts   = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MaxTrans      = 32'd0,
   // if enabled, this multiplexer is purely combinatorial
@@ -473,7 +473,7 @@ module axi_lite_mux_intf #(
   input  logic    clk_i,                // Clock
   input  logic    rst_ni,               // Asynchronous reset active low
   input  logic    test_i,               // Testmode enable
-  AXI_LITE.Slave  slv [NoSlvPorts-1:0], // slave ports
+  AXI_LITE.Slave  slv [NumSlvPorts-1:0], // slave ports
   AXI_LITE.Master mst                   // master port
 );
 
@@ -489,12 +489,12 @@ module axi_lite_mux_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  axi_lite_req_t     [NoSlvPorts-1:0] slv_reqs;
-  axi_lite_rsp_t     [NoSlvPorts-1:0] slv_rsps;
-  axi_lite_req_t                      mst_req;
-  axi_lite_rsp_t                      mst_rsp;
+  axi_lite_req_t     [NumSlvPorts-1:0] slv_reqs;
+  axi_lite_rsp_t     [NumSlvPorts-1:0] slv_rsps;
+  axi_lite_req_t                       mst_req;
+  axi_lite_rsp_t                       mst_rsp;
 
-  for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
+  for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_assign_slv_ports
     `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
     `AXI_LITE_ASSIGN_FROM_RSP(slv[i], slv_rsps[i])
   end
@@ -510,7 +510,7 @@ module axi_lite_mux_intf #(
     .r_chan_t       (  r_chan_t      ), //  R Channel Type
     .axi_lite_req_t ( axi_lite_req_t ),
     .axi_lite_rsp_t ( axi_lite_rsp_t ),
-    .NoSlvPorts     ( NoSlvPorts     ), // Number of slave ports
+    .NumSlvPorts    ( NumSlvPorts    ), // Number of slave ports
     .MaxTrans       ( MaxTrans       ),
     .FallThrough    ( FallThrough    ),
     .SpillAw        ( SpillAw        ),

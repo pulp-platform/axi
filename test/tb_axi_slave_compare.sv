@@ -127,7 +127,7 @@ module tb_axi_slave_compare #(
   );
 
   axi_multicut #(
-    .NoCuts    (8),
+    .NumCuts   (8),
     .aw_chan_t (axi_aw_chan_t),
     .w_chan_t  (axi_w_chan_t),
     .b_chan_t  (axi_b_chan_t),

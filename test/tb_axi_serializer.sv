@@ -16,11 +16,11 @@
 `include "axi/assign.svh"
 
 module tb_axi_serializer #(
-    parameter int unsigned NoWrites = 5000,  // How many writes per master
-    parameter int unsigned NoReads  = 3000   // How many reads per master
+    parameter int unsigned NumWrites = 5000,  // How many writes per master
+    parameter int unsigned NumReads  = 3000   // How many reads per master
   );
   // Random master no Transactions
-  localparam int unsigned NoPendingDut = 4;
+  localparam int unsigned NumPendingDut = 4;
   // Random Master Atomics
   localparam int unsigned MaxAW      = 32'd30;
   localparam int unsigned MaxAR      = 32'd30;
@@ -113,8 +113,8 @@ module tb_axi_serializer #(
   // DUT
   //-----------------------------------
   axi_serializer_intf #(
-    .MAX_READ_TXNS  ( NoPendingDut ),
-    .MAX_WRITE_TXNS ( NoPendingDut ),
+    .MAX_READ_TXNS  ( NumPendingDut ),
+    .MAX_WRITE_TXNS ( NumPendingDut ),
     .AXI_ID_WIDTH   ( IdWidth      ), // AXI ID width
     .AXI_ADDR_WIDTH ( AddrWidth    ), // AXI address width
     .AXI_DATA_WIDTH ( DataWidth    ), // AXI data width
@@ -134,7 +134,7 @@ module tb_axi_serializer #(
     axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
     axi_rand_master.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NoReads, NoWrites);
+    axi_rand_master.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (100) @(posedge clk);
     $stop();
@@ -267,11 +267,11 @@ module tb_axi_serializer #(
       end
 
       if ((aw % PrintTxn == 0) && ! aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTxn == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 

@@ -15,8 +15,8 @@
 
 // AXI Multiplexer: This module multiplexes the AXI4 slave ports down to one master port.
 // The AXI IDs from the slave ports get extended with the respective slave port index.
-// The extension width can be calculated with `$clog2(NoSlvPorts)`. This means the AXI
-// ID for the master port has to be this `$clog2(NoSlvPorts)` wider than the ID for the
+// The extension width can be calculated with `$clog2(NumSlvPorts)`. This means the AXI
+// ID for the master port has to be this `$clog2(NumSlvPorts)` wider than the ID for the
 // slave ports.
 // Responses are switched based on these bits. For example, with 4 slave ports
 // a response with ID `6'b100110` will be forwarded to slave port 2 (`2'b10`).
@@ -41,7 +41,7 @@ module axi_mux #(
   parameter type         slv_port_axi_rsp_t = logic, // Slave port response type
   parameter type         mst_port_axi_req_t = logic, // Master ports request type
   parameter type         mst_port_axi_rsp_t = logic, // Master ports response type
-  parameter int unsigned NoSlvPorts         = 32'd0, // Number of slave ports
+  parameter int unsigned NumSlvPorts        = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MaxWTrans          = 32'd8,
   // If enabled, this multiplexer is purely combinatorial
@@ -54,22 +54,22 @@ module axi_mux #(
   parameter bit          SpillAr            = 1'b1,
   parameter bit          SpillR             = 1'b0
 ) (
-  input  logic                               clk_i,    // Clock
-  input  logic                               rst_ni,   // Asynchronous reset active low
-  input  logic                               test_i,   // Test Mode enable
+  input  logic                                clk_i,    // Clock
+  input  logic                                rst_ni,   // Asynchronous reset active low
+  input  logic                                test_i,   // Test Mode enable
   // slave ports (AXI inputs), connect master modules here
-  input  slv_port_axi_req_t [NoSlvPorts-1:0] slv_reqs_i,
-  output slv_port_axi_rsp_t [NoSlvPorts-1:0] slv_rsps_o,
+  input  slv_port_axi_req_t [NumSlvPorts-1:0] slv_reqs_i,
+  output slv_port_axi_rsp_t [NumSlvPorts-1:0] slv_rsps_o,
   // master port (AXI outputs), connect slave modules here
-  output mst_port_axi_req_t                  mst_req_o,
-  input  mst_port_axi_rsp_t                  mst_rsp_i
+  output mst_port_axi_req_t                   mst_req_o,
+  input  mst_port_axi_rsp_t                   mst_rsp_i
 );
 
-  localparam int unsigned MstIdxBits = $clog2(NoSlvPorts);
+  localparam int unsigned MstIdxBits = $clog2(NumSlvPorts);
   localparam int unsigned MstIDWidth = SlvIDWidth + MstIdxBits;
 
   // pass through if only one slave port
-  if (NoSlvPorts == 32'h1) begin : gen_no_mux
+  if (NumSlvPorts == 32'h1) begin : gen_no_mux
     spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
@@ -153,16 +153,16 @@ module axi_mux #(
     typedef logic [MstIdxBits-1:0] switch_id_t;
 
     // AXI channels between the ID prepend unit and the rest of the multiplexer
-    mst_aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
-    logic         [NoSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
-    w_chan_t      [NoSlvPorts-1:0] slv_w_chans;
-    logic         [NoSlvPorts-1:0] slv_w_valids,  slv_w_readies;
-    mst_b_chan_t  [NoSlvPorts-1:0] slv_b_chans;
-    logic         [NoSlvPorts-1:0] slv_b_valids,  slv_b_readies;
-    mst_ar_chan_t [NoSlvPorts-1:0] slv_ar_chans;
-    logic         [NoSlvPorts-1:0] slv_ar_valids, slv_ar_readies;
-    mst_r_chan_t  [NoSlvPorts-1:0] slv_r_chans;
-    logic         [NoSlvPorts-1:0] slv_r_valids,  slv_r_readies;
+    mst_aw_chan_t [NumSlvPorts-1:0] slv_aw_chans;
+    logic         [NumSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
+    w_chan_t      [NumSlvPorts-1:0] slv_w_chans;
+    logic         [NumSlvPorts-1:0] slv_w_valids,  slv_w_readies;
+    mst_b_chan_t  [NumSlvPorts-1:0] slv_b_chans;
+    logic         [NumSlvPorts-1:0] slv_b_valids,  slv_b_readies;
+    mst_ar_chan_t [NumSlvPorts-1:0] slv_ar_chans;
+    logic         [NumSlvPorts-1:0] slv_ar_valids, slv_ar_readies;
+    mst_r_chan_t  [NumSlvPorts-1:0] slv_r_chans;
+    logic         [NumSlvPorts-1:0] slv_r_valids,  slv_r_readies;
 
     // These signals are all ID prepended
     // AW channel
@@ -208,9 +208,9 @@ module axi_mux #(
     //--------------------------------------
     // ID prepend for all slave ports
     //--------------------------------------
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_id_prepend
+    for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_id_prepend
       axi_id_prepend #(
-        .NoBus         ( 32'd1               ), // one AXI bus per slave port
+        .NumBus         ( 32'd1               ), // one AXI bus per slave port
         .IdWidthSlvPort( SlvIDWidth          ),
         .IdWidthMstPort( MstIDWidth          ),
         .slv_aw_chan_t ( slv_aw_chan_t       ),
@@ -262,7 +262,7 @@ module axi_mux #(
     // AW Channel
     //--------------------------------------
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts    ),
+      .NumIn    ( NumSlvPorts   ),
       .DataType ( mst_aw_chan_t ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
@@ -384,7 +384,7 @@ module axi_mux #(
     // B Channel
     //--------------------------------------
     // replicate B channels
-    assign slv_b_chans  = {NoSlvPorts{mst_b_chan}};
+    assign slv_b_chans  = {NumSlvPorts{mst_b_chan}};
     // control B channel handshake
     assign switch_b_id  = mst_b_chan.id[SlvIDWidth+:MstIdxBits];
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
@@ -407,7 +407,7 @@ module axi_mux #(
     // AR Channel
     //--------------------------------------
     rr_arb_tree #(
-      .NumIn    ( NoSlvPorts    ),
+      .NumIn    ( NumSlvPorts   ),
       .DataType ( mst_ar_chan_t ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
@@ -443,7 +443,7 @@ module axi_mux #(
     // R Channel
     //--------------------------------------
     // replicate R channels
-    assign slv_r_chans  = {NoSlvPorts{mst_r_chan}};
+    assign slv_r_chans  = {NumSlvPorts{mst_r_chan}};
     // R channel handshake control
     assign switch_r_id  = mst_r_chan.id[SlvIDWidth+:MstIdxBits];
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
@@ -467,10 +467,10 @@ module axi_mux #(
 `ifndef VERILATOR
   initial begin
     assert (SlvIDWidth > 0) else $fatal(1, "AXI ID width of slave ports must be non-zero!");
-    assert (NoSlvPorts > 0) else $fatal(1, "Number of slave ports must be non-zero!");
+    assert (NumSlvPorts > 0) else $fatal(1, "Number of slave ports must be non-zero!");
     assert (MaxWTrans > 0)
       else $fatal(1, "Maximum number of outstanding writes must be non-zero!");
-    assert (MstIDWidth >= SlvIDWidth + $clog2(NoSlvPorts))
+    assert (MstIDWidth >= SlvIDWidth + $clog2(NumSlvPorts))
       else $fatal(1, "AXI ID width of master ports must be wide enough to identify slave ports!");
     // Assert ID widths (one slave is sufficient since they all have the same type).
     assert ($unsigned($bits(slv_reqs_i[0].aw.id)) == SlvIDWidth)
@@ -578,7 +578,7 @@ module axi_mux_intf #(
     .slv_port_axi_rsp_t ( slv_port_axi_rsp_t ),
     .mst_port_axi_req_t ( mst_port_axi_req_t ),
     .mst_port_axi_rsp_t ( mst_port_axi_rsp_t ),
-    .NoSlvPorts         ( NO_SLV_PORTS       ), // Number of slave ports
+    .NumSlvPorts        ( NO_SLV_PORTS       ), // Number of slave ports
     .MaxWTrans          ( MAX_W_TRANS        ),
     .FallThrough        ( FALL_THROUGH       ),
     .SpillAw            ( SPILL_AW           ),

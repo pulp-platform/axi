@@ -17,8 +17,8 @@
 module tb_axi_fifo #(
     parameter int unsigned Depth = 16,
     parameter int unsigned FallThrough = 0,
-    parameter int unsigned NoWrites = 200,  // How many writes per master
-    parameter int unsigned NoReads = 200  // How many reads per master
+    parameter int unsigned NumWrites = 200,  // How many writes per master
+    parameter int unsigned NumReads = 200  // How many reads per master
 );
   // Random Master Atomics
   localparam int unsigned MaxAW = 30;
@@ -124,7 +124,7 @@ module tb_axi_fifo #(
     axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
     axi_rand_master.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NoReads, NoWrites);
+    axi_rand_master.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
@@ -156,11 +156,11 @@ module tb_axi_fifo #(
       end
 
       if ((aw % PrintTnx == 0) && !aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTnx == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 

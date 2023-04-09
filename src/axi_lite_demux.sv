@@ -32,7 +32,7 @@ module axi_lite_demux #(
   parameter type         r_chan_t       = logic, // AXI4-Lite  R channel
   parameter type         axi_lite_req_t = logic, // AXI4-Lite request struct
   parameter type         axi_lite_rsp_t = logic, // AXI4-Lite response struct
-  parameter int unsigned NoMstPorts     = 32'd0, // Number of instantiated ports
+  parameter int unsigned NumMstPorts    = 32'd0, // Number of instantiated ports
   parameter int unsigned MaxTrans       = 32'd0, // Maximum number of open transactions per channel
   parameter bit          FallThrough    = 1'b0,  // FIFOs are in fall through mode
   parameter bit          SpillAw        = 1'b1,  // insert one cycle latency on slave AW
@@ -41,19 +41,19 @@ module axi_lite_demux #(
   parameter bit          SpillAr        = 1'b1,  // insert one cycle latency on slave AR
   parameter bit          SpillR         = 1'b0,  // insert one cycle latency on slave  R
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0]
+  parameter type         select_t       = logic [$clog2(NumMstPorts)-1:0]
 ) (
-  input  logic                           clk_i,
-  input  logic                           rst_ni,
-  input  logic                           test_i,
+  input  logic                            clk_i,
+  input  logic                            rst_ni,
+  input  logic                            test_i,
   // slave port (AXI4-Lite input), connect master module here
-  input  axi_lite_req_t                  slv_req_i,
-  input  select_t                        slv_aw_select_i,
-  input  select_t                        slv_ar_select_i,
-  output axi_lite_rsp_t                  slv_rsp_o,
+  input  axi_lite_req_t                   slv_req_i,
+  input  select_t                         slv_aw_select_i,
+  input  select_t                         slv_ar_select_i,
+  output axi_lite_rsp_t                   slv_rsp_o,
   // master ports (AXI4-Lite outputs), connect slave modules here
-  output axi_lite_req_t [NoMstPorts-1:0] mst_reqs_o,
-  input  axi_lite_rsp_t [NoMstPorts-1:0] mst_rsps_i
+  output axi_lite_req_t [NumMstPorts-1:0] mst_reqs_o,
+  input  axi_lite_rsp_t [NumMstPorts-1:0] mst_rsps_i
 );
 
   //--------------------------------------
@@ -68,7 +68,7 @@ module axi_lite_demux #(
     select_t  select;
   } ar_chan_select_t;
 
-  if (NoMstPorts == 32'd1) begin : gen_no_demux
+  if (NumMstPorts == 32'd1) begin : gen_no_demux
     // degenerate case, connect slave to master port
     spill_register #(
       .T       ( aw_chan_t  ),
@@ -149,26 +149,26 @@ module axi_lite_demux #(
     //--------------------------------------
     // Write Transaction
     //--------------------------------------
-    aw_chan_select_t       slv_aw_chan;
-    logic                  slv_aw_valid,    slv_aw_ready;
+    aw_chan_select_t        slv_aw_chan;
+    logic                   slv_aw_valid,    slv_aw_ready;
 
-    logic [NoMstPorts-1:0] mst_aw_valids, mst_aw_readies;
+    logic [NumMstPorts-1:0] mst_aw_valids, mst_aw_readies;
 
-    logic                  lock_aw_valid_d, lock_aw_valid_q, load_aw_lock;
+    logic                   lock_aw_valid_d, lock_aw_valid_q, load_aw_lock;
 
-    logic                  w_fifo_push,     w_fifo_pop;
-    logic                  w_fifo_full,     w_fifo_empty;
+    logic                   w_fifo_push,     w_fifo_pop;
+    logic                   w_fifo_full,     w_fifo_empty;
 
-    w_chan_t               slv_w_chan;
-    select_t               w_select;
-    logic                  slv_w_valid,     slv_w_ready;
+    w_chan_t                slv_w_chan;
+    select_t                w_select;
+    logic                   slv_w_valid,     slv_w_ready;
 
-    logic                  /*w_pop*/        b_fifo_pop;
-    logic                  b_fifo_full,     b_fifo_empty;
+    logic                   /*w_pop*/        b_fifo_pop;
+    logic                   b_fifo_full,     b_fifo_empty;
 
-    b_chan_t               slv_b_chan;
-    select_t               b_select;
-    logic                  slv_b_valid,     slv_b_ready;
+    b_chan_t                slv_b_chan;
+    select_t                b_select;
+    logic                   slv_b_valid,     slv_b_ready;
 
     //--------------------------------------
     // Read Transaction
@@ -220,7 +220,7 @@ module axi_lite_demux #(
     assign slv_aw_chan = slv_aw_chan_select_out_flat;
 
     // replicate AW channel to the request output
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_aw
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_mst_aw
       assign mst_reqs_o[i].aw       = slv_aw_chan.aw;
       assign mst_reqs_o[i].aw_valid = mst_aw_valids[i];
       assign mst_aw_readies[i]      = mst_rsps_i[i].aw_ready;
@@ -303,7 +303,7 @@ module axi_lite_demux #(
     );
 
     // replicate W channel
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_w
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_mst_w
       assign mst_reqs_o[i].w       = slv_w_chan;
       assign mst_reqs_o[i].w_valid = ~w_fifo_empty & ~b_fifo_full &
                                        slv_w_valid & (w_select == select_t'(i));
@@ -349,7 +349,7 @@ module axi_lite_demux #(
     // connect the response if the FIFO has valid data in it
     assign slv_b_chan      = (!b_fifo_empty) ? mst_rsps_i[b_select].b : '0;
     assign slv_b_valid     =  ~b_fifo_empty  & mst_rsps_i[b_select].b_valid;
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_b
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_mst_b
       assign mst_reqs_o[i].b_ready = ~b_fifo_empty & slv_b_ready & (b_select == select_t'(i));
     end
     assign b_fifo_pop = slv_b_valid & slv_b_ready;
@@ -382,7 +382,7 @@ module axi_lite_demux #(
     assign slv_ar_chan = slv_ar_chan_select_out_flat;
 
     // replicate AR channel
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_ar
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_mst_ar
       assign mst_reqs_o[i].ar       = slv_ar_chan.ar;
       assign mst_reqs_o[i].ar_valid = ~r_fifo_full & slv_ar_valid &
                                        (slv_ar_chan.select == select_t'(i));
@@ -435,7 +435,7 @@ module axi_lite_demux #(
        end
     end
 
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_r
+    for (genvar i = 0; i < NumMstPorts; i++) begin : gen_mst_r
       assign mst_reqs_o[i].r_ready = ~r_fifo_empty & slv_r_ready & (r_select == select_t'(i));
     end
     assign r_fifo_pop      = slv_r_valid & slv_r_ready;
@@ -444,13 +444,13 @@ module axi_lite_demux #(
     `ifndef VERILATOR
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
-                                                 (slv_aw_select_i < NoMstPorts))) else
+                                                 (slv_aw_select_i < NumMstPorts))) else
       $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\
-                 NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
+                 NumMstPorts: %d", slv_aw_select_i, NumMstPorts);
     ar_select: assume property( @(posedge clk_i) (slv_req_i.ar_valid |->
-                                                 (slv_ar_select_i < NoMstPorts))) else
+                                                 (slv_ar_select_i < NumMstPorts))) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
-                 NoMstPorts: %d", slv_ar_select_i, NoMstPorts);
+                 NumMstPorts: %d", slv_ar_select_i, NumMstPorts);
     aw_valid_stable: assert property( @(posedge clk_i) (slv_aw_valid && !slv_aw_ready)
                                                        |=> slv_aw_valid) else
       $fatal(1, "aw_valid was deasserted, when aw_ready = 0 in last cycle.");
@@ -470,8 +470,8 @@ module axi_lite_demux #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      NoPorts:  assert (NoMstPorts > 0) else $fatal("Number of master ports must be at least 1!");
-      MaxTnx:   assert (MaxTrans   > 0) else $fatal("Number of transactions must be at least 1!");
+      NumPorts:  assert (NumMstPorts > 0) else $fatal("Number of master ports must be at least 1!");
+      MaxTnx:    assert (MaxTrans   > 0) else $fatal("Number of transactions must be at least 1!");
     end
   `endif
   // pragma translate_on
@@ -483,7 +483,7 @@ endmodule
 module axi_lite_demux_intf #(
   parameter int unsigned AddrWidth    = 32'd0,
   parameter int unsigned DataWidth    = 32'd0,
-  parameter int unsigned NoMstPorts   = 32'd0,
+  parameter int unsigned NumMstPorts  = 32'd0,
   parameter int unsigned MaxTrans     = 32'd0,
   parameter bit          FallThrough  = 1'b0,
   parameter bit          SpillAw      = 1'b1,
@@ -492,7 +492,7 @@ module axi_lite_demux_intf #(
   parameter bit          SpillAr      = 1'b1,
   parameter bit          SpillR       = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t     = logic [$clog2(NoMstPorts)-1:0]
+  parameter type         select_t     = logic [$clog2(NumMstPorts)-1:0]
 ) (
   input  logic     clk_i,               // Clock
   input  logic     rst_ni,              // Asynchronous reset active low
@@ -500,7 +500,7 @@ module axi_lite_demux_intf #(
   input  select_t  slv_aw_select_i,     // has to be stable, when aw_valid
   input  select_t  slv_ar_select_i,     // has to be stable, when ar_valid
   AXI_LITE.Slave   slv,                 // slave port
-  AXI_LITE.Master  mst [NoMstPorts-1:0] // master ports
+  AXI_LITE.Master  mst [NumMstPorts-1:0]// master ports
 );
   typedef logic [AddrWidth-1:0]   addr_t;
   typedef logic [DataWidth-1:0]   data_t;
@@ -513,15 +513,15 @@ module axi_lite_demux_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  axi_lite_req_t                  slv_req;
-  axi_lite_rsp_t                  slv_rsp;
-  axi_lite_req_t [NoMstPorts-1:0] mst_reqs;
-  axi_lite_rsp_t [NoMstPorts-1:0] mst_rsps;
+  axi_lite_req_t                   slv_req;
+  axi_lite_rsp_t                   slv_rsp;
+  axi_lite_req_t [NumMstPorts-1:0] mst_reqs;
+  axi_lite_rsp_t [NumMstPorts-1:0] mst_rsps;
 
   `AXI_LITE_ASSIGN_TO_REQ(slv_req, slv)
   `AXI_LITE_ASSIGN_FROM_RSP(slv, slv_rsp)
 
-  for (genvar i = 0; i < NoMstPorts; i++) begin : gen_assign_mst_ports
+  for (genvar i = 0; i < NumMstPorts; i++) begin : gen_assign_mst_ports
     `AXI_LITE_ASSIGN_FROM_REQ(mst[i], mst_reqs[i])
     `AXI_LITE_ASSIGN_TO_RSP(mst_rsps[i], mst[i])
   end
@@ -534,7 +534,7 @@ module axi_lite_demux_intf #(
     .r_chan_t       (       r_chan_t ),
     .axi_lite_req_t ( axi_lite_req_t ),
     .axi_lite_rsp_t ( axi_lite_rsp_t ),
-    .NoMstPorts     ( NoMstPorts     ),
+    .NumMstPorts    ( NumMstPorts    ),
     .MaxTrans       ( MaxTrans       ),
     .FallThrough    ( FallThrough    ),
     .SpillAw        ( SpillAw        ),

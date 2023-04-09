@@ -23,7 +23,7 @@ This demultiplexer is configured through the parameters listed in the following 
 | Name                 | Type               | Definition |
 |:---------------------|:-------------------|:-----------|
 | `IdWidth`            | `int unsigned`     | The AXI ID width (of all ports). |
-| `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the demultiplexer (in other words, how many AXI slave modules can be attached). |
+| `NumMstPorts`        | `int unsigned`     | The number of AXI master ports of the demultiplexer (in other words, how many AXI slave modules can be attached). |
 | `MaxTrans`           | `int unsigned`     | The slave port can have at most this many transactions [in flight](../doc#in-flight). |
 | `LookBits`           | `int unsigned`     | The number of ID bits (starting at the least significant) the demultiplexer uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `IdWidth`. |
 | `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the demultiplexer (see section *Ordering and Stalls* below).  Defaults to `1'b0`. |

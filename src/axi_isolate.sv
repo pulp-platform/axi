@@ -102,7 +102,7 @@ module axi_isolate #(
       .r_chan_t    ( r_chan_t    ),
       .axi_req_t   ( axi_req_t   ),
       .axi_rsp_t   ( axi_rsp_t   ),
-      .NoMstPorts  ( 2           ),
+      .NumMstPorts ( 2           ),
       .MaxTrans    ( NumPending  ),
       // We don't need many bits here as the common case will be to go for the pass-through.
       .LookBits    ( 1           ),

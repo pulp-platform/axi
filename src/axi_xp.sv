@@ -198,7 +198,7 @@ import cf_math_pkg::idx_width;
   input  rule_t  [NumAddrRules-1:0]  addr_map_i
 );
 
-  // localparam int unsigned AxiIdWidthMstPorts = AxiIdWidth + $clog2(NoSlvPorts);
+  // localparam int unsigned AxiIdWidthMstPorts = AxiIdWidth + $clog2(NumSlvPorts);
 
   typedef logic [IdWidth         -1:0] id_t;
   typedef logic [AddrWidth       -1:0] addr_t;

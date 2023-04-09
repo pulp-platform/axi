@@ -24,11 +24,11 @@ module tb_axi_lite_to_apb #(
   parameter bit TbPipelineResponse = 1'b0
 );
   // Dut parameters
-  localparam int unsigned NoApbSlaves = 8;    // How many APB Slaves  there are
-  localparam int unsigned NoAddrRules = 9;    // How many address rules for the APB slaves
+  localparam int unsigned NumApbSlaves = 8;    // How many APB Slaves  there are
+  localparam int unsigned NumAddrRules = 9;    // How many address rules for the APB slaves
   // Random master no Transactions
-  localparam int unsigned NoWrites    = 10000;  // How many rand writes of the master
-  localparam int unsigned NoReads     = 20000;  // How many rand reads of the master
+  localparam int unsigned NumWrites    = 10000;  // How many rand writes of the master
+  localparam int unsigned NumReads     = 20000;  // How many rand reads of the master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -53,7 +53,7 @@ module tb_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  typedef logic [NoApbSlaves-1:0] sel_t;
+  typedef logic [NumApbSlaves-1:0] sel_t;
 
   typedef struct packed {
     addr_t          paddr;
@@ -71,7 +71,7 @@ module tb_axi_lite_to_apb #(
     logic  pslverr;
   } apb_rsp_t;
 
-  localparam rule_t [NoAddrRules-1:0] AddrMap = '{
+  localparam rule_t [NumAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
     '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
     '{idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
@@ -117,8 +117,8 @@ module tb_axi_lite_to_apb #(
   axi_lite_rsp_t axi_rsp;
 
   // slave structs
-  apb_req_t [NoApbSlaves-1:0] apb_req;
-  apb_rsp_t [NoApbSlaves-1:0] apb_rsps;
+  apb_req_t [NumApbSlaves-1:0] apb_req;
+  apb_rsp_t [NumApbSlaves-1:0] apb_rsps;
 
   // -------------------------------
   // AXI Interfaces
@@ -144,12 +144,12 @@ module tb_axi_lite_to_apb #(
     end_of_sim <= 1'b0;
     axi_lite_rand_master.reset();
     @(posedge rst_n);
-    axi_lite_rand_master.run(NoReads, NoWrites);
+    axi_lite_rand_master.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
   end
 
 
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_slave
+  for (genvar i = 0; i < NumApbSlaves; i++) begin : gen_apb_slave
     initial begin : proc_apb_slave
       apb_rsps[i] <= '0;
       forever begin
@@ -171,7 +171,7 @@ module tb_axi_lite_to_apb #(
   `ifndef VERILATOR
   // Assertions to determine correct APB protocol sequencing
   default disable iff (!rst_n);
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_assertions
+  for (genvar i = 0; i < NumApbSlaves; i++) begin : gen_apb_assertions
     // when psel is not asserted, the bus is in the idle state
     sequence APB_IDLE;
       !apb_req[i].psel;
@@ -228,8 +228,8 @@ module tb_axi_lite_to_apb #(
   // DUT
   //-----------------------------------
   axi_lite_to_apb #(
-    .NoApbSlaves      ( NoApbSlaves         ),
-    .NoRules          ( NoAddrRules         ),
+    .NumApbSlaves     ( NumApbSlaves        ),
+    .NumRules         ( NumAddrRules        ),
     .AddrWidth        ( AddrWidth           ),
     .DataWidth        ( DataWidth           ),
     .PipelineRequest  ( TbPipelineRequest   ),
