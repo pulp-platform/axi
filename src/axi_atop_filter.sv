@@ -40,22 +40,22 @@ module axi_atop_filter #(
   /// Maximum number of in-flight AXI write transactions
   parameter int unsigned AxiMaxWriteTxns = 0,
   /// AXI request type
-  parameter type axi_req_t  = logic,
+  parameter type axi_req_t = logic,
   /// AXI response type
-  parameter type axi_resp_t = logic
+  parameter type axi_rsp_t = logic
 ) (
   /// Rising-edge clock of both ports
-  input  logic      clk_i,
+  input  logic     clk_i,
   /// Asynchronous reset, active low
-  input  logic      rst_ni,
+  input  logic     rst_ni,
   /// Slave port request
-  input  axi_req_t  slv_req_i,
+  input  axi_req_t slv_req_i,
   /// Slave port response
-  output axi_resp_t slv_resp_o,
+  output axi_rsp_t slv_rsp_o,
   /// Master port request
-  output axi_req_t  mst_req_o,
+  output axi_req_t mst_req_o,
   /// Master port response
-  input  axi_resp_t mst_resp_i
+  input  axi_rsp_t mst_rsp_i
 );
 
   // Minimum counter width is 2 to detect underflows.
@@ -100,14 +100,14 @@ module axi_atop_filter #(
   always_comb begin
     // Defaults:
     // Disable AW and W handshakes.
-    mst_req_o.aw_valid  = 1'b0;
-    slv_resp_o.aw_ready = 1'b0;
-    mst_req_o.w_valid   = 1'b0;
-    slv_resp_o.w_ready  = 1'b0;
+    mst_req_o.aw_valid = 1'b0;
+    slv_rsp_o.aw_ready = 1'b0;
+    mst_req_o.w_valid  = 1'b0;
+    slv_rsp_o.w_ready  = 1'b0;
     // Feed write responses through.
-    mst_req_o.b_ready   = slv_req_i.b_ready;
-    slv_resp_o.b_valid  = mst_resp_i.b_valid;
-    slv_resp_o.b        = mst_resp_i.b;
+    mst_req_o.b_ready  = slv_req_i.b_ready;
+    slv_rsp_o.b_valid  = mst_rsp_i.b_valid;
+    slv_rsp_o.b        = mst_rsp_i.b;
     // Keep ID stored for B and R response.
     id_d = id_q;
     // Do not push R response commands.
@@ -119,8 +119,8 @@ module axi_atop_filter #(
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
         if (complete_w_without_aw_downstream || (w_cnt_q.cnt < AxiMaxWriteTxns)) begin
-          mst_req_o.aw_valid  = slv_req_i.aw_valid;
-          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+          mst_req_o.aw_valid = slv_req_i.aw_valid;
+          slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
         end
         // Feed W channel through if ..
         if (aw_without_complete_w_downstream // .. downstream is missing W bursts ..
@@ -129,13 +129,13 @@ module axi_atop_filter #(
             || ((slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE)
                 && !complete_w_without_aw_downstream)
         ) begin
-          mst_req_o.w_valid  = slv_req_i.w_valid;
-          slv_resp_o.w_ready = mst_resp_i.w_ready;
+          mst_req_o.w_valid = slv_req_i.w_valid;
+          slv_rsp_o.w_ready = mst_rsp_i.w_ready;
         end
         // Filter out AWs that are atomic operations.
         if (slv_req_i.aw_valid && slv_req_i.aw.atop[5:4] != axi_pkg::ATOP_NONE) begin
           mst_req_o.aw_valid  = 1'b0; // Do not let AW pass to master port.
-          slv_resp_o.aw_ready = 1'b1; // Absorb AW on slave port.
+          slv_rsp_o.aw_ready = 1'b1; // Absorb AW on slave port.
           id_d = slv_req_i.aw.id; // Store ID for B response.
           // Some atomic operations require a response on the R channel.
           if (slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
@@ -149,13 +149,13 @@ module axi_atop_filter #(
             w_state_d = BLOCK_AW;
           // If downstream is not missing W beats, absorb the W beats for this atomic AW.
           end else begin
-            mst_req_o.w_valid  = 1'b0; // Do not let W beats pass to master port.
-            slv_resp_o.w_ready = 1'b1; // Absorb W beats on slave port.
+            mst_req_o.w_valid = 1'b0; // Do not let W beats pass to master port.
+            slv_rsp_o.w_ready = 1'b1; // Absorb W beats on slave port.
             if (slv_req_i.w_valid && slv_req_i.w.last) begin
               // If the W beat is valid and the last, proceed by injecting the B response.
               // However, if there is a non-handshaked B on our response port, we must let that
               // complete first.
-              if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+              if (slv_rsp_o.b_valid && !slv_req_i.b_ready) begin
                 w_state_d = HOLD_B;
               end else begin
                 w_state_d = INJECT_B;
@@ -172,13 +172,13 @@ module axi_atop_filter #(
         // Feed W channel through to let outstanding bursts complete.
         if (aw_without_complete_w_downstream) begin
           mst_req_o.w_valid  = slv_req_i.w_valid;
-          slv_resp_o.w_ready = mst_resp_i.w_ready;
+          slv_rsp_o.w_ready = mst_rsp_i.w_ready;
         end else begin
           // If there are no more outstanding W bursts, start absorbing the next W burst.
-          slv_resp_o.w_ready = 1'b1;
+          slv_rsp_o.w_ready = 1'b1;
           if (slv_req_i.w_valid && slv_req_i.w.last) begin
             // If the W beat is valid and the last, proceed by injecting the B response.
-            if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+            if (slv_rsp_o.b_valid && !slv_req_i.b_ready) begin
               w_state_d = HOLD_B;
             end else begin
               w_state_d = INJECT_B;
@@ -192,9 +192,9 @@ module axi_atop_filter #(
 
       ABSORB_W: begin
         // Absorb all W beats of the current burst.
-        slv_resp_o.w_ready = 1'b1;
+        slv_rsp_o.w_ready = 1'b1;
         if (slv_req_i.w_valid && slv_req_i.w.last) begin
-          if (slv_resp_o.b_valid && !slv_req_i.b_ready) begin
+          if (slv_rsp_o.b_valid && !slv_req_i.b_ready) begin
             w_state_d = HOLD_B;
           end else begin
             w_state_d = INJECT_B;
@@ -204,7 +204,7 @@ module axi_atop_filter #(
 
       HOLD_B: begin
         // Proceed with injection of B response upon handshake.
-        if (slv_resp_o.b_valid && slv_req_i.b_ready) begin
+        if (slv_rsp_o.b_valid && slv_req_i.b_ready) begin
           w_state_d = INJECT_B;
         end
       end
@@ -215,10 +215,10 @@ module axi_atop_filter #(
         // Inject error response instead.  Since the B channel has an ID and the atomic burst we are
         // replying to is guaranteed to be the only burst with this ID in flight, we do not have to
         // observe any ordering and can immediately inject on the B channel.
-        slv_resp_o.b = '0;
-        slv_resp_o.b.id = id_q;
-        slv_resp_o.b.resp = axi_pkg::RESP_SLVERR;
-        slv_resp_o.b_valid = 1'b1;
+        slv_rsp_o.b = '0;
+        slv_rsp_o.b.id = id_q;
+        slv_rsp_o.b.resp = axi_pkg::RESP_SLVERR;
+        slv_rsp_o.b_valid = 1'b1;
         if (slv_req_i.b_ready) begin
           // If not all beats of the R response have been injected, wait for them. Otherwise, return
           // to `W_FEEDTHROUGH`.
@@ -255,8 +255,8 @@ module axi_atop_filter #(
   always_comb begin
     // Defaults:
     // Feed read responses through.
-    slv_resp_o.r       = mst_resp_i.r;
-    slv_resp_o.r_valid = mst_resp_i.r_valid;
+    slv_rsp_o.r       = mst_rsp_i.r;
+    slv_rsp_o.r_valid = mst_rsp_i.r_valid;
     mst_req_o.r_ready  = slv_req_i.r_ready;
     // Do not pop R response command.
     r_resp_cmd_pop_ready = 1'b0;
@@ -267,7 +267,7 @@ module axi_atop_filter #(
 
     unique case (r_state_q)
       R_FEEDTHROUGH: begin
-        if (mst_resp_i.r_valid && !slv_req_i.r_ready) begin
+        if (mst_rsp_i.r_valid && !slv_req_i.r_ready) begin
           r_state_d = R_HOLD;
         end else if (r_resp_cmd_pop_valid) begin
           // Upon a command to inject an R response, immediately proceed with doing so because there
@@ -279,14 +279,14 @@ module axi_atop_filter #(
       end
 
       INJECT_R: begin
-        mst_req_o.r_ready  = 1'b0;
-        slv_resp_o.r       = '0;
-        slv_resp_o.r.id    = id_q;
-        slv_resp_o.r.resp  = axi_pkg::RESP_SLVERR;
-        slv_resp_o.r.last  = (r_beats_q == '0);
-        slv_resp_o.r_valid = 1'b1;
+        mst_req_o.r_ready = 1'b0;
+        slv_rsp_o.r       = '0;
+        slv_rsp_o.r.id    = id_q;
+        slv_rsp_o.r.resp  = axi_pkg::RESP_SLVERR;
+        slv_rsp_o.r.last  = (r_beats_q == '0);
+        slv_rsp_o.r_valid = 1'b1;
         if (slv_req_i.r_ready) begin
-          if (slv_resp_o.r.last) begin
+          if (slv_rsp_o.r.last) begin
             r_resp_cmd_pop_ready = 1'b1;
             r_state_d = R_FEEDTHROUGH;
           end else begin
@@ -296,7 +296,7 @@ module axi_atop_filter #(
       end
 
       R_HOLD: begin
-        if (mst_resp_i.r_valid && slv_req_i.r_ready) begin
+        if (mst_rsp_i.r_valid && slv_req_i.r_ready) begin
           r_state_d = R_FEEDTHROUGH;
         end
       end
@@ -305,17 +305,17 @@ module axi_atop_filter #(
     endcase
   end
   // Feed all signals on AR through.
-  assign mst_req_o.ar        = slv_req_i.ar;
-  assign mst_req_o.ar_valid  = slv_req_i.ar_valid;
-  assign slv_resp_o.ar_ready = mst_resp_i.ar_ready;
+  assign mst_req_o.ar       = slv_req_i.ar;
+  assign mst_req_o.ar_valid = slv_req_i.ar_valid;
+  assign slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
 
   // Keep track of outstanding downstream write bursts and responses.
   always_comb begin
     w_cnt_d = w_cnt_q;
-    if (mst_req_o.aw_valid && mst_resp_i.aw_ready) begin
+    if (mst_req_o.aw_valid && mst_rsp_i.aw_ready) begin
       w_cnt_d.cnt += 1;
     end
-    if (mst_req_o.w_valid && mst_resp_i.w_ready && mst_req_o.w.last) begin
+    if (mst_req_o.w_valid && mst_rsp_i.w_ready && mst_req_o.w.last) begin
       w_cnt_d.cnt -= 1;
     end
     if (w_cnt_q.underflow && (w_cnt_d.cnt == '0)) begin
@@ -406,16 +406,16 @@ module axi_atop_filter_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req, mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
 
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_atop_filter #(
     .AxiIdWidth      ( AXI_ID_WIDTH       ),
@@ -423,14 +423,14 @@ module axi_atop_filter_intf #(
     .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
   // AXI request & response type
     .axi_req_t       ( axi_req_t          ),
-    .axi_resp_t      ( axi_resp_t         )
+    .axi_rsp_t       ( axi_rsp_t          )
   ) i_axi_atop_filter (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req  ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req  ),
+    .mst_rsp_i ( mst_rsp )
   );
 // pragma translate_off
 `ifndef VERILATOR

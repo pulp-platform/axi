@@ -49,26 +49,26 @@ module axi_id_serialize #(
   /// Enable support for AXI4+ATOP atomics
   parameter bit          AtopSupport  = 1'b1,
   /// Request struct type of the AXI4+ATOP slave port
-  parameter type slv_req_t = logic,
+  parameter type slv_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
-  parameter type slv_resp_t = logic,
+  parameter type slv_port_axi_rsp_t = logic,
   /// Request struct type of the AXI4+ATOP master port
-  parameter type mst_req_t = logic,
+  parameter type mst_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
-  parameter type mst_resp_t = logic
+  parameter type mst_port_axi_rsp_t = logic
 ) (
   /// Rising-edge clock of both ports
-  input  logic      clk_i,
+  input  logic              clk_i,
   /// Asynchronous reset, active low
-  input  logic      rst_ni,
+  input  logic              rst_ni,
   /// Slave port request
-  input  slv_req_t  slv_req_i,
+  input  slv_port_axi_req_t slv_req_i,
   /// Slave port response
-  output slv_resp_t slv_resp_o,
+  output slv_port_axi_rsp_t slv_rsp_o,
   /// Master port request
-  output mst_req_t  mst_req_o,
+  output mst_port_axi_req_t mst_req_o,
   /// Master port response
-  input  mst_resp_t mst_resp_i
+  input  mst_port_axi_rsp_t mst_rsp_i
 );
 
   /// Number of bits of the slave port ID that determine the mapping to the master port ID
@@ -119,7 +119,7 @@ module axi_id_serialize #(
   /// AXI Requests from serializer
   `AXI_TYPEDEF_REQ_T(ser_req_t, ser_aw_t, w_t, ser_ar_t)
   /// AXI responses to serializer
-  `AXI_TYPEDEF_RESP_T(ser_resp_t, ser_b_t, ser_r_t)
+  `AXI_TYPEDEF_RSP_T(ser_rsp_t, ser_b_t, ser_r_t)
 
   /// AW channel after the multiplexer
   `AXI_TYPEDEF_AW_CHAN_T(mux_aw_t, addr_t, mux_id_t, user_t)
@@ -132,7 +132,7 @@ module axi_id_serialize #(
   /// AXI requests from the multiplexer
   `AXI_TYPEDEF_REQ_T(mux_req_t, mux_aw_t, w_t, mux_ar_t)
   /// AXI responses to the multiplexer
-  `AXI_TYPEDEF_RESP_T(mux_resp_t, mux_b_t, mux_r_t)
+  `AXI_TYPEDEF_RSP_T(mux_rsp_t, mux_b_t, mux_r_t)
 
   /// AW channel at master port
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
@@ -147,8 +147,8 @@ module axi_id_serialize #(
   assign slv_aw_select = select_t'(slv_req_i.aw.id % AxiMstPortMaxUniqIds); // TODO: customizable base
   assign slv_ar_select = select_t'(slv_req_i.ar.id % AxiMstPortMaxUniqIds);
 
-  slv_req_t  [AxiMstPortMaxUniqIds-1:0] to_serializer_reqs;
-  slv_resp_t [AxiMstPortMaxUniqIds-1:0] to_serializer_resps;
+  slv_port_axi_req_t [AxiMstPortMaxUniqIds-1:0] to_serializer_reqs;
+  slv_port_axi_rsp_t [AxiMstPortMaxUniqIds-1:0] to_serializer_rsps;
 
   axi_demux #(
     .AxiIdWidth  ( AxiSlvPortIdWidth    ),
@@ -157,8 +157,8 @@ module axi_id_serialize #(
     .b_chan_t    ( slv_b_t              ),
     .ar_chan_t   ( slv_ar_t             ),
     .r_chan_t    ( slv_r_t              ),
-    .axi_req_t   ( slv_req_t            ),
-    .axi_resp_t  ( slv_resp_t           ),
+    .axi_req_t   ( slv_port_axi_req_t   ),
+    .axi_rsp_t   ( slv_port_axi_rsp_t   ),
     .NoMstPorts  ( AxiMstPortMaxUniqIds ),
     .MaxTrans    ( AxiSlvPortMaxTxns    ),
     .AxiLookBits ( AxiSlvPortIdWidth    ),
@@ -171,81 +171,81 @@ module axi_id_serialize #(
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
-    .test_i          ( 1'b0                ),
-    .slv_req_i       ( slv_req_i           ),
-    .slv_aw_select_i ( slv_aw_select       ),
-    .slv_ar_select_i ( slv_ar_select       ),
-    .slv_resp_o      ( slv_resp_o          ),
-    .mst_reqs_o      ( to_serializer_reqs  ),
-    .mst_resps_i     ( to_serializer_resps )
+    .test_i          ( 1'b0               ),
+    .slv_req_i       ( slv_req_i          ),
+    .slv_aw_select_i ( slv_aw_select      ),
+    .slv_ar_select_i ( slv_ar_select      ),
+    .slv_rsp_o       ( slv_rsp_o          ),
+    .mst_reqs_o      ( to_serializer_reqs ),
+    .mst_rsps_i      ( to_serializer_rsps )
   );
 
-  slv_req_t  [AxiMstPortMaxUniqIds-1:0] tmp_serializer_reqs;
-  slv_resp_t [AxiMstPortMaxUniqIds-1:0] tmp_serializer_resps;
-  ser_req_t  [AxiMstPortMaxUniqIds-1:0] from_serializer_reqs;
-  ser_resp_t [AxiMstPortMaxUniqIds-1:0] from_serializer_resps;
+  slv_port_axi_req_t [AxiMstPortMaxUniqIds-1:0] tmp_serializer_reqs;
+  slv_port_axi_rsp_t [AxiMstPortMaxUniqIds-1:0] tmp_serializer_rsps;
+  ser_req_t [AxiMstPortMaxUniqIds-1:0] from_serializer_reqs;
+  ser_rsp_t [AxiMstPortMaxUniqIds-1:0] from_serializer_rsps;
 
   for (genvar i = 0; i < AxiMstPortMaxUniqIds; i++) begin : gen_serializers
     axi_serializer #(
       .MaxReadTxns  ( AxiMstPortMaxTxnsPerId  ),
       .MaxWriteTxns ( AxiMstPortMaxTxnsPerId  ),
       .AxiIdWidth   ( AxiSlvPortIdWidth       ),
-      .axi_req_t    ( slv_req_t               ),
-      .axi_resp_t   ( slv_resp_t              )
+      .axi_req_t    ( slv_port_axi_req_t      ),
+      .axi_rsp_t    ( slv_port_axi_rsp_t      )
     ) i_axi_serializer (
       .clk_i,
       .rst_ni,
-      .slv_req_i  ( to_serializer_reqs[i]   ),
-      .slv_resp_o ( to_serializer_resps[i]  ),
-      .mst_req_o  ( tmp_serializer_reqs[i]  ),
-      .mst_resp_i ( tmp_serializer_resps[i] )
+      .slv_req_i ( to_serializer_reqs[i]  ),
+      .slv_rsp_o ( to_serializer_rsps[i]  ),
+      .mst_req_o ( tmp_serializer_reqs[i] ),
+      .mst_rsp_i ( tmp_serializer_rsps[i] )
     );
     always_comb begin
       `AXI_SET_REQ_STRUCT(from_serializer_reqs[i], tmp_serializer_reqs[i])
       // Truncate to ID width 1 as all requests have ID '0.
       from_serializer_reqs[i].aw.id = tmp_serializer_reqs[i].aw.id[0];
       from_serializer_reqs[i].ar.id = tmp_serializer_reqs[i].ar.id[0];
-      `AXI_SET_RESP_STRUCT(tmp_serializer_resps[i], from_serializer_resps[i])
+      `AXI_SET_RSP_STRUCT(tmp_serializer_rsps[i], from_serializer_rsps[i])
       // Zero-extend response IDs.
-      tmp_serializer_resps[i].b.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].b.id};
-      tmp_serializer_resps[i].r.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_resps[i].r.id};
+      tmp_serializer_rsps[i].b.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_rsps[i].b.id};
+      tmp_serializer_rsps[i].r.id = {{AxiSlvPortIdWidth-1{1'b0}}, from_serializer_rsps[i].r.id};
     end
   end
 
-  mux_req_t  axi_mux_req;
-  mux_resp_t axi_mux_resp;
+  mux_req_t axi_mux_req;
+  mux_rsp_t axi_mux_rsp;
 
   axi_mux #(
-    .SlvAxiIDWidth ( 32'd1                  ),
-    .slv_aw_chan_t ( ser_aw_t               ),
-    .mst_aw_chan_t ( mux_aw_t               ),
-    .w_chan_t      ( w_t                    ),
-    .slv_b_chan_t  ( ser_b_t                ),
-    .mst_b_chan_t  ( mux_b_t                ),
-    .slv_ar_chan_t ( ser_ar_t               ),
-    .mst_ar_chan_t ( mux_ar_t               ),
-    .slv_r_chan_t  ( ser_r_t                ),
-    .mst_r_chan_t  ( mux_r_t                ),
-    .slv_req_t     ( ser_req_t              ),
-    .slv_resp_t    ( ser_resp_t             ),
-    .mst_req_t     ( mux_req_t              ),
-    .mst_resp_t    ( mux_resp_t             ),
-    .NoSlvPorts    ( AxiMstPortMaxUniqIds   ),
-    .MaxWTrans     ( AxiMstPortMaxTxnsPerId ),
-    .FallThrough   ( 1'b0                   ),
-    .SpillAw       ( 1'b1                   ),
-    .SpillW        ( 1'b0                   ),
-    .SpillB        ( 1'b0                   ),
-    .SpillAr       ( 1'b1                   ),
-    .SpillR        ( 1'b0                   )
+    .SlvAxiIDWidth      ( 32'd1                  ),
+    .slv_aw_chan_t      ( ser_aw_t               ),
+    .mst_aw_chan_t      ( mux_aw_t               ),
+    .w_chan_t           ( w_t                    ),
+    .slv_b_chan_t       ( ser_b_t                ),
+    .mst_b_chan_t       ( mux_b_t                ),
+    .slv_ar_chan_t      ( ser_ar_t               ),
+    .mst_ar_chan_t      ( mux_ar_t               ),
+    .slv_r_chan_t       ( ser_r_t                ),
+    .mst_r_chan_t       ( mux_r_t                ),
+    .slv_port_axi_req_t ( ser_req_t              ),
+    .slv_port_axi_rsp_t ( ser_rsp_t              ),
+    .mst_port_axi_req_t ( mux_req_t              ),
+    .mst_port_axi_rsp_t ( mux_rsp_t              ),
+    .NoSlvPorts         ( AxiMstPortMaxUniqIds   ),
+    .MaxWTrans          ( AxiMstPortMaxTxnsPerId ),
+    .FallThrough        ( 1'b0                   ),
+    .SpillAw            ( 1'b1                   ),
+    .SpillW             ( 1'b0                   ),
+    .SpillB             ( 1'b0                   ),
+    .SpillAr            ( 1'b1                   ),
+    .SpillR             ( 1'b0                   )
   ) i_axi_mux (
     .clk_i,
     .rst_ni,
-    .test_i      ( 1'b0                   ),
-    .slv_reqs_i  ( from_serializer_reqs   ),
-    .slv_resps_o ( from_serializer_resps  ),
-    .mst_req_o   ( axi_mux_req            ),
-    .mst_resp_i  ( axi_mux_resp           )
+    .test_i     ( 1'b0                  ),
+    .slv_reqs_i ( from_serializer_reqs  ),
+    .slv_rsps_o ( from_serializer_rsps  ),
+    .mst_req_o  ( axi_mux_req           ),
+    .mst_rsp_i  ( axi_mux_rsp           )
   );
 
   // Shift the ID one down if needed, as mux prepends IDs
@@ -254,9 +254,9 @@ module axi_id_serialize #(
       `AXI_SET_REQ_STRUCT(mst_req_o, axi_mux_req)
       mst_req_o.aw.id = mst_id_t'(axi_mux_req.aw.id >> 32'd1);
       mst_req_o.ar.id = mst_id_t'(axi_mux_req.ar.id >> 32'd1);
-      `AXI_SET_RESP_STRUCT(axi_mux_resp, mst_resp_i)
-      axi_mux_resp.b.id = mux_id_t'(mst_resp_i.b.id << 32'd1);
-      axi_mux_resp.r.id = mux_id_t'(mst_resp_i.r.id << 32'd1);
+      `AXI_SET_RSP_STRUCT(axi_mux_rsp, mst_rsp_i)
+      axi_mux_rsp.b.id = mux_id_t'(mst_rsp_i.b.id << 32'd1);
+      axi_mux_rsp.r.id = mux_id_t'(mst_rsp_i.r.id << 32'd1);
     end
   end else begin : gen_no_id_shift
     axi_id_prepend #(
@@ -274,37 +274,37 @@ module axi_id_serialize #(
       .mst_ar_chan_t     ( mst_ar_t           ),
       .mst_r_chan_t      ( mst_r_t            )
     ) i_axi_id_prepend (
-      .pre_id_i         ( '0                    ),
-      .slv_aw_chans_i   ( axi_mux_req.aw        ),
-      .slv_aw_valids_i  ( axi_mux_req.aw_valid  ),
-      .slv_aw_readies_o ( axi_mux_resp.aw_ready ),
-      .slv_w_chans_i    ( axi_mux_req.w         ),
-      .slv_w_valids_i   ( axi_mux_req.w_valid   ),
-      .slv_w_readies_o  ( axi_mux_resp.w_ready  ),
-      .slv_b_chans_o    ( axi_mux_resp.b        ),
-      .slv_b_valids_o   ( axi_mux_resp.b_valid  ),
-      .slv_b_readies_i  ( axi_mux_req.b_ready   ),
-      .slv_ar_chans_i   ( axi_mux_req.ar        ),
-      .slv_ar_valids_i  ( axi_mux_req.ar_valid  ),
-      .slv_ar_readies_o ( axi_mux_resp.ar_ready ),
-      .slv_r_chans_o    ( axi_mux_resp.r        ),
-      .slv_r_valids_o   ( axi_mux_resp.r_valid  ),
-      .slv_r_readies_i  ( axi_mux_req.r_ready   ),
-      .mst_aw_chans_o   ( mst_req_o.aw          ),
-      .mst_aw_valids_o  ( mst_req_o.aw_valid    ),
-      .mst_aw_readies_i ( mst_resp_i.aw_ready   ),
-      .mst_w_chans_o    ( mst_req_o.w           ),
-      .mst_w_valids_o   ( mst_req_o.w_valid     ),
-      .mst_w_readies_i  ( mst_resp_i.w_ready    ),
-      .mst_b_chans_i    ( mst_resp_i.b          ),
-      .mst_b_valids_i   ( mst_resp_i.b_valid    ),
-      .mst_b_readies_o  ( mst_req_o.b_ready     ),
-      .mst_ar_chans_o   ( mst_req_o.ar          ),
-      .mst_ar_valids_o  ( mst_req_o.ar_valid    ),
-      .mst_ar_readies_i ( mst_resp_i.ar_ready   ),
-      .mst_r_chans_i    ( mst_resp_i.r          ),
-      .mst_r_valids_i   ( mst_resp_i.r_valid    ),
-      .mst_r_readies_o  ( mst_req_o.r_ready     )
+      .pre_id_i         ( '0                   ),
+      .slv_aw_chans_i   ( axi_mux_req.aw       ),
+      .slv_aw_valids_i  ( axi_mux_req.aw_valid ),
+      .slv_aw_readies_o ( axi_mux_rsp.aw_ready ),
+      .slv_w_chans_i    ( axi_mux_req.w        ),
+      .slv_w_valids_i   ( axi_mux_req.w_valid  ),
+      .slv_w_readies_o  ( axi_mux_rsp.w_ready  ),
+      .slv_b_chans_o    ( axi_mux_rsp.b        ),
+      .slv_b_valids_o   ( axi_mux_rsp.b_valid  ),
+      .slv_b_readies_i  ( axi_mux_req.b_ready  ),
+      .slv_ar_chans_i   ( axi_mux_req.ar       ),
+      .slv_ar_valids_i  ( axi_mux_req.ar_valid ),
+      .slv_ar_readies_o ( axi_mux_rsp.ar_ready ),
+      .slv_r_chans_o    ( axi_mux_rsp.r        ),
+      .slv_r_valids_o   ( axi_mux_rsp.r_valid  ),
+      .slv_r_readies_i  ( axi_mux_req.r_ready  ),
+      .mst_aw_chans_o   ( mst_req_o.aw         ),
+      .mst_aw_valids_o  ( mst_req_o.aw_valid   ),
+      .mst_aw_readies_i ( mst_rsp_i.aw_ready   ),
+      .mst_w_chans_o    ( mst_req_o.w          ),
+      .mst_w_valids_o   ( mst_req_o.w_valid    ),
+      .mst_w_readies_i  ( mst_rsp_i.w_ready    ),
+      .mst_b_chans_i    ( mst_rsp_i.b          ),
+      .mst_b_valids_i   ( mst_rsp_i.b_valid    ),
+      .mst_b_readies_o  ( mst_req_o.b_ready    ),
+      .mst_ar_chans_o   ( mst_req_o.ar         ),
+      .mst_ar_valids_o  ( mst_req_o.ar_valid   ),
+      .mst_ar_readies_i ( mst_rsp_i.ar_ready   ),
+      .mst_r_chans_i    ( mst_rsp_i.r          ),
+      .mst_r_valids_i   ( mst_rsp_i.r_valid    ),
+      .mst_r_readies_o  ( mst_req_o.r_ready    )
     );
   end
 
@@ -327,7 +327,7 @@ module axi_id_serialize #(
       else $fatal(1, "AXI W data widths are not equal!");
     assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
+    assert($bits(slv_rsp_o.r.data) == $bits(mst_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
   end
   `endif
@@ -366,25 +366,25 @@ module axi_id_serialize_intf #(
   `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_t, w_t, slv_ar_t)
-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_t, slv_r_t)
+  `AXI_TYPEDEF_REQ_T(slv_port_axi_req_t, slv_aw_t, w_t, slv_ar_t)
+  `AXI_TYPEDEF_RSP_T(slv_port_axi_rsp_t, slv_b_t, slv_r_t)
 
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_t, w_t, mst_ar_t)
-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_t, mst_r_t)
+  `AXI_TYPEDEF_REQ_T(mst_port_axi_req_t, mst_aw_t, w_t, mst_ar_t)
+  `AXI_TYPEDEF_RSP_T(mst_port_axi_rsp_t, mst_b_t, mst_r_t)
 
-  slv_req_t  slv_req;
-  slv_resp_t slv_resp;
-  mst_req_t  mst_req;
-  mst_resp_t mst_resp;
+  slv_port_axi_req_t slv_req;
+  slv_port_axi_rsp_t slv_rsp;
+  mst_port_axi_req_t mst_req;
+  mst_port_axi_rsp_t mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_id_serialize #(
     .AxiSlvPortIdWidth      ( AXI_SLV_PORT_ID_WIDTH         ),
@@ -395,17 +395,17 @@ module axi_id_serialize_intf #(
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
     .AxiDataWidth           ( AXI_DATA_WIDTH                ),
     .AxiUserWidth           ( AXI_USER_WIDTH                ),
-    .slv_req_t              ( slv_req_t                     ),
-    .slv_resp_t             ( slv_resp_t                    ),
-    .mst_req_t              ( mst_req_t                     ),
-    .mst_resp_t             ( mst_resp_t                    )
+    .slv_port_axi_req_t     ( slv_port_axi_req_t            ),
+    .slv_port_axi_rsp_t     ( slv_port_axi_rsp_t            ),
+    .mst_port_axi_req_t     ( mst_port_axi_req_t            ),
+    .mst_port_axi_rsp_t     ( mst_port_axi_rsp_t            )
   ) i_axi_id_serialize (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
 
 // pragma translate_off

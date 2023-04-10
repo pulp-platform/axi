@@ -58,32 +58,32 @@ module axi_id_remap #(
   /// Request struct type of the AXI4+ATOP slave port.
   ///
   /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
-  parameter type slv_req_t = logic,
+  parameter type slv_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port.
   ///
   /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
-  parameter type slv_resp_t = logic,
+  parameter type slv_port_axi_rsp_t = logic,
   /// Request struct type of the AXI4+ATOP master port
   ///
   /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
-  parameter type mst_req_t = logic,
+  parameter type mst_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
   ///
   /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
-  parameter type mst_resp_t = logic
+  parameter type mst_port_axi_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
-  input  logic      clk_i,
+  input  logic              clk_i,
   /// Asynchronous reset, active low
-  input  logic      rst_ni,
+  input  logic              rst_ni,
   /// Slave port request
-  input  slv_req_t  slv_req_i,
+  input  slv_port_axi_req_t slv_req_i,
   /// Slave port response
-  output slv_resp_t slv_resp_o,
+  output slv_port_axi_rsp_t slv_rsp_o,
   /// Master port request
-  output mst_req_t  mst_req_o,
+  output mst_port_axi_req_t mst_req_o,
   /// Master port response
-  input  mst_resp_t mst_resp_i
+  input  mst_port_axi_rsp_t mst_rsp_i
 );
 
   // Feed all signals that are not ID or flow control of AW and AR through.
@@ -101,11 +101,11 @@ module axi_id_remap #(
 
   assign mst_req_o.w         = slv_req_i.w;
   assign mst_req_o.w_valid   = slv_req_i.w_valid;
-  assign slv_resp_o.w_ready  = mst_resp_i.w_ready;
+  assign slv_rsp_o.w_ready   = mst_rsp_i.w_ready;
 
-  assign slv_resp_o.b.resp   = mst_resp_i.b.resp;
-  assign slv_resp_o.b.user   = mst_resp_i.b.user;
-  assign slv_resp_o.b_valid  = mst_resp_i.b_valid;
+  assign slv_rsp_o.b.resp    = mst_rsp_i.b.resp;
+  assign slv_rsp_o.b.user    = mst_rsp_i.b.user;
+  assign slv_rsp_o.b_valid   = mst_rsp_i.b_valid;
   assign mst_req_o.b_ready   = slv_req_i.b_ready;
 
   assign mst_req_o.ar.addr   = slv_req_i.ar.addr;
@@ -119,11 +119,11 @@ module axi_id_remap #(
   assign mst_req_o.ar.region = slv_req_i.ar.region;
   assign mst_req_o.ar.user   = slv_req_i.ar.user;
 
-  assign slv_resp_o.r.data   = mst_resp_i.r.data;
-  assign slv_resp_o.r.resp   = mst_resp_i.r.resp;
-  assign slv_resp_o.r.last   = mst_resp_i.r.last;
-  assign slv_resp_o.r.user   = mst_resp_i.r.user;
-  assign slv_resp_o.r_valid  = mst_resp_i.r_valid;
+  assign slv_rsp_o.r.data    = mst_rsp_i.r.data;
+  assign slv_rsp_o.r.resp    = mst_rsp_i.r.resp;
+  assign slv_rsp_o.r.last    = mst_rsp_i.r.last;
+  assign slv_rsp_o.r.user    = mst_rsp_i.r.user;
+  assign slv_rsp_o.r_valid   = mst_rsp_i.r_valid;
   assign mst_req_o.r_ready   = slv_req_i.r_ready;
 
 
@@ -149,19 +149,19 @@ module axi_id_remap #(
   ) i_wr_table (
     .clk_i,
     .rst_ni,
-    .free_o          ( wr_free                                 ),
-    .free_oup_id_o   ( wr_free_oup_id                          ),
-    .full_o          ( wr_full                                 ),
-    .push_i          ( wr_push                                 ),
-    .push_inp_id_i   ( slv_req_i.aw.id                         ),
-    .push_oup_id_i   ( wr_push_oup_id                          ),
-    .exists_inp_id_i ( slv_req_i.aw.id                         ),
-    .exists_o        ( wr_exists                               ),
-    .exists_oup_id_o ( wr_exists_id                            ),
-    .exists_full_o   ( wr_exists_full                          ),
-    .pop_i           ( slv_resp_o.b_valid && slv_req_i.b_ready ),
-    .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ),
-    .pop_inp_id_o    ( slv_resp_o.b.id                         )
+    .free_o          ( wr_free                                ),
+    .free_oup_id_o   ( wr_free_oup_id                         ),
+    .full_o          ( wr_full                                ),
+    .push_i          ( wr_push                                ),
+    .push_inp_id_i   ( slv_req_i.aw.id                        ),
+    .push_oup_id_i   ( wr_push_oup_id                         ),
+    .exists_inp_id_i ( slv_req_i.aw.id                        ),
+    .exists_o        ( wr_exists                              ),
+    .exists_oup_id_o ( wr_exists_id                           ),
+    .exists_full_o   ( wr_exists_full                         ),
+    .pop_i           ( slv_rsp_o.b_valid && slv_req_i.b_ready ),
+    .pop_oup_id_i    ( mst_rsp_i.b.id[IdxWidth-1:0]           ),
+    .pop_inp_id_o    ( slv_rsp_o.b.id                         )
   );
   axi_id_remap_table #(
     .InpIdWidth     ( AxiSlvPortIdWidth     ),
@@ -170,19 +170,19 @@ module axi_id_remap #(
   ) i_rd_table (
     .clk_i,
     .rst_ni,
-    .free_o           ( rd_free                                                      ),
-    .free_oup_id_o    ( rd_free_oup_id                                               ),
-    .full_o           ( rd_full                                                      ),
-    .push_i           ( rd_push                                                      ),
-    .push_inp_id_i    ( rd_push_inp_id                                               ),
-    .push_oup_id_i    ( rd_push_oup_id                                               ),
-    .exists_inp_id_i  ( slv_req_i.ar.id                                              ),
-    .exists_o         ( rd_exists                                                    ),
-    .exists_oup_id_o  ( rd_exists_id                                                 ),
-    .exists_full_o    ( rd_exists_full                                               ),
-    .pop_i            ( slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last ),
-    .pop_oup_id_i     ( mst_resp_i.r.id[IdxWidth-1:0]                                ),
-    .pop_inp_id_o     ( slv_resp_o.r.id                                              )
+    .free_o           ( rd_free                                                    ),
+    .free_oup_id_o    ( rd_free_oup_id                                             ),
+    .full_o           ( rd_full                                                    ),
+    .push_i           ( rd_push                                                    ),
+    .push_inp_id_i    ( rd_push_inp_id                                             ),
+    .push_oup_id_i    ( rd_push_oup_id                                             ),
+    .exists_inp_id_i  ( slv_req_i.ar.id                                            ),
+    .exists_o         ( rd_exists                                                  ),
+    .exists_oup_id_o  ( rd_exists_id                                               ),
+    .exists_full_o    ( rd_exists_full                                             ),
+    .pop_i            ( slv_rsp_o.r_valid && slv_req_i.r_ready && slv_rsp_o.r.last ),
+    .pop_oup_id_i     ( mst_rsp_i.r.id[IdxWidth-1:0]                               ),
+    .pop_inp_id_o     ( slv_rsp_o.r.id                                             )
   );
   assign both_free = wr_free & rd_free;
   lzc #(
@@ -205,19 +205,19 @@ module axi_id_remap #(
         aw_id_d, aw_id_q;
   logic ar_prio_d, ar_prio_q;
   always_comb begin
-    mst_req_o.aw_valid  = 1'b0;
-    slv_resp_o.aw_ready = 1'b0;
-    wr_push             = 1'b0;
-    wr_push_oup_id      =   '0;
-    mst_req_o.ar_valid  = 1'b0;
-    slv_resp_o.ar_ready = 1'b0;
-    rd_push             = 1'b0;
-    rd_push_inp_id      =   '0;
-    rd_push_oup_id      =   '0;
-    ar_id_d             = ar_id_q;
-    aw_id_d             = aw_id_q;
-    ar_prio_d           = ar_prio_q;
-    state_d             = state_q;
+    mst_req_o.aw_valid = 1'b0;
+    slv_rsp_o.aw_ready = 1'b0;
+    wr_push            = 1'b0;
+    wr_push_oup_id     =   '0;
+    mst_req_o.ar_valid = 1'b0;
+    slv_rsp_o.ar_ready = 1'b0;
+    rd_push            = 1'b0;
+    rd_push_inp_id     =   '0;
+    rd_push_oup_id     =   '0;
+    ar_id_d            = ar_id_q;
+    aw_id_d            = aw_id_q;
+    ar_prio_d          = ar_prio_q;
+    state_d            = state_q;
 
     unique case (state_q)
       Ready: begin
@@ -254,9 +254,9 @@ module axi_id_remap #(
           // Only allowed if AR does not have arbitration priority
           end else if (!(ar_prio_q && mst_req_o.ar_valid)) begin
             // Nullify a potential AR at our output.  This is legal in this state.
-            mst_req_o.ar_valid  = 1'b0;
-            slv_resp_o.ar_ready = 1'b0;
-            rd_push             = 1'b0;
+            mst_req_o.ar_valid = 1'b0;
+            slv_rsp_o.ar_ready = 1'b0;
+            rd_push            = 1'b0;
             if ((|both_free)) begin
               // Use an output ID that is free in both directions.
               wr_push_oup_id = both_free_oup_id;
@@ -274,29 +274,29 @@ module axi_id_remap #(
 
         // Hold AR, AW, or both if they are valid but not yet ready.
         if (mst_req_o.ar_valid) begin
-          slv_resp_o.ar_ready = mst_resp_i.ar_ready;
-          if (!mst_resp_i.ar_ready) begin
+          slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
+          if (!mst_rsp_i.ar_ready) begin
             ar_id_d = rd_push_oup_id;
           end
         end
         if (mst_req_o.aw_valid) begin
-          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
-          if (!mst_resp_i.aw_ready) begin
+          slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
+          if (!mst_rsp_i.aw_ready) begin
             aw_id_d = wr_push_oup_id;
           end
         end
-        if ({mst_req_o.ar_valid, mst_resp_i.ar_ready,
-             mst_req_o.aw_valid, mst_resp_i.aw_ready} == 4'b1010) begin
+        if ({mst_req_o.ar_valid, mst_rsp_i.ar_ready,
+             mst_req_o.aw_valid, mst_rsp_i.aw_ready} == 4'b1010) begin
           state_d = HoldAx;
-        end else if ({mst_req_o.ar_valid, mst_resp_i.ar_ready} == 2'b10) begin
+        end else if ({mst_req_o.ar_valid, mst_rsp_i.ar_ready} == 2'b10) begin
           state_d = HoldAR;
-        end else if ({mst_req_o.aw_valid, mst_resp_i.aw_ready} == 2'b10) begin
+        end else if ({mst_req_o.aw_valid, mst_rsp_i.aw_ready} == 2'b10) begin
           state_d = HoldAW;
         end else begin
           state_d = Ready;
         end
 
-        if (mst_req_o.ar_valid && mst_resp_i.ar_ready) begin
+        if (mst_req_o.ar_valid && mst_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
@@ -305,8 +305,8 @@ module axi_id_remap #(
         // Drive `mst_req_o.ar.id` through `rd_push_oup_id`.
         rd_push_oup_id      = ar_id_q;
         mst_req_o.ar_valid  = 1'b1;
-        slv_resp_o.ar_ready = mst_resp_i.ar_ready;
-        if (mst_resp_i.ar_ready) begin
+        slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
+        if (mst_rsp_i.ar_ready) begin
           state_d = Ready;
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
@@ -316,26 +316,26 @@ module axi_id_remap #(
         // Drive mst_req_o.aw.id through `wr_push_oup_id`.
         wr_push_oup_id      = aw_id_q;
         mst_req_o.aw_valid  = 1'b1;
-        slv_resp_o.aw_ready = mst_resp_i.aw_ready;
-        if (mst_resp_i.aw_ready) begin
+        slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
+        if (mst_rsp_i.aw_ready) begin
           state_d = Ready;
         end
       end
 
       HoldAx: begin
-        rd_push_oup_id      = ar_id_q;
-        mst_req_o.ar_valid  = 1'b1;
-        slv_resp_o.ar_ready = mst_resp_i.ar_ready;
-        wr_push_oup_id      = aw_id_q;
-        mst_req_o.aw_valid  = 1'b1;
-        slv_resp_o.aw_ready = mst_resp_i.aw_ready;
-        unique case ({mst_resp_i.ar_ready, mst_resp_i.aw_ready})
+        rd_push_oup_id     = ar_id_q;
+        mst_req_o.ar_valid = 1'b1;
+        slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
+        wr_push_oup_id     = aw_id_q;
+        mst_req_o.aw_valid = 1'b1;
+        slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
+        unique case ({mst_rsp_i.ar_ready, mst_rsp_i.aw_ready})
           2'b01:   state_d = HoldAR;
           2'b10:   state_d = HoldAW;
           2'b11:   state_d = Ready;
           default: /*do nothing / stay in this state*/;
         endcase
-        if (mst_resp_i.ar_ready) begin
+        if (mst_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
@@ -371,31 +371,31 @@ module axi_id_remap #(
       else $fatal(1, "AXI W user widths are not equal!");
     assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
+    assert($bits(slv_rsp_o.r.data) == $bits(mst_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
     assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
-    assert ($bits(slv_resp_o.b.id) == AxiSlvPortIdWidth);
+    assert ($bits(slv_rsp_o.b.id) == AxiSlvPortIdWidth);
     assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
-    assert ($bits(slv_resp_o.r.id) == AxiSlvPortIdWidth);
+    assert ($bits(slv_rsp_o.r.id) == AxiSlvPortIdWidth);
     assert ($bits(mst_req_o.aw.id) == AxiMstPortIdWidth);
-    assert ($bits(mst_resp_i.b.id) == AxiMstPortIdWidth);
+    assert ($bits(mst_rsp_i.b.id) == AxiMstPortIdWidth);
     assert ($bits(mst_req_o.ar.id) == AxiMstPortIdWidth);
-    assert ($bits(mst_resp_i.r.id) == AxiMstPortIdWidth);
+    assert ($bits(mst_rsp_i.r.id) == AxiMstPortIdWidth);
   end
   default disable iff (!rst_ni);
-  assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready
-      |-> mst_req_o.aw_valid && mst_resp_i.aw_ready);
-  assert property (@(posedge clk_i) mst_resp_i.b_valid && mst_req_o.b_ready
-      |-> slv_resp_o.b_valid && slv_req_i.b_ready);
-  assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_resp_o.ar_ready
-      |-> mst_req_o.ar_valid && mst_resp_i.ar_ready);
-  assert property (@(posedge clk_i) mst_resp_i.r_valid && mst_req_o.r_ready
-      |-> slv_resp_o.r_valid && slv_req_i.r_ready);
-  assert property (@(posedge clk_i) slv_resp_o.r_valid
-      |-> slv_resp_o.r.last == mst_resp_i.r.last);
-  assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_resp_i.ar_ready
+  assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_rsp_o.aw_ready
+      |-> mst_req_o.aw_valid && mst_rsp_i.aw_ready);
+  assert property (@(posedge clk_i) mst_rsp_i.b_valid && mst_req_o.b_ready
+      |-> slv_rsp_o.b_valid && slv_req_i.b_ready);
+  assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_rsp_o.ar_ready
+      |-> mst_req_o.ar_valid && mst_rsp_i.ar_ready);
+  assert property (@(posedge clk_i) mst_rsp_i.r_valid && mst_req_o.r_ready
+      |-> slv_rsp_o.r_valid && slv_req_i.r_ready);
+  assert property (@(posedge clk_i) slv_rsp_o.r_valid
+      |-> slv_rsp_o.r.last == mst_rsp_i.r.last);
+  assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_rsp_i.ar_ready
       |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
-  assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
+  assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_rsp_i.aw_ready
       |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
   `endif
   // pragma translate_on
@@ -606,43 +606,43 @@ module axi_id_remap_intf #(
   `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_port_axi_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(slv_port_axi_rsp_t, slv_b_chan_t, slv_r_chan_t)
 
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(mst_port_axi_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(mst_port_axi_rsp_t, mst_b_chan_t, mst_r_chan_t)
 
-  slv_req_t  slv_req;
-  slv_resp_t slv_resp;
-  mst_req_t  mst_req;
-  mst_resp_t mst_resp;
+  slv_port_axi_req_t slv_req;
+  slv_port_axi_rsp_t slv_rsp;
+  mst_port_axi_req_t mst_req;
+  mst_port_axi_rsp_t mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_id_remap #(
     .AxiSlvPortIdWidth    ( AXI_SLV_PORT_ID_WIDTH     ),
     .AxiSlvPortMaxUniqIds ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
     .AxiMaxTxnsPerId      ( AXI_MAX_TXNS_PER_ID       ),
     .AxiMstPortIdWidth    ( AXI_MST_PORT_ID_WIDTH     ),
-    .slv_req_t            ( slv_req_t                 ),
-    .slv_resp_t           ( slv_resp_t                ),
-    .mst_req_t            ( mst_req_t                 ),
-    .mst_resp_t           ( mst_resp_t                )
+    .slv_port_axi_req_t   ( slv_port_axi_req_t        ),
+    .slv_port_axi_rsp_t   ( slv_port_axi_rsp_t        ),
+    .mst_port_axi_req_t   ( mst_port_axi_req_t        ),
+    .mst_port_axi_rsp_t   ( mst_port_axi_rsp_t        )
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
   // pragma translate_off
   `ifndef VERILATOR

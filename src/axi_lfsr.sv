@@ -72,7 +72,7 @@ module axi_lfsr #(
     `AXI_LITE_TYPEDEF_R_CHAN_T(axi_lite_r_chan_t, data_t)
 
     `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, axi_lite_aw_chan_t, axi_lite_w_chan_t, axi_lite_ar_chan_t)
-    `AXI_LITE_TYPEDEF_RESP_T(axi_lite_rsp_t, axi_lite_b_chan_t, axi_lite_r_chan_t)
+    `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, axi_lite_b_chan_t, axi_lite_r_chan_t)
 
     // AXI Lite buses
     axi_lite_req_t axi_lite_req;
@@ -87,17 +87,17 @@ module axi_lfsr #(
         .AxiMaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
         .FallThrough     ( 1'b0           ),
         .full_req_t      ( axi_req_t      ),
-        .full_resp_t     ( axi_rsp_t      ),
+        .full_rsp_t      ( axi_rsp_t      ),
         .lite_req_t      ( axi_lite_req_t ),
-        .lite_resp_t     ( axi_lite_rsp_t )
+        .lite_rsp_t      ( axi_lite_rsp_t )
     ) i_axi_to_axi_lite (
         .clk_i,
         .rst_ni,
-        .test_i     ( testmode_i   ),
-        .slv_req_i  ( req_i        ),
-        .slv_resp_o ( rsp_o        ),
-        .mst_req_o  ( axi_lite_req ),
-        .mst_resp_i ( axi_lite_rsp )
+        .test_i    ( testmode_i   ),
+        .slv_req_i ( req_i        ),
+        .slv_rsp_o ( rsp_o        ),
+        .mst_req_o ( axi_lite_req ),
+        .mst_rsp_i ( axi_lite_rsp )
     );
 
     axi_lite_lfsr #(

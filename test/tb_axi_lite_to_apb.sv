@@ -51,7 +51,7 @@ module tb_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
 
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
   typedef logic [NoApbSlaves-1:0] sel_t;
 
@@ -69,7 +69,7 @@ module tb_axi_lite_to_apb #(
     logic  pready;
     data_t prdata;
     logic  pslverr;
-  } apb_resp_t;
+  } apb_rsp_t;
 
   localparam rule_t [NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
@@ -113,12 +113,12 @@ module tb_axi_lite_to_apb #(
   logic end_of_sim;
 
   // master structs
-  axi_lite_req_t  axi_req;
-  axi_lite_resp_t axi_resp;
+  axi_lite_req_t axi_req;
+  axi_lite_rsp_t axi_rsp;
 
   // slave structs
-  apb_req_t  [NoApbSlaves-1:0] apb_req;
-  apb_resp_t [NoApbSlaves-1:0] apb_resps;
+  apb_req_t [NoApbSlaves-1:0] apb_req;
+  apb_rsp_t [NoApbSlaves-1:0] apb_rsps;
 
   // -------------------------------
   // AXI Interfaces
@@ -133,7 +133,7 @@ module tb_axi_lite_to_apb #(
   ) master_dv (clk);
   `AXI_LITE_ASSIGN(master, master_dv)
   `AXI_LITE_ASSIGN_TO_REQ(axi_req, master)
-  `AXI_LITE_ASSIGN_FROM_RESP(master, axi_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(master, axi_rsp)
 
   // -------------------------------
   // AXI Rand Masters
@@ -151,12 +151,12 @@ module tb_axi_lite_to_apb #(
 
   for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_slave
     initial begin : proc_apb_slave
-      apb_resps[i] <= '0;
+      apb_rsps[i] <= '0;
       forever begin
         @(posedge clk);
-        apb_resps[i].pready  <= #ApplTime $urandom();
-        apb_resps[i].prdata  <= #ApplTime $urandom();
-        apb_resps[i].pslverr <= #ApplTime $urandom();
+        apb_rsps[i].pready  <= #ApplTime $urandom();
+        apb_rsps[i].prdata  <= #ApplTime $urandom();
+        apb_rsps[i].pslverr <= #ApplTime $urandom();
       end
     end
   end
@@ -196,7 +196,7 @@ module tb_axi_lite_to_apb #(
         (APB_SETUP |-> APB_TRANSFER));
 
     apb_penable:    assert property ( @(posedge clk)
-        (apb_req[i].penable && apb_req[i].psel && apb_resps[i].pready |=> (!apb_req[i].penable)));
+        (apb_req[i].penable && apb_req[i].psel && apb_rsps[i].pready |=> (!apb_req[i].penable)));
 
     control_stable: assert property ( @(posedge clk)
         (APB_TRANSFER |-> $stable({apb_req[i].pwrite, apb_req[i].paddr})));
@@ -235,17 +235,17 @@ module tb_axi_lite_to_apb #(
     .PipelineRequest  ( TbPipelineRequest   ),
     .PipelineResponse ( TbPipelineResponse  ),
     .axi_lite_req_t   ( axi_lite_req_t      ),
-    .axi_lite_resp_t  ( axi_lite_resp_t     ),
+    .axi_lite_rsp_t   ( axi_lite_rsp_t      ),
     .apb_req_t        ( apb_req_t           ),
-    .apb_resp_t       ( apb_resp_t          ),
+    .apb_rsp_t        ( apb_rsp_t           ),
     .rule_t           ( rule_t              )
   ) i_axi_lite_to_apb_dut (
-    .clk_i           ( clk          ),
-    .rst_ni          ( rst_n        ),
-    .axi_lite_req_i  ( axi_req      ),
-    .axi_lite_resp_o ( axi_resp     ),
-    .apb_req_o       ( apb_req      ),
-    .apb_resp_i      ( apb_resps    ),
-    .addr_map_i      ( AddrMap      )
+    .clk_i          ( clk         ),
+    .rst_ni         ( rst_n       ),
+    .axi_lite_req_i ( axi_req     ),
+    .axi_lite_rsp_o ( axi_rsp     ),
+    .apb_req_o      ( apb_req     ),
+    .apb_rsp_i      ( apb_rsps    ),
+    .addr_map_i     ( AddrMap     )
   );
 endmodule

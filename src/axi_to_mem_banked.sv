@@ -37,7 +37,7 @@ module axi_to_mem_banked #(
   /// AXI4+ATOP request struct
   parameter type                          axi_req_t     = logic,
   /// AXI4+ATOP response struct
-  parameter type                          axi_resp_t    = logic,
+  parameter type                          axi_rsp_t     = logic,
   /// Number of memory banks / macros
   /// Has to satisfy:
   /// - MemNumBanks >= 2 * AxiDataWidth / MemDataWidth
@@ -73,7 +73,7 @@ module axi_to_mem_banked #(
   /// AXI4+ATOP slave port, request struct
   input  axi_req_t                    axi_req_i,
   /// AXI4+ATOP slave port, response struct
-  output axi_resp_t                   axi_resp_o,
+  output axi_rsp_t                    axi_rsp_o,
   /// Memory bank request
   output logic      [MemNumBanks-1:0] mem_req_o,
   /// Memory request grant
@@ -133,8 +133,8 @@ module axi_to_mem_banked #(
     logic      valid;
   } read_sel_t;
 
-  axi_req_t  [1:0] mem_axi_reqs;
-  axi_resp_t [1:0] mem_axi_resps;
+  axi_req_t [1:0] mem_axi_reqs;
+  axi_rsp_t [1:0] mem_axi_rsps;
 
   // Fixed select `axi_demux` to split reads and writes to the two `axi_to_mem`
   axi_demux #(
@@ -146,7 +146,7 @@ module axi_to_mem_banked #(
     .ar_chan_t   ( axi_ar_chan_t ),
     .r_chan_t    ( axi_r_chan_t  ),
     .axi_req_t   ( axi_req_t     ),
-    .axi_resp_t  ( axi_resp_t    ),
+    .axi_rsp_t   ( axi_rsp_t     ),
     .NoMstPorts  ( 32'd2         ),
     .MaxTrans    ( MemLatency+2  ), // allow multiple Ax vectors to not starve W channel
     .AxiLookBits ( 32'd1         ), // select is fixed, do not need it
@@ -160,12 +160,12 @@ module axi_to_mem_banked #(
     .clk_i,
     .rst_ni,
     .test_i,
-    .slv_req_i       ( axi_req_i     ),
-    .slv_aw_select_i ( WriteAccess   ),
-    .slv_ar_select_i ( ReadAccess    ),
-    .slv_resp_o      ( axi_resp_o    ),
-    .mst_reqs_o      ( mem_axi_reqs  ),
-    .mst_resps_i     ( mem_axi_resps )
+    .slv_req_i       ( axi_req_i    ),
+    .slv_aw_select_i ( WriteAccess  ),
+    .slv_ar_select_i ( ReadAccess   ),
+    .slv_rsp_o       ( axi_rsp_o    ),
+    .mst_reqs_o      ( mem_axi_reqs ),
+    .mst_rsps_i      ( mem_axi_rsps )
   );
 
   xbar_payload_t [1:0][BanksPerAxiChannel-1:0] inter_payload;
@@ -185,7 +185,7 @@ module axi_to_mem_banked #(
     // Only assert grant, if there is a ready
     axi_to_mem #(
       .axi_req_t    ( axi_req_t          ),
-      .axi_resp_t   ( axi_resp_t         ),
+      .axi_rsp_t    ( axi_rsp_t          ),
       .AddrWidth    ( AxiAddrWidth       ),
       .DataWidth    ( AxiDataWidth       ),
       .IdWidth      ( AxiIdWidth         ),
@@ -198,7 +198,7 @@ module axi_to_mem_banked #(
       .rst_ni,
       .busy_o       ( axi_to_mem_busy_o[i]            ),
       .axi_req_i    ( mem_axi_reqs[i]                 ),
-      .axi_resp_o   ( mem_axi_resps[i]                ),
+      .axi_rsp_o    ( mem_axi_rsps[i]                 ),
       .mem_req_o    ( inter_valid[i]                  ),
       .mem_gnt_i    ( inter_ready[i] & inter_valid[i] ), // convert valid/ready to req/gnt
       .mem_addr_o   ( req_addr                        ),
@@ -379,13 +379,13 @@ module axi_to_mem_banked_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  mem_axi_req;
-  axi_resp_t mem_axi_resp;
+  axi_req_t mem_axi_req;
+  axi_rsp_t mem_axi_rsp;
 
   `AXI_ASSIGN_TO_REQ(mem_axi_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, mem_axi_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, mem_axi_rsp)
 
   axi_to_mem_banked #(
     .AxiIdWidth    ( AXI_ID_WIDTH               ),
@@ -397,7 +397,7 @@ module axi_to_mem_banked_intf #(
     .axi_ar_chan_t ( ar_chan_t                  ),
     .axi_r_chan_t  (  r_chan_t                  ),
     .axi_req_t     ( axi_req_t                  ),
-    .axi_resp_t    ( axi_resp_t                 ),
+    .axi_rsp_t     ( axi_rsp_t                  ),
     .MemNumBanks   ( MEM_NUM_BANKS              ),
     .MemAddrWidth  ( MEM_ADDR_WIDTH             ),
     .MemDataWidth  ( MEM_DATA_WIDTH             ),
@@ -409,8 +409,8 @@ module axi_to_mem_banked_intf #(
     .rst_ni,
     .test_i,
     .axi_to_mem_busy_o,
-    .axi_req_i      ( mem_axi_req  ),
-    .axi_resp_o     ( mem_axi_resp ),
+    .axi_req_i      ( mem_axi_req ),
+    .axi_rsp_o      ( mem_axi_rsp ),
     .mem_req_o,
     .mem_gnt_i,
     .mem_add_o,

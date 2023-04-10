@@ -19,7 +19,7 @@ module axi_to_mem #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type         axi_req_t  = logic,
   /// AXI4+ATOP response type. See `include/axi/typedef.svh`.
-  parameter type         axi_resp_t = logic,
+  parameter type         axi_rsp_t  = logic,
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
@@ -52,7 +52,7 @@ module axi_to_mem #(
   /// AXI4+ATOP slave port, request input.
   input  axi_req_t                       axi_req_i,
   /// AXI4+ATOP slave port, response output.
-  output axi_resp_t                      axi_resp_o,
+  output axi_rsp_t                       axi_rsp_o,
   /// Memory stream master, request is valid for this bank.
   output logic           [NumBanks-1:0]  mem_req_o,
   /// Memory stream master, request can be granted by this bank.
@@ -97,7 +97,7 @@ module axi_to_mem #(
   } meta_t;
 
   axi_data_t      mem_rdata,
-                  m2s_resp;
+                  m2s_rsp;
   axi_pkg::len_t  r_cnt_d,        r_cnt_q,
                   w_cnt_d,        w_cnt_q;
   logic           arb_valid,      arb_ready,
@@ -112,7 +112,7 @@ module axi_to_mem #(
                   meta_buf_valid, meta_buf_ready,
                   meta_sel_d,     meta_sel_q,
                   m2s_req_valid,  m2s_req_ready,
-                  m2s_resp_valid, m2s_resp_ready,
+                  m2s_rsp_valid,  m2s_rsp_ready,
                   mem_req_valid,  mem_req_ready,
                   mem_rvalid;
   mem_req_t       m2s_req,
@@ -124,17 +124,17 @@ module axi_to_mem #(
                   meta,           meta_buf;
 
   assign busy_o = axi_req_i.aw_valid | axi_req_i.ar_valid | axi_req_i.w_valid |
-                    axi_resp_o.b_valid | axi_resp_o.r_valid |
+                    axi_rsp_o.b_valid | axi_rsp_o.r_valid |
                     (r_cnt_q > 0) | (w_cnt_q > 0);
 
   // Handle reads.
   always_comb begin
     // Default assignments
-    axi_resp_o.ar_ready = 1'b0;
-    rd_meta_d           = rd_meta_q;
-    rd_meta             = meta_t'{default: '0};
-    rd_valid            = 1'b0;
-    r_cnt_d             = r_cnt_q;
+    axi_rsp_o.ar_ready = 1'b0;
+    rd_meta_d          = rd_meta_q;
+    rd_meta            = meta_t'{default: '0};
+    rd_valid           = 1'b0;
+    r_cnt_d            = r_cnt_q;
     // Handle R burst in progress.
     if (r_cnt_q > '0) begin
       rd_meta_d.last = (r_cnt_q == 8'd1);
@@ -160,8 +160,8 @@ module axi_to_mem #(
       rd_meta.addr = addr_t'(axi_req_i.ar.addr);
       rd_valid     = 1'b1;
       if (rd_ready) begin
-        r_cnt_d             = axi_req_i.ar.len;
-        axi_resp_o.ar_ready = 1'b1;
+        r_cnt_d            = axi_req_i.ar.len;
+        axi_rsp_o.ar_ready = 1'b1;
       end
     end
   end
@@ -169,12 +169,12 @@ module axi_to_mem #(
   // Handle writes.
   always_comb begin
     // Default assignments
-    axi_resp_o.aw_ready = 1'b0;
-    axi_resp_o.w_ready  = 1'b0;
-    wr_meta_d           = wr_meta_q;
-    wr_meta             = meta_t'{default: '0};
-    wr_valid            = 1'b0;
-    w_cnt_d             = w_cnt_q;
+    axi_rsp_o.aw_ready = 1'b0;
+    axi_rsp_o.w_ready  = 1'b0;
+    wr_meta_d          = wr_meta_q;
+    wr_meta            = meta_t'{default: '0};
+    wr_valid           = 1'b0;
+    w_cnt_d            = w_cnt_q;
     // Handle W bursts in progress.
     if (w_cnt_q > '0) begin
       wr_meta_d.last = (w_cnt_q == 8'd1);
@@ -183,7 +183,7 @@ module axi_to_mem #(
       if (axi_req_i.w_valid) begin
         wr_valid = 1'b1;
         if (wr_ready) begin
-          axi_resp_o.w_ready = 1'b1;
+          axi_rsp_o.w_ready = 1'b1;
           w_cnt_d--;
           wr_meta_d.addr = wr_meta.addr;
         end
@@ -204,8 +204,8 @@ module axi_to_mem #(
       wr_valid = 1'b1;
       if (wr_ready) begin
         w_cnt_d = axi_req_i.aw.len;
-        axi_resp_o.aw_ready = 1'b1;
-        axi_resp_o.w_ready = 1'b1;
+        axi_rsp_o.aw_ready = 1'b1;
+        axi_rsp_o.w_ready = 1'b1;
       end
     end
   end
@@ -335,17 +335,17 @@ module axi_to_mem #(
   ) i_stream_to_mem (
     .clk_i,
     .rst_ni,
-    .req_i            ( m2s_req        ),
-    .req_valid_i      ( m2s_req_valid  ),
-    .req_ready_o      ( m2s_req_ready  ),
-    .resp_o           ( m2s_resp       ),
-    .resp_valid_o     ( m2s_resp_valid ),
-    .resp_ready_i     ( m2s_resp_ready ),
-    .mem_req_o        ( mem_req        ),
-    .mem_req_valid_o  ( mem_req_valid  ),
-    .mem_req_ready_i  ( mem_req_ready  ),
-    .mem_resp_i       ( mem_rdata      ),
-    .mem_resp_valid_i ( mem_rvalid     )
+    .req_i            ( m2s_req       ),
+    .req_valid_i      ( m2s_req_valid ),
+    .req_ready_o      ( m2s_req_ready ),
+    .resp_o           ( m2s_rsp       ),
+    .resp_valid_o     ( m2s_rsp_valid ),
+    .resp_ready_i     ( m2s_rsp_ready ),
+    .mem_req_o        ( mem_req       ),
+    .mem_req_valid_o  ( mem_req_valid ),
+    .mem_req_ready_i  ( mem_req_ready ),
+    .mem_resp_i       ( mem_rdata     ),
+    .mem_resp_valid_i ( mem_rvalid    )
   );
 
   // Split single memory request to desired number of banks.
@@ -385,10 +385,10 @@ module axi_to_mem #(
   stream_join #(
     .N_INP ( 32'd2 )
   ) i_join (
-    .inp_valid_i  ({m2s_resp_valid, meta_buf_valid}),
-    .inp_ready_o  ({m2s_resp_ready, meta_buf_ready}),
-    .oup_valid_o  ( mem_join_valid                 ),
-    .oup_ready_i  ( mem_join_ready                 )
+    .inp_valid_i  ({m2s_rsp_valid, meta_buf_valid}),
+    .inp_ready_o  ({m2s_rsp_ready, meta_buf_ready}),
+    .oup_valid_o  ( mem_join_valid                ),
+    .oup_ready_i  ( mem_join_ready                )
   );
 
   // Dynamically fork the joined stream to B and R channels.
@@ -397,25 +397,25 @@ module axi_to_mem #(
   ) i_fork_dynamic (
     .clk_i,
     .rst_ni,
-    .valid_i      ( mem_join_valid                         ),
-    .ready_o      ( mem_join_ready                         ),
-    .sel_i        ({sel_buf_b,          sel_buf_r         }),
-    .sel_valid_i  ( sel_buf_valid                          ),
-    .sel_ready_o  ( sel_buf_ready                          ),
-    .valid_o      ({axi_resp_o.b_valid, axi_resp_o.r_valid}),
-    .ready_i      ({axi_req_i.b_ready,  axi_req_i.r_ready })
+    .valid_i      ( mem_join_valid                       ),
+    .ready_o      ( mem_join_ready                       ),
+    .sel_i        ({sel_buf_b,         sel_buf_r        }),
+    .sel_valid_i  ( sel_buf_valid                        ),
+    .sel_ready_o  ( sel_buf_ready                        ),
+    .valid_o      ({axi_rsp_o.b_valid, axi_rsp_o.r_valid}),
+    .ready_i      ({axi_req_i.b_ready, axi_req_i.r_ready})
   );
 
   // Compose B responses.
-  assign axi_resp_o.b = '{
+  assign axi_rsp_o.b = '{
     id:   meta_buf.id,
     resp: axi_pkg::RESP_OKAY,
     user: '0
   };
 
   // Compose R responses.
-  assign axi_resp_o.r = '{
-    data: m2s_resp,
+  assign axi_rsp_o.r = '{
+    data: m2s_rsp,
     id:   meta_buf.id,
     last: meta_buf.last,
     resp: axi_pkg::RESP_OKAY,
@@ -435,19 +435,19 @@ module axi_to_mem #(
   `ifndef VERILATOR
   default disable iff (!rst_ni);
   assume property (@(posedge clk_i)
-      axi_req_i.ar_valid && !axi_resp_o.ar_ready |=> $stable(axi_req_i.ar))
+      axi_req_i.ar_valid && !axi_rsp_o.ar_ready |=> $stable(axi_req_i.ar))
     else $error("AR must remain stable until handshake has happened!");
   assert property (@(posedge clk_i)
-      axi_resp_o.r_valid && !axi_req_i.r_ready |=> $stable(axi_resp_o.r))
+      axi_rsp_o.r_valid && !axi_req_i.r_ready |=> $stable(axi_rsp_o.r))
     else $error("R must remain stable until handshake has happened!");
   assume property (@(posedge clk_i)
-      axi_req_i.aw_valid && !axi_resp_o.aw_ready |=> $stable(axi_req_i.aw))
+      axi_req_i.aw_valid && !axi_rsp_o.aw_ready |=> $stable(axi_req_i.aw))
     else $error("AW must remain stable until handshake has happened!");
   assume property (@(posedge clk_i)
-      axi_req_i.w_valid && !axi_resp_o.w_ready |=> $stable(axi_req_i.w))
+      axi_req_i.w_valid && !axi_rsp_o.w_ready |=> $stable(axi_req_i.w))
     else $error("W must remain stable until handshake has happened!");
   assert property (@(posedge clk_i)
-      axi_resp_o.b_valid && !axi_req_i.b_ready |=> $stable(axi_resp_o.b))
+      axi_rsp_o.b_valid && !axi_req_i.b_ready |=> $stable(axi_rsp_o.b))
     else $error("B must remain stable until handshake has happened!");
   assert property (@(posedge clk_i) axi_req_i.ar_valid && axi_req_i.ar.len > 0 |->
       axi_req_i.ar.burst == axi_pkg::BURST_INCR)
@@ -526,14 +526,14 @@ module axi_to_mem_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(rsp_t, b_chan_t, r_chan_t)
   req_t   req;
-  resp_t  resp;
+  rsp_t  rsp;
   `AXI_ASSIGN_TO_REQ(req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, resp)
+  `AXI_ASSIGN_FROM_RSP(slv, rsp)
   axi_to_mem #(
     .axi_req_t    ( req_t          ),
-    .axi_resp_t   ( resp_t         ),
+    .axi_rsp_t    ( rsp_t          ),
     .AddrWidth    ( ADDR_WIDTH     ),
     .DataWidth    ( DATA_WIDTH     ),
     .IdWidth      ( ID_WIDTH       ),
@@ -545,8 +545,8 @@ module axi_to_mem_intf #(
     .clk_i,
     .rst_ni,
     .busy_o,
-    .axi_req_i  ( req  ),
-    .axi_resp_o ( resp ),
+    .axi_req_i ( req ),
+    .axi_rsp_o ( rsp ),
     .mem_req_o,
     .mem_gnt_i,
     .mem_addr_o,

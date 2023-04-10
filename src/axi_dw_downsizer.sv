@@ -32,19 +32,19 @@ module axi_dw_downsizer #(
     parameter type ar_chan_t                   = logic, // AR Channel Type
     parameter type mst_r_chan_t                = logic, //  R Channel Type for mst port
     parameter type slv_r_chan_t                = logic, //  R Channel Type for slv port
-    parameter type axi_mst_req_t               = logic, // AXI Request Type for mst ports
-    parameter type axi_mst_resp_t              = logic, // AXI Response Type for mst ports
-    parameter type axi_slv_req_t               = logic, // AXI Request Type for slv ports
-    parameter type axi_slv_resp_t              = logic  // AXI Response Type for slv ports
+    parameter type mst_port_axi_req_t          = logic, // AXI Request Type for mst ports
+    parameter type mst_port_axi_rsp_t          = logic, // AXI Response Type for mst ports
+    parameter type slv_port_axi_req_t          = logic, // AXI Request Type for slv ports
+    parameter type slv_port_axi_rsp_t          = logic  // AXI Response Type for slv ports
   ) (
-    input  logic          clk_i,
-    input  logic          rst_ni,
+    input  logic              clk_i,
+    input  logic              rst_ni,
     // Slave interface
-    input  axi_slv_req_t  slv_req_i,
-    output axi_slv_resp_t slv_resp_o,
+    input  slv_port_axi_req_t slv_req_i,
+    output slv_port_axi_rsp_t slv_rsp_o,
     // Master interface
-    output axi_mst_req_t  mst_req_o,
-    input  axi_mst_resp_t mst_resp_i
+    output mst_port_axi_req_t mst_req_o,
+    input  mst_port_axi_rsp_t mst_rsp_i
   );
 
   /*****************
@@ -83,8 +83,8 @@ module axi_dw_downsizer #(
   typedef logic [$clog2(AxiSlvPortStrbWidth/AxiMstPortStrbWidth) + 7:0] burst_len_t;
 
   // Internal AXI bus
-  axi_mst_req_t  mst_req;
-  axi_mst_resp_t mst_resp;
+  mst_port_axi_req_t mst_req;
+  mst_port_axi_rsp_t mst_rsp;
 
   /**************
    *  ARBITERS  *
@@ -103,17 +103,17 @@ module axi_dw_downsizer #(
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
   ) i_slv_r_arb (
-    .clk_i  (clk_i             ),
-    .rst_ni (rst_ni            ),
-    .flush_i(1'b0              ),
-    .rr_i   ('0                ),
-    .req_i  (slv_r_valid_tran  ),
-    .gnt_o  (slv_r_ready_tran  ),
-    .data_i (slv_r_tran        ),
-    .gnt_i  (slv_req_i.r_ready ),
-    .req_o  (slv_resp_o.r_valid),
-    .data_o (slv_resp_o.r      ),
-    .idx_o  (/* Unused */      )
+    .clk_i  (clk_i            ),
+    .rst_ni (rst_ni           ),
+    .flush_i(1'b0             ),
+    .rr_i   ('0               ),
+    .req_i  (slv_r_valid_tran ),
+    .gnt_o  (slv_r_ready_tran ),
+    .data_i (slv_r_tran       ),
+    .gnt_i  (slv_req_i.r_ready),
+    .req_o  (slv_rsp_o.r_valid),
+    .data_o (slv_rsp_o.r      ),
+    .idx_o  (/* Unused */     )
   );
 
   logic [AxiMaxReads-1:0] mst_r_ready_tran;
@@ -139,17 +139,17 @@ module axi_dw_downsizer #(
     .AxiVldRdy (1'b1      ),
     .LockIn    (1'b0      )
   ) i_slv_ar_arb (
-    .clk_i   (clk_i                                       ),
-    .rst_ni  (rst_ni                                      ),
-    .flush_i (1'b0                                        ),
-    .rr_i    ('0                                          ),
-    .req_i   ({inject_aw_into_ar_req, slv_req_i.ar_valid} ),
-    .gnt_o   ({inject_aw_into_ar_gnt, slv_resp_o.ar_ready}),
-    .data_i  ({slv_req_i.aw.id, slv_req_i.ar.id}          ),
-    .req_o   (arb_slv_ar_req                              ),
-    .gnt_i   (arb_slv_ar_gnt                              ),
-    .data_o  (arb_slv_ar_id                               ),
-    .idx_o   (inject_aw_into_ar                           )
+    .clk_i   (clk_i                                      ),
+    .rst_ni  (rst_ni                                     ),
+    .flush_i (1'b0                                       ),
+    .rr_i    ('0                                         ),
+    .req_i   ({inject_aw_into_ar_req, slv_req_i.ar_valid}),
+    .gnt_o   ({inject_aw_into_ar_gnt, slv_rsp_o.ar_ready}),
+    .data_i  ({slv_req_i.aw.id, slv_req_i.ar.id}         ),
+    .req_o   (arb_slv_ar_req                             ),
+    .gnt_i   (arb_slv_ar_gnt                             ),
+    .data_o  (arb_slv_ar_id                              ),
+    .idx_o   (inject_aw_into_ar                          )
   );
 
   ar_chan_t [AxiMaxReads-1:0] mst_ar_tran;
@@ -172,7 +172,7 @@ module axi_dw_downsizer #(
     .req_i  (mst_ar_valid_tran),
     .gnt_o  (mst_ar_ready_tran),
     .data_i (mst_ar_tran      ),
-    .gnt_i  (mst_resp.ar_ready),
+    .gnt_i  (mst_rsp.ar_ready ),
     .req_o  (mst_req.ar_valid ),
     .data_o (mst_req.ar       ),
     .idx_o  (mst_req_idx      )
@@ -182,20 +182,20 @@ module axi_dw_downsizer #(
    *  ERROR SLAVE  *
    *****************/
 
-  axi_mst_req_t  axi_err_req;
-  axi_mst_resp_t axi_err_resp;
+  mst_port_axi_req_t axi_err_req;
+  mst_port_axi_rsp_t axi_err_rsp;
 
   axi_err_slv #(
     .AxiIdWidth(AxiIdWidth          ),
     .Resp      (axi_pkg::RESP_SLVERR),
-    .axi_req_t (axi_mst_req_t       ),
-    .axi_resp_t(axi_mst_resp_t      )
+    .axi_req_t (mst_port_axi_req_t  ),
+    .axi_rsp_t (mst_port_axi_rsp_t  )
   ) i_axi_err_slv (
-    .clk_i     (clk_i       ),
-    .rst_ni    (rst_ni      ),
-    .test_i    (1'b0        ),
-    .slv_req_i (axi_err_req ),
-    .slv_resp_o(axi_err_resp)
+    .clk_i    (clk_i      ),
+    .rst_ni   (rst_ni     ),
+    .test_i   (1'b0       ),
+    .slv_req_i(axi_err_req),
+    .slv_rsp_o(axi_err_rsp)
   );
 
   /***********
@@ -209,28 +209,28 @@ module axi_dw_downsizer #(
   logic                   mst_req_aw_err;
 
   axi_demux #(
-    .AxiIdWidth (AxiIdWidth    ),
-    .AxiLookBits(AxiIdWidth    ),
-    .aw_chan_t  (aw_chan_t     ),
-    .w_chan_t   (mst_w_chan_t  ),
-    .b_chan_t   (b_chan_t      ),
-    .ar_chan_t  (ar_chan_t     ),
-    .r_chan_t   (mst_r_chan_t  ),
-    .axi_req_t  (axi_mst_req_t ),
-    .axi_resp_t (axi_mst_resp_t),
-    .NoMstPorts (2             ),
-    .MaxTrans   (AxiMaxReads   ),
-    .SpillAw    (1'b1          ) // Required to break dependency between AW and W channels
+    .AxiIdWidth (AxiIdWidth        ),
+    .AxiLookBits(AxiIdWidth        ),
+    .aw_chan_t  (aw_chan_t         ),
+    .w_chan_t   (mst_w_chan_t      ),
+    .b_chan_t   (b_chan_t          ),
+    .ar_chan_t  (ar_chan_t         ),
+    .r_chan_t   (mst_r_chan_t      ),
+    .axi_req_t  (mst_port_axi_req_t),
+    .axi_rsp_t  (mst_port_axi_rsp_t),
+    .NoMstPorts (2                 ),
+    .MaxTrans   (AxiMaxReads       ),
+    .SpillAw    (1'b1              ) // Required to break dependency between AW and W channels
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),
     .test_i         (1'b0                       ),
     .mst_reqs_o     ({axi_err_req, mst_req_o}   ),
-    .mst_resps_i    ({axi_err_resp, mst_resp_i} ),
+    .mst_rsps_i     ({axi_err_rsp, mst_rsp_i}   ),
     .slv_ar_select_i(mst_req_ar_err[mst_req_idx]),
     .slv_aw_select_i(mst_req_aw_err             ),
     .slv_req_i      (mst_req                    ),
-    .slv_resp_o     (mst_resp                   )
+    .slv_rsp_o      (mst_rsp                    )
   );
 
   /**********
@@ -320,7 +320,7 @@ module axi_dw_downsizer #(
     .inp_data_i      (idx_ar_downsizer),
     .inp_req_i       (|idqueue_push   ),
     .inp_gnt_o       (/* Unused  */   ),
-    .oup_id_i        (mst_resp.r.id   ),
+    .oup_id_i        (mst_rsp.r.id    ),
     .oup_pop_i       (|idqueue_pop    ),
     .oup_req_i       (1'b1            ),
     .oup_data_o      (idqueue_id      ),
@@ -550,7 +550,7 @@ module axi_dw_downsizer #(
               if (!slv_r_valid_tran[t] || (slv_r_valid_tran[t] && slv_r_ready_tran[t])) begin
                 mst_r_ready_tran[t] = 1'b1;
 
-                if (mst_resp.r_valid) begin
+                if (mst_rsp.r_valid) begin
                   automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
                   automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
@@ -559,18 +559,18 @@ module axi_dw_downsizer #(
                     if ((b >= slv_port_offset) &&
                         (b - slv_port_offset < (1 << r_req_q.orig_ar_size)) &&
                         (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
-                      r_data[b] = mst_resp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
+                      r_data[b] = mst_rsp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
                     end
 
                   r_req_d.burst_len = r_req_q.burst_len - 1   ;
                   r_req_d.ar.len    = r_req_q.ar.len - 1      ;
                   r_req_d.r.data    = r_data                  ;
                   r_req_d.r.last    = (r_req_q.burst_len == 0);
-                  r_req_d.r.id      = mst_resp.r.id           ;
-                  r_req_d.r.user    = mst_resp.r.user         ;
+                  r_req_d.r.id      = mst_rsp.r.id           ;
+                  r_req_d.r.user    = mst_rsp.r.user         ;
 
                   // Merge response of this beat with prior one according to precedence rules.
-                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_q.r.resp, mst_resp.r.resp);
+                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_q.r.resp, mst_rsp.r.resp);
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
@@ -677,47 +677,47 @@ module axi_dw_downsizer #(
     w_req_d   = w_req_q  ;
 
     // AW Channel
-    mst_req.aw          = w_req_q.aw      ;
-    mst_req.aw_valid    = w_req_q.aw_valid;
-    slv_resp_o.aw_ready = '0              ;
+    mst_req.aw         = w_req_q.aw      ;
+    mst_req.aw_valid   = w_req_q.aw_valid;
+    slv_rsp_o.aw_ready = '0              ;
 
     // Throw an error.
     mst_req_aw_err = w_req_q.aw_throw_error;
 
     // W Channel
-    mst_req.w          = '0;
-    mst_req.w_valid    = '0;
-    slv_resp_o.w_ready = '0;
+    mst_req.w         = '0;
+    mst_req.w_valid   = '0;
+    slv_rsp_o.w_ready = '0;
 
     // Initialize w_data
     w_data = '0;
 
     // B Channel (No latency)
-    if (mst_resp.b_valid) begin
+    if (mst_rsp.b_valid) begin
       // Merge response of this burst with prior one according to precedence rules.
-      w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
+      w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_rsp.b.resp);
     end
-    slv_resp_o.b      = mst_resp.b        ;
-    slv_resp_o.b.resp = w_req_d.burst_resp;
+    slv_rsp_o.b      = mst_rsp.b         ;
+    slv_rsp_o.b.resp = w_req_d.burst_resp;
 
     // Each write transaction might trigger several B beats on the master (narrow) side.
     // Only forward the last B beat of each transaction.
     if (forward_b_beat_o) begin
-      slv_resp_o.b_valid = mst_resp.b_valid ;
-      mst_req.b_ready    = slv_req_i.b_ready;
+      slv_rsp_o.b_valid = mst_rsp.b_valid  ;
+      mst_req.b_ready   = slv_req_i.b_ready;
 
       // Got an ack on the B channel. Pop transaction.
-      if (mst_req.b_ready && mst_resp.b_valid)
+      if (mst_req.b_ready && mst_rsp.b_valid)
         forward_b_beat_pop = 1'b1;
     end else begin
       // Otherwise, just acknowlegde the B beats
-      slv_resp_o.b_valid = 1'b0            ;
-      mst_req.b_ready    = 1'b1            ;
-      forward_b_beat_pop = mst_resp.b_valid;
+      slv_rsp_o.b_valid  = 1'b0           ;
+      mst_req.b_ready    = 1'b1           ;
+      forward_b_beat_pop = mst_rsp.b_valid;
     end
 
     // Got a grant on the AW channel
-    if (mst_req.aw_valid & mst_resp.aw_ready) begin
+    if (mst_req.aw_valid & mst_rsp.aw_ready) begin
       w_req_d.aw_valid       = 1'b0;
       w_req_d.aw_throw_error = 1'b0;
     end
@@ -747,7 +747,7 @@ module axi_dw_downsizer #(
           end
 
         // Acknowledgment
-        if (mst_resp.w_ready && mst_req.w_valid) begin
+        if (mst_rsp.w_ready && mst_req.w_valid) begin
           w_req_d.burst_len = w_req_q.burst_len - 1;
           w_req_d.aw.len    = w_req_q.aw.len - 1   ;
 
@@ -762,11 +762,11 @@ module axi_dw_downsizer #(
 
           case (w_state_q)
             W_PASSTHROUGH:
-              slv_resp_o.w_ready = 1'b1;
+              slv_rsp_o.w_ready = 1'b1;
 
             W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
               if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
-                slv_resp_o.w_ready = 1'b1;
+                slv_rsp_o.w_ready = 1'b1;
           endcase
 
           // Trigger another burst request, if needed
@@ -802,13 +802,13 @@ module axi_dw_downsizer #(
       if (!forward_b_beat_full) begin
         if (slv_req_i.aw_valid && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin // ATOP with an R response
           inject_aw_into_ar_req = 1'b1                 ;
-          slv_resp_o.aw_ready   = inject_aw_into_ar_gnt;
+          slv_rsp_o.aw_ready   = inject_aw_into_ar_gnt;
         end else begin // Regular AW
-          slv_resp_o.aw_ready = 1'b1;
+          slv_rsp_o.aw_ready = 1'b1;
         end
 
         // New write request
-        if (slv_req_i.aw_valid && slv_resp_o.aw_ready) begin
+        if (slv_req_i.aw_valid && slv_rsp_o.aw_ready) begin
           // Default state
           w_state_d = W_PASSTHROUGH;
 

@@ -19,24 +19,24 @@
 `include "common_cells/registers.svh"
 
 module axi_lite_mailbox #(
-  parameter int unsigned MailboxDepth    = 32'd0,
-  parameter bit unsigned IrqEdgeTrig     = 1'b0,
-  parameter bit unsigned IrqActHigh      = 1'b1,
-  parameter int unsigned AxiAddrWidth    = 32'd0,
-  parameter int unsigned AxiDataWidth    = 32'd0,
-  parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_resp_t = logic,
+  parameter int unsigned MailboxDepth   = 32'd0,
+  parameter bit unsigned IrqEdgeTrig    = 1'b0,
+  parameter bit unsigned IrqActHigh     = 1'b1,
+  parameter int unsigned AxiAddrWidth   = 32'd0,
+  parameter int unsigned AxiDataWidth   = 32'd0,
+  parameter type         axi_lite_req_t = logic,
+  parameter type         axi_lite_rsp_t = logic,
   // DEPENDENT PARAMETERS, DO NOT OVERRIDE!
-  parameter type         addr_t          = logic [AxiAddrWidth-1:0]
+  parameter type         addr_t         = logic [AxiAddrWidth-1:0]
 ) (
-  input  logic                 clk_i,       // Clock
-  input  logic                 rst_ni,      // Asynchronous reset active low
-  input  logic                 test_i,      // Testmode enable
+  input  logic                clk_i,       // Clock
+  input  logic                rst_ni,      // Asynchronous reset active low
+  input  logic                test_i,      // Testmode enable
   // slave ports [1:0]
-  input  axi_lite_req_t  [1:0] slv_reqs_i,
-  output axi_lite_resp_t [1:0] slv_resps_o,
-  output logic           [1:0] irq_o,       // interrupt output for each port
-  input  addr_t          [1:0] base_addr_i  // base address for each port
+  input  axi_lite_req_t [1:0] slv_reqs_i,
+  output axi_lite_rsp_t [1:0] slv_rsps_o,
+  output logic          [1:0] irq_o,       // interrupt output for each port
+  input  addr_t         [1:0] base_addr_i  // base address for each port
 );
   localparam int unsigned FifoUsageWidth = $clog2(MailboxDepth);
   typedef logic [AxiDataWidth-1:0] data_t;
@@ -55,20 +55,20 @@ module axi_lite_mailbox #(
   logic   [1:0] clear_irq;
 
   axi_lite_mailbox_slave #(
-    .MailboxDepth    ( MailboxDepth    ),
-    .AxiAddrWidth    ( AxiAddrWidth    ),
-    .AxiDataWidth    ( AxiDataWidth    ),
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t ),
-    .addr_t          ( addr_t          ),
-    .data_t          ( data_t          ),
-    .usage_t         ( usage_t         )  // fill pointer from MBOX FIFO
+    .MailboxDepth   ( MailboxDepth   ),
+    .AxiAddrWidth   ( AxiAddrWidth   ),
+    .AxiDataWidth   ( AxiDataWidth   ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t ),
+    .addr_t         ( addr_t         ),
+    .data_t         ( data_t         ),
+    .usage_t        ( usage_t        )  // fill pointer from MBOX FIFO
   ) i_slv_port_0 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
     // slave port
     .slv_req_i      ( slv_reqs_i[0]   ),
-    .slv_resp_o     ( slv_resps_o[0]  ),
+    .slv_rsp_o      ( slv_rsps_o[0]   ),
     .base_addr_i    ( base_addr_i[0]  ), // base address for the slave port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[0]  ),
@@ -88,20 +88,20 @@ module axi_lite_mailbox #(
   );
 
   axi_lite_mailbox_slave #(
-    .MailboxDepth    ( MailboxDepth    ),
-    .AxiAddrWidth    ( AxiAddrWidth    ),
-    .AxiDataWidth    ( AxiDataWidth    ),
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t ),
-    .addr_t          ( addr_t          ),
-    .data_t          ( data_t          ),
-    .usage_t         ( usage_t         )  // fill pointer from MBOX FIFO
+    .MailboxDepth   ( MailboxDepth   ),
+    .AxiAddrWidth   ( AxiAddrWidth   ),
+    .AxiDataWidth   ( AxiDataWidth   ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t ),
+    .addr_t         ( addr_t         ),
+    .data_t         ( data_t         ),
+    .usage_t        ( usage_t        )  // fill pointer from MBOX FIFO
   ) i_slv_port_1 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
     // slave port
     .slv_req_i      ( slv_reqs_i[1]   ),
-    .slv_resp_o     ( slv_resps_o[1]  ),
+    .slv_rsp_o      ( slv_rsps_o[1]   ),
     .base_addr_i    ( base_addr_i[1]  ), // base address for the slave port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[1]  ),
@@ -202,36 +202,36 @@ endmodule
 
 // slave port module
 module axi_lite_mailbox_slave #(
-  parameter int unsigned MailboxDepth    = 32'd16,
-  parameter int unsigned AxiAddrWidth    = 32'd32,
-  parameter int unsigned AxiDataWidth    = 32'd32,
-  parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_resp_t = logic,
-  parameter type         addr_t          = logic [AxiAddrWidth-1:0],
-  parameter type         data_t          = logic [AxiDataWidth-1:0],
-  parameter type         usage_t         = logic                     // fill pointer from MBOX FIFO
+  parameter int unsigned MailboxDepth   = 32'd16,
+  parameter int unsigned AxiAddrWidth   = 32'd32,
+  parameter int unsigned AxiDataWidth   = 32'd32,
+  parameter type         axi_lite_req_t = logic,
+  parameter type         axi_lite_rsp_t = logic,
+  parameter type         addr_t         = logic [AxiAddrWidth-1:0],
+  parameter type         data_t         = logic [AxiDataWidth-1:0],
+  parameter type         usage_t        = logic                     // fill pointer from MBOX FIFO
 ) (
-  input  logic           clk_i,   // Clock
-  input  logic           rst_ni,  // Asynchronous reset active low
+  input  logic          clk_i,   // Clock
+  input  logic          rst_ni,  // Asynchronous reset active low
   // slave port
-  input  axi_lite_req_t  slv_req_i,
-  output axi_lite_resp_t slv_resp_o,
-  input  addr_t          base_addr_i, // base address for the slave port
+  input  axi_lite_req_t slv_req_i,
+  output axi_lite_rsp_t slv_rsp_o,
+  input  addr_t         base_addr_i, // base address for the slave port
   // write FIFO port
-  output data_t          mbox_w_data_o,
-  input  logic           mbox_w_full_i,
-  output logic           mbox_w_push_o,
-  output logic           mbox_w_flush_o,
-  input  usage_t         mbox_w_usage_i,
+  output data_t         mbox_w_data_o,
+  input  logic          mbox_w_full_i,
+  output logic          mbox_w_push_o,
+  output logic          mbox_w_flush_o,
+  input  usage_t        mbox_w_usage_i,
   // read FIFO port
-  input  data_t          mbox_r_data_i,
-  input  logic           mbox_r_empty_i,
-  output logic           mbox_r_pop_o,
-  output logic           mbox_r_flush_o,
-  input  usage_t         mbox_r_usage_i,
+  input  data_t         mbox_r_data_i,
+  input  logic          mbox_r_empty_i,
+  output logic          mbox_r_pop_o,
+  output logic          mbox_r_flush_o,
+  input  usage_t        mbox_r_usage_i,
   // interrupt output, level triggered, active high, conversion in top
-  output logic           irq_o,
-  output logic           clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
+  output logic          irq_o,
+  output logic          clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
 );
 
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
@@ -314,13 +314,13 @@ module axi_lite_mailbox_slave #(
 
   always_comb begin
     // slave port channel outputs for the AW, W and R channel, other driven from spill register
-    slv_resp_o.aw_ready = 1'b0;
-    slv_resp_o.w_ready  = 1'b0;
-    b_chan              = '{resp: axi_pkg::RESP_SLVERR};
-    b_valid             = 1'b0;
-    slv_resp_o.ar_ready = 1'b0;
-    r_chan              = '{data: '0, resp: axi_pkg::RESP_SLVERR};
-    r_valid             = 1'b0;
+    slv_rsp_o.aw_ready = 1'b0;
+    slv_rsp_o.w_ready  = 1'b0;
+    b_chan             = '{resp: axi_pkg::RESP_SLVERR};
+    b_valid            = 1'b0;
+    slv_rsp_o.ar_ready = 1'b0;
+    r_chan             = '{data: '0, resp: axi_pkg::RESP_SLVERR};
+    r_valid            = 1'b0;
     // Default assignments for the internal registers
     error_d     = error_q;   // mailbox error register
     wirqt_d     = wirqt_q;   // write interrupt request threshold register
@@ -397,7 +397,7 @@ module axi_lite_mailbox_slave #(
       end
       r_valid = 1'b1;
       if (r_ready) begin
-        slv_resp_o.ar_ready = 1'b1;
+        slv_rsp_o.ar_ready = 1'b1;
       end
     end // read register
 
@@ -480,8 +480,8 @@ module axi_lite_mailbox_slave #(
             default : /* use default b_chan */;
           endcase
         end
-        slv_resp_o.aw_ready = 1'b1;
-        slv_resp_o.w_ready  = 1'b1;
+        slv_rsp_o.aw_ready = 1'b1;
+        slv_rsp_o.w_ready  = 1'b1;
       end // if (b_ready): Does not violate AXI spec, because the ready comes from an internal
           // spill register and does not propagate the ready from the b channel.
     end // write register
@@ -508,12 +508,12 @@ module axi_lite_mailbox_slave #(
   ) i_b_chan_outp (
     .clk_i,
     .rst_ni,
-    .valid_i ( b_valid            ),
-    .ready_o ( b_ready            ),
-    .data_i  ( b_chan             ),
-    .valid_o ( slv_resp_o.b_valid ),
-    .ready_i ( slv_req_i.b_ready  ),
-    .data_o  ( slv_resp_o.b       )
+    .valid_i ( b_valid           ),
+    .ready_o ( b_ready           ),
+    .data_i  ( b_chan            ),
+    .valid_o ( slv_rsp_o.b_valid ),
+    .ready_i ( slv_req_i.b_ready ),
+    .data_o  ( slv_rsp_o.b       )
   );
   addr_decode #(
     .NoIndices( NoRegs ),
@@ -534,12 +534,12 @@ module axi_lite_mailbox_slave #(
   ) i_r_chan_outp (
     .clk_i,
     .rst_ni,
-    .valid_i ( r_valid            ),
-    .ready_o ( r_ready            ),
-    .data_i  ( r_chan             ),
-    .valid_o ( slv_resp_o.r_valid ),
-    .ready_i ( slv_req_i.r_ready  ),
-    .data_o  ( slv_resp_o.r       )
+    .valid_i ( r_valid           ),
+    .ready_o ( r_ready           ),
+    .data_i  ( r_chan            ),
+    .valid_o ( slv_rsp_o.r_valid ),
+    .ready_i ( slv_req_i.r_ready ),
+    .data_o  ( slv_rsp_o.r       )
   );
   // pragma translate_off
   `ifndef VERILATOR
@@ -547,7 +547,7 @@ module axi_lite_mailbox_slave #(
     assert (AxiAddrWidth == $bits(slv_req_i.aw.addr)) else $fatal(1, "AW AxiAddrWidth mismatch");
     assert (AxiDataWidth == $bits(slv_req_i.w.data))  else $fatal(1, " W AxiDataWidth mismatch");
     assert (AxiAddrWidth == $bits(slv_req_i.ar.addr)) else $fatal(1, "AR AxiAddrWidth mismatch");
-    assert (AxiDataWidth == $bits(slv_resp_o.r.data)) else $fatal(1, " R AxiDataWidth mismatch");
+    assert (AxiDataWidth == $bits(slv_rsp_o.r.data))  else $fatal(1, " R AxiDataWidth mismatch");
   end
   `endif
   // pragma translate_on
@@ -579,31 +579,31 @@ module axi_lite_mailbox_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_lite_t, r_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_lite_t, r_chan_lite_t)
 
-  axi_lite_req_t  [1:0] slv_reqs;
-  axi_lite_resp_t [1:0] slv_resps;
+  axi_lite_req_t [1:0] slv_reqs;
+  axi_lite_rsp_t [1:0] slv_rsps;
 
   for (genvar i = 0; i < 2; i++) begin : gen_port_assign
     `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
-    `AXI_LITE_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
+    `AXI_LITE_ASSIGN_FROM_RSP(slv[i], slv_rsps[i])
   end
 
   axi_lite_mailbox #(
-    .MailboxDepth    ( MAILBOX_DEPTH   ),
-    .IrqEdgeTrig     ( IRQ_EDGE_TRIG   ),
-    .IrqActHigh      ( IRQ_ACT_HIGH    ),
-    .AxiAddrWidth    ( AXI_ADDR_WIDTH  ),
-    .AxiDataWidth    ( AXI_DATA_WIDTH  ),
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t )
+    .MailboxDepth   ( MAILBOX_DEPTH  ),
+    .IrqEdgeTrig    ( IRQ_EDGE_TRIG  ),
+    .IrqActHigh     ( IRQ_ACT_HIGH   ),
+    .AxiAddrWidth   ( AXI_ADDR_WIDTH ),
+    .AxiDataWidth   ( AXI_DATA_WIDTH ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t )
   ) i_axi_lite_mailbox (
     .clk_i,      // Clock
     .rst_ni,     // Asynchronous reset active low
     .test_i,     // Testmode enable
     // slave ports [1:0]
-    .slv_reqs_i  ( slv_reqs  ),
-    .slv_resps_o ( slv_resps ),
+    .slv_reqs_i ( slv_reqs ),
+    .slv_rsps_o ( slv_rsps ),
     .irq_o,      // interrupt output for each port
     .base_addr_i // base address for each port
   );

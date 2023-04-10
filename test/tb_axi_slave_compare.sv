@@ -61,11 +61,11 @@ module tb_axi_slave_compare #(
 
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
-  axi_req_t   axi_req, axi_req_a_out, axi_req_b_out, axi_req_b_dly;
-  axi_resp_t  axi_rsp, axi_rsp_a_out, axi_rsp_b_out, axi_rsp_b_dly;
+  axi_req_t  axi_req, axi_req_a_out, axi_req_b_out, axi_req_b_dly;
+  axi_rsp_t  axi_rsp, axi_rsp_a_out, axi_rsp_b_out, axi_rsp_b_dly;
 
   `AXI_ASSIGN_TO_REQ(axi_req, axi)
-  `AXI_ASSIGN_FROM_RESP(axi, axi_rsp)
+  `AXI_ASSIGN_FROM_RSP(axi, axi_rsp)
 
   axi_slave_compare #(
     .AxiIdWidth     ( TbIdWidth       ),
@@ -76,7 +76,7 @@ module tb_axi_slave_compare #(
     .axi_ar_chan_t  ( axi_ar_chan_t   ),
     .axi_r_chan_t   ( axi_r_chan_t    ),
     .axi_req_t      ( axi_req_t       ),
-    .axi_rsp_t      ( axi_resp_t      )
+    .axi_rsp_t      ( axi_rsp_t       )
   ) i_axi_bus_compare (
     .clk_i          ( clk           ),
     .rst_ni         ( rst_n         ),
@@ -102,7 +102,7 @@ module tb_axi_slave_compare #(
     .IdWidth  (TbIdWidth),
     .UserWidth(TbUserWidth),
     .axi_req_t(axi_req_t),
-    .axi_rsp_t(axi_resp_t),
+    .axi_rsp_t(axi_rsp_t),
     .ApplDelay(TbApplDelay),
     .AcqDelay (TbAcqDelay)
   ) i_axi_sim_mem_a (
@@ -134,14 +134,14 @@ module tb_axi_slave_compare #(
     .ar_chan_t (axi_ar_chan_t),
     .r_chan_t  (axi_r_chan_t),
     .axi_req_t (axi_req_t),
-    .axi_resp_t(axi_resp_t)
+    .axi_rsp_t (axi_rsp_t)
   ) i_axi_multicut (
-    .clk_i      ( clk           ),
-    .rst_ni     ( rst_n         ),
-    .slv_req_i  ( axi_req_b_out ),
-    .slv_resp_o ( axi_rsp_b_out ),
-    .mst_req_o  ( axi_req_b_dly ),
-    .mst_resp_i ( axi_rsp_b_dly )
+    .clk_i     ( clk           ),
+    .rst_ni    ( rst_n         ),
+    .slv_req_i ( axi_req_b_out ),
+    .slv_rsp_o ( axi_rsp_b_out ),
+    .mst_req_o ( axi_req_b_dly ),
+    .mst_rsp_i ( axi_rsp_b_dly )
   );
 
   axi_sim_mem #(
@@ -150,7 +150,7 @@ module tb_axi_slave_compare #(
     .IdWidth  (TbIdWidth),
     .UserWidth(TbUserWidth),
     .axi_req_t(axi_req_t),
-    .axi_rsp_t(axi_resp_t),
+    .axi_rsp_t(axi_rsp_t),
     .ApplDelay(TbApplDelay),
     .AcqDelay (TbAcqDelay)
   ) i_axi_sim_mem_b (

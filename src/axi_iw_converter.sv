@@ -86,26 +86,26 @@ module axi_iw_converter #(
   /// User signal width of both AXI4+ATOP ports
   parameter int unsigned AxiUserWidth = 32'd0,
   /// Request struct type of the AXI4+ATOP slave port
-  parameter type slv_req_t = logic,
+  parameter type slv_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
-  parameter type slv_resp_t = logic,
+  parameter type slv_port_axi_rsp_t = logic,
   /// Request struct type of the AXI4+ATOP master port
-  parameter type mst_req_t = logic,
+  parameter type mst_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
-  parameter type mst_resp_t = logic
+  parameter type mst_port_axi_rsp_t = logic
 ) (
   /// Rising-edge clock of both ports
-  input  logic      clk_i,
+  input  logic              clk_i,
   /// Asynchronous reset, active low
-  input  logic      rst_ni,
+  input  logic              rst_ni,
   /// Slave port request
-  input  slv_req_t  slv_req_i,
+  input  slv_port_axi_req_t slv_req_i,
   /// Slave port response
-  output slv_resp_t slv_resp_o,
+  output slv_port_axi_rsp_t slv_rsp_o,
   /// Master port request
-  output mst_req_t  mst_req_o,
+  output mst_port_axi_req_t mst_req_o,
   /// Master port response
-  input  mst_resp_t mst_resp_i
+  input  mst_port_axi_rsp_t mst_rsp_i
 );
 
   typedef logic [AxiAddrWidth-1:0]      addr_t;
@@ -131,17 +131,17 @@ module axi_iw_converter #(
         .AxiMstPortIdWidth    ( AxiMstPortIdWidth       ),
         .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds    ),
         .AxiMaxTxnsPerId      ( AxiSlvPortMaxTxnsPerId  ),
-        .slv_req_t            ( slv_req_t               ),
-        .slv_resp_t           ( slv_resp_t              ),
-        .mst_req_t            ( mst_req_t               ),
-        .mst_resp_t           ( mst_resp_t              )
+        .slv_port_axi_req_t   ( slv_port_axi_req_t      ),
+        .slv_port_axi_rsp_t   ( slv_port_axi_rsp_t      ),
+        .mst_port_axi_req_t   ( mst_port_axi_req_t      ),
+        .mst_port_axi_rsp_t   ( mst_port_axi_rsp_t      )
       ) i_axi_id_remap (
         .clk_i,
         .rst_ni,
-        .slv_req_i  ( slv_req_i  ),
-        .slv_resp_o ( slv_resp_o ),
-        .mst_req_o  ( mst_req_o  ),
-        .mst_resp_i ( mst_resp_i )
+        .slv_req_i ( slv_req_i ),
+        .slv_rsp_o ( slv_rsp_o ),
+        .mst_req_o ( mst_req_o ),
+        .mst_rsp_i ( mst_rsp_i )
       );
     end else begin : gen_serialize
       axi_id_serialize #(
@@ -153,17 +153,17 @@ module axi_iw_converter #(
         .AxiAddrWidth           ( AxiAddrWidth            ),
         .AxiDataWidth           ( AxiDataWidth            ),
         .AxiUserWidth           ( AxiUserWidth            ),
-        .slv_req_t              ( slv_req_t               ),
-        .slv_resp_t             ( slv_resp_t              ),
-        .mst_req_t              ( mst_req_t               ),
-        .mst_resp_t             ( mst_resp_t              )
+        .slv_port_axi_req_t     ( slv_port_axi_req_t      ),
+        .slv_port_axi_rsp_t     ( slv_port_axi_rsp_t      ),
+        .mst_port_axi_req_t     ( mst_port_axi_req_t      ),
+        .mst_port_axi_rsp_t     ( mst_port_axi_rsp_t      )
       ) i_axi_id_serialize (
         .clk_i,
         .rst_ni,
-        .slv_req_i  ( slv_req_i  ),
-        .slv_resp_o ( slv_resp_o ),
-        .mst_req_o  ( mst_req_o  ),
-        .mst_resp_i ( mst_resp_i )
+        .slv_req_i ( slv_req_i ),
+        .slv_rsp_o ( slv_rsp_o ),
+        .mst_req_o ( mst_req_o ),
+        .mst_rsp_i ( mst_rsp_i )
       );
       end
   end else if (AxiMstPortIdWidth > AxiSlvPortIdWidth) begin : gen_upsize
@@ -182,41 +182,41 @@ module axi_iw_converter #(
       .mst_ar_chan_t     ( mst_ar_t           ),
       .mst_r_chan_t      ( mst_r_t            )
     ) i_axi_id_prepend (
-      .pre_id_i         ( '0                  ),
-      .slv_aw_chans_i   ( slv_req_i.aw        ),
-      .slv_aw_valids_i  ( slv_req_i.aw_valid  ),
-      .slv_aw_readies_o ( slv_resp_o.aw_ready ),
-      .slv_w_chans_i    ( slv_req_i.w         ),
-      .slv_w_valids_i   ( slv_req_i.w_valid   ),
-      .slv_w_readies_o  ( slv_resp_o.w_ready  ),
-      .slv_b_chans_o    ( slv_resp_o.b        ),
-      .slv_b_valids_o   ( slv_resp_o.b_valid  ),
-      .slv_b_readies_i  ( slv_req_i.b_ready   ),
-      .slv_ar_chans_i   ( slv_req_i.ar        ),
-      .slv_ar_valids_i  ( slv_req_i.ar_valid  ),
-      .slv_ar_readies_o ( slv_resp_o.ar_ready ),
-      .slv_r_chans_o    ( slv_resp_o.r        ),
-      .slv_r_valids_o   ( slv_resp_o.r_valid  ),
-      .slv_r_readies_i  ( slv_req_i.r_ready   ),
-      .mst_aw_chans_o   ( mst_req_o.aw        ),
-      .mst_aw_valids_o  ( mst_req_o.aw_valid  ),
-      .mst_aw_readies_i ( mst_resp_i.aw_ready ),
-      .mst_w_chans_o    ( mst_req_o.w         ),
-      .mst_w_valids_o   ( mst_req_o.w_valid   ),
-      .mst_w_readies_i  ( mst_resp_i.w_ready  ),
-      .mst_b_chans_i    ( mst_resp_i.b        ),
-      .mst_b_valids_i   ( mst_resp_i.b_valid  ),
-      .mst_b_readies_o  ( mst_req_o.b_ready   ),
-      .mst_ar_chans_o   ( mst_req_o.ar        ),
-      .mst_ar_valids_o  ( mst_req_o.ar_valid  ),
-      .mst_ar_readies_i ( mst_resp_i.ar_ready ),
-      .mst_r_chans_i    ( mst_resp_i.r        ),
-      .mst_r_valids_i   ( mst_resp_i.r_valid  ),
-      .mst_r_readies_o  ( mst_req_o.r_ready   )
+      .pre_id_i         ( '0                 ),
+      .slv_aw_chans_i   ( slv_req_i.aw       ),
+      .slv_aw_valids_i  ( slv_req_i.aw_valid ),
+      .slv_aw_readies_o ( slv_rsp_o.aw_ready ),
+      .slv_w_chans_i    ( slv_req_i.w        ),
+      .slv_w_valids_i   ( slv_req_i.w_valid  ),
+      .slv_w_readies_o  ( slv_rsp_o.w_ready  ),
+      .slv_b_chans_o    ( slv_rsp_o.b        ),
+      .slv_b_valids_o   ( slv_rsp_o.b_valid  ),
+      .slv_b_readies_i  ( slv_req_i.b_ready  ),
+      .slv_ar_chans_i   ( slv_req_i.ar       ),
+      .slv_ar_valids_i  ( slv_req_i.ar_valid ),
+      .slv_ar_readies_o ( slv_rsp_o.ar_ready ),
+      .slv_r_chans_o    ( slv_rsp_o.r        ),
+      .slv_r_valids_o   ( slv_rsp_o.r_valid  ),
+      .slv_r_readies_i  ( slv_req_i.r_ready  ),
+      .mst_aw_chans_o   ( mst_req_o.aw       ),
+      .mst_aw_valids_o  ( mst_req_o.aw_valid ),
+      .mst_aw_readies_i ( mst_rsp_i.aw_ready ),
+      .mst_w_chans_o    ( mst_req_o.w        ),
+      .mst_w_valids_o   ( mst_req_o.w_valid  ),
+      .mst_w_readies_i  ( mst_rsp_i.w_ready  ),
+      .mst_b_chans_i    ( mst_rsp_i.b        ),
+      .mst_b_valids_i   ( mst_rsp_i.b_valid  ),
+      .mst_b_readies_o  ( mst_req_o.b_ready  ),
+      .mst_ar_chans_o   ( mst_req_o.ar       ),
+      .mst_ar_valids_o  ( mst_req_o.ar_valid ),
+      .mst_ar_readies_i ( mst_rsp_i.ar_ready ),
+      .mst_r_chans_i    ( mst_rsp_i.r        ),
+      .mst_r_valids_i   ( mst_rsp_i.r_valid  ),
+      .mst_r_readies_o  ( mst_req_o.r_ready  )
     );
   end else begin : gen_passthrough
-    assign mst_req_o  = slv_req_i;
-    assign slv_resp_o = mst_resp_i;
+    assign mst_req_o = slv_req_i;
+    assign slv_rsp_o = mst_rsp_i;
   end
 
   // pragma translate_off
@@ -247,7 +247,7 @@ module axi_iw_converter #(
       else $fatal(1, "AXI W data widths are not equal!");
     assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(slv_resp_o.r.data) == $bits(mst_resp_i.r.data))
+    assert($bits(slv_rsp_o.r.data) == $bits(mst_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
   end
   `endif
@@ -289,26 +289,26 @@ module axi_iw_converter_intf #(
   `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
   `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(slv_port_axi_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(slv_port_axi_rsp_t, slv_b_chan_t, slv_r_chan_t)
 
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
   `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(mst_port_axi_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(mst_port_axi_rsp_t, mst_b_chan_t, mst_r_chan_t)
 
-  slv_req_t  slv_req;
-  slv_resp_t slv_resp;
-  mst_req_t  mst_req;
-  mst_resp_t mst_resp;
+  slv_port_axi_req_t slv_req;
+  slv_port_axi_rsp_t slv_rsp;
+  mst_port_axi_req_t mst_req;
+  mst_port_axi_rsp_t mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_iw_converter #(
     .AxiSlvPortIdWidth      ( AXI_SLV_PORT_ID_WIDTH         ),
@@ -321,17 +321,17 @@ module axi_iw_converter_intf #(
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
     .AxiDataWidth           ( AXI_DATA_WIDTH                ),
     .AxiUserWidth           ( AXI_USER_WIDTH                ),
-    .slv_req_t              ( slv_req_t                     ),
-    .slv_resp_t             ( slv_resp_t                    ),
-    .mst_req_t              ( mst_req_t                     ),
-    .mst_resp_t             ( mst_resp_t                    )
+    .slv_port_axi_req_t     ( slv_port_axi_req_t            ),
+    .slv_port_axi_rsp_t     ( slv_port_axi_rsp_t            ),
+    .mst_port_axi_req_t     ( mst_port_axi_req_t            ),
+    .mst_port_axi_rsp_t     ( mst_port_axi_rsp_t            )
   ) i_axi_iw_converter (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
   // pragma translate_off
   `ifndef VERILATOR

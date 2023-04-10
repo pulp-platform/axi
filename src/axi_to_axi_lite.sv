@@ -24,37 +24,37 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
   parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
   parameter type         axi_req_t       = logic,
-  parameter type         axi_resp_t      = logic,
+  parameter type         axi_rsp_t       = logic,
   parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_resp_t = logic
+  parameter type         axi_lite_rsp_t  = logic
 ) (
-  input  logic           clk_i,    // Clock
-  input  logic           rst_ni,   // Asynchronous reset active low
-  input  logic           test_i,   // Testmode enable
+  input  logic          clk_i,    // Clock
+  input  logic          rst_ni,   // Asynchronous reset active low
+  input  logic          test_i,   // Testmode enable
   // slave port full AXI4+ATOP
-  input  axi_req_t       slv_req_i,
-  output axi_resp_t      slv_resp_o,
+  input  axi_req_t      slv_req_i,
+  output axi_rsp_t      slv_rsp_o,
   // master port AXI4-Lite
-  output axi_lite_req_t  mst_req_o,
-  input  axi_lite_resp_t mst_resp_i
+  output axi_lite_req_t mst_req_o,
+  input  axi_lite_rsp_t mst_rsp_i
 );
   // full bus declarations
-  axi_req_t  filtered_req,  splitted_req;
-  axi_resp_t filtered_resp, splitted_resp;
+  axi_req_t filtered_req, splitted_req;
+  axi_rsp_t filtered_rsp, splitted_rsp;
 
   // atomics adapter so that atomics can be resolved
   axi_atop_filter #(
     .AxiIdWidth      ( AxiIdWidth      ),
     .AxiMaxWriteTxns ( AxiMaxWriteTxns ),
     .axi_req_t       ( axi_req_t       ),
-    .axi_resp_t      ( axi_resp_t      )
+    .axi_rsp_t       ( axi_rsp_t       )
   ) i_axi_atop_filter(
-    .clk_i      ( clk_i         ),
-    .rst_ni     ( rst_ni        ),
-    .slv_req_i  ( slv_req_i     ),
-    .slv_resp_o ( slv_resp_o    ),
-    .mst_req_o  ( filtered_req  ),
-    .mst_resp_i ( filtered_resp )
+    .clk_i     ( clk_i        ),
+    .rst_ni    ( rst_ni       ),
+    .slv_req_i ( slv_req_i    ),
+    .slv_rsp_o ( slv_rsp_o    ),
+    .mst_req_o ( filtered_req ),
+    .mst_rsp_i ( filtered_rsp )
   );
 
   // burst splitter so that the id reflect module has no burst accessing it
@@ -66,14 +66,14 @@ module axi_to_axi_lite #(
     .IdWidth      ( AxiIdWidth      ),
     .UserWidth    ( AxiUserWidth    ),
     .axi_req_t    ( axi_req_t       ),
-    .axi_resp_t   ( axi_resp_t      )
+    .axi_rsp_t    ( axi_rsp_t       )
   ) i_axi_burst_splitter (
-    .clk_i      ( clk_i         ),
-    .rst_ni     ( rst_ni        ),
-    .slv_req_i  ( filtered_req  ),
-    .slv_resp_o ( filtered_resp ),
-    .mst_req_o  ( splitted_req  ),
-    .mst_resp_i ( splitted_resp )
+    .clk_i     ( clk_i        ),
+    .rst_ni    ( rst_ni       ),
+    .slv_req_i ( filtered_req ),
+    .slv_rsp_o ( filtered_rsp ),
+    .mst_req_o ( splitted_req ),
+    .mst_rsp_i ( splitted_rsp )
   );
 
   // ID reflect module handles the conversion from the full AXI to AXI lite on the wireing
@@ -83,17 +83,17 @@ module axi_to_axi_lite #(
     .AxiMaxReadTxns  ( AxiMaxReadTxns  ),
     .FallThrough     ( FallThrough     ),
     .axi_req_t       ( axi_req_t       ),
-    .axi_resp_t      ( axi_resp_t      ),
+    .axi_rsp_t       ( axi_rsp_t       ),
     .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t )
+    .axi_lite_rsp_t  ( axi_lite_rsp_t  )
   ) i_axi_to_axi_lite_id_reflect (
-    .clk_i      ( clk_i         ),
-    .rst_ni     ( rst_ni        ),
-    .test_i     ( test_i        ),
-    .slv_req_i  ( splitted_req  ),
-    .slv_resp_o ( splitted_resp ),
-    .mst_req_o  ( mst_req_o     ),
-    .mst_resp_i ( mst_resp_i    )
+    .clk_i     ( clk_i        ),
+    .rst_ni    ( rst_ni       ),
+    .test_i    ( test_i       ),
+    .slv_req_i ( splitted_req ),
+    .slv_rsp_o ( splitted_rsp ),
+    .mst_req_o ( mst_req_o    ),
+    .mst_rsp_i ( mst_rsp_i    )
   );
 
   // Assertions, check params
@@ -119,19 +119,19 @@ module axi_to_axi_lite_id_reflect #(
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
   parameter bit          FallThrough     = 1'b1,  // FIFOs in fall through mode
   parameter type         axi_req_t       = logic,
-  parameter type         axi_resp_t      = logic,
+  parameter type         axi_rsp_t       = logic,
   parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_resp_t = logic
+  parameter type         axi_lite_rsp_t  = logic
 ) (
-  input  logic           clk_i,    // Clock
-  input  logic           rst_ni,   // Asynchronous reset active low
-  input  logic           test_i,   // Testmode enable
+  input  logic          clk_i,    // Clock
+  input  logic          rst_ni,   // Asynchronous reset active low
+  input  logic          test_i,   // Testmode enable
   // slave port full AXI
-  input  axi_req_t       slv_req_i,
-  output axi_resp_t      slv_resp_o,
+  input  axi_req_t      slv_req_i,
+  output axi_rsp_t      slv_rsp_o,
   // master port AXI LITE
-  output axi_lite_req_t  mst_req_o,
-  input  axi_lite_resp_t mst_resp_i
+  output axi_lite_req_t mst_req_o,
+  input  axi_lite_rsp_t mst_rsp_i
 );
   typedef logic [AxiIdWidth-1:0] id_t;
 
@@ -139,30 +139,30 @@ module axi_to_axi_lite_id_reflect #(
   logic aw_full, aw_empty, aw_push, aw_pop, ar_full, ar_empty, ar_push, ar_pop;
   id_t  aw_reflect_id, ar_reflect_id;
 
-  assign slv_resp_o = '{
-    aw_ready: mst_resp_i.aw_ready & ~aw_full,
-    w_ready:  mst_resp_i.w_ready,
+  assign slv_rsp_o = '{
+    aw_ready: mst_rsp_i.aw_ready & ~aw_full,
+    w_ready:  mst_rsp_i.w_ready,
     b: '{
       id:       aw_reflect_id,
-      resp:     mst_resp_i.b.resp,
+      resp:     mst_rsp_i.b.resp,
       default:  '0
     },
-    b_valid:  mst_resp_i.b_valid  & ~aw_empty,
-    ar_ready: mst_resp_i.ar_ready & ~ar_full,
+    b_valid:  mst_rsp_i.b_valid  & ~aw_empty,
+    ar_ready: mst_rsp_i.ar_ready & ~ar_full,
     r: '{
       id:       ar_reflect_id,
-      data:     mst_resp_i.r.data,
-      resp:     mst_resp_i.r.resp,
+      data:     mst_rsp_i.r.data,
+      resp:     mst_rsp_i.r.resp,
       last:     1'b1,
       default:  '0
     },
-    r_valid: mst_resp_i.r_valid & ~ar_empty,
+    r_valid: mst_rsp_i.r_valid & ~ar_empty,
     default: '0
   };
 
   // Write ID reflection
-  assign aw_push = mst_req_o.aw_valid & slv_resp_o.aw_ready;
-  assign aw_pop  = slv_resp_o.b_valid & mst_req_o.b_ready;
+  assign aw_push = mst_req_o.aw_valid & slv_rsp_o.aw_ready;
+  assign aw_pop  = slv_rsp_o.b_valid & mst_req_o.b_ready;
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough     ),
     .DEPTH        ( AxiMaxWriteTxns ),
@@ -182,8 +182,8 @@ module axi_to_axi_lite_id_reflect #(
   );
 
   // Read ID reflection
-  assign ar_push = mst_req_o.ar_valid & slv_resp_o.ar_ready;
-  assign ar_pop  = slv_resp_o.r_valid & mst_req_o.r_ready;
+  assign ar_push = mst_req_o.ar_valid & slv_rsp_o.ar_ready;
+  assign ar_pop  = slv_rsp_o.r_valid & mst_req_o.r_ready;
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough    ),
     .DEPTH        ( AxiMaxReadTxns ),
@@ -275,7 +275,7 @@ module axi_to_axi_lite_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(full_ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(full_r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, full_b_chan_t, full_r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, full_b_chan_t, full_r_chan_t)
   // LITE channels typedef
   `AXI_LITE_TYPEDEF_AW_CHAN_T(lite_aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(lite_w_chan_t, data_t, strb_t)
@@ -283,18 +283,18 @@ module axi_to_axi_lite_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(lite_ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T (lite_r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, lite_aw_chan_t, lite_w_chan_t, lite_ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, lite_b_chan_t, lite_r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, lite_b_chan_t, lite_r_chan_t)
 
-  axi_req_t  full_req;
-  axi_resp_t full_resp;
-  axi_lite_req_t  lite_req;
-  axi_lite_resp_t lite_resp;
+  axi_req_t full_req;
+  axi_rsp_t full_rsp;
+  axi_lite_req_t lite_req;
+  axi_lite_rsp_t lite_rsp;
 
   `AXI_ASSIGN_TO_REQ(full_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, full_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, full_rsp)
 
   `AXI_LITE_ASSIGN_FROM_REQ(mst, lite_req)
-  `AXI_LITE_ASSIGN_TO_RESP(lite_resp, mst)
+  `AXI_LITE_ASSIGN_TO_RSP(lite_rsp, mst)
 
   axi_to_axi_lite #(
     .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),
@@ -305,18 +305,18 @@ module axi_to_axi_lite_intf #(
     .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),
     .FallThrough     ( FALL_THROUGH       ),  // FIFOs in Fall through mode in ID reflect
     .axi_req_t       ( axi_req_t          ),
-    .axi_resp_t      ( axi_resp_t         ),
+    .axi_rsp_t       ( axi_rsp_t          ),
     .axi_lite_req_t  ( axi_lite_req_t     ),
-    .axi_lite_resp_t ( axi_lite_resp_t    )
+    .axi_lite_rsp_t  ( axi_lite_rsp_t     )
   ) i_axi_to_axi_lite (
-    .clk_i      ( clk_i      ),
-    .rst_ni     ( rst_ni     ),
-    .test_i     ( testmode_i ),
+    .clk_i     ( clk_i      ),
+    .rst_ni    ( rst_ni     ),
+    .test_i    ( testmode_i ),
     // slave port full AXI4+ATOP
-    .slv_req_i  ( full_req   ),
-    .slv_resp_o ( full_resp  ),
+    .slv_req_i ( full_req   ),
+    .slv_rsp_o ( full_rsp   ),
     // master port AXI4-Lite
-    .mst_req_o  ( lite_req   ),
-    .mst_resp_i ( lite_resp  )
+    .mst_req_o ( lite_req   ),
+    .mst_rsp_i ( lite_rsp   )
   );
 endmodule

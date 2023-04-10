@@ -74,28 +74,28 @@ module axi_xp #(
   /// Number of rules in the address map.
   parameter int unsigned NumAddrRules = 32'd0,
   /// Request struct type of the AXI4+ATOP
-  parameter type axi_req_t  = logic,
+  parameter type axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP
-  parameter type axi_resp_t = logic,
+  parameter type axi_rsp_t = logic,
   /// Rule type (see documentation of `axi_xbar` for details).
   parameter type rule_t = axi_pkg::xbar_rule_64_t
 ) (
   /// Rising-edge clock of all ports
-  input  logic                          clk_i,
+  input  logic                         clk_i,
   /// Asynchronous reset, active low
-  input  logic                          rst_ni,
+  input  logic                         rst_ni,
   /// Test mode enable
-  input  logic                          test_en_i,
+  input  logic                         test_en_i,
   /// Slave ports request
-  input  axi_req_t  [NumSlvPorts-1:0]   slv_req_i,
+  input  axi_req_t [NumSlvPorts-1:0]   slv_req_i,
   /// Slave ports response
-  output axi_resp_t [NumSlvPorts-1:0]   slv_resp_o,
+  output axi_rsp_t [NumSlvPorts-1:0]   slv_rsp_o,
   /// Master ports request
-  output axi_req_t  [NumMstPorts-1:0]   mst_req_o,
+  output axi_req_t [NumMstPorts-1:0]   mst_req_o,
   /// Master ports response
-  input  axi_resp_t [NumMstPorts-1:0]   mst_resp_i,
+  input  axi_rsp_t [NumMstPorts-1:0]   mst_rsp_i,
   /// Address map for transferring transactions from slave to master ports
-  input  rule_t     [NumAddrRules-1:0]  addr_map_i
+  input  rule_t    [NumAddrRules-1:0]  addr_map_i
 );
 
   // The master port of the Xbar has a different ID width than the slave ports.
@@ -111,8 +111,8 @@ module axi_xp #(
   `AXI_TYPEDEF_ALL(xp, addr_t, id_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_ALL(xbar, addr_t, xbar_id_t, data_t, strb_t, user_t)
 
-  xbar_req_t  [NumMstPorts-1:0] xbar_req;
-  xbar_resp_t [NumMstPorts-1:0] xbar_resp;
+  xbar_req_t [NumMstPorts-1:0] xbar_req;
+  xbar_rsp_t [NumMstPorts-1:0] xbar_rsp;
 
   axi_xbar #(
     .Cfg            ( Cfg             ),
@@ -128,18 +128,18 @@ module axi_xp #(
     .slv_r_chan_t   ( xp_r_chan_t     ),
     .mst_r_chan_t   ( xbar_r_chan_t   ),
     .slv_req_t      ( axi_req_t       ),
-    .slv_resp_t     ( axi_resp_t      ),
+    .slv_rsp_t      ( axi_rsp_t       ),
     .mst_req_t      ( xbar_req_t      ),
-    .mst_resp_t     ( xbar_resp_t     ),
+    .mst_rsp_t      ( xbar_rsp_t      ),
     .rule_t         ( rule_t          )
   ) i_xbar (
     .clk_i,
     .rst_ni,
     .test_i                 ( test_en_i                               ),
     .slv_ports_req_i        ( slv_req_i                               ),
-    .slv_ports_resp_o       ( slv_resp_o                              ),
+    .slv_ports_rsp_o        ( slv_rsp_o                               ),
     .mst_ports_req_o        ( xbar_req                                ),
-    .mst_ports_resp_i       ( xbar_resp                               ),
+    .mst_ports_rsp_i        ( xbar_rsp                                ),
     .addr_map_i,
     .en_default_mst_port_i  ( '0                                      ),
     .default_mst_port_i     ( '0                                      )
@@ -152,16 +152,16 @@ module axi_xp #(
       .AxiMaxTxnsPerId      ( AxiSlvPortMaxTxnsPerId ),
       .AxiMstPortIdWidth    ( AxiIdWidth             ),
       .slv_req_t            ( xbar_req_t             ),
-      .slv_resp_t           ( xbar_resp_t            ),
-      .mst_req_t            ( axi_req_t                  ),
-      .mst_resp_t           ( axi_resp_t                 )
+      .slv_rsp_t            ( xbar_rsp_t             ),
+      .mst_req_t            ( axi_req_t              ),
+      .mst_rsp_t            ( axi_rsp_t              )
     ) i_axi_id_remap (
       .clk_i,
       .rst_ni,
-      .slv_req_i  ( xbar_req[i]   ),
-      .slv_resp_o ( xbar_resp[i]  ),
-      .mst_req_o  ( mst_req_o[i]  ),
-      .mst_resp_i ( mst_resp_i[i] )
+      .slv_req_i ( xbar_req[i]  ),
+      .slv_rsp_o ( xbar_rsp[i]  ),
+      .mst_req_o ( mst_req_o[i] ),
+      .mst_rsp_i ( mst_rsp_i[i] )
     );
   end
 
@@ -208,19 +208,19 @@ import cf_math_pkg::idx_width;
 
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
-  axi_req_t   [NumMstPorts-1:0]  mst_reqs;
-  axi_resp_t  [NumMstPorts-1:0]  mst_resps;
-  axi_req_t   [NumSlvPorts-1:0]  slv_reqs;
-  axi_resp_t  [NumSlvPorts-1:0]  slv_resps;
+  axi_req_t  [NumMstPorts-1:0]  mst_reqs;
+  axi_rsp_t  [NumMstPorts-1:0]  mst_rsps;
+  axi_req_t  [NumSlvPorts-1:0]  slv_reqs;
+  axi_rsp_t  [NumSlvPorts-1:0]  slv_rsps;
 
   for (genvar i = 0; i < NumMstPorts; i++) begin : gen_assign_mst
     `AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
-    `AXI_ASSIGN_TO_RESP(mst_resps[i], mst_ports[i])
+    `AXI_ASSIGN_TO_RSP(mst_rsps[i], mst_ports[i])
   end
 
   for (genvar i = 0; i < NumSlvPorts; i++) begin : gen_assign_slv
     `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
-    `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
+    `AXI_ASSIGN_FROM_RSP(slv_ports[i], slv_rsps[i])
   end
 
   axi_xp #(
@@ -240,16 +240,16 @@ import cf_math_pkg::idx_width;
     .AxiMstPortMaxTxnsPerId  ( AxiMstPortMaxTxnsPerId ),
     .NumAddrRules            ( NumAddrRules            ),
     .axi_req_t               ( axi_req_t     ),
-    .axi_resp_t              ( axi_resp_t    ),
+    .axi_rsp_t               ( axi_rsp_t     ),
     .rule_t                  ( rule_t        )
   ) i_xp (
     .clk_i,
     .rst_ni,
     .test_en_i,
-    .slv_req_i  (slv_reqs ),
-    .slv_resp_o (slv_resps),
-    .mst_req_o  (mst_reqs ),
-    .mst_resp_i (mst_resps),
+    .slv_req_i (slv_reqs),
+    .slv_rsp_o (slv_rsps),
+    .mst_req_o (mst_reqs),
+    .mst_rsp_i (mst_rsps),
     .addr_map_i
   );
 

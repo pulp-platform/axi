@@ -80,7 +80,7 @@ module axi_from_mem #(
 
   `AXI_LITE_TYPEDEF_ALL(axi_lite, logic [AxiAddrWidth-1:0], logic [DataWidth-1:0], logic [DataWidth/8-1:0])
   axi_lite_req_t axi_lite_req;
-  axi_lite_resp_t axi_lite_rsp;
+  axi_lite_rsp_t axi_lite_rsp;
 
   axi_lite_from_mem #(
     .MemAddrWidth    ( MemAddrWidth    ),
@@ -89,7 +89,7 @@ module axi_from_mem #(
     .MaxRequests     ( MaxRequests     ),
     .AxiProt         ( AxiProt         ),
     .axi_req_t       ( axi_lite_req_t  ),
-    .axi_rsp_t       ( axi_lite_resp_t )
+    .axi_rsp_t       ( axi_lite_rsp_t )
   ) i_axi_lite_from_mem (
     .clk_i,
     .rst_ni,
@@ -107,18 +107,18 @@ module axi_from_mem #(
   );
 
   axi_lite_to_axi #(
-    .AxiDataWidth    ( DataWidth       ),
-    .req_lite_t      ( axi_lite_req_t  ),
-    .resp_lite_t     ( axi_lite_resp_t ),
-    .axi_req_t       ( axi_req_t       ),
-    .axi_resp_t      ( axi_rsp_t       )
+    .AxiDataWidth    ( DataWidth      ),
+    .req_lite_t      ( axi_lite_req_t ),
+    .rsp_lite_t      ( axi_lite_rsp_t ),
+    .axi_req_t       ( axi_req_t      ),
+    .axi_rsp_t       ( axi_rsp_t      )
   ) i_axi_lite_to_axi (
-    .slv_req_lite_i  ( axi_lite_req    ),
-    .slv_resp_lite_o ( axi_lite_rsp    ),
+    .slv_req_lite_i ( axi_lite_req   ),
+    .slv_rsp_lite_o ( axi_lite_rsp   ),
     .slv_aw_cache_i,
     .slv_ar_cache_i,
-    .mst_req_o       ( axi_req_o       ),
-    .mst_resp_i      ( axi_rsp_i       )
+    .mst_req_o      ( axi_req_o      ),
+    .mst_rsp_i      ( axi_rsp_i      )
   );
 
 endmodule

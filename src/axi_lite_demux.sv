@@ -25,35 +25,35 @@
 //                 stability rules as the corresponding AXI4-Lite channel.
 
 module axi_lite_demux #(
-  parameter type         aw_chan_t       = logic, // AXI4-Lite AW channel
-  parameter type         w_chan_t        = logic, // AXI4-Lite  W channel
-  parameter type         b_chan_t        = logic, // AXI4-Lite  B channel
-  parameter type         ar_chan_t       = logic, // AXI4-Lite AR channel
-  parameter type         r_chan_t        = logic, // AXI4-Lite  R channel
-  parameter type         axi_lite_req_t  = logic, // AXI4-Lite request struct
-  parameter type         axi_lite_resp_t = logic, // AXI4-Lite response struct
-  parameter int unsigned NoMstPorts      = 32'd0, // Number of instantiated ports
-  parameter int unsigned MaxTrans        = 32'd0, // Maximum number of open transactions per channel
-  parameter bit          FallThrough     = 1'b0,  // FIFOs are in fall through mode
-  parameter bit          SpillAw         = 1'b1,  // insert one cycle latency on slave AW
-  parameter bit          SpillW          = 1'b0,  // insert one cycle latency on slave  W
-  parameter bit          SpillB          = 1'b0,  // insert one cycle latency on slave  B
-  parameter bit          SpillAr         = 1'b1,  // insert one cycle latency on slave AR
-  parameter bit          SpillR          = 1'b0,  // insert one cycle latency on slave  R
+  parameter type         aw_chan_t      = logic, // AXI4-Lite AW channel
+  parameter type         w_chan_t       = logic, // AXI4-Lite  W channel
+  parameter type         b_chan_t       = logic, // AXI4-Lite  B channel
+  parameter type         ar_chan_t      = logic, // AXI4-Lite AR channel
+  parameter type         r_chan_t       = logic, // AXI4-Lite  R channel
+  parameter type         axi_lite_req_t = logic, // AXI4-Lite request struct
+  parameter type         axi_lite_rsp_t = logic, // AXI4-Lite response struct
+  parameter int unsigned NoMstPorts     = 32'd0, // Number of instantiated ports
+  parameter int unsigned MaxTrans       = 32'd0, // Maximum number of open transactions per channel
+  parameter bit          FallThrough    = 1'b0,  // FIFOs are in fall through mode
+  parameter bit          SpillAw        = 1'b1,  // insert one cycle latency on slave AW
+  parameter bit          SpillW         = 1'b0,  // insert one cycle latency on slave  W
+  parameter bit          SpillB         = 1'b0,  // insert one cycle latency on slave  B
+  parameter bit          SpillAr        = 1'b1,  // insert one cycle latency on slave AR
+  parameter bit          SpillR         = 1'b0,  // insert one cycle latency on slave  R
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter type         select_t        = logic [$clog2(NoMstPorts)-1:0]
+  parameter type         select_t       = logic [$clog2(NoMstPorts)-1:0]
 ) (
-  input  logic                            clk_i,
-  input  logic                            rst_ni,
-  input  logic                            test_i,
+  input  logic                           clk_i,
+  input  logic                           rst_ni,
+  input  logic                           test_i,
   // slave port (AXI4-Lite input), connect master module here
-  input  axi_lite_req_t                   slv_req_i,
-  input  select_t                         slv_aw_select_i,
-  input  select_t                         slv_ar_select_i,
-  output axi_lite_resp_t                  slv_resp_o,
+  input  axi_lite_req_t                  slv_req_i,
+  input  select_t                        slv_aw_select_i,
+  input  select_t                        slv_ar_select_i,
+  output axi_lite_rsp_t                  slv_rsp_o,
   // master ports (AXI4-Lite outputs), connect slave modules here
-  output axi_lite_req_t  [NoMstPorts-1:0] mst_reqs_o,
-  input  axi_lite_resp_t [NoMstPorts-1:0] mst_resps_i
+  output axi_lite_req_t [NoMstPorts-1:0] mst_reqs_o,
+  input  axi_lite_rsp_t [NoMstPorts-1:0] mst_rsps_i
 );
 
   //--------------------------------------
@@ -77,10 +77,10 @@ module axi_lite_demux #(
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
       .valid_i ( slv_req_i.aw_valid       ),
-      .ready_o ( slv_resp_o.aw_ready      ),
+      .ready_o ( slv_rsp_o.aw_ready       ),
       .data_i  ( slv_req_i.aw             ),
       .valid_o ( mst_reqs_o[0].aw_valid   ),
-      .ready_i ( mst_resps_i[0].aw_ready  ),
+      .ready_i ( mst_rsps_i[0].aw_ready   ),
       .data_o  ( mst_reqs_o[0].aw         )
     );
     spill_register #(
@@ -90,10 +90,10 @@ module axi_lite_demux #(
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
       .valid_i ( slv_req_i.w_valid       ),
-      .ready_o ( slv_resp_o.w_ready      ),
+      .ready_o ( slv_rsp_o.w_ready       ),
       .data_i  ( slv_req_i.w             ),
       .valid_o ( mst_reqs_o[0].w_valid   ),
-      .ready_i ( mst_resps_i[0].w_ready  ),
+      .ready_i ( mst_rsps_i[0].w_ready   ),
       .data_o  ( mst_reqs_o[0].w         )
     );
     spill_register #(
@@ -102,12 +102,12 @@ module axi_lite_demux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mst_resps_i[0].b_valid ),
+      .valid_i ( mst_rsps_i[0].b_valid  ),
       .ready_o ( mst_reqs_o[0].b_ready  ),
-      .data_i  ( mst_resps_i[0].b       ),
-      .valid_o ( slv_resp_o.b_valid     ),
+      .data_i  ( mst_rsps_i[0].b        ),
+      .valid_o ( slv_rsp_o.b_valid      ),
       .ready_i ( slv_req_i.b_ready      ),
-      .data_o  ( slv_resp_o.b           )
+      .data_o  ( slv_rsp_o.b            )
     );
     spill_register #(
       .T       ( ar_chan_t  ),
@@ -116,10 +116,10 @@ module axi_lite_demux #(
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
       .valid_i ( slv_req_i.ar_valid       ),
-      .ready_o ( slv_resp_o.ar_ready      ),
+      .ready_o ( slv_rsp_o.ar_ready       ),
       .data_i  ( slv_req_i.ar             ),
       .valid_o ( mst_reqs_o[0].ar_valid   ),
-      .ready_i ( mst_resps_i[0].ar_ready  ),
+      .ready_i ( mst_rsps_i[0].ar_ready   ),
       .data_o  ( mst_reqs_o[0].ar         )
     );
     spill_register #(
@@ -128,12 +128,12 @@ module axi_lite_demux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mst_resps_i[0].r_valid ),
+      .valid_i ( mst_rsps_i[0].r_valid  ),
       .ready_o ( mst_reqs_o[0].r_ready  ),
-      .data_i  ( mst_resps_i[0].r       ),
-      .valid_o ( slv_resp_o.r_valid     ),
+      .data_i  ( mst_rsps_i[0].r        ),
+      .valid_o ( slv_rsp_o.r_valid      ),
       .ready_i ( slv_req_i.r_ready      ),
-      .data_o  ( slv_resp_o.r           )
+      .data_o  ( slv_rsp_o.r            )
     );
 
   end else begin : gen_demux
@@ -211,7 +211,7 @@ module axi_lite_demux #(
       .clk_i   ( clk_i                        ),
       .rst_ni  ( rst_ni                       ),
       .valid_i ( slv_req_i.aw_valid           ),
-      .ready_o ( slv_resp_o.aw_ready          ),
+      .ready_o ( slv_rsp_o.aw_ready           ),
       .data_i  ( slv_aw_chan_select_in_flat   ),
       .valid_o ( slv_aw_valid                 ),
       .ready_i ( slv_aw_ready                 ),
@@ -223,7 +223,7 @@ module axi_lite_demux #(
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_aw
       assign mst_reqs_o[i].aw       = slv_aw_chan.aw;
       assign mst_reqs_o[i].aw_valid = mst_aw_valids[i];
-      assign mst_aw_readies[i]      = mst_resps_i[i].aw_ready;
+      assign mst_aw_readies[i]      = mst_rsps_i[i].aw_ready;
     end
 
     // AW channel handshake control
@@ -295,7 +295,7 @@ module axi_lite_demux #(
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
       .valid_i ( slv_req_i.w_valid  ),
-      .ready_o ( slv_resp_o.w_ready ),
+      .ready_o ( slv_rsp_o.w_ready  ),
       .data_i  ( slv_req_i.w        ),
       .valid_o ( slv_w_valid        ),
       .ready_i ( slv_w_ready        ),
@@ -308,7 +308,7 @@ module axi_lite_demux #(
       assign mst_reqs_o[i].w_valid = ~w_fifo_empty & ~b_fifo_full &
                                        slv_w_valid & (w_select == select_t'(i));
     end
-    assign slv_w_ready = ~w_fifo_empty & ~b_fifo_full & mst_resps_i[w_select].w_ready;
+    assign slv_w_ready = ~w_fifo_empty & ~b_fifo_full & mst_rsps_i[w_select].w_ready;
     assign w_fifo_pop  = slv_w_valid & slv_w_ready;
 
     fifo_v3 #(
@@ -341,14 +341,14 @@ module axi_lite_demux #(
       .valid_i ( slv_b_valid        ),
       .ready_o ( slv_b_ready        ),
       .data_i  ( slv_b_chan         ),
-      .valid_o ( slv_resp_o.b_valid ),
+      .valid_o ( slv_rsp_o.b_valid  ),
       .ready_i ( slv_req_i.b_ready  ),
-      .data_o  ( slv_resp_o.b       )
+      .data_o  ( slv_rsp_o.b        )
     );
 
     // connect the response if the FIFO has valid data in it
-    assign slv_b_chan      = (!b_fifo_empty) ? mst_resps_i[b_select].b : '0;
-    assign slv_b_valid     =  ~b_fifo_empty  & mst_resps_i[b_select].b_valid;
+    assign slv_b_chan      = (!b_fifo_empty) ? mst_rsps_i[b_select].b : '0;
+    assign slv_b_valid     =  ~b_fifo_empty  & mst_rsps_i[b_select].b_valid;
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_mst_b
       assign mst_reqs_o[i].b_ready = ~b_fifo_empty & slv_b_ready & (b_select == select_t'(i));
     end
@@ -373,7 +373,7 @@ module axi_lite_demux #(
       .clk_i   ( clk_i                        ),
       .rst_ni  ( rst_ni                       ),
       .valid_i ( slv_req_i.ar_valid           ),
-      .ready_o ( slv_resp_o.ar_ready          ),
+      .ready_o ( slv_rsp_o.ar_ready           ),
       .data_i  ( slv_ar_chan_select_in_flat   ),
       .valid_o ( slv_ar_valid                 ),
       .ready_i ( slv_ar_ready                 ),
@@ -387,7 +387,7 @@ module axi_lite_demux #(
       assign mst_reqs_o[i].ar_valid = ~r_fifo_full & slv_ar_valid &
                                        (slv_ar_chan.select == select_t'(i));
     end
-    assign slv_ar_ready = ~r_fifo_full & mst_resps_i[slv_ar_chan.select].ar_ready;
+    assign slv_ar_ready = ~r_fifo_full & mst_rsps_i[slv_ar_chan.select].ar_ready;
     assign r_fifo_push  = slv_ar_valid & slv_ar_ready;
 
     fifo_v3 #(
@@ -420,9 +420,9 @@ module axi_lite_demux #(
       .valid_i ( slv_r_valid        ),
       .ready_o ( slv_r_ready        ),
       .data_i  ( slv_r_chan         ),
-      .valid_o ( slv_resp_o.r_valid ),
+      .valid_o ( slv_rsp_o.r_valid  ),
       .ready_i ( slv_req_i.r_ready  ),
-      .data_o  ( slv_resp_o.r       )
+      .data_o  ( slv_rsp_o.r        )
     );
 
     // connect the response if the FIFO has valid data in it
@@ -430,8 +430,8 @@ module axi_lite_demux #(
        slv_r_chan  = '0;
        slv_r_valid = '0;
        if (!r_fifo_empty) begin
-          slv_r_chan  = mst_resps_i[r_select].r;
-          slv_r_valid = mst_resps_i[r_select].r_valid;
+          slv_r_chan  = mst_rsps_i[r_select].r;
+          slv_r_valid = mst_rsps_i[r_select].r_valid;
        end
     end
 
@@ -511,37 +511,37 @@ module axi_lite_demux_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  axi_lite_req_t                   slv_req;
-  axi_lite_resp_t                  slv_resp;
-  axi_lite_req_t  [NoMstPorts-1:0] mst_reqs;
-  axi_lite_resp_t [NoMstPorts-1:0] mst_resps;
+  axi_lite_req_t                  slv_req;
+  axi_lite_rsp_t                  slv_rsp;
+  axi_lite_req_t [NoMstPorts-1:0] mst_reqs;
+  axi_lite_rsp_t [NoMstPorts-1:0] mst_rsps;
 
   `AXI_LITE_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(slv, slv_rsp)
 
   for (genvar i = 0; i < NoMstPorts; i++) begin : gen_assign_mst_ports
     `AXI_LITE_ASSIGN_FROM_REQ(mst[i], mst_reqs[i])
-    `AXI_LITE_ASSIGN_TO_RESP(mst_resps[i], mst[i])
+    `AXI_LITE_ASSIGN_TO_RSP(mst_rsps[i], mst[i])
   end
 
   axi_lite_demux #(
-    .aw_chan_t       (       aw_chan_t ),
-    .w_chan_t        (        w_chan_t ),
-    .b_chan_t        (        b_chan_t ),
-    .ar_chan_t       (       ar_chan_t ),
-    .r_chan_t        (        r_chan_t ),
-    .axi_lite_req_t  (  axi_lite_req_t ),
-    .axi_lite_resp_t ( axi_lite_resp_t ),
-    .NoMstPorts      ( NoMstPorts      ),
-    .MaxTrans        ( MaxTrans        ),
-    .FallThrough     ( FallThrough     ),
-    .SpillAw         ( SpillAw         ),
-    .SpillW          ( SpillW          ),
-    .SpillB          ( SpillB          ),
-    .SpillAr         ( SpillAr         ),
-    .SpillR          ( SpillR          )
+    .aw_chan_t      (      aw_chan_t ),
+    .w_chan_t       (       w_chan_t ),
+    .b_chan_t       (       b_chan_t ),
+    .ar_chan_t      (      ar_chan_t ),
+    .r_chan_t       (       r_chan_t ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t ),
+    .NoMstPorts     ( NoMstPorts     ),
+    .MaxTrans       ( MaxTrans       ),
+    .FallThrough    ( FallThrough    ),
+    .SpillAw        ( SpillAw        ),
+    .SpillW         ( SpillW         ),
+    .SpillB         ( SpillB         ),
+    .SpillAr        ( SpillAr        ),
+    .SpillR         ( SpillR         )
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
@@ -550,10 +550,10 @@ module axi_lite_demux_intf #(
     .slv_req_i       ( slv_req         ),
     .slv_aw_select_i ( slv_aw_select_i ), // must be stable while slv_aw_valid_i
     .slv_ar_select_i ( slv_ar_select_i ), // must be stable while slv_ar_valid_i
-    .slv_resp_o      ( slv_resp        ),
+    .slv_rsp_o      ( slv_rsp        ),
     // mster ports
     .mst_reqs_o      ( mst_reqs        ),
-    .mst_resps_i     ( mst_resps       )
+    .mst_rsps_i     ( mst_rsps       )
   );
 
   // pragma translate_off

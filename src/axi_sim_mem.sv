@@ -47,9 +47,9 @@ module axi_sim_mem #(
   parameter time AcqDelay = 0ps
 ) (
   /// Rising-edge clock
-  input  logic      clk_i,
+  input  logic     clk_i,
   /// Active-low reset
-  input  logic      rst_ni,
+  input  logic     rst_ni,
   /// AXI4 request struct
   input  axi_req_t axi_req_i,
   /// AXI4 response struct
@@ -373,10 +373,10 @@ module axi_sim_mem_intf #(
   `AXI_TYPEDEF_ALL(axi, axi_addr_t, axi_id_t, axi_data_t, axi_strb_t, axi_user_t)
 
   axi_req_t   axi_req;
-  axi_resp_t  axi_rsp;
+  axi_rsp_t  axi_rsp;
 
   `AXI_ASSIGN_TO_REQ(axi_req, axi_slv)
-  `AXI_ASSIGN_FROM_RESP(axi_slv, axi_rsp)
+  `AXI_ASSIGN_FROM_RSP(axi_slv, axi_rsp)
 
   axi_sim_mem #(
     .AddrWidth          (AXI_ADDR_WIDTH),
@@ -384,7 +384,7 @@ module axi_sim_mem_intf #(
     .IdWidth            (AXI_ID_WIDTH),
     .UserWidth          (AXI_USER_WIDTH),
     .axi_req_t          (axi_req_t),
-    .axi_rsp_t          (axi_resp_t),
+    .axi_rsp_t          (axi_rsp_t),
     .WarnUninitialized  (WARN_UNINITIALIZED),
     .ClearErrOnAccess   (ClearErrOnAccess),
     .ApplDelay          (APPL_DELAY),

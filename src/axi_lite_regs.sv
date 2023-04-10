@@ -19,7 +19,7 @@
 ///
 /// This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them
 /// accessible on two interfaces:
-/// - as memory-mapped AXI4-Lite slave (ports `axi_req_i` and `axi_resp_o`), and
+/// - as memory-mapped AXI4-Lite slave (ports `axi_req_i` and `axi_rsp_o`), and
 /// - as wires to directly attach other hardware logic (ports `reg_d_i`, `reg_load_i`, `reg_q_o`,
 ///   `wr_active_o`, `rd_active_o`).
 ///
@@ -94,7 +94,7 @@ module axi_lite_regs #(
   /// Request struct of the AXI4-Lite port.
   parameter type axi_lite_req_t = logic,
   /// Response struct of the AXI4-Lite port.
-  parameter type axi_lite_resp_t = logic
+  parameter type axi_lite_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
   input  logic clk_i,
@@ -103,7 +103,7 @@ module axi_lite_regs #(
   /// AXI4-Lite slave request
   input  axi_lite_req_t axi_req_i,
   /// AXI4-Lite slave response
-  output axi_lite_resp_t axi_resp_o,
+  output axi_lite_rsp_t axi_rsp_o,
   /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
   /// signal is asserted regardless of the value of `AxiReadOnly` and can therefore be used by
   /// surrounding logic to react to write-on-read-only-byte errors.
@@ -216,8 +216,8 @@ module axi_lite_regs #(
     reg_d               = reg_q;
     reg_update          = '0;
     // Channel handshake
-    axi_resp_o.aw_ready = 1'b0;
-    axi_resp_o.w_ready  = 1'b0;
+    axi_rsp_o.aw_ready = 1'b0;
+    axi_rsp_o.w_ready  = 1'b0;
     // Response
     b_chan              = b_chan_lite_t'{resp: axi_pkg::RESP_SLVERR, default: '0};
     b_valid             = 1'b0;
@@ -258,16 +258,16 @@ module axi_lite_regs #(
               wr_active_o[reg_byte_idx] = axi_req_i.w.strb[i];
             end
           end
-          b_chan.resp         = chunk_ro ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
-          b_valid             = 1'b1;
-          axi_resp_o.aw_ready = 1'b1;
-          axi_resp_o.w_ready  = 1'b1;
+          b_chan.resp        = chunk_ro ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+          b_valid            = 1'b1;
+          axi_rsp_o.aw_ready = 1'b1;
+          axi_rsp_o.w_ready  = 1'b1;
         end
       end else begin
         // Send default B error response on each not allowed write transaction.
-        b_valid             = 1'b1;
-        axi_resp_o.aw_ready = 1'b1;
-        axi_resp_o.w_ready  = 1'b1;
+        b_valid            = 1'b1;
+        axi_rsp_o.aw_ready = 1'b1;
+        axi_rsp_o.w_ready  = 1'b1;
       end
     end
   end
@@ -308,8 +308,8 @@ module axi_lite_regs #(
     end
   end
 
-  assign r_valid             = axi_req_i.ar_valid; // to spill register
-  assign axi_resp_o.ar_ready = r_ready;            // from spill register
+  assign r_valid            = axi_req_i.ar_valid; // to spill register
+  assign axi_rsp_o.ar_ready = r_ready;            // from spill register
 
   // Register array mapping, even read only register can be loaded over `reg_load_i`.
   for (genvar i = 0; i < RegNumBytes; i++) begin : gen_rw_regs
@@ -354,12 +354,12 @@ module axi_lite_regs #(
   ) i_b_spill_register (
     .clk_i,
     .rst_ni,
-    .valid_i ( b_valid            ),
-    .ready_o ( b_ready            ),
-    .data_i  ( b_chan             ),
-    .valid_o ( axi_resp_o.b_valid ),
-    .ready_i ( axi_req_i.b_ready  ),
-    .data_o  ( axi_resp_o.b       )
+    .valid_i ( b_valid           ),
+    .ready_o ( b_ready           ),
+    .data_i  ( b_chan            ),
+    .valid_o ( axi_rsp_o.b_valid ),
+    .ready_i ( axi_req_i.b_ready ),
+    .data_o  ( axi_rsp_o.b       )
   );
 
   // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
@@ -369,12 +369,12 @@ module axi_lite_regs #(
   ) i_r_spill_register (
     .clk_i,
     .rst_ni,
-    .valid_i ( r_valid            ),
-    .ready_o ( r_ready            ),
-    .data_i  ( r_chan             ),
-    .valid_o ( axi_resp_o.r_valid ),
-    .ready_i ( axi_req_i.r_ready  ),
-    .data_o  ( axi_resp_o.r       )
+    .valid_i ( r_valid           ),
+    .ready_o ( r_ready           ),
+    .data_i  ( r_chan            ),
+    .valid_o ( axi_rsp_o.r_valid ),
+    .ready_i ( axi_req_i.r_ready ),
+    .data_o  ( axi_rsp_o.r       )
   );
 
   // Validate parameters.
@@ -391,8 +391,8 @@ module axi_lite_regs #(
           $fatal(1, "AddrWidth does not match req_i.ar.addr!");
       assert (AxiDataWidth == $bits(axi_req_i.w.data)) else
           $fatal(1, "AxiDataWidth has to be: AxiDataWidth == $bits(axi_req_i.w.data)!");
-      assert (AxiDataWidth == $bits(axi_resp_o.r.data)) else
-          $fatal(1, "AxiDataWidth has to be: AxiDataWidth == $bits(axi_resp_o.r.data)!");
+      assert (AxiDataWidth == $bits(axi_rsp_o.r.data)) else
+          $fatal(1, "AxiDataWidth has to be: AxiDataWidth == $bits(axi_rsp_o.r.data)!");
       assert (RegNumBytes == $bits(AxiReadOnly)) else
           $fatal(1, "Each register needs a `ReadOnly` flag!");
     end
@@ -439,29 +439,29 @@ module axi_lite_regs_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_lite_t, r_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_lite_t, r_chan_lite_t)
 
-  axi_lite_req_t  axi_lite_req;
-  axi_lite_resp_t axi_lite_resp;
+  axi_lite_req_t axi_lite_req;
+  axi_lite_rsp_t axi_lite_rsp;
 
   `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_lite_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(slv, axi_lite_rsp)
 
   axi_lite_regs #(
-    .RegNumBytes     ( REG_NUM_BYTES   ),
-    .AxiAddrWidth    ( AXI_ADDR_WIDTH  ),
-    .AxiDataWidth    ( AXI_DATA_WIDTH  ),
-    .PrivProtOnly    ( PRIV_PROT_ONLY  ),
-    .SecuProtOnly    ( SECU_PROT_ONLY  ),
-    .AxiReadOnly     ( AXI_READ_ONLY   ),
-    .RegRstVal       ( REG_RST_VAL     ),
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t )
+    .RegNumBytes    ( REG_NUM_BYTES  ),
+    .AxiAddrWidth   ( AXI_ADDR_WIDTH ),
+    .AxiDataWidth   ( AXI_DATA_WIDTH ),
+    .PrivProtOnly   ( PRIV_PROT_ONLY ),
+    .SecuProtOnly   ( SECU_PROT_ONLY ),
+    .AxiReadOnly    ( AXI_READ_ONLY  ),
+    .RegRstVal      ( REG_RST_VAL    ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t )
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,
-    .axi_req_i   ( axi_lite_req  ),
-    .axi_resp_o  ( axi_lite_resp ),
+    .axi_req_i  ( axi_lite_req ),
+    .axi_rsp_o  ( axi_lite_rsp ),
     .wr_active_o,
     .rd_active_o,
     .reg_d_i,

@@ -40,8 +40,8 @@
 //    logic  pready;   // slave signals that it is ready
 //    data_t prdata;   // read data, connects to R channel
 //    logic  pslverr;  // gets translated into either `axi_pkg::RESP_OK` or `axi_pkg::RESP_SLVERR`
-//  } apb_resp_t;
-// Each connected `apb_resp`, has to be connected to the corresponding port index. The module
+//  } apb_rsp_t;
+// Each connected `apb_rsp`, has to be connected to the corresponding port index. The module
 // routes the response depending on the `apb_req.psel` bit and `apb_req.pwrite` either to the
 // AXI4Lite B channel for writes and to the R channel for reads.
 
@@ -55,21 +55,21 @@ module axi_lite_to_apb #(
   parameter bit PipelineRequest      = 1'b0,   // Pipeline request path
   parameter bit PipelineResponse     = 1'b0,   // Pipeline response path
   parameter type      axi_lite_req_t = logic,  // AXI4-Lite request struct
-  parameter type     axi_lite_resp_t = logic,  // AXI4-Lite response sruct
+  parameter type      axi_lite_rsp_t = logic,  // AXI4-Lite response sruct
   parameter type           apb_req_t = logic,  // APB4 request struct
-  parameter type          apb_resp_t = logic,  // APB4 response struct
+  parameter type           apb_rsp_t = logic,  // APB4 response struct
   parameter type              rule_t = logic   // Address Decoder rule from `common_cells`
 ) (
-  input  logic                        clk_i,     // Clock
-  input  logic                        rst_ni,    // Asynchronous reset active low
+  input  logic                       clk_i,     // Clock
+  input  logic                       rst_ni,    // Asynchronous reset active low
   // AXI LITE slave port
-  input  axi_lite_req_t               axi_lite_req_i,
-  output axi_lite_resp_t              axi_lite_resp_o,
+  input  axi_lite_req_t              axi_lite_req_i,
+  output axi_lite_rsp_t              axi_lite_rsp_o,
   // APB master port
-  output apb_req_t  [NoApbSlaves-1:0] apb_req_o,
-  input  apb_resp_t [NoApbSlaves-1:0] apb_resp_i,
+  output apb_req_t [NoApbSlaves-1:0] apb_req_o,
+  input  apb_rsp_t [NoApbSlaves-1:0] apb_rsp_i,
   // APB Slave Address Map
-  input  rule_t     [NoRules-1:0]     addr_map_i
+  input  rule_t    [NoRules-1:0]     addr_map_i
 );
   localparam logic RD = 1'b0; // Encode index of a read request
   localparam logic WR = 1'b1; // Encode index of a write request
@@ -127,7 +127,7 @@ module axi_lite_to_apb #(
     write: WR
   };
   assign axi_req_valid[WR] = axi_lite_req_i.aw_valid & axi_lite_req_i.w_valid;
-  assign axi_lite_resp_o = '{
+  assign axi_lite_rsp_o = '{
     aw_ready: axi_req_valid[WR] & axi_req_ready[WR],        // if AXI AW & W valid & tree gnt_o[WR]
     w_ready:  axi_req_valid[WR] & axi_req_ready[WR],        // if AXI AW & W valid & tree gnt_o[WR]
     b:       '{resp: axi_bresp},                            // from spill reg
@@ -334,17 +334,17 @@ module axi_lite_to_apb #(
           pwdata:  apb_req.data,
           pstrb:   apb_req.strb
         };
-        if (apb_resp_i[apb_sel_idx].pready) begin
+        if (apb_rsp_i[apb_sel_idx].pready) begin
           // transfer, pop the request, generate response and update state
           apb_req_ready = 1'b1;
           // we are only in this state if the response spill registers are ready anyway
           if (apb_req.write) begin
-            apb_wresp       = apb_resp_i[apb_sel_idx].pslverr ?
+            apb_wresp       = apb_rsp_i[apb_sel_idx].pslverr ?
                                   axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
             apb_wresp_valid = 1'b1;
           end else begin
-            apb_rresp.data  = apb_resp_i[apb_sel_idx].prdata;
-            apb_rresp.resp  = apb_resp_i[apb_sel_idx].pslverr ?
+            apb_rresp.data  = apb_rsp_i[apb_sel_idx].prdata;
+            apb_rresp.resp  = apb_rsp_i[apb_sel_idx].pslverr ?
                                   axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
             apb_rresp_valid = 1'b1;
           end
@@ -368,7 +368,7 @@ module axi_lite_to_apb #(
       $fatal(1, $sformatf("AXI4-Lite and APB write data width not equal"));
     strb_width:  assert ($bits(axi_lite_req_i.w.strb ) == $bits(apb_req_o[0].pstrb)) else
       $fatal(1, $sformatf("AXI4-Lite and APB strobe width not equal"));
-    rdata_width: assert ($bits(axi_lite_resp_o.r.data ) == $bits(apb_resp_i[0].prdata)) else
+    rdata_width: assert ($bits(axi_lite_rsp_o.r.data ) == $bits(apb_rsp_i[0].prdata)) else
       $fatal(1, $sformatf("AXI4-Lite and APB read data width not equal"));
     sel_width:   assert ($bits(apb_req_o[0].psel) == 32'd1) else
       $fatal(1, $sformatf("APB psel signal has to have a width of 1'b1"));
@@ -428,7 +428,7 @@ module axi_lite_to_apb_intf #(
     logic  pready;   // slave signals that it is ready
     data_t prdata;   // read data, connects to R channel
     logic  pslverr;  // gets translated into either `axi_pkg::RESP_OK` or `axi_pkg::RESP_SLVERR`
-  } apb_resp_t;
+  } apb_rsp_t;
 
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -436,16 +436,16 @@ module axi_lite_to_apb_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
   axi_req_t                     axi_req;
-  axi_resp_t                    axi_resp;
+  axi_rsp_t                     axi_rsp;
   apb_req_t   [NoApbSlaves-1:0] apb_req;
-  apb_resp_t  [NoApbSlaves-1:0] apb_resp;
+  apb_rsp_t   [NoApbSlaves-1:0] apb_rsp;
   logic       [SelIdxWidth-1:0] apb_sel;
 
   `AXI_LITE_ASSIGN_TO_REQ(axi_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(slv, axi_rsp)
 
   onehot_to_bin #(
     .ONEHOT_WIDTH ( NoApbSlaves )
@@ -460,11 +460,11 @@ module axi_lite_to_apb_intf #(
   assign pwrite_o  = apb_req[apb_sel].pwrite;
   assign pwdata_o  = apb_req[apb_sel].pwdata;
   assign pstrb_o   = apb_req[apb_sel].pstrb;
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_resp_assign
-    assign pselx_o[i]          = apb_req[i].psel;
-    assign apb_resp[i].pready  = pready_i[i];
-    assign apb_resp[i].prdata  = prdata_i[i];
-    assign apb_resp[i].pslverr = pslverr_i[i];
+  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_rsp_assign
+    assign pselx_o[i]         = apb_req[i].psel;
+    assign apb_rsp[i].pready  = pready_i[i];
+    assign apb_rsp[i].prdata  = prdata_i[i];
+    assign apb_rsp[i].pslverr = pslverr_i[i];
   end
 
   axi_lite_to_apb #(
@@ -475,19 +475,19 @@ module axi_lite_to_apb_intf #(
     .PipelineRequest  ( PipelineRequest   ),
     .PipelineResponse ( PipelineResponse  ),
     .axi_lite_req_t   ( axi_req_t         ),
-    .axi_lite_resp_t  ( axi_resp_t        ),
+    .axi_lite_rsp_t   ( axi_rsp_t         ),
     .apb_req_t        ( apb_req_t         ),
-    .apb_resp_t       ( apb_resp_t        ),
+    .apb_rsp_t        ( apb_rsp_t         ),
     .rule_t           ( rule_t            )
   ) i_axi_lite_to_apb (
     .clk_i,     // Clock
     .rst_ni,    // Asynchronous reset active low
     // AXI LITE slave port
-    .axi_lite_req_i  ( axi_req  ),
-    .axi_lite_resp_o ( axi_resp ),
+    .axi_lite_req_i ( axi_req ),
+    .axi_lite_rsp_o ( axi_rsp ),
     // APB master port
-    .apb_req_o       ( apb_req  ),
-    .apb_resp_i      ( apb_resp ),
+    .apb_req_o      ( apb_req ),
+    .apb_rsp_i      ( apb_rsp ),
     // APB Slave Address Map
     .addr_map_i
   );

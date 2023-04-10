@@ -310,7 +310,7 @@ module synth_axi_lite_to_apb #(
     logic  pready;   // slave signals that it is ready
     data_t prdata;   // read data, connects to R channel
     logic  pslverr;  // gets translated into either `axi_pkg::RESP_OK` or `axi_pkg::RESP_SLVERR`
-  } apb_resp_t;
+  } apb_rsp_t;
 
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -318,33 +318,33 @@ module synth_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t                    axi_req;
-  axi_resp_t                   axi_resp;
-  apb_req_t  [NoApbSlaves-1:0] apb_req;
-  apb_resp_t [NoApbSlaves-1:0] apb_resp;
+  axi_req_t                   axi_req;
+  axi_rsp_t                   axi_rsp;
+  apb_req_t [NoApbSlaves-1:0] apb_req;
+  apb_rsp_t [NoApbSlaves-1:0] apb_rsp;
 
   axi_pkg::xbar_rule_32_t [NoApbSlaves-1:0] addr_map;
 
   axi_lite_to_apb #(
-    .NoApbSlaves     ( NoApbSlaves             ),
-    .NoRules         ( NoApbSlaves             ),
-    .AddrWidth       ( 32'd32                  ),
-    .DataWidth       ( DataWidth               ),
-    .axi_lite_req_t  ( axi_req_t               ),
-    .axi_lite_resp_t ( axi_resp_t              ),
-    .apb_req_t       ( apb_req_t               ),
-    .apb_resp_t      ( apb_resp_t              ),
-    .rule_t          ( axi_pkg::xbar_rule_32_t )
+    .NoApbSlaves    ( NoApbSlaves             ),
+    .NoRules        ( NoApbSlaves             ),
+    .AddrWidth      ( 32'd32                  ),
+    .DataWidth      ( DataWidth               ),
+    .axi_lite_req_t ( axi_req_t               ),
+    .axi_lite_rsp_t ( axi_rsp_t               ),
+    .apb_req_t      ( apb_req_t               ),
+    .apb_rsp_t      ( apb_rsp_t               ),
+    .rule_t         ( axi_pkg::xbar_rule_32_t )
   ) i_axi_lite_to_apb_dut (
-    .clk_i           ( clk_i    ),
-    .rst_ni          ( rst_ni   ),
-    .axi_lite_req_i  ( axi_req  ),
-    .axi_lite_resp_o ( axi_resp ),
-    .apb_req_o       ( apb_req  ),
-    .apb_resp_i      ( apb_resp ),
-    .addr_map_i      ( addr_map )
+    .clk_i          ( clk_i    ),
+    .rst_ni         ( rst_ni   ),
+    .axi_lite_req_i ( axi_req  ),
+    .axi_lite_rsp_o ( axi_rsp  ),
+    .apb_req_o      ( apb_req  ),
+    .apb_rsp_i      ( apb_rsp  ),
+    .addr_map_i     ( addr_map )
   );
 
 endmodule
@@ -408,7 +408,7 @@ module synth_axi_lite_xbar #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
   localparam axi_pkg::xbar_cfg_t XbarCfg = '{
     NoSlvPorts:         NoSlvMst,
     NoMstPorts:         NoSlvMst,
@@ -424,30 +424,30 @@ module synth_axi_lite_xbar #(
 
   axi_pkg::xbar_rule_32_t [NoSlvMst-1:0] addr_map;
   logic                                  test;
-  axi_lite_req_t                   [NoSlvMst-1:0] mst_reqs,  slv_reqs;
-  axi_lite_resp_t                  [NoSlvMst-1:0] mst_resps, slv_resps;
+  axi_lite_req_t          [NoSlvMst-1:0] mst_reqs, slv_reqs;
+  axi_lite_rsp_t          [NoSlvMst-1:0] mst_rsps, slv_rsps;
 
   axi_lite_xbar #(
     .Cfg             ( XbarCfg                 ),
-    .aw_chan_t       (       aw_chan_t         ),
-    .w_chan_t        (        w_chan_t         ),
-    .b_chan_t        (        b_chan_t         ),
-    .ar_chan_t       (       ar_chan_t         ),
-    .r_chan_t        (        r_chan_t         ),
-    .axi_lite_req_t  (  axi_lite_req_t         ),
-    .axi_lite_resp_t ( axi_lite_resp_t         ),
+    .aw_chan_t       (      aw_chan_t          ),
+    .w_chan_t        (       w_chan_t          ),
+    .b_chan_t        (       b_chan_t          ),
+    .ar_chan_t       (      ar_chan_t          ),
+    .r_chan_t        (       r_chan_t          ),
+    .axi_lite_req_t  ( axi_lite_req_t          ),
+    .axi_lite_rsp_t  ( axi_lite_rsp_t          ),
     .rule_t          ( axi_pkg::xbar_rule_32_t )
   ) i_xbar_dut (
-    .clk_i                 ( clk_i     ),
-    .rst_ni                ( rst_ni    ),
-    .test_i                ( test      ),
-    .slv_ports_req_i       ( mst_reqs  ),
-    .slv_ports_resp_o      ( mst_resps ),
-    .mst_ports_req_o       ( slv_reqs  ),
-    .mst_ports_resp_i      ( slv_resps ),
-    .addr_map_i            ( addr_map  ),
-    .en_default_mst_port_i ( '0        ),
-    .default_mst_port_i    ( '0        )
+    .clk_i                 ( clk_i    ),
+    .rst_ni                ( rst_ni   ),
+    .test_i                ( test     ),
+    .slv_ports_req_i       ( mst_reqs ),
+    .slv_ports_rsp_o       ( mst_rsps ),
+    .mst_ports_req_o       ( slv_reqs ),
+    .mst_ports_rsp_i       ( slv_rsps ),
+    .addr_map_i            ( addr_map ),
+    .en_default_mst_port_i ( '0       ),
+    .default_mst_port_i    ( '0       )
   );
 endmodule
 

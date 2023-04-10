@@ -16,22 +16,22 @@ This table describes the parameters of the module.
 | `AxiAddrWidth` | `int unsigned` | The AXI4-Lite address width on the AW and AR channels                                        |
 | `AxiDataWidth` | `int unsigned` | The AXI4-Lite data width on the W and R channels                                             |
 | `req_lite_t`   | `type`         | In accordance with the `AXI_LITE_TYPEDEF_REQ_T` macro                                        |
-| `resp_lite_t`  | `type`         | In accordance with the `AXI_LITE_TYPEDEF_RESP_T` macro                                       |
+| `rsp_lite_t`   | `type`         | In accordance with the `AXI_LITE_TYPEDEF_RSP_T` macro                                        |
 
 
 ## Module Ports
 
 This table describes the ports of the module.
 
-| Name           | Type                       | Description                                            |
-|:---------------|:---------------------------|:-------------------------------------------------------|
-| `clk_i`        | `input  logic`             | clock                                                  |
-| `rst_ni`       | `input  logic`             | asynchronous reset active low                          |
-| `test_i`       | `input  logic`             | testmode enable                                        |
-| `slv_reqs_i`   | `input  req_lite_t  [1:0]` | requests of the two AXI4-Lite ports                    |
-| `slv_resps_o`  | `output resp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
-| `irq_o`        | `output logic       [1:0]` | interrupt output for each port                         |
-| `base_addr_i`  | `input  addr_t      [1:0]` | base address for each port                             |
+| Name           | Type                      | Description                                            |
+|:---------------|:--------------------------|:-------------------------------------------------------|
+| `clk_i`        | `input  logic`            | clock                                                  |
+| `rst_ni`       | `input  logic`            | asynchronous reset active low                          |
+| `test_i`       | `input  logic`            | testmode enable                                        |
+| `slv_reqs_i`   | `input  req_lite_t [1:0]` | requests of the two AXI4-Lite ports                    |
+| `slv_rsps_o`   | `output rsp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
+| `irq_o`        | `output logic      [1:0]` | interrupt output for each port                         |
+| `base_addr_i`  | `input  addr_t     [1:0]` | base address for each port                             |
 
 
 

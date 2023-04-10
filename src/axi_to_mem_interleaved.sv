@@ -19,7 +19,7 @@ module axi_to_mem_interleaved #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type         axi_req_t  = logic,
   /// AXI4+ATOP response type. See `include/axi/typedef.svh`.
-  parameter type         axi_resp_t = logic,
+  parameter type         axi_rsp_t  = logic,
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
@@ -52,7 +52,7 @@ module axi_to_mem_interleaved #(
   /// AXI4+ATOP slave port, request input.
   input  axi_req_t                       axi_req_i,
   /// AXI4+ATOP slave port, response output.
-  output axi_resp_t                      axi_resp_o,
+  output axi_rsp_t                       axi_rsp_o,
   /// Memory stream master, request is valid for this bank.
   output logic           [NumBanks-1:0]  mem_req_o,
   /// Memory stream master, request can be granted by this bank.
@@ -79,8 +79,8 @@ module axi_to_mem_interleaved #(
   logic [NumBanks-1:0] arb_outcome, arb_outcome_head;
 
   // internal AXI buses
-  axi_req_t  r_axi_req,  w_axi_req;
-  axi_resp_t r_axi_resp, w_axi_resp;
+  axi_req_t r_axi_req, w_axi_req;
+  axi_rsp_t r_axi_rsp, w_axi_rsp;
 
   // internal TCDM buses
   logic           [NumBanks-1:0]  r_mem_req,    w_mem_req;
@@ -95,13 +95,13 @@ module axi_to_mem_interleaved #(
 
   // split AXI bus in read and write
   always_comb begin : proc_axi_rw_split
-    axi_resp_o.r          = r_axi_resp.r;
-    axi_resp_o.r_valid    = r_axi_resp.r_valid;
-    axi_resp_o.ar_ready   = r_axi_resp.ar_ready;
-    axi_resp_o.b          = w_axi_resp.b;
-    axi_resp_o.b_valid    = w_axi_resp.b_valid;
-    axi_resp_o.w_ready    = w_axi_resp.w_ready;
-    axi_resp_o.aw_ready   = w_axi_resp.aw_ready;
+    axi_rsp_o.r          = r_axi_rsp.r;
+    axi_rsp_o.r_valid    = r_axi_rsp.r_valid;
+    axi_rsp_o.ar_ready   = r_axi_rsp.ar_ready;
+    axi_rsp_o.b          = w_axi_rsp.b;
+    axi_rsp_o.b_valid    = w_axi_rsp.b_valid;
+    axi_rsp_o.w_ready    = w_axi_rsp.w_ready;
+    axi_rsp_o.aw_ready   = w_axi_rsp.aw_ready;
 
     w_axi_req             = '0;
     w_axi_req.aw          = axi_req_i.aw;
@@ -118,7 +118,7 @@ module axi_to_mem_interleaved #(
 
   axi_to_mem #(
     .axi_req_t   ( axi_req_t    ),
-    .axi_resp_t  ( axi_resp_t   ),
+    .axi_rsp_t   ( axi_rsp_t    ),
     .AddrWidth   ( AddrWidth    ),
     .DataWidth   ( DataWidth    ),
     .IdWidth     ( IdWidth      ),
@@ -131,7 +131,7 @@ module axi_to_mem_interleaved #(
     .rst_ni       ( rst_ni        ),
     .busy_o       ( w_busy        ),
     .axi_req_i    ( w_axi_req     ),
-    .axi_resp_o   ( w_axi_resp    ),
+    .axi_rsp_o    ( w_axi_rsp     ),
     .mem_req_o    ( w_mem_req     ),
     .mem_gnt_i    ( w_mem_gnt     ),
     .mem_addr_o   ( w_mem_addr    ),
@@ -145,7 +145,7 @@ module axi_to_mem_interleaved #(
 
   axi_to_mem #(
     .axi_req_t    ( axi_req_t    ),
-    .axi_resp_t   ( axi_resp_t   ),
+    .axi_rsp_t    ( axi_rsp_t    ),
     .AddrWidth    ( AddrWidth    ),
     .DataWidth    ( DataWidth    ),
     .IdWidth      ( IdWidth      ),
@@ -158,7 +158,7 @@ module axi_to_mem_interleaved #(
     .rst_ni       ( rst_ni        ),
     .busy_o       ( r_busy        ),
     .axi_req_i    ( r_axi_req     ),
-    .axi_resp_o   ( r_axi_resp    ),
+    .axi_rsp_o    ( r_axi_rsp     ),
     .mem_req_o    ( r_mem_req     ),
     .mem_gnt_i    ( r_mem_gnt     ),
     .mem_addr_o   ( r_mem_addr    ),

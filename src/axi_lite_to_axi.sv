@@ -18,20 +18,20 @@
 module axi_lite_to_axi #(
   parameter int unsigned AxiDataWidth = 32'd0,
   // LITE AXI structs
-  parameter type  axi_lite_req_t = logic,
-  parameter type axi_lite_resp_t = logic,
+  parameter type axi_lite_req_t = logic,
+  parameter type axi_lite_rsp_t = logic,
   // FULL AXI structs
-  parameter type       axi_req_t = logic,
-  parameter type      axi_resp_t = logic
+  parameter type      axi_req_t = logic,
+  parameter type      axi_rsp_t = logic
 ) (
   // Slave AXI LITE port
   input  axi_lite_req_t   slv_req_lite_i,
-  output axi_lite_resp_t  slv_resp_lite_o,
+  output axi_lite_rsp_t   slv_rsp_lite_o,
   input  axi_pkg::cache_t slv_aw_cache_i,
   input  axi_pkg::cache_t slv_ar_cache_i,
   // Master AXI port
   output axi_req_t        mst_req_o,
-  input  axi_resp_t       mst_resp_i
+  input  axi_rsp_t        mst_rsp_i
 );
   localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AxiDataWidth/8)));
 
@@ -67,21 +67,21 @@ module axi_lite_to_axi #(
     default:   '0
   };
   // response assign
-  assign slv_resp_lite_o = '{
-    aw_ready: mst_resp_i.aw_ready,
-    w_ready:  mst_resp_i.w_ready,
+  assign slv_rsp_lite_o = '{
+    aw_ready: mst_rsp_i.aw_ready,
+    w_ready:  mst_rsp_i.w_ready,
     b: '{
-      resp: mst_resp_i.b.resp,
+      resp: mst_rsp_i.b.resp,
       default: '0
     },
-    b_valid:  mst_resp_i.b_valid,
-    ar_ready: mst_resp_i.ar_ready,
+    b_valid:  mst_rsp_i.b_valid,
+    ar_ready: mst_rsp_i.ar_ready,
     r: '{
-      data: mst_resp_i.r.data,
-      resp: mst_resp_i.r.resp,
+      data: mst_rsp_i.r.data,
+      resp: mst_rsp_i.r.resp,
       default: '0
     },
-    r_valid: mst_resp_i.r_valid,
+    r_valid: mst_rsp_i.r_valid,
     default: '0
   };
 

@@ -141,7 +141,7 @@ module axi_slave_compare #(
     ar_ready_test = axi_test_rsp_in.ar_ready;
     w_ready_test  = axi_test_rsp_in.w_ready;
     // response
-    `AXI_SET_RESP_STRUCT(axi_mst_rsp_o, axi_ref_rsp_in)
+    `AXI_SET_RSP_STRUCT(axi_mst_rsp_o, axi_ref_rsp_in)
     // overwrite readies
     axi_mst_rsp_o.aw_ready  = aw_ready_mst;
     axi_mst_rsp_o.w_ready   = w_ready_mst;

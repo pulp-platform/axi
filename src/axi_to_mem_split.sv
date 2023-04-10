@@ -19,7 +19,7 @@ module axi_to_mem_split #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type         axi_req_t    = logic,
   /// AXI4+ATOP response type. See `include/axi/typedef.svh`.
-  parameter type         axi_resp_t   = logic,
+  parameter type         axi_rsp_t    = logic,
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
@@ -54,7 +54,7 @@ module axi_to_mem_split #(
   /// AXI4+ATOP slave port, request input.
   input  axi_req_t                         axi_req_i,
   /// AXI4+ATOP slave port, response output.
-  output axi_resp_t                        axi_resp_o,
+  output axi_rsp_t                         axi_rsp_o,
   /// Memory stream master, request is valid for this bank.
   output logic           [NumMemPorts-1:0] mem_req_o,
   /// Memory stream master, request can be granted by this bank.
@@ -77,29 +77,29 @@ module axi_to_mem_split #(
 );
 
   axi_req_t axi_read_req, axi_write_req;
-  axi_resp_t axi_read_resp, axi_write_resp;
+  axi_rsp_t axi_read_rsp, axi_write_rsp;
 
   logic read_busy, write_busy;
 
   axi_rw_split #(
-    .axi_req_t  ( axi_req_t  ),
-    .axi_resp_t ( axi_resp_t )
+    .axi_req_t ( axi_req_t ),
+    .axi_rsp_t ( axi_rsp_t )
   ) i_axi_rw_split (
     .clk_i,
     .rst_ni,
-    .slv_req_i        ( axi_req_i        ),
-    .slv_resp_o       ( axi_resp_o       ),
-    .mst_read_req_o   ( axi_read_req     ),
-    .mst_read_resp_i  ( axi_read_resp    ),
-    .mst_write_req_o  ( axi_write_req    ),
-    .mst_write_resp_i ( axi_write_resp   )
+    .slv_req_i       ( axi_req_i       ),
+    .slv_rsp_o       ( axi_rsp_o       ),
+    .mst_read_req_o  ( axi_read_req    ),
+    .mst_read_rsp_i  ( axi_read_rsp    ),
+    .mst_write_req_o ( axi_write_req   ),
+    .mst_write_rsp_i ( axi_write_rsp   )
   );
 
   assign busy_o = read_busy || write_busy;
 
   axi_to_mem #(
     .axi_req_t    ( axi_req_t     ),
-    .axi_resp_t   ( axi_resp_t    ),
+    .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
     .DataWidth    ( AxiDataWidth  ),
     .IdWidth      ( IdWidth       ),
@@ -112,7 +112,7 @@ module axi_to_mem_split #(
     .rst_ni,
     .busy_o       ( read_busy                        ),
     .axi_req_i    ( axi_read_req                     ),
-    .axi_resp_o   ( axi_read_resp                    ),
+    .axi_rsp_o    ( axi_read_rsp                     ),
     .mem_req_o    ( mem_req_o    [NumMemPorts/2-1:0] ),
     .mem_gnt_i    ( mem_gnt_i    [NumMemPorts/2-1:0] ),
     .mem_addr_o   ( mem_addr_o   [NumMemPorts/2-1:0] ),
@@ -126,7 +126,7 @@ module axi_to_mem_split #(
 
   axi_to_mem #(
     .axi_req_t    ( axi_req_t     ),
-    .axi_resp_t   ( axi_resp_t    ),
+    .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
     .DataWidth    ( AxiDataWidth  ),
     .IdWidth      ( IdWidth       ),
@@ -139,7 +139,7 @@ module axi_to_mem_split #(
     .rst_ni,
     .busy_o       ( write_busy                                 ),
     .axi_req_i    ( axi_write_req                              ),
-    .axi_resp_o   ( axi_write_resp                             ),
+    .axi_rsp_o    ( axi_write_rsp                              ),
     .mem_req_o    ( mem_req_o    [NumMemPorts-1:NumMemPorts/2] ),
     .mem_gnt_i    ( mem_gnt_i    [NumMemPorts-1:NumMemPorts/2] ),
     .mem_addr_o   ( mem_addr_o   [NumMemPorts-1:NumMemPorts/2] ),
@@ -216,13 +216,13 @@ module axi_to_mem_split_intf #(
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
   axi_req_t axi_req;
-  axi_resp_t axi_resp;
+  axi_rsp_t axi_rsp;
   `AXI_ASSIGN_TO_REQ(axi_req, axi_bus)
-  `AXI_ASSIGN_FROM_RESP(axi_bus, axi_resp)
+  `AXI_ASSIGN_FROM_RSP(axi_bus, axi_rsp)
 
   axi_to_mem_split #(
     .axi_req_t    ( axi_req_t      ),
-    .axi_resp_t   ( axi_resp_t     ),
+    .axi_rsp_t    ( axi_rsp_t      ),
     .AxiDataWidth ( AXI_DATA_WIDTH ),
     .AddrWidth    ( AXI_ADDR_WIDTH ),
     .IdWidth      ( AXI_ID_WIDTH   ),
@@ -235,7 +235,7 @@ module axi_to_mem_split_intf #(
     .rst_ni,
     .busy_o,
     .axi_req_i (axi_req),
-    .axi_resp_o (axi_resp),
+    .axi_rsp_o (axi_rsp),
     .mem_req_o,
     .mem_gnt_i,
     .mem_addr_o,

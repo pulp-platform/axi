@@ -30,7 +30,7 @@ module axi_cdc_dst #(
   parameter type ar_chan_t = logic,
   parameter type r_chan_t = logic,
   parameter type axi_req_t = logic,
-  parameter type axi_resp_t = logic
+  parameter type axi_rsp_t = logic
 ) (
   // asynchronous slave port
   input  aw_chan_t  [2**LogDepth-1:0] async_data_slave_aw_data_i,
@@ -52,7 +52,7 @@ module axi_cdc_dst #(
   input  logic                        dst_clk_i,
   input  logic                        dst_rst_ni,
   output axi_req_t                    dst_req_o,
-  input  axi_resp_t                   dst_resp_i
+  input  axi_rsp_t                    dst_rsp_i
 );
 
   cdc_fifo_gray_dst #(
@@ -72,7 +72,7 @@ module axi_cdc_dst #(
     .dst_rst_ni,
     .dst_data_o   ( dst_req_o.aw                ),
     .dst_valid_o  ( dst_req_o.aw_valid          ),
-    .dst_ready_i  ( dst_resp_i.aw_ready         )
+    .dst_ready_i  ( dst_rsp_i.aw_ready          )
   );
 
   cdc_fifo_gray_dst #(
@@ -90,7 +90,7 @@ module axi_cdc_dst #(
     .dst_rst_ni,
     .dst_data_o   ( dst_req_o.w               ),
     .dst_valid_o  ( dst_req_o.w_valid         ),
-    .dst_ready_i  ( dst_resp_i.w_ready        )
+    .dst_ready_i  ( dst_rsp_i.w_ready         )
   );
 
   cdc_fifo_gray_src #(
@@ -103,8 +103,8 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_src_b (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),
-    .src_data_i   ( dst_resp_i.b              ),
-    .src_valid_i  ( dst_resp_i.b_valid        ),
+    .src_data_i   ( dst_rsp_i.b               ),
+    .src_valid_i  ( dst_rsp_i.b_valid         ),
     .src_ready_o  ( dst_req_o.b_ready         ),
     .async_data_o ( async_data_slave_b_data_o ),
     .async_wptr_o ( async_data_slave_b_wptr_o ),
@@ -123,7 +123,7 @@ module axi_cdc_dst #(
     .dst_rst_ni,
     .dst_data_o   ( dst_req_o.ar                ),
     .dst_valid_o  ( dst_req_o.ar_valid          ),
-    .dst_ready_i  ( dst_resp_i.ar_ready         ),
+    .dst_ready_i  ( dst_rsp_i.ar_ready          ),
     .async_data_i ( async_data_slave_ar_data_i  ),
     .async_wptr_i ( async_data_slave_ar_wptr_i  ),
     .async_rptr_o ( async_data_slave_ar_rptr_o  )
@@ -139,8 +139,8 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_src_r (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),
-    .src_data_i   ( dst_resp_i.r              ),
-    .src_valid_i  ( dst_resp_i.r_valid        ),
+    .src_data_i   ( dst_rsp_i.r               ),
+    .src_valid_i  ( dst_rsp_i.r_valid         ),
     .src_ready_o  ( dst_req_o.r_ready         ),
     .async_data_o ( async_data_slave_r_data_o ),
     .async_wptr_o ( async_data_slave_r_wptr_o ),
@@ -176,11 +176,11 @@ module axi_cdc_dst_intf #(
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  req_t  dst_req;
-  resp_t dst_resp;
+  axi_req_t dst_req;
+  axi_rsp_t dst_rsp;
 
   axi_cdc_dst #(
     .aw_chan_t  ( aw_chan_t ),
@@ -188,8 +188,8 @@ module axi_cdc_dst_intf #(
     .b_chan_t   ( b_chan_t  ),
     .ar_chan_t  ( ar_chan_t ),
     .r_chan_t   ( r_chan_t  ),
-    .axi_req_t  ( req_t     ),
-    .axi_resp_t ( resp_t    ),
+    .axi_req_t  ( axi_req_t ),
+    .axi_rsp_t  ( axi_rsp_t ),
     .LogDepth   ( LOG_DEPTH )
   ) i_axi_cdc_dst (
     .async_data_slave_aw_data_i ( src.aw_data ),
@@ -210,11 +210,11 @@ module axi_cdc_dst_intf #(
     .dst_clk_i,
     .dst_rst_ni,
     .dst_req_o                  ( dst_req     ),
-    .dst_resp_i                 ( dst_resp    )
+    .dst_rsp_i                  ( dst_rsp     )
   );
 
   `AXI_ASSIGN_FROM_REQ(dst, dst_req)
-  `AXI_ASSIGN_TO_RESP(dst_resp, dst)
+  `AXI_ASSIGN_TO_RSP(dst_rsp, dst)
 
 endmodule
 
@@ -241,21 +241,21 @@ module axi_lite_cdc_dst_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  req_t   dst_req;
-  resp_t  dst_resp;
+  axi_lite_req_t  dst_req;
+  axi_lite_rsp_t  dst_rsp;
 
   axi_cdc_dst #(
-    .aw_chan_t  ( aw_chan_t ),
-    .w_chan_t   ( w_chan_t  ),
-    .b_chan_t   ( b_chan_t  ),
-    .ar_chan_t  ( ar_chan_t ),
-    .r_chan_t   ( r_chan_t  ),
-    .axi_req_t  ( req_t     ),
-    .axi_resp_t ( resp_t    ),
-    .LogDepth   ( LOG_DEPTH )
+    .aw_chan_t  ( aw_chan_t      ),
+    .w_chan_t   ( w_chan_t       ),
+    .b_chan_t   ( b_chan_t       ),
+    .ar_chan_t  ( ar_chan_t      ),
+    .r_chan_t   ( r_chan_t       ),
+    .axi_req_t  ( axi_lite_req_t ),
+    .axi_rsp_t  ( axi_lite_rsp_t ),
+    .LogDepth   ( LOG_DEPTH      )
   ) i_axi_cdc_dst (
     .async_data_slave_aw_data_i ( src.aw_data ),
     .async_data_slave_aw_wptr_i ( src.aw_wptr ),
@@ -275,10 +275,10 @@ module axi_lite_cdc_dst_intf #(
     .dst_clk_i,
     .dst_rst_ni,
     .dst_req_o                  ( dst_req     ),
-    .dst_resp_i                 ( dst_resp    )
+    .dst_rsp_i                  ( dst_rsp     )
   );
 
   `AXI_LITE_ASSIGN_FROM_REQ(dst, dst_req)
-  `AXI_LITE_ASSIGN_TO_RESP(dst_resp, dst)
+  `AXI_LITE_ASSIGN_TO_RSP(dst_rsp, dst)
 
 endmodule

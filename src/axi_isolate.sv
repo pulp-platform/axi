@@ -56,24 +56,24 @@ module axi_isolate #(
   /// Request struct type of all AXI4+ATOP ports
   parameter type         axi_req_t  = logic,
   /// Response struct type of all AXI4+ATOP ports
-  parameter type         axi_resp_t = logic
+  parameter type         axi_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
-  input  logic      clk_i,
+  input  logic     clk_i,
   /// Asynchronous reset, active low
-  input  logic      rst_ni,
+  input  logic     rst_ni,
   /// Slave port request
-  input  axi_req_t  slv_req_i,
+  input  axi_req_t slv_req_i,
   /// Slave port response
-  output axi_resp_t slv_resp_o,
+  output axi_rsp_t slv_rsp_o,
   /// Master port request
-  output axi_req_t  mst_req_o,
+  output axi_req_t mst_req_o,
   /// Master port response
-  input  axi_resp_t mst_resp_i,
+  input  axi_rsp_t mst_rsp_i,
   /// Isolate master port from slave port
-  input  logic      isolate_i,
+  input  logic     isolate_i,
   /// Master port is isolated from slave port
-  output logic      isolated_o
+  output logic     isolated_o
 );
 
   typedef logic [AxiIdWidth-1:0]     id_t;
@@ -88,8 +88,8 @@ module axi_isolate #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
-  axi_req_t [1:0]   demux_req;
-  axi_resp_t [1:0]  demux_rsp;
+  axi_req_t [1:0]  demux_req;
+  axi_rsp_t [1:0]  demux_rsp;
 
   if (TerminateTransaction) begin
     axi_demux #(
@@ -101,7 +101,7 @@ module axi_isolate #(
       .ar_chan_t      ( ar_chan_t   ),
       .r_chan_t       ( r_chan_t    ),
       .axi_req_t      ( axi_req_t   ),
-      .axi_resp_t     ( axi_resp_t  ),
+      .axi_rsp_t      ( axi_rsp_t   ),
       .NoMstPorts     ( 2           ),
       .MaxTrans       ( NumPending  ),
       // We don't need many bits here as the common case will be to go for the pass-through.
@@ -119,15 +119,15 @@ module axi_isolate #(
       .slv_req_i,
       .slv_aw_select_i ( isolated_o ),
       .slv_ar_select_i ( isolated_o ),
-      .slv_resp_o,
+      .slv_rsp_o,
       .mst_reqs_o      ( demux_req ),
-      .mst_resps_i     ( demux_rsp )
+      .mst_rsps_i      ( demux_rsp )
     );
 
     axi_err_slv #(
       .AxiIdWidth  ( AxiIdWidth           ),
       .axi_req_t   ( axi_req_t            ),
-      .axi_resp_t  ( axi_resp_t           ),
+      .axi_rsp_t   ( axi_rsp_t            ),
       .Resp        ( axi_pkg::RESP_DECERR ),
       .RespData    ( 'h1501A7ED           ),
       .ATOPs       ( AtopSupport          ),
@@ -135,26 +135,26 @@ module axi_isolate #(
     ) i_axi_err_slv (
       .clk_i,
       .rst_ni,
-      .test_i     ( 1'b0         ),
-      .slv_req_i  ( demux_req[1] ),
-      .slv_resp_o ( demux_rsp[1] )
+      .test_i    ( 1'b0         ),
+      .slv_req_i ( demux_req[1] ),
+      .slv_rsp_o ( demux_rsp[1] )
     );
   end else begin
     assign demux_req[0] = slv_req_i;
-    assign slv_resp_o = demux_rsp[0];
+    assign slv_rsp_o = demux_rsp[0];
   end
 
   axi_isolate_inner #(
     .NumPending ( NumPending  ),
     .axi_req_t  ( axi_req_t   ),
-    .axi_resp_t ( axi_resp_t  )
+    .axi_rsp_t  ( axi_rsp_t   )
   ) i_axi_isolate (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( demux_req[0] ),
-    .slv_resp_o ( demux_rsp[0] ),
+    .slv_req_i ( demux_req[0] ),
+    .slv_rsp_o ( demux_rsp[0] ),
     .mst_req_o,
-    .mst_resp_i,
+    .mst_rsp_i,
     .isolate_i,
     .isolated_o
   );
@@ -163,16 +163,16 @@ endmodule
 module axi_isolate_inner #(
   parameter int unsigned NumPending = 32'd16,
   parameter type         axi_req_t  = logic,
-  parameter type         axi_resp_t = logic
+  parameter type         axi_rsp_t  = logic
 ) (
-  input  logic      clk_i,
-  input  logic      rst_ni,
-  input  axi_req_t  slv_req_i,
-  output axi_resp_t slv_resp_o,
-  output axi_req_t  mst_req_o,
-  input  axi_resp_t mst_resp_i,
-  input  logic      isolate_i,
-  output logic      isolated_o
+  input  logic     clk_i,
+  input  logic     rst_ni,
+  input  axi_req_t slv_req_i,
+  output axi_rsp_t slv_rsp_o,
+  output axi_req_t mst_req_o,
+  input  axi_rsp_t mst_rsp_i,
+  input  logic     isolate_i,
+  output logic     isolated_o
 );
 
   // plus 1 in clog for accouning no open transaction, plus one bit for atomic injection
@@ -224,11 +224,11 @@ module axi_isolate_inner #(
         update_ar_cnt = 1'b1;
       end
     end
-    if (mst_req_o.w_valid  && mst_resp_i.w_ready && mst_req_o.w.last) begin
+    if (mst_req_o.w_valid  && mst_rsp_i.w_ready && mst_req_o.w.last) begin
       pending_w_d--;
       update_w_cnt  = 1'b1;
     end
-    if (mst_resp_i.b_valid  && mst_req_o.b_ready) begin
+    if (mst_rsp_i.b_valid  && mst_req_o.b_ready) begin
       pending_aw_d--;
       update_aw_cnt = 1'b1;
     end
@@ -237,7 +237,7 @@ module axi_isolate_inner #(
       pending_ar_d++;
       update_ar_cnt = 1'b1;
     end
-    if (mst_resp_i.r_valid  && mst_req_o.r_ready && mst_resp_i.r.last) begin
+    if (mst_rsp_i.r_valid  && mst_req_o.r_ready && mst_rsp_i.r.last) begin
       pending_ar_d--;
       update_ar_cnt = 1'b1;
     end
@@ -252,7 +252,7 @@ module axi_isolate_inner #(
     update_ar_state = 1'b0;
     // Connect channel per default
     mst_req_o       = slv_req_i;
-    slv_resp_o      = mst_resp_i;
+    slv_rsp_o      = mst_rsp_i;
 
     /////////////////////////////////////////////////////////////
     // Write transaction
@@ -265,14 +265,14 @@ module axi_isolate_inner #(
         if (pending_aw_q >= cnt_t'(NumPending) || pending_ar_q >= cnt_t'(2*NumPending)
             || (pending_w_q >= cnt_t'(NumPending))) begin
           mst_req_o.aw_valid  = 1'b0;
-          slv_resp_o.aw_ready = 1'b0;
+          slv_rsp_o.aw_ready = 1'b0;
           if (isolate_i) begin
             state_aw_d      = Drain;
             update_aw_state = 1'b1;
           end
         end else begin
           // here the AW handshake is connected normally
-          if (slv_req_i.aw_valid && !mst_resp_i.aw_ready) begin
+          if (slv_req_i.aw_valid && !mst_rsp_i.aw_ready) begin
             state_aw_d      = Hold;
             update_aw_state = 1'b1;
           end else begin
@@ -286,27 +286,27 @@ module axi_isolate_inner #(
       Hold: begin // Hold the valid signal on 1'b1 if there was no transfer
         mst_req_o.aw_valid = 1'b1;
         // aw_ready normal connected
-        if (mst_resp_i.aw_ready) begin
+        if (mst_rsp_i.aw_ready) begin
           update_aw_state = 1'b1;
           state_aw_d      = isolate_i ? Drain : Normal;
         end
       end
       Drain: begin // cut the AW channel until counter is zero
-        mst_req_o.aw        = '0;
-        mst_req_o.aw_valid  = 1'b0;
-        slv_resp_o.aw_ready = 1'b0;
+        mst_req_o.aw       = '0;
+        mst_req_o.aw_valid = 1'b0;
+        slv_rsp_o.aw_ready = 1'b0;
         if (pending_aw_q == '0) begin
           state_aw_d      = Isolate;
           update_aw_state = 1'b1;
         end
       end
       Isolate: begin // Cut the signals to the outputs
-        mst_req_o.aw        = '0;
-        mst_req_o.aw_valid  = 1'b0;
-        slv_resp_o.aw_ready = 1'b0;
-        slv_resp_o.b        = '0;
-        slv_resp_o.b_valid  = 1'b0;
-        mst_req_o.b_ready   = 1'b0;
+        mst_req_o.aw       = '0;
+        mst_req_o.aw_valid = 1'b0;
+        slv_rsp_o.aw_ready = 1'b0;
+        slv_rsp_o.b        = '0;
+        slv_rsp_o.b_valid  = 1'b0;
+        mst_req_o.b_ready  = 1'b0;
         if (!isolate_i) begin
           state_aw_d      = Normal;
           update_aw_state = 1'b1;
@@ -317,9 +317,9 @@ module axi_isolate_inner #(
 
     // W channel is cut as long the counter is zero and not explicitly unlocked through an AW.
     if ((pending_w_q == '0) && !connect_w ) begin
-      mst_req_o.w         = '0;
-      mst_req_o.w_valid   = 1'b0;
-      slv_resp_o.w_ready  = 1'b0;
+      mst_req_o.w        = '0;
+      mst_req_o.w_valid  = 1'b0;
+      slv_rsp_o.w_ready  = 1'b0;
     end
 
     /////////////////////////////////////////////////////////////
@@ -329,15 +329,15 @@ module axi_isolate_inner #(
       Normal: begin
         // cut handshake if counter capacity is reached
         if (pending_ar_q >= NumPending) begin
-          mst_req_o.ar_valid  = 1'b0;
-          slv_resp_o.ar_ready = 1'b0;
+          mst_req_o.ar_valid = 1'b0;
+          slv_rsp_o.ar_ready = 1'b0;
           if (isolate_i) begin
             state_ar_d      = Drain;
             update_ar_state = 1'b1;
           end
         end else begin
           // here the AR handshake is connected normally
-          if (slv_req_i.ar_valid && !mst_resp_i.ar_ready) begin
+          if (slv_req_i.ar_valid && !mst_rsp_i.ar_ready) begin
             state_ar_d      = Hold;
             update_ar_state = 1'b1;
           end else begin
@@ -351,27 +351,27 @@ module axi_isolate_inner #(
       Hold: begin // Hold the valid signal on 1'b1 if there was no transfer
         mst_req_o.ar_valid = 1'b1;
         // ar_ready normal connected
-        if (mst_resp_i.ar_ready) begin
+        if (mst_rsp_i.ar_ready) begin
           update_ar_state = 1'b1;
           state_ar_d      = isolate_i ? Drain : Normal;
         end
       end
       Drain: begin
-        mst_req_o.ar        = '0;
-        mst_req_o.ar_valid  = 1'b0;
-        slv_resp_o.ar_ready = 1'b0;
+        mst_req_o.ar       = '0;
+        mst_req_o.ar_valid = 1'b0;
+        slv_rsp_o.ar_ready = 1'b0;
         if (pending_ar_q == '0) begin
           state_ar_d      = Isolate;
           update_ar_state = 1'b1;
         end
       end
       Isolate: begin
-        mst_req_o.ar        = '0;
-        mst_req_o.ar_valid  = 1'b0;
-        slv_resp_o.ar_ready = 1'b0;
-        slv_resp_o.r        = '0;
-        slv_resp_o.r_valid  = 1'b0;
-        mst_req_o.r_ready   = 1'b0;
+        mst_req_o.ar       = '0;
+        mst_req_o.ar_valid = 1'b0;
+        slv_rsp_o.ar_ready = 1'b0;
+        slv_rsp_o.r        = '0;
+        slv_rsp_o.r_valid  = 1'b0;
+        mst_req_o.r_ready  = 1'b0;
         if (!isolate_i) begin
           state_ar_d      = Normal;
           update_ar_state = 1'b1;
@@ -441,16 +441,16 @@ module axi_isolate_intf #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req, mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
 
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_isolate #(
     .NumPending           ( NUM_PENDING           ),
@@ -461,14 +461,14 @@ module axi_isolate_intf #(
     .AxiIdWidth           ( AXI_ID_WIDTH          ),
     .AxiUserWidth         ( AXI_USER_WIDTH        ),
     .axi_req_t            ( axi_req_t             ),
-    .axi_resp_t           ( axi_resp_t            )
+    .axi_rsp_t            ( axi_rsp_t             )
   ) i_axi_isolate (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp ),
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp ),
     .isolate_i,
     .isolated_o
   );

@@ -28,7 +28,7 @@ module axi_lite_mux #(
   parameter type          ar_chan_t  = logic, // AR LITE Channel Type
   parameter type           r_chan_t  = logic, //  R LITE Channel Type
   parameter type     axi_lite_req_t  = logic, // AXI4-Lite request type
-  parameter type    axi_lite_resp_t  = logic, // AXI4-Lite response type
+  parameter type     axi_lite_rsp_t  = logic, // AXI4-Lite response type
   parameter int unsigned NoSlvPorts  = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write or read
   parameter int unsigned MaxTrans    = 32'd0,
@@ -42,15 +42,15 @@ module axi_lite_mux #(
   parameter bit          SpillAr     = 1'b1,
   parameter bit          SpillR      = 1'b0
 ) (
-  input  logic                            clk_i,    // Clock
-  input  logic                            rst_ni,   // Asynchronous reset active low
-  input  logic                            test_i,   // Test Mode enable
+  input  logic                           clk_i,    // Clock
+  input  logic                           rst_ni,   // Asynchronous reset active low
+  input  logic                           test_i,   // Test Mode enable
   // slave ports (AXI4-Lite inputs), connect master modules here
-  input  axi_lite_req_t  [NoSlvPorts-1:0] slv_reqs_i,
-  output axi_lite_resp_t [NoSlvPorts-1:0] slv_resps_o,
+  input  axi_lite_req_t [NoSlvPorts-1:0] slv_reqs_i,
+  output axi_lite_rsp_t [NoSlvPorts-1:0] slv_rsps_o,
   // master port (AXI4-Lite output), connect slave module here
-  output axi_lite_req_t                   mst_req_o,
-  input  axi_lite_resp_t                  mst_resp_i
+  output axi_lite_req_t                  mst_req_o,
+  input  axi_lite_rsp_t                  mst_rsp_i
 );
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
@@ -61,10 +61,10 @@ module axi_lite_mux #(
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
       .valid_i ( slv_reqs_i[0].aw_valid   ),
-      .ready_o ( slv_resps_o[0].aw_ready  ),
+      .ready_o ( slv_rsps_o[0].aw_ready   ),
       .data_i  ( slv_reqs_i[0].aw         ),
       .valid_o ( mst_req_o.aw_valid       ),
-      .ready_i ( mst_resp_i.aw_ready      ),
+      .ready_i ( mst_rsp_i.aw_ready       ),
       .data_o  ( mst_req_o.aw             )
     );
     spill_register #(
@@ -74,24 +74,24 @@ module axi_lite_mux #(
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
       .valid_i ( slv_reqs_i[0].w_valid   ),
-      .ready_o ( slv_resps_o[0].w_ready  ),
+      .ready_o ( slv_rsps_o[0].w_ready   ),
       .data_i  ( slv_reqs_i[0].w         ),
       .valid_o ( mst_req_o.w_valid       ),
-      .ready_i ( mst_resp_i.w_ready      ),
+      .ready_i ( mst_rsp_i.w_ready       ),
       .data_o  ( mst_req_o.w             )
     );
     spill_register #(
       .T       ( b_chan_t ),
       .Bypass  ( ~SpillB  )
     ) i_b_spill_reg (
-      .clk_i   ( clk_i                  ),
-      .rst_ni  ( rst_ni                 ),
-      .valid_i ( mst_resp_i.b_valid     ),
-      .ready_o ( mst_req_o.b_ready      ),
-      .data_i  ( mst_resp_i.b           ),
-      .valid_o ( slv_resps_o[0].b_valid ),
-      .ready_i ( slv_reqs_i[0].b_ready  ),
-      .data_o  ( slv_resps_o[0].b       )
+      .clk_i   ( clk_i                 ),
+      .rst_ni  ( rst_ni                ),
+      .valid_i ( mst_rsp_i.b_valid     ),
+      .ready_o ( mst_req_o.b_ready     ),
+      .data_i  ( mst_rsp_i.b           ),
+      .valid_o ( slv_rsps_o[0].b_valid ),
+      .ready_i ( slv_reqs_i[0].b_ready ),
+      .data_o  ( slv_rsps_o[0].b       )
     );
     spill_register #(
       .T       ( ar_chan_t ),
@@ -100,24 +100,24 @@ module axi_lite_mux #(
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
       .valid_i ( slv_reqs_i[0].ar_valid   ),
-      .ready_o ( slv_resps_o[0].ar_ready  ),
+      .ready_o ( slv_rsps_o[0].ar_ready   ),
       .data_i  ( slv_reqs_i[0].ar         ),
       .valid_o ( mst_req_o.ar_valid       ),
-      .ready_i ( mst_resp_i.ar_ready      ),
+      .ready_i ( mst_rsp_i.ar_ready       ),
       .data_o  ( mst_req_o.ar             )
     );
     spill_register #(
       .T       ( r_chan_t ),
       .Bypass  ( ~SpillR  )
     ) i_r_spill_reg (
-      .clk_i   ( clk_i                  ),
-      .rst_ni  ( rst_ni                 ),
-      .valid_i ( mst_resp_i.r_valid     ),
-      .ready_o ( mst_req_o.r_ready      ),
-      .data_i  ( mst_resp_i.r           ),
-      .valid_o ( slv_resps_o[0].r_valid ),
-      .ready_i ( slv_reqs_i[0].r_ready  ),
-      .data_o  ( slv_resps_o[0].r       )
+      .clk_i   ( clk_i                 ),
+      .rst_ni  ( rst_ni                ),
+      .valid_i ( mst_rsp_i.r_valid     ),
+      .ready_o ( mst_req_o.r_ready     ),
+      .data_i  ( mst_rsp_i.r           ),
+      .valid_o ( slv_rsps_o[0].r_valid ),
+      .ready_i ( slv_reqs_i[0].r_ready ),
+      .data_o  ( slv_rsps_o[0].r       )
     );
 
   // other non degenerate cases
@@ -192,7 +192,7 @@ module axi_lite_mux #(
     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_aw_arb_input
       assign slv_aw_chans[i]         = slv_reqs_i[i].aw;
       assign slv_aw_valids[i]        = slv_reqs_i[i].aw_valid;
-      assign slv_resps_o[i].aw_ready = slv_aw_readies[i];
+      assign slv_rsps_o[i].aw_ready = slv_aw_readies[i];
     end
     rr_arb_tree #(
       .NumIn    ( NoSlvPorts ),
@@ -275,7 +275,7 @@ module axi_lite_mux #(
       .ready_o ( mst_aw_ready        ),
       .data_i  ( mst_aw_chan         ),
       .valid_o ( mst_req_o.aw_valid  ),
-      .ready_i ( mst_resp_i.aw_ready ),
+      .ready_i ( mst_rsp_i.aw_ready  ),
       .data_o  ( mst_req_o.aw        )
     );
 
@@ -286,7 +286,7 @@ module axi_lite_mux #(
     assign mst_w_chan      = slv_reqs_i[w_select].w;
     assign mst_w_valid     = (!w_fifo_empty && !b_fifo_full) ? slv_reqs_i[w_select].w_valid  : 1'b0;
     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_w_ready
-      assign slv_resps_o[i].w_ready =  mst_w_ready & ~w_fifo_empty &
+      assign slv_rsps_o[i].w_ready =  mst_w_ready & ~w_fifo_empty &
                                       ~b_fifo_full & (w_select == select_t'(i));
     end
     assign w_fifo_pop      = mst_w_valid & mst_w_ready;
@@ -319,7 +319,7 @@ module axi_lite_mux #(
       .ready_o ( mst_w_ready        ),
       .data_i  ( mst_w_chan         ),
       .valid_o ( mst_req_o.w_valid  ),
-      .ready_i ( mst_resp_i.w_ready ),
+      .ready_i ( mst_rsp_i.w_ready  ),
       .data_o  ( mst_req_o.w        )
     );
 
@@ -327,9 +327,9 @@ module axi_lite_mux #(
     // B Channel
     //--------------------------------------
     // replicate B channels
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_resps_b
-      assign slv_resps_o[i].b       = mst_b_chan;
-      assign slv_resps_o[i].b_valid = mst_b_valid & ~b_fifo_empty & (b_select == select_t'(i));
+    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_rsps_b
+      assign slv_rsps_o[i].b       = mst_b_chan;
+      assign slv_rsps_o[i].b_valid = mst_b_valid & ~b_fifo_empty & (b_select == select_t'(i));
     end
     assign mst_b_ready    = ~b_fifo_empty & slv_reqs_i[b_select].b_ready;
     assign b_fifo_pop     = mst_b_valid & mst_b_ready;
@@ -338,14 +338,14 @@ module axi_lite_mux #(
       .T       ( b_chan_t ),
       .Bypass  ( ~SpillB  )
     ) i_b_spill_reg (
-      .clk_i   ( clk_i              ),
-      .rst_ni  ( rst_ni             ),
-      .valid_i ( mst_resp_i.b_valid ),
-      .ready_o ( mst_req_o.b_ready  ),
-      .data_i  ( mst_resp_i.b       ),
-      .valid_o ( mst_b_valid        ),
-      .ready_i ( mst_b_ready        ),
-      .data_o  ( mst_b_chan         )
+      .clk_i   ( clk_i             ),
+      .rst_ni  ( rst_ni            ),
+      .valid_i ( mst_rsp_i.b_valid ),
+      .ready_o ( mst_req_o.b_ready ),
+      .data_i  ( mst_rsp_i.b       ),
+      .valid_o ( mst_b_valid       ),
+      .ready_i ( mst_b_ready       ),
+      .data_o  ( mst_b_chan        )
     );
 
     //--------------------------------------
@@ -355,7 +355,7 @@ module axi_lite_mux #(
     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_ar_arb_input
       assign slv_ar_chans[i]         = slv_reqs_i[i].ar;
       assign slv_ar_valids[i]        = slv_reqs_i[i].ar_valid;
-      assign slv_resps_o[i].ar_ready = slv_ar_readies[i];
+      assign slv_rsps_o[i].ar_ready = slv_ar_readies[i];
     end
     rr_arb_tree #(
       .NumIn    ( NoSlvPorts ),
@@ -410,7 +410,7 @@ module axi_lite_mux #(
       .ready_o ( mst_ar_ready        ),
       .data_i  ( mst_ar_chan         ),
       .valid_o ( mst_req_o.ar_valid  ),
-      .ready_i ( mst_resp_i.ar_ready ),
+      .ready_i ( mst_rsp_i.ar_ready  ),
       .data_o  ( mst_req_o.ar        )
     );
 
@@ -418,9 +418,9 @@ module axi_lite_mux #(
     // R Channel
     //--------------------------------------
     // replicate R channels
-    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_resps_r
-      assign slv_resps_o[i].r       = mst_r_chan;
-      assign slv_resps_o[i].r_valid = mst_r_valid & ~r_fifo_empty & (r_select == select_t'(i));
+    for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_slv_rsps_r
+      assign slv_rsps_o[i].r       = mst_r_chan;
+      assign slv_rsps_o[i].r_valid = mst_r_valid & ~r_fifo_empty & (r_select == select_t'(i));
     end
     assign mst_r_ready    = ~r_fifo_empty & slv_reqs_i[r_select].r_ready;
     assign r_fifo_pop     = mst_r_valid & mst_r_ready;
@@ -429,14 +429,14 @@ module axi_lite_mux #(
       .T       ( r_chan_t ),
       .Bypass  ( ~SpillR  )
     ) i_r_spill_reg (
-      .clk_i   ( clk_i              ),
-      .rst_ni  ( rst_ni             ),
-      .valid_i ( mst_resp_i.r_valid ),
-      .ready_o ( mst_req_o.r_ready  ),
-      .data_i  ( mst_resp_i.r       ),
-      .valid_o ( mst_r_valid        ),
-      .ready_i ( mst_r_ready        ),
-      .data_o  ( mst_r_chan         )
+      .clk_i   ( clk_i             ),
+      .rst_ni  ( rst_ni            ),
+      .valid_i ( mst_rsp_i.r_valid ),
+      .ready_o ( mst_req_o.r_ready ),
+      .data_i  ( mst_rsp_i.r       ),
+      .valid_o ( mst_r_valid       ),
+      .ready_i ( mst_r_ready       ),
+      .data_o  ( mst_r_chan        )
     );
   end
 
@@ -487,45 +487,45 @@ module axi_lite_mux_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
   axi_lite_req_t     [NoSlvPorts-1:0] slv_reqs;
-  axi_lite_resp_t    [NoSlvPorts-1:0] slv_resps;
+  axi_lite_rsp_t     [NoSlvPorts-1:0] slv_rsps;
   axi_lite_req_t                      mst_req;
-  axi_lite_resp_t                     mst_resp;
+  axi_lite_rsp_t                      mst_rsp;
 
   for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_assign_slv_ports
     `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
-    `AXI_LITE_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
+    `AXI_LITE_ASSIGN_FROM_RSP(slv[i], slv_rsps[i])
   end
 
   `AXI_LITE_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_lite_mux #(
-    .aw_chan_t       ( aw_chan_t       ), // AW Channel Type
-    .w_chan_t        (  w_chan_t       ), //  W Channel Type
-    .b_chan_t        (  b_chan_t       ), //  B Channel Type
-    .ar_chan_t       ( ar_chan_t       ), // AR Channel Type
-    .r_chan_t        (  r_chan_t       ), //  R Channel Type
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_resp_t ( axi_lite_resp_t ),
-    .NoSlvPorts      ( NoSlvPorts      ), // Number of slave ports
-    .MaxTrans        ( MaxTrans        ),
-    .FallThrough     ( FallThrough     ),
-    .SpillAw         ( SpillAw         ),
-    .SpillW          ( SpillW          ),
-    .SpillB          ( SpillB          ),
-    .SpillAr         ( SpillAr         ),
-    .SpillR          ( SpillR          )
+    .aw_chan_t      ( aw_chan_t      ), // AW Channel Type
+    .w_chan_t       (  w_chan_t      ), //  W Channel Type
+    .b_chan_t       (  b_chan_t      ), //  B Channel Type
+    .ar_chan_t      ( ar_chan_t      ), // AR Channel Type
+    .r_chan_t       (  r_chan_t      ), //  R Channel Type
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t ),
+    .NoSlvPorts     ( NoSlvPorts     ), // Number of slave ports
+    .MaxTrans       ( MaxTrans       ),
+    .FallThrough    ( FallThrough    ),
+    .SpillAw        ( SpillAw        ),
+    .SpillW         ( SpillW         ),
+    .SpillB         ( SpillB         ),
+    .SpillAr        ( SpillAr        ),
+    .SpillR         ( SpillR         )
   ) i_axi_mux (
     .clk_i,  // Clock
     .rst_ni, // Asynchronous reset active low
     .test_i, // Test Mode enable
-    .slv_reqs_i  ( slv_reqs  ),
-    .slv_resps_o ( slv_resps ),
-    .mst_req_o   ( mst_req   ),
-    .mst_resp_i  ( mst_resp  )
+    .slv_reqs_i ( slv_reqs ),
+    .slv_rsps_o ( slv_rsps ),
+    .mst_req_o  ( mst_req  ),
+    .mst_rsp_i  ( mst_rsp  )
   );
 
   // pragma translate_off

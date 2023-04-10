@@ -98,9 +98,9 @@ module tb_axi_xbar #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_slv_t, data_t, id_slv_t, user_t)
 
   `AXI_TYPEDEF_REQ_T(mst_req_t, aw_chan_mst_t, w_chan_t, ar_chan_mst_t)
-  `AXI_TYPEDEF_RESP_T(mst_resp_t, b_chan_mst_t, r_chan_mst_t)
+  `AXI_TYPEDEF_RSP_T(mst_rsp_t, b_chan_mst_t, r_chan_mst_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, aw_chan_slv_t, w_chan_t, ar_chan_slv_t)
-  `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
+  `AXI_TYPEDEF_RSP_T(slv_rsp_t, b_chan_slv_t, r_chan_slv_t)
 
   // Each slave has its own address range:
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = addr_map_gen();
@@ -153,11 +153,11 @@ module tb_axi_xbar #(
 
   // master structs
   mst_req_t  [TbNumMasters-1:0] masters_req;
-  mst_resp_t [TbNumMasters-1:0] masters_resp;
+  mst_rsp_t [TbNumMasters-1:0] masters_rsp;
 
   // slave structs
   slv_req_t  [TbNumSlaves-1:0]  slaves_req;
-  slv_resp_t [TbNumSlaves-1:0]  slaves_resp;
+  slv_rsp_t [TbNumSlaves-1:0]  slaves_rsp;
 
   // -------------------------------
   // AXI Interfaces
@@ -183,7 +183,7 @@ module tb_axi_xbar #(
   for (genvar i = 0; i < TbNumMasters; i++) begin : gen_conn_dv_masters
     `AXI_ASSIGN (master[i], master_dv[i])
     `AXI_ASSIGN_TO_REQ(masters_req[i], master[i])
-    `AXI_ASSIGN_TO_RESP(masters_resp[i], master[i])
+    `AXI_ASSIGN_TO_RSP(masters_rsp[i], master[i])
   end
 
   AXI_BUS #(
@@ -207,7 +207,7 @@ module tb_axi_xbar #(
   for (genvar i = 0; i < TbNumSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_ASSIGN(slave_dv[i], slave[i])
     `AXI_ASSIGN_TO_REQ(slaves_req[i], slave[i])
-    `AXI_ASSIGN_TO_RESP(slaves_resp[i], slave[i])
+    `AXI_ASSIGN_TO_RSP(slaves_rsp[i], slave[i])
   end
   // -------------------------------
   // AXI Rand Masters and Slaves
@@ -309,25 +309,25 @@ module tb_axi_xbar #(
       .rst_ni     ( rst_n       ),    // Asynchronous reset active low, when `1'b0` no sampling
       .end_sim_i  ( &end_of_sim ),
       // AW channel
-      .aw_chan_i  ( masters_req[i].aw        ),
-      .aw_valid_i ( masters_req[i].aw_valid  ),
-      .aw_ready_i ( masters_resp[i].aw_ready ),
+      .aw_chan_i  ( masters_req[i].aw       ),
+      .aw_valid_i ( masters_req[i].aw_valid ),
+      .aw_ready_i ( masters_rsp[i].aw_ready ),
       //  W channel
-      .w_chan_i   ( masters_req[i].w         ),
-      .w_valid_i  ( masters_req[i].w_valid   ),
-      .w_ready_i  ( masters_resp[i].w_ready  ),
+      .w_chan_i   ( masters_req[i].w        ),
+      .w_valid_i  ( masters_req[i].w_valid  ),
+      .w_ready_i  ( masters_rsp[i].w_ready  ),
       //  B channel
-      .b_chan_i   ( masters_resp[i].b        ),
-      .b_valid_i  ( masters_resp[i].b_valid  ),
-      .b_ready_i  ( masters_req[i].b_ready   ),
+      .b_chan_i   ( masters_rsp[i].b        ),
+      .b_valid_i  ( masters_rsp[i].b_valid  ),
+      .b_ready_i  ( masters_req[i].b_ready  ),
       // AR channel
-      .ar_chan_i  ( masters_req[i].ar        ),
-      .ar_valid_i ( masters_req[i].ar_valid  ),
-      .ar_ready_i ( masters_resp[i].ar_ready ),
+      .ar_chan_i  ( masters_req[i].ar       ),
+      .ar_valid_i ( masters_req[i].ar_valid ),
+      .ar_ready_i ( masters_rsp[i].ar_ready ),
       //  R channel
-      .r_chan_i   ( masters_resp[i].r        ),
-      .r_valid_i  ( masters_resp[i].r_valid  ),
-      .r_ready_i  ( masters_req[i].r_ready   )
+      .r_chan_i   ( masters_rsp[i].r        ),
+      .r_valid_i  ( masters_rsp[i].r_valid  ),
+      .r_ready_i  ( masters_req[i].r_ready  )
     );
   end
   // logger for slave modules
@@ -345,25 +345,25 @@ module tb_axi_xbar #(
       .rst_ni     ( rst_n       ),    // Asynchronous reset active low, when `1'b0` no sampling
       .end_sim_i  ( &end_of_sim ),
       // AW channel
-      .aw_chan_i  ( slaves_req[i].aw        ),
-      .aw_valid_i ( slaves_req[i].aw_valid  ),
-      .aw_ready_i ( slaves_resp[i].aw_ready ),
+      .aw_chan_i  ( slaves_req[i].aw       ),
+      .aw_valid_i ( slaves_req[i].aw_valid ),
+      .aw_ready_i ( slaves_rsp[i].aw_ready ),
       //  W channel
-      .w_chan_i   ( slaves_req[i].w         ),
-      .w_valid_i  ( slaves_req[i].w_valid   ),
-      .w_ready_i  ( slaves_resp[i].w_ready  ),
+      .w_chan_i   ( slaves_req[i].w        ),
+      .w_valid_i  ( slaves_req[i].w_valid  ),
+      .w_ready_i  ( slaves_rsp[i].w_ready  ),
       //  B channel
-      .b_chan_i   ( slaves_resp[i].b        ),
-      .b_valid_i  ( slaves_resp[i].b_valid  ),
-      .b_ready_i  ( slaves_req[i].b_ready   ),
+      .b_chan_i   ( slaves_rsp[i].b        ),
+      .b_valid_i  ( slaves_rsp[i].b_valid  ),
+      .b_ready_i  ( slaves_req[i].b_ready  ),
       // AR channel
-      .ar_chan_i  ( slaves_req[i].ar        ),
-      .ar_valid_i ( slaves_req[i].ar_valid  ),
-      .ar_ready_i ( slaves_resp[i].ar_ready ),
+      .ar_chan_i  ( slaves_req[i].ar       ),
+      .ar_valid_i ( slaves_req[i].ar_valid ),
+      .ar_ready_i ( slaves_rsp[i].ar_ready ),
       //  R channel
-      .r_chan_i   ( slaves_resp[i].r        ),
-      .r_valid_i  ( slaves_resp[i].r_valid  ),
-      .r_ready_i  ( slaves_req[i].r_ready   )
+      .r_chan_i   ( slaves_rsp[i].r        ),
+      .r_valid_i  ( slaves_rsp[i].r_valid  ),
+      .r_ready_i  ( slaves_req[i].r_ready  )
     );
   end
 

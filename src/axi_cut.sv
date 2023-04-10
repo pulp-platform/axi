@@ -19,25 +19,25 @@
 /// Breaks all combinatorial paths between its input and output.
 module axi_cut #(
   // bypass enable
-  parameter bit  Bypass     = 1'b0,
+  parameter bit  Bypass    = 1'b0,
   // AXI channel structs
-  parameter type  aw_chan_t = logic,
-  parameter type   w_chan_t = logic,
-  parameter type   b_chan_t = logic,
-  parameter type  ar_chan_t = logic,
-  parameter type   r_chan_t = logic,
+  parameter type aw_chan_t = logic,
+  parameter type  w_chan_t = logic,
+  parameter type  b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type  r_chan_t = logic,
   // AXI request & response structs
-  parameter type  axi_req_t = logic,
-  parameter type axi_resp_t = logic
+  parameter type axi_req_t = logic,
+  parameter type axi_rsp_t = logic
 ) (
-  input logic       clk_i,
-  input logic       rst_ni,
+  input logic      clk_i,
+  input logic      rst_ni,
   // salve port
-  input  axi_req_t  slv_req_i,
-  output axi_resp_t slv_resp_o,
+  input  axi_req_t slv_req_i,
+  output axi_rsp_t slv_rsp_o,
   // master port
-  output axi_req_t  mst_req_o,
-  input  axi_resp_t mst_resp_i
+  output axi_req_t mst_req_o,
+  input  axi_rsp_t mst_rsp_i
 );
 
   // a spill register for each channel
@@ -45,70 +45,70 @@ module axi_cut #(
     .T       ( aw_chan_t ),
     .Bypass  ( Bypass    )
   ) i_reg_aw (
-    .clk_i   ( clk_i               ),
-    .rst_ni  ( rst_ni              ),
-    .valid_i ( slv_req_i.aw_valid  ),
-    .ready_o ( slv_resp_o.aw_ready ),
-    .data_i  ( slv_req_i.aw        ),
-    .valid_o ( mst_req_o.aw_valid  ),
-    .ready_i ( mst_resp_i.aw_ready ),
-    .data_o  ( mst_req_o.aw        )
+    .clk_i   ( clk_i              ),
+    .rst_ni  ( rst_ni             ),
+    .valid_i ( slv_req_i.aw_valid ),
+    .ready_o ( slv_rsp_o.aw_ready ),
+    .data_i  ( slv_req_i.aw       ),
+    .valid_o ( mst_req_o.aw_valid ),
+    .ready_i ( mst_rsp_i.aw_ready ),
+    .data_o  ( mst_req_o.aw       )
   );
 
   spill_register #(
     .T       ( w_chan_t ),
     .Bypass  ( Bypass   )
   ) i_reg_w  (
-    .clk_i   ( clk_i              ),
-    .rst_ni  ( rst_ni             ),
-    .valid_i ( slv_req_i.w_valid  ),
-    .ready_o ( slv_resp_o.w_ready ),
-    .data_i  ( slv_req_i.w        ),
-    .valid_o ( mst_req_o.w_valid  ),
-    .ready_i ( mst_resp_i.w_ready ),
-    .data_o  ( mst_req_o.w        )
+    .clk_i   ( clk_i             ),
+    .rst_ni  ( rst_ni            ),
+    .valid_i ( slv_req_i.w_valid ),
+    .ready_o ( slv_rsp_o.w_ready ),
+    .data_i  ( slv_req_i.w       ),
+    .valid_o ( mst_req_o.w_valid ),
+    .ready_i ( mst_rsp_i.w_ready ),
+    .data_o  ( mst_req_o.w       )
   );
 
   spill_register #(
     .T       ( b_chan_t ),
     .Bypass  ( Bypass   )
   ) i_reg_b  (
-    .clk_i   ( clk_i              ),
-    .rst_ni  ( rst_ni             ),
-    .valid_i ( mst_resp_i.b_valid ),
-    .ready_o ( mst_req_o.b_ready  ),
-    .data_i  ( mst_resp_i.b       ),
-    .valid_o ( slv_resp_o.b_valid ),
-    .ready_i ( slv_req_i.b_ready  ),
-    .data_o  ( slv_resp_o.b       )
+    .clk_i   ( clk_i             ),
+    .rst_ni  ( rst_ni            ),
+    .valid_i ( mst_rsp_i.b_valid ),
+    .ready_o ( mst_req_o.b_ready ),
+    .data_i  ( mst_rsp_i.b       ),
+    .valid_o ( slv_rsp_o.b_valid ),
+    .ready_i ( slv_req_i.b_ready ),
+    .data_o  ( slv_rsp_o.b       )
   );
 
   spill_register #(
     .T       ( ar_chan_t ),
     .Bypass  ( Bypass    )
   ) i_reg_ar (
-    .clk_i   ( clk_i               ),
-    .rst_ni  ( rst_ni              ),
-    .valid_i ( slv_req_i.ar_valid  ),
-    .ready_o ( slv_resp_o.ar_ready ),
-    .data_i  ( slv_req_i.ar        ),
-    .valid_o ( mst_req_o.ar_valid  ),
-    .ready_i ( mst_resp_i.ar_ready ),
-    .data_o  ( mst_req_o.ar        )
+    .clk_i   ( clk_i              ),
+    .rst_ni  ( rst_ni             ),
+    .valid_i ( slv_req_i.ar_valid ),
+    .ready_o ( slv_rsp_o.ar_ready ),
+    .data_i  ( slv_req_i.ar       ),
+    .valid_o ( mst_req_o.ar_valid ),
+    .ready_i ( mst_rsp_i.ar_ready ),
+    .data_o  ( mst_req_o.ar       )
   );
 
   spill_register #(
     .T       ( r_chan_t ),
     .Bypass  ( Bypass   )
   ) i_reg_r  (
-    .clk_i   ( clk_i              ),
-    .rst_ni  ( rst_ni             ),
-    .valid_i ( mst_resp_i.r_valid ),
-    .ready_o ( mst_req_o.r_ready  ),
-    .data_i  ( mst_resp_i.r       ),
-    .valid_o ( slv_resp_o.r_valid ),
-    .ready_i ( slv_req_i.r_ready  ),
-    .data_o  ( slv_resp_o.r       )
+    .clk_i   ( clk_i             ),
+    .rst_ni  ( rst_ni            ),
+    .valid_i ( mst_rsp_i.r_valid ),
+    .ready_o ( mst_req_o.r_ready ),
+    .data_i  ( mst_rsp_i.r       ),
+    .valid_o ( slv_rsp_o.r_valid ),
+    .ready_i ( slv_req_i.r_ready ),
+    .data_o  ( slv_rsp_o.r       )
   );
 endmodule
 
@@ -146,33 +146,33 @@ module axi_cut_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req,  mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(in, slv_rsp)
 
   `AXI_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, out)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_cut #(
-    .Bypass     (     BYPASS ),
-    .aw_chan_t  (  aw_chan_t ),
-    .w_chan_t   (   w_chan_t ),
-    .b_chan_t   (   b_chan_t ),
-    .ar_chan_t  (  ar_chan_t ),
-    .r_chan_t   (   r_chan_t ),
-    .axi_req_t  (  axi_req_t ),
-    .axi_resp_t ( axi_resp_t )
+    .Bypass     (    BYPASS ),
+    .aw_chan_t  ( aw_chan_t ),
+    .w_chan_t   (  w_chan_t ),
+    .b_chan_t   (  b_chan_t ),
+    .ar_chan_t  ( ar_chan_t ),
+    .r_chan_t   (  r_chan_t ),
+    .axi_req_t  ( axi_req_t ),
+    .axi_rsp_t  ( axi_rsp_t )
   ) i_axi_cut (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rep ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rep )
   );
 
   // Check the invariants.
@@ -219,34 +219,34 @@ module axi_lite_cut_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t   slv_req,  mst_req;
-  axi_resp_t  slv_resp, mst_resp;
+  axi_lite_req_t  slv_req,  mst_req;
+  axi_lite_rsp_t  slv_rsp, mst_rsp;
 
   `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_LITE_ASSIGN_FROM_RESP(in, slv_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(in, slv_rsp)
 
   `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, out)
+  `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_cut #(
-    .Bypass     (     BYPASS ),
-    .aw_chan_t  (  aw_chan_t ),
-    .w_chan_t   (   w_chan_t ),
-    .b_chan_t   (   b_chan_t ),
-    .ar_chan_t  (  ar_chan_t ),
-    .r_chan_t   (   r_chan_t ),
-    .axi_req_t  (  axi_req_t ),
-    .axi_resp_t ( axi_resp_t )
+    .Bypass     (         BYPASS ),
+    .aw_chan_t  (      aw_chan_t ),
+    .w_chan_t   (       w_chan_t ),
+    .b_chan_t   (       b_chan_t ),
+    .ar_chan_t  (      ar_chan_t ),
+    .r_chan_t   (       r_chan_t ),
+    .axi_req_t  ( axi_lite_req_t ),
+    .axi_rsp_t  ( axi_lite_rsp_t )
   ) i_axi_cut (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
 
   // Check the invariants.

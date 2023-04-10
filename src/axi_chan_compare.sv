@@ -20,15 +20,15 @@ module axi_chan_compare #(
     parameter type b_chan_t  = logic,
     parameter type ar_chan_t = logic,
     parameter type r_chan_t  = logic,
-    parameter type req_t     = logic,
-    parameter type resp_t    = logic
+    parameter type axi_req_t = logic,
+    parameter type axi_rsp_t = logic
 )(
-    input logic  clk_a_i,
-    input logic  clk_b_i,
-    input req_t  axi_a_req,
-    input resp_t axi_a_res,
-    input req_t  axi_b_req,
-    input resp_t axi_b_res
+    input logic     clk_a_i,
+    input logic     clk_b_i,
+    input axi_req_t axi_a_req,
+    input axi_rsp_t axi_a_rsp,
+    input axi_req_t axi_b_req,
+    input axi_rsp_t axi_b_rsp
 );
 
     function automatic void print_aw (
@@ -131,30 +131,30 @@ module axi_chan_compare #(
     // requests generated at axi A: enqueue elements
     always_ff @(posedge clk_a_i) begin : proc_enqueue_a
         // aw
-        if (axi_a_req.aw_valid & axi_a_res.aw_ready)
+        if (axi_a_req.aw_valid & axi_a_rsp.aw_ready)
             aw_queue.push_back(axi_a_req.aw);
         // w
-        if (axi_a_req.w_valid & axi_a_res.w_ready)
+        if (axi_a_req.w_valid & axi_a_rsp.w_ready)
             w_queue.push_back(axi_a_req.w);
         // ar
-        if (axi_a_req.ar_valid & axi_a_res.ar_ready)
+        if (axi_a_req.ar_valid & axi_a_rsp.ar_ready)
             ar_queue.push_back(axi_a_req.ar);
     end
 
     // responses generated at axi B: enqueue elements
     always_ff @(posedge clk_b_i) begin : proc_enqueue_b
         // b
-        if (axi_b_res.b_valid & axi_b_req.b_ready)
-            b_queue.push_back(axi_b_res.b);
+        if (axi_b_rsp.b_valid & axi_b_req.b_ready)
+            b_queue.push_back(axi_b_rsp.b);
         // r
-        if (axi_b_res.r_valid & axi_b_req.r_ready)
-            r_queue.push_back(axi_b_res.r);
+        if (axi_b_rsp.r_valid & axi_b_req.r_ready)
+            r_queue.push_back(axi_b_rsp.r);
     end
 
     // requests arriving at axi B from A: dequeue elements and check
     always_ff @(posedge clk_b_i) begin : proc_dequeue_and_check_b
         // aw
-        if (axi_b_req.aw_valid & axi_b_res.aw_ready) begin
+        if (axi_b_req.aw_valid & axi_b_rsp.aw_ready) begin
             automatic aw_chan_t aw;
             if (aw_queue.size() == 0) $error("AW queue is empty!");
             aw = aw_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
@@ -164,7 +164,7 @@ module axi_chan_compare #(
             end
         end
         // w
-        if (axi_b_req.w_valid & axi_b_res.w_ready) begin
+        if (axi_b_req.w_valid & axi_b_rsp.w_ready) begin
             automatic w_chan_t w;
             if (w_queue.size() == 0) $error("W queue is empty!");
             w = w_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
@@ -174,7 +174,7 @@ module axi_chan_compare #(
             end
         end
         // ar
-        if (axi_b_req.ar_valid & axi_b_res.ar_ready) begin
+        if (axi_b_req.ar_valid & axi_b_rsp.ar_ready) begin
             automatic ar_chan_t ar;
             if (ar_queue.size() == 0) $error("AR queue is empty!");
             ar = ar_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
@@ -188,23 +188,23 @@ module axi_chan_compare #(
     // responses arriving at axi A from B: dequeue elements and check
     always_ff @(posedge clk_a_i) begin : proc_dequeue_and_check_a
         // b
-        if (axi_a_res.b_valid & axi_a_req.b_ready) begin
+        if (axi_a_rsp.b_valid & axi_a_req.b_ready) begin
             automatic b_chan_t b;
             if (b_queue.size() == 0) $error("B queue is empty!");
             b = b_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_a_res.b !== b) begin
+            if (axi_a_rsp.b !== b) begin
                 $error("B mismatch!");
-                print_b(b, axi_a_res.b);
+                print_b(b, axi_a_rsp.b);
             end
         end
         // r
-        if (axi_a_res.r_valid & axi_a_req.r_ready) begin
+        if (axi_a_rsp.r_valid & axi_a_req.r_ready) begin
             automatic r_chan_t r;
             if (r_queue.size() == 0) $error("R queue is empty!");
             r = r_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_a_res.r !== r) begin
+            if (axi_a_rsp.r !== r) begin
                 $error("R mismatch!");
-                print_r(r, axi_a_res.r);
+                print_r(r, axi_a_rsp.r);
             end
         end
     end

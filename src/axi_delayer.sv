@@ -16,28 +16,28 @@
 /// Synthesizable module that (randomly) delays AXI channels.
 module axi_delayer #(
   // AXI channel types
-  parameter type  aw_chan_t = logic,
-  parameter type   w_chan_t = logic,
-  parameter type   b_chan_t = logic,
-  parameter type  ar_chan_t = logic,
-  parameter type   r_chan_t = logic,
+  parameter type aw_chan_t = logic,
+  parameter type  w_chan_t = logic,
+  parameter type  b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type  r_chan_t = logic,
   // AXI request & response types
-  parameter type  axi_req_t = logic,
-  parameter type axi_resp_t = logic,
+  parameter type axi_req_t = logic,
+  parameter type axi_rsp_t = logic,
   // delay parameters
   parameter bit          StallRandomInput  = 0,
   parameter bit          StallRandomOutput = 0,
   parameter int unsigned FixedDelayInput   = 1,
   parameter int unsigned FixedDelayOutput  = 1
 ) (
-  input  logic      clk_i,      // Clock
-  input  logic      rst_ni,     // Asynchronous reset active low
+  input  logic     clk_i,      // Clock
+  input  logic     rst_ni,     // Asynchronous reset active low
   // slave port
-  input  axi_req_t  slv_req_i,
-  output axi_resp_t slv_resp_o,
+  input  axi_req_t slv_req_i,
+  output axi_rsp_t slv_rsp_o,
   // master port
-  output axi_req_t  mst_req_o,
-  input  axi_resp_t mst_resp_i
+  output axi_req_t mst_req_o,
+  input  axi_rsp_t mst_rsp_i
 );
   // AW
   stream_delay #(
@@ -47,12 +47,12 @@ module axi_delayer #(
   ) i_stream_delay_aw (
     .clk_i,
     .rst_ni,
-    .payload_i ( slv_req_i.aw        ),
-    .ready_o   ( slv_resp_o.aw_ready ),
-    .valid_i   ( slv_req_i.aw_valid  ),
-    .payload_o ( mst_req_o.aw        ),
-    .ready_i   ( mst_resp_i.aw_ready ),
-    .valid_o   ( mst_req_o.aw_valid  )
+    .payload_i ( slv_req_i.aw       ),
+    .ready_o   ( slv_rsp_o.aw_ready ),
+    .valid_i   ( slv_req_i.aw_valid ),
+    .payload_o ( mst_req_o.aw       ),
+    .ready_i   ( mst_rsp_i.aw_ready ),
+    .valid_o   ( mst_req_o.aw_valid )
   );
 
   // AR
@@ -63,12 +63,12 @@ module axi_delayer #(
   ) i_stream_delay_ar (
     .clk_i,
     .rst_ni,
-    .payload_i ( slv_req_i.ar        ),
-    .ready_o   ( slv_resp_o.ar_ready ),
-    .valid_i   ( slv_req_i.ar_valid  ),
-    .payload_o ( mst_req_o.ar        ),
-    .ready_i   ( mst_resp_i.ar_ready ),
-    .valid_o   ( mst_req_o.ar_valid  )
+    .payload_i ( slv_req_i.ar       ),
+    .ready_o   ( slv_rsp_o.ar_ready ),
+    .valid_i   ( slv_req_i.ar_valid ),
+    .payload_o ( mst_req_o.ar       ),
+    .ready_i   ( mst_rsp_i.ar_ready ),
+    .valid_o   ( mst_req_o.ar_valid )
   );
 
   // W
@@ -79,12 +79,12 @@ module axi_delayer #(
   ) i_stream_delay_w (
     .clk_i,
     .rst_ni,
-    .payload_i ( slv_req_i.w        ),
-    .ready_o   ( slv_resp_o.w_ready ),
-    .valid_i   ( slv_req_i.w_valid  ),
-    .payload_o ( mst_req_o.w        ),
-    .ready_i   ( mst_resp_i.w_ready ),
-    .valid_o   ( mst_req_o.w_valid  )
+    .payload_i ( slv_req_i.w       ),
+    .ready_o   ( slv_rsp_o.w_ready ),
+    .valid_i   ( slv_req_i.w_valid ),
+    .payload_o ( mst_req_o.w       ),
+    .ready_i   ( mst_rsp_i.w_ready ),
+    .valid_o   ( mst_req_o.w_valid )
   );
 
   // B
@@ -95,12 +95,12 @@ module axi_delayer #(
   ) i_stream_delay_b (
     .clk_i,
     .rst_ni,
-    .payload_i ( mst_resp_i.b       ),
-    .ready_o   ( mst_req_o.b_ready  ),
-    .valid_i   ( mst_resp_i.b_valid ),
-    .payload_o ( slv_resp_o.b       ),
-    .ready_i   ( slv_req_i.b_ready  ),
-    .valid_o   ( slv_resp_o.b_valid )
+    .payload_i ( mst_rsp_i.b       ),
+    .ready_o   ( mst_req_o.b_ready ),
+    .valid_i   ( mst_rsp_i.b_valid ),
+    .payload_o ( slv_rsp_o.b       ),
+    .ready_i   ( slv_req_i.b_ready ),
+    .valid_o   ( slv_rsp_o.b_valid )
   );
 
   // R
@@ -111,12 +111,12 @@ module axi_delayer #(
   ) i_stream_delay_r (
     .clk_i,
     .rst_ni,
-    .payload_i ( mst_resp_i.r       ),
-    .ready_o   ( mst_req_o.r_ready  ),
-    .valid_i   ( mst_resp_i.r_valid ),
-    .payload_o ( slv_resp_o.r       ),
-    .ready_i   ( slv_req_i.r_ready  ),
-    .valid_o   ( slv_resp_o.r_valid )
+    .payload_i ( mst_rsp_i.r       ),
+    .ready_o   ( mst_req_o.r_ready ),
+    .valid_i   ( mst_rsp_i.r_valid ),
+    .payload_o ( slv_rsp_o.r       ),
+    .ready_i   ( slv_req_i.r_ready ),
+    .valid_o   ( slv_rsp_o.r_valid )
   );
 endmodule
 
@@ -153,16 +153,16 @@ module axi_delayer_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req,  mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
 
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_delayer #(
     .aw_chan_t         (           aw_chan_t ),
@@ -171,7 +171,7 @@ module axi_delayer_intf #(
     .ar_chan_t         (           ar_chan_t ),
     .r_chan_t          (            r_chan_t ),
     .axi_req_t         (           axi_req_t ),
-    .axi_resp_t        (          axi_resp_t ),
+    .axi_rsp_t         (           axi_rsp_t ),
     .StallRandomInput  ( STALL_RANDOM_INPUT  ),
     .StallRandomOutput ( STALL_RANDOM_OUTPUT ),
     .FixedDelayInput   ( FIXED_DELAY_INPUT   ),
@@ -179,10 +179,10 @@ module axi_delayer_intf #(
   ) i_axi_delayer (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
 
 // pragma translate_off

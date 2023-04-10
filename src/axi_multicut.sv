@@ -21,62 +21,62 @@
 module axi_multicut #(
   parameter int unsigned NoCuts = 32'd1, // Number of cuts.
   // AXI channel structs
-  parameter type  aw_chan_t = logic,
-  parameter type   w_chan_t = logic,
-  parameter type   b_chan_t = logic,
-  parameter type  ar_chan_t = logic,
-  parameter type   r_chan_t = logic,
+  parameter type aw_chan_t = logic,
+  parameter type  w_chan_t = logic,
+  parameter type  b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type  r_chan_t = logic,
   // AXI request & response structs
-  parameter type  axi_req_t = logic,
-  parameter type axi_resp_t = logic
+  parameter type axi_req_t = logic,
+  parameter type axi_rsp_t = logic
 ) (
-  input  logic      clk_i,   // Clock
-  input  logic      rst_ni,  // Asynchronous reset active low
+  input  logic     clk_i,   // Clock
+  input  logic     rst_ni,  // Asynchronous reset active low
   // slave port
-  input  axi_req_t  slv_req_i,
-  output axi_resp_t slv_resp_o,
+  input  axi_req_t slv_req_i,
+  output axi_rsp_t slv_rsp_o,
   // master port
-  output axi_req_t  mst_req_o,
-  input  axi_resp_t mst_resp_i
+  output axi_req_t mst_req_o,
+  input  axi_rsp_t mst_rsp_i
 );
 
   if (NoCuts == '0) begin : gen_no_cut
     // degenerate case, connect input to output
-    assign mst_req_o  = slv_req_i;
-    assign slv_resp_o = mst_resp_i;
+    assign mst_req_o = slv_req_i;
+    assign slv_rsp_o = mst_rsp_i;
   end else begin : gen_axi_cut
     // instantiate all needed cuts
-    axi_req_t  [NoCuts:0] cut_req;
-    axi_resp_t [NoCuts:0] cut_resp;
+    axi_req_t [NoCuts:0] cut_req;
+    axi_rsp_t [NoCuts:0] cut_rsp;
 
     // connect slave to the lowest index
     assign cut_req[0] = slv_req_i;
-    assign slv_resp_o = cut_resp[0];
+    assign slv_rsp_o  = cut_rsp[0];
 
     // AXI cuts
     for (genvar i = 0; i < NoCuts; i++) begin : gen_axi_cuts
       axi_cut #(
-        .Bypass     (       1'b0 ),
-        .aw_chan_t  (  aw_chan_t ),
-        .w_chan_t   (   w_chan_t ),
-        .b_chan_t   (   b_chan_t ),
-        .ar_chan_t  (  ar_chan_t ),
-        .r_chan_t   (   r_chan_t ),
-        .axi_req_t  (  axi_req_t ),
-        .axi_resp_t ( axi_resp_t )
+        .Bypass    (      1'b0 ),
+        .aw_chan_t ( aw_chan_t ),
+        .w_chan_t  (  w_chan_t ),
+        .b_chan_t  (  b_chan_t ),
+        .ar_chan_t ( ar_chan_t ),
+        .r_chan_t  (  r_chan_t ),
+        .axi_req_t ( axi_req_t ),
+        .axi_rsp_t ( axi_rsp_t )
       ) i_cut (
         .clk_i,
         .rst_ni,
-        .slv_req_i  ( cut_req[i]    ),
-        .slv_resp_o ( cut_resp[i]   ),
-        .mst_req_o  ( cut_req[i+1]  ),
-        .mst_resp_i ( cut_resp[i+1] )
+        .slv_req_i ( cut_req[i]   ),
+        .slv_rsp_o ( cut_rsp[i]   ),
+        .mst_req_o ( cut_req[i+1] ),
+        .mst_rsp_i ( cut_rsp[i+1] )
       );
     end
 
     // connect master to the highest index
-    assign mst_req_o        = cut_req[NoCuts];
-    assign cut_resp[NoCuts] = mst_resp_i;
+    assign mst_req_o       = cut_req[NoCuts];
+    assign cut_rsp[NoCuts] = mst_rsp_i;
   end
 
   // Check the invariants
@@ -118,33 +118,33 @@ module axi_multicut_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req,  mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
+  `AXI_ASSIGN_FROM_RSP(in, slv_rsp)
 
   `AXI_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, out)
+  `AXI_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_multicut #(
-    .NoCuts     (   NUM_CUTS ),
-    .aw_chan_t  (  aw_chan_t ),
-    .w_chan_t   (   w_chan_t ),
-    .b_chan_t   (   b_chan_t ),
-    .ar_chan_t  (  ar_chan_t ),
-    .r_chan_t   (   r_chan_t ),
-    .axi_req_t  (  axi_req_t ),
-    .axi_resp_t ( axi_resp_t )
+    .NoCuts    (  NUM_CUTS ),
+    .aw_chan_t ( aw_chan_t ),
+    .w_chan_t  (  w_chan_t ),
+    .b_chan_t  (  b_chan_t ),
+    .ar_chan_t ( ar_chan_t ),
+    .r_chan_t  (  r_chan_t ),
+    .axi_req_t ( axi_req_t ),
+    .axi_rsp_t ( axi_rsp_t )
   ) i_axi_multicut (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
 
   // Check the invariants.
@@ -192,33 +192,33 @@ module axi_lite_multicut_intf #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t  slv_req,  mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t slv_req, mst_req;
+  axi_rsp_t slv_rsp, mst_rsp;
 
   `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_LITE_ASSIGN_FROM_RESP(in, slv_resp)
+  `AXI_LITE_ASSIGN_FROM_RSP(in, slv_rsp)
 
   `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, out)
+  `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, out)
 
   axi_multicut #(
-    .NoCuts     (   NUM_CUTS ),
-    .aw_chan_t  (  aw_chan_t ),
-    .w_chan_t   (   w_chan_t ),
-    .b_chan_t   (   b_chan_t ),
-    .ar_chan_t  (  ar_chan_t ),
-    .r_chan_t   (   r_chan_t ),
-    .axi_req_t  (  axi_req_t ),
-    .axi_resp_t ( axi_resp_t )
+    .NoCuts    (  NUM_CUTS ),
+    .aw_chan_t ( aw_chan_t ),
+    .w_chan_t  (  w_chan_t ),
+    .b_chan_t  (  b_chan_t ),
+    .ar_chan_t ( ar_chan_t ),
+    .r_chan_t  (  r_chan_t ),
+    .axi_req_t ( axi_req_t ),
+    .axi_rsp_t ( axi_rsp_t )
   ) i_axi_multicut (
     .clk_i,
     .rst_ni,
-    .slv_req_i  ( slv_req  ),
-    .slv_resp_o ( slv_resp ),
-    .mst_req_o  ( mst_req  ),
-    .mst_resp_i ( mst_resp )
+    .slv_req_i ( slv_req ),
+    .slv_rsp_o ( slv_rsp ),
+    .mst_req_o ( mst_req ),
+    .mst_rsp_i ( mst_rsp )
   );
 
   // Check the invariants.

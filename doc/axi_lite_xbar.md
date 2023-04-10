@@ -40,7 +40,7 @@ The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg
 | `AxiDataWidth`       | `int unsigned`     | The AXI4-Lite data width.                                                                                                                                                                                                                                         |
 | `NoAddrRules`        | `int unsigned`     | The number of address map rules.                                                                                                                                                                                                                                  |
 
-The other parameters are types to define the ports of the crossbar.  The `*_chan_t` and `*_req_t`/`*_resp_t` types must be bound in accordance to the configuration with the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.  The `rule_t` type must be bound to an address decoding rule with the same address width as in the configuration, and `axi_pkg` contains definitions for 64- and 32-bit addresses.
+The other parameters are types to define the ports of the crossbar.  The `*_chan_t` and `*_req_t`/`*_rsp_t` types must be bound in accordance to the configuration with the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.  The `rule_t` type must be bound to an address decoding rule with the same address width as in the configuration, and `axi_pkg` contains definitions for 64- and 32-bit addresses.
 
 ### Pipelining and Latency
 
