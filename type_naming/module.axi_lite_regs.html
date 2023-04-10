@@ -9,7 +9,7 @@
 <p>This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them
 accessible on two interfaces:</p>
 <ul>
-<li>as memory-mapped AXI4-Lite slave (ports <code>axi_req_i</code> and <code>axi_resp_o</code>), and</li>
+<li>as memory-mapped AXI4-Lite subordinate (ports <code>axi_req_i</code> and <code>axi_rsp_o</code>), and</li>
 <li>as wires to directly attach other hardware logic (ports <code>reg_d_i</code>, <code>reg_load_i</code>, <code>reg_q_o</code>,
 <code>wr_active_o</code>, <code>rd_active_o</code>).</li>
 </ul>
@@ -84,9 +84,9 @@ assigned its value from this array.</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low</p>
 </div><h3 id="port.axi_req_i" class="impl"><code class="in-band">axi_req_i<span class="type-annotation">: input  axi_lite_req_t</span></code></h3><div class="docblock"
-><p>AXI4-Lite slave request</p>
-</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output axi_lite_rsp_t</span></code></h3><div class="docblock"
-><p>AXI4-Lite slave response</p>
+><p>AXI4-Lite subordinate request</p>
+</div><h3 id="port.axi_rsp_o" class="impl"><code class="in-band">axi_rsp_o<span class="type-annotation">: output axi_lite_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4-Lite subordinate response</p>
 </div><h3 id="port.wr_active_o" class="impl"><code class="in-band">wr_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
 ><p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
 signal is asserted regardless of the value of <code>ReadOnly</code> and can therefore be used by

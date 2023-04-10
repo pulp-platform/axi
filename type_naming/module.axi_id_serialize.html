@@ -7,43 +7,45 @@
 <div class="docblock">
 <p>Reduce AXI IDs by serializing transactions when necessary.</p>
 <p>This module is designed to remap a wide ID space to an arbitrarily narrow ID space.  If
-necessary, this module maps two different IDs at its slave port to the same ID at its master
+necessary, this module maps two different IDs at its subordinate port to the same ID at its manager
 port, thereby constraining the order of those transactions and in this sense <em>serializing</em> them.
-If the independence of IDs needs to be retained at the cost of a wider ID space at the master
+If the independence of IDs needs to be retained at the cost of a wider ID space at the manager
 port, use <a href="module.axi_id_remap"><code>axi_id_remap</code></a> instead.</p>
-<p>This module contains one <a href="module.axi_serializer"><code>axi_serializer</code></a> per master port ID (given by
-the <code>MstPortMaxUniqIds parameter</code>).</p>
+<p>This module contains one <a href="module.axi_serializer"><code>axi_serializer</code></a> per manager port ID (given by
+the <code>MgrPortMaxUniqIds parameter</code>).</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.SlvPortIdWidth" class="impl"><code class="in-band">SlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>ID width of the AXI4+ATOP slave port</p>
-</div><h3 id="parameter.SlvPortMaxTxns" class="impl"><code class="in-band">SlvPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of transactions that can be in flight at the slave port.  Reads and writes are
+<h3 id="parameter.SbrPortIdWidth" class="impl"><code class="in-band">SbrPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>ID width of the AXI4+ATOP subordinate port</p>
+</div><h3 id="parameter.SbrPortMaxTxns" class="impl"><code class="in-band">SbrPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of transactions that can be in flight at the subordinate port.  Reads and writes are
 counted separately (except for ATOPs, which count as both read and write).</p>
-</div><h3 id="parameter.MstPortIdWidth" class="impl"><code class="in-band">MstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>ID width of the AXI4+ATOP master port</p>
-</div><h3 id="parameter.MstPortMaxUniqIds" class="impl"><code class="in-band">MstPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of different IDs that can be in flight at the master port.  Reads and writes
+</div><h3 id="parameter.MgrPortIdWidth" class="impl"><code class="in-band">MgrPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>ID width of the AXI4+ATOP manager port</p>
+</div><h3 id="parameter.MgrPortMaxUniqIds" class="impl"><code class="in-band">MgrPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of different IDs that can be in flight at the manager port.  Reads and writes
 are counted separately (except for ATOPs, which count as both read and write).</p>
-<p>The maximum value of this parameter is <code>2**MstPortIdWidth</code>.</p>
-</div><h3 id="parameter.MstPortMaxTxnsPerId" class="impl"><code class="in-band">MstPortMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of in-flight transactions with the same ID at the master port.</p>
+<p>The maximum value of this parameter is <code>2**MgrPortIdWidth</code>.</p>
+</div><h3 id="parameter.MgrPortMaxTxnsPerId" class="impl"><code class="in-band">MgrPortMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of in-flight transactions with the same ID at the manager port.</p>
 </div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Address width of both AXI4+ATOP ports</p>
 </div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Data width of both AXI4+ATOP ports</p>
 </div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>User width of both AXI4+ATOP ports</p>
-</div><h3 id="parameter.slv_port_axi_req_t" class="impl"><code class="in-band">slv_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct type of the AXI4+ATOP slave port</p>
-</div><h3 id="parameter.slv_port_axi_rsp_t" class="impl"><code class="in-band">slv_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct type of the AXI4+ATOP slave port</p>
-</div><h3 id="parameter.mst_port_axi_req_t" class="impl"><code class="in-band">mst_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct type of the AXI4+ATOP master port</p>
-</div><h3 id="parameter.mst_port_axi_rsp_t" class="impl"><code class="in-band">mst_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct type of the AXI4+ATOP master port</p>
+</div><h3 id="parameter.AtopSupport" class="impl"><code class="in-band">AtopSupport<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+><p>Enable support for AXI4+ATOP atomics</p>
+</div><h3 id="parameter.sbr_port_axi_req_t" class="impl"><code class="in-band">sbr_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Request struct type of the AXI4+ATOP subordinate port</p>
+</div><h3 id="parameter.sbr_port_axi_rsp_t" class="impl"><code class="in-band">sbr_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Response struct type of the AXI4+ATOP subordinate port</p>
+</div><h3 id="parameter.mgr_port_axi_req_t" class="impl"><code class="in-band">mgr_port_axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Request struct type of the AXI4+ATOP manager port</p>
+</div><h3 id="parameter.mgr_port_axi_rsp_t" class="impl"><code class="in-band">mgr_port_axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Response struct type of the AXI4+ATOP manager port</p>
 </div><h3 id="parameter.SelectWidth" class="impl"><code class="in-band">SelectWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Number of bits of the slave port ID that determine the mapping to the master port ID</p>
+><p>Number of bits of the subordinate port ID that determine the mapping to the manager port ID</p>
 </div><h3 id="parameter.MuxIdWidth" class="impl"><code class="in-band">MuxIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>ID width after the multiplexer</p>
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
@@ -51,30 +53,30 @@ are counted separately (except for ATOPs, which count as both read and write).</
 ><p>Rising-edge clock of both ports</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  slv_port_axi_req_t</span></code></h3><div class="docblock"
-><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output slv_port_axi_rsp_t</span></code></h3><div class="docblock"
-><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output mst_port_axi_req_t</span></code></h3><div class="docblock"
-><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  mst_port_axi_rsp_t</span></code></h3><div class="docblock"
-><p>Master port response</p>
+</div><h3 id="port.sbr_req_i" class="impl"><code class="in-band">sbr_req_i<span class="type-annotation">: input  sbr_port_axi_req_t</span></code></h3><div class="docblock"
+><p>Subordinate port request</p>
+</div><h3 id="port.sbr_rsp_o" class="impl"><code class="in-band">sbr_rsp_o<span class="type-annotation">: output sbr_port_axi_rsp_t</span></code></h3><div class="docblock"
+><p>Subordinate port response</p>
+</div><h3 id="port.mgr_req_o" class="impl"><code class="in-band">mgr_req_o<span class="type-annotation">: output mgr_port_axi_req_t</span></code></h3><div class="docblock"
+><p>Manager port request</p>
+</div><h3 id="port.mgr_rsp_i" class="impl"><code class="in-band">mgr_rsp_i<span class="type-annotation">: input  mgr_port_axi_rsp_t</span></code></h3><div class="docblock"
+><p>Manager port response</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
-<tr><td><a class="type" href="type.select_t.html">select_t</a></td><td><p>Slice of slave port IDs that determines the master port ID</p>
+<tr><td><a class="type" href="type.select_t.html">select_t</a></td><td><p>Slice of subordinate port IDs that determines the manager port ID</p>
 </td></tr><tr><td><a class="type" href="type.ser_id_t.html">ser_id_t</a></td><td><p>ID after serializer (i.e., with a constant value of zero)</p>
 </td></tr><tr><td><a class="type" href="type.mux_id_t.html">mux_id_t</a></td><td><p>ID after the multiplexer</p>
-</td></tr><tr><td><a class="type" href="type.slv_id_t.html">slv_id_t</a></td><td><p>ID at the slave port</p>
-</td></tr><tr><td><a class="type" href="type.mst_id_t.html">mst_id_t</a></td><td><p>ID at the master port</p>
+</td></tr><tr><td><a class="type" href="type.sbr_id_t.html">sbr_id_t</a></td><td><p>ID at the subordinate port</p>
+</td></tr><tr><td><a class="type" href="type.mgr_id_t.html">mgr_id_t</a></td><td><p>ID at the manager port</p>
 </td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td><p>Address in any AXI channel</p>
 </td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td><p>Data in any AXI channel</p>
 </td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td><p>Strobe in any AXI channel</p>
 </td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td><p>User signal in any AXI channel</p>
 </td></tr><tr><td><a class="type" href="type.w_t.html">w_t</a></td><td><p>W channel at any interface</p>
-</td></tr><tr><td><a class="type" href="type.slv_aw_t.html">slv_aw_t</a></td><td><p>AW channel at slave port</p>
-</td></tr><tr><td><a class="type" href="type.slv_b_t.html">slv_b_t</a></td><td><p>B channel at slave port</p>
-</td></tr><tr><td><a class="type" href="type.slv_ar_t.html">slv_ar_t</a></td><td><p>AR channel at slave port</p>
-</td></tr><tr><td><a class="type" href="type.slv_r_t.html">slv_r_t</a></td><td><p>R channel at slave port</p>
+</td></tr><tr><td><a class="type" href="type.sbr_aw_t.html">sbr_aw_t</a></td><td><p>AW channel at subordinate port</p>
+</td></tr><tr><td><a class="type" href="type.sbr_b_t.html">sbr_b_t</a></td><td><p>B channel at subordinate port</p>
+</td></tr><tr><td><a class="type" href="type.sbr_ar_t.html">sbr_ar_t</a></td><td><p>AR channel at subordinate port</p>
+</td></tr><tr><td><a class="type" href="type.sbr_r_t.html">sbr_r_t</a></td><td><p>R channel at subordinate port</p>
 </td></tr><tr><td><a class="type" href="type.ser_aw_t.html">ser_aw_t</a></td><td><p>AW channel after serializer</p>
 </td></tr><tr><td><a class="type" href="type.ser_b_t.html">ser_b_t</a></td><td><p>B channel after serializer</p>
 </td></tr><tr><td><a class="type" href="type.ser_ar_t.html">ser_ar_t</a></td><td><p>AR channel after serializer</p>
@@ -87,16 +89,16 @@ are counted separately (except for ATOPs, which count as both read and write).</
 </td></tr><tr><td><a class="type" href="type.mux_r_t.html">mux_r_t</a></td><td><p>R channel after the multiplexer</p>
 </td></tr><tr><td><a class="type" href="type.mux_req_t.html">mux_req_t</a></td><td><p>AXI requests from the multiplexer</p>
 </td></tr><tr><td><a class="type" href="type.mux_rsp_t.html">mux_rsp_t</a></td><td><p>AXI responses to the multiplexer</p>
-</td></tr><tr><td><a class="type" href="type.mst_aw_t.html">mst_aw_t</a></td><td><p>AW channel at master port</p>
-</td></tr><tr><td><a class="type" href="type.mst_b_t.html">mst_b_t</a></td><td><p>B channel at master port</p>
-</td></tr><tr><td><a class="type" href="type.mst_ar_t.html">mst_ar_t</a></td><td><p>AR channel at master port</p>
-</td></tr><tr><td><a class="type" href="type.mst_r_t.html">mst_r_t</a></td><td><p>R channel at master port</p>
+</td></tr><tr><td><a class="type" href="type.mgr_aw_t.html">mgr_aw_t</a></td><td><p>AW channel at manager port</p>
+</td></tr><tr><td><a class="type" href="type.mgr_b_t.html">mgr_b_t</a></td><td><p>B channel at manager port</p>
+</td></tr><tr><td><a class="type" href="type.mgr_ar_t.html">mgr_ar_t</a></td><td><p>AR channel at manager port</p>
+</td></tr><tr><td><a class="type" href="type.mgr_r_t.html">mgr_r_t</a></td><td><p>R channel at manager port</p>
 </td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.slv_aw_select" class="impl"><code class="in-band">slv_aw_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_ar_select" class="impl"><code class="in-band">slv_ar_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
+<h3 id="signal.sbr_aw_select" class="impl"><code class="in-band">sbr_aw_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.sbr_ar_select" class="impl"><code class="in-band">sbr_ar_select<span class="type-annotation">: select_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.axi_mux_req" class="impl"><code class="in-band">axi_mux_req<span class="type-annotation">: mux_req_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.axi_mux_resp" class="impl"><code class="in-band">axi_mux_resp<span class="type-annotation">: mux_rsp_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.axi_mux_rsp" class="impl"><code class="in-band">axi_mux_rsp<span class="type-annotation">: mux_rsp_t</span></code></h3><div class="docblock"
 ></div></section>
 </body>
 </html>

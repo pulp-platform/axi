@@ -1,0 +1,88 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_xp</a></h1>
+<div class="docblock">
+<p>AXI Crosspoint (XP) with homomorphous subordinate and manager ports.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.ATOPs" class="impl"><code class="in-band">ATOPs<span class="type-annotation">: bit</span></code></h3><div class="docblock"
+></div><h3 id="parameter.Cfg" class="impl"><code class="in-band">Cfg<span class="type-annotation">: axi_pkg::xbar_cfg_t</span></code></h3><div class="docblock"
+></div><h3 id="parameter.NumSbrPorts" class="impl"><code class="in-band">NumSbrPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of subordinate ports.</p>
+</div><h3 id="parameter.NumMgrPorts" class="impl"><code class="in-band">NumMgrPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of manager ports.</p>
+</div><h3 id="parameter.Connectivity" class="impl"><code class="in-band">Connectivity<span class="type-annotation">: bit [NumSbrPorts-1:0][NumMgrPorts-1:0]</span></code></h3><div class="docblock"
+><p>Connectivity from a subordinate port to the manager ports.  A <code>1'b1</code> in <code>Connectivity[i][j]</code> means
+that subordinate port <code>i</code> is connected to manager port <code>j</code>.  By default, all subordinate ports are
+connected to all manager ports.</p>
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Address width of all ports.</p>
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Data width of all ports.</p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>ID width of all ports.</p>
+</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>User signal width of all ports.</p>
+</div><h3 id="parameter.SbrPortMaxUniqIds" class="impl"><code class="in-band">SbrPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of different IDs that can be in flight at each subordinate port.  Reads and writes
+are counted separately (except for ATOPs, which count as both read and write).</p>
+<p>It is legal for upstream to have transactions with more unique IDs than the maximum given by
+this parameter in flight, but a transaction exceeding the maximum will be stalled until all
+transactions of another ID complete.</p>
+</div><h3 id="parameter.SbrPortMaxTxnsPerId" class="impl"><code class="in-band">SbrPortMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of in-flight transactions with the same ID at the subordinate port.</p>
+<p>This parameter is only relevant if <code>SbrPortMaxUniqIds &lt;= 2**MgrPortIdWidth</code>.  In that
+case, this parameter is passed to <a href="module.axi_id_remap#parameter.MaxTxnsPerId"><code>axi_id_remap</code> as <code>MaxTxnsPerId</code>
+parameter</a>.</p>
+</div><h3 id="parameter.SbrPortMaxTxns" class="impl"><code class="in-band">SbrPortMaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of in-flight transactions at the subordinate port.  Reads and writes are counted
+separately (except for ATOPs, which count as both read and write).</p>
+<p>This parameter is only relevant if <code>SbrPortMaxUniqIds &gt; 2**MgrPortIdWidth</code>.  In that
+case, this parameter is passed to
+<a href="module.axi_id_serialize#parameter.SbrPortMaxTxns"><code>axi_id_serialize</code></a>.</p>
+</div><h3 id="parameter.MgrPortMaxUniqIds" class="impl"><code class="in-band">MgrPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of different IDs that can be in flight at the manager port.  Reads and writes
+are counted separately (except for ATOPs, which count as both read and write).</p>
+<p>This parameter is only relevant if <code>SbrPortMaxUniqIds &gt; 2**MgrPortIdWidth</code>.  In that
+case, this parameter is passed to
+<a href="module.axi_id_serialize#parameter.MgrPortMaxUniqIds"><code>axi_id_serialize</code></a>.</p>
+</div><h3 id="parameter.MgrPortMaxTxnsPerId" class="impl"><code class="in-band">MgrPortMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Maximum number of in-flight transactions with the same ID at the manager port.</p>
+<p>This parameter is only relevant if <code>SbrPortMaxUniqIds &gt; 2**MgrPortIdWidth</code>.  In that
+case, this parameter is passed to
+<a href="module.axi_id_serialize#parameter.MgrPortMaxTxnsPerId"><code>axi_id_serialize</code></a>.</p>
+</div><h3 id="parameter.NumAddrRules" class="impl"><code class="in-band">NumAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>Number of rules in the address map.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Request struct type of the AXI4+ATOP</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Response struct type of the AXI4+ATOP</p>
+</div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Rule type (see documentation of <code>axi_xbar</code> for details).</p>
+</div><h3 id="parameter.XbarIdWidth" class="impl"><code class="in-band">XbarIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Rising-edge clock of all ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low</p>
+</div><h3 id="port.test_en_i" class="impl"><code class="in-band">test_en_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Test mode enable</p>
+</div><h3 id="port.sbr_req_i" class="impl"><code class="in-band">sbr_req_i<span class="type-annotation">: input  axi_req_t [NumSbrPorts-1:0]</span></code></h3><div class="docblock"
+><p>Subordinate ports request</p>
+</div><h3 id="port.sbr_rsp_o" class="impl"><code class="in-band">sbr_rsp_o<span class="type-annotation">: output axi_rsp_t [NumSbrPorts-1:0]</span></code></h3><div class="docblock"
+><p>Subordinate ports response</p>
+</div><h3 id="port.mgr_req_o" class="impl"><code class="in-band">mgr_req_o<span class="type-annotation">: output axi_req_t [NumMgrPorts-1:0]</span></code></h3><div class="docblock"
+><p>Manager ports request</p>
+</div><h3 id="port.mgr_rsp_i" class="impl"><code class="in-band">mgr_rsp_i<span class="type-annotation">: input  axi_rsp_t [NumMgrPorts-1:0]</span></code></h3><div class="docblock"
+><p>Manager ports response</p>
+</div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t    [NumAddrRules-1:0]</span></code></h3><div class="docblock"
+><p>Address map for transferring transactions from subordinate to manager ports</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_id_t.html">xbar_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_aw_chan_t.html">xp_aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_w_chan_t.html">xp_w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_b_chan_t.html">xp_b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_ar_chan_t.html">xp_ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_r_chan_t.html">xp_r_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_req_t.html">xp_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.xp_rsp_t.html">xp_rsp_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_aw_chan_t.html">xbar_aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_w_chan_t.html">xbar_w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_b_chan_t.html">xbar_b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_ar_chan_t.html">xbar_ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_r_chan_t.html">xbar_r_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_req_t.html">xbar_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_rsp_t.html">xbar_rsp_t</a></td><td></td></tr></table>
+</section>
+</body>
+</html>

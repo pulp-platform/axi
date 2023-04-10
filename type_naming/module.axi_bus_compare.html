@@ -1,0 +1,98 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_bus_compare</a></h1>
+<div class="docblock">
+<p>Synthesizable test module comparing two AXI channels of the same type
+This module is meant to be used in FPGA-based verification.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>ID width of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.FifoDepth" class="impl"><code class="in-band">FifoDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>FIFO depth</p>
+</div><h3 id="parameter.axi_aw_chan_t" class="impl"><code class="in-band">axi_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AW channel type of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.axi_w_chan_t" class="impl"><code class="in-band">axi_w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>W channel type of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.axi_b_chan_t" class="impl"><code class="in-band">axi_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>B channel type of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.axi_ar_chan_t" class="impl"><code class="in-band">axi_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>AR channel type of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.axi_r_chan_t" class="impl"><code class="in-band">axi_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>R channel type of the AXI4+ATOP interface</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Request struct type of the AXI4+ATOP subordinate port</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>Response struct type of the AXI4+ATOP subordinate port</p>
+</div><h3 id="parameter.id_t" class="impl"><code class="in-band">id_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+><p>ID type (<em>do not overwrite</em>)</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Asynchronous reset, active low</p>
+</div><h3 id="port.testmode_i" class="impl"><code class="in-band">testmode_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+><p>Testmode</p>
+</div><h3 id="port.axi_a_req_i" class="impl"><code class="in-band">axi_a_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP A channel request in</p>
+</div><h3 id="port.axi_a_rsp_o" class="impl"><code class="in-band">axi_a_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP A channel response out</p>
+</div><h3 id="port.axi_a_req_o" class="impl"><code class="in-band">axi_a_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP A channel request out</p>
+</div><h3 id="port.axi_a_rsp_i" class="impl"><code class="in-band">axi_a_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP A channel response in</p>
+</div><h3 id="port.axi_b_req_i" class="impl"><code class="in-band">axi_b_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel request in</p>
+</div><h3 id="port.axi_b_rsp_o" class="impl"><code class="in-band">axi_b_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel response out</p>
+</div><h3 id="port.axi_b_req_o" class="impl"><code class="in-band">axi_b_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel request out</p>
+</div><h3 id="port.axi_b_rsp_i" class="impl"><code class="in-band">axi_b_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
+><p>AXI4+ATOP B channel response in</p>
+</div><h3 id="port.aw_mismatch_o" class="impl"><code class="in-band">aw_mismatch_o<span class="type-annotation">: output id_t</span></code></h3><div class="docblock"
+><p>AW mismatch</p>
+</div><h3 id="port.w_mismatch_o" class="impl"><code class="in-band">w_mismatch_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>W mismatch</p>
+</div><h3 id="port.b_mismatch_o" class="impl"><code class="in-band">b_mismatch_o<span class="type-annotation">: output id_t</span></code></h3><div class="docblock"
+><p>B mismatch</p>
+</div><h3 id="port.ar_mismatch_o" class="impl"><code class="in-band">ar_mismatch_o<span class="type-annotation">: output id_t</span></code></h3><div class="docblock"
+><p>AR mismatch</p>
+</div><h3 id="port.r_mismatch_o" class="impl"><code class="in-band">r_mismatch_o<span class="type-annotation">: output id_t</span></code></h3><div class="docblock"
+><p>R mismatch</p>
+</div><h3 id="port.mismatch_o" class="impl"><code class="in-band">mismatch_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>General mismatch</p>
+</div><h3 id="port.busy_o" class="impl"><code class="in-band">busy_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+><p>Unit is busy</p>
+</div><h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.fifo_valid_aw_a" class="impl"><code class="in-band">fifo_valid_aw_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_aw_a" class="impl"><code class="in-band">fifo_ready_aw_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_b_a" class="impl"><code class="in-band">fifo_valid_b_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_b_a" class="impl"><code class="in-band">fifo_ready_b_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_ar_a" class="impl"><code class="in-band">fifo_valid_ar_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_ar_a" class="impl"><code class="in-band">fifo_ready_ar_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_r_a" class="impl"><code class="in-band">fifo_valid_r_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_r_a" class="impl"><code class="in-band">fifo_ready_r_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_aw_b" class="impl"><code class="in-band">fifo_valid_aw_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_aw_b" class="impl"><code class="in-band">fifo_ready_aw_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_b_b" class="impl"><code class="in-band">fifo_valid_b_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_b_b" class="impl"><code class="in-band">fifo_ready_b_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_ar_b" class="impl"><code class="in-band">fifo_valid_ar_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_ar_b" class="impl"><code class="in-band">fifo_ready_ar_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_valid_r_b" class="impl"><code class="in-band">fifo_valid_r_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_ready_r_b" class="impl"><code class="in-band">fifo_ready_r_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_aw_a" class="impl"><code class="in-band">fifo_cmp_valid_aw_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_b_a" class="impl"><code class="in-band">fifo_cmp_valid_b_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_ar_a" class="impl"><code class="in-band">fifo_cmp_valid_ar_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_r_a" class="impl"><code class="in-band">fifo_cmp_valid_r_a<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_aw_b" class="impl"><code class="in-band">fifo_cmp_valid_aw_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_b_b" class="impl"><code class="in-band">fifo_cmp_valid_b_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_ar_b" class="impl"><code class="in-band">fifo_cmp_valid_ar_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_valid_r_b" class="impl"><code class="in-band">fifo_cmp_valid_r_b<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_data_w_a" class="impl"><code class="in-band">fifo_cmp_data_w_a<span class="type-annotation">: axi_w_chan_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fifo_cmp_data_w_b" class="impl"><code class="in-band">fifo_cmp_data_w_b<span class="type-annotation">: axi_w_chan_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>

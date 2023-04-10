@@ -1,0 +1,26 @@
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_rw_join</a></h1>
+<div class="docblock">
+<p>Joins a read and a write subordinate into one single read / write manager</p>
+<p>Connects the ar and r channel of the read subordinate to the read / write manager
+and the aw, w and b channel of the write subordinate to the read / write manager</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.sbr_read_req_i" class="impl"><code class="in-band">sbr_read_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="port.sbr_read_rsp_o" class="impl"><code class="in-band">sbr_read_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+></div><h3 id="port.sbr_write_req_i" class="impl"><code class="in-band">sbr_write_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="port.sbr_write_rsp_o" class="impl"><code class="in-band">sbr_write_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+></div><h3 id="port.mgr_req_o" class="impl"><code class="in-band">mgr_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="port.mgr_rsp_i" class="impl"><code class="in-band">mgr_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
+></div></section>
+</body>
+</html>

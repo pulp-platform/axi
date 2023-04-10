@@ -6,8 +6,8 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_serializer</a></h1>
 <div class="docblock">
 <p>Serialize all AXI transactions to a single ID (zero).</p>
-<p>This module contains one queue with slave port IDs for the read direction and one for the write
-direction.  These queues are used to reconstruct the ID of responses at the slave port.  The
+<p>This module contains one queue with subordinate port IDs for the read direction and one for the write
+direction.  These queues are used to reconstruct the ID of responses at the subordinate port.  The
 depth of each queue is defined by <code>MaxReadTxns</code> and <code>MaxWriteTxns</code>, respectively.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
@@ -26,14 +26,14 @@ depth of each queue is defined by <code>MaxReadTxns</code> and <code>MaxWriteTxn
 ><p>Clock</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
-><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
-><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
-><p>Master port response</p>
+</div><h3 id="port.sbr_req_i" class="impl"><code class="in-band">sbr_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+><p>Subordinate port request</p>
+</div><h3 id="port.sbr_rsp_o" class="impl"><code class="in-band">sbr_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+><p>Subordinate port response</p>
+</div><h3 id="port.mgr_req_o" class="impl"><code class="in-band">mgr_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+><p>Manager port request</p>
+</div><h3 id="port.mgr_rsp_i" class="impl"><code class="in-band">mgr_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
+><p>Manager port response</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.state_e.html">state_e</a></td><td></td></tr></table>

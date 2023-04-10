@@ -8,7 +8,29 @@
 <p>Contains all necessary type definitions, constants, and generally useful functions.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.BURST_FIXED" class="impl"><code class="in-band">BURST_FIXED<span class="type-annotation">: </span></code></h3><div class="docblock"
+<h3 id="parameter.BurstWidth" class="impl"><code class="in-band">BurstWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Burst Width.</p>
+</div><h3 id="parameter.RespWidth" class="impl"><code class="in-band">RespWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Response Width.</p>
+</div><h3 id="parameter.CacheWidth" class="impl"><code class="in-band">CacheWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Cacheability Width.</p>
+</div><h3 id="parameter.ProtWidth" class="impl"><code class="in-band">ProtWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Protection Width.</p>
+</div><h3 id="parameter.QosWidth" class="impl"><code class="in-band">QosWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Quality of Service Width.</p>
+</div><h3 id="parameter.RegionWidth" class="impl"><code class="in-band">RegionWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Region Width.</p>
+</div><h3 id="parameter.LenWidth" class="impl"><code class="in-band">LenWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Length Width.</p>
+</div><h3 id="parameter.SizeWidth" class="impl"><code class="in-band">SizeWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Transaction Size Width.</p>
+</div><h3 id="parameter.LockWidth" class="impl"><code class="in-band">LockWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI Lock Width.</p>
+</div><h3 id="parameter.AtopWidth" class="impl"><code class="in-band">AtopWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI5 Atomic Operation Width.</p>
+</div><h3 id="parameter.NsaidWidth" class="impl"><code class="in-band">NsaidWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>AXI5 Non-Secure Address Identifier.</p>
+</div><h3 id="parameter.BURST_FIXED" class="impl"><code class="in-band">BURST_FIXED<span class="type-annotation">: </span></code></h3><div class="docblock"
 ><p>In a fixed burst:</p>
 <ul>
 <li>The address is the same for every transfer in the burst.</li>
@@ -39,11 +61,11 @@ that an exclusive access has failed.</p>
 ><p>Exclusive access okay.  Indicates that either the read or write portion of an exclusive access
 has been successful.</p>
 </div><h3 id="parameter.RESP_SLVERR" class="impl"><code class="in-band">RESP_SLVERR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Slave error.  Used when the access has reached the slave successfully, but the slave wishes to
-return an error condition to the originating master.</p>
+><p>Subordinate error.  Used when the access has reached the subordinate successfully, but the subordinate wishes to
+return an error condition to the originating manager.</p>
 </div><h3 id="parameter.RESP_DECERR" class="impl"><code class="in-band">RESP_DECERR<span class="type-annotation">: </span></code></h3><div class="docblock"
 ><p>Decode error.  Generated, typically by an interconnect component, to indicate that there is no
-slave at the transaction address.</p>
+subordinate at the transaction address.</p>
 </div><h3 id="parameter.CACHE_BUFFERABLE" class="impl"><code class="in-band">CACHE_BUFFERABLE<span class="type-annotation">: </span></code></h3><div class="docblock"
 ><p>When this bit is asserted, the interconnect, or any component, can delay the transaction
 reaching its final destination for any number of cycles.</p>
@@ -151,7 +173,7 @@ assumes unsigned data.</p>
 ><p>Slice on Mux R channel.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
-<tr><td><a class="type" href="type.burst_t.html">burst_t</a></td><td><p>AXI Transaction Burst Type.</p>
+<tr><td><a class="type" href="type.burst_t.html">burst_t</a></td><td><p>AXI Transaction Burst Width.</p>
 </td></tr><tr><td><a class="type" href="type.resp_t.html">resp_t</a></td><td><p>AXI Transaction Response Type.</p>
 </td></tr><tr><td><a class="type" href="type.cache_t.html">cache_t</a></td><td><p>AXI Transaction Cacheability Type.</p>
 </td></tr><tr><td><a class="type" href="type.prot_t.html">prot_t</a></td><td><p>AXI Transaction Protection Type.</p>
