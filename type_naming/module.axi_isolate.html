@@ -13,7 +13,7 @@ responses.</p>
 <p>The isolation interface has two signals: <code>isolate_i</code> and <code>isolated_o</code>.  When <code>isolate_i</code> is
 asserted, all open transactions are gracefully terminated.  When no transactions are in flight
 anymore, the <code>isolated_o</code> output is asserted.  As long as <code>isolated_o</code> is asserted, all output
-signals in <code>mgr_req_o</code> are silenced to <code>'0</code>.  When isolated, new transactions initiated on the
+signals in <code>mgr_port_req_o</code> are silenced to <code>'0</code>.  When isolated, new transactions initiated on the
 subordinate port are stalled until the isolation is terminated by deasserting <code>isolate_i</code>.</p>
 <h2>Response</h2>
 <p>If the <code>TerminateTransaction</code> parameter is set to <code>1'b1</code>, the module will return response errors
@@ -47,13 +47,13 @@ responses.</p>
 ><p>Rising-edge clock of all ports</p>
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Asynchronous reset, active low</p>
-</div><h3 id="port.sbr_req_i" class="impl"><code class="in-band">sbr_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
+</div><h3 id="port.sbr_port_req_i" class="impl"><code class="in-band">sbr_port_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
 ><p>Subordinate port request</p>
-</div><h3 id="port.sbr_rsp_o" class="impl"><code class="in-band">sbr_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
+</div><h3 id="port.sbr_port_rsp_o" class="impl"><code class="in-band">sbr_port_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
 ><p>Subordinate port response</p>
-</div><h3 id="port.mgr_req_o" class="impl"><code class="in-band">mgr_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
+</div><h3 id="port.mgr_port_req_o" class="impl"><code class="in-band">mgr_port_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
 ><p>Manager port request</p>
-</div><h3 id="port.mgr_rsp_i" class="impl"><code class="in-band">mgr_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
+</div><h3 id="port.mgr_port_rsp_i" class="impl"><code class="in-band">mgr_port_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
 ><p>Manager port response</p>
 </div><h3 id="port.isolate_i" class="impl"><code class="in-band">isolate_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ><p>Isolate manager port from subordinate port</p>

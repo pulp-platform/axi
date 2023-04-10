@@ -28,10 +28,10 @@
     /// This is the number of `axi_multicut` stages instantiated in the line cross of the channels.
     /// Having multiple stages can potentially add a large number of FFs!
     int unsigned   PipelineStages;
-    /// AXI ID width of the salve ports. The ID width of the manager ports is determined
+    /// AXI ID width of the subordinate ports. The ID width of the manager ports is determined
     /// Automatically. See `axi_mux` for details.
     int unsigned   IdWidthSbrPorts;
-    /// The used ID portion to determine if a different salve is used for the same ID.
+    /// The used ID portion to determine if a different subordinate is used for the same ID.
     /// See `axi_demux` for details.
     int unsigned   IdUsedSbrPorts;
     /// Are IDs unique?
