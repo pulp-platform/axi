@@ -22,10 +22,10 @@ This demultiplexer is configured through the parameters listed in the following 
 
 | Name                 | Type               | Definition |
 |:---------------------|:-------------------|:-----------|
-| `AxiIdWidth`         | `int unsigned`     | The AXI ID width (of all ports). |
+| `IdWidth`            | `int unsigned`     | The AXI ID width (of all ports). |
 | `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the demultiplexer (in other words, how many AXI slave modules can be attached). |
 | `MaxTrans`           | `int unsigned`     | The slave port can have at most this many transactions [in flight](../doc#in-flight). |
-| `AxiLookBits`        | `int unsigned`     | The number of ID bits (starting at the least significant) the demultiplexer uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidth`. |
+| `LookBits`           | `int unsigned`     | The number of ID bits (starting at the least significant) the demultiplexer uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `IdWidth`. |
 | `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the demultiplexer (see section *Ordering and Stalls* below).  Defaults to `1'b0`. |
 | `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the demultiplexer to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from `slv_aw_select_i`. |
 | `SpillXX`            | `bit`              | Inserts one spill register on the respective channel (AW, W, B, AR, and R) before the demultiplexer. |
@@ -53,7 +53,7 @@ If all `SpillXX` and `FallThrough` are disabled, all paths through this multiple
 
 ## Ordering and Stalls
 
-When the demultiplexer receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the demultiplexer stalls the AR or AW channel, respectively.  To determine whether two transactions have the same ID, the `AxiLookBits` least-significant bits are compared.  That parameter can be set to the full `AxiIdWidth` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
+When the demultiplexer receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the demultiplexer stalls the AR or AW channel, respectively.  To determine whether two transactions have the same ID, the `LookBits` least-significant bits are compared.  That parameter can be set to the full `IdWidth` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
 
 The reason for this behavior are AXI ordering constraints, see the [documentation of the crossbar](axi_xbar.md#ordering-and-stalls) for details.
 
@@ -69,7 +69,7 @@ Setting the `UniqueIds` parameter to `1'b1` reduces the area complexity of the d
 
 ### Implementation
 
-`2 * 2^AxiLookBits` counters track the number of [in-flight](../doc#in-flight) transactions.  That is, for each ID in the (potentially) reduced set of IDs of `AxiLookBits` bits, there is one counter for write transactions and one for read transactions.  Each counter can count up to (and including) `MaxTrans`, and there is a register that holds the index of the master port to which a counter is assigned.
+`2 * 2^LookBits` counters track the number of [in-flight](../doc#in-flight) transactions.  That is, for each ID in the (potentially) reduced set of IDs of `LookBits` bits, there is one counter for write transactions and one for read transactions.  Each counter can count up to (and including) `MaxTrans`, and there is a register that holds the index of the master port to which a counter is assigned.
 
 When the demultiplexer gets an AW or an AR, it indexes the counters with the AXI ID.  If the indexed counter has a value greater than zero and its master port index register is not equal to the index to which the AW or AR is to be sent, a transaction with the same direction and ID is already in flight to another master port.  The demultiplexer then stalls the AW or AR.  In all other cases, the demultiplexer forwards the AW or AR, increments the value of the indexed counter, and sets the master port index of the counter.  A counter is decremented upon a handshake a B respectively last R beat at a slave port.
 

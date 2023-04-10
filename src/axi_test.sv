@@ -1874,10 +1874,10 @@ package axi_test;
   ///
   /// Example usage:
   ///   typedef axi_test::axi_scoreboard #(
-  ///   .IW ( AxiIdWidth   ),
-  ///   .AW ( AxiAddrWidth ),
-  ///   .DW ( AxiDataWidth ),
-  ///   .UW ( AxiUserWidth ),
+  ///   .IW ( IdWidth   ),
+  ///   .AW ( AddrWidth ),
+  ///   .DW ( DataWidth ),
+  ///   .UW ( UserWidth ),
   ///   .TT ( TestTime     )
   /// ) axi_scoreboard_t;
   /// axi_scoreboard_t axi_scoreboard = new(monitor_dv);

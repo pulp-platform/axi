@@ -30,19 +30,19 @@ module tb_axi_serializer #(
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // AXI configuration
-  localparam int unsigned AxiIdWidth   =  4;
-  localparam int unsigned AxiAddrWidth =  32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth =  64;    // Axi Data Width
-  localparam int unsigned AxiUserWidth =  5;
+  localparam int unsigned IdWidth   =  4;
+  localparam int unsigned AddrWidth =  32;    // Address Width
+  localparam int unsigned DataWidth =  64;    // Data Width
+  localparam int unsigned UserWidth =  5;
   // Sim print config, how many transactions
   localparam int unsigned PrintTxn = 500;
 
   typedef axi_test::axi_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime ),
@@ -53,10 +53,10 @@ module tb_axi_serializer #(
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
@@ -71,28 +71,28 @@ module tb_axi_serializer #(
 
   // interfaces
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) master ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) master_dv (clk);
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) slave ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) slave_dv (clk);
 
   `AXI_ASSIGN(master, master_dv)
@@ -115,10 +115,10 @@ module tb_axi_serializer #(
   axi_serializer_intf #(
     .MAX_READ_TXNS  ( NoPendingDut ),
     .MAX_WRITE_TXNS ( NoPendingDut ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
-    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
-    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+    .AXI_ID_WIDTH   ( IdWidth      ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AddrWidth    ), // AXI address width
+    .AXI_DATA_WIDTH ( DataWidth    ), // AXI data width
+    .AXI_USER_WIDTH ( UserWidth    )  // AXI user width
   ) i_dut (
     .clk_i      ( clk      ), // clock
     .rst_ni     ( rst_n    ), // asynchronous reset active low
@@ -148,11 +148,11 @@ module tb_axi_serializer #(
   end
 
   // Checker
-  typedef logic [AxiIdWidth-1:0]     axi_id_t;
-  typedef logic [AxiAddrWidth-1:0]   axi_addr_t;
-  typedef logic [AxiDataWidth-1:0]   axi_data_t;
-  typedef logic [AxiDataWidth/8-1:0] axi_strb_t;
-  typedef logic [AxiUserWidth-1:0]   axi_user_t;
+  typedef logic [IdWidth-1:0]     axi_id_t;
+  typedef logic [AddrWidth-1:0]   axi_addr_t;
+  typedef logic [DataWidth-1:0]   axi_data_t;
+  typedef logic [DataWidth/8-1:0] axi_strb_t;
+  typedef logic [UserWidth-1:0]   axi_user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, axi_addr_t,  axi_id_t,  axi_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t,  axi_data_t,  axi_strb_t,  axi_user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t,  axi_id_t,  axi_user_t)

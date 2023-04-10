@@ -22,13 +22,13 @@ Using an ID prefix for the switching in the multiplexer prevents that this modul
 
 The following table shows the parameters of the module. The module further requires the structs describing the five AXI channels.
 
-| Name          | Type | Function |
-|:------------------ |:----------------- |:---------------------------------- |
-| `AxiIdWidth`  | `int unsigned` | The width of the AXI transaction ID in bits. |
-| `NoSlvPorts`  | `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.|
-| `MaxWTrans` | `int unsigned` | The depth of the FIFO holding the highest bits of the ID between the AW and W channel. |
-| `FallThrough` | `bit` | Is the FIFO between the AW and W channel in fall-through mode. Enabling will lead to longer cycle delays. |
-| `SpillXX` | `bit` | Enables the optional spill-register on the respective channel. |
+| Name         | Type           | Function                                                                                                    |
+|:------------ |:-------------- |:----------------------------------------------------------------------------------------------------------- |
+| `IdWidth`    | `int unsigned` | The width of the AXI transaction ID in bits.                                                                |
+| `NoSlvPorts` | `int unsigned` | How many slave ports the multiplexer features. This many master modules can be connected to the multiplexer.|
+| `MaxWTrans`  | `int unsigned` | The depth of the FIFO holding the highest bits of the ID between the AW and W channel.                      |
+| `FallThrough`| `bit`          | Is the FIFO between the AW and W channel in fall-through mode. Enabling will lead to longer cycle delays.   |
+| `SpillXX`    | `bit`          | Enables the optional spill-register on the respective channel.                                              |
 
 
 

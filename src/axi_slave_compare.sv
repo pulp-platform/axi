@@ -19,7 +19,7 @@
 /// This module is meant to be used in FPGA-based verification.
 module axi_slave_compare #(
     /// ID width of the AXI4+ATOP interface
-    parameter int unsigned AxiIdWidth = 32'd0,
+    parameter int unsigned IdWidth = 32'd0,
     /// FIFO depth
     parameter int unsigned FifoDepth  = 32'd0,
     /// AW channel type of the AXI4+ATOP interface
@@ -37,7 +37,7 @@ module axi_slave_compare #(
     /// Response struct type of the AXI4+ATOP slave port
     parameter type axi_rsp_t     = logic,
     /// ID type (*do not overwrite*)
-    parameter type id_t          = logic [2**AxiIdWidth-1:0]
+    parameter type id_t          = logic [2**IdWidth-1:0]
 )(
     /// Clock
     input  logic     clk_i,
@@ -152,7 +152,7 @@ module axi_slave_compare #(
   end
 
   axi_bus_compare #(
-    .AxiIdWidth     ( AxiIdWidth      ),
+    .IdWidth        ( IdWidth         ),
     .FifoDepth      ( FifoDepth       ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
     .axi_w_chan_t   ( axi_w_chan_t    ),

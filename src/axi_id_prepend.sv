@@ -16,21 +16,21 @@
 // Constraints enforced through assertions: ID width of slave and master port
 
 module axi_id_prepend #(
-  parameter int unsigned NoBus             = 1,     // Can take multiple axi busses
-  parameter int unsigned AxiIdWidthSlvPort = 4,     // AXI ID Width of the Slave Ports
-  parameter int unsigned AxiIdWidthMstPort = 6,     // AXI ID Width of the Master Ports
-  parameter type         slv_aw_chan_t     = logic, // AW Channel Type for slv port
-  parameter type         slv_w_chan_t      = logic, //  W Channel Type for slv port
-  parameter type         slv_b_chan_t      = logic, //  B Channel Type for slv port
-  parameter type         slv_ar_chan_t     = logic, // AR Channel Type for slv port
-  parameter type         slv_r_chan_t      = logic, //  R Channel Type for slv port
-  parameter type         mst_aw_chan_t     = logic, // AW Channel Type for mst port
-  parameter type         mst_w_chan_t      = logic, //  W Channel Type for mst port
-  parameter type         mst_b_chan_t      = logic, //  B Channel Type for mst port
-  parameter type         mst_ar_chan_t     = logic, // AR Channel Type for mst port
-  parameter type         mst_r_chan_t      = logic, //  R Channel Type for mst port
+  parameter int unsigned NoBus          = 1,     // Can take multiple axi busses
+  parameter int unsigned IdWidthSlvPort = 4,     // AXI ID Width of the Slave Ports
+  parameter int unsigned IdWidthMstPort = 6,     // AXI ID Width of the Master Ports
+  parameter type         slv_aw_chan_t  = logic, // AW Channel Type for slv port
+  parameter type         slv_w_chan_t   = logic, //  W Channel Type for slv port
+  parameter type         slv_b_chan_t   = logic, //  B Channel Type for slv port
+  parameter type         slv_ar_chan_t  = logic, // AR Channel Type for slv port
+  parameter type         slv_r_chan_t   = logic, //  R Channel Type for slv port
+  parameter type         mst_aw_chan_t  = logic, // AW Channel Type for mst port
+  parameter type         mst_w_chan_t   = logic, //  W Channel Type for mst port
+  parameter type         mst_b_chan_t   = logic, //  B Channel Type for mst port
+  parameter type         mst_ar_chan_t  = logic, // AR Channel Type for mst port
+  parameter type         mst_r_chan_t   = logic, //  R Channel Type for mst port
   // DEPENDENT PARAMETER DO NOT OVERWRITE!
-  parameter int unsigned PreIdWidth        = AxiIdWidthMstPort - AxiIdWidthSlvPort
+  parameter int unsigned PreIdWidth     = IdWidthMstPort - IdWidthSlvPort
 ) (
   input  logic [PreIdWidth-1:0] pre_id_i, // ID to be prepended
   // slave port (input), connect master modules here
@@ -86,8 +86,8 @@ module axi_id_prepend #(
       always_comb begin
         mst_aw_chans_o[i] = slv_aw_chans_i[i];
         mst_ar_chans_o[i] = slv_ar_chans_i[i];
-        mst_aw_chans_o[i].id = {pre_id_i, slv_aw_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
-        mst_ar_chans_o[i].id = {pre_id_i, slv_ar_chans_i[i].id[AxiIdWidthSlvPort-1:0]};
+        mst_aw_chans_o[i].id = {pre_id_i, slv_aw_chans_i[i].id[IdWidthSlvPort-1:0]};
+        mst_ar_chans_o[i].id = {pre_id_i, slv_ar_chans_i[i].id[IdWidthSlvPort-1:0]};
       end
     end
     // The ID is in the highest bits of the struct, so an assignment from a channel with a wide ID

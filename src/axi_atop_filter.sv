@@ -36,9 +36,9 @@
 /// other write or read burst that is in-flight at the same time**.
 module axi_atop_filter #(
   /// AXI ID width
-  parameter int unsigned AxiIdWidth = 0,
+  parameter int unsigned IdWidth = 0,
   /// Maximum number of in-flight AXI write transactions
-  parameter int unsigned AxiMaxWriteTxns = 0,
+  parameter int unsigned MaxWriteTxns = 0,
   /// AXI request type
   parameter type axi_req_t = logic,
   /// AXI response type
@@ -59,7 +59,7 @@ module axi_atop_filter #(
 );
 
   // Minimum counter width is 2 to detect underflows.
-  localparam int unsigned COUNTER_WIDTH = (AxiMaxWriteTxns == 1) ? 2 : $clog2(AxiMaxWriteTxns+1);
+  localparam int unsigned COUNTER_WIDTH = (MaxWriteTxns == 1) ? 2 : $clog2(MaxWriteTxns+1);
   typedef struct packed {
     logic                     underflow;
     logic [COUNTER_WIDTH-1:0] cnt;
@@ -74,7 +74,7 @@ module axi_atop_filter #(
   typedef enum logic [1:0] { R_FEEDTHROUGH, INJECT_R, R_HOLD } r_state_e;
   r_state_e   r_state_d, r_state_q;
 
-  typedef logic [AxiIdWidth-1:0] id_t;
+  typedef logic [IdWidth-1:0] id_t;
   id_t  id_d, id_q;
 
   typedef logic [7:0] len_t;
@@ -118,8 +118,8 @@ module axi_atop_filter #(
     unique case (w_state_q)
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
-        if (complete_w_without_aw_downstream || (w_cnt_q.cnt < AxiMaxWriteTxns)) begin
-          mst_req_o.aw_valid = slv_req_i.aw_valid;
+        if (complete_w_without_aw_downstream || (w_cnt_q.cnt < MaxWriteTxns)) begin
+          mst_req_o.aw_valid  = slv_req_i.aw_valid;
           slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
         end
         // Feed W channel through if ..
@@ -360,8 +360,8 @@ module axi_atop_filter #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AxiIdWidth >= 1) else $fatal(1, "AXI ID width must be at least 1!");
-    assert (AxiMaxWriteTxns >= 1)
+    assert (IdWidth >= 1) else $fatal(1, "AXI ID width must be at least 1!");
+    assert (MaxWriteTxns >= 1)
       else $fatal(1, "Maximum number of outstanding write transactions must be at least 1!");
   end
 `endif
@@ -418,12 +418,12 @@ module axi_atop_filter_intf #(
   `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_atop_filter #(
-    .AxiIdWidth      ( AXI_ID_WIDTH       ),
+    .IdWidth      ( AXI_ID_WIDTH       ),
   // Maximum number of AXI write bursts outstanding at the same time
-    .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
+    .MaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
   // AXI request & response type
-    .axi_req_t       ( axi_req_t          ),
-    .axi_rsp_t       ( axi_rsp_t          )
+    .axi_req_t    ( axi_req_t          ),
+    .axi_rsp_t    ( axi_rsp_t          )
   ) i_axi_atop_filter (
     .clk_i,
     .rst_ni,

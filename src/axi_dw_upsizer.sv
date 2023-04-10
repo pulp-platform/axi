@@ -19,22 +19,22 @@
 // upon receiving a burst of such type.
 
 module axi_dw_upsizer #(
-    parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
-    parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
-    parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
-    parameter int unsigned AxiAddrWidth        = 1    , // Address width
-    parameter int unsigned AxiIdWidth          = 1    , // ID width
-    parameter type aw_chan_t                   = logic, // AW Channel Type
-    parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
-    parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port
-    parameter type b_chan_t                    = logic, //  B Channel Type
-    parameter type ar_chan_t                   = logic, // AR Channel Type
-    parameter type mst_r_chan_t                = logic, //  R Channel Type for mst port
-    parameter type slv_r_chan_t                = logic, //  R Channel Type for slv port
-    parameter type mst_port_axi_req_t          = logic, // AXI Request Type for mst ports
-    parameter type mst_port_axi_rsp_t          = logic, // AXI Response Type for mst ports
-    parameter type slv_port_axi_req_t          = logic, // AXI Request Type for slv ports
-    parameter type slv_port_axi_rsp_t          = logic  // AXI Response Type for slv ports
+    parameter int unsigned MaxReads         = 1    , // Number of outstanding reads
+    parameter int unsigned SlvPortDataWidth = 8    , // Data width of the slv port
+    parameter int unsigned MstPortDataWidth = 8    , // Data width of the mst port
+    parameter int unsigned AddrWidth        = 1    , // Address width
+    parameter int unsigned IdWidth          = 1    , // ID width
+    parameter type aw_chan_t                = logic, // AW Channel Type
+    parameter type mst_w_chan_t             = logic, //  W Channel Type for mst port
+    parameter type slv_w_chan_t             = logic, //  W Channel Type for slv port
+    parameter type b_chan_t                 = logic, //  B Channel Type
+    parameter type ar_chan_t                = logic, // AR Channel Type
+    parameter type mst_r_chan_t             = logic, //  R Channel Type for mst port
+    parameter type slv_r_chan_t             = logic, //  R Channel Type for slv port
+    parameter type mst_port_axi_req_t       = logic, // AXI Request Type for mst ports
+    parameter type mst_port_axi_rsp_t       = logic, // AXI Response Type for mst ports
+    parameter type slv_port_axi_req_t       = logic, // AXI Request Type for slv ports
+    parameter type slv_port_axi_rsp_t       = logic  // AXI Response Type for slv ports
   ) (
     input  logic              clk_i,
     input  logic              rst_ni,
@@ -56,28 +56,28 @@ module axi_dw_upsizer #(
   import cf_math_pkg::idx_width;
 
   // Type used to index which adapter is handling each outstanding transaction.
-  localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
+  localparam TranIdWidth = MaxReads > 1 ? $clog2(MaxReads) : 1;
   typedef logic [TranIdWidth-1:0] tran_id_t;
 
   // Data width
-  localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
-  localparam AxiMstPortStrbWidth = AxiMstPortDataWidth / 8;
+  localparam SlvPortStrbWidth = SlvPortDataWidth / 8;
+  localparam MstPortStrbWidth = MstPortDataWidth / 8;
 
-  localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
-  localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
+  localparam SlvPortMaxSize = $clog2(SlvPortStrbWidth);
+  localparam MstPortMaxSize = $clog2(MstPortStrbWidth);
 
   // Byte-grouped data words
-  typedef logic [AxiMstPortStrbWidth-1:0][7:0] mst_data_t;
-  typedef logic [AxiSlvPortStrbWidth-1:0][7:0] slv_data_t;
+  typedef logic [MstPortStrbWidth-1:0][7:0] mst_data_t;
+  typedef logic [SlvPortStrbWidth-1:0][7:0] slv_data_t;
 
   // Address width
-  typedef logic [AxiAddrWidth-1:0] addr_t;
+  typedef logic [AddrWidth-1:0] addr_t;
 
   // ID width
-  typedef logic [AxiIdWidth-1:0] id_t;
+  typedef logic [IdWidth-1:0] id_t;
 
   // Length of burst after upsizing
-  typedef logic [$clog2(AxiMstPortStrbWidth/AxiSlvPortStrbWidth) + 7:0] burst_len_t;
+  typedef logic [$clog2(MstPortStrbWidth/SlvPortStrbWidth) + 7:0] burst_len_t;
 
   // Internal AXI bus
   mst_port_axi_req_t mst_req;
@@ -89,12 +89,12 @@ module axi_dw_upsizer #(
 
   // R
 
-  slv_r_chan_t [AxiMaxReads-1:0] slv_r_tran;
-  logic        [AxiMaxReads-1:0] slv_r_valid_tran;
-  logic        [AxiMaxReads-1:0] slv_r_ready_tran;
+  slv_r_chan_t [MaxReads-1:0] slv_r_tran;
+  logic        [MaxReads-1:0] slv_r_valid_tran;
+  logic        [MaxReads-1:0] slv_r_ready_tran;
 
   rr_arb_tree #(
-    .NumIn    (AxiMaxReads ),
+    .NumIn    (MaxReads    ),
     .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
@@ -113,28 +113,28 @@ module axi_dw_upsizer #(
     .idx_o  (/* Unused */     )
   );
 
-  logic [AxiMaxReads-1:0] mst_r_ready_tran;
+  logic [MaxReads-1:0] mst_r_ready_tran;
   assign mst_req.r_ready = |mst_r_ready_tran;
 
   // AR
 
-  id_t                    arb_slv_ar_id;
-  logic                   arb_slv_ar_req;
-  logic                   arb_slv_ar_gnt;
-  logic [AxiMaxReads-1:0] arb_slv_ar_gnt_tran;
+  id_t                 arb_slv_ar_id;
+  logic                arb_slv_ar_req;
+  logic                arb_slv_ar_gnt;
+  logic [MaxReads-1:0] arb_slv_ar_gnt_tran;
   // Multiplex AR slave between AR and AW for the injection of atomic operations with an R response.
-  logic                   inject_aw_into_ar;
-  logic                   inject_aw_into_ar_req;
-  logic                   inject_aw_into_ar_gnt;
+  logic                inject_aw_into_ar;
+  logic                inject_aw_into_ar_req;
+  logic                inject_aw_into_ar_gnt;
 
   assign arb_slv_ar_gnt = |arb_slv_ar_gnt_tran;
 
   rr_arb_tree #(
-    .NumIn     (2         ),
-    .DataWidth (AxiIdWidth),
-    .ExtPrio   (1'b0      ),
-    .AxiVldRdy (1'b1      ),
-    .LockIn    (1'b0      )
+    .NumIn     (2      ),
+    .DataWidth (IdWidth),
+    .ExtPrio   (1'b0   ),
+    .AxiVldRdy (1'b1   ),
+    .LockIn    (1'b0   )
   ) i_slv_ar_arb (
     .clk_i  (clk_i                                      ),
     .rst_ni (rst_ni                                     ),
@@ -149,18 +149,18 @@ module axi_dw_upsizer #(
     .idx_o  (inject_aw_into_ar                          )
   );
 
-  ar_chan_t [AxiMaxReads-1:0] mst_ar_tran;
-  id_t      [AxiMaxReads-1:0] mst_ar_id;
-  logic     [AxiMaxReads-1:0] mst_ar_valid_tran;
-  logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
-  tran_id_t                   mst_req_idx;
+  ar_chan_t [MaxReads-1:0] mst_ar_tran;
+  id_t      [MaxReads-1:0] mst_ar_id;
+  logic     [MaxReads-1:0] mst_ar_valid_tran;
+  logic     [MaxReads-1:0] mst_ar_ready_tran;
+  tran_id_t                mst_req_idx;
 
   rr_arb_tree #(
-    .NumIn    (AxiMaxReads),
-    .DataType (ar_chan_t  ),
-    .AxiVldRdy(1'b1       ),
-    .ExtPrio  (1'b0       ),
-    .LockIn   (1'b1       )
+    .NumIn    (MaxReads) ,
+    .DataType (ar_chan_t),
+    .AxiVldRdy(1'b1     ),
+    .ExtPrio  (1'b0     ),
+    .LockIn   (1'b1     )
   ) i_mst_ar_arb (
     .clk_i  (clk_i            ),
     .rst_ni (rst_ni           ),
@@ -183,7 +183,7 @@ module axi_dw_upsizer #(
   mst_port_axi_rsp_t axi_err_rsp;
 
   axi_err_slv #(
-    .AxiIdWidth(AxiIdWidth          ),
+    .IdWidth   (IdWidth             ),
     .Resp      (axi_pkg::RESP_SLVERR),
     .axi_req_t (mst_port_axi_req_t  ),
     .axi_rsp_t (mst_port_axi_rsp_t  )
@@ -202,12 +202,12 @@ module axi_dw_upsizer #(
   // Requests can be sent either to the error slave,
   // or to the DWC's master port.
 
-  logic [AxiMaxReads-1:0] mst_req_ar_err;
-  logic                   mst_req_aw_err;
+  logic [MaxReads-1:0] mst_req_ar_err;
+  logic                mst_req_aw_err;
 
   axi_demux #(
-    .AxiIdWidth (AxiIdWidth        ),
-    .AxiLookBits(AxiIdWidth        ),
+    .IdWidth    (IdWidth        ),
+    .LookBits   (IdWidth        ),
     .aw_chan_t  (aw_chan_t         ),
     .w_chan_t   (mst_w_chan_t      ),
     .b_chan_t   (b_chan_t          ),
@@ -216,7 +216,7 @@ module axi_dw_upsizer #(
     .axi_req_t  (mst_port_axi_req_t),
     .axi_rsp_t  (mst_port_axi_rsp_t),
     .NoMstPorts (2                 ),
-    .MaxTrans   (AxiMaxReads       ),
+    .MaxTrans   (MaxReads          ),
     .SpillAw    (1'b1              ) // Required to break dependency between AW and W channels
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
@@ -255,13 +255,13 @@ module axi_dw_upsizer #(
   w_req_t   w_req_d, w_req_q;
 
   // Decide which upsizer will handle the incoming AXI transaction
-  logic     [AxiMaxReads-1:0] idle_read_upsizer;
-  tran_id_t                   idx_ar_upsizer ;
+  logic     [MaxReads-1:0] idle_read_upsizer;
+  tran_id_t                idx_ar_upsizer ;
 
   // Find an idle upsizer to handle this transaction
   tran_id_t idx_idle_upsizer;
   lzc #(
-    .WIDTH(AxiMaxReads)
+    .WIDTH(MaxReads)
   ) i_idle_lzc (
     .in_i   (idle_read_upsizer),
     .cnt_o  (idx_idle_upsizer ),
@@ -269,14 +269,14 @@ module axi_dw_upsizer #(
   );
 
   // Is there already another upsizer handling a transaction with the same id
-  logic     [AxiMaxReads-1:0] id_clash_upsizer;
-  tran_id_t                   idx_id_clash_upsizer ;
-  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_id_clash
+  logic     [MaxReads-1:0] id_clash_upsizer;
+  tran_id_t                idx_id_clash_upsizer ;
+  for (genvar t = 0; t < MaxReads; t++) begin: gen_id_clash
     assign id_clash_upsizer[t] = arb_slv_ar_id == mst_ar_id[t] && !idle_read_upsizer[t];
   end
 
   onehot_to_bin #(
-    .ONEHOT_WIDTH(AxiMaxReads)
+    .ONEHOT_WIDTH(MaxReads)
   ) i_id_clash_onehot_to_bin (
     .onehot(id_clash_upsizer    ),
     .bin   (idx_id_clash_upsizer)
@@ -291,17 +291,17 @@ module axi_dw_upsizer #(
   logic     r_upsizer_valid;
   tran_id_t idx_r_upsizer;
 
-  logic [AxiMaxReads-1:0] rid_upsizer_match;
+  logic [MaxReads-1:0] rid_upsizer_match;
 
   // Is there a upsizer handling this transaction?
   assign r_upsizer_valid = |rid_upsizer_match;
 
-  for (genvar t = 0; t < AxiMaxReads; t++) begin: gen_rid_match
+  for (genvar t = 0; t < MaxReads; t++) begin: gen_rid_match
     assign rid_upsizer_match[t] = (mst_rsp.r.id == mst_ar_id[t]) && !idle_read_upsizer[t];
   end
 
   onehot_to_bin #(
-    .ONEHOT_WIDTH(AxiMaxReads)
+    .ONEHOT_WIDTH(MaxReads)
   ) i_rid_upsizer_lzc (
     .onehot(rid_upsizer_match),
     .bin   (idx_r_upsizer    )
@@ -315,7 +315,7 @@ module axi_dw_upsizer #(
     axi_pkg::size_t orig_ar_size;
   } r_req_t;
 
-  for (genvar t = 0; unsigned'(t) < AxiMaxReads; t++) begin: gen_read_upsizer
+  for (genvar t = 0; unsigned'(t) < MaxReads; t++) begin: gen_read_upsizer
     r_state_e r_state_d, r_state_q;
     r_req_t r_req_d    , r_req_q  ;
 
@@ -388,13 +388,13 @@ module axi_dw_upsizer #(
                     // No need to upsize single-beat transactions.
                     if (r_req_d.ar.len != '0) begin
                       // Evaluate output burst length
-                      automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize);
+                      automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, MstPortMaxSize);
                       automatic addr_t end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr,
                           r_req_d.orig_ar_size, r_req_d.burst_len, r_req_d.ar.burst,
-                          r_req_d.burst_len), AxiMstPortMaxSize);
-                      r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
-                      r_req_d.ar.size = AxiMstPortMaxSize                           ;
-                      r_state_d       = R_INCR_UPSIZE                               ;
+                          r_req_d.burst_len), MstPortMaxSize);
+                      r_req_d.ar.len  = (end_addr - start_addr) >> MstPortMaxSize;
+                      r_req_d.ar.size = MstPortMaxSize                           ;
+                      r_state_d       = R_INCR_UPSIZE                            ;
                     end
                   end
                 end
@@ -446,13 +446,13 @@ module axi_dw_upsizer #(
                 // No need to upsize single-beat transactions.
                 if (r_req_d.ar.len != '0) begin
                   // Evaluate output burst length
-                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize);
+                  automatic addr_t start_addr = aligned_addr(r_req_d.ar.addr, MstPortMaxSize);
                   automatic addr_t end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr,
                       r_req_d.orig_ar_size, r_req_d.burst_len, r_req_d.ar.burst,
-                      r_req_d.burst_len), AxiMstPortMaxSize);
-                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
-                  r_req_d.ar.size = AxiMstPortMaxSize                           ;
-                  r_state_d       = R_INCR_UPSIZE                               ;
+                      r_req_d.burst_len), MstPortMaxSize);
+                  r_req_d.ar.len  = (end_addr - start_addr) >> MstPortMaxSize;
+                  r_req_d.ar.size = MstPortMaxSize                           ;
+                  r_state_d       = R_INCR_UPSIZE                            ;
                 end
               end
             end
@@ -478,18 +478,18 @@ module axi_dw_upsizer #(
           // Request was accepted
           if (!r_req_q.ar_valid)
             if (mst_rsp.r_valid && (idx_r_upsizer == t) && r_upsizer_valid) begin
-              automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-              automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+              automatic addr_t mst_port_offset = MstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(MstPortStrbWidth)-1:0];
+              automatic addr_t slv_port_offset = SlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(SlvPortStrbWidth)-1:0];
 
               // Valid output
               slv_r_valid_tran[t] = 1'b1                                       ;
               slv_r_tran[t].last  = mst_rsp.r.last && (r_req_q.burst_len == 0);
 
               // Lane steering
-              for (int b = 0; b < AxiMstPortStrbWidth; b++) begin
+              for (int b = 0; b < MstPortStrbWidth; b++) begin
                 if ((b >= mst_port_offset) &&
                     (b - mst_port_offset < (1 << r_req_q.orig_ar_size)) &&
-                    (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
+                    (b + slv_port_offset - mst_port_offset < SlvPortStrbWidth)) begin
                   r_data[b + slv_port_offset - mst_port_offset] = mst_rsp.r.data[8*b +: 8];
                 end
               end
@@ -513,7 +513,7 @@ module axi_dw_upsizer #(
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_UPSIZE:
-                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstPortMaxSize)))
+                    if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, MstPortMaxSize) != aligned_addr(r_req_q.ar.addr, MstPortMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
                 endcase
 
@@ -600,14 +600,14 @@ module axi_dw_upsizer #(
           slv_rsp_o.w_ready = ~mst_req.w_valid || mst_rsp.w_ready;
 
           if (slv_req_i.w_valid && slv_rsp_o.w_ready) begin
-            automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-            automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+            automatic addr_t mst_port_offset = MstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(MstPortStrbWidth)-1:0];
+            automatic addr_t slv_port_offset = SlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(SlvPortStrbWidth)-1:0];
 
             // Serialization
-            for (int b = 0; b < AxiMstPortStrbWidth; b++)
+            for (int b = 0; b < MstPortStrbWidth; b++)
               if ((b >= mst_port_offset) &&
                   (b - mst_port_offset < (1 << w_req_q.orig_aw_size)) &&
-                  (b + slv_port_offset - mst_port_offset < AxiSlvPortStrbWidth)) begin
+                  (b + slv_port_offset - mst_port_offset < SlvPortStrbWidth)) begin
                 w_data[b]         = slv_req_i.w.data[8*(b + slv_port_offset - mst_port_offset) +: 8];
                 w_req_d.w.strb[b] = slv_req_i.w.strb[b + slv_port_offset - mst_port_offset]         ;
               end
@@ -633,7 +633,7 @@ module axi_dw_upsizer #(
 
               W_INCR_UPSIZE:
                 // Forward when the burst is finished, or after filling up a word
-                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstPortMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstPortMaxSize)))
+                if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, MstPortMaxSize) != aligned_addr(w_req_q.aw.addr, MstPortMaxSize)))
                   w_req_d.w_valid = 1'b1;
             endcase
           end
@@ -682,14 +682,14 @@ module axi_dw_upsizer #(
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate output burst length
-                automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstPortMaxSize);
+                automatic addr_t start_addr = aligned_addr(slv_req_i.aw.addr, MstPortMaxSize);
                 automatic addr_t end_addr   = aligned_addr(beat_addr(slv_req_i.aw.addr,
                     slv_req_i.aw.size, slv_req_i.aw.len, slv_req_i.aw.burst, slv_req_i.aw.len),
-                    AxiMstPortMaxSize);
+                    MstPortMaxSize);
 
-                w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
-                w_req_d.aw.size = AxiMstPortMaxSize                           ;
-                w_state_d       = W_INCR_UPSIZE                               ;
+                w_req_d.aw.len  = (end_addr - start_addr) >> MstPortMaxSize;
+                w_req_d.aw.size = MstPortMaxSize                           ;
+                w_state_d       = W_INCR_UPSIZE                            ;
               end
           end
 

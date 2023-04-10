@@ -68,7 +68,7 @@ module tb_axi_slave_compare #(
   `AXI_ASSIGN_FROM_RSP(axi, axi_rsp)
 
   axi_slave_compare #(
-    .AxiIdWidth     ( TbIdWidth       ),
+    .IdWidth        ( TbIdWidth       ),
     .FifoDepth      ( 32'd16          ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
     .axi_w_chan_t   ( axi_w_chan_t    ),

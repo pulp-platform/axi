@@ -12,7 +12,7 @@ A block-diagram of the crossbar is shown below:
 
 The crossbar has a configurable number of slave and master ports.
 
-The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports must be `AxiIdWidthSlvPorts + $clog_2(NoSlvPorts)`.
+The ID width of the master ports is wider than that of the slave ports.  The additional ID bits are used by the internal multiplexers to route responses.  The ID width of the master ports must be `IdWidthSlvPorts + $clog_2(NoSlvPorts)`.
 
 
 ## Address Map
@@ -39,20 +39,20 @@ Each slave port can have a default master port.  If the default master port is e
 
 The crossbar is configured through the `Cfg` parameter with a `axi_pkg::xbar_cfg_t` struct.  That struct has the following fields:
 
-| Name                 | Type               | Definition |
-|:---------------------|:-------------------|:-----------|
-| `NoSlvPorts`         | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
-| `NoMstPorts`         | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
-| `MaxMstTrans`        | `int unsigned`     | Each slave port can have at most this many transactions [in flight](../doc#in-flight). |
-| `MaxSlvTrans`        | `int unsigned`     | Each master port can have at most this many transactions per ID [in flight](../doc#in-flight). |
-| `FallThrough`        | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from the AW channel. |
-| `LatencyMode`        | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
-| `AxiIdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
-| `AxiIdUsedSlvPorts`  | `int unsigned`     | The number of slave port ID bits (starting at the least significant) the crossbar uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `AxiIdWidthSlvPorts`. |
-| `UniqueIds`          | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the crossbar.  See the [`axi_demux` documentation](axi_demux#ordering-and-stalls) for details. |
-| `AxiAddrWidth`       | `int unsigned`     | The AXI address width. |
-| `AxiDataWidth`       | `int unsigned`     | The AXI data width. |
-| `NoAddrRules`        | `int unsigned`     | The number of address map rules. |
+| Name              | Type               | Definition |
+|:------------------|:-------------------|:-----------|
+| `NoSlvPorts`      | `int unsigned`     | The number of AXI slave ports of the crossbar (in other words, how many AXI master modules can be attached). |
+| `NoMstPorts`      | `int unsigned`     | The number of AXI master ports of the crossbar (in other words, how many AXI slave modules can be attached). |
+| `MaxMstTrans`     | `int unsigned`     | Each slave port can have at most this many transactions [in flight](../doc#in-flight). |
+| `MaxSlvTrans`     | `int unsigned`     | Each master port can have at most this many transactions per ID [in flight](../doc#in-flight). |
+| `FallThrough`     | `bit`              | Routing decisions on the AW channel fall through to the W channel.  Enabling this allows the crossbar to accept a W beat in the same cycle as the corresponding AW beat, but it increases the combinatorial path of the W channel with logic from the AW channel. |
+| `LatencyMode`     | `enum logic [9:0]` | Latency on the individual channels, defined in detail in section *Pipelining and Latency* below. |
+| `IdWidthSlvPorts` | `int unsigned`     | The AXI ID width of the slave ports. |
+| `IdUsedSlvPorts`  | `int unsigned`     | The number of slave port ID bits (starting at the least significant) the crossbar uses to determine the uniqueness of an AXI ID (see section *Ordering and Stalls* below).  This value has to be less or equal than `IdWidthSlvPorts`. |
+| `UniqueIds`       | `bit`              | If you can guarantee that the ID of each transaction is always unique among all in-flight transactions in the same direction, setting this parameter to `1'b1` simplifies the crossbar.  See the [`axi_demux` documentation](axi_demux#ordering-and-stalls) for details. |
+| `AddrWidth`       | `int unsigned`     | The AXI address width. |
+| `DataWidth`       | `int unsigned`     | The AXI data width. |
+| `NoAddrRules`     | `int unsigned`     | The number of address map rules. |
 
 The other parameters are types to define the ports of the crossbar.  The `*_chan_t` and `*_req_t`/`*_rsp_t` types must be bound in accordance to the configuration with the `AXI_TYPEDEF` macros defined in `axi/typedef.svh`.  The `rule_t` type must be bound to an address decoding rule with the same address width as in the configuration, and `axi_pkg` contains definitions for 64- and 32-bit addresses.
 
@@ -81,7 +81,7 @@ If two crossbars are connected in both directions, meaning both have one of thei
 
 ## Ordering and Stalls
 
-When one slave port receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the crossbar stalls the AR or AW channel of that slave port.  To determine whether two transactions have the same ID, the `AxiIdUsedSlvPorts` least-significant bits are compared.  That parameter can be set to the full `AxiIdWidthSlvPorts` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
+When one slave port receives two transactions with the same ID and direction (i.e., both read or both write) but targeting two different master ports, it will not accept the second transaction until the first has completed.  During this time, the crossbar stalls the AR or AW channel of that slave port.  To determine whether two transactions have the same ID, the `IdUsedSlvPorts` least-significant bits are compared.  That parameter can be set to the full `IdWidthSlvPorts` to avoid false ID conflicts, or it can be set to a lower value to reduce area and delay at the cost of more false conflicts.
 
 The reason for this ordering constraint is that AXI transactions with the same ID and direction must remain ordered.  If this crossbar would forward both transactions described above, the second master port could get a response before the first one, and the crossbar would have to reorder the responses before returning them on the master port.  However, for efficiency reasons, this crossbar does not have reorder buffers.
 

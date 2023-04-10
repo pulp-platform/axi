@@ -19,11 +19,11 @@
 
 package tb_axi_xbar_pkg;
   class axi_xbar_monitor #(
-    parameter int unsigned AxiAddrWidth,
-    parameter int unsigned AxiDataWidth,
-    parameter int unsigned AxiIdWidthMasters,
-    parameter int unsigned AxiIdWidthSlaves,
-    parameter int unsigned AxiUserWidth,
+    parameter int unsigned AddrWidth,
+    parameter int unsigned DataWidth,
+    parameter int unsigned IdWidthMasters,
+    parameter int unsigned IdWidthSlaves,
+    parameter int unsigned UserWidth,
     parameter int unsigned NoMasters,
     parameter int unsigned NoSlaves,
     parameter int unsigned NoAddrRules,
@@ -32,9 +32,9 @@ package tb_axi_xbar_pkg;
       // Stimuli application and test time
     parameter time  TimeTest
   );
-    typedef logic [AxiIdWidthMasters-1:0] mst_axi_id_t;
-    typedef logic [AxiIdWidthSlaves-1:0]  slv_axi_id_t;
-    typedef logic [AxiAddrWidth-1:0]      axi_addr_t;
+    typedef logic [IdWidthMasters-1:0] mst_axi_id_t;
+    typedef logic [IdWidthSlaves-1:0]  slv_axi_id_t;
+    typedef logic [AddrWidth-1:0]      axi_addr_t;
 
     typedef logic [$clog2(NoMasters)-1:0] idx_mst_t;
     typedef int unsigned                  idx_slv_t; // from rule_t
@@ -54,33 +54,33 @@ package tb_axi_xbar_pkg;
     } slave_exp_t;
 
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( master_exp_t      ),
-      .ID_WIDTH ( AxiIdWidthMasters )
+      .data_t   ( master_exp_t   ),
+      .ID_WIDTH ( IdWidthMasters )
     ) master_exp_queue_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( exp_ax_t         ),
-      .ID_WIDTH ( AxiIdWidthSlaves )
+      .data_t   ( exp_ax_t      ),
+      .ID_WIDTH ( IdWidthSlaves )
     ) ax_queue_t;
 
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( slave_exp_t      ),
-      .ID_WIDTH ( AxiIdWidthSlaves )
+      .data_t   ( slave_exp_t   ),
+      .ID_WIDTH ( IdWidthSlaves )
     ) slave_exp_queue_t;
 
     //-----------------------------------------
     // Monitoring virtual interfaces
     //-----------------------------------------
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-      .AXI_DATA_WIDTH ( AxiDataWidth      ),
-      .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
-      .AXI_USER_WIDTH ( AxiUserWidth      )
+      .AXI_ADDR_WIDTH ( AddrWidth      ),
+      .AXI_DATA_WIDTH ( DataWidth      ),
+      .AXI_ID_WIDTH   ( IdWidthMasters ),
+      .AXI_USER_WIDTH ( UserWidth      )
     ) masters_axi [NoMasters-1:0];
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-      .AXI_DATA_WIDTH ( AxiDataWidth      ),
-      .AXI_ID_WIDTH   ( AxiIdWidthSlaves  ),
-      .AXI_USER_WIDTH ( AxiUserWidth      )
+      .AXI_ADDR_WIDTH ( AddrWidth      ),
+      .AXI_DATA_WIDTH ( DataWidth      ),
+      .AXI_ID_WIDTH   ( IdWidthSlaves  ),
+      .AXI_USER_WIDTH ( UserWidth      )
     ) slaves_axi [NoSlaves-1:0];
     //-----------------------------------------
     // Queues and FIFOs to hold the expected ids
@@ -108,16 +108,16 @@ package tb_axi_xbar_pkg;
     //-----------------------------------------
     function new(
       virtual AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-        .AXI_DATA_WIDTH ( AxiDataWidth      ),
-        .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
-        .AXI_USER_WIDTH ( AxiUserWidth      )
+        .AXI_ADDR_WIDTH ( AddrWidth      ),
+        .AXI_DATA_WIDTH ( DataWidth      ),
+        .AXI_ID_WIDTH   ( IdWidthMasters ),
+        .AXI_USER_WIDTH ( UserWidth      )
       ) axi_masters_vif [NoMasters-1:0],
       virtual AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-        .AXI_DATA_WIDTH ( AxiDataWidth      ),
-        .AXI_ID_WIDTH   ( AxiIdWidthSlaves  ),
-        .AXI_USER_WIDTH ( AxiUserWidth      )
+        .AXI_ADDR_WIDTH ( AddrWidth      ),
+        .AXI_DATA_WIDTH ( DataWidth      ),
+        .AXI_ID_WIDTH   ( IdWidthSlaves  ),
+        .AXI_USER_WIDTH ( UserWidth      )
       ) axi_slaves_vif [NoSlaves-1:0]
     );
       begin

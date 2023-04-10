@@ -16,17 +16,17 @@
 
 /// An AXI4+ATOP to AXI4-Lite converter with atomic transaction and burst support.
 module axi_to_axi_lite #(
-  parameter int unsigned AxiAddrWidth    = 32'd0,
-  parameter int unsigned AxiDataWidth    = 32'd0,
-  parameter int unsigned AxiIdWidth      = 32'd0,
-  parameter int unsigned AxiUserWidth    = 32'd0,
-  parameter int unsigned AxiMaxWriteTxns = 32'd0,
-  parameter int unsigned AxiMaxReadTxns  = 32'd0,
-  parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
-  parameter type         axi_req_t       = logic,
-  parameter type         axi_rsp_t       = logic,
-  parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_rsp_t  = logic
+  parameter int unsigned AddrWidth      = 32'd0,
+  parameter int unsigned DataWidth      = 32'd0,
+  parameter int unsigned IdWidth        = 32'd0,
+  parameter int unsigned UserWidth      = 32'd0,
+  parameter int unsigned MaxWriteTxns   = 32'd0,
+  parameter int unsigned MaxReadTxns    = 32'd0,
+  parameter bit          FallThrough    = 1'b1,  // FIFOs in Fall through mode in ID reflect
+  parameter type         axi_req_t      = logic,
+  parameter type         axi_rsp_t      = logic,
+  parameter type         axi_lite_req_t = logic,
+  parameter type         axi_lite_rsp_t = logic
 ) (
   input  logic          clk_i,    // Clock
   input  logic          rst_ni,   // Asynchronous reset active low
@@ -44,10 +44,10 @@ module axi_to_axi_lite #(
 
   // atomics adapter so that atomics can be resolved
   axi_atop_filter #(
-    .AxiIdWidth      ( AxiIdWidth      ),
-    .AxiMaxWriteTxns ( AxiMaxWriteTxns ),
-    .axi_req_t       ( axi_req_t       ),
-    .axi_rsp_t       ( axi_rsp_t       )
+    .IdWidth      ( IdWidth      ),
+    .MaxWriteTxns ( MaxWriteTxns ),
+    .axi_req_t    ( axi_req_t    ),
+    .axi_rsp_t    ( axi_rsp_t    )
   ) i_axi_atop_filter(
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -59,14 +59,14 @@ module axi_to_axi_lite #(
 
   // burst splitter so that the id reflect module has no burst accessing it
   axi_burst_splitter #(
-    .MaxReadTxns  ( AxiMaxReadTxns  ),
-    .MaxWriteTxns ( AxiMaxWriteTxns ),
-    .AddrWidth    ( AxiAddrWidth    ),
-    .DataWidth    ( AxiDataWidth    ),
-    .IdWidth      ( AxiIdWidth      ),
-    .UserWidth    ( AxiUserWidth    ),
-    .axi_req_t    ( axi_req_t       ),
-    .axi_rsp_t    ( axi_rsp_t       )
+    .MaxReadTxns  ( MaxReadTxns  ),
+    .MaxWriteTxns ( MaxWriteTxns ),
+    .AddrWidth    ( AddrWidth    ),
+    .DataWidth    ( DataWidth    ),
+    .IdWidth      ( IdWidth      ),
+    .UserWidth    ( UserWidth    ),
+    .axi_req_t    ( axi_req_t    ),
+    .axi_rsp_t    ( axi_rsp_t    )
   ) i_axi_burst_splitter (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -78,14 +78,14 @@ module axi_to_axi_lite #(
 
   // ID reflect module handles the conversion from the full AXI to AXI lite on the wireing
   axi_to_axi_lite_id_reflect #(
-    .AxiIdWidth      ( AxiIdWidth      ),
-    .AxiMaxWriteTxns ( AxiMaxWriteTxns ),
-    .AxiMaxReadTxns  ( AxiMaxReadTxns  ),
-    .FallThrough     ( FallThrough     ),
-    .axi_req_t       ( axi_req_t       ),
-    .axi_rsp_t       ( axi_rsp_t       ),
-    .axi_lite_req_t  ( axi_lite_req_t  ),
-    .axi_lite_rsp_t  ( axi_lite_rsp_t  )
+    .IdWidth        ( IdWidth        ),
+    .MaxWriteTxns   ( MaxWriteTxns   ),
+    .MaxReadTxns    ( MaxReadTxns    ),
+    .FallThrough    ( FallThrough    ),
+    .axi_req_t      ( axi_req_t      ),
+    .axi_rsp_t      ( axi_rsp_t      ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t )
   ) i_axi_to_axi_lite_id_reflect (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -100,9 +100,9 @@ module axi_to_axi_lite #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assume (AxiIdWidth   > 0) else $fatal(1, "AXI ID width has to be > 0");
-    assume (AxiAddrWidth > 0) else $fatal(1, "AXI address width has to be > 0");
-    assume (AxiDataWidth > 0) else $fatal(1, "AXI data width has to be > 0");
+    assume (IdWidth   > 0) else $fatal(1, "AXI ID width has to be > 0");
+    assume (AddrWidth > 0) else $fatal(1, "AXI address width has to be > 0");
+    assume (DataWidth > 0) else $fatal(1, "AXI data width has to be > 0");
   end
   `endif
   // pragma translate_on
@@ -114,14 +114,14 @@ endmodule
 //              `axi_pkg::len_t` of `'0` and an `axi_pkg::atop_t` of `'0`.
 
 module axi_to_axi_lite_id_reflect #(
-  parameter int unsigned AxiIdWidth      = 32'd0,
-  parameter int unsigned AxiMaxWriteTxns = 32'd0,
-  parameter int unsigned AxiMaxReadTxns  = 32'd0,
-  parameter bit          FallThrough     = 1'b1,  // FIFOs in fall through mode
-  parameter type         axi_req_t       = logic,
-  parameter type         axi_rsp_t       = logic,
-  parameter type         axi_lite_req_t  = logic,
-  parameter type         axi_lite_rsp_t  = logic
+  parameter int unsigned IdWidth        = 32'd0,
+  parameter int unsigned MaxWriteTxns   = 32'd0,
+  parameter int unsigned MaxReadTxns    = 32'd0,
+  parameter bit          FallThrough    = 1'b1,  // FIFOs in fall through mode
+  parameter type         axi_req_t      = logic,
+  parameter type         axi_rsp_t      = logic,
+  parameter type         axi_lite_req_t = logic,
+  parameter type         axi_lite_rsp_t = logic
 ) (
   input  logic          clk_i,    // Clock
   input  logic          rst_ni,   // Asynchronous reset active low
@@ -133,7 +133,7 @@ module axi_to_axi_lite_id_reflect #(
   output axi_lite_req_t mst_req_o,
   input  axi_lite_rsp_t mst_rsp_i
 );
-  typedef logic [AxiIdWidth-1:0] id_t;
+  typedef logic [IdWidth-1:0] id_t;
 
   // FIFO status and control signals
   logic aw_full, aw_empty, aw_push, aw_pop, ar_full, ar_empty, ar_push, ar_pop;
@@ -164,9 +164,9 @@ module axi_to_axi_lite_id_reflect #(
   assign aw_push = mst_req_o.aw_valid & slv_rsp_o.aw_ready;
   assign aw_pop  = slv_rsp_o.b_valid & mst_req_o.b_ready;
   fifo_v3 #(
-    .FALL_THROUGH ( FallThrough     ),
-    .DEPTH        ( AxiMaxWriteTxns ),
-    .dtype        ( id_t            )
+    .FALL_THROUGH ( FallThrough  ),
+    .DEPTH        ( MaxWriteTxns ),
+    .dtype        ( id_t         )
   ) i_aw_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
@@ -185,9 +185,9 @@ module axi_to_axi_lite_id_reflect #(
   assign ar_push = mst_req_o.ar_valid & slv_rsp_o.ar_ready;
   assign ar_pop  = slv_rsp_o.r_valid & mst_req_o.r_ready;
   fifo_v3 #(
-    .FALL_THROUGH ( FallThrough    ),
-    .DEPTH        ( AxiMaxReadTxns ),
-    .dtype        ( id_t           )
+    .FALL_THROUGH ( FallThrough ),
+    .DEPTH        ( MaxReadTxns ),
+    .dtype        ( id_t        )
   ) i_ar_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
@@ -297,17 +297,17 @@ module axi_to_axi_lite_intf #(
   `AXI_LITE_ASSIGN_TO_RSP(lite_rsp, mst)
 
   axi_to_axi_lite #(
-    .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),
-    .AxiDataWidth    ( AXI_DATA_WIDTH     ),
-    .AxiIdWidth      ( AXI_ID_WIDTH       ),
-    .AxiUserWidth    ( AXI_USER_WIDTH     ),
-    .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
-    .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),
-    .FallThrough     ( FALL_THROUGH       ),  // FIFOs in Fall through mode in ID reflect
-    .axi_req_t       ( axi_req_t          ),
-    .axi_rsp_t       ( axi_rsp_t          ),
-    .axi_lite_req_t  ( axi_lite_req_t     ),
-    .axi_lite_rsp_t  ( axi_lite_rsp_t     )
+    .AddrWidth      ( AXI_ADDR_WIDTH     ),
+    .DataWidth      ( AXI_DATA_WIDTH     ),
+    .IdWidth        ( AXI_ID_WIDTH       ),
+    .UserWidth      ( AXI_USER_WIDTH     ),
+    .MaxWriteTxns   ( AXI_MAX_WRITE_TXNS ),
+    .MaxReadTxns    ( AXI_MAX_READ_TXNS  ),
+    .FallThrough    ( FALL_THROUGH       ),  // FIFOs in Fall through mode in ID reflect
+    .axi_req_t      ( axi_req_t          ),
+    .axi_rsp_t      ( axi_rsp_t          ),
+    .axi_lite_req_t ( axi_lite_req_t     ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t     )
   ) i_axi_to_axi_lite (
     .clk_i     ( clk_i      ),
     .rst_ni    ( rst_ni     ),

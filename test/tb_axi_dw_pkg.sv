@@ -28,28 +28,28 @@ package tb_axi_dw_pkg       ;
    ****************/
 
   class axi_dw_monitor #(
-      parameter int unsigned AxiAddrWidth       ,
-      parameter int unsigned AxiSlvPortDataWidth,
-      parameter int unsigned AxiMstPortDataWidth,
-      parameter int unsigned AxiIdWidth         ,
-      parameter int unsigned AxiUserWidth       ,
+      parameter int unsigned AddrWidth       ,
+      parameter int unsigned SlvPortDataWidth,
+      parameter int unsigned MstPortDataWidth,
+      parameter int unsigned IdWidth         ,
+      parameter int unsigned UserWidth       ,
       // Stimuli application and test time
       parameter time TimeTest
     );
 
-    localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
-    localparam AxiMstPortStrbWidth = AxiMstPortDataWidth / 8;
+    localparam SlvPortStrbWidth = SlvPortDataWidth / 8;
+    localparam MstPortStrbWidth = MstPortDataWidth / 8;
 
-    localparam AxiSlvPortMaxSize = $clog2(AxiSlvPortStrbWidth);
-    localparam AxiMstPortMaxSize = $clog2(AxiMstPortStrbWidth);
+    localparam SlvPortMaxSize = $clog2(SlvPortStrbWidth);
+    localparam MstPortMaxSize = $clog2(MstPortStrbWidth);
 
-    typedef logic [AxiIdWidth-1:0] axi_id_t    ;
-    typedef logic [AxiAddrWidth-1:0] axi_addr_t;
+    typedef logic [IdWidth-1:0] axi_id_t    ;
+    typedef logic [AddrWidth-1:0] axi_addr_t;
 
-    typedef logic [AxiSlvPortDataWidth-1:0] slv_port_data_t;
-    typedef logic [AxiSlvPortStrbWidth-1:0] slv_port_strb_t;
-    typedef logic [AxiMstPortDataWidth-1:0] mst_port_data_t;
-    typedef logic [AxiMstPortStrbWidth-1:0] mst_port_strb_t;
+    typedef logic [SlvPortDataWidth-1:0] slv_port_data_t;
+    typedef logic [SlvPortStrbWidth-1:0] slv_port_strb_t;
+    typedef logic [MstPortDataWidth-1:0] mst_port_data_t;
+    typedef logic [MstPortStrbWidth-1:0] mst_port_strb_t;
 
     typedef struct packed {
       axi_id_t axi_id;
@@ -77,20 +77,20 @@ package tb_axi_dw_pkg       ;
     } exp_ax_t;
 
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_ax_t  ),
-      .ID_WIDTH(AxiIdWidth)
+      .data_t  (exp_ax_t),
+      .ID_WIDTH(IdWidth )
     ) ax_queue_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_b_t   ),
-      .ID_WIDTH(AxiIdWidth)
+      .data_t  (exp_b_t),
+      .ID_WIDTH(IdWidth)
     ) b_queue_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_slv_rw_t ),
-      .ID_WIDTH(AxiIdWidth   )
+      .data_t  (exp_slv_rw_t),
+      .ID_WIDTH(IdWidth     )
     ) slv_r_queue_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t  (exp_mst_rw_t ),
-      .ID_WIDTH(AxiIdWidth   )
+      .data_t  (exp_mst_rw_t),
+      .ID_WIDTH(IdWidth     )
     ) mst_r_queue_t;
 
     /**********************
@@ -115,16 +115,16 @@ package tb_axi_dw_pkg       ;
      ************************/
 
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-      .AXI_DATA_WIDTH(AxiSlvPortDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth         ),
-      .AXI_USER_WIDTH(AxiUserWidth       )
+      .AXI_ADDR_WIDTH(AddrWidth       ),
+      .AXI_DATA_WIDTH(SlvPortDataWidth),
+      .AXI_ID_WIDTH  (IdWidth         ),
+      .AXI_USER_WIDTH(UserWidth       )
     ) slv_port_axi;
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-      .AXI_DATA_WIDTH(AxiMstPortDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth         ),
-      .AXI_USER_WIDTH(AxiUserWidth       )
+      .AXI_ADDR_WIDTH(AddrWidth       ),
+      .AXI_DATA_WIDTH(MstPortDataWidth),
+      .AXI_ID_WIDTH  (IdWidth         ),
+      .AXI_USER_WIDTH(UserWidth       )
     ) mst_port_axi;
 
     /*****************
@@ -160,16 +160,16 @@ package tb_axi_dw_pkg       ;
 
     function new (
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiSlvPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(SlvPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) slv_port_vif,
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiMstPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(MstPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) mst_port_vif
       );
       begin
@@ -274,7 +274,7 @@ package tb_axi_dw_pkg       ;
 
       if (slv_port_axi.w_valid && slv_port_axi.w_ready)
         this.act_slv_port_w_queue.push_back('{
-            axi_id  : {AxiIdWidth{1'b?}} ,
+            axi_id  : {IdWidth{1'b?}}    ,
             axi_data: slv_port_axi.w_data,
             axi_strb: slv_port_axi.w_strb,
             axi_last: slv_port_axi.w_last
@@ -282,9 +282,9 @@ package tb_axi_dw_pkg       ;
 
       if (slv_port_axi.r_valid && slv_port_axi.r_ready)
         this.act_slv_port_r_queue.push_back('{
-            axi_id  : slv_port_axi.r_id          ,
-            axi_data: slv_port_axi.r_data        ,
-            axi_strb: {AxiSlvPortStrbWidth{1'b?}},
+            axi_id  : slv_port_axi.r_id       ,
+            axi_data: slv_port_axi.r_data     ,
+            axi_strb: {SlvPortStrbWidth{1'b?}},
             axi_last: slv_port_axi.r_last
           });
 
@@ -325,7 +325,7 @@ package tb_axi_dw_pkg       ;
 
       if (mst_port_axi.w_valid && mst_port_axi.w_ready)
         this.act_mst_port_w_queue.push_back('{
-            axi_id  : {AxiIdWidth{1'b?}} ,
+            axi_id  : {IdWidth{1'b?}}    ,
             axi_data: mst_port_axi.w_data,
             axi_strb: mst_port_axi.w_strb,
             axi_last: mst_port_axi.w_last
@@ -571,20 +571,20 @@ package tb_axi_dw_pkg       ;
    *************/
 
   class axi_dw_upsizer_monitor #(
-      parameter int unsigned AxiAddrWidth       ,
-      parameter int unsigned AxiSlvPortDataWidth,
-      parameter int unsigned AxiMstPortDataWidth,
-      parameter int unsigned AxiIdWidth         ,
-      parameter int unsigned AxiUserWidth       ,
+      parameter int unsigned AddrWidth       ,
+      parameter int unsigned SlvPortDataWidth,
+      parameter int unsigned MstPortDataWidth,
+      parameter int unsigned IdWidth         ,
+      parameter int unsigned UserWidth       ,
       // Stimuli application and test time
       parameter time TimeTest
     ) extends axi_dw_monitor #(
-      .AxiAddrWidth       (AxiAddrWidth       ),
-      .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
-      .AxiMstPortDataWidth(AxiMstPortDataWidth),
-      .AxiIdWidth         (AxiIdWidth         ),
-      .AxiUserWidth       (AxiUserWidth       ),
-      .TimeTest           (TimeTest           )
+      .AddrWidth       (AddrWidth       ),
+      .SlvPortDataWidth(SlvPortDataWidth),
+      .MstPortDataWidth(MstPortDataWidth),
+      .IdWidth         (IdWidth         ),
+      .UserWidth       (UserWidth       ),
+      .TimeTest        (TimeTest        )
     );
 
     local static shortint unsigned slv_port_r_cnt[axi_id_t];
@@ -600,16 +600,16 @@ package tb_axi_dw_pkg       ;
 
     function new (
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiSlvPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(SlvPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) slv_port_vif,
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiMstPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(MstPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) mst_port_vif
       );
       begin
@@ -618,7 +618,7 @@ package tb_axi_dw_pkg       ;
         mst_port_w_cnt = '0;
         mst_port_w_pnt = '1;
         mst_port_w     = '0;
-        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+        for (int unsigned id = 0; id < 2**IdWidth; id++) begin
           slv_port_r_cnt[id] = '0;
           mst_port_r_cnt[id] = '0;
         end
@@ -661,15 +661,15 @@ package tb_axi_dw_pkg       ;
             end
             // INCR upsize
             axi_pkg::BURST_INCR: begin
-              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(slv_port_axi.aw_addr, AxiMstPortMaxSize)                                                                                                        ;
-              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, slv_port_axi.aw_size) + (unsigned'(slv_port_axi.aw_len) << slv_port_axi.aw_size), AxiMstPortMaxSize);
+              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(slv_port_axi.aw_addr, MstPortMaxSize)                                                                                                        ;
+              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, slv_port_axi.aw_size) + (unsigned'(slv_port_axi.aw_len) << slv_port_axi.aw_size), MstPortMaxSize);
 
               exp_aw = '{
-                axi_id   : slv_port_axi.aw_id                                 ,
-                axi_addr : slv_port_axi.aw_addr                               ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize ,
-                axi_burst: slv_port_axi.aw_burst                              ,
-                axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size : AxiMstPortMaxSize,
+                axi_id   : slv_port_axi.aw_id                              ,
+                axi_addr : slv_port_axi.aw_addr                            ,
+                axi_len  : (aligned_end - aligned_start) >> MstPortMaxSize ,
+                axi_burst: slv_port_axi.aw_burst                           ,
+                axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size : MstPortMaxSize,
                 axi_cache: slv_port_axi.aw_cache
               };
             end
@@ -706,13 +706,13 @@ package tb_axi_dw_pkg       ;
 
           // Calculate the offsets
           shortint unsigned mst_port_lower_byte =
-          axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+          axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, MstPortStrbWidth, mst_port_w_cnt);
           shortint unsigned mst_port_upper_byte =
-          axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+          axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, MstPortStrbWidth, mst_port_w_cnt);
           shortint unsigned slv_port_lower_byte =
-          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, SlvPortStrbWidth, slv_port_w_cnt);
           shortint unsigned slv_port_upper_byte =
-          axi_pkg::beat_upper_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+          axi_pkg::beat_upper_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, SlvPortStrbWidth, slv_port_w_cnt);
 
           shortint unsigned bytes_copied = 0;
           // Pointer inside the outcoming word
@@ -721,7 +721,7 @@ package tb_axi_dw_pkg       ;
 
           mst_port_w.axi_last = mst_port_w_cnt == act_mst_aw.axi_len;
           for (shortint unsigned b = slv_port_lower_byte; b <= slv_port_upper_byte; b++) begin
-            if (b + mst_port_w_pnt - slv_port_lower_byte == AxiMstPortStrbWidth)
+            if (b + mst_port_w_pnt - slv_port_lower_byte == MstPortStrbWidth)
               break;
             mst_port_w.axi_data[8*(b + mst_port_w_pnt - slv_port_lower_byte) +: 8] = act_slv_w.axi_data[8*b +: 8];
             mst_port_w.axi_strb[b + mst_port_w_pnt - slv_port_lower_byte]          = act_slv_w.axi_strb[b]       ;
@@ -733,11 +733,11 @@ package tb_axi_dw_pkg       ;
           mst_port_w_pnt += bytes_copied;
 
           if (act_mst_aw.axi_burst == axi_pkg::BURST_FIXED // No upsizing
-              || mst_port_w_pnt == AxiMstPortStrbWidth     // Filled up an outcoming W beat
+              || mst_port_w_pnt == MstPortStrbWidth        // Filled up an outcoming W beat
               || act_slv_w.axi_last                        // Last beat of a W burst
             ) begin
             // Don't care for the bits outside these accessed by this request
-            for (int unsigned b = 0; b < AxiMstPortStrbWidth; b++)
+            for (int unsigned b = 0; b < MstPortStrbWidth; b++)
               if (!(mst_port_lower_byte <= b && b <= mst_port_upper_byte))
                 mst_port_w.axi_data[8*b +: 8] = {8{1'b?}};
 
@@ -801,15 +801,15 @@ package tb_axi_dw_pkg       ;
             end
             // INCR upsize
             axi_pkg::BURST_INCR: begin
-              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(slv_port_axi.ar_addr, AxiMstPortMaxSize)                                                                                                        ;
-              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, slv_port_axi.ar_size) + (unsigned'(slv_port_axi.ar_len) << slv_port_axi.ar_size), AxiMstPortMaxSize);
+              automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(slv_port_axi.ar_addr, MstPortMaxSize)                                                                                                        ;
+              automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, slv_port_axi.ar_size) + (unsigned'(slv_port_axi.ar_len) << slv_port_axi.ar_size), MstPortMaxSize);
 
               exp_slv_ar = '{
-                axi_id   : slv_port_axi.ar_id                                 ,
-                axi_addr : slv_port_axi.ar_addr                               ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize ,
-                axi_burst: slv_port_axi.ar_burst                              ,
-                axi_size : slv_port_axi.ar_len == 0 ? slv_port_axi.ar_size : AxiMstPortMaxSize,
+                axi_id   : slv_port_axi.ar_id                              ,
+                axi_addr : slv_port_axi.ar_addr                            ,
+                axi_len  : (aligned_end - aligned_start) >> MstPortMaxSize ,
+                axi_burst: slv_port_axi.ar_burst                           ,
+                axi_size : slv_port_axi.ar_len == 0 ? slv_port_axi.ar_size : MstPortMaxSize,
                 axi_cache: slv_port_axi.ar_cache
               };
             end
@@ -836,9 +836,9 @@ package tb_axi_dw_pkg       ;
 
         // Calculate the offsets inside the incoming word
         shortint unsigned mst_port_lower_byte =
-        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, MstPortStrbWidth, mst_port_r_cnt[id]);
         shortint unsigned mst_port_upper_byte =
-        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, MstPortStrbWidth, mst_port_r_cnt[id]);
         // Pointer inside the incoming word
         shortint unsigned mst_port_data_pointer = mst_port_lower_byte;
 
@@ -851,16 +851,16 @@ package tb_axi_dw_pkg       ;
 
           // Calculate the offsets inside the outcoming word
           shortint unsigned slv_port_lower_byte =
-          axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+          axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, SlvPortStrbWidth, slv_port_r_cnt[id]);
           shortint unsigned slv_port_upper_byte =
-          axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+          axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, SlvPortStrbWidth, slv_port_r_cnt[id]);
 
           shortint unsigned bytes_copied = 0;
 
           act_slv_r.axi_id   = mst_port_axi.r_id                       ;
           act_slv_r.axi_last = slv_port_r_cnt[id] == act_slv_ar.axi_len;
-          act_slv_r.axi_data = {AxiSlvPortDataWidth{1'b?}}             ;
-          act_slv_r.axi_strb = {AxiSlvPortStrbWidth{1'b?}}             ;
+          act_slv_r.axi_data = {SlvPortDataWidth{1'b?}}                ;
+          act_slv_r.axi_strb = {SlvPortStrbWidth{1'b?}}                ;
           for (shortint unsigned b = mst_port_data_pointer; b <= mst_port_upper_byte; b++) begin
             act_slv_r.axi_data[8*(b + slv_port_lower_byte - mst_port_data_pointer) +: 8] = mst_port_axi.r_data[8*b +: 8];
             bytes_copied++;
@@ -875,7 +875,7 @@ package tb_axi_dw_pkg       ;
           mst_port_data_pointer += bytes_copied;
 
           // Used the whole R beat
-          if (mst_port_data_pointer == AxiMstPortStrbWidth)
+          if (mst_port_data_pointer == MstPortStrbWidth)
             break;
           // Finished the R beat
           if (act_slv_r.axi_last)
@@ -903,20 +903,20 @@ package tb_axi_dw_pkg       ;
    ***************/
 
   class axi_dw_downsizer_monitor #(
-      parameter int unsigned AxiAddrWidth       ,
-      parameter int unsigned AxiSlvPortDataWidth,
-      parameter int unsigned AxiMstPortDataWidth,
-      parameter int unsigned AxiIdWidth         ,
-      parameter int unsigned AxiUserWidth       ,
+      parameter int unsigned AddrWidth       ,
+      parameter int unsigned SlvPortDataWidth,
+      parameter int unsigned MstPortDataWidth,
+      parameter int unsigned IdWidth         ,
+      parameter int unsigned UserWidth       ,
       // Stimuli application and test time
       parameter time TimeTest
     ) extends axi_dw_monitor #(
-      .AxiAddrWidth       (AxiAddrWidth       ),
-      .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
-      .AxiMstPortDataWidth(AxiMstPortDataWidth),
-      .AxiIdWidth         (AxiIdWidth         ),
-      .AxiUserWidth       (AxiUserWidth       ),
-      .TimeTest           (TimeTest           )
+      .AddrWidth       (AddrWidth       ),
+      .SlvPortDataWidth(SlvPortDataWidth),
+      .MstPortDataWidth(MstPortDataWidth),
+      .IdWidth         (IdWidth         ),
+      .UserWidth       (UserWidth       ),
+      .TimeTest        (TimeTest        )
     );
 
     local static shortint unsigned slv_port_r_cnt[axi_id_t];
@@ -934,8 +934,8 @@ package tb_axi_dw_pkg       ;
      * Returns how many beats of the incoming AXI transaction will be dropped after downsizing
      * due to an unaligned memory address.
      */
-    function automatic len_t aligned_adjustment(axi_addr_t addr, axi_pkg::size_t size)                     ;
-      return (addr & size_mask(size) & ~size_mask(AxiMstPortMaxSize))/axi_pkg::num_bytes(AxiMstPortMaxSize);
+    function automatic len_t aligned_adjustment(axi_addr_t addr, axi_pkg::size_t size)               ;
+      return (addr & size_mask(size) & ~size_mask(MstPortMaxSize))/axi_pkg::num_bytes(MstPortMaxSize);
     endfunction: aligned_adjustment
 
     /*****************
@@ -944,16 +944,16 @@ package tb_axi_dw_pkg       ;
 
     function new (
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiSlvPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(SlvPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) slv_port_vif,
         virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AxiAddrWidth       ),
-          .AXI_DATA_WIDTH(AxiMstPortDataWidth),
-          .AXI_ID_WIDTH  (AxiIdWidth         ),
-          .AXI_USER_WIDTH(AxiUserWidth       )
+          .AXI_ADDR_WIDTH(AddrWidth       ),
+          .AXI_DATA_WIDTH(MstPortDataWidth),
+          .AXI_ID_WIDTH  (IdWidth         ),
+          .AXI_USER_WIDTH(UserWidth       )
         ) mst_port_vif
       );
       begin
@@ -961,7 +961,7 @@ package tb_axi_dw_pkg       ;
 
         slv_port_w_cnt = 0;
         mst_port_w_cnt = 0;
-        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+        for (int unsigned id = 0; id < 2**IdWidth; id++) begin
           slv_port_r_cnt[id] = '0;
           mst_port_r_cnt[id] = '0;
           slv_port_r[id]     = '0;
@@ -981,7 +981,7 @@ package tb_axi_dw_pkg       ;
         case (slv_port_axi.aw_burst)
           axi_pkg::BURST_INCR: begin
             // Transaction unchanged
-            if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) == 1) begin
+            if (conv_ratio(slv_port_axi.aw_size, MstPortMaxSize) == 1) begin
               exp_aw = '{
                 axi_id   : slv_port_axi.aw_id   ,
                 axi_addr : slv_port_axi.aw_addr ,
@@ -996,7 +996,7 @@ package tb_axi_dw_pkg       ;
             end
             // INCR downsize
             else begin
-              automatic int unsigned num_beats = (slv_port_axi.aw_len + 1) * conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size);
+              automatic int unsigned num_beats = (slv_port_axi.aw_len + 1) * conv_ratio(slv_port_axi.aw_size, MstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size);
               // One burst
               if (num_beats <= 256) begin
                 exp_aw = '{
@@ -1004,7 +1004,7 @@ package tb_axi_dw_pkg       ;
                   axi_addr : slv_port_axi.aw_addr ,
                   axi_len  : num_beats - 1        ,
                   axi_burst: slv_port_axi.aw_burst,
-                  axi_size : AxiMstPortMaxSize    ,
+                  axi_size : MstPortMaxSize       ,
                   axi_cache: slv_port_axi.aw_cache
                 };
 
@@ -1023,15 +1023,15 @@ package tb_axi_dw_pkg       ;
                   axi_addr : slv_port_axi.aw_addr ,
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.aw_burst,
-                  axi_size : AxiMstPortMaxSize    ,
+                  axi_size : MstPortMaxSize       ,
                   axi_cache: slv_port_axi.aw_cache
                 }                                                          ;
                 this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
                 incr_expected_tests(6)                                     ;
 
                 // Push the other bursts in a loop
-                num_beats  = num_beats - burst_len - 1                                                                                                                         ;
-                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, AxiMstPortMaxSize), AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
+                num_beats  = num_beats - burst_len - 1                                                                                                                   ;
+                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, MstPortMaxSize), MstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 while (num_beats != 0) begin
                   burst_len  = num_beats >= 256 ? 255 : num_beats - 1;
                   exp_aw    = '{
@@ -1039,14 +1039,14 @@ package tb_axi_dw_pkg       ;
                     axi_addr : burst_addr           ,
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.aw_burst,
-                    axi_size : AxiMstPortMaxSize    ,
+                    axi_size : MstPortMaxSize       ,
                     axi_cache: slv_port_axi.aw_cache
                   }                                                          ;
                   this.exp_mst_port_aw_queue.push(slv_port_axi.aw_id, exp_aw);
                   incr_expected_tests(6)                                     ;
 
-                  num_beats  = num_beats - burst_len - 1                                                                     ;
-                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
+                  num_beats  = num_beats - burst_len - 1                                                                  ;
+                  burst_addr = axi_pkg::beat_addr(burst_addr, MstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 end;
               end
             end
@@ -1054,7 +1054,7 @@ package tb_axi_dw_pkg       ;
           // Passthrough downsize
           axi_pkg::BURST_FIXED: begin
             // Transaction unchanged
-            if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) == 1) begin
+            if (conv_ratio(slv_port_axi.aw_size, MstPortMaxSize) == 1) begin
               exp_aw = '{
                 axi_id   : slv_port_axi.aw_id   ,
                 axi_addr : slv_port_axi.aw_addr ,
@@ -1073,10 +1073,10 @@ package tb_axi_dw_pkg       ;
                 exp_aw.axi_id    = slv_port_axi.aw_id   ;
                 exp_aw.axi_addr  = slv_port_axi.aw_addr ;
                 exp_aw.axi_burst = axi_pkg::BURST_INCR  ;
-                exp_aw.axi_size  = AxiMstPortMaxSize    ;
+                exp_aw.axi_size  = MstPortMaxSize       ;
                 exp_aw.axi_cache = slv_port_axi.aw_cache;
-                if (conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) >= aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) + 1)
-                  exp_aw.axi_len = conv_ratio(slv_port_axi.aw_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) - 1;
+                if (conv_ratio(slv_port_axi.aw_size, MstPortMaxSize) >= aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) + 1)
+                  exp_aw.axi_len = conv_ratio(slv_port_axi.aw_size, MstPortMaxSize) - aligned_adjustment(slv_port_axi.aw_addr, slv_port_axi.aw_size) - 1;
                 else
                   exp_aw.axi_len = 0;
 
@@ -1119,36 +1119,36 @@ package tb_axi_dw_pkg       ;
 
           // Calculate the offsets inside the incoming word
           shortint unsigned slv_port_lower_byte =
-          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, AxiSlvPortStrbWidth, slv_port_w_cnt);
+          axi_pkg::beat_lower_byte(act_slv_aw.axi_addr, act_slv_aw.axi_size, act_slv_aw.axi_len, act_slv_aw.axi_burst, SlvPortStrbWidth, slv_port_w_cnt);
           // Pointer inside the incoming word
           shortint unsigned slv_port_data_pointer = slv_port_lower_byte;
 
           // Several W beats generated from this incoming W beat
-          int unsigned beat_cnt = conv_ratio(act_slv_aw.axi_size, AxiMstPortMaxSize) - aligned_adjustment(slv_aw_addr, act_slv_aw.axi_size);
+          int unsigned beat_cnt = conv_ratio(act_slv_aw.axi_size, MstPortMaxSize) - aligned_adjustment(slv_aw_addr, act_slv_aw.axi_size);
 
           for (int unsigned beat = 0; beat < beat_cnt; beat++) begin
             exp_mst_rw_t act_mst_w = '0;
 
             // Calculate the offsets inside the outcoming word
             shortint unsigned mst_port_lower_byte =
-            axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+            axi_pkg::beat_lower_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, MstPortStrbWidth, mst_port_w_cnt);
             shortint unsigned mst_port_upper_byte =
-            axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, AxiMstPortStrbWidth, mst_port_w_cnt);
+            axi_pkg::beat_upper_byte(act_mst_aw.axi_addr, act_mst_aw.axi_size, act_mst_aw.axi_len, act_mst_aw.axi_burst, MstPortStrbWidth, mst_port_w_cnt);
 
             shortint unsigned bytes_copied = 0;
 
             act_mst_w.axi_id   = act_mst_aw.axi_id                   ;
             act_mst_w.axi_last = mst_port_w_cnt == act_mst_aw.axi_len;
             act_mst_w.axi_data = '0                                  ;
-            for (shortint unsigned b = slv_port_data_pointer; b < AxiSlvPortStrbWidth; b++) begin
-              if (b + mst_port_lower_byte - slv_port_data_pointer == AxiMstPortStrbWidth)
+            for (shortint unsigned b = slv_port_data_pointer; b < SlvPortStrbWidth; b++) begin
+              if (b + mst_port_lower_byte - slv_port_data_pointer == MstPortStrbWidth)
                 break;
               act_mst_w.axi_data[8*(b + mst_port_lower_byte - slv_port_data_pointer) +: 8] = act_slv_w.axi_data[8*b +: 8];
               act_mst_w.axi_strb[b + mst_port_lower_byte - slv_port_data_pointer]          = act_slv_w.axi_strb[b]       ;
               bytes_copied++;
             end
             // Don't care for the bits outside these accessed by this request
-            for (int unsigned b = 0; b < AxiMstPortStrbWidth; b++)
+            for (int unsigned b = 0; b < MstPortStrbWidth; b++)
               if (!(mst_port_lower_byte <= b && b <= mst_port_upper_byte))
                 act_mst_w.axi_data[8*b +: 8] = {8{1'b?}};
 
@@ -1160,7 +1160,7 @@ package tb_axi_dw_pkg       ;
             slv_port_data_pointer += bytes_copied;
 
             // Used the whole W beat
-            if (slv_port_data_pointer == AxiSlvPortStrbWidth)
+            if (slv_port_data_pointer == SlvPortStrbWidth)
               break;
           end
 
@@ -1191,7 +1191,7 @@ package tb_axi_dw_pkg       ;
         case (slv_port_axi.ar_burst)
           axi_pkg::BURST_INCR: begin
             // Transaction unchanged
-            if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) == 1) begin
+            if (conv_ratio(slv_port_axi.ar_size, MstPortMaxSize) == 1) begin
               exp_slv_ar = '{
                 axi_id   : slv_port_axi.ar_id   ,
                 axi_addr : slv_port_axi.ar_addr ,
@@ -1206,7 +1206,7 @@ package tb_axi_dw_pkg       ;
             end
             // INCR downsize
             else begin
-              automatic int unsigned num_beats = (slv_port_axi.ar_len + 1) * conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size);
+              automatic int unsigned num_beats = (slv_port_axi.ar_len + 1) * conv_ratio(slv_port_axi.ar_size, MstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size);
               // One burst
               if (num_beats <= 256) begin
                 exp_slv_ar = '{
@@ -1214,7 +1214,7 @@ package tb_axi_dw_pkg       ;
                   axi_addr : slv_port_axi.ar_addr ,
                   axi_len  : num_beats - 1        ,
                   axi_burst: slv_port_axi.ar_burst,
-                  axi_size : AxiMstPortMaxSize    ,
+                  axi_size : MstPortMaxSize       ,
                   axi_cache: slv_port_axi.ar_cache
                 };
 
@@ -1233,15 +1233,15 @@ package tb_axi_dw_pkg       ;
                   axi_addr : slv_port_axi.ar_addr ,
                   axi_len  : burst_len            ,
                   axi_burst: slv_port_axi.ar_burst,
-                  axi_size : AxiMstPortMaxSize    ,
+                  axi_size : MstPortMaxSize       ,
                   axi_cache: slv_port_axi.ar_cache
                 }                                                              ;
                 this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
                 incr_expected_tests(6)                                         ;
 
                 // Push the other bursts in a loop
-                num_beats  = num_beats - burst_len - 1                                                                                                                         ;
-                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, AxiMstPortMaxSize), AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
+                num_beats  = num_beats - burst_len - 1                                                                                                                   ;
+                burst_addr = axi_pkg::beat_addr(axi_pkg::aligned_addr(slv_port_axi.ar_addr, MstPortMaxSize), MstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 while (num_beats != 0) begin
                   burst_len  = num_beats >= 256 ? 255 : num_beats - 1;
                   exp_slv_ar = '{
@@ -1249,14 +1249,14 @@ package tb_axi_dw_pkg       ;
                     axi_addr : burst_addr           ,
                     axi_len  : burst_len            ,
                     axi_burst: slv_port_axi.ar_burst,
-                    axi_size : AxiMstPortMaxSize    ,
+                    axi_size : MstPortMaxSize       ,
                     axi_cache: slv_port_axi.ar_cache
                   }                                                              ;
                   this.exp_mst_port_ar_queue.push(slv_port_axi.ar_id, exp_slv_ar);
                   incr_expected_tests(6)                                         ;
 
-                  num_beats  = num_beats - burst_len - 1                                                                     ;
-                  burst_addr = axi_pkg::beat_addr(burst_addr, AxiMstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
+                  num_beats  = num_beats - burst_len - 1                                                                  ;
+                  burst_addr = axi_pkg::beat_addr(burst_addr, MstPortMaxSize, burst_len, axi_pkg::BURST_INCR, burst_len+1);
                 end;
               end
             end
@@ -1264,7 +1264,7 @@ package tb_axi_dw_pkg       ;
           // Passthrough downsize
           axi_pkg::BURST_FIXED: begin
             // Transaction unchanged
-            if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) == 1) begin
+            if (conv_ratio(slv_port_axi.ar_size, MstPortMaxSize) == 1) begin
               exp_slv_ar = '{
                 axi_id   : slv_port_axi.ar_id   ,
                 axi_addr : slv_port_axi.ar_addr ,
@@ -1283,10 +1283,10 @@ package tb_axi_dw_pkg       ;
                 exp_slv_ar.axi_id    = slv_port_axi.ar_id   ;
                 exp_slv_ar.axi_addr  = slv_port_axi.ar_addr ;
                 exp_slv_ar.axi_burst = axi_pkg::BURST_INCR  ;
-                exp_slv_ar.axi_size  = AxiMstPortMaxSize    ;
+                exp_slv_ar.axi_size  = MstPortMaxSize       ;
                 exp_slv_ar.axi_cache = slv_port_axi.ar_cache;
-                if (conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) >= aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) + 1)
-                  exp_slv_ar.axi_len = conv_ratio(slv_port_axi.ar_size, AxiMstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) - 1;
+                if (conv_ratio(slv_port_axi.ar_size, MstPortMaxSize) >= aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) + 1)
+                  exp_slv_ar.axi_len = conv_ratio(slv_port_axi.ar_size, MstPortMaxSize) - aligned_adjustment(slv_port_axi.ar_addr, slv_port_axi.ar_size) - 1;
                 else
                   exp_slv_ar.axi_len = 0;
 
@@ -1316,13 +1316,13 @@ package tb_axi_dw_pkg       ;
 
         // Calculate the offsets
         shortint unsigned mst_port_lower_byte =
-        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        axi_pkg::beat_lower_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, MstPortStrbWidth, mst_port_r_cnt[id]);
         shortint unsigned mst_port_upper_byte =
-        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, AxiMstPortStrbWidth, mst_port_r_cnt[id]);
+        axi_pkg::beat_upper_byte(act_mst_ar.axi_addr, act_mst_ar.axi_size, act_mst_ar.axi_len, act_mst_ar.axi_burst, MstPortStrbWidth, mst_port_r_cnt[id]);
         shortint unsigned slv_port_lower_byte =
-        axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+        axi_pkg::beat_lower_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, SlvPortStrbWidth, slv_port_r_cnt[id]);
         shortint unsigned slv_port_upper_byte =
-        axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, AxiSlvPortStrbWidth, slv_port_r_cnt[id]);
+        axi_pkg::beat_upper_byte(act_slv_ar.axi_addr, act_slv_ar.axi_size, act_slv_ar.axi_len, act_slv_ar.axi_burst, SlvPortStrbWidth, slv_port_r_cnt[id]);
 
         // Pointer inside the outcoming word
         shortint unsigned bytes_copied = 0;
@@ -1332,7 +1332,7 @@ package tb_axi_dw_pkg       ;
         slv_port_r[id].axi_id   = id                                      ;
         slv_port_r[id].axi_last = slv_port_r_cnt[id] == act_slv_ar.axi_len;
         for (shortint unsigned b = mst_port_lower_byte; b <= mst_port_upper_byte; b++) begin
-          if (b + slv_port_r_pnt[id] - mst_port_lower_byte == AxiSlvPortStrbWidth)
+          if (b + slv_port_r_pnt[id] - mst_port_lower_byte == SlvPortStrbWidth)
             break;
           slv_port_r[id].axi_data[8*(b + slv_port_r_pnt[id] - mst_port_lower_byte) +: 8] = mst_port_axi.r_data[8*b +: 8];
           bytes_copied++;
@@ -1343,12 +1343,12 @@ package tb_axi_dw_pkg       ;
         slv_port_r_pnt[id] += bytes_copied;
 
         if (slv_port_r_pnt[id] == slv_port_upper_byte + 1                // Used all bits from the incoming R beat
-            || slv_port_r_pnt[id] == AxiSlvPortStrbWidth                 // Filled up an outcoming R beat
+            || slv_port_r_pnt[id] == SlvPortStrbWidth                    // Filled up an outcoming R beat
             || conv_ratio(act_slv_ar.axi_size, act_mst_ar.axi_size) == 1 // Not downsizing
             || mst_port_axi.r_last                                       // Last beat of an R burst
           ) begin
           // Don't care for the bits outside these accessed by this request
-          for (int unsigned b = 0; b < AxiSlvPortStrbWidth; b++)
+          for (int unsigned b = 0; b < SlvPortStrbWidth; b++)
             if (!(slv_port_lower_byte <= b && b <= slv_port_upper_byte))
               slv_port_r[id].axi_data[8*b +: 8] = {8{1'b?}};
 

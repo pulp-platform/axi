@@ -107,11 +107,11 @@ module axi_synth_bench (
   // AXI Isolation module
   for (genvar i = 0; i < 6; i++) begin
     synth_axi_isolate #(
-      .NumPending   ( AXI_ADDR_WIDTH[i] ),
-      .AxiIdWidth   ( 32'd10            ),
-      .AxiAddrWidth ( 32'd64            ),
-      .AxiDataWidth ( 32'd512           ),
-      .AxiUserWidth ( 32'd10            )
+      .NumPending ( AXI_ADDR_WIDTH[i] ),
+      .IdWidth    ( 32'd10            ),
+      .AddrWidth  ( 32'd64            ),
+      .DataWidth  ( 32'd512           ),
+      .UserWidth  ( 32'd10            )
     ) i_synth_axi_isolate (.*);
   end
 
@@ -136,11 +136,11 @@ module axi_synth_bench (
   // AXI4+ATOP serializer
   for (genvar i = 0; i < 6; i++) begin
     synth_axi_serializer #(
-      .NumPending   ( AXI_ADDR_WIDTH[i] ),
-      .AxiIdWidth   ( 32'd10            ),
-      .AxiAddrWidth ( 32'd64            ),
-      .AxiDataWidth ( 32'd512           ),
-      .AxiUserWidth ( 32'd10            )
+      .NumPending ( AXI_ADDR_WIDTH[i] ),
+      .IdWidth    ( 32'd10            ),
+      .AddrWidth  ( 32'd64            ),
+      .DataWidth  ( 32'd512           ),
+      .UserWidth  ( 32'd10            )
     ) i_synth_axi_serializer (.*);
   end
 
@@ -156,21 +156,21 @@ module axi_synth_bench (
 
   // AXI ID width converter
   for (genvar i_iwus = 0; i_iwus < 3; i_iwus++) begin : gen_iw_upstream
-    localparam int unsigned AxiIdWidthUs = AXI_ID_USER_WIDTH[i_iwus] + 1;
+    localparam int unsigned IdWidthUs = AXI_ID_USER_WIDTH[i_iwus] + 1;
     for (genvar i_iwds = 0; i_iwds < 3; i_iwds++) begin : gen_iw_downstream
-      localparam int unsigned AxiIdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
-      localparam int unsigned TableSize    = 2**AxiIdWidthDs;
+      localparam int unsigned IdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
+      localparam int unsigned TableSize    = 2**IdWidthDs;
       synth_axi_iw_converter # (
-        .AxiSlvPortIdWidth      ( AxiIdWidthUs    ),
-        .AxiMstPortIdWidth      ( AxiIdWidthDs    ),
-        .AxiSlvPortMaxUniqIds   ( 2**AxiIdWidthUs ),
-        .AxiSlvPortMaxTxnsPerId ( 13              ),
-        .AxiSlvPortMaxTxns      ( 81              ),
-        .AxiMstPortMaxUniqIds   ( 2**AxiIdWidthDs ),
-        .AxiMstPortMaxTxnsPerId ( 11              ),
-        .AxiAddrWidth           ( 32'd64          ),
-        .AxiDataWidth           ( 32'd512         ),
-        .AxiUserWidth           ( 32'd10          )
+        .SlvPortIdWidth      ( IdWidthUs    ),
+        .MstPortIdWidth      ( IdWidthDs    ),
+        .SlvPortMaxUniqIds   ( 2**IdWidthUs ),
+        .SlvPortMaxTxnsPerId ( 13           ),
+        .SlvPortMaxTxns      ( 81           ),
+        .MstPortMaxUniqIds   ( 2**IdWidthDs ),
+        .MstPortMaxTxnsPerId ( 11           ),
+        .AddrWidth           ( 32'd64       ),
+        .DataWidth           ( 32'd512      ),
+        .UserWidth           ( 32'd10       )
       ) i_synth_axi_iw_converter (.*);
     end
   end
@@ -184,7 +184,7 @@ module axi_synth_bench (
         localparam int unsigned ADDR_WIDTH_BANKS[2] = {32'd5,  32'd11};
 
         synth_axi_to_mem_banked #(
-          .AxiDataWidth  ( DATA_WIDTH_AXI[i]   ),
+          .DataWidth  ( DATA_WIDTH_AXI[i]   ),
           .BankNum       ( NUM_BANKS[j]        ),
           .BankAddrWidth ( ADDR_WIDTH_BANKS[k] )
         ) i_axi_to_mem_banked (.*);
@@ -416,8 +416,8 @@ module synth_axi_lite_xbar #(
     MaxSlvTrans:        32'd5,
     FallThrough:        1'b1,
     LatencyMode:        axi_pkg::CUT_ALL_PORTS,
-    AxiAddrWidth:       32'd32,
-    AxiDataWidth:       32'd32,
+    AddrWidth:          32'd32,
+    DataWidth:          32'd32,
     NoAddrRules:        NoSlvMst,
     default:            '0
   };
@@ -488,31 +488,31 @@ module synth_axi_lite_mailbox #(
 endmodule
 
 module synth_axi_isolate #(
-  parameter int unsigned NumPending   = 32'd16, // number of pending requests
-  parameter int unsigned AxiIdWidth   = 32'd0,  // AXI ID width
-  parameter int unsigned AxiAddrWidth = 32'd0,  // AXI address width
-  parameter int unsigned AxiDataWidth = 32'd0,  // AXI data width
-  parameter int unsigned AxiUserWidth = 32'd0   // AXI user width
+  parameter int unsigned NumPending = 32'd16, // number of pending requests
+  parameter int unsigned IdWidth    = 32'd0,  // AXI ID width
+  parameter int unsigned AddrWidth  = 32'd0,  // AXI address width
+  parameter int unsigned DataWidth  = 32'd0,  // AXI data width
+  parameter int unsigned UserWidth  = 32'd0   // AXI user width
 ) (
   input clk_i,
   input rst_ni
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( IdWidth   ),
+    .AXI_DATA_WIDTH ( AddrWidth ),
+    .AXI_ID_WIDTH   ( DataWidth ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) axi[1:0] ();
 
   logic isolate, isolated;
 
   axi_isolate_intf #(
-    .NUM_PENDING    ( NumPending   ), // number of pending requests
-    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
-    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
-    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+    .NUM_PENDING    ( NumPending ), // number of pending requests
+    .AXI_ID_WIDTH   ( IdWidth    ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AddrWidth  ), // AXI address width
+    .AXI_DATA_WIDTH ( DataWidth  ), // AXI data width
+    .AXI_USER_WIDTH ( UserWidth  )  // AXI user width
   ) i_axi_isolate_dut (
     .clk_i,
     .rst_ni,
@@ -562,30 +562,30 @@ module synth_axi_modify_address #(
 endmodule
 
 module synth_axi_serializer #(
-  parameter int unsigned NumPending   = 32'd16, // number of pending requests
-  parameter int unsigned AxiIdWidth   = 32'd0,  // AXI ID width
-  parameter int unsigned AxiAddrWidth = 32'd0,  // AXI address width
-  parameter int unsigned AxiDataWidth = 32'd0,  // AXI data width
-  parameter int unsigned AxiUserWidth = 32'd0   // AXI user width
+  parameter int unsigned NumPending = 32'd16, // number of pending requests
+  parameter int unsigned IdWidth    = 32'd0,  // AXI ID width
+  parameter int unsigned AddrWidth  = 32'd0,  // AXI address width
+  parameter int unsigned DataWidth  = 32'd0,  // AXI data width
+  parameter int unsigned UserWidth  = 32'd0   // AXI user width
 ) (
   input clk_i,
   input rst_ni
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( IdWidth   ),
+    .AXI_DATA_WIDTH ( AddrWidth ),
+    .AXI_ID_WIDTH   ( DataWidth ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) axi[1:0] ();
 
   axi_serializer_intf #(
     .MAX_READ_TXNS  ( NumPending   ), // Number of pending requests
     .MAX_WRITE_TXNS ( NumPending   ), // Number of pending requests
-    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
-    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
-    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+    .AXI_ID_WIDTH   ( IdWidth   ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AddrWidth ), // AXI address width
+    .AXI_DATA_WIDTH ( DataWidth ), // AXI data width
+    .AXI_USER_WIDTH ( UserWidth )  // AXI user width
   ) i_axi_isolate_dut (
     .clk_i,
     .rst_ni,
@@ -634,44 +634,44 @@ module synth_axi_lite_regs #(
 endmodule
 
 module synth_axi_iw_converter # (
-  parameter int unsigned AxiSlvPortIdWidth = 32'd0,
-  parameter int unsigned AxiMstPortIdWidth = 32'd0,
-  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
-  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
-  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
-  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned AxiAddrWidth = 32'd0,
-  parameter int unsigned AxiDataWidth = 32'd0,
-  parameter int unsigned AxiUserWidth = 32'd0
+  parameter int unsigned SlvPortIdWidth = 32'd0,
+  parameter int unsigned MstPortIdWidth = 32'd0,
+  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned SlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned SlvPortMaxTxns = 32'd0,
+  parameter int unsigned MstPortMaxUniqIds = 32'd0,
+  parameter int unsigned MstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AddrWidth = 32'd0,
+  parameter int unsigned DataWidth = 32'd0,
+  parameter int unsigned UserWidth = 32'd0
 ) (
   input logic clk_i,
   input logic rst_ni
 );
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      ),
-    .AXI_ID_WIDTH   ( AxiSlvPortIdWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      ),
+    .AXI_ID_WIDTH   ( SlvPortIdWidth ),
+    .AXI_USER_WIDTH ( UserWidth      )
   ) upstream ();
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      ),
-    .AXI_ID_WIDTH   ( AxiMstPortIdWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      ),
+    .AXI_ID_WIDTH   ( MstPortIdWidth ),
+    .AXI_USER_WIDTH ( UserWidth      )
   ) downstream ();
 
   axi_iw_converter_intf #(
-    .AXI_SLV_PORT_ID_WIDTH        (AxiSlvPortIdWidth      ),
-    .AXI_MST_PORT_ID_WIDTH        (AxiMstPortIdWidth      ),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS    (AxiMstPortIdWidth      ),
-    .AXI_SLV_PORT_MAX_TXNS_PER_ID (AxiSlvPortMaxTxnsPerId ),
-    .AXI_SLV_PORT_MAX_TXNS        (AxiSlvPortMaxTxns      ),
-    .AXI_MST_PORT_MAX_UNIQ_IDS    (AxiMstPortMaxUniqIds   ),
-    .AXI_MST_PORT_MAX_TXNS_PER_ID (AxiMstPortMaxTxnsPerId ),
-    .AXI_ADDR_WIDTH               (AxiAddrWidth           ),
-    .AXI_DATA_WIDTH               (AxiDataWidth           ),
-    .AXI_USER_WIDTH               (AxiUserWidth           )
+    .AXI_SLV_PORT_ID_WIDTH        (SlvPortIdWidth      ),
+    .AXI_MST_PORT_ID_WIDTH        (MstPortIdWidth      ),
+    .AXI_SLV_PORT_MAX_UNIQ_IDS    (MstPortIdWidth      ),
+    .AXI_SLV_PORT_MAX_TXNS_PER_ID (SlvPortMaxTxnsPerId ),
+    .AXI_SLV_PORT_MAX_TXNS        (SlvPortMaxTxns      ),
+    .AXI_MST_PORT_MAX_UNIQ_IDS    (MstPortMaxUniqIds   ),
+    .AXI_MST_PORT_MAX_TXNS_PER_ID (MstPortMaxTxnsPerId ),
+    .AXI_ADDR_WIDTH               (AddrWidth           ),
+    .AXI_DATA_WIDTH               (DataWidth           ),
+    .AXI_USER_WIDTH               (UserWidth           )
   ) i_axi_iw_converter_dut (
     .clk_i,
     .rst_ni,
@@ -681,18 +681,18 @@ module synth_axi_iw_converter # (
 endmodule
 
 module synth_axi_to_mem_banked #(
-  parameter int unsigned AxiDataWidth  = 32'd0,
+  parameter int unsigned DataWidth  = 32'd0,
   parameter int unsigned BankNum       = 32'd0,
   parameter int unsigned BankAddrWidth = 32'd0
 ) (
   input logic clk_i,
   input logic rst_ni
 );
-  localparam int unsigned AxiIdWidth    = 32'd10;
-  localparam int unsigned AxiAddrWidth  = 32'd64;
-  localparam int unsigned AxiStrbWidth  = AxiDataWidth / 32'd8;
-  localparam int unsigned AxiUserWidth  = 32'd8;
-  localparam int unsigned BankDataWidth = 32'd2 * AxiDataWidth / BankNum;
+  localparam int unsigned IdWidth    = 32'd10;
+  localparam int unsigned AddrWidth  = 32'd64;
+  localparam int unsigned StrbWidth  = DataWidth / 32'd8;
+  localparam int unsigned UserWidth  = 32'd8;
+  localparam int unsigned BankDataWidth = 32'd2 * DataWidth / BankNum;
   localparam int unsigned BankStrbWidth = BankDataWidth / 32'd8;
   localparam int unsigned BankLatency   = 32'd1;
 
@@ -701,10 +701,10 @@ module synth_axi_to_mem_banked #(
   typedef logic [BankStrbWidth-1:0] mem_strb_t;
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( IdWidth   ),
+    .AXI_DATA_WIDTH ( AddrWidth ),
+    .AXI_ID_WIDTH   ( DataWidth ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) axi ();
 
   // Misc signals
@@ -722,10 +722,10 @@ module synth_axi_to_mem_banked #(
 
 
   axi_to_mem_banked_intf #(
-    .AXI_ID_WIDTH    ( AxiIdWidth    ),
-    .AXI_ADDR_WIDTH  ( AxiAddrWidth  ),
-    .AXI_DATA_WIDTH  ( AxiDataWidth  ),
-    .AXI_USER_WIDTH  ( AxiUserWidth  ),
+    .AXI_ID_WIDTH    ( IdWidth       ),
+    .AXI_ADDR_WIDTH  ( AddrWidth     ),
+    .AXI_DATA_WIDTH  ( DataWidth     ),
+    .AXI_USER_WIDTH  ( UserWidth     ),
     .MEM_NUM_BANKS   ( BankNum       ),
     .MEM_ADDR_WIDTH  ( BankAddrWidth ),
     .MEM_DATA_WIDTH  ( BankDataWidth ),

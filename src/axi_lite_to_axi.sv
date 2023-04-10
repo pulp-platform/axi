@@ -16,7 +16,7 @@
 
 /// An AXI4-Lite to AXI4 adapter.
 module axi_lite_to_axi #(
-  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned DataWidth = 32'd0,
   // LITE AXI structs
   parameter type axi_lite_req_t = logic,
   parameter type axi_lite_rsp_t = logic,
@@ -33,14 +33,14 @@ module axi_lite_to_axi #(
   output axi_req_t        mst_req_o,
   input  axi_rsp_t        mst_rsp_i
 );
-  localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AxiDataWidth/8)));
+  localparam int unsigned Size = axi_pkg::size_t'($unsigned($clog2(DataWidth/8)));
 
   // request assign
   assign mst_req_o = '{
     aw: '{
       addr:  slv_req_lite_i.aw.addr,
       prot:  slv_req_lite_i.aw.prot,
-      size:  AxiSize,
+      size:  Size,
       burst: axi_pkg::BURST_FIXED,
       cache: slv_aw_cache_i,
       default: '0
@@ -57,7 +57,7 @@ module axi_lite_to_axi #(
     ar: '{
       addr:  slv_req_lite_i.ar.addr,
       prot:  slv_req_lite_i.ar.prot,
-      size:  AxiSize,
+      size:  Size,
       burst: axi_pkg::BURST_FIXED,
       cache: slv_ar_cache_i,
       default: '0
@@ -88,7 +88,7 @@ module axi_lite_to_axi #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assert (AxiDataWidth > 0) else $fatal(1, "Data width must be non-zero!");
+    assert (DataWidth > 0) else $fatal(1, "Data width must be non-zero!");
   end
   `endif
   // pragma translate_on
@@ -102,7 +102,7 @@ module axi_lite_to_axi_intf #(
   input axi_pkg::cache_t slv_ar_cache_i,
   AXI_BUS.Master  out
 );
-  localparam int unsigned AxiSize = axi_pkg::size_t'($unsigned($clog2(AXI_DATA_WIDTH/8)));
+  localparam int unsigned Size = axi_pkg::size_t'($unsigned($clog2(AXI_DATA_WIDTH/8)));
 
 // pragma translate_off
   initial begin
@@ -115,7 +115,7 @@ module axi_lite_to_axi_intf #(
   assign out.aw_id     = '0;
   assign out.aw_addr   = in.aw_addr;
   assign out.aw_len    = '0;
-  assign out.aw_size   = AxiSize;
+  assign out.aw_size   = Size;
   assign out.aw_burst  = axi_pkg::BURST_FIXED;
   assign out.aw_lock   = '0;
   assign out.aw_cache  = slv_aw_cache_i;
@@ -141,7 +141,7 @@ module axi_lite_to_axi_intf #(
   assign out.ar_id     = '0;
   assign out.ar_addr   = in.ar_addr;
   assign out.ar_len    = '0;
-  assign out.ar_size   = AxiSize;
+  assign out.ar_size   = Size;
   assign out.ar_burst  = axi_pkg::BURST_FIXED;
   assign out.ar_lock   = '0;
   assign out.ar_cache  = slv_ar_cache_i;

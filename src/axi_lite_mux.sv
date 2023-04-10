@@ -455,8 +455,8 @@ endmodule
 `include "axi/typedef.svh"
 
 module axi_lite_mux_intf #(
-  parameter int unsigned AxiAddrWidth  = 32'd0,
-  parameter int unsigned AxiDataWidth  = 32'd0,
+  parameter int unsigned AddrWidth     = 32'd0,
+  parameter int unsigned DataWidth     = 32'd0,
   parameter int unsigned NoSlvPorts    = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MaxTrans      = 32'd0,
@@ -477,9 +477,9 @@ module axi_lite_mux_intf #(
   AXI_LITE.Master mst                   // master port
 );
 
-  typedef logic [AxiAddrWidth-1:0]   addr_t;
-  typedef logic [AxiDataWidth-1:0]   data_t;
-  typedef logic [AxiDataWidth/8-1:0] strb_t;
+  typedef logic [AddrWidth-1:0]   addr_t;
+  typedef logic [DataWidth-1:0]   data_t;
+  typedef logic [DataWidth/8-1:0] strb_t;
   // channels typedef
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -531,8 +531,8 @@ module axi_lite_mux_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      AddrWidth: assert (AxiAddrWidth > 0) else $fatal("Axi Parameter has to be > 0!");
-      DataWidth: assert (AxiDataWidth > 0) else $fatal("Axi Parameter has to be > 0!");
+      assert (AddrWidth > 0) else $fatal("AddrWidth Parameter has to be > 0!");
+      assert (DataWidth > 0) else $fatal("DataWidth Parameter has to be > 0!");
     end
   `endif
   // pragma translate_on

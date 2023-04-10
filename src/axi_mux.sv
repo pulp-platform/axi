@@ -27,7 +27,7 @@
 
 module axi_mux #(
   // AXI parameter and channel types
-  parameter int unsigned SlvAxiIDWidth      = 32'd0, // AXI ID width, slave ports
+  parameter int unsigned SlvIDWidth         = 32'd0, // AXI ID width, slave ports
   parameter type         slv_aw_chan_t      = logic, // AW Channel Type, slave ports
   parameter type         mst_aw_chan_t      = logic, // AW Channel Type, master port
   parameter type         w_chan_t           = logic, //  W Channel Type, all ports
@@ -65,8 +65,8 @@ module axi_mux #(
   input  mst_port_axi_rsp_t                  mst_rsp_i
 );
 
-  localparam int unsigned MstIdxBits    = $clog2(NoSlvPorts);
-  localparam int unsigned MstAxiIDWidth = SlvAxiIDWidth + MstIdxBits;
+  localparam int unsigned MstIdxBits = $clog2(NoSlvPorts);
+  localparam int unsigned MstIDWidth = SlvIDWidth + MstIdxBits;
 
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
@@ -137,14 +137,14 @@ module axi_mux #(
     );
 // Validate parameters.
 // pragma translate_off
-    `ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSlvB, $bits(slv_rsps_o[0].b.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSlvAr, $bits(slv_reqs_i[0].ar.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSlvR, $bits(slv_rsps_o[0].r.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMstAw, $bits(mst_req_o.aw.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMstB, $bits(mst_rsp_i.b.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMstAr, $bits(mst_req_o.ar.id) == SlvAxiIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMstR, $bits(mst_rsp_i.r.id) == SlvAxiIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvB, $bits(slv_rsps_o[0].b.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvAr, $bits(slv_reqs_i[0].ar.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSlvR, $bits(slv_rsps_o[0].r.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstAw, $bits(mst_req_o.aw.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstB, $bits(mst_rsp_i.b.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstAr, $bits(mst_req_o.ar.id) == SlvIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMstR, $bits(mst_rsp_i.r.id) == SlvIDWidth)
 // pragma translate_on
 
   // other non degenerate cases
@@ -210,19 +210,19 @@ module axi_mux #(
     //--------------------------------------
     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_id_prepend
       axi_id_prepend #(
-        .NoBus            ( 32'd1               ), // one AXI bus per slave port
-        .AxiIdWidthSlvPort( SlvAxiIDWidth       ),
-        .AxiIdWidthMstPort( MstAxiIDWidth       ),
-        .slv_aw_chan_t    ( slv_aw_chan_t       ),
-        .slv_w_chan_t     ( w_chan_t            ),
-        .slv_b_chan_t     ( slv_b_chan_t        ),
-        .slv_ar_chan_t    ( slv_ar_chan_t       ),
-        .slv_r_chan_t     ( slv_r_chan_t        ),
-        .mst_aw_chan_t    ( mst_aw_chan_t       ),
-        .mst_w_chan_t     ( w_chan_t            ),
-        .mst_b_chan_t     ( mst_b_chan_t        ),
-        .mst_ar_chan_t    ( mst_ar_chan_t       ),
-        .mst_r_chan_t     ( mst_r_chan_t        )
+        .NoBus         ( 32'd1               ), // one AXI bus per slave port
+        .IdWidthSlvPort( SlvIDWidth          ),
+        .IdWidthMstPort( MstIDWidth          ),
+        .slv_aw_chan_t ( slv_aw_chan_t       ),
+        .slv_w_chan_t  ( w_chan_t            ),
+        .slv_b_chan_t  ( slv_b_chan_t        ),
+        .slv_ar_chan_t ( slv_ar_chan_t       ),
+        .slv_r_chan_t  ( slv_r_chan_t        ),
+        .mst_aw_chan_t ( mst_aw_chan_t       ),
+        .mst_w_chan_t  ( w_chan_t            ),
+        .mst_b_chan_t  ( mst_b_chan_t        ),
+        .mst_ar_chan_t ( mst_ar_chan_t       ),
+        .mst_r_chan_t  ( mst_r_chan_t        )
       ) i_id_prepend (
         .pre_id_i         ( switch_id_t'(i)        ),
         .slv_aw_chans_i   ( slv_reqs_i[i].aw       ),
@@ -319,17 +319,17 @@ module axi_mux #(
       .DEPTH        ( MaxWTrans   ),
       .dtype        ( switch_id_t )
     ) i_w_fifo (
-      .clk_i     ( clk_i                                     ),
-      .rst_ni    ( rst_ni                                    ),
-      .flush_i   ( 1'b0                                      ),
-      .testmode_i( test_i                                    ),
-      .full_o    ( w_fifo_full                               ),
-      .empty_o   ( w_fifo_empty                              ),
-      .usage_o   (                                           ),
-      .data_i    ( mst_aw_chan.id[SlvAxiIDWidth+:MstIdxBits] ),
-      .push_i    ( w_fifo_push                               ),
-      .data_o    ( w_fifo_data                               ),
-      .pop_i     ( w_fifo_pop                                )
+      .clk_i     ( clk_i                                  ),
+      .rst_ni    ( rst_ni                                 ),
+      .flush_i   ( 1'b0                                   ),
+      .testmode_i( test_i                                 ),
+      .full_o    ( w_fifo_full                            ),
+      .empty_o   ( w_fifo_empty                           ),
+      .usage_o   (                                        ),
+      .data_i    ( mst_aw_chan.id[SlvIDWidth+:MstIdxBits] ),
+      .push_i    ( w_fifo_push                            ),
+      .data_o    ( w_fifo_data                            ),
+      .pop_i     ( w_fifo_pop                             )
     );
 
     spill_register #(
@@ -386,7 +386,7 @@ module axi_mux #(
     // replicate B channels
     assign slv_b_chans  = {NoSlvPorts{mst_b_chan}};
     // control B channel handshake
-    assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
+    assign switch_b_id  = mst_b_chan.id[SlvIDWidth+:MstIdxBits];
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
     spill_register #(
@@ -445,7 +445,7 @@ module axi_mux #(
     // replicate R channels
     assign slv_r_chans  = {NoSlvPorts{mst_r_chan}};
     // R channel handshake control
-    assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
+    assign switch_r_id  = mst_r_chan.id[SlvIDWidth+:MstIdxBits];
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
     spill_register #(
@@ -466,28 +466,28 @@ module axi_mux #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin
-    assert (SlvAxiIDWidth > 0) else $fatal(1, "AXI ID width of slave ports must be non-zero!");
+    assert (SlvIDWidth > 0) else $fatal(1, "AXI ID width of slave ports must be non-zero!");
     assert (NoSlvPorts > 0) else $fatal(1, "Number of slave ports must be non-zero!");
     assert (MaxWTrans > 0)
       else $fatal(1, "Maximum number of outstanding writes must be non-zero!");
-    assert (MstAxiIDWidth >= SlvAxiIDWidth + $clog2(NoSlvPorts))
+    assert (MstIDWidth >= SlvIDWidth + $clog2(NoSlvPorts))
       else $fatal(1, "AXI ID width of master ports must be wide enough to identify slave ports!");
     // Assert ID widths (one slave is sufficient since they all have the same type).
-    assert ($unsigned($bits(slv_reqs_i[0].aw.id)) == SlvAxiIDWidth)
+    assert ($unsigned($bits(slv_reqs_i[0].aw.id)) == SlvIDWidth)
       else $fatal(1, "ID width of AW channel of slave ports does not match parameter!");
-    assert ($unsigned($bits(slv_reqs_i[0].ar.id)) == SlvAxiIDWidth)
+    assert ($unsigned($bits(slv_reqs_i[0].ar.id)) == SlvIDWidth)
       else $fatal(1, "ID width of AR channel of slave ports does not match parameter!");
-    assert ($unsigned($bits(slv_rsps_o[0].b.id)) == SlvAxiIDWidth)
+    assert ($unsigned($bits(slv_rsps_o[0].b.id)) == SlvIDWidth)
       else $fatal(1, "ID width of B channel of slave ports does not match parameter!");
-    assert ($unsigned($bits(slv_rsps_o[0].r.id)) == SlvAxiIDWidth)
+    assert ($unsigned($bits(slv_rsps_o[0].r.id)) == SlvIDWidth)
       else $fatal(1, "ID width of R channel of slave ports does not match parameter!");
-    assert ($unsigned($bits(mst_req_o.aw.id)) == MstAxiIDWidth)
+    assert ($unsigned($bits(mst_req_o.aw.id)) == MstIDWidth)
       else $fatal(1, "ID width of AW channel of master port is wrong!");
-    assert ($unsigned($bits(mst_req_o.ar.id)) == MstAxiIDWidth)
+    assert ($unsigned($bits(mst_req_o.ar.id)) == MstIDWidth)
       else $fatal(1, "ID width of AR channel of master port is wrong!");
-    assert ($unsigned($bits(mst_rsp_i.b.id)) == MstAxiIDWidth)
+    assert ($unsigned($bits(mst_rsp_i.b.id)) == MstIDWidth)
       else $fatal(1, "ID width of B channel of master port is wrong!");
-    assert ($unsigned($bits(mst_rsp_i.r.id)) == MstAxiIDWidth)
+    assert ($unsigned($bits(mst_rsp_i.r.id)) == MstIDWidth)
       else $fatal(1, "ID width of R channel of master port is wrong!");
   end
 `endif
@@ -564,7 +564,7 @@ module axi_mux_intf #(
   `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_mux #(
-    .SlvAxiIDWidth      ( SLV_AXI_ID_WIDTH   ),
+    .SlvIDWidth         ( SLV_AXI_ID_WIDTH   ),
     .slv_aw_chan_t      ( slv_aw_chan_t      ), // AW Channel Type, slave ports
     .mst_aw_chan_t      ( mst_aw_chan_t      ), // AW Channel Type, master port
     .w_chan_t           ( w_chan_t           ), //  W Channel Type, all ports

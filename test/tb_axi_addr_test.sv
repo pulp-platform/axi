@@ -24,10 +24,10 @@ module tb_axi_addr_test #(
   bit          PrintDbg = 1'b0
 );
 
-  localparam int unsigned AxiIdWidth   = 32'd1;
-  localparam int unsigned AxiAddrWidth = 32'd16;
-  localparam int unsigned AxiDataWidth = 32'd1024;
-  localparam int unsigned AxiUserWidth = 32'd1;
+  localparam int unsigned IdWidth   = 32'd1;
+  localparam int unsigned AddrWidth = 32'd16;
+  localparam int unsigned DataWidth = 32'd1024;
+  localparam int unsigned UserWidth = 32'd1;
 
   // Sim print config, how many transactions
   localparam int unsigned PrintTnx = 1000;
@@ -35,7 +35,7 @@ module tb_axi_addr_test #(
   localparam int unsigned NoWrites = NumTests;
 
 
-  typedef logic [AxiAddrWidth:0] addr_t;
+  typedef logic [AddrWidth:0] addr_t;
 
   /// The data transferred on a beat on the AW/AR channels.
   class ax_transfer;
@@ -55,10 +55,10 @@ module tb_axi_addr_test #(
 
   typedef axi_test::axi_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime ),
@@ -69,10 +69,10 @@ module tb_axi_addr_test #(
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
@@ -85,16 +85,16 @@ module tb_axi_addr_test #(
   logic end_of_sim;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) master_dv (clk);
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) slave_dv (clk);
 
   `AXI_ASSIGN(slave_dv, master_dv)

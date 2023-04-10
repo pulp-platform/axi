@@ -137,7 +137,7 @@ module tb_axi_bus_compare #(
   end
 
   axi_bus_compare #(
-    .AxiIdWidth     ( TbIdWidth       ),
+    .IdWidth        ( TbIdWidth       ),
     .FifoDepth      ( 32'd16          ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
     .axi_w_chan_t   ( axi_w_chan_t    ),

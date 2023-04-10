@@ -25,7 +25,7 @@ module axi_serializer #(
   /// Maximum number of in flight write transactions.
   parameter int unsigned MaxWriteTxns = 32'd0,
   /// AXI4+ATOP ID width.
-  parameter int unsigned AxiIdWidth   = 32'd0,
+  parameter int unsigned IdWidth      = 32'd0,
   /// AXI4+ATOP request struct definition.
   parameter type         axi_req_t    = logic,
   /// AXI4+ATOP response struct definition.
@@ -45,7 +45,7 @@ module axi_serializer #(
   input  axi_rsp_t mst_rsp_i
 );
 
-  typedef logic [AxiIdWidth-1:0] id_t;
+  typedef logic [IdWidth-1:0] id_t;
   typedef enum logic [1:0] {
     AtopIdle    = 2'b00,
     AtopDrain   = 2'b01,
@@ -191,7 +191,7 @@ module axi_serializer #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AxiIdWidth    >= 1) else $fatal(1, "AXI ID width must be at least 1!");
+    assert (IdWidth    >= 1) else $fatal(1, "AXI ID width must be at least 1!");
     assert (MaxReadTxns   >= 1)
       else $fatal(1, "Maximum number of read transactions must be >= 1!");
     assert (MaxWriteTxns  >= 1)
@@ -266,7 +266,7 @@ module axi_serializer_intf #(
   axi_serializer #(
     .MaxReadTxns  ( MAX_READ_TXNS  ),
     .MaxWriteTxns ( MAX_WRITE_TXNS ),
-    .AxiIdWidth   ( AXI_ID_WIDTH   ),
+    .IdWidth      ( AXI_ID_WIDTH   ),
     .axi_req_t    ( axi_req_t      ),
     .axi_rsp_t    ( axi_rsp_t      )
   ) i_axi_serializer (

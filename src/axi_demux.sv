@@ -38,7 +38,7 @@
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
 module axi_demux #(
-  parameter int unsigned AxiIdWidth     = 32'd0,
+  parameter int unsigned IdWidth        = 32'd0,
   parameter bit          AtopSupport    = 1'b1,
   parameter type         aw_chan_t      = logic,
   parameter type         w_chan_t       = logic,
@@ -49,7 +49,7 @@ module axi_demux #(
   parameter type         axi_rsp_t      = logic,
   parameter int unsigned NoMstPorts     = 32'd0,
   parameter int unsigned MaxTrans       = 32'd8,
-  parameter int unsigned AxiLookBits    = 32'd3,
+  parameter int unsigned LookBits       = 32'd3,
   parameter bit          UniqueIds      = 1'b0,
   parameter bit          SpillAw        = 1'b1,
   parameter bit          SpillW         = 1'b0,
@@ -329,23 +329,23 @@ module axi_demux #(
       assign aw_id_cnt_full = 1'b0;
     end else begin : gen_aw_id_counter
       axi_demux_id_counters #(
-        .AxiIdBits         ( AxiLookBits    ),
+        .IdBits            ( LookBits    ),
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_aw_id_counter (
-        .clk_i                        ( clk_i                          ),
-        .rst_ni                       ( rst_ni                         ),
-        .lookup_axi_id_i              ( slv_aw_chan.id[0+:AxiLookBits] ),
-        .lookup_mst_select_o          ( lookup_aw_select               ),
-        .lookup_mst_select_occupied_o ( aw_select_occupied             ),
-        .full_o                       ( aw_id_cnt_full                 ),
-        .inject_axi_id_i              ( '0                             ),
-        .inject_i                     ( 1'b0                           ),
-        .push_axi_id_i                ( slv_aw_chan.id[0+:AxiLookBits] ),
-        .push_mst_select_i            ( slv_aw_select                  ),
-        .push_i                       ( w_cnt_up                       ),
-        .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]  ),
-        .pop_i                        ( slv_b_valid & slv_b_ready      )
+        .clk_i                        ( clk_i                       ),
+        .rst_ni                       ( rst_ni                      ),
+        .lookup_axi_id_i              ( slv_aw_chan.id[0+:LookBits] ),
+        .lookup_mst_select_o          ( lookup_aw_select            ),
+        .lookup_mst_select_occupied_o ( aw_select_occupied          ),
+        .full_o                       ( aw_id_cnt_full              ),
+        .inject_axi_id_i              ( '0                          ),
+        .inject_i                     ( 1'b0                        ),
+        .push_axi_id_i                ( slv_aw_chan.id[0+:LookBits] ),
+        .push_mst_select_i            ( slv_aw_select               ),
+        .push_i                       ( w_cnt_up                    ),
+        .pop_axi_id_i                 ( slv_b_chan.id[0+:LookBits]  ),
+        .pop_i                        ( slv_b_valid & slv_b_ready   )
       );
       // pop from ID counter on outward transaction
     end
@@ -522,22 +522,22 @@ module axi_demux #(
       assign ar_id_cnt_full = 1'b0;
     end else begin : gen_ar_id_counter
       axi_demux_id_counters #(
-        .AxiIdBits         ( AxiLookBits    ),
+        .IdBits            ( LookBits    ),
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( select_t       )
       ) i_ar_id_counter (
         .clk_i                        ( clk_i                                       ),
         .rst_ni                       ( rst_ni                                      ),
-        .lookup_axi_id_i              ( slv_ar_chan.id[0+:AxiLookBits]              ),
+        .lookup_axi_id_i              ( slv_ar_chan.id[0+:LookBits]                 ),
         .lookup_mst_select_o          ( lookup_ar_select                            ),
         .lookup_mst_select_occupied_o ( ar_select_occupied                          ),
         .full_o                       ( ar_id_cnt_full                              ),
-        .inject_axi_id_i              ( slv_aw_chan.id[0+:AxiLookBits]              ),
+        .inject_axi_id_i              ( slv_aw_chan.id[0+:LookBits]                 ),
         .inject_i                     ( atop_inject                                 ),
-        .push_axi_id_i                ( slv_ar_chan.id[0+:AxiLookBits]              ),
+        .push_axi_id_i                ( slv_ar_chan.id[0+:LookBits]                 ),
         .push_mst_select_i            ( slv_ar_select                               ),
         .push_i                       ( ar_push                                     ),
-        .pop_axi_id_i                 ( slv_r_chan.id[0+:AxiLookBits]               ),
+        .pop_axi_id_i                 ( slv_r_chan.id[0+:LookBits]                  ),
         .pop_i                        ( slv_r_valid & slv_r_ready & slv_r_chan.last )
       );
     end
@@ -638,8 +638,8 @@ module axi_demux #(
     initial begin: validate_params
       no_mst_ports: assume (NoMstPorts > 0) else
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
-      AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
-        $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
+      AXI_ID_BITS:  assume (IdWidth >= LookBits) else
+        $fatal(1, "IdBits has to be equal or smaller than IdWidth.");
     end
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
@@ -685,29 +685,29 @@ endmodule
 
 module axi_demux_id_counters #(
   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
-  parameter int unsigned AxiIdBits         = 2,
+  parameter int unsigned IdBits            = 2,
   parameter int unsigned CounterWidth      = 4,
   parameter type         mst_port_select_t = logic
 ) (
-  input                        clk_i,   // Clock
-  input                        rst_ni,  // Asynchronous reset active low
+  input                     clk_i,   // Clock
+  input                     rst_ni,  // Asynchronous reset active low
   // lookup
-  input  logic [AxiIdBits-1:0] lookup_axi_id_i,
-  output mst_port_select_t     lookup_mst_select_o,
-  output logic                 lookup_mst_select_occupied_o,
+  input  logic [IdBits-1:0] lookup_axi_id_i,
+  output mst_port_select_t  lookup_mst_select_o,
+  output logic              lookup_mst_select_occupied_o,
   // push
-  output logic                 full_o,
-  input  logic [AxiIdBits-1:0] push_axi_id_i,
-  input  mst_port_select_t     push_mst_select_i,
-  input  logic                 push_i,
+  output logic              full_o,
+  input  logic [IdBits-1:0] push_axi_id_i,
+  input  mst_port_select_t  push_mst_select_i,
+  input  logic              push_i,
   // inject ATOPs in AR channel
-  input  logic [AxiIdBits-1:0] inject_axi_id_i,
-  input  logic                 inject_i,
+  input  logic [IdBits-1:0] inject_axi_id_i,
+  input  logic              inject_i,
   // pop
-  input  logic [AxiIdBits-1:0] pop_axi_id_i,
-  input  logic                 pop_i
+  input  logic [IdBits-1:0] pop_axi_id_i,
+  input  logic              pop_i
 );
-  localparam int unsigned NoCounters = 2**AxiIdBits;
+  localparam int unsigned NoCounters = 2**IdBits;
   typedef logic [CounterWidth-1:0] cnt_t;
 
   // registers, each gets loaded when push_en[i]
@@ -862,7 +862,7 @@ module axi_demux_intf #(
   end
 
   axi_demux #(
-    .AxiIdWidth     ( AXI_ID_WIDTH  ), // ID Width
+    .IdWidth        ( AXI_ID_WIDTH  ), // ID Width
     .AtopSupport    ( ATOP_SUPPORT  ),
     .aw_chan_t      ( aw_chan_t     ), // AW Channel Type
     .w_chan_t       (  w_chan_t     ), //  W Channel Type
@@ -873,7 +873,7 @@ module axi_demux_intf #(
     .axi_rsp_t      ( axi_rsp_t     ),
     .NoMstPorts     ( NO_MST_PORTS  ),
     .MaxTrans       ( MAX_TRANS     ),
-    .AxiLookBits    ( AXI_LOOK_BITS ),
+    .LookBits       ( AXI_LOOK_BITS ),
     .UniqueIds      ( UNIQUE_IDS    ),
     .SpillAw        ( SPILL_AW      ),
     .SpillW         ( SPILL_W       ),

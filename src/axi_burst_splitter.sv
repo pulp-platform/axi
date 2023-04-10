@@ -67,7 +67,7 @@ module axi_burst_splitter #(
   logic   sel_aw_unsupported, sel_ar_unsupported;
   localparam int unsigned MaxTxns = (MaxReadTxns > MaxWriteTxns) ? MaxReadTxns : MaxWriteTxns;
   axi_demux #(
-    .AxiIdWidth   ( IdWidth     ),
+    .IdWidth      ( IdWidth     ),
     .aw_chan_t    ( aw_chan_t   ),
     .w_chan_t     ( w_chan_t    ),
     .b_chan_t     ( b_chan_t    ),
@@ -77,7 +77,7 @@ module axi_burst_splitter #(
     .axi_rsp_t    ( axi_rsp_t   ),
     .NoMstPorts   ( 2           ),
     .MaxTrans     ( MaxTxns     ),
-    .AxiLookBits  ( IdWidth     ),
+    .LookBits     ( IdWidth     ),
     .SpillAw      ( 1'b0        ),
     .SpillW       ( 1'b0        ),
     .SpillB       ( 1'b0        ),
@@ -117,7 +117,7 @@ module axi_burst_splitter #(
                                               slv_req_i.ar.cache, slv_req_i.ar.len);
   // Respond to unsupported transactions with slave errors.
   axi_err_slv #(
-    .AxiIdWidth ( IdWidth               ),
+    .IdWidth    ( IdWidth               ),
     .axi_req_t  ( axi_req_t             ),
     .axi_rsp_t  ( axi_rsp_t             ),
     .Resp       ( axi_pkg::RESP_SLVERR  ),

@@ -29,19 +29,19 @@ module tb_axi_fifo #(
   localparam time ApplTime = 2ns;
   localparam time TestTime = 8ns;
   // AXI configuration
-  localparam int unsigned AxiIdWidth = 4;
-  localparam int unsigned AxiAddrWidth = 32;  // Axi Address Width
-  localparam int unsigned AxiDataWidth = 64;  // Axi Data Width
-  localparam int unsigned AxiUserWidth = 5;
+  localparam int unsigned IdWidth = 4;
+  localparam int unsigned AddrWidth = 32;  // Address Width
+  localparam int unsigned DataWidth = 64;  // Data Width
+  localparam int unsigned UserWidth = 5;
   // Sim print config, how many transactions
   localparam int unsigned PrintTnx = 100;
 
   typedef axi_test::axi_rand_master#(
       // AXI interface parameters
-      .AW            (AxiAddrWidth),
-      .DW            (AxiDataWidth),
-      .IW            (AxiIdWidth),
-      .UW            (AxiUserWidth),
+      .AW            (AddrWidth),
+      .DW            (DataWidth),
+      .IW            (IdWidth),
+      .UW            (UserWidth),
       // Stimuli application and test time
       .TA            (ApplTime),
       .TT            (TestTime),
@@ -52,10 +52,10 @@ module tb_axi_fifo #(
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave#(
       // AXI interface parameters
-      .AW(AxiAddrWidth),
-      .DW(AxiDataWidth),
-      .IW(AxiIdWidth),
-      .UW(AxiUserWidth),
+      .AW(AddrWidth),
+      .DW(DataWidth),
+      .IW(IdWidth),
+      .UW(UserWidth),
       // Stimuli application and test time
       .TA(ApplTime),
       .TT(TestTime)
@@ -70,17 +70,17 @@ module tb_axi_fifo #(
 
   // interfaces
   AXI_BUS #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth),
+      .AXI_ID_WIDTH  (IdWidth),
+      .AXI_USER_WIDTH(UserWidth)
   )
       master (), slave ();
   AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth),
+      .AXI_ID_WIDTH  (IdWidth),
+      .AXI_USER_WIDTH(UserWidth)
   )
       master_dv (clk), slave_dv (clk);
 
@@ -104,10 +104,10 @@ module tb_axi_fifo #(
   axi_fifo_intf #(
       .DEPTH       (Depth),  // number of FiFo slots
       .FALL_THROUGH(FallThrough),  // FiFos in fall through mode
-      .ID_WIDTH    (AxiIdWidth),  // AXI ID width
-      .ADDR_WIDTH  (AxiAddrWidth),  // AXI address width
-      .DATA_WIDTH  (AxiDataWidth),  // AXI data width
-      .USER_WIDTH  (AxiUserWidth)  // AXI user width
+      .ID_WIDTH    (IdWidth),  // AXI ID width
+      .ADDR_WIDTH  (AddrWidth),  // AXI address width
+      .DATA_WIDTH  (DataWidth),  // AXI data width
+      .USER_WIDTH  (UserWidth)  // AXI user width
   ) i_dut (
       .clk_i (clk),  // clock
       .rst_ni(rst_n),  // asynchronous reset active low

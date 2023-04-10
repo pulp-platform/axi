@@ -22,12 +22,12 @@ module axi_lite_mailbox #(
   parameter int unsigned MailboxDepth   = 32'd0,
   parameter bit unsigned IrqEdgeTrig    = 1'b0,
   parameter bit unsigned IrqActHigh     = 1'b1,
-  parameter int unsigned AxiAddrWidth   = 32'd0,
-  parameter int unsigned AxiDataWidth   = 32'd0,
+  parameter int unsigned AddrWidth      = 32'd0,
+  parameter int unsigned DataWidth      = 32'd0,
   parameter type         axi_lite_req_t = logic,
   parameter type         axi_lite_rsp_t = logic,
   // DEPENDENT PARAMETERS, DO NOT OVERRIDE!
-  parameter type         addr_t         = logic [AxiAddrWidth-1:0]
+  parameter type         addr_t         = logic [AddrWidth-1:0]
 ) (
   input  logic                clk_i,       // Clock
   input  logic                rst_ni,      // Asynchronous reset active low
@@ -39,7 +39,7 @@ module axi_lite_mailbox #(
   input  addr_t         [1:0] base_addr_i  // base address for each port
 );
   localparam int unsigned FifoUsageWidth = $clog2(MailboxDepth);
-  typedef logic [AxiDataWidth-1:0] data_t;
+  typedef logic [DataWidth-1:0] data_t;
   // usage type of the mailbox FIFO, also the type of the threshold comparison
   // is one bit wider, MSB is the fifo_full flag of the respective fifo
   typedef logic [FifoUsageWidth:0] usage_t;
@@ -56,8 +56,8 @@ module axi_lite_mailbox #(
 
   axi_lite_mailbox_slave #(
     .MailboxDepth   ( MailboxDepth   ),
-    .AxiAddrWidth   ( AxiAddrWidth   ),
-    .AxiDataWidth   ( AxiDataWidth   ),
+    .AddrWidth      ( AddrWidth      ),
+    .DataWidth      ( DataWidth      ),
     .axi_lite_req_t ( axi_lite_req_t ),
     .axi_lite_rsp_t ( axi_lite_rsp_t ),
     .addr_t         ( addr_t         ),
@@ -89,8 +89,8 @@ module axi_lite_mailbox #(
 
   axi_lite_mailbox_slave #(
     .MailboxDepth   ( MailboxDepth   ),
-    .AxiAddrWidth   ( AxiAddrWidth   ),
-    .AxiDataWidth   ( AxiDataWidth   ),
+    .AddrWidth      ( AddrWidth      ),
+    .DataWidth      ( DataWidth      ),
     .axi_lite_req_t ( axi_lite_req_t ),
     .axi_lite_rsp_t ( axi_lite_rsp_t ),
     .addr_t         ( addr_t         ),
@@ -191,8 +191,8 @@ module axi_lite_mailbox #(
   `ifndef VERILATOR
   initial begin : proc_check_params
     mailbox_depth:  assert (MailboxDepth > 1) else $fatal(1, "MailboxDepth has to be at least 2");
-    axi_addr_width: assert (AxiAddrWidth > 0) else $fatal(1, "AxiAddrWidth has to be > 0");
-    axi_data_width: assert (AxiDataWidth > 0) else $fatal(1, "AxiDataWidth has to be > 0");
+    axi_addr_width: assert (AddrWidth > 0) else $fatal(1, "AddrWidth has to be > 0");
+    axi_data_width: assert (DataWidth > 0) else $fatal(1, "DataWidth has to be > 0");
   end
   `endif
   // pragma translate_on
@@ -203,12 +203,12 @@ endmodule
 // slave port module
 module axi_lite_mailbox_slave #(
   parameter int unsigned MailboxDepth   = 32'd16,
-  parameter int unsigned AxiAddrWidth   = 32'd32,
-  parameter int unsigned AxiDataWidth   = 32'd32,
+  parameter int unsigned AddrWidth      = 32'd32,
+  parameter int unsigned DataWidth      = 32'd32,
   parameter type         axi_lite_req_t = logic,
   parameter type         axi_lite_rsp_t = logic,
-  parameter type         addr_t         = logic [AxiAddrWidth-1:0],
-  parameter type         data_t         = logic [AxiDataWidth-1:0],
+  parameter type         addr_t         = logic [AddrWidth-1:0],
+  parameter type         data_t         = logic [DataWidth-1:0],
   parameter type         usage_t        = logic                     // fill pointer from MBOX FIFO
 ) (
   input  logic          clk_i,   // Clock
@@ -269,8 +269,8 @@ module axi_lite_mailbox_slave #(
   for (genvar i = 0; i < NoRegs; i++) begin : gen_addr_map
     assign addr_map[i] = '{
         idx:        i,
-        start_addr: base_addr_i +  i      * (AxiDataWidth / 8),
-        end_addr:   base_addr_i + (i + 1) * (AxiDataWidth / 8),
+        start_addr: base_addr_i +  i      * (DataWidth / 8),
+        end_addr:   base_addr_i + (i + 1) * (DataWidth / 8),
         default:    '0
     };
   end
@@ -299,7 +299,7 @@ module axi_lite_mailbox_slave #(
   `FFLARN(irqen_q, irqen_d, update_regs, '0, clk_i, rst_ni)
 
   // Mailbox FIFO data assignments
-  for (genvar i = 0; i < (AxiDataWidth/8); i++) begin : gen_w_mbox_data
+  for (genvar i = 0; i < (DataWidth/8); i++) begin : gen_w_mbox_data
     assign mbox_w_data_o[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : '0;
   end
 
@@ -428,7 +428,7 @@ module axi_lite_mailbox_slave #(
             // STATUS: read only
             // ERROR:  read only
             WIRQT:  begin
-              for (int unsigned i = 0; i < AxiDataWidth/8; i++) begin
+              for (int unsigned i = 0; i < DataWidth/8; i++) begin
                 wirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (wirqt_d >= data_t'(MailboxDepth)) begin
@@ -439,7 +439,7 @@ module axi_lite_mailbox_slave #(
               b_chan      = '{resp: axi_pkg::RESP_OKAY};
             end
             RIRQT:  begin
-              for (int unsigned i = 0; i < AxiDataWidth/8; i++) begin
+              for (int unsigned i = 0; i < DataWidth/8; i++) begin
                 rirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (rirqt_d >= data_t'(MailboxDepth)) begin
@@ -544,10 +544,10 @@ module axi_lite_mailbox_slave #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : proc_check_params
-    assert (AxiAddrWidth == $bits(slv_req_i.aw.addr)) else $fatal(1, "AW AxiAddrWidth mismatch");
-    assert (AxiDataWidth == $bits(slv_req_i.w.data))  else $fatal(1, " W AxiDataWidth mismatch");
-    assert (AxiAddrWidth == $bits(slv_req_i.ar.addr)) else $fatal(1, "AR AxiAddrWidth mismatch");
-    assert (AxiDataWidth == $bits(slv_rsp_o.r.data))  else $fatal(1, " R AxiDataWidth mismatch");
+    assert (AddrWidth == $bits(slv_req_i.aw.addr)) else $fatal(1, "AW AddrWidth mismatch");
+    assert (DataWidth == $bits(slv_req_i.w.data))  else $fatal(1, " W DataWidth mismatch");
+    assert (AddrWidth == $bits(slv_req_i.ar.addr)) else $fatal(1, "AR AddrWidth mismatch");
+    assert (DataWidth == $bits(slv_rsp_o.r.data))  else $fatal(1, " R DataWidth mismatch");
   end
   `endif
   // pragma translate_on
@@ -593,8 +593,8 @@ module axi_lite_mailbox_intf #(
     .MailboxDepth   ( MAILBOX_DEPTH  ),
     .IrqEdgeTrig    ( IRQ_EDGE_TRIG  ),
     .IrqActHigh     ( IRQ_ACT_HIGH   ),
-    .AxiAddrWidth   ( AXI_ADDR_WIDTH ),
-    .AxiDataWidth   ( AXI_DATA_WIDTH ),
+    .AddrWidth      ( AXI_ADDR_WIDTH ),
+    .DataWidth      ( AXI_DATA_WIDTH ),
     .axi_lite_req_t ( axi_lite_req_t ),
     .axi_lite_rsp_t ( axi_lite_rsp_t )
   ) i_axi_lite_mailbox (

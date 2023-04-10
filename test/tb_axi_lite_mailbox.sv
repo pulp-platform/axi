@@ -39,32 +39,32 @@ module tb_axi_lite_mailbox;
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // axi configuration
-  localparam int unsigned AxiAddrWidth      =  32'd32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth      =  32'd64;    // Axi Data Width
+  localparam int unsigned AddrWidth      =  32'd32;    //  Address Width
+  localparam int unsigned DataWidth      =  32'd64;    //  Data Width
 
   // mailbox params
   localparam int unsigned MailboxDepth = 32'd16;
 
-  typedef logic [AxiAddrWidth-1:0] addr_t; // for sign extension
-  typedef logic [AxiDataWidth-1:0] data_t; // for sign extension
+  typedef logic [AddrWidth-1:0] addr_t; // for sign extension
+  typedef logic [DataWidth-1:0] data_t; // for sign extension
 
   typedef enum addr_t {
-    MBOXW  = addr_t'(0 * AxiDataWidth/8),
-    MBOXR  = addr_t'(1 * AxiDataWidth/8),
-    STATUS = addr_t'(2 * AxiDataWidth/8),
-    ERROR  = addr_t'(3 * AxiDataWidth/8),
-    WIRQT  = addr_t'(4 * AxiDataWidth/8),
-    RIRQT  = addr_t'(5 * AxiDataWidth/8),
-    IRQS   = addr_t'(6 * AxiDataWidth/8),
-    IRQEN  = addr_t'(7 * AxiDataWidth/8),
-    IRQP   = addr_t'(8 * AxiDataWidth/8),
-    CTRL   = addr_t'(9 * AxiDataWidth/8)
+    MBOXW  = addr_t'(0 * DataWidth/8),
+    MBOXR  = addr_t'(1 * DataWidth/8),
+    STATUS = addr_t'(2 * DataWidth/8),
+    ERROR  = addr_t'(3 * DataWidth/8),
+    WIRQT  = addr_t'(4 * DataWidth/8),
+    RIRQT  = addr_t'(5 * DataWidth/8),
+    IRQS   = addr_t'(6 * DataWidth/8),
+    IRQEN  = addr_t'(7 * DataWidth/8),
+    IRQP   = addr_t'(8 * DataWidth/8),
+    CTRL   = addr_t'(9 * DataWidth/8)
   } reg_addr_e;
 
   typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth        ),
-    .DW ( AxiDataWidth        ),
+    .AW ( AddrWidth           ),
+    .DW ( DataWidth           ),
     // Stimuli application and test time
     .TA ( ApplTime            ),
     .TT ( TestTime            ),
@@ -90,12 +90,12 @@ module tb_axi_lite_mailbox;
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master [1:0] ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master_dv [1:0] (clk);
   for (genvar i = 0; i < 2; i++) begin : gen_conn_dv_masters
     `AXI_LITE_ASSIGN(master[i], master_dv[i])
@@ -451,8 +451,8 @@ module tb_axi_lite_mailbox;
     .MAILBOX_DEPTH  ( MailboxDepth ),
     .IRQ_EDGE_TRIG  ( 1'b0         ),
     .IRQ_ACT_HIGH   ( 1'b1         ),
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth    ),
+    .AXI_DATA_WIDTH ( DataWidth    )
   ) i_mailbox_dut (
     .clk_i       ( clk       ),
     .rst_ni      ( rst_n     ),

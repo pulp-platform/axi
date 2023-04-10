@@ -25,13 +25,13 @@ module axi_from_mem #(
   /// Memory request address width.
   parameter int unsigned    MemAddrWidth    = 32'd0,
   /// AXI4-Lite address width.
-  parameter int unsigned    AxiAddrWidth    = 32'd0,
+  parameter int unsigned    AddrWidth    = 32'd0,
   /// Data width in bit of the memory request data **and** the Axi4-Lite data channels.
   parameter int unsigned    DataWidth       = 32'd0,
   /// How many requests can be in flight at the same time. (Depth of the response mux FIFO).
   parameter int unsigned    MaxRequests     = 32'd0,
   /// Protection signal the module should emit on the AXI4 transactions.
-  parameter axi_pkg::prot_t AxiProt         = 3'b000,
+  parameter axi_pkg::prot_t Prot         = 3'b000,
   /// AXI4 request struct definition.
   parameter type            axi_req_t       = logic,
   /// AXI4 response struct definition.
@@ -45,7 +45,7 @@ module axi_from_mem #(
   input  logic                    mem_req_i,
   /// Memory slave port, request address.
   ///
-  /// Byte address, will be extended or truncated to match `AxiAddrWidth`.
+  /// Byte address, will be extended or truncated to match `AddrWidth`.
   input  logic [MemAddrWidth-1:0] mem_addr_i,
   /// Memory slave port, request is a write.
   ///
@@ -78,18 +78,18 @@ module axi_from_mem #(
   input  axi_rsp_t                axi_rsp_i
 );
 
-  `AXI_LITE_TYPEDEF_ALL(axi_lite, logic [AxiAddrWidth-1:0], logic [DataWidth-1:0], logic [DataWidth/8-1:0])
+  `AXI_LITE_TYPEDEF_ALL(axi_lite, logic [AddrWidth-1:0], logic [DataWidth-1:0], logic [DataWidth/8-1:0])
   axi_lite_req_t axi_lite_req;
   axi_lite_rsp_t axi_lite_rsp;
 
   axi_lite_from_mem #(
-    .MemAddrWidth    ( MemAddrWidth    ),
-    .AxiAddrWidth    ( AxiAddrWidth    ),
-    .DataWidth       ( DataWidth       ),
-    .MaxRequests     ( MaxRequests     ),
-    .AxiProt         ( AxiProt         ),
-    .axi_req_t       ( axi_lite_req_t  ),
-    .axi_rsp_t       ( axi_lite_rsp_t )
+    .MemAddrWidth ( MemAddrWidth   ),
+    .AddrWidth    ( AddrWidth      ),
+    .DataWidth    ( DataWidth      ),
+    .MaxRequests  ( MaxRequests    ),
+    .Prot         ( Prot           ),
+    .axi_req_t    ( axi_lite_req_t ),
+    .axi_rsp_t    ( axi_lite_rsp_t )
   ) i_axi_lite_from_mem (
     .clk_i,
     .rst_ni,
@@ -107,11 +107,11 @@ module axi_from_mem #(
   );
 
   axi_lite_to_axi #(
-    .AxiDataWidth    ( DataWidth      ),
-    .req_lite_t      ( axi_lite_req_t ),
-    .rsp_lite_t      ( axi_lite_rsp_t ),
-    .axi_req_t       ( axi_req_t      ),
-    .axi_rsp_t       ( axi_rsp_t      )
+    .DataWidth    ( DataWidth      ),
+    .req_lite_t   ( axi_lite_req_t ),
+    .rsp_lite_t   ( axi_lite_rsp_t ),
+    .axi_req_t    ( axi_req_t      ),
+    .axi_rsp_t    ( axi_rsp_t      )
   ) i_axi_lite_to_axi (
     .slv_req_lite_i ( axi_lite_req   ),
     .slv_rsp_lite_o ( axi_lite_rsp   ),

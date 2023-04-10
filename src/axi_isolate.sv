@@ -46,13 +46,13 @@ module axi_isolate #(
   /// Support atomic operations (ATOPs)
   parameter bit AtopSupport = 1'b1,
   /// Address width of all AXI4+ATOP ports
-  parameter int signed AxiAddrWidth = 32'd0,
+  parameter int signed AddrWidth = 32'd0,
   /// Data width of all AXI4+ATOP ports
-  parameter int signed AxiDataWidth = 32'd0,
+  parameter int signed DataWidth = 32'd0,
   /// ID width of all AXI4+ATOP ports
-  parameter int signed AxiIdWidth = 32'd0,
+  parameter int signed IdWidth = 32'd0,
   /// User signal width of all AXI4+ATOP ports
-  parameter int signed AxiUserWidth = 32'd0,
+  parameter int signed UserWidth = 32'd0,
   /// Request struct type of all AXI4+ATOP ports
   parameter type         axi_req_t  = logic,
   /// Response struct type of all AXI4+ATOP ports
@@ -76,11 +76,11 @@ module axi_isolate #(
   output logic     isolated_o
 );
 
-  typedef logic [AxiIdWidth-1:0]     id_t;
-  typedef logic [AxiAddrWidth-1:0]   addr_t;
-  typedef logic [AxiDataWidth-1:0]   data_t;
-  typedef logic [AxiDataWidth/8-1:0] strb_t;
-  typedef logic [AxiUserWidth-1:0]   user_t;
+  typedef logic [IdWidth-1:0]     id_t;
+  typedef logic [AddrWidth-1:0]   addr_t;
+  typedef logic [DataWidth-1:0]   data_t;
+  typedef logic [DataWidth/8-1:0] strb_t;
+  typedef logic [UserWidth-1:0]   user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
@@ -93,25 +93,25 @@ module axi_isolate #(
 
   if (TerminateTransaction) begin
     axi_demux #(
-      .AxiIdWidth     ( AxiIdWidth  ),
-      .AtopSupport    ( AtopSupport ),
-      .aw_chan_t      ( aw_chan_t   ),
-      .w_chan_t       ( w_chan_t    ),
-      .b_chan_t       ( b_chan_t    ),
-      .ar_chan_t      ( ar_chan_t   ),
-      .r_chan_t       ( r_chan_t    ),
-      .axi_req_t      ( axi_req_t   ),
-      .axi_rsp_t      ( axi_rsp_t   ),
-      .NoMstPorts     ( 2           ),
-      .MaxTrans       ( NumPending  ),
+      .IdWidth     ( IdWidth     ),
+      .AtopSupport ( AtopSupport ),
+      .aw_chan_t   ( aw_chan_t   ),
+      .w_chan_t    ( w_chan_t    ),
+      .b_chan_t    ( b_chan_t    ),
+      .ar_chan_t   ( ar_chan_t   ),
+      .r_chan_t    ( r_chan_t    ),
+      .axi_req_t   ( axi_req_t   ),
+      .axi_rsp_t   ( axi_rsp_t   ),
+      .NoMstPorts  ( 2           ),
+      .MaxTrans    ( NumPending  ),
       // We don't need many bits here as the common case will be to go for the pass-through.
-      .AxiLookBits    ( 1           ),
-      .UniqueIds      ( 1'b0        ),
-      .SpillAw        ( 1'b0        ),
-      .SpillW         ( 1'b0        ),
-      .SpillB         ( 1'b0        ),
-      .SpillAr        ( 1'b0        ),
-      .SpillR         ( 1'b0        )
+      .LookBits    ( 1           ),
+      .UniqueIds   ( 1'b0        ),
+      .SpillAw     ( 1'b0        ),
+      .SpillW      ( 1'b0        ),
+      .SpillB      ( 1'b0        ),
+      .SpillAr     ( 1'b0        ),
+      .SpillR      ( 1'b0        )
     ) i_axi_demux (
       .clk_i,
       .rst_ni,
@@ -125,7 +125,7 @@ module axi_isolate #(
     );
 
     axi_err_slv #(
-      .AxiIdWidth  ( AxiIdWidth           ),
+      .IdWidth     ( IdWidth              ),
       .axi_req_t   ( axi_req_t            ),
       .axi_rsp_t   ( axi_rsp_t            ),
       .Resp        ( axi_pkg::RESP_DECERR ),
@@ -456,10 +456,10 @@ module axi_isolate_intf #(
     .NumPending           ( NUM_PENDING           ),
     .TerminateTransaction ( TERMINATE_TRANSACTION ),
     .AtopSupport          ( ATOP_SUPPORT          ),
-    .AxiAddrWidth         ( AXI_ADDR_WIDTH        ),
-    .AxiDataWidth         ( AXI_DATA_WIDTH        ),
-    .AxiIdWidth           ( AXI_ID_WIDTH          ),
-    .AxiUserWidth         ( AXI_USER_WIDTH        ),
+    .AddrWidth            ( AXI_ADDR_WIDTH        ),
+    .DataWidth            ( AXI_DATA_WIDTH        ),
+    .IdWidth              ( AXI_ID_WIDTH          ),
+    .UserWidth            ( AXI_USER_WIDTH        ),
     .axi_req_t            ( axi_req_t             ),
     .axi_rsp_t            ( axi_rsp_t             )
   ) i_axi_isolate (

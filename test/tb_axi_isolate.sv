@@ -30,20 +30,20 @@ module tb_axi_isolate #(
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // AXI configuration
-  localparam int unsigned AxiIdWidth   =  4;
-  localparam int unsigned AxiAddrWidth =  32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth =  64;    // Axi Data Width
-  localparam int unsigned AxiUserWidth =  5;
+  localparam int unsigned IdWidth   =  4;
+  localparam int unsigned AddrWidth =  32;    //  Address Width
+  localparam int unsigned DataWidth =  64;    //  Data Width
+  localparam int unsigned UserWidth =  5;
   // Sim print config, how many transactions
   localparam int unsigned PrintTnx = 1000;
 
 
   typedef axi_test::axi_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime ),
@@ -54,10 +54,10 @@ module tb_axi_isolate #(
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
@@ -74,28 +74,28 @@ module tb_axi_isolate #(
 
   // interfaces
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) master ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) master_dv (clk);
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) slave ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) slave_dv (clk);
 
   `AXI_ASSIGN           ( master,  master_dv )
@@ -117,10 +117,10 @@ module tb_axi_isolate #(
   //-----------------------------------
   axi_isolate_intf #(
     .NUM_PENDING    ( NoPendingDut ), // number of pending requests
-    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
-    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
-    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+    .AXI_ID_WIDTH   ( IdWidth      ), // AXI ID width
+    .AXI_ADDR_WIDTH ( AddrWidth    ), // AXI address width
+    .AXI_DATA_WIDTH ( DataWidth    ), // AXI data width
+    .AXI_USER_WIDTH ( UserWidth    )  // AXI user width
   ) i_dut (
     .clk_i      ( clk      ), // clock
     .rst_ni     ( rst_n    ), // asynchronous reset active low

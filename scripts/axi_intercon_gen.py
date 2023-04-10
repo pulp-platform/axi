@@ -333,38 +333,38 @@ class AxiIntercon:
   localparam int unsigned NoSlaves    = 32'd{};    // How many Axi Slaves  there are
 
   // axi configuration
-  localparam int unsigned AxiIdWidthMasters =  32'd{};
-  localparam int unsigned AxiIdUsed         =  32'd{}; // Has to be <= AxiIdWidthMasters
-  localparam int unsigned AxiIdWidthSlaves  =  AxiIdWidthMasters + $clog2(NoMasters);
-  localparam int unsigned AxiAddrWidth      =  32'd32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth      =  32'd64;    // Axi Data Width
-  localparam int unsigned AxiStrbWidth      =  AxiDataWidth / 8;
-  localparam int unsigned AxiUserWidth      =  1;
+  localparam int unsigned IdWidthMasters =  32'd{};
+  localparam int unsigned IdUsed         =  32'd{}; // Has to be <= IdWidthMasters
+  localparam int unsigned IdWidthSlaves  =  IdWidthMasters + $clog2(NoMasters);
+  localparam int unsigned AddrWidth      =  32'd32;    //  Address Width
+  localparam int unsigned DataWidth      =  32'd64;    //  Data Width
+  localparam int unsigned StrbWidth      =  DataWidth / 8;
+  localparam int unsigned UserWidth      =  1;
 """.format(nm, ns, max_idw, max_idw)
         raw += "  localparam axi_pkg::xbar_cfg_t xbar_cfg = '{\n"
         raw += """
-    NoSlvPorts:         NoMasters,
-    NoMstPorts:         NoSlaves,
-    MaxMstTrans:        10,
-    MaxSlvTrans:        6,
-    FallThrough:        1'b0,
-    LatencyMode:        axi_pkg::CUT_ALL_AX,
-    AxiIdWidthSlvPorts: AxiIdWidthMasters,
-    AxiIdUsedSlvPorts:  AxiIdUsed,
-    UniqueIds:          1'b0,
-    AxiAddrWidth:       AxiAddrWidth,
-    AxiDataWidth:       AxiDataWidth,
-    NoAddrRules:        NoSlaves
+    NoSlvPorts:      NoMasters,
+    NoMstPorts:      NoSlaves,
+    MaxMstTrans:     10,
+    MaxSlvTrans:     6,
+    FallThrough:     1'b0,
+    LatencyMode:     axi_pkg::CUT_ALL_AX,
+    IdWidthSlvPorts: IdWidthMasters,
+    IdUsedSlvPorts:  IdUsed,
+    UniqueIds:       1'b0,
+    AddrWidth:       AddrWidth,
+    DataWidth:       DataWidth,
+    NoAddrRules:     NoSlaves
 """
         raw += "  };\n"
         raw += """
-  typedef logic [AxiIdWidthMasters-1:0] id_mst_t;
-  typedef logic [AxiIdWidthSlaves-1:0]  id_slv_t;
-  typedef logic [AxiAddrWidth-1:0]      addr_t;
-  typedef axi_pkg::xbar_rule_32_t       rule_t; // Has to be the same width as axi addr
-  typedef logic [AxiDataWidth-1:0]      data_t;
-  typedef logic [AxiStrbWidth-1:0]      strb_t;
-  typedef logic [AxiUserWidth-1:0]      user_t;
+  typedef logic [IdWidthMasters-1:0] id_mst_t;
+  typedef logic [IdWidthSlaves-1:0]  id_slv_t;
+  typedef logic [AddrWidth-1:0]      addr_t;
+  typedef axi_pkg::xbar_rule_32_t    rule_t; // Has to be the same width as axi addr
+  typedef logic [DataWidth-1:0]      data_t;
+  typedef logic [StrbWidth-1:0]      strb_t;
+  typedef logic [UserWidth-1:0]      user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_mst_t, addr_t, id_mst_t, user_t)
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_slv_t, addr_t, id_slv_t, user_t)

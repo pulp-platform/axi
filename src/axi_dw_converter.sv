@@ -16,22 +16,22 @@
 // does not support FIXED bursts with incoming axlen != 0.
 
 module axi_dw_converter #(
-    parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
-    parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
-    parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
-    parameter int unsigned AxiAddrWidth        = 1    , // Address width
-    parameter int unsigned AxiIdWidth          = 1    , // ID width
-    parameter type aw_chan_t                   = logic, // AW Channel Type
-    parameter type mst_w_chan_t                = logic, //  W Channel Type for the mst port
-    parameter type slv_w_chan_t                = logic, //  W Channel Type for the slv port
-    parameter type b_chan_t                    = logic, //  B Channel Type
-    parameter type ar_chan_t                   = logic, // AR Channel Type
-    parameter type mst_r_chan_t                = logic, //  R Channel Type for the mst port
-    parameter type slv_r_chan_t                = logic, //  R Channel Type for the slv port
-    parameter type mst_port_axi_req_t          = logic, // AXI Request Type for mst ports
-    parameter type mst_port_axi_rsp_t          = logic, // AXI Response Type for mst ports
-    parameter type slv_port_axi_req_t          = logic, // AXI Request Type for slv ports
-    parameter type slv_port_axi_rsp_t          = logic  // AXI Response Type for slv ports
+    parameter int unsigned MaxReads         = 1    , // Number of outstanding reads
+    parameter int unsigned SlvPortDataWidth = 8    , // Data width of the slv port
+    parameter int unsigned MstPortDataWidth = 8    , // Data width of the mst port
+    parameter int unsigned AddrWidth        = 1    , // Address width
+    parameter int unsigned IdWidth          = 1    , // ID width
+    parameter type aw_chan_t                = logic, // AW Channel Type
+    parameter type mst_w_chan_t             = logic, //  W Channel Type for the mst port
+    parameter type slv_w_chan_t             = logic, //  W Channel Type for the slv port
+    parameter type b_chan_t                 = logic, //  B Channel Type
+    parameter type ar_chan_t                = logic, // AR Channel Type
+    parameter type mst_r_chan_t             = logic, //  R Channel Type for the mst port
+    parameter type slv_r_chan_t             = logic, //  R Channel Type for the slv port
+    parameter type mst_port_axi_req_t       = logic, // AXI Request Type for mst ports
+    parameter type mst_port_axi_rsp_t       = logic, // AXI Response Type for mst ports
+    parameter type slv_port_axi_req_t       = logic, // AXI Request Type for slv ports
+    parameter type slv_port_axi_rsp_t       = logic  // AXI Response Type for slv ports
   ) (
     input  logic              clk_i,
     input  logic              rst_ni,
@@ -43,18 +43,18 @@ module axi_dw_converter #(
     input  mst_port_axi_rsp_t mst_rsp_i
   );
 
-  if (AxiMstPortDataWidth == AxiSlvPortDataWidth) begin: gen_no_dw_conversion
-    assign mst_req_o = slv_req_i;
+  if (MstPortDataWidth == SlvPortDataWidth) begin: gen_no_dw_conversion
+    assign mst_req_o = slv_req_i ;
     assign slv_rsp_o = mst_rsp_i;
   end : gen_no_dw_conversion
 
-  if (AxiMstPortDataWidth > AxiSlvPortDataWidth) begin: gen_dw_upsize
+  if (MstPortDataWidth > SlvPortDataWidth) begin: gen_dw_upsize
     axi_dw_upsizer #(
-      .AxiMaxReads        (AxiMaxReads        ),
-      .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
-      .AxiMstPortDataWidth(AxiMstPortDataWidth),
-      .AxiAddrWidth       (AxiAddrWidth       ),
-      .AxiIdWidth         (AxiIdWidth         ),
+      .MaxReads           (MaxReads        ),
+      .SlvPortDataWidth   (SlvPortDataWidth),
+      .MstPortDataWidth   (MstPortDataWidth),
+      .AddrWidth          (AddrWidth       ),
+      .IdWidth            (IdWidth         ),
       .aw_chan_t          (aw_chan_t          ),
       .mst_w_chan_t       (mst_w_chan_t       ),
       .slv_w_chan_t       (slv_w_chan_t       ),
@@ -78,13 +78,13 @@ module axi_dw_converter #(
     );
   end : gen_dw_upsize
 
-  if (AxiMstPortDataWidth < AxiSlvPortDataWidth) begin: gen_dw_downsize
+  if (MstPortDataWidth < SlvPortDataWidth) begin: gen_dw_downsize
     axi_dw_downsizer #(
-      .AxiMaxReads        (AxiMaxReads        ),
-      .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
-      .AxiMstPortDataWidth(AxiMstPortDataWidth),
-      .AxiAddrWidth       (AxiAddrWidth       ),
-      .AxiIdWidth         (AxiIdWidth         ),
+      .MaxReads           (MaxReads        ),
+      .SlvPortDataWidth   (SlvPortDataWidth),
+      .MstPortDataWidth   (MstPortDataWidth),
+      .AddrWidth          (AddrWidth       ),
+      .IdWidth            (IdWidth         ),
       .aw_chan_t          (aw_chan_t          ),
       .mst_w_chan_t       (mst_w_chan_t       ),
       .slv_w_chan_t       (slv_w_chan_t       ),
@@ -160,11 +160,11 @@ module axi_dw_converter_intf #(
   `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_dw_converter #(
-    .AxiMaxReads        ( AXI_MAX_READS           ),
-    .AxiSlvPortDataWidth( AXI_SLV_PORT_DATA_WIDTH ),
-    .AxiMstPortDataWidth( AXI_MST_PORT_DATA_WIDTH ),
-    .AxiAddrWidth       ( AXI_ADDR_WIDTH          ),
-    .AxiIdWidth         ( AXI_ID_WIDTH            ),
+    .MaxReads           ( AXI_MAX_READS           ),
+    .SlvPortDataWidth   ( AXI_SLV_PORT_DATA_WIDTH ),
+    .MstPortDataWidth   ( AXI_MST_PORT_DATA_WIDTH ),
+    .AddrWidth          ( AXI_ADDR_WIDTH          ),
+    .IdWidth            ( AXI_ID_WIDTH            ),
     .aw_chan_t          ( aw_chan_t               ),
     .mst_w_chan_t       ( mst_w_chan_t            ),
     .slv_w_chan_t       ( slv_w_chan_t            ),

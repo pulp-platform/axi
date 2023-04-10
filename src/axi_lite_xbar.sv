@@ -44,9 +44,9 @@ module axi_lite_xbar #(
   input  logic          [Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
 );
 
-  typedef logic [Cfg.AxiAddrWidth-1:0]   addr_t;
-  typedef logic [Cfg.AxiDataWidth-1:0]   data_t;
-  typedef logic [Cfg.AxiDataWidth/8-1:0] strb_t;
+  typedef logic [Cfg.AddrWidth-1:0]   addr_t;
+  typedef logic [Cfg.DataWidth-1:0]   data_t;
+  typedef logic [Cfg.DataWidth/8-1:0] strb_t;
   // to account for the decoding error slave
   typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
   // full AXI typedef for the decode error slave, id_t and user_t are logic and will be
@@ -168,7 +168,7 @@ module axi_lite_xbar #(
     // connect the decode error module to the last index of the demux master port
     // typedef as the decode error slave uses full axi
     axi_lite_to_axi #(
-      .AxiDataWidth   ( Cfg.AxiDataWidth  ),
+      .DataWidth      ( Cfg.DataWidth     ),
       .axi_lite_req_t ( axi_lite_req_t    ),
       .axi_lite_rsp_t ( axi_lite_rsp_t    ),
       .axi_req_t      ( full_req_t        ),
@@ -183,7 +183,7 @@ module axi_lite_xbar #(
     );
 
     axi_err_slv #(
-      .AxiIdWidth  ( 32'd1                ), // ID width is one as defined as logic above
+      .IdWidth     ( 32'd1                ), // ID width is one as defined as logic above
       .axi_req_t   ( full_req_t           ), // AXI request struct
       .axi_rsp_t   ( full_rsp_t           ), // AXI response struct
       .Resp        ( axi_pkg::RESP_DECERR ),
@@ -253,9 +253,9 @@ module axi_lite_xbar_intf #(
   input  logic  [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0]  default_mst_port_i
 );
 
-  typedef logic [Cfg.AxiAddrWidth       -1:0] addr_t;
-  typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
-  typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
+  typedef logic [Cfg.AddrWidth       -1:0] addr_t;
+  typedef logic [Cfg.DataWidth       -1:0] data_t;
+  typedef logic [Cfg.DataWidth/8     -1:0] strb_t;
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)

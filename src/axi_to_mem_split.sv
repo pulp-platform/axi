@@ -25,11 +25,11 @@ module axi_to_mem_split #(
   /// which should be accessible.
   parameter int unsigned AddrWidth    = 0,
   /// AXI4+ATOP data width.
-  parameter int unsigned AxiDataWidth = 0,
+  parameter int unsigned DataWidth    = 0,
   /// AXI4+ATOP ID width.
   parameter int unsigned IdWidth      = 0,
   /// Memory data width, must evenly divide `DataWidth`.
-  parameter int unsigned MemDataWidth = 0, // must divide `AxiDataWidth` without remainder
+  parameter int unsigned MemDataWidth = 0, // must divide `DataWidth` without remainder
   /// Depth of memory response buffer. This should be equal to the memory response latency.
   parameter int unsigned BufDepth     = 0,
   /// Hide write requests if the strb == '0
@@ -37,7 +37,7 @@ module axi_to_mem_split #(
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OutFifoDepth = 1,
   /// Dependent parameters, do not override. Number of memory ports.
-  parameter int unsigned NumMemPorts  = 2*AxiDataWidth/MemDataWidth,
+  parameter int unsigned NumMemPorts  = 2*DataWidth/MemDataWidth,
   /// Dependent parameter, do not override. Memory address type.
   parameter type         addr_t       = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -101,7 +101,7 @@ module axi_to_mem_split #(
     .axi_req_t    ( axi_req_t     ),
     .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
-    .DataWidth    ( AxiDataWidth  ),
+    .DataWidth    ( DataWidth     ),
     .IdWidth      ( IdWidth       ),
     .NumBanks     ( NumMemPorts/2 ),
     .BufDepth     ( BufDepth      ),
@@ -128,7 +128,7 @@ module axi_to_mem_split #(
     .axi_req_t    ( axi_req_t     ),
     .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
-    .DataWidth    ( AxiDataWidth  ),
+    .DataWidth    ( DataWidth     ),
     .IdWidth      ( IdWidth       ),
     .NumBanks     ( NumMemPorts/2 ),
     .BufDepth     ( BufDepth      ),
@@ -223,10 +223,10 @@ module axi_to_mem_split_intf #(
   axi_to_mem_split #(
     .axi_req_t    ( axi_req_t      ),
     .axi_rsp_t    ( axi_rsp_t      ),
-    .AxiDataWidth ( AXI_DATA_WIDTH ),
+    .DataWidth    ( AXI_DATA_WIDTH ),
     .AddrWidth    ( AXI_ADDR_WIDTH ),
     .IdWidth      ( AXI_ID_WIDTH   ),
-    .MemDataWidth ( MEM_DATA_WIDTH ), // must divide `AxiDataWidth` without remainder
+    .MemDataWidth ( MEM_DATA_WIDTH ), // must divide `DataWidth` without remainder
     .BufDepth     ( BUF_DEPTH      ),
     .HideStrb     ( HIDE_STRB      ),
     .OutFifoDepth ( OUT_FIFO_DEPTH )

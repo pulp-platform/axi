@@ -25,13 +25,13 @@
 /// This module retains the independence of IDs.  That is, if two transactions have different IDs at
 /// the slave port of this module, they are guaranteed to have different IDs at the master port of
 /// this module.  This implies a lower bound on the [width of IDs on the master
-/// port](#parameter.AxiMstPortIdWidth).  If you require narrower master port IDs and can forgo ID
+/// port](#parameter.MstPortIdWidth).  If you require narrower master port IDs and can forgo ID
 /// independence, use [`axi_id_serialize`](module.axi_id_serialize) instead.
 ///
 /// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
 module axi_id_remap #(
   /// ID width of the AXI4+ATOP slave port.
-  parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+  parameter int unsigned SlvPortIdWidth = 32'd0,
   /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
   /// counted separately (except for ATOPs, which count as both read and write).
   ///
@@ -39,37 +39,37 @@ module axi_id_remap #(
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
   ///
-  /// The maximum value of this parameter is `2**AxiSlvPortIdWidth`.
-  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
+  /// The maximum value of this parameter is `2**SlvPortIdWidth`.
+  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   ///
   /// It is legal for upstream to have more transactions than the maximum given by this parameter in
   /// flight for any ID, but a transaction exceeding the maximum will be stalled until another
   /// transaction with the same ID completes.
-  parameter int unsigned AxiMaxTxnsPerId = 32'd0,
+  parameter int unsigned MaxTxnsPerId = 32'd0,
   /// ID width of the AXI4+ATOP master port.
   ///
-  /// The minimum value of this parameter is the ceiled binary logarithm of `AxiSlvPortMaxUniqIds`,
+  /// The minimum value of this parameter is the ceiled binary logarithm of `SlvPortMaxUniqIds`,
   /// because IDs at the master port must be wide enough to represent IDs up to
-  /// `AxiSlvPortMaxUniqIds-1`.
+  /// `SlvPortMaxUniqIds-1`.
   ///
   /// If master IDs are wider than the minimum, they are extended by prepending zeros.
-  parameter int unsigned AxiMstPortIdWidth = 32'd0,
+  parameter int unsigned MstPortIdWidth = 32'd0,
   /// Request struct type of the AXI4+ATOP slave port.
   ///
-  /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
+  /// The width of all IDs in this struct must match `SlvPortIdWidth`.
   parameter type slv_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port.
   ///
-  /// The width of all IDs in this struct must match `AxiSlvPortIdWidth`.
+  /// The width of all IDs in this struct must match `SlvPortIdWidth`.
   parameter type slv_port_axi_rsp_t = logic,
   /// Request struct type of the AXI4+ATOP master port
   ///
-  /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
+  /// The width of all IDs in this struct must match `MstPortIdWidth`.
   parameter type mst_port_axi_req_t = logic,
   /// Response struct type of the AXI4+ATOP master port
   ///
-  /// The width of all IDs in this struct must match `AxiMstPortIdWidth`.
+  /// The width of all IDs in this struct must match `MstPortIdWidth`.
   parameter type mst_port_axi_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
@@ -128,10 +128,10 @@ module axi_id_remap #(
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(AxiSlvPortMaxUniqIds);
-  typedef logic [AxiSlvPortMaxUniqIds-1:0]  field_t;
-  typedef logic [AxiSlvPortIdWidth-1:0]     id_inp_t;
-  typedef logic [IdxWidth-1:0]              idx_t;
+  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(SlvPortMaxUniqIds);
+  typedef logic [SlvPortMaxUniqIds-1:0]  field_t;
+  typedef logic [SlvPortIdWidth-1:0]     id_inp_t;
+  typedef logic [IdxWidth-1:0]           idx_t;
   field_t   wr_free,          rd_free,          both_free;
   id_inp_t                    rd_push_inp_id;
   idx_t     wr_free_oup_id,   rd_free_oup_id,   both_free_oup_id,
@@ -143,9 +143,9 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .InpIdWidth     ( AxiSlvPortIdWidth     ),
-    .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
-    .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
+    .InpIdWidth     ( SlvPortIdWidth     ),
+    .MaxUniqInpIds  ( SlvPortMaxUniqIds  ),
+    .MaxTxnsPerId   ( MaxTxnsPerId       )
   ) i_wr_table (
     .clk_i,
     .rst_ni,
@@ -164,9 +164,9 @@ module axi_id_remap #(
     .pop_inp_id_o    ( slv_rsp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .InpIdWidth     ( AxiSlvPortIdWidth     ),
-    .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
-    .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
+    .InpIdWidth     ( SlvPortIdWidth     ),
+    .MaxUniqInpIds  ( SlvPortMaxUniqIds  ),
+    .MaxTxnsPerId   ( MaxTxnsPerId       )
   ) i_rd_table (
     .clk_i,
     .rst_ni,
@@ -186,8 +186,8 @@ module axi_id_remap #(
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  ( AxiSlvPortMaxUniqIds  ),
-    .MODE   ( 1'b0                  )
+    .WIDTH  ( SlvPortMaxUniqIds  ),
+    .MODE   ( 1'b0               )
   ) i_lzc (
     .in_i     ( both_free        ),
     .cnt_o    ( both_free_oup_id ),
@@ -195,7 +195,7 @@ module axi_id_remap #(
   );
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
-  localparam ZeroWidth = AxiMstPortIdWidth - IdxWidth;
+  localparam ZeroWidth = MstPortIdWidth - IdxWidth;
   assign mst_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
   assign mst_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
 
@@ -353,16 +353,16 @@ module axi_id_remap #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
-    assert(AxiSlvPortIdWidth > 32'd0)
-      else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
-    assert(AxiMstPortIdWidth >= IdxWidth)
-      else $fatal(1, "Parameter AxiMstPortIdWidth has to be at least IdxWidth!");
-    assert (AxiSlvPortMaxUniqIds > 0)
-      else $fatal(1, "Parameter AxiSlvPortMaxUniqIds has to be larger than 0!");
-    assert (AxiSlvPortMaxUniqIds <= 2**AxiSlvPortIdWidth)
-      else $fatal(1, "Parameter AxiSlvPortMaxUniqIds may be at most 2**AxiSlvPortIdWidth!");
-    assert (AxiMaxTxnsPerId > 0)
-      else $fatal(1, "Parameter AxiMaxTxnsPerId has to be larger than 0!");
+    assert(SlvPortIdWidth > 32'd0)
+      else $fatal(1, "Parameter SlvPortIdWidth has to be larger than 0!");
+    assert(MstPortIdWidth >= IdxWidth)
+      else $fatal(1, "Parameter MstPortIdWidth has to be at least IdxWidth!");
+    assert (SlvPortMaxUniqIds > 0)
+      else $fatal(1, "Parameter SlvPortMaxUniqIds has to be larger than 0!");
+    assert (SlvPortMaxUniqIds <= 2**SlvPortIdWidth)
+      else $fatal(1, "Parameter SlvPortMaxUniqIds may be at most 2**SlvPortIdWidth!");
+    assert (MaxTxnsPerId > 0)
+      else $fatal(1, "Parameter MaxTxnsPerId has to be larger than 0!");
     assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
     assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
@@ -373,14 +373,14 @@ module axi_id_remap #(
       else $fatal(1, "AXI AR address widths are not equal!");
     assert($bits(slv_rsp_o.r.data) == $bits(mst_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
-    assert ($bits(slv_req_i.aw.id) == AxiSlvPortIdWidth);
-    assert ($bits(slv_rsp_o.b.id) == AxiSlvPortIdWidth);
-    assert ($bits(slv_req_i.ar.id) == AxiSlvPortIdWidth);
-    assert ($bits(slv_rsp_o.r.id) == AxiSlvPortIdWidth);
-    assert ($bits(mst_req_o.aw.id) == AxiMstPortIdWidth);
-    assert ($bits(mst_rsp_i.b.id) == AxiMstPortIdWidth);
-    assert ($bits(mst_req_o.ar.id) == AxiMstPortIdWidth);
-    assert ($bits(mst_rsp_i.r.id) == AxiMstPortIdWidth);
+    assert ($bits(slv_req_i.aw.id) == SlvPortIdWidth);
+    assert ($bits(slv_rsp_o.b.id) == SlvPortIdWidth);
+    assert ($bits(slv_req_i.ar.id) == SlvPortIdWidth);
+    assert ($bits(slv_rsp_o.r.id) == SlvPortIdWidth);
+    assert ($bits(mst_req_o.aw.id) == MstPortIdWidth);
+    assert ($bits(mst_rsp_i.b.id) == MstPortIdWidth);
+    assert ($bits(mst_req_o.ar.id) == MstPortIdWidth);
+    assert ($bits(mst_rsp_i.r.id) == MstPortIdWidth);
   end
   default disable iff (!rst_ni);
   assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_rsp_o.aw_ready
@@ -628,14 +628,14 @@ module axi_id_remap_intf #(
   `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
 
   axi_id_remap #(
-    .AxiSlvPortIdWidth    ( AXI_SLV_PORT_ID_WIDTH     ),
-    .AxiSlvPortMaxUniqIds ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
-    .AxiMaxTxnsPerId      ( AXI_MAX_TXNS_PER_ID       ),
-    .AxiMstPortIdWidth    ( AXI_MST_PORT_ID_WIDTH     ),
-    .slv_port_axi_req_t   ( slv_port_axi_req_t        ),
-    .slv_port_axi_rsp_t   ( slv_port_axi_rsp_t        ),
-    .mst_port_axi_req_t   ( mst_port_axi_req_t        ),
-    .mst_port_axi_rsp_t   ( mst_port_axi_rsp_t        )
+    .SlvPortIdWidth     ( AXI_SLV_PORT_ID_WIDTH     ),
+    .SlvPortMaxUniqIds  ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
+    .MaxTxnsPerId       ( AXI_MAX_TXNS_PER_ID       ),
+    .MstPortIdWidth     ( AXI_MST_PORT_ID_WIDTH     ),
+    .slv_port_axi_req_t ( slv_port_axi_req_t        ),
+    .slv_port_axi_rsp_t ( slv_port_axi_rsp_t        ),
+    .mst_port_axi_req_t ( mst_port_axi_req_t        ),
+    .mst_port_axi_rsp_t ( mst_port_axi_rsp_t        )
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,

@@ -23,8 +23,8 @@
 
 module tb_axi_lite_xbar;
   // Dut parameters
-  localparam int unsigned NoMasters   = 32'd6;    // How many Axi Masters there are
-  localparam int unsigned NoSlaves    = 32'd8;    // How many Axi Slaves  there are
+  localparam int unsigned NoMasters   = 32'd6;    // How many Masters there are
+  localparam int unsigned NoSlaves    = 32'd8;    // How many Slaves  there are
   // Random master no Transactions
   localparam int unsigned NoWrites   = 32'd10000;  // How many writes per master
   localparam int unsigned NoReads    = 32'd10000;  // How many reads per master
@@ -33,9 +33,9 @@ module tb_axi_lite_xbar;
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // axi configuration
-  localparam int unsigned AxiAddrWidth      =  32'd32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth      =  32'd64;    // Axi Data Width
-  localparam int unsigned AxiStrbWidth      =  AxiDataWidth / 32'd8;
+  localparam int unsigned AddrWidth      =  32'd32;    // Address Width
+  localparam int unsigned DataWidth      =  32'd64;    // Data Width
+  localparam int unsigned StrbWidth      =  DataWidth / 32'd8;
   // in the bench can change this variables which are set here freely
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
     NoSlvPorts:         NoMasters,
@@ -44,15 +44,15 @@ module tb_axi_lite_xbar;
     MaxSlvTrans:        32'd6,
     FallThrough:        1'b0,
     LatencyMode:        axi_pkg::CUT_ALL_AX,
-    AxiAddrWidth:       AxiAddrWidth,
-    AxiDataWidth:       AxiDataWidth,
+    AddrWidth:          AddrWidth,
+    DataWidth:          DataWidth,
     NoAddrRules:        32'd8,
     default:            '0
   };
-  typedef logic [AxiAddrWidth-1:0]      addr_t;
-  typedef axi_pkg::xbar_rule_32_t       rule_t; // Has to be the same width as axi addr
-  typedef logic [AxiDataWidth-1:0]      data_t;
-  typedef logic [AxiStrbWidth-1:0]      strb_t;
+  typedef logic [AddrWidth-1:0]      addr_t;
+  typedef axi_pkg::xbar_rule_32_t    rule_t; // Has to be the same width as axi addr
+  typedef logic [DataWidth-1:0]      data_t;
+  typedef logic [StrbWidth-1:0]      strb_t;
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
@@ -67,8 +67,8 @@ module tb_axi_lite_xbar;
 
   typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth       ),
-    .DW ( AxiDataWidth       ),
+    .AW ( AddrWidth          ),
+    .DW ( DataWidth          ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
     .TT ( TestTime           ),
@@ -79,8 +79,8 @@ module tb_axi_lite_xbar;
   ) rand_lite_master_t;
   typedef axi_test::axi_lite_rand_slave #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth       ),
-    .DW ( AxiDataWidth       ),
+    .AW ( AddrWidth          ),
+    .DW ( DataWidth          ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
     .TT ( TestTime           )
@@ -98,24 +98,24 @@ module tb_axi_lite_xbar;
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master [NoMasters-1:0] ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master_dv [NoMasters-1:0] (clk);
   for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
     `AXI_LITE_ASSIGN(master[i], master_dv[i])
   end
 
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
-    .AXI_DATA_WIDTH ( AxiDataWidth     )
+    .AXI_ADDR_WIDTH ( AddrWidth     ),
+    .AXI_DATA_WIDTH ( DataWidth     )
   ) slave [NoSlaves-1:0] ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
-    .AXI_DATA_WIDTH ( AxiDataWidth     )
+    .AXI_ADDR_WIDTH ( AddrWidth     ),
+    .AXI_DATA_WIDTH ( DataWidth     )
   ) slave_dv [NoSlaves-1:0](clk);
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_LITE_ASSIGN(slave_dv[i], slave[i])

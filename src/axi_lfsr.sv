@@ -79,12 +79,12 @@ module axi_lfsr #(
     axi_lite_rsp_t axi_lite_rsp;
 
     axi_to_axi_lite #(
-        .AxiAddrWidth    ( AddrWidth      ),
-        .AxiDataWidth    ( DataWidth      ),
-        .AxiIdWidth      ( IdWidth        ),
-        .AxiUserWidth    ( UserWidth      ),
-        .AxiMaxWriteTxns ( 'd2            ), // We only have 1 cycle latency; 2 is enough
-        .AxiMaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
+        .AddrWidth    ( AddrWidth      ),
+        .DataWidth    ( DataWidth      ),
+        .IdWidth      ( IdWidth        ),
+        .UserWidth    ( UserWidth      ),
+        .MaxWriteTxns ( 'd2            ), // We only have 1 cycle latency; 2 is enough
+        .MaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
         .FallThrough     ( 1'b0           ),
         .full_req_t      ( axi_req_t      ),
         .full_rsp_t      ( axi_rsp_t      ),

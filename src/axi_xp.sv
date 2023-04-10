@@ -31,46 +31,46 @@ module axi_xp #(
   /// connected to all master ports.
   parameter bit [NumSlvPorts-1:0][NumMstPorts-1:0] Connectivity = '1,
   /// Address width of all ports.
-  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int unsigned AddrWidth = 32'd0,
   /// Data width of all ports.
-  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned DataWidth = 32'd0,
   /// ID width of all ports.
-  parameter int unsigned AxiIdWidth = 32'd0,
+  parameter int unsigned IdWidth = 32'd0,
   /// User signal width of all ports.
-  parameter int unsigned AxiUserWidth = 32'd0,
+  parameter int unsigned UserWidth = 32'd0,
   /// Maximum number of different IDs that can be in flight at each slave port.  Reads and writes
   /// are counted separately (except for ATOPs, which count as both read and write).
   ///
   /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
-  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the slave port.
   ///
-  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth`.  In that
-  /// case, this parameter is passed to [`axi_id_remap` as `AxiMaxTxnsPerId`
-  /// parameter](module.axi_id_remap#parameter.AxiMaxTxnsPerId).
-  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
+  /// This parameter is only relevant if `SlvPortMaxUniqIds <= 2**MstPortIdWidth`.  In that
+  /// case, this parameter is passed to [`axi_id_remap` as `MaxTxnsPerId`
+  /// parameter](module.axi_id_remap#parameter.MaxTxnsPerId).
+  parameter int unsigned SlvPortMaxTxnsPerId = 32'd0,
   /// Maximum number of in-flight transactions at the slave port.  Reads and writes are counted
   /// separately (except for ATOPs, which count as both read and write).
   ///
-  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `SlvPortMaxUniqIds > 2**MstPortIdWidth`.  In that
   /// case, this parameter is passed to
-  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiSlvPortMaxTxns).
-  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.SlvPortMaxTxns).
+  parameter int unsigned SlvPortMaxTxns = 32'd0,
   /// Maximum number of different IDs that can be in flight at the master port.  Reads and writes
   /// are counted separately (except for ATOPs, which count as both read and write).
   ///
-  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `SlvPortMaxUniqIds > 2**MstPortIdWidth`.  In that
   /// case, this parameter is passed to
-  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxUniqIds).
-  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.MstPortMaxUniqIds).
+  parameter int unsigned MstPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the master port.
   ///
-  /// This parameter is only relevant if `AxiSlvPortMaxUniqIds > 2**AxiMstPortIdWidth`.  In that
+  /// This parameter is only relevant if `SlvPortMaxUniqIds > 2**MstPortIdWidth`.  In that
   /// case, this parameter is passed to
-  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.AxiMstPortMaxTxnsPerId).
-  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
+  /// [`axi_id_serialize`](module.axi_id_serialize#parameter.MstPortMaxTxnsPerId).
+  parameter int unsigned MstPortMaxTxnsPerId = 32'd0,
   /// Number of rules in the address map.
   parameter int unsigned NumAddrRules = 32'd0,
   /// Request struct type of the AXI4+ATOP
@@ -99,13 +99,13 @@ module axi_xp #(
 );
 
   // The master port of the Xbar has a different ID width than the slave ports.
-  parameter int unsigned AxiXbarIdWidth = AxiIdWidth + $clog2(NumSlvPorts);
-  typedef logic [AxiAddrWidth-1:0]    addr_t;
-  typedef logic [AxiDataWidth-1:0]    data_t;
-  typedef logic [AxiIdWidth-1:0]      id_t;
-  typedef logic [AxiXbarIdWidth-1:0]  xbar_id_t;
-  typedef logic [AxiDataWidth/8-1:0]  strb_t;
-  typedef logic [AxiUserWidth-1:0]    user_t;
+  parameter int unsigned XbarIdWidth = IdWidth + $clog2(NumSlvPorts);
+  typedef logic [AddrWidth-1:0]    addr_t;
+  typedef logic [DataWidth-1:0]    data_t;
+  typedef logic [IdWidth-1:0]      id_t;
+  typedef logic [XbarIdWidth-1:0]  xbar_id_t;
+  typedef logic [DataWidth/8-1:0]  strb_t;
+  typedef logic [UserWidth-1:0]    user_t;
 
 
   `AXI_TYPEDEF_ALL(xp, addr_t, id_t, data_t, strb_t, user_t)
@@ -147,14 +147,14 @@ module axi_xp #(
 
   for (genvar i = 0; i < NumMstPorts; i++) begin : gen_remap
     axi_id_remap #(
-      .AxiSlvPortIdWidth    ( AxiXbarIdWidth         ),
-      .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds   ),
-      .AxiMaxTxnsPerId      ( AxiSlvPortMaxTxnsPerId ),
-      .AxiMstPortIdWidth    ( AxiIdWidth             ),
-      .slv_req_t            ( xbar_req_t             ),
-      .slv_rsp_t            ( xbar_rsp_t             ),
-      .mst_req_t            ( axi_req_t              ),
-      .mst_rsp_t            ( axi_rsp_t              )
+      .SlvPortIdWidth    ( XbarIdWidth         ),
+      .SlvPortMaxUniqIds ( SlvPortMaxUniqIds   ),
+      .MaxTxnsPerId      ( SlvPortMaxTxnsPerId ),
+      .MstPortIdWidth    ( IdWidth             ),
+      .slv_req_t         ( xbar_req_t          ),
+      .slv_rsp_t         ( xbar_rsp_t          ),
+      .mst_req_t         ( axi_req_t           ),
+      .mst_rsp_t         ( axi_rsp_t           )
     ) i_axi_id_remap (
       .clk_i,
       .rst_ni,
@@ -178,15 +178,15 @@ import cf_math_pkg::idx_width;
   parameter int unsigned NumSlvPorts = 32'd0,
   parameter int unsigned NumMstPorts = 32'd0,
   parameter bit [NumSlvPorts-1:0][NumMstPorts-1:0] Connectivity = '1,
-  parameter int unsigned AxiAddrWidth = 32'd0,
-  parameter int unsigned AxiDataWidth = 32'd0,
-  parameter int unsigned AxiIdWidth = 32'd0,
-  parameter int unsigned AxiUserWidth = 32'd0,
-  parameter int unsigned AxiSlvPortMaxUniqIds = 32'd0,
-  parameter int unsigned AxiSlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
-  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
-  parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned AddrWidth = 32'd0,
+  parameter int unsigned DataWidth = 32'd0,
+  parameter int unsigned IdWidth = 32'd0,
+  parameter int unsigned UserWidth = 32'd0,
+  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned SlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned SlvPortMaxTxns = 32'd0,
+  parameter int unsigned MstPortMaxUniqIds = 32'd0,
+  parameter int unsigned MstPortMaxTxnsPerId = 32'd0,
   parameter int unsigned NumAddrRules = 32'd0,
   parameter type rule_t = axi_pkg::xbar_rule_64_t
 ) (
@@ -200,11 +200,11 @@ import cf_math_pkg::idx_width;
 
   // localparam int unsigned AxiIdWidthMstPorts = AxiIdWidth + $clog2(NoSlvPorts);
 
-  typedef logic [AxiIdWidth         -1:0] id_t;
-  typedef logic [AxiAddrWidth       -1:0] addr_t;
-  typedef logic [AxiDataWidth       -1:0] data_t;
-  typedef logic [AxiDataWidth/8     -1:0] strb_t;
-  typedef logic [AxiUserWidth       -1:0] user_t;
+  typedef logic [IdWidth         -1:0] id_t;
+  typedef logic [AddrWidth       -1:0] addr_t;
+  typedef logic [DataWidth       -1:0] data_t;
+  typedef logic [DataWidth/8     -1:0] strb_t;
+  typedef logic [UserWidth       -1:0] user_t;
 
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
@@ -224,24 +224,24 @@ import cf_math_pkg::idx_width;
   end
 
   axi_xp #(
-    .ATOPs                   ( ATOPs         ),
-    .Cfg                     ( Cfg           ),
-    .NumSlvPorts             ( NumSlvPorts    ),
-    .NumMstPorts             ( NumMstPorts    ),
-    .Connectivity            ( Connectivity  ),
-    .AxiAddrWidth            ( AxiAddrWidth  ),
-    .AxiDataWidth            ( AxiDataWidth  ),
-    .AxiIdWidth              ( AxiIdWidth    ),
-    .AxiUserWidth            ( AxiUserWidth  ),
-    .AxiSlvPortMaxUniqIds    ( AxiSlvPortMaxUniqIds   ),
-    .AxiSlvPortMaxTxnsPerId  ( AxiSlvPortMaxTxnsPerId ),
-    .AxiSlvPortMaxTxns       ( AxiSlvPortMaxTxns      ),
-    .AxiMstPortMaxUniqIds    ( AxiMstPortMaxUniqIds   ),
-    .AxiMstPortMaxTxnsPerId  ( AxiMstPortMaxTxnsPerId ),
-    .NumAddrRules            ( NumAddrRules            ),
-    .axi_req_t               ( axi_req_t     ),
-    .axi_rsp_t               ( axi_rsp_t     ),
-    .rule_t                  ( rule_t        )
+    .ATOPs                ( ATOPs               ),
+    .Cfg                  ( Cfg                 ),
+    .NumSlvPorts          ( NumSlvPorts         ),
+    .NumMstPorts          ( NumMstPorts         ),
+    .Connectivity         ( Connectivity        ),
+    .AddrWidth            ( AddrWidth           ),
+    .DataWidth            ( DataWidth           ),
+    .IdWidth              ( IdWidth             ),
+    .UserWidth            ( UserWidth           ),
+    .SlvPortMaxUniqIds    ( SlvPortMaxUniqIds   ),
+    .SlvPortMaxTxnsPerId  ( SlvPortMaxTxnsPerId ),
+    .SlvPortMaxTxns       ( SlvPortMaxTxns      ),
+    .MstPortMaxUniqIds    ( MstPortMaxUniqIds   ),
+    .MstPortMaxTxnsPerId  ( MstPortMaxTxnsPerId ),
+    .NumAddrRules         ( NumAddrRules        ),
+    .axi_req_t            ( axi_req_t           ),
+    .axi_rsp_t            ( axi_rsp_t           ),
+    .rule_t               ( rule_t              )
   ) i_xp (
     .clk_i,
     .rst_ni,

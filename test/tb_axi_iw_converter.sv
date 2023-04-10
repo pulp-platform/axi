@@ -39,16 +39,16 @@ endclass
 
 module tb_axi_iw_converter #(
   // DUT Parameters
-  parameter int unsigned TbAxiSlvPortIdWidth = 32'd0,
-  parameter int unsigned TbAxiMstPortIdWidth = 32'd0,
-  parameter int unsigned TbAxiSlvPortMaxUniqIds = 32'd0,
-  parameter int unsigned TbAxiSlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned TbAxiSlvPortMaxTxns = 32'd0,
-  parameter int unsigned TbAxiMstPortMaxUniqIds = 32'd0,
-  parameter int unsigned TbAxiMstPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned TbAxiAddrWidth = 32'd32,
-  parameter int unsigned TbAxiDataWidth = 32'd32,
-  parameter int unsigned TbAxiUserWidth = 32'd4,
+  parameter int unsigned TbSlvPortIdWidth = 32'd0,
+  parameter int unsigned TbMstPortIdWidth = 32'd0,
+  parameter int unsigned TbSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbSlvPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned TbSlvPortMaxTxns = 32'd0,
+  parameter int unsigned TbMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbMstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned TbAddrWidth = 32'd32,
+  parameter int unsigned TbDataWidth = 32'd32,
+  parameter int unsigned TbUserWidth = 32'd4,
   // TB Parameters
   parameter int unsigned TbNumReadTxns = 32'd100,
   parameter int unsigned TbNumWriteTxns = 32'd200,
@@ -65,10 +65,10 @@ module tb_axi_iw_converter #(
   // Driver definitions
   typedef axi_test::axi_rand_master #(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth       ),
-    .DW ( TbAxiDataWidth       ),
-    .IW ( TbAxiSlvPortIdWidth  ),
-    .UW ( TbAxiUserWidth       ),
+    .AW ( TbAddrWidth       ),
+    .DW ( TbDataWidth       ),
+    .IW ( TbSlvPortIdWidth  ),
+    .UW ( TbUserWidth       ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
     .TT ( TestTime           ),
@@ -80,10 +80,10 @@ module tb_axi_iw_converter #(
   ) rand_axi_master_t;
   typedef axi_test::axi_rand_slave #(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth      ),
-    .DW ( TbAxiDataWidth      ),
-    .IW ( TbAxiMstPortIdWidth ),
-    .UW ( TbAxiUserWidth      ),
+    .AW ( TbAddrWidth      ),
+    .DW ( TbDataWidth      ),
+    .IW ( TbMstPortIdWidth ),
+    .UW ( TbUserWidth      ),
     // Stimuli application and test time
     .TA ( ApplTime         ),
     .TT ( TestTime         )
@@ -104,33 +104,33 @@ module tb_axi_iw_converter #(
   );
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth       ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth       ),
-    .AXI_ID_WIDTH   ( TbAxiSlvPortIdWidth  ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth       )
+    .AXI_ADDR_WIDTH ( TbAddrWidth       ),
+    .AXI_DATA_WIDTH ( TbDataWidth       ),
+    .AXI_ID_WIDTH   ( TbSlvPortIdWidth  ),
+    .AXI_USER_WIDTH ( TbUserWidth       )
   ) axi_upstream_dv (clk);
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth       ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth       ),
-    .AXI_ID_WIDTH   ( TbAxiSlvPortIdWidth  ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth       )
+    .AXI_ADDR_WIDTH ( TbAddrWidth       ),
+    .AXI_DATA_WIDTH ( TbDataWidth       ),
+    .AXI_ID_WIDTH   ( TbSlvPortIdWidth  ),
+    .AXI_USER_WIDTH ( TbUserWidth       )
   ) axi_upstream();
 
   `AXI_ASSIGN(axi_upstream, axi_upstream_dv);
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth      ),
-    .AXI_ID_WIDTH   ( TbAxiMstPortIdWidth ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth      )
+    .AXI_ADDR_WIDTH ( TbAddrWidth      ),
+    .AXI_DATA_WIDTH ( TbDataWidth      ),
+    .AXI_ID_WIDTH   ( TbMstPortIdWidth ),
+    .AXI_USER_WIDTH ( TbUserWidth      )
   ) axi_downstream_dv (clk);
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth      ),
-    .AXI_ID_WIDTH   ( TbAxiMstPortIdWidth ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth      )
+    .AXI_ADDR_WIDTH ( TbAddrWidth      ),
+    .AXI_DATA_WIDTH ( TbDataWidth      ),
+    .AXI_ID_WIDTH   ( TbMstPortIdWidth ),
+    .AXI_USER_WIDTH ( TbUserWidth      )
   ) axi_downstream();
 
   `AXI_ASSIGN(axi_downstream_dv, axi_downstream);
@@ -162,16 +162,16 @@ module tb_axi_iw_converter #(
   end
 
   axi_iw_converter_intf #(
-    .AXI_SLV_PORT_ID_WIDTH        ( TbAxiSlvPortIdWidth       ),
-    .AXI_MST_PORT_ID_WIDTH        ( TbAxiMstPortIdWidth       ),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS    ( TbAxiSlvPortMaxUniqIds    ),
-    .AXI_SLV_PORT_MAX_TXNS_PER_ID ( TbAxiSlvPortMaxTxnsPerId  ),
-    .AXI_SLV_PORT_MAX_TXNS        ( TbAxiSlvPortMaxTxns       ),
-    .AXI_MST_PORT_MAX_UNIQ_IDS    ( TbAxiMstPortMaxUniqIds    ),
-    .AXI_MST_PORT_MAX_TXNS_PER_ID ( TbAxiMstPortMaxTxnsPerId  ),
-    .AXI_ADDR_WIDTH               ( TbAxiAddrWidth            ),
-    .AXI_DATA_WIDTH               ( TbAxiDataWidth            ),
-    .AXI_USER_WIDTH               ( TbAxiUserWidth            )
+    .AXI_SLV_PORT_ID_WIDTH        ( TbSlvPortIdWidth       ),
+    .AXI_MST_PORT_ID_WIDTH        ( TbMstPortIdWidth       ),
+    .AXI_SLV_PORT_MAX_UNIQ_IDS    ( TbSlvPortMaxUniqIds    ),
+    .AXI_SLV_PORT_MAX_TXNS_PER_ID ( TbSlvPortMaxTxnsPerId  ),
+    .AXI_SLV_PORT_MAX_TXNS        ( TbSlvPortMaxTxns       ),
+    .AXI_MST_PORT_MAX_UNIQ_IDS    ( TbMstPortMaxUniqIds    ),
+    .AXI_MST_PORT_MAX_TXNS_PER_ID ( TbMstPortMaxTxnsPerId  ),
+    .AXI_ADDR_WIDTH               ( TbAddrWidth            ),
+    .AXI_DATA_WIDTH               ( TbDataWidth            ),
+    .AXI_USER_WIDTH               ( TbUserWidth            )
   ) i_dut (
     .clk_i  ( clk            ),
     .rst_ni ( rst_n          ),

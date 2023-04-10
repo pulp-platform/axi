@@ -34,14 +34,14 @@ module tb_axi_lite_to_apb #(
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // Type widths
-  localparam int unsigned AxiAddrWidth = 32;
-  localparam int unsigned AxiDataWidth = 32;
-  localparam int unsigned AxiStrbWidth = AxiDataWidth/8;
+  localparam int unsigned AddrWidth = 32;
+  localparam int unsigned DataWidth = 32;
+  localparam int unsigned StrbWidth = DataWidth/8;
 
-  typedef logic [AxiAddrWidth-1:0]      addr_t;
-  typedef axi_pkg::xbar_rule_32_t       rule_t; // Has to be the same width as axi addr
-  typedef logic [AxiDataWidth-1:0]      data_t;
-  typedef logic [AxiStrbWidth-1:0]      strb_t;
+  typedef logic [AddrWidth-1:0]      addr_t;
+  typedef axi_pkg::xbar_rule_32_t    rule_t; // Has to be the same width as axi addr
+  typedef logic [DataWidth-1:0]      data_t;
+  typedef logic [StrbWidth-1:0]      strb_t;
 
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -85,8 +85,8 @@ module tb_axi_lite_to_apb #(
 
   typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
-    .AW       ( AxiAddrWidth  ),
-    .DW       ( AxiDataWidth  ),
+    .AW       ( AddrWidth      ),
+    .DW       ( DataWidth      ),
     // Stimuli application and test time
     .TA       ( ApplTime       ),
     .TT       ( TestTime       ),
@@ -124,12 +124,12 @@ module tb_axi_lite_to_apb #(
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master_dv (clk);
   `AXI_LITE_ASSIGN(master, master_dv)
   `AXI_LITE_ASSIGN_TO_REQ(axi_req, master)
@@ -230,8 +230,8 @@ module tb_axi_lite_to_apb #(
   axi_lite_to_apb #(
     .NoApbSlaves      ( NoApbSlaves         ),
     .NoRules          ( NoAddrRules         ),
-    .AddrWidth        ( AxiAddrWidth        ),
-    .DataWidth        ( AxiDataWidth        ),
+    .AddrWidth        ( AddrWidth           ),
+    .DataWidth        ( DataWidth           ),
     .PipelineRequest  ( TbPipelineRequest   ),
     .PipelineResponse ( TbPipelineResponse  ),
     .axi_lite_req_t   ( axi_lite_req_t      ),

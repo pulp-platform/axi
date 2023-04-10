@@ -500,16 +500,16 @@ package axi_pkg;
     int unsigned   PipelineStages;
     /// AXI ID width of the salve ports. The ID width of the master ports is determined
     /// Automatically. See `axi_mux` for details.
-    int unsigned   AxiIdWidthSlvPorts;
+    int unsigned   IdWidthSlvPorts;
     /// The used ID portion to determine if a different salve is used for the same ID.
     /// See `axi_demux` for details.
-    int unsigned   AxiIdUsedSlvPorts;
+    int unsigned   IdUsedSlvPorts;
     /// Are IDs unique?
     bit            UniqueIds;
     /// AXI4+ATOP address field width.
-    int unsigned   AxiAddrWidth;
+    int unsigned   AddrWidth;
     /// AXI4+ATOP data field width.
-    int unsigned   AxiDataWidth;
+    int unsigned   DataWidth;
     /// The number of address rules defined for routing of the transactions.
     /// Each master port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.

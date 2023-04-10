@@ -20,8 +20,8 @@
 module tb_axi_lite_regs #(
   /// Define the parameter `RegNumBytes` of the DUT.
   parameter int unsigned              TbRegNumBytes  = 32'd200,
-  /// Define the parameter `AxiReadOnly` of the DUT.
-  parameter logic [TbRegNumBytes-1:0] TbAxiReadOnly  = {{TbRegNumBytes-18{1'b0}}, 18'b101110111111000000},
+  /// Define the parameter `ReadOnly` of the DUT.
+  parameter logic [TbRegNumBytes-1:0] TbReadOnly     = {{TbRegNumBytes-18{1'b0}}, 18'b101110111111000000},
   /// Define the parameter `PrivProtOnly` of the DUT.
   parameter bit                       TbPrivProtOnly = 1'b0,
   /// Define the parameter `SecuProtOnly` of the DUT.
@@ -32,18 +32,18 @@ module tb_axi_lite_regs #(
   parameter int unsigned              TbNoReads      = 32'd1500
 );
   // AXI configuration
-  localparam int unsigned AxiAddrWidth = 32'd32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth = 32'd32;    // Axi Data Width
-  localparam int unsigned AxiStrbWidth = AxiDataWidth / 32'd8;
+  localparam int unsigned AddrWidth = 32'd32;    //  Address Width
+  localparam int unsigned DataWidth = 32'd32;    //  Data Width
+  localparam int unsigned StrbWidth = DataWidth / 32'd8;
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
 
-  typedef logic [7:0]              byte_t;
-  typedef logic [AxiAddrWidth-1:0] axi_addr_t;
-  typedef logic [AxiDataWidth-1:0] axi_data_t;
-  typedef logic [AxiStrbWidth-1:0] axi_strb_t;
+  typedef logic [7:0]           byte_t;
+  typedef logic [AddrWidth-1:0] axi_addr_t;
+  typedef logic [DataWidth-1:0] axi_data_t;
+  typedef logic [StrbWidth-1:0] axi_strb_t;
 
   localparam axi_addr_t StartAddr = axi_addr_t'(0);
   localparam axi_addr_t EndAddr   =
@@ -53,8 +53,8 @@ module tb_axi_lite_regs #(
 
   typedef axi_test::axi_lite_rand_master #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
     // Stimuli application and test time
     .TA ( ApplTime  ),
     .TT ( TestTime  ),
@@ -79,12 +79,12 @@ module tb_axi_lite_regs #(
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
   ) master_dv (clk);
   `AXI_LITE_ASSIGN(master, master_dv)
 
@@ -170,10 +170,10 @@ module tb_axi_lite_regs #(
       // Push the expected data back.
       if (master.ar_valid && master.ar_ready) begin
         automatic int unsigned ar_idx = ((master.ar_addr - StartAddr)
-            >> $clog2(AxiStrbWidth) << $clog2(AxiStrbWidth));
+            >> $clog2(StrbWidth) << $clog2(StrbWidth));
         automatic axi_data_t      r_data = axi_data_t'(0);
         automatic axi_pkg::resp_t r_resp = axi_pkg::RESP_SLVERR;
-        for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+        for (int unsigned i = 0; i < StrbWidth; i++) begin
           if ((ar_idx+i) < TbRegNumBytes) begin
             r_data[8*i+:8] = reg_q[ar_idx+i];
             r_resp         = axi_pkg::RESP_OKAY;
@@ -196,7 +196,7 @@ module tb_axi_lite_regs #(
       if (master.r_valid && master.r_ready) begin
         automatic axi_data_t r_data = exp_rdata.pop_front();
         if (master.r_resp == axi_pkg::RESP_OKAY) begin
-          for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+          for (int unsigned i = 0; i < StrbWidth; i++) begin
             automatic byte_t exp_byte = r_data[8*i+:8];
             if (exp_byte !== 8'hxx) begin
               assert (master.r_data[8*i+:8] == exp_byte) else
@@ -223,7 +223,7 @@ module tb_axi_lite_regs #(
       // AW and W is launched, setup the test tasks
       if (master.aw_valid && master.aw_ready && master.w_valid && master.w_ready) begin
         automatic int unsigned aw_idx = ((master.aw_addr - StartAddr)
-            >> $clog2(AxiStrbWidth) << $clog2(AxiStrbWidth));
+            >> $clog2(StrbWidth) << $clog2(StrbWidth));
         automatic axi_pkg::resp_t exp_b_resp = (aw_idx < TbRegNumBytes) ?
             axi_pkg::RESP_OKAY : axi_pkg::RESP_SLVERR;
         automatic bit all_ro = 1'b1;
@@ -235,8 +235,8 @@ module tb_axi_lite_regs #(
           exp_b_resp = axi_pkg::RESP_SLVERR;
         end
         // Check if all accesses bytes are read only
-        for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
-          if (!TbAxiReadOnly[aw_idx+i]) begin
+        for (int unsigned i = 0; i < StrbWidth; i++) begin
+          if (!TbReadOnly[aw_idx+i]) begin
             all_ro = 1'b0;
           end
         end
@@ -247,7 +247,7 @@ module tb_axi_lite_regs #(
         // do the actual write checking
         if (exp_b_resp == axi_pkg::RESP_OKAY) begin
           // go through every byte
-          for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+          for (int unsigned i = 0; i < StrbWidth; i++) begin
             if ((aw_idx+i) < TbRegNumBytes) begin
               if (master.w_strb[i]) begin
                 automatic int unsigned        j = aw_idx + i;
@@ -289,7 +289,7 @@ module tb_axi_lite_regs #(
     automatic byte_t save_byte = (reg_load[byte_i]) ? reg_d[byte_i] : reg_q[byte_i];
     @(posedge clk);
     #TestTime;
-    if (!TbAxiReadOnly[byte_i]) begin
+    if (!TbReadOnly[byte_i]) begin
       assert(exp_byte == reg_q[byte_i]) else
           $error("AXI write was not registered at byte: %0d", byte_i);
     end else begin
@@ -302,7 +302,7 @@ module tb_axi_lite_regs #(
   // Some assertions for additional checking.
   default disable iff (~rst_n);
   for (genvar i = 0; i < TbRegNumBytes; i++) begin : gen_check_ro_bytes
-    if (TbAxiReadOnly[i]) begin : gen_check_ro
+    if (TbReadOnly[i]) begin : gen_check_ro
       ro_assert_no_load: assert property (@(posedge clk)
           ((wr_active[i] && !reg_load[i]) |=> $stable(reg_q[i]))) else
           $fatal(1, "ReadOnly byte %0d changed from AXI write, while not direct loaded.", i);
@@ -311,7 +311,7 @@ module tb_axi_lite_regs #(
           $fatal(1, "ReadOnly byte %0d changed from AXI write, while direct loaded.", i);
     end
     load_assert_no_axi: assert property (@(posedge clk)
-        (reg_load[i] && !TbAxiReadOnly[i] |-> !wr_active[i])) else
+        (reg_load[i] && !TbReadOnly[i] |-> !wr_active[i])) else
         $fatal(1, "Byte %0d, AXI write onto non read-only and direct load are both active!", i);
     load_assert_data:   assert property (@(posedge clk)
         (reg_load[i] |=> reg_q[i] === $past(reg_d[i]))) else
@@ -344,11 +344,11 @@ module tb_axi_lite_regs #(
   //-----------------------------------
   axi_lite_regs_intf #(
     .REG_NUM_BYTES  ( TbRegNumBytes  ),
-    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
-    .AXI_DATA_WIDTH ( AxiDataWidth   ),
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      ),
     .PRIV_PROT_ONLY ( TbPrivProtOnly ),
     .SECU_PROT_ONLY ( TbSecuProtOnly ),
-    .AXI_READ_ONLY  ( TbAxiReadOnly  ),
+    .AXI_READ_ONLY  ( TbReadOnly     ),
     .REG_RST_VAL    ( RegRstVal      )
   ) i_axi_lite_regs (
     .clk_i       ( clk       ),
