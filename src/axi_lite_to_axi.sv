@@ -18,15 +18,15 @@
 module axi_lite_to_axi #(
   parameter int unsigned AxiDataWidth = 32'd0,
   // LITE AXI structs
-  parameter type  req_lite_t = logic,
-  parameter type resp_lite_t = logic,
+  parameter type  axi_lite_req_t = logic,
+  parameter type axi_lite_resp_t = logic,
   // FULL AXI structs
-  parameter type   axi_req_t = logic,
-  parameter type  axi_resp_t = logic
+  parameter type       axi_req_t = logic,
+  parameter type      axi_resp_t = logic
 ) (
   // Slave AXI LITE port
-  input  req_lite_t       slv_req_lite_i,
-  output resp_lite_t      slv_resp_lite_o,
+  input  axi_lite_req_t   slv_req_lite_i,
+  output axi_lite_resp_t  slv_resp_lite_o,
   input  axi_pkg::cache_t slv_aw_cache_i,
   input  axi_pkg::cache_t slv_ar_cache_i,
   // Master AXI port

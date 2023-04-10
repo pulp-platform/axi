@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Move `mem_to_banks` to `common_cells`.
 - Update `common_cells` from version `v1.26.0` to `v1.27.0`.
 - `axi_pkg`: Define `localparams` to define AXI type widths.
+- Enforce consistent naming for request and response types. Now uses `axi_req_t` and `axi_resp_t` for axi types, and `axi_lite_req_t` and `axi_lite_resp_t` for axi-lite types.
 
 ### Fixed
 

@@ -407,8 +407,8 @@ module synth_axi_lite_xbar #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
   localparam axi_pkg::xbar_cfg_t XbarCfg = '{
     NoSlvPorts:         NoSlvMst,
     NoMstPorts:         NoSlvMst,
@@ -424,19 +424,19 @@ module synth_axi_lite_xbar #(
 
   axi_pkg::xbar_rule_32_t [NoSlvMst-1:0] addr_map;
   logic                                  test;
-  axi_req_t               [NoSlvMst-1:0] mst_reqs,  slv_reqs;
-  axi_resp_t              [NoSlvMst-1:0] mst_resps, slv_resps;
+  axi_lite_req_t                   [NoSlvMst-1:0] mst_reqs,  slv_reqs;
+  axi_lite_resp_t                  [NoSlvMst-1:0] mst_resps, slv_resps;
 
   axi_lite_xbar #(
-    .Cfg        ( XbarCfg                 ),
-    .aw_chan_t  (  aw_chan_t              ),
-    .w_chan_t   (   w_chan_t              ),
-    .b_chan_t   (   b_chan_t              ),
-    .ar_chan_t  (  ar_chan_t              ),
-    .r_chan_t   (   r_chan_t              ),
-    .axi_req_t  (  axi_req_t              ),
-    .axi_resp_t ( axi_resp_t              ),
-    .rule_t     ( axi_pkg::xbar_rule_32_t )
+    .Cfg             ( XbarCfg                 ),
+    .aw_chan_t       (       aw_chan_t         ),
+    .w_chan_t        (        w_chan_t         ),
+    .b_chan_t        (        b_chan_t         ),
+    .ar_chan_t       (       ar_chan_t         ),
+    .r_chan_t        (        r_chan_t         ),
+    .axi_lite_req_t  (  axi_lite_req_t         ),
+    .axi_lite_resp_t ( axi_lite_resp_t         ),
+    .rule_t          ( axi_pkg::xbar_rule_32_t )
   ) i_xbar_dut (
     .clk_i                 ( clk_i     ),
     .rst_ni                ( rst_ni    ),

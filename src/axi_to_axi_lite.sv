@@ -23,31 +23,31 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
   parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
-  parameter type         full_req_t      = logic,
-  parameter type         full_resp_t     = logic,
-  parameter type         lite_req_t      = logic,
-  parameter type         lite_resp_t     = logic
+  parameter type         axi_req_t       = logic,
+  parameter type         axi_resp_t      = logic,
+  parameter type         axi_lite_req_t  = logic,
+  parameter type         axi_lite_resp_t = logic
 ) (
-  input  logic       clk_i,    // Clock
-  input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
+  input  logic           clk_i,    // Clock
+  input  logic           rst_ni,   // Asynchronous reset active low
+  input  logic           test_i,   // Testmode enable
   // slave port full AXI4+ATOP
-  input  full_req_t  slv_req_i,
-  output full_resp_t slv_resp_o,
+  input  axi_req_t       slv_req_i,
+  output axi_resp_t      slv_resp_o,
   // master port AXI4-Lite
-  output lite_req_t  mst_req_o,
-  input  lite_resp_t mst_resp_i
+  output axi_lite_req_t  mst_req_o,
+  input  axi_lite_resp_t mst_resp_i
 );
   // full bus declarations
-  full_req_t  filtered_req,  splitted_req;
-  full_resp_t filtered_resp, splitted_resp;
+  axi_req_t  filtered_req,  splitted_req;
+  axi_resp_t filtered_resp, splitted_resp;
 
   // atomics adapter so that atomics can be resolved
   axi_atop_filter #(
     .AxiIdWidth      ( AxiIdWidth      ),
     .AxiMaxWriteTxns ( AxiMaxWriteTxns ),
-    .axi_req_t       ( full_req_t      ),
-    .axi_resp_t      ( full_resp_t     )
+    .axi_req_t       ( axi_req_t       ),
+    .axi_resp_t      ( axi_resp_t      )
   ) i_axi_atop_filter(
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
@@ -65,8 +65,8 @@ module axi_to_axi_lite #(
     .DataWidth    ( AxiDataWidth    ),
     .IdWidth      ( AxiIdWidth      ),
     .UserWidth    ( AxiUserWidth    ),
-    .axi_req_t    ( full_req_t      ),
-    .axi_resp_t   ( full_resp_t     )
+    .axi_req_t    ( axi_req_t       ),
+    .axi_resp_t   ( axi_resp_t      )
   ) i_axi_burst_splitter (
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
@@ -82,10 +82,10 @@ module axi_to_axi_lite #(
     .AxiMaxWriteTxns ( AxiMaxWriteTxns ),
     .AxiMaxReadTxns  ( AxiMaxReadTxns  ),
     .FallThrough     ( FallThrough     ),
-    .full_req_t      ( full_req_t      ),
-    .full_resp_t     ( full_resp_t     ),
-    .lite_req_t      ( lite_req_t      ),
-    .lite_resp_t     ( lite_resp_t     )
+    .axi_req_t       ( axi_req_t       ),
+    .axi_resp_t      ( axi_resp_t      ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t )
   ) i_axi_to_axi_lite_id_reflect (
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
@@ -118,20 +118,20 @@ module axi_to_axi_lite_id_reflect #(
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
   parameter bit          FallThrough     = 1'b1,  // FIFOs in fall through mode
-  parameter type         full_req_t      = logic,
-  parameter type         full_resp_t     = logic,
-  parameter type         lite_req_t      = logic,
-  parameter type         lite_resp_t     = logic
+  parameter type         axi_req_t       = logic,
+  parameter type         axi_resp_t      = logic,
+  parameter type         axi_lite_req_t  = logic,
+  parameter type         axi_lite_resp_t = logic
 ) (
-  input  logic       clk_i,    // Clock
-  input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
+  input  logic           clk_i,    // Clock
+  input  logic           rst_ni,   // Asynchronous reset active low
+  input  logic           test_i,   // Testmode enable
   // slave port full AXI
-  input  full_req_t  slv_req_i,
-  output full_resp_t slv_resp_o,
+  input  axi_req_t       slv_req_i,
+  output axi_resp_t      slv_resp_o,
   // master port AXI LITE
-  output lite_req_t  mst_req_o,
-  input  lite_resp_t mst_resp_i
+  output axi_lite_req_t  mst_req_o,
+  input  axi_lite_resp_t mst_resp_i
 );
   typedef logic [AxiIdWidth-1:0] id_t;
 
@@ -274,21 +274,21 @@ module axi_to_axi_lite_intf #(
   `AXI_TYPEDEF_B_CHAN_T(full_b_chan_t, id_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(full_ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(full_r_chan_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(full_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(full_resp_t, full_b_chan_t, full_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(axi_req_t, full_aw_chan_t, full_w_chan_t, full_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, full_b_chan_t, full_r_chan_t)
   // LITE channels typedef
   `AXI_LITE_TYPEDEF_AW_CHAN_T(lite_aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(lite_w_chan_t, data_t, strb_t)
   `AXI_LITE_TYPEDEF_B_CHAN_T(lite_b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(lite_ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T (lite_r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(lite_req_t, lite_aw_chan_t, lite_w_chan_t, lite_ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(lite_resp_t, lite_b_chan_t, lite_r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, lite_aw_chan_t, lite_w_chan_t, lite_ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, lite_b_chan_t, lite_r_chan_t)
 
-  full_req_t  full_req;
-  full_resp_t full_resp;
-  lite_req_t  lite_req;
-  lite_resp_t lite_resp;
+  axi_req_t  full_req;
+  axi_resp_t full_resp;
+  axi_lite_req_t  lite_req;
+  axi_lite_resp_t lite_resp;
 
   `AXI_ASSIGN_TO_REQ(full_req, slv)
   `AXI_ASSIGN_FROM_RESP(slv, full_resp)
@@ -304,10 +304,10 @@ module axi_to_axi_lite_intf #(
     .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
     .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),
     .FallThrough     ( FALL_THROUGH       ),  // FIFOs in Fall through mode in ID reflect
-    .full_req_t      ( full_req_t         ),
-    .full_resp_t     ( full_resp_t        ),
-    .lite_req_t      ( lite_req_t         ),
-    .lite_resp_t     ( lite_resp_t        )
+    .axi_req_t       ( axi_req_t          ),
+    .axi_resp_t      ( axi_resp_t         ),
+    .axi_lite_req_t  ( axi_lite_req_t     ),
+    .axi_lite_resp_t ( axi_lite_resp_t    )
   ) i_axi_to_axi_lite (
     .clk_i      ( clk_i      ),
     .rst_ni     ( rst_ni     ),

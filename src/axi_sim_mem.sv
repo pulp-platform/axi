@@ -47,9 +47,9 @@ module axi_sim_mem #(
   parameter time AcqDelay = 0ps
 ) (
   /// Rising-edge clock
-  input  logic clk_i,
+  input  logic      clk_i,
   /// Active-low reset
-  input  logic rst_ni,
+  input  logic      rst_ni,
   /// AXI4 request struct
   input  axi_req_t axi_req_i,
   /// AXI4 response struct

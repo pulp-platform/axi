@@ -19,24 +19,24 @@
 `include "common_cells/registers.svh"
 
 module axi_lite_mailbox #(
-  parameter int unsigned MailboxDepth = 32'd0,
-  parameter bit unsigned IrqEdgeTrig  = 1'b0,
-  parameter bit unsigned IrqActHigh   = 1'b1,
-  parameter int unsigned AxiAddrWidth = 32'd0,
-  parameter int unsigned AxiDataWidth = 32'd0,
-  parameter type         req_lite_t   = logic,
-  parameter type         resp_lite_t  = logic,
+  parameter int unsigned MailboxDepth    = 32'd0,
+  parameter bit unsigned IrqEdgeTrig     = 1'b0,
+  parameter bit unsigned IrqActHigh      = 1'b1,
+  parameter int unsigned AxiAddrWidth    = 32'd0,
+  parameter int unsigned AxiDataWidth    = 32'd0,
+  parameter type         axi_lite_req_t  = logic,
+  parameter type         axi_lite_resp_t = logic,
   // DEPENDENT PARAMETERS, DO NOT OVERRIDE!
-  parameter type         addr_t       = logic [AxiAddrWidth-1:0]
+  parameter type         addr_t          = logic [AxiAddrWidth-1:0]
 ) (
-  input  logic             clk_i,       // Clock
-  input  logic             rst_ni,      // Asynchronous reset active low
-  input  logic             test_i,      // Testmode enable
+  input  logic                 clk_i,       // Clock
+  input  logic                 rst_ni,      // Asynchronous reset active low
+  input  logic                 test_i,      // Testmode enable
   // slave ports [1:0]
-  input  req_lite_t  [1:0] slv_reqs_i,
-  output resp_lite_t [1:0] slv_resps_o,
-  output logic       [1:0] irq_o,       // interrupt output for each port
-  input  addr_t      [1:0] base_addr_i  // base address for each port
+  input  axi_lite_req_t  [1:0] slv_reqs_i,
+  output axi_lite_resp_t [1:0] slv_resps_o,
+  output logic           [1:0] irq_o,       // interrupt output for each port
+  input  addr_t          [1:0] base_addr_i  // base address for each port
 );
   localparam int unsigned FifoUsageWidth = $clog2(MailboxDepth);
   typedef logic [AxiDataWidth-1:0] data_t;
@@ -55,14 +55,14 @@ module axi_lite_mailbox #(
   logic   [1:0] clear_irq;
 
   axi_lite_mailbox_slave #(
-    .MailboxDepth ( MailboxDepth ),
-    .AxiAddrWidth ( AxiAddrWidth ),
-    .AxiDataWidth ( AxiDataWidth ),
-    .req_lite_t   ( req_lite_t   ),
-    .resp_lite_t  ( resp_lite_t  ),
-    .addr_t       ( addr_t       ),
-    .data_t       ( data_t       ),
-    .usage_t      ( usage_t      )  // fill pointer from MBOX FIFO
+    .MailboxDepth    ( MailboxDepth    ),
+    .AxiAddrWidth    ( AxiAddrWidth    ),
+    .AxiDataWidth    ( AxiDataWidth    ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t ),
+    .addr_t          ( addr_t          ),
+    .data_t          ( data_t          ),
+    .usage_t         ( usage_t         )  // fill pointer from MBOX FIFO
   ) i_slv_port_0 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
@@ -88,14 +88,14 @@ module axi_lite_mailbox #(
   );
 
   axi_lite_mailbox_slave #(
-    .MailboxDepth ( MailboxDepth ),
-    .AxiAddrWidth ( AxiAddrWidth ),
-    .AxiDataWidth ( AxiDataWidth ),
-    .req_lite_t   ( req_lite_t   ),
-    .resp_lite_t  ( resp_lite_t  ),
-    .addr_t       ( addr_t       ),
-    .data_t       ( data_t       ),
-    .usage_t      ( usage_t      )  // fill pointer from MBOX FIFO
+    .MailboxDepth    ( MailboxDepth    ),
+    .AxiAddrWidth    ( AxiAddrWidth    ),
+    .AxiDataWidth    ( AxiDataWidth    ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t ),
+    .addr_t          ( addr_t          ),
+    .data_t          ( data_t          ),
+    .usage_t         ( usage_t         )  // fill pointer from MBOX FIFO
   ) i_slv_port_1 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
@@ -202,36 +202,36 @@ endmodule
 
 // slave port module
 module axi_lite_mailbox_slave #(
-  parameter int unsigned MailboxDepth = 32'd16,
-  parameter int unsigned AxiAddrWidth = 32'd32,
-  parameter int unsigned AxiDataWidth = 32'd32,
-  parameter type         req_lite_t   = logic,
-  parameter type         resp_lite_t  = logic,
-  parameter type         addr_t       = logic [AxiAddrWidth-1:0],
-  parameter type         data_t       = logic [AxiDataWidth-1:0],
-  parameter type         usage_t      = logic                     // fill pointer from MBOX FIFO
+  parameter int unsigned MailboxDepth    = 32'd16,
+  parameter int unsigned AxiAddrWidth    = 32'd32,
+  parameter int unsigned AxiDataWidth    = 32'd32,
+  parameter type         axi_lite_req_t  = logic,
+  parameter type         axi_lite_resp_t = logic,
+  parameter type         addr_t          = logic [AxiAddrWidth-1:0],
+  parameter type         data_t          = logic [AxiDataWidth-1:0],
+  parameter type         usage_t         = logic                     // fill pointer from MBOX FIFO
 ) (
-  input  logic       clk_i,   // Clock
-  input  logic       rst_ni,  // Asynchronous reset active low
+  input  logic           clk_i,   // Clock
+  input  logic           rst_ni,  // Asynchronous reset active low
   // slave port
-  input  req_lite_t  slv_req_i,
-  output resp_lite_t slv_resp_o,
-  input  addr_t      base_addr_i, // base address for the slave port
+  input  axi_lite_req_t  slv_req_i,
+  output axi_lite_resp_t slv_resp_o,
+  input  addr_t          base_addr_i, // base address for the slave port
   // write FIFO port
-  output data_t      mbox_w_data_o,
-  input  logic       mbox_w_full_i,
-  output logic       mbox_w_push_o,
-  output logic       mbox_w_flush_o,
-  input  usage_t     mbox_w_usage_i,
+  output data_t          mbox_w_data_o,
+  input  logic           mbox_w_full_i,
+  output logic           mbox_w_push_o,
+  output logic           mbox_w_flush_o,
+  input  usage_t         mbox_w_usage_i,
   // read FIFO port
-  input  data_t      mbox_r_data_i,
-  input  logic       mbox_r_empty_i,
-  output logic       mbox_r_pop_o,
-  output logic       mbox_r_flush_o,
-  input  usage_t     mbox_r_usage_i,
+  input  data_t          mbox_r_data_i,
+  input  logic           mbox_r_empty_i,
+  output logic           mbox_r_pop_o,
+  output logic           mbox_r_flush_o,
+  input  usage_t         mbox_r_usage_i,
   // interrupt output, level triggered, active high, conversion in top
-  output logic       irq_o,
-  output logic       clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
+  output logic           irq_o,
+  output logic           clear_irq_o // clear the edge trigger irq register in `axi_lite_mailbox`
 );
 
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
@@ -578,11 +578,11 @@ module axi_lite_mailbox_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_lite_t, r_chan_lite_t)
 
-  req_lite_t  [1:0] slv_reqs;
-  resp_lite_t [1:0] slv_resps;
+  axi_lite_req_t  [1:0] slv_reqs;
+  axi_lite_resp_t [1:0] slv_resps;
 
   for (genvar i = 0; i < 2; i++) begin : gen_port_assign
     `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
@@ -590,13 +590,13 @@ module axi_lite_mailbox_intf #(
   end
 
   axi_lite_mailbox #(
-    .MailboxDepth ( MAILBOX_DEPTH  ),
-    .IrqEdgeTrig  ( IRQ_EDGE_TRIG  ),
-    .IrqActHigh   ( IRQ_ACT_HIGH   ),
-    .AxiAddrWidth ( AXI_ADDR_WIDTH ),
-    .AxiDataWidth ( AXI_DATA_WIDTH ),
-    .req_lite_t   ( req_lite_t     ),
-    .resp_lite_t  ( resp_lite_t    )
+    .MailboxDepth    ( MAILBOX_DEPTH   ),
+    .IrqEdgeTrig     ( IRQ_EDGE_TRIG   ),
+    .IrqActHigh      ( IRQ_ACT_HIGH    ),
+    .AxiAddrWidth    ( AXI_ADDR_WIDTH  ),
+    .AxiDataWidth    ( AXI_DATA_WIDTH  ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t )
   ) i_axi_lite_mailbox (
     .clk_i,      // Clock
     .rst_ni,     // Asynchronous reset active low

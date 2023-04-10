@@ -50,8 +50,8 @@ module tb_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
 
-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
 
   typedef logic [NoApbSlaves-1:0] sel_t;
 
@@ -113,8 +113,8 @@ module tb_axi_lite_to_apb #(
   logic end_of_sim;
 
   // master structs
-  axi_req_t  axi_req;
-  axi_resp_t axi_resp;
+  axi_lite_req_t  axi_req;
+  axi_lite_resp_t axi_resp;
 
   // slave structs
   apb_req_t  [NoApbSlaves-1:0] apb_req;
@@ -234,8 +234,8 @@ module tb_axi_lite_to_apb #(
     .DataWidth        ( AxiDataWidth        ),
     .PipelineRequest  ( TbPipelineRequest   ),
     .PipelineResponse ( TbPipelineResponse  ),
-    .axi_lite_req_t   ( axi_req_t           ),
-    .axi_lite_resp_t  ( axi_resp_t          ),
+    .axi_lite_req_t   ( axi_lite_req_t      ),
+    .axi_lite_resp_t  ( axi_lite_resp_t     ),
     .apb_req_t        ( apb_req_t           ),
     .apb_resp_t       ( apb_resp_t          ),
     .rule_t           ( rule_t              )

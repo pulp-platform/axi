@@ -38,8 +38,8 @@ module axi_burst_splitter #(
   parameter type         axi_req_t    = logic,
   parameter type         axi_resp_t   = logic
 ) (
-  input  logic  clk_i,
-  input  logic  rst_ni,
+  input  logic      clk_i,
+  input  logic      rst_ni,
 
   // Input / Slave Port
   input  axi_req_t  slv_req_i,

@@ -92,18 +92,18 @@ module axi_lite_regs #(
   /// assigned its value from this array.
   parameter byte_t [RegNumBytes-1:0] RegRstVal = {RegNumBytes{8'h00}},
   /// Request struct of the AXI4-Lite port.
-  parameter type req_lite_t = logic,
+  parameter type axi_lite_req_t = logic,
   /// Response struct of the AXI4-Lite port.
-  parameter type resp_lite_t = logic
+  parameter type axi_lite_resp_t = logic
 ) (
   /// Rising-edge clock of all ports
   input  logic clk_i,
   /// Asynchronous reset, active low
   input  logic rst_ni,
   /// AXI4-Lite slave request
-  input  req_lite_t axi_req_i,
+  input  axi_lite_req_t axi_req_i,
   /// AXI4-Lite slave response
-  output resp_lite_t axi_resp_o,
+  output axi_lite_resp_t axi_resp_o,
   /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
   /// signal is asserted regardless of the value of `AxiReadOnly` and can therefore be used by
   /// surrounding logic to react to write-on-read-only-byte errors.
@@ -438,25 +438,25 @@ module axi_lite_regs_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_lite_t, r_chan_lite_t)
 
-  req_lite_t  axi_lite_req;
-  resp_lite_t axi_lite_resp;
+  axi_lite_req_t  axi_lite_req;
+  axi_lite_resp_t axi_lite_resp;
 
   `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, slv)
   `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_lite_resp)
 
   axi_lite_regs #(
-    .RegNumBytes  ( REG_NUM_BYTES  ),
-    .AxiAddrWidth ( AXI_ADDR_WIDTH ),
-    .AxiDataWidth ( AXI_DATA_WIDTH ),
-    .PrivProtOnly ( PRIV_PROT_ONLY ),
-    .SecuProtOnly ( SECU_PROT_ONLY ),
-    .AxiReadOnly  ( AXI_READ_ONLY  ),
-    .RegRstVal    ( REG_RST_VAL    ),
-    .req_lite_t   ( req_lite_t     ),
-    .resp_lite_t  ( resp_lite_t    )
+    .RegNumBytes     ( REG_NUM_BYTES   ),
+    .AxiAddrWidth    ( AXI_ADDR_WIDTH  ),
+    .AxiDataWidth    ( AXI_DATA_WIDTH  ),
+    .PrivProtOnly    ( PRIV_PROT_ONLY  ),
+    .SecuProtOnly    ( SECU_PROT_ONLY  ),
+    .AxiReadOnly     ( AXI_READ_ONLY   ),
+    .RegRstVal       ( REG_RST_VAL     ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t )
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,

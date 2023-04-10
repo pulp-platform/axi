@@ -21,27 +21,27 @@
 
 module axi_lite_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0,
-  parameter type  aw_chan_t         = logic,
-  parameter type   w_chan_t         = logic,
-  parameter type   b_chan_t         = logic,
-  parameter type  ar_chan_t         = logic,
-  parameter type   r_chan_t         = logic,
-  parameter type  axi_req_t         = logic,
-  parameter type axi_resp_t         = logic,
-  parameter type     rule_t         = axi_pkg::xbar_rule_64_t,
+  parameter type       aw_chan_t    = logic,
+  parameter type        w_chan_t    = logic,
+  parameter type        b_chan_t    = logic,
+  parameter type       ar_chan_t    = logic,
+  parameter type        r_chan_t    = logic,
+  parameter type  axi_lite_req_t    = logic,
+  parameter type axi_lite_resp_t    = logic,
+  parameter type          rule_t    = axi_pkg::xbar_rule_64_t,
   // DEPENDENT PARAMETERS, DO NOT OVERWRITE!
   parameter int unsigned MstIdxWidth = (Cfg.NoMstPorts > 32'd1) ? $clog2(Cfg.NoMstPorts) : 32'd1
 ) (
-  input  logic                                        clk_i,
-  input  logic                                        rst_ni,
-  input  logic                                        test_i,
-  input  axi_req_t  [Cfg.NoSlvPorts-1:0]              slv_ports_req_i,
-  output axi_resp_t [Cfg.NoSlvPorts-1:0]              slv_ports_resp_o,
-  output axi_req_t  [Cfg.NoMstPorts-1:0]              mst_ports_req_o,
-  input  axi_resp_t [Cfg.NoMstPorts-1:0]              mst_ports_resp_i,
-  input  rule_t [Cfg.NoAddrRules-1:0]                 addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                  en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  logic                                                 test_i,
+  input  axi_lite_req_t  [Cfg.NoSlvPorts-1:0]                  slv_ports_req_i,
+  output axi_lite_resp_t [Cfg.NoSlvPorts-1:0]                  slv_ports_resp_o,
+  output axi_lite_req_t  [Cfg.NoMstPorts-1:0]                  mst_ports_req_o,
+  input  axi_lite_resp_t [Cfg.NoMstPorts-1:0]                  mst_ports_resp_i,
+  input  rule_t          [Cfg.NoAddrRules-1:0]                 addr_map_i,
+  input  logic           [Cfg.NoSlvPorts-1:0]                  en_default_mst_port_i,
+  input  logic           [Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
 );
 
   typedef logic [Cfg.AxiAddrWidth-1:0]   addr_t;
@@ -60,12 +60,12 @@ module axi_lite_xbar #(
   `AXI_TYPEDEF_RESP_T(full_resp_t, full_b_chan_t, full_r_chan_t)
 
   // signals from the axi_lite_demuxes, one index more for decode error routing
-  axi_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_reqs;
-  axi_resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_resps;
+  axi_lite_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_reqs;
+  axi_lite_resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_resps;
 
   // signals into the axi_lite_muxes, are of type slave as the multiplexer extends the ID
-  axi_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
-  axi_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
+  axi_lite_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
+  axi_lite_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
     logic [MstIdxWidth-1:0] dec_aw,        dec_ar;
@@ -138,21 +138,21 @@ module axi_lite_xbar #(
     `endif
     // pragma translate_on
     axi_lite_demux #(
-      .aw_chan_t      ( aw_chan_t          ),  // AW Channel Type
-      .w_chan_t       (  w_chan_t          ),  //  W Channel Type
-      .b_chan_t       (  b_chan_t          ),  //  B Channel Type
-      .ar_chan_t      ( ar_chan_t          ),  // AR Channel Type
-      .r_chan_t       (  r_chan_t          ),  //  R Channel Type
-      .axi_req_t      ( axi_req_t          ),
-      .axi_resp_t     ( axi_resp_t         ),
-      .NoMstPorts     ( Cfg.NoMstPorts + 1 ),
-      .MaxTrans       ( Cfg.MaxMstTrans    ),
-      .FallThrough    ( Cfg.FallThrough    ),
-      .SpillAw        ( Cfg.LatencyMode[9] ),
-      .SpillW         ( Cfg.LatencyMode[8] ),
-      .SpillB         ( Cfg.LatencyMode[7] ),
-      .SpillAr        ( Cfg.LatencyMode[6] ),
-      .SpillR         ( Cfg.LatencyMode[5] )
+      .aw_chan_t       ( aw_chan_t          ),  // AW Channel Type
+      .w_chan_t        (  w_chan_t          ),  //  W Channel Type
+      .b_chan_t        (  b_chan_t          ),  //  B Channel Type
+      .ar_chan_t       ( ar_chan_t          ),  // AR Channel Type
+      .r_chan_t        (  r_chan_t          ),  //  R Channel Type
+      .axi_lite_req_t  ( axi_lite_req_t     ),
+      .axi_lite_resp_t ( axi_lite_resp_t    ),
+      .NoMstPorts      ( Cfg.NoMstPorts + 1 ),
+      .MaxTrans        ( Cfg.MaxMstTrans    ),
+      .FallThrough     ( Cfg.FallThrough    ),
+      .SpillAw         ( Cfg.LatencyMode[9] ),
+      .SpillW          ( Cfg.LatencyMode[8] ),
+      .SpillB          ( Cfg.LatencyMode[7] ),
+      .SpillAr         ( Cfg.LatencyMode[6] ),
+      .SpillR          ( Cfg.LatencyMode[5] )
     ) i_axi_lite_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
@@ -168,11 +168,11 @@ module axi_lite_xbar #(
     // connect the decode error module to the last index of the demux master port
     // typedef as the decode error slave uses full axi
     axi_lite_to_axi #(
-      .AxiDataWidth ( Cfg.AxiDataWidth  ),
-      .req_lite_t   ( axi_req_t         ),
-      .resp_lite_t  ( axi_resp_t        ),
-      .axi_req_t    ( full_req_t        ),
-      .axi_resp_t   ( full_resp_t       )
+      .AxiDataWidth    ( Cfg.AxiDataWidth  ),
+      .axi_lite_req_t  ( axi_lite_req_t    ),
+      .axi_lite_resp_t ( axi_lite_resp_t   ),
+      .axi_req_t       ( full_req_t        ),
+      .axi_resp_t      ( full_resp_t       )
     ) i_dec_err_conv (
       .slv_req_lite_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
       .slv_resp_lite_o ( slv_resps[i][Cfg.NoMstPorts] ),
@@ -210,21 +210,21 @@ module axi_lite_xbar #(
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_lite_mux #(
-      .aw_chan_t   ( aw_chan_t          ), // AW Channel Type
-      .w_chan_t    (  w_chan_t          ), //  W Channel Type
-      .b_chan_t    (  b_chan_t          ), //  B Channel Type
-      .ar_chan_t   ( ar_chan_t          ), // AR Channel Type
-      .r_chan_t    (  r_chan_t          ), //  R Channel Type
-      .axi_req_t   ( axi_req_t          ),
-      .axi_resp_t  ( axi_resp_t         ),
-      .NoSlvPorts  ( Cfg.NoSlvPorts     ), // Number of Masters for the module
-      .MaxTrans    ( Cfg.MaxSlvTrans    ),
-      .FallThrough ( Cfg.FallThrough    ),
-      .SpillAw     ( Cfg.LatencyMode[4] ),
-      .SpillW      ( Cfg.LatencyMode[3] ),
-      .SpillB      ( Cfg.LatencyMode[2] ),
-      .SpillAr     ( Cfg.LatencyMode[1] ),
-      .SpillR      ( Cfg.LatencyMode[0] )
+      .aw_chan_t       ( aw_chan_t          ), // AW Channel Type
+      .w_chan_t        (  w_chan_t          ), //  W Channel Type
+      .b_chan_t        (  b_chan_t          ), //  B Channel Type
+      .ar_chan_t       ( ar_chan_t          ), // AR Channel Type
+      .r_chan_t        (  r_chan_t          ), //  R Channel Type
+      .axi_lite_req_t  ( axi_lite_req_t     ),
+      .axi_lite_resp_t ( axi_lite_resp_t    ),
+      .NoSlvPorts      ( Cfg.NoSlvPorts     ), // Number of Masters for the module
+      .MaxTrans        ( Cfg.MaxSlvTrans    ),
+      .FallThrough     ( Cfg.FallThrough    ),
+      .SpillAw         ( Cfg.LatencyMode[4] ),
+      .SpillW          ( Cfg.LatencyMode[3] ),
+      .SpillB          ( Cfg.LatencyMode[2] ),
+      .SpillAr         ( Cfg.LatencyMode[1] ),
+      .SpillR          ( Cfg.LatencyMode[0] )
     ) i_axi_lite_mux (
       .clk_i,  // Clock
       .rst_ni, // Asynchronous reset active low
@@ -261,13 +261,13 @@ module axi_lite_xbar_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RESP_T(axi_lite_resp_t, b_chan_t, r_chan_t)
 
-  axi_req_t   [Cfg.NoMstPorts-1:0]  mst_reqs;
-  axi_resp_t  [Cfg.NoMstPorts-1:0]  mst_resps;
-  axi_req_t   [Cfg.NoSlvPorts-1:0]  slv_reqs;
-  axi_resp_t  [Cfg.NoSlvPorts-1:0]  slv_resps;
+  axi_lite_req_t   [Cfg.NoMstPorts-1:0]  mst_reqs;
+  axi_lite_resp_t  [Cfg.NoMstPorts-1:0]  mst_resps;
+  axi_lite_req_t   [Cfg.NoSlvPorts-1:0]  slv_reqs;
+  axi_lite_resp_t  [Cfg.NoSlvPorts-1:0]  slv_resps;
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
     `AXI_LITE_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
@@ -280,15 +280,15 @@ module axi_lite_xbar_intf #(
   end
 
   axi_lite_xbar #(
-    .Cfg  (Cfg),
-    .aw_chan_t  ( aw_chan_t  ),
-    .w_chan_t   ( w_chan_t   ),
-    .b_chan_t   ( b_chan_t   ),
-    .ar_chan_t  ( ar_chan_t  ),
-    .r_chan_t   ( r_chan_t   ),
-    .axi_req_t  ( axi_req_t  ),
-    .axi_resp_t ( axi_resp_t ),
-    .rule_t     ( rule_t     )
+    .Cfg             ( Cfg             ),
+    .aw_chan_t       ( aw_chan_t       ),
+    .w_chan_t        ( w_chan_t        ),
+    .b_chan_t        ( b_chan_t        ),
+    .ar_chan_t       ( ar_chan_t       ),
+    .r_chan_t        ( r_chan_t        ),
+    .axi_lite_req_t  ( axi_lite_req_t  ),
+    .axi_lite_resp_t ( axi_lite_resp_t ),
+    .rule_t          ( rule_t          )
   ) i_xbar (
     .clk_i,
     .rst_ni,
