@@ -32,12 +32,12 @@ module axi_cdc #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
   parameter int unsigned  LogDepth  = 1
 ) (
-  // slave side - clocked by `src_clk_i`
+  // subordinate side - clocked by `src_clk_i`
   input  logic     src_clk_i,
   input  logic     src_rst_ni,
   input  axi_req_t src_req_i,
   output axi_rsp_t src_rsp_o,
-  // master side - clocked by `dst_clk_i`
+  // manager side - clocked by `dst_clk_i`
   input  logic     dst_clk_i,
   input  logic     dst_rst_ni,
   output axi_req_t dst_req_o,
@@ -69,21 +69,21 @@ module axi_cdc #(
                 .src_rst_ni,
                 .src_req_i,
                 .src_rsp_o,
-    (* async *) .async_data_master_aw_data_o  ( async_data_aw_data  ),
-    (* async *) .async_data_master_aw_wptr_o  ( async_data_aw_wptr  ),
-    (* async *) .async_data_master_aw_rptr_i  ( async_data_aw_rptr  ),
-    (* async *) .async_data_master_w_data_o   ( async_data_w_data   ),
-    (* async *) .async_data_master_w_wptr_o   ( async_data_w_wptr   ),
-    (* async *) .async_data_master_w_rptr_i   ( async_data_w_rptr   ),
-    (* async *) .async_data_master_b_data_i   ( async_data_b_data   ),
-    (* async *) .async_data_master_b_wptr_i   ( async_data_b_wptr   ),
-    (* async *) .async_data_master_b_rptr_o   ( async_data_b_rptr   ),
-    (* async *) .async_data_master_ar_data_o  ( async_data_ar_data  ),
-    (* async *) .async_data_master_ar_wptr_o  ( async_data_ar_wptr  ),
-    (* async *) .async_data_master_ar_rptr_i  ( async_data_ar_rptr  ),
-    (* async *) .async_data_master_r_data_i   ( async_data_r_data   ),
-    (* async *) .async_data_master_r_wptr_i   ( async_data_r_wptr   ),
-    (* async *) .async_data_master_r_rptr_o   ( async_data_r_rptr   )
+    (* async *) .async_data_manager_aw_data_o  ( async_data_aw_data  ),
+    (* async *) .async_data_manager_aw_wptr_o  ( async_data_aw_wptr  ),
+    (* async *) .async_data_manager_aw_rptr_i  ( async_data_aw_rptr  ),
+    (* async *) .async_data_manager_w_data_o   ( async_data_w_data   ),
+    (* async *) .async_data_manager_w_wptr_o   ( async_data_w_wptr   ),
+    (* async *) .async_data_manager_w_rptr_i   ( async_data_w_rptr   ),
+    (* async *) .async_data_manager_b_data_i   ( async_data_b_data   ),
+    (* async *) .async_data_manager_b_wptr_i   ( async_data_b_wptr   ),
+    (* async *) .async_data_manager_b_rptr_o   ( async_data_b_rptr   ),
+    (* async *) .async_data_manager_ar_data_o  ( async_data_ar_data  ),
+    (* async *) .async_data_manager_ar_wptr_o  ( async_data_ar_wptr  ),
+    (* async *) .async_data_manager_ar_rptr_i  ( async_data_ar_rptr  ),
+    (* async *) .async_data_manager_r_data_i   ( async_data_r_data   ),
+    (* async *) .async_data_manager_r_wptr_i   ( async_data_r_wptr   ),
+    (* async *) .async_data_manager_r_rptr_o   ( async_data_r_rptr   )
   );
 
   axi_cdc_dst #(
@@ -100,21 +100,21 @@ module axi_cdc #(
                 .dst_rst_ni,
                 .dst_req_o,
                 .dst_rsp_i,
-    (* async *) .async_data_slave_aw_wptr_i ( async_data_aw_wptr  ),
-    (* async *) .async_data_slave_aw_rptr_o ( async_data_aw_rptr  ),
-    (* async *) .async_data_slave_aw_data_i ( async_data_aw_data  ),
-    (* async *) .async_data_slave_w_wptr_i  ( async_data_w_wptr   ),
-    (* async *) .async_data_slave_w_rptr_o  ( async_data_w_rptr   ),
-    (* async *) .async_data_slave_w_data_i  ( async_data_w_data   ),
-    (* async *) .async_data_slave_b_wptr_o  ( async_data_b_wptr   ),
-    (* async *) .async_data_slave_b_rptr_i  ( async_data_b_rptr   ),
-    (* async *) .async_data_slave_b_data_o  ( async_data_b_data   ),
-    (* async *) .async_data_slave_ar_wptr_i ( async_data_ar_wptr  ),
-    (* async *) .async_data_slave_ar_rptr_o ( async_data_ar_rptr  ),
-    (* async *) .async_data_slave_ar_data_i ( async_data_ar_data  ),
-    (* async *) .async_data_slave_r_wptr_o  ( async_data_r_wptr   ),
-    (* async *) .async_data_slave_r_rptr_i  ( async_data_r_rptr   ),
-    (* async *) .async_data_slave_r_data_o  ( async_data_r_data   )
+    (* async *) .async_data_subordinate_aw_wptr_i ( async_data_aw_wptr  ),
+    (* async *) .async_data_subordinate_aw_rptr_o ( async_data_aw_rptr  ),
+    (* async *) .async_data_subordinate_aw_data_i ( async_data_aw_data  ),
+    (* async *) .async_data_subordinate_w_wptr_i  ( async_data_w_wptr   ),
+    (* async *) .async_data_subordinate_w_rptr_o  ( async_data_w_rptr   ),
+    (* async *) .async_data_subordinate_w_data_i  ( async_data_w_data   ),
+    (* async *) .async_data_subordinate_b_wptr_o  ( async_data_b_wptr   ),
+    (* async *) .async_data_subordinate_b_rptr_i  ( async_data_b_rptr   ),
+    (* async *) .async_data_subordinate_b_data_o  ( async_data_b_data   ),
+    (* async *) .async_data_subordinate_ar_wptr_i ( async_data_ar_wptr  ),
+    (* async *) .async_data_subordinate_ar_rptr_o ( async_data_ar_rptr  ),
+    (* async *) .async_data_subordinate_ar_data_i ( async_data_ar_data  ),
+    (* async *) .async_data_subordinate_r_wptr_o  ( async_data_r_wptr   ),
+    (* async *) .async_data_subordinate_r_rptr_i  ( async_data_r_rptr   ),
+    (* async *) .async_data_subordinate_r_data_o  ( async_data_r_data   )
 );
 
 endmodule
@@ -131,14 +131,14 @@ module axi_cdc_intf #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
   parameter int unsigned LOG_DEPTH = 1
 ) (
-   // slave side - clocked by `src_clk_i`
+   // subordinate side - clocked by `src_clk_i`
   input  logic      src_clk_i,
   input  logic      src_rst_ni,
-  AXI_BUS.Slave     src,
-  // master side - clocked by `dst_clk_i`
+  AXI_BUS.Subordinate     src,
+  // manager side - clocked by `dst_clk_i`
   input  logic      dst_clk_i,
   input  logic      dst_rst_ni,
-  AXI_BUS.Master    dst
+  AXI_BUS.Manager    dst
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]     id_t;
@@ -191,14 +191,14 @@ module axi_lite_cdc_intf #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
   parameter int unsigned LOG_DEPTH = 1
 ) (
-   // slave side - clocked by `src_clk_i`
+   // subordinate side - clocked by `src_clk_i`
   input  logic      src_clk_i,
   input  logic      src_rst_ni,
-  AXI_LITE.Slave    src,
-  // master side - clocked by `dst_clk_i`
+  AXI_LITE.Subordinate    src,
+  // manager side - clocked by `dst_clk_i`
   input  logic      dst_clk_i,
   input  logic      dst_rst_ni,
-  AXI_LITE.Master   dst
+  AXI_LITE.Manager   dst
 );
 
   typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;

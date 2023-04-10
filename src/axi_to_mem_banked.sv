@@ -12,7 +12,7 @@
 // - Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
-/// AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.
+/// AXI4+ATOP to banked SRAM memory subordinate. Allows for parallel read and write transactions.
 /// Has higher throughput than `axi_to_mem`, however needs more hardware.
 ///
 /// The used address space starts at 0x0 and ends at the capacity of all memory banks combined.
@@ -70,9 +70,9 @@ module axi_to_mem_banked #(
   input  logic                        rst_ni,
   /// Testmode enable
   input  logic                        test_i,
-  /// AXI4+ATOP slave port, request struct
+  /// AXI4+ATOP subordinate port, request struct
   input  axi_req_t                    axi_req_i,
-  /// AXI4+ATOP slave port, response struct
+  /// AXI4+ATOP subordinate port, response struct
   output axi_rsp_t                    axi_rsp_o,
   /// Memory bank request
   output logic      [MemNumBanks-1:0] mem_req_o,
@@ -146,8 +146,8 @@ module axi_to_mem_banked #(
     .ar_chan_t   ( axi_ar_chan_t ),
     .r_chan_t    ( axi_r_chan_t  ),
     .axi_req_t   ( axi_req_t     ),
-    .axi_rsp_t   ( axi_rsp_t    ),
-    .NumMstPorts ( 32'd2         ),
+    .axi_rsp_t   ( axi_rsp_t     ),
+    .NumMgrPorts ( 32'd2         ),
     .MaxTrans    ( MemLatency+2  ), // allow multiple Ax vectors to not starve W channel
     .LookBits    ( 32'd1         ), // select is fixed, do not need it
     .UniqueIds   ( 1'b0          ),
@@ -160,12 +160,12 @@ module axi_to_mem_banked #(
     .clk_i,
     .rst_ni,
     .test_i,
-    .slv_req_i       ( axi_req_i    ),
-    .slv_aw_select_i ( WriteAccess  ),
-    .slv_ar_select_i ( ReadAccess   ),
-    .slv_rsp_o       ( axi_rsp_o    ),
-    .mst_reqs_o      ( mem_axi_reqs ),
-    .mst_rsps_i      ( mem_axi_rsps )
+    .sbr_req_i       ( axi_req_i    ),
+    .sbr_aw_select_i ( WriteAccess  ),
+    .sbr_ar_select_i ( ReadAccess   ),
+    .sbr_rsp_o       ( axi_rsp_o    ),
+    .mgr_reqs_o      ( mem_axi_reqs ),
+    .mgr_rsps_i      ( mem_axi_rsps )
   );
 
   xbar_payload_t [1:0][BanksPerAxiChannel-1:0] inter_payload;
@@ -347,8 +347,8 @@ module axi_to_mem_banked_intf #(
   input  logic                          rst_ni,
   /// Testmode enable
   input  logic                          test_i,
-  /// AXI4+ATOP slave port
-  AXI_BUS.Slave                         slv,
+  /// AXI4+ATOP subordinate port
+  AXI_BUS.Subordinate                         sbr,
   /// Memory bank request
   output logic      [MEM_NUM_BANKS-1:0] mem_req_o,
   /// Memory request grant
@@ -384,8 +384,8 @@ module axi_to_mem_banked_intf #(
   axi_req_t mem_axi_req;
   axi_rsp_t mem_axi_rsp;
 
-  `AXI_ASSIGN_TO_REQ(mem_axi_req, slv)
-  `AXI_ASSIGN_FROM_RSP(slv, mem_axi_rsp)
+  `AXI_ASSIGN_TO_REQ(mem_axi_req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, mem_axi_rsp)
 
   axi_to_mem_banked #(
     .IdWidth       ( AXI_ID_WIDTH               ),

@@ -24,11 +24,11 @@ module tb_axi_lite_to_apb #(
   parameter bit TbPipelineResponse = 1'b0
 );
   // Dut parameters
-  localparam int unsigned NumApbSlaves = 8;    // How many APB Slaves  there are
+  localparam int unsigned NumApbSlaves = 8;    // How many APB Slaves there are
   localparam int unsigned NumAddrRules = 9;    // How many address rules for the APB slaves
-  // Random master no Transactions
-  localparam int unsigned NumWrites    = 10000;  // How many rand writes of the master
-  localparam int unsigned NumReads     = 20000;  // How many rand reads of the master
+  // Random manager no Transactions
+  localparam int unsigned NumWrites    = 10000;  // How many rand writes of the manager
+  localparam int unsigned NumReads     = 20000;  // How many rand reads of the manager
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -83,7 +83,7 @@ module tb_axi_lite_to_apb #(
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::axi_lite_rand_master #(
+  typedef axi_test::axi_lite_rand_manager #(
     // AXI interface parameters
     .AW       ( AddrWidth      ),
     .DW       ( DataWidth      ),
@@ -102,7 +102,7 @@ module tb_axi_lite_to_apb #(
     .W_MAX_WAIT_CYCLES  (    5 ),
     .RESP_MIN_WAIT_CYCLES (  0 ),
     .RESP_MAX_WAIT_CYCLES ( 20 )
-  ) axi_lite_rand_master_t;
+  ) axi_lite_rand_manager_t;
 
   // -------------
   // DUT signals
@@ -112,7 +112,7 @@ module tb_axi_lite_to_apb #(
   logic rst_n;
   logic end_of_sim;
 
-  // master structs
+  // manager structs
   axi_lite_req_t axi_req;
   axi_lite_rsp_t axi_rsp;
 
@@ -126,25 +126,25 @@ module tb_axi_lite_to_apb #(
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master ();
+  ) manager ();
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master_dv (clk);
-  `AXI_LITE_ASSIGN(master, master_dv)
-  `AXI_LITE_ASSIGN_TO_REQ(axi_req, master)
-  `AXI_LITE_ASSIGN_FROM_RSP(master, axi_rsp)
+  ) manager_dv (clk);
+  `AXI_LITE_ASSIGN(manager, manager_dv)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_req, manager)
+  `AXI_LITE_ASSIGN_FROM_RSP(manager, axi_rsp)
 
   // -------------------------------
-  // AXI Rand Masters
+  // AXI Rand Managers
   // -------------------------------
-  // Master controls simulation run time
-  initial begin : proc_axi_master
-    static axi_lite_rand_master_t axi_lite_rand_master = new ( master_dv , "axi_lite_mst");
+  // Manager controls simulation run time
+  initial begin : proc_axi_manager
+    static axi_lite_rand_manager_t axi_lite_rand_manager = new ( manager_dv , "axi_lite_mgr");
     end_of_sim <= 1'b0;
-    axi_lite_rand_master.reset();
+    axi_lite_rand_manager.reset();
     @(posedge rst_n);
-    axi_lite_rand_master.run(NumReads, NumWrites);
+    axi_lite_rand_manager.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
   end
 

@@ -1,6 +1,6 @@
 # AXI4-Lite Mailbox
 
-`axi_lite_mailbox` implements a hardware mailbox, where two AXI4-Lite slave ports are connected to each other over two FIFOs. Data written on port 0 is made available on the read data at port 1 and vice versa.
+`axi_lite_mailbox` implements a hardware mailbox, where two AXI4-Lite subordinate ports are connected to each other over two FIFOs. Data written on port 0 is made available on the read data at port 1 and vice versa.
 The module features an interrupt for each port which can be enabled with the [IRQEN](#irqen-register) register. Interrupts can be configured to trigger depending on the fill levels of the read ([RIRQT](#rirqt-register)) and write ([WIRQT](#wirqt-register)) FIFO. It is further possible to trigger an interrupt on an mailbox error condition as defined by the [ERROR](#error-register) register.
 
 
@@ -10,7 +10,7 @@ This table describes the parameters of the module.
 
 | Name           | Type           | Description                                                                                  |
 |:---------------|:---------------|:---------------------------------------------------------------------------------------------|
-| `MailboxDepth` | `int unsigned `| The depth of the FIFOs between the two slave ports, min `32'd2`                              |
+| `MailboxDepth` | `int unsigned `| The depth of the FIFOs between the two subordinate ports, min `32'd2`                              |
 | `IrqEdgeTrig`  | `bit`          | Interrupts trigger mode. <br/>[0]: level trigger <br/>[1]: edge trigger                      |
 | `IrqActHigh`   | `bit`          | Interrupts polarity. <br/>[0]: active low / falling edge <br/>[1]: active high / rising edge |
 | `AddrWidth`    | `int unsigned` | The AXI4-Lite address width on the AW and AR channels                                        |
@@ -28,8 +28,8 @@ This table describes the ports of the module.
 | `clk_i`        | `input  logic`            | clock                                                  |
 | `rst_ni`       | `input  logic`            | asynchronous reset active low                          |
 | `test_i`       | `input  logic`            | testmode enable                                        |
-| `slv_reqs_i`   | `input  req_lite_t [1:0]` | requests of the two AXI4-Lite ports                    |
-| `slv_rsps_o`   | `output rsp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
+| `sbr_reqs_i`   | `input  req_lite_t [1:0]` | requests of the two AXI4-Lite ports                    |
+| `sbr_rsps_o`   | `output rsp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
 | `irq_o`        | `output logic      [1:0]` | interrupt output for each port                         |
 | `base_addr_i`  | `input  addr_t     [1:0]` | base address for each port                             |
 
@@ -57,13 +57,13 @@ Each register has one of the access types `R/W = read and write`, `R = read-only
 
 ### MBOXW Register
 
-Mailbox write register. Write here to send data to the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [WIRQT Register](#wirqt-register) (if enabled).
+Mailbox write register. Write here to send data to the other subordinate port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [WIRQT Register](#wirqt-register) (if enabled).
 Writes are ignored when the FIFO is full and a `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
 
 ### MBOXR Register
 
-Mailbox read register. Read here to receive data from the other slave port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
+Mailbox read register. Read here to receive data from the other subordinate port. A interrupt request will be raised when the fill pointer of the FIFO surpasses the [RIRQT Register](#rirqt-register) (if enabled).
 When the FIFO is empty, the read response `axi_pkg::RESP_SLVERR` is returned. Additionally the corresponding bit in the [ERROR Register](#error-register) is set.
 
 
@@ -115,7 +115,7 @@ When a value larger than or equal to the `MailboxDepth` parameter is written to 
 
 ### IRQS Register
 
-Interrupt request status register. This register holds the current interrupt status of this slave port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also get updated when the respective interrupt is not enabled.
+Interrupt request status register. This register holds the current interrupt status of this subordinate port. There are three types of interrupts which can be enabled in the [IRQEN register](#irqen-register). The bits inside this register are sticky and get set when the trigger condition is fulfilled. This register has to be cleared explicitly by acknowledging the interrupt request status described below. This register will also get updated when the respective interrupt is not enabled.
 * `EIRQ`:  Error interrupt request, is set to high when there was a read from an empty mailbox or a write to a full mailbox.
 * `RTIRQ`: Read threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the R channel is higher than the threshold set in `RIRQT`.
 * `WTIRQ`: Write threshold interrupt request, is set to high when the fill pointer of the FIFO connected to the W channel is higher than the threshold set in `WIRQT`.
@@ -143,7 +143,7 @@ Interrupt request enable register. Here the interrupts from [IRQS](#irqs-registe
 
 ### IRQP Register
 
-Interrupt request pending register. This read-only register holds the pending interrupts for this slave port. It is generated by the bitwise AND of the [IRQS](#irqs-register) and [IRQEN](#irqen-register) registers.
+Interrupt request pending register. This read-only register holds the pending interrupts for this subordinate port. It is generated by the bitwise AND of the [IRQS](#irqs-register) and [IRQEN](#irqen-register) registers.
 An interrupt gets triggered by the OR of the bits of this register.
 
 | Bit(s)          | Name     | Access Type | Reset Value | Description                                                               |
@@ -156,7 +156,7 @@ An interrupt gets triggered by the OR of the bits of this register.
 
 ### CTRL Register
 
-Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal of each FIFO is the OR combination of the respective bit of this register at each slave port. On register write, the FIFO is cleared and the register is reset.
+Mailbox control register. Here the FIFOs can be cleared from each interface. The flush signal of each FIFO is the OR combination of the respective bit of this register at each subordinate port. On register write, the FIFO is cleared and the register is reset.
 
 | Bit(s)          | Name     | Access Type | Reset Value | Description                                  |
 |:---------------:|:--------:|:-----------:|:-----------:|:---------------------------------------------|

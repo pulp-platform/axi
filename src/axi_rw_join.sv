@@ -15,27 +15,27 @@
 `include "axi/assign.svh"
 `include "common_cells/assertions.svh"
 
-/// Joins a read and a write slave into one single read / write master
+/// Joins a read and a write subordinate into one single read / write manager
 ///
-/// Connects the ar and r channel of the read slave to the read / write master
-/// and the aw, w and b channel of the write slave to the read / write master
+/// Connects the ar and r channel of the read subordinate to the read / write manager
+/// and the aw, w and b channel of the write subordinate to the read / write manager
 module axi_rw_join #(
   parameter type axi_req_t = logic,
   parameter type axi_rsp_t = logic
 ) (
   input  logic     clk_i,
   input  logic     rst_ni,
-  // Read Slave
-  input  axi_req_t slv_read_req_i,
-  output axi_rsp_t slv_read_rsp_o,
+  // Read Subordinate
+  input  axi_req_t sbr_read_req_i,
+  output axi_rsp_t sbr_read_rsp_o,
 
-  // Write Slave
-  input  axi_req_t slv_write_req_i,
-  output axi_rsp_t slv_write_rsp_o,
+  // Write Subordinate
+  input  axi_req_t sbr_write_req_i,
+  output axi_rsp_t sbr_write_rsp_o,
 
-  // Read / Write Master
-  output axi_req_t mst_req_o,
-  input  axi_rsp_t mst_rsp_i
+  // Read / Write Manager
+  output axi_req_t mgr_req_o,
+  input  axi_rsp_t mgr_rsp_i
 );
 
   //--------------------------------------
@@ -43,11 +43,11 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Assign Read Structs
-  `AXI_ASSIGN_AR_STRUCT ( mst_req_o.ar      , slv_read_req_i.ar  )
-  `AXI_ASSIGN_R_STRUCT  ( slv_read_rsp_o.r  , mst_rsp_i.r        )
+  `AXI_ASSIGN_AR_STRUCT ( mgr_req_o.ar      , sbr_read_req_i.ar  )
+  `AXI_ASSIGN_R_STRUCT  ( sbr_read_rsp_o.r  , mgr_rsp_i.r        )
 
   // Read B channel data
-  assign slv_read_rsp_o.b         = '0;
+  assign sbr_read_rsp_o.b         = '0;
 
 
   //--------------------------------------
@@ -55,33 +55,33 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Read AR channel handshake
-  assign mst_req_o.ar_valid       = slv_read_req_i.ar_valid;
-  assign slv_read_rsp_o.ar_ready  = mst_rsp_i.ar_ready;
+  assign mgr_req_o.ar_valid       = sbr_read_req_i.ar_valid;
+  assign sbr_read_rsp_o.ar_ready  = mgr_rsp_i.ar_ready;
 
   // Read R channel handshake
-  assign slv_read_rsp_o.r_valid   = mst_rsp_i.r_valid;
-  assign mst_req_o.r_ready        = slv_read_req_i.r_ready;
+  assign sbr_read_rsp_o.r_valid   = mgr_rsp_i.r_valid;
+  assign mgr_req_o.r_ready        = sbr_read_req_i.r_ready;
 
   // Read AW, W and B handshake
-  assign slv_read_rsp_o.aw_ready  = 1'b0;
-  assign slv_read_rsp_o.w_ready   = 1'b0;
-  assign slv_read_rsp_o.b_valid   = 1'b0;
+  assign sbr_read_rsp_o.aw_ready  = 1'b0;
+  assign sbr_read_rsp_o.w_ready   = 1'b0;
+  assign sbr_read_rsp_o.b_valid   = 1'b0;
 
   // check for AW and W never to be valid
-  `ASSERT_NEVER(slv_read_req_aw_valid, slv_read_req_i.aw_valid, clk_i, !rst_ni)
-  `ASSERT_NEVER(slv_read_req_w_valid,  slv_read_req_i.w_valid,  clk_i, !rst_ni)
+  `ASSERT_NEVER(sbr_read_req_aw_valid, sbr_read_req_i.aw_valid, clk_i, !rst_ni)
+  `ASSERT_NEVER(sbr_read_req_w_valid,  sbr_read_req_i.w_valid,  clk_i, !rst_ni)
 
   //--------------------------------------
   // Write channel data
   //--------------------------------------
 
   // Assign Write Structs
-  `AXI_ASSIGN_AW_STRUCT ( mst_req_o.aw      , slv_write_req_i.aw )
-  `AXI_ASSIGN_W_STRUCT  ( mst_req_o.w       , slv_write_req_i.w  )
-  `AXI_ASSIGN_B_STRUCT  ( slv_write_rsp_o.b , mst_rsp_i.b        )
+  `AXI_ASSIGN_AW_STRUCT ( mgr_req_o.aw      , sbr_write_req_i.aw )
+  `AXI_ASSIGN_W_STRUCT  ( mgr_req_o.w       , sbr_write_req_i.w  )
+  `AXI_ASSIGN_B_STRUCT  ( sbr_write_rsp_o.b , mgr_rsp_i.b        )
 
   // Write R channel data
-  assign slv_write_rsp_o.r        = '0;
+  assign sbr_write_rsp_o.r        = '0;
 
 
   //--------------------------------------
@@ -89,22 +89,22 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Write AR and R channel handshake
-  assign slv_write_rsp_o.ar_ready = 1'b0;
-  assign slv_write_rsp_o.r_valid  = 1'b0;
+  assign sbr_write_rsp_o.ar_ready = 1'b0;
+  assign sbr_write_rsp_o.r_valid  = 1'b0;
 
   // check for AR to never be valid
-  `ASSERT_NEVER(slv_write_req_ar_valid, slv_write_req_i.ar_valid, clk_i, !rst_ni)
+  `ASSERT_NEVER(sbr_write_req_ar_valid, sbr_write_req_i.ar_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
-  assign mst_req_o.aw_valid       = slv_write_req_i.aw_valid;
-  assign slv_write_rsp_o.aw_ready = mst_rsp_i.aw_ready;
+  assign mgr_req_o.aw_valid       = sbr_write_req_i.aw_valid;
+  assign sbr_write_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
 
   // Write W channel handshake
-  assign mst_req_o.w_valid        = slv_write_req_i.w_valid;
-  assign slv_write_rsp_o.w_ready  = mst_rsp_i.w_ready;
+  assign mgr_req_o.w_valid        = sbr_write_req_i.w_valid;
+  assign sbr_write_rsp_o.w_ready  = mgr_rsp_i.w_ready;
 
   // Write B channel handshake
-  assign slv_write_rsp_o.b_valid  = mst_rsp_i.b_valid;
-  assign mst_req_o.b_ready        = slv_write_req_i.b_ready;
+  assign sbr_write_rsp_o.b_valid  = mgr_rsp_i.b_valid;
+  assign mgr_req_o.b_ready        = sbr_write_req_i.b_ready;
 
 endmodule : axi_rw_join

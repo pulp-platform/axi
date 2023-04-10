@@ -22,7 +22,7 @@ module axi_synth_bench (
 
   localparam int AXI_ADDR_WIDTH[6] = '{32, 64, 1, 2, 42, 129};
   localparam int AXI_ID_USER_WIDTH[3] = '{0, 1, 8};
-  localparam int NUM_SLAVE_MASTER[3] = '{1, 2, 4};
+  localparam int NUM_SUBORDINATE_MANAGER[3] = '{1, 2, 4};
 
   // AXI_DATA_WIDTH = {8, 16, 32, 64, 128, 256, 512, 1024}
   for (genvar i = 0; i < 8; i++) begin
@@ -61,7 +61,7 @@ module axi_synth_bench (
   // AXI4-Lite crossbar
   for (genvar i = 0; i < 3; i++) begin
     synth_axi_lite_xbar #(
-      .NumSlvMst  ( NUM_SLAVE_MASTER[i] )
+      .NumSbrMgr  ( NUM_SUBORDINATE_MANAGER[i] )
     ) i_lite_xbar (.*);
   end
 
@@ -84,7 +84,7 @@ module axi_synth_bench (
     localparam int unsigned DataWidth = (2**i_data) * 8;
     for (genvar i_slv = 0; i_slv < 3; i_slv++) begin
       synth_axi_lite_to_apb #(
-        .NumApbSlaves ( NUM_SLAVE_MASTER[i_slv] ),
+        .NumApbSlaves ( NUM_SUBORDINATE_MANAGER[i_slv] ),
         .DataWidth   ( DataWidth               )
       ) i_axi_lite_to_apb (.*);
     end
@@ -116,14 +116,14 @@ module axi_synth_bench (
   end
 
   for (genvar i = 0; i < 6; i++) begin
-    localparam int unsigned SLV_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[i];
-    if (SLV_PORT_ADDR_WIDTH > 12) begin
+    localparam int unsigned SBR_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[i];
+    if (SBR_PORT_ADDR_WIDTH > 12) begin
       for (genvar j = 0; j < 6; j++) begin
-        localparam int unsigned MST_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[j];
-        if (MST_PORT_ADDR_WIDTH > 12) begin
+        localparam int unsigned MGR_PORT_ADDR_WIDTH = AXI_ADDR_WIDTH[j];
+        if (MGR_PORT_ADDR_WIDTH > 12) begin
           synth_axi_modify_address #(
-            .AXI_SLV_PORT_ADDR_WIDTH  (SLV_PORT_ADDR_WIDTH),
-            .AXI_MST_PORT_ADDR_WIDTH  (MST_PORT_ADDR_WIDTH),
+            .AXI_SBR_PORT_ADDR_WIDTH  (SBR_PORT_ADDR_WIDTH),
+            .AXI_MGR_PORT_ADDR_WIDTH  (MGR_PORT_ADDR_WIDTH),
             .AXI_DATA_WIDTH           (128),
             .AXI_ID_WIDTH             (5),
             .AXI_USER_WIDTH           (2)
@@ -161,13 +161,13 @@ module axi_synth_bench (
       localparam int unsigned IdWidthDs = AXI_ID_USER_WIDTH[i_iwds] + 1;
       localparam int unsigned TableSize    = 2**IdWidthDs;
       synth_axi_iw_converter # (
-        .SlvPortIdWidth      ( IdWidthUs    ),
-        .MstPortIdWidth      ( IdWidthDs    ),
-        .SlvPortMaxUniqIds   ( 2**IdWidthUs ),
-        .SlvPortMaxTxnsPerId ( 13           ),
-        .SlvPortMaxTxns      ( 81           ),
-        .MstPortMaxUniqIds   ( 2**IdWidthDs ),
-        .MstPortMaxTxnsPerId ( 11           ),
+        .SbrPortIdWidth      ( IdWidthUs    ),
+        .MgrPortIdWidth      ( IdWidthDs    ),
+        .SbrPortMaxUniqIds   ( 2**IdWidthUs ),
+        .SbrPortMaxTxnsPerId ( 13           ),
+        .SbrPortMaxTxns      ( 81           ),
+        .MgrPortMaxUniqIds   ( 2**IdWidthDs ),
+        .MgrPortMaxTxnsPerId ( 11           ),
         .AddrWidth           ( 32'd64       ),
         .DataWidth           ( 32'd512      ),
         .UserWidth           ( 32'd10       )
@@ -175,7 +175,7 @@ module axi_synth_bench (
     end
   end
 
-  // AXI4+ATOP on chip memory slave banked
+  // AXI4+ATOP on chip memory subordinate banked
   for (genvar i = 0; i < 5; i++) begin : gen_axi_to_mem_banked_data
     for (genvar j = 0; j < 4; j++) begin : gen_axi_to_mem_banked_bank_num
       for (genvar k = 0; k < 2; k++) begin : gen_axi_to_mem_banked_bank_addr
@@ -231,16 +231,16 @@ module synth_slice #(
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .testmode_i (1'b0),
-    .slv        (a_full.Slave),
-    .mst        (a_lite.Master)
+    .sbr        (a_full.Subordinate),
+    .mgr        (a_lite.Manager)
   );
   axi_lite_to_axi_intf #(
     .AXI_DATA_WIDTH (DW)
   ) b (
-    .in   (b_lite.Slave),
-    .slv_aw_cache_i ('0),
-    .slv_ar_cache_i ('0),
-    .out  (b_full.Master)
+    .in   (b_lite.Subordinate),
+    .sbr_aw_cache_i ('0),
+    .sbr_ar_cache_i ('0),
+    .out  (b_full.Manager)
   );
 
 endmodule
@@ -277,8 +277,8 @@ module synth_axi_atop_filter #(
   ) dut (
     .clk_i  (clk_i),
     .rst_ni (rst_ni),
-    .slv    (upstream),
-    .mst    (downstream)
+    .sbr    (upstream),
+    .mgr    (downstream)
   );
 endmodule
 
@@ -393,7 +393,7 @@ endmodule
 `include "axi/typedef.svh"
 
 module synth_axi_lite_xbar #(
-  parameter int unsigned NumSlvMst = 32'd1
+  parameter int unsigned NumSbrMgr = 32'd1
 ) (
   input logic clk_i,  // Clock
   input logic rst_ni  // Asynchronous reset active low
@@ -410,22 +410,22 @@ module synth_axi_lite_xbar #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
   localparam axi_pkg::xbar_cfg_t XbarCfg = '{
-    NumSlvPorts:        NumSlvMst,
-    NumMstPorts:        NumSlvMst,
-    MaxMstTrans:        32'd5,
-    MaxSlvTrans:        32'd5,
+    NumSbrPorts:        NumSbrMgr,
+    NumMgrPorts:        NumSbrMgr,
+    MaxMgrTrans:        32'd5,
+    MaxSbrTrans:        32'd5,
     FallThrough:        1'b1,
     LatencyMode:        axi_pkg::CUT_ALL_PORTS,
     AddrWidth:          32'd32,
     DataWidth:          32'd32,
-    NumAddrRules:       NumSlvMst,
+    NumAddrRules:       NumSbrMgr,
     default:            '0
   };
 
-  axi_pkg::xbar_rule_32_t [NumSlvMst-1:0] addr_map;
+  axi_pkg::xbar_rule_32_t [NumSbrMgr-1:0] addr_map;
   logic                                   test;
-  axi_lite_req_t          [NumSlvMst-1:0] mst_reqs, slv_reqs;
-  axi_lite_rsp_t          [NumSlvMst-1:0] mst_rsps, slv_rsps;
+  axi_lite_req_t          [NumSbrMgr-1:0] mgr_reqs, sbr_reqs;
+  axi_lite_rsp_t          [NumSbrMgr-1:0] mgr_rsps, sbr_rsps;
 
   axi_lite_xbar #(
     .Cfg             ( XbarCfg                 ),
@@ -438,16 +438,16 @@ module synth_axi_lite_xbar #(
     .axi_lite_rsp_t  ( axi_lite_rsp_t          ),
     .rule_t          ( axi_pkg::xbar_rule_32_t )
   ) i_xbar_dut (
-    .clk_i                 ( clk_i    ),
-    .rst_ni                ( rst_ni   ),
-    .test_i                ( test     ),
-    .slv_ports_req_i       ( mst_reqs ),
-    .slv_ports_rsp_o       ( mst_rsps ),
-    .mst_ports_req_o       ( slv_reqs ),
-    .mst_ports_rsp_i       ( slv_rsps ),
-    .addr_map_i            ( addr_map ),
-    .en_default_mst_port_i ( '0       ),
-    .default_mst_port_i    ( '0       )
+    .clk_i                 ( clk_i     ),
+    .rst_ni                ( rst_ni    ),
+    .test_i                ( test      ),
+    .sbr_ports_req_i       ( mgr_reqs  ),
+    .sbr_ports_rsp_o       ( mgr_rsps  ),
+    .mgr_ports_req_o       ( sbr_reqs  ),
+    .mgr_ports_rsp_i       ( sbr_rsps  ),
+    .addr_map_i            ( addr_map  ),
+    .en_default_mgr_port_i ( '0        ),
+    .default_mgr_port_i    ( '0        )
   );
 endmodule
 
@@ -464,7 +464,7 @@ module synth_axi_lite_mailbox #(
   AXI_LITE #(
     .AXI_ADDR_WIDTH (32'd32),
     .AXI_DATA_WIDTH (32'd32)
-  ) slv [1:0] ();
+  ) sbr [1:0] ();
 
   logic        test;
   logic  [1:0] irq;
@@ -480,8 +480,8 @@ module synth_axi_lite_mailbox #(
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
     .test_i      ( test      ), // Testmode enable
-    // slave ports [1:0]
-    .slv         ( slv       ),
+    // subordinate ports [1:0]
+    .sbr         ( sbr       ),
     .irq_o       ( irq       ), // interrupt output for each port
     .base_addr_i ( base_addr )  // base address for each port
   );
@@ -516,48 +516,48 @@ module synth_axi_isolate #(
   ) i_axi_isolate_dut (
     .clk_i,
     .rst_ni,
-    .slv        ( axi[0]   ), // slave port
-    .mst        ( axi[1]   ), // master port
-    .isolate_i  ( isolate  ), // isolate master port from slave port
-    .isolated_o ( isolated )  // master port is isolated from slave port
+    .sbr        ( axi[0]   ), // subordinate port
+    .mgr        ( axi[1]   ), // manager port
+    .isolate_i  ( isolate  ), // isolate manager port from subordinate port
+    .isolated_o ( isolated )  // manager port is isolated from subordinate port
   );
 endmodule
 
 module synth_axi_modify_address #(
-  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_SBR_PORT_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_MGR_PORT_ADDR_WIDTH = 0,
   parameter int unsigned AXI_DATA_WIDTH = 0,
   parameter int unsigned AXI_ID_WIDTH = 0,
   parameter int unsigned AXI_USER_WIDTH = 0
 ) ();
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_SLV_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_SBR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) upstream ();
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_MGR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) downstream ();
 
-  logic [AXI_MST_PORT_ADDR_WIDTH-1:0] mst_aw_addr,
-                                      mst_ar_addr;
+  logic [AXI_MGR_PORT_ADDR_WIDTH-1:0] mgr_aw_addr,
+                                      mgr_ar_addr;
   axi_modify_address_intf #(
-    .AXI_SLV_PORT_ADDR_WIDTH  (AXI_SLV_PORT_ADDR_WIDTH),
-    .AXI_MST_PORT_ADDR_WIDTH  (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_SBR_PORT_ADDR_WIDTH  (AXI_SBR_PORT_ADDR_WIDTH),
+    .AXI_MGR_PORT_ADDR_WIDTH  (AXI_MGR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH           (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH             (AXI_ID_WIDTH),
     .AXI_USER_WIDTH           (AXI_USER_WIDTH)
   ) dut (
-    .slv            (upstream),
-    .mst_aw_addr_i  (mst_aw_addr),
-    .mst_ar_addr_i  (mst_ar_addr),
-    .mst            (downstream)
+    .sbr            (upstream),
+    .mgr_aw_addr_i  (mgr_aw_addr),
+    .mgr_ar_addr_i  (mgr_ar_addr),
+    .mgr            (downstream)
   );
 endmodule
 
@@ -589,8 +589,8 @@ module synth_axi_serializer #(
   ) i_axi_isolate_dut (
     .clk_i,
     .rst_ni,
-    .slv        ( axi[0]   ), // slave port
-    .mst        ( axi[1]   )  // master port
+    .sbr        ( axi[0]   ), // subordinate port
+    .mgr        ( axi[1]   )  // manager port
   );
 endmodule
 
@@ -607,7 +607,7 @@ module synth_axi_lite_regs #(
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH )
-  ) slv ();
+  ) sbr ();
 
   logic  [REG_NUM_BYTES-1:0] wr_active, rd_active;
   byte_t [REG_NUM_BYTES-1:0] reg_d,     reg_q;
@@ -624,7 +624,7 @@ module synth_axi_lite_regs #(
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,
-    .slv         ( slv         ),
+    .sbr         ( sbr         ),
     .wr_active_o ( wr_active   ),
     .rd_active_o ( rd_active   ),
     .reg_d_i     ( reg_d       ),
@@ -634,13 +634,13 @@ module synth_axi_lite_regs #(
 endmodule
 
 module synth_axi_iw_converter # (
-  parameter int unsigned SlvPortIdWidth = 32'd0,
-  parameter int unsigned MstPortIdWidth = 32'd0,
-  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
-  parameter int unsigned SlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned SlvPortMaxTxns = 32'd0,
-  parameter int unsigned MstPortMaxUniqIds = 32'd0,
-  parameter int unsigned MstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned SbrPortIdWidth = 32'd0,
+  parameter int unsigned MgrPortIdWidth = 32'd0,
+  parameter int unsigned SbrPortMaxUniqIds = 32'd0,
+  parameter int unsigned SbrPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned SbrPortMaxTxns = 32'd0,
+  parameter int unsigned MgrPortMaxUniqIds = 32'd0,
+  parameter int unsigned MgrPortMaxTxnsPerId = 32'd0,
   parameter int unsigned AddrWidth = 32'd0,
   parameter int unsigned DataWidth = 32'd0,
   parameter int unsigned UserWidth = 32'd0
@@ -651,32 +651,32 @@ module synth_axi_iw_converter # (
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      ),
-    .AXI_ID_WIDTH   ( SlvPortIdWidth ),
+    .AXI_ID_WIDTH   ( SbrPortIdWidth ),
     .AXI_USER_WIDTH ( UserWidth      )
   ) upstream ();
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      ),
-    .AXI_ID_WIDTH   ( MstPortIdWidth ),
+    .AXI_ID_WIDTH   ( MgrPortIdWidth ),
     .AXI_USER_WIDTH ( UserWidth      )
   ) downstream ();
 
   axi_iw_converter_intf #(
-    .AXI_SLV_PORT_ID_WIDTH        (SlvPortIdWidth      ),
-    .AXI_MST_PORT_ID_WIDTH        (MstPortIdWidth      ),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS    (MstPortIdWidth      ),
-    .AXI_SLV_PORT_MAX_TXNS_PER_ID (SlvPortMaxTxnsPerId ),
-    .AXI_SLV_PORT_MAX_TXNS        (SlvPortMaxTxns      ),
-    .AXI_MST_PORT_MAX_UNIQ_IDS    (MstPortMaxUniqIds   ),
-    .AXI_MST_PORT_MAX_TXNS_PER_ID (MstPortMaxTxnsPerId ),
+    .AXI_SBR_PORT_ID_WIDTH        (SbrPortIdWidth      ),
+    .AXI_MGR_PORT_ID_WIDTH        (MgrPortIdWidth      ),
+    .AXI_SBR_PORT_MAX_UNIQ_IDS    (MgrPortIdWidth      ),
+    .AXI_SBR_PORT_MAX_TXNS_PER_ID (SbrPortMaxTxnsPerId ),
+    .AXI_SBR_PORT_MAX_TXNS        (SbrPortMaxTxns      ),
+    .AXI_MGR_PORT_MAX_UNIQ_IDS    (MgrPortMaxUniqIds   ),
+    .AXI_MGR_PORT_MAX_TXNS_PER_ID (MgrPortMaxTxnsPerId ),
     .AXI_ADDR_WIDTH               (AddrWidth           ),
     .AXI_DATA_WIDTH               (DataWidth           ),
     .AXI_USER_WIDTH               (UserWidth           )
   ) i_axi_iw_converter_dut (
     .clk_i,
     .rst_ni,
-    .slv     ( upstream   ),
-    .mst     ( downstream )
+    .sbr     ( upstream   ),
+    .mgr     ( downstream )
   );
 endmodule
 
@@ -734,7 +734,7 @@ module synth_axi_to_mem_banked #(
     .clk_i,
     .rst_ni,
     .test_i            ( test            ),
-    .slv               ( axi             ),
+    .sbr               ( axi             ),
     .mem_req_o         ( mem_req         ),
     .mem_gnt_i         ( mem_gnt         ),
     .mem_add_o         ( mem_addr        ),

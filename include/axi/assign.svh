@@ -84,16 +84,16 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Assigning one AXI4+ATOP interface to another, as if you would do `assign slv = mst;`
+// Assigning one AXI4+ATOP interface to another, as if you would do `assign sbr = mgr;`
 //
 // The channel assignments `AXI_ASSIGN_XX(dst, src)` assign all payload and the valid signal of the
 // `XX` channel from the `src` to the `dst` interface and they assign the ready signal from the
 // `src` to the `dst` interface.
 // The interface assignment `AXI_ASSIGN(dst, src)` assigns all channels including handshakes as if
-// `src` was the master of `dst`.
+// `src` was the manager of `dst`.
 //
 // Usage Example:
-// `AXI_ASSIGN(slv, mst)
+// `AXI_ASSIGN(sbr, mgr)
 // `AXI_ASSIGN_AW(dst, src)
 // `AXI_ASSIGN_R(dst, src)
 `define AXI_ASSIGN_AW(dst, src)               \
@@ -116,12 +116,12 @@
   `__AXI_TO_R(assign, dst.r, _, src.r, _)     \
   assign dst.r_valid  = src.r_valid;          \
   assign src.r_ready  = dst.r_ready;
-`define AXI_ASSIGN(slv, mst)  \
-  `AXI_ASSIGN_AW(slv, mst)    \
-  `AXI_ASSIGN_W(slv, mst)     \
-  `AXI_ASSIGN_B(mst, slv)     \
-  `AXI_ASSIGN_AR(slv, mst)    \
-  `AXI_ASSIGN_R(mst, slv)
+`define AXI_ASSIGN(sbr, mgr)  \
+  `AXI_ASSIGN_AW(sbr, mgr)    \
+  `AXI_ASSIGN_W(sbr, mgr)     \
+  `AXI_ASSIGN_B(mgr, sbr)     \
+  `AXI_ASSIGN_AR(sbr, mgr)    \
+  `AXI_ASSIGN_R(mgr, sbr)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -343,16 +343,16 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Assigning one AXI-Lite interface to another, as if you would do `assign slv = mst;`
+// Assigning one AXI-Lite interface to another, as if you would do `assign sbr = mgr;`
 //
 // The channel assignments `AXI_LITE_ASSIGN_XX(dst, src)` assign all payload and the valid signal of
 // the `XX` channel from the `src` to the `dst` interface and they assign the ready signal from the
 // `src` to the `dst` interface.
 // The interface assignment `AXI_LITE_ASSIGN(dst, src)` assigns all channels including handshakes as
-// if `src` was the master of `dst`.
+// if `src` was the manager of `dst`.
 //
 // Usage Example:
-// `AXI_LITE_ASSIGN(slv, mst)
+// `AXI_LITE_ASSIGN(sbr, mgr)
 // `AXI_LITE_ASSIGN_AW(dst, src)
 // `AXI_LITE_ASSIGN_R(dst, src)
 `define AXI_LITE_ASSIGN_AW(dst, src)              \
@@ -375,12 +375,12 @@
   `__AXI_LITE_TO_R(assign, dst.r, _, src.r, _)  \
   assign dst.r_valid  = src.r_valid;            \
   assign src.r_ready  = dst.r_ready;
-`define AXI_LITE_ASSIGN(slv, mst) \
-  `AXI_LITE_ASSIGN_AW(slv, mst)   \
-  `AXI_LITE_ASSIGN_W(slv, mst)    \
-  `AXI_LITE_ASSIGN_B(mst, slv)    \
-  `AXI_LITE_ASSIGN_AR(slv, mst)   \
-  `AXI_LITE_ASSIGN_R(mst, slv)
+`define AXI_LITE_ASSIGN(sbr, mgr) \
+  `AXI_LITE_ASSIGN_AW(sbr, mgr)   \
+  `AXI_LITE_ASSIGN_W(sbr, mgr)    \
+  `AXI_LITE_ASSIGN_B(mgr, sbr)    \
+  `AXI_LITE_ASSIGN_AR(sbr, mgr)   \
+  `AXI_LITE_ASSIGN_R(mgr, sbr)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -543,8 +543,8 @@
 // Flat AXI ports are required by the Vivado IP Integrator. Vivado naming convention is followed.
 //
 // Usage Example:
-// `AXI_ASSIGN_MASTER_TO_FLAT("my_bus", my_req_struct, my_rsp_struct)
-`define AXI_ASSIGN_MASTER_TO_FLAT(pat, req, rsp) \
+// `AXI_ASSIGN_MANAGER_TO_FLAT("my_bus", my_req_struct, my_rsp_struct)
+`define AXI_ASSIGN_MANAGER_TO_FLAT(pat, req, rsp) \
   assign m_axi_``pat``_awvalid  = req.aw_valid;  \
   assign m_axi_``pat``_awid     = req.aw.id;     \
   assign m_axi_``pat``_awaddr   = req.aw.addr;   \
@@ -597,7 +597,7 @@
   assign rsp.r.last   = m_axi_``pat``_rlast;     \
   assign rsp.r.user   = m_axi_``pat``_ruser;
 
-`define AXI_ASSIGN_SLAVE_TO_FLAT(pat, req, rsp)  \
+`define AXI_ASSIGN_SUBORDINATE_TO_FLAT(pat, req, rsp)  \
   assign req.aw_valid  = s_axi_``pat``_awvalid;  \
   assign req.aw.id     = s_axi_``pat``_awid;     \
   assign req.aw.addr   = s_axi_``pat``_awaddr;   \

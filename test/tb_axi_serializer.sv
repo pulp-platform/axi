@@ -16,12 +16,12 @@
 `include "axi/assign.svh"
 
 module tb_axi_serializer #(
-    parameter int unsigned NumWrites = 5000,  // How many writes per master
-    parameter int unsigned NumReads  = 3000   // How many reads per master
+    parameter int unsigned NumWrites = 5000,  // How many writes per manager
+    parameter int unsigned NumReads  = 3000   // How many reads per manager
   );
-  // Random master no Transactions
+  // Random manager no Transactions
   localparam int unsigned NumPendingDut = 4;
-  // Random Master Atomics
+  // Random Manager Atomics
   localparam int unsigned MaxAW      = 32'd30;
   localparam int unsigned MaxAR      = 32'd30;
   localparam bit          EnAtop     = 1'b1;
@@ -37,7 +37,7 @@ module tb_axi_serializer #(
   // Sim print config, how many transactions
   localparam int unsigned PrintTxn = 500;
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
     .AW ( AddrWidth ),
     .DW ( DataWidth ),
@@ -50,8 +50,8 @@ module tb_axi_serializer #(
     .MAX_READ_TXNS  ( MaxAR  ),
     .MAX_WRITE_TXNS ( MaxAW  ),
     .AXI_ATOPS      ( EnAtop )
-  ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  ) axi_rand_manager_t;
+  typedef axi_test::axi_rand_subordinate #(
     // AXI interface parameters
     .AW ( AddrWidth ),
     .DW ( DataWidth ),
@@ -60,7 +60,7 @@ module tb_axi_serializer #(
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
-  ) axi_rand_slave_t;
+  ) axi_rand_subordinate_t;
 
   // -------------
   // DUT signals
@@ -75,28 +75,28 @@ module tb_axi_serializer #(
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) master ();
+  ) manager ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) master_dv (clk);
+  ) manager_dv (clk);
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) slave ();
+  ) subordinate ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) slave_dv (clk);
+  ) subordinate_dv (clk);
 
-  `AXI_ASSIGN(master, master_dv)
-  `AXI_ASSIGN(slave_dv, slave)
+  `AXI_ASSIGN(manager, manager_dv)
+  `AXI_ASSIGN(subordinate_dv, subordinate)
 
   //-----------------------------------
   // Clock generator
@@ -122,29 +122,29 @@ module tb_axi_serializer #(
   ) i_dut (
     .clk_i      ( clk      ), // clock
     .rst_ni     ( rst_n    ), // asynchronous reset active low
-    .slv        ( master   ), // slave port
-    .mst        ( slave    )  // master port
+    .sbr        ( manager   ), // subordinate port
+    .mgr        ( subordinate    )  // manager port
   );
 
-  initial begin : proc_axi_master
-    automatic axi_rand_master_t axi_rand_master = new(master_dv);
+  initial begin : proc_axi_manager
+    automatic axi_rand_manager_t axi_rand_manager = new(manager_dv);
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
-    axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_manager.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NumReads, NumWrites);
+    axi_rand_manager.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (100) @(posedge clk);
     $stop();
   end
 
-  initial begin : proc_axi_slave
-    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
-    axi_rand_slave.reset();
+  initial begin : proc_axi_subordinate
+    automatic axi_rand_subordinate_t  axi_rand_subordinate  = new(subordinate_dv);
+    axi_rand_subordinate.reset();
     @(posedge rst_n);
-    axi_rand_slave.run();
+    axi_rand_subordinate.run();
   end
 
   // Checker
@@ -182,36 +182,36 @@ module tb_axi_serializer #(
       @(posedge clk);
       #TestTime;
       // All FIFOs get populated if there is something to put in
-      if (master.aw_valid && master.aw_ready) begin
-        `AXI_SET_TO_AW(aw_exp, master)
+      if (manager.aw_valid && manager.aw_ready) begin
+        `AXI_SET_TO_AW(aw_exp, manager)
         aw_exp.id = '0;
-        id_exp    = master.aw_id;
+        id_exp    = manager.aw_id;
         aw_chan.push_back(aw_exp);
         aw_queue.push_back(id_exp);
-        if (master.aw_atop[axi_pkg::ATOP_R_RESP]) begin
+        if (manager.aw_atop[axi_pkg::ATOP_R_RESP]) begin
           ar_queue.push_back(id_exp);
         end
       end
-      if (master.w_valid && master.w_ready) begin
-        `AXI_SET_TO_W(w_exp, master)
+      if (manager.w_valid && manager.w_ready) begin
+        `AXI_SET_TO_W(w_exp, manager)
         w_chan.push_back(w_exp);
       end
-      if (slave.b_valid && slave.b_ready) begin
+      if (subordinate.b_valid && subordinate.b_ready) begin
         id_exp = aw_queue.pop_front();
-        `AXI_SET_TO_B(b_exp, slave)
+        `AXI_SET_TO_B(b_exp, subordinate)
         b_exp.id = id_exp;
         b_chan.push_back(b_exp);
       end
-      if (master.ar_valid && master.ar_ready) begin
-        `AXI_SET_TO_AR(ar_exp, master)
+      if (manager.ar_valid && manager.ar_ready) begin
+        `AXI_SET_TO_AR(ar_exp, manager)
         ar_exp.id = '0;
-        id_exp    = master.ar_id;
+        id_exp    = manager.ar_id;
         ar_chan.push_back(ar_exp);
         ar_queue.push_back(id_exp);
       end
-      if (slave.r_valid && slave.r_ready) begin
-        `AXI_SET_TO_R(r_exp, slave)
-        if (slave.r_last) begin
+      if (subordinate.r_valid && subordinate.r_ready) begin
+        `AXI_SET_TO_R(r_exp, subordinate)
+        if (subordinate.r_last) begin
           id_exp = ar_queue.pop_front();
         end else begin
           id_exp = ar_queue[0];
@@ -220,29 +220,29 @@ module tb_axi_serializer #(
         r_chan.push_back(r_exp);
       end
       // Check that all channels match the expected response
-      if (slave.aw_valid && slave.aw_ready) begin
+      if (subordinate.aw_valid && subordinate.aw_ready) begin
         aw_exp = aw_chan.pop_front();
-        `AXI_SET_TO_AW(aw_act, slave)
+        `AXI_SET_TO_AW(aw_act, subordinate)
         assert(aw_act == aw_exp) else $error("AW Measured: %h Expected: %h", aw_act, aw_exp);
       end
-      if (slave.w_valid && slave.w_ready) begin
+      if (subordinate.w_valid && subordinate.w_ready) begin
         w_exp = w_chan.pop_front();
-        `AXI_SET_TO_W(w_act, slave)
+        `AXI_SET_TO_W(w_act, subordinate)
         assert(w_act == w_exp) else $error("W Measured: %h Expected: %h", w_act, w_exp);
       end
-      if (master.b_valid && master.b_ready) begin
+      if (manager.b_valid && manager.b_ready) begin
         b_exp = b_chan.pop_front();
-        `AXI_SET_TO_B(b_act, master)
+        `AXI_SET_TO_B(b_act, manager)
         assert(b_act == b_exp) else $error("B Measured: %h Expected: %h", b_act, b_exp);
       end
-      if (slave.ar_valid && slave.ar_ready) begin
+      if (subordinate.ar_valid && subordinate.ar_ready) begin
         ar_exp = ar_chan.pop_front();
-        `AXI_SET_TO_AR(ar_act, slave)
+        `AXI_SET_TO_AR(ar_act, subordinate)
         assert(ar_act == ar_exp) else $error("AR Measured: %h Expected: %h", ar_act, ar_exp);
       end
-      if (master.r_valid && master.r_ready) begin
+      if (manager.r_valid && manager.r_ready) begin
         r_exp = r_chan.pop_front();
-        `AXI_SET_TO_R(r_act, master)
+        `AXI_SET_TO_R(r_act, manager)
         assert(r_act == r_exp) else $error("R Measured: %h Expected: %h", r_act, r_exp);
       end
     end
@@ -259,10 +259,10 @@ module tb_axi_serializer #(
     forever begin
       @(posedge clk);
       #TestTime;
-      if (master.aw_valid && master.aw_ready) begin
+      if (manager.aw_valid && manager.aw_ready) begin
         aw++;
       end
-      if (master.ar_valid && master.ar_ready) begin
+      if (manager.ar_valid && manager.ar_ready) begin
         ar++;
       end
 

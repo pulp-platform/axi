@@ -53,7 +53,7 @@ module axi_lite_lfsr #(
     logic w_lfsr_en;
     logic r_lfsr_en;
 
-    logic w_b_fifo_ready;
+    logic w_b_fifo_ready, w_b_fifo_valid;
 
     // LFSR outputs
     logic [DataWidth-1:0] w_data_in, w_data_out;

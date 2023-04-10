@@ -16,8 +16,8 @@
 
 /// Serialize all AXI transactions to a single ID (zero).
 ///
-/// This module contains one queue with slave port IDs for the read direction and one for the write
-/// direction.  These queues are used to reconstruct the ID of responses at the slave port.  The
+/// This module contains one queue with subordinate port IDs for the read direction and one for the write
+/// direction.  These queues are used to reconstruct the ID of responses at the subordinate port.  The
 /// depth of each queue is defined by `MaxReadTxns` and `MaxWriteTxns`, respectively.
 module axi_serializer #(
   /// Maximum number of in flight read transactions.
@@ -35,14 +35,14 @@ module axi_serializer #(
   input  logic     clk_i,
   /// Asynchronous reset, active low
   input  logic     rst_ni,
-  /// Slave port request
-  input  axi_req_t slv_req_i,
-  /// Slave port response
-  output axi_rsp_t slv_rsp_o,
-  /// Master port request
-  output axi_req_t mst_req_o,
-  /// Master port response
-  input  axi_rsp_t mst_rsp_i
+  /// Subordinate port request
+  input  axi_req_t sbr_req_i,
+  /// Subordinate port response
+  output axi_rsp_t sbr_rsp_o,
+  /// Manager port request
+  output axi_req_t mgr_req_o,
+  /// Manager port response
+  input  axi_rsp_t mgr_rsp_i
 );
 
   typedef logic [IdWidth-1:0] id_t;
@@ -65,23 +65,23 @@ module axi_serializer #(
     wr_fifo_push = 1'b0;
 
     // Default, connect the channels
-    mst_req_o = slv_req_i;
-    slv_rsp_o = mst_rsp_i;
+    mgr_req_o = sbr_req_i;
+    sbr_rsp_o = mgr_rsp_i;
 
     // Serialize transactions -> tie downstream IDs to zero.
-    mst_req_o.aw.id = '0;
-    mst_req_o.ar.id = '0;
+    mgr_req_o.aw.id = '0;
+    mgr_req_o.ar.id = '0;
 
     // Reflect upstream ID in response.
-    ar_id          = slv_req_i.ar.id;
-    slv_rsp_o.b.id = b_id;
-    slv_rsp_o.r.id = r_id;
+    ar_id          = sbr_req_i.ar.id;
+    sbr_rsp_o.b.id = b_id;
+    sbr_rsp_o.r.id = r_id;
 
     // Default, cut the AW/AR handshaking
-    mst_req_o.ar_valid = 1'b0;
-    slv_rsp_o.ar_ready = 1'b0;
-    mst_req_o.aw_valid = 1'b0;
-    slv_rsp_o.aw_ready = 1'b0;
+    mgr_req_o.ar_valid = 1'b0;
+    sbr_rsp_o.ar_ready = 1'b0;
+    mgr_req_o.aw_valid = 1'b0;
+    sbr_rsp_o.aw_ready = 1'b0;
 
     unique case (state_q)
       AtopIdle, AtopExecute: begin
@@ -98,20 +98,20 @@ module axi_serializer #(
         // response has been transmitted.
         if ((state_q == AtopIdle) || (state_d == AtopIdle)) begin
           // Gate AR handshake with ready output of Read FIFO.
-          mst_req_o.ar_valid = slv_req_i.ar_valid & ~rd_fifo_full;
-          slv_rsp_o.ar_ready = mst_rsp_i.ar_ready & ~rd_fifo_full;
-          rd_fifo_push       = mst_req_o.ar_valid & mst_rsp_i.ar_ready;
-          if (slv_req_i.aw_valid) begin
-            if (slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE) begin
+          mgr_req_o.ar_valid = sbr_req_i.ar_valid & ~rd_fifo_full;
+          sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready & ~rd_fifo_full;
+          rd_fifo_push       = mgr_req_o.ar_valid & mgr_rsp_i.ar_ready;
+          if (sbr_req_i.aw_valid) begin
+            if (sbr_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE) begin
               // Normal operation
               // Gate AW handshake with ready output of Write FIFO.
-              mst_req_o.aw_valid = ~wr_fifo_full;
-              slv_rsp_o.aw_ready = mst_rsp_i.aw_ready & ~wr_fifo_full;
-              wr_fifo_push       = mst_req_o.aw_valid & mst_rsp_i.aw_ready;
+              mgr_req_o.aw_valid = ~wr_fifo_full;
+              sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready & ~wr_fifo_full;
+              wr_fifo_push       = mgr_req_o.aw_valid  & mgr_rsp_i.aw_ready;
             end else begin
               // Atomic Operation received, go to drain state, when both channels are ready
               // Wait for finished or no AR beat
-              if (!mst_req_o.ar_valid || (mst_req_o.ar_valid && mst_rsp_i.ar_ready)) begin
+              if (!mgr_req_o.ar_valid || (mgr_req_o.ar_valid && mgr_rsp_i.ar_ready)) begin
                 state_d = AtopDrain;
               end
             end
@@ -121,15 +121,15 @@ module axi_serializer #(
       AtopDrain: begin
         // Send the ATOP AW when the last open transaction terminates
         if (wr_fifo_empty && rd_fifo_empty) begin
-          mst_req_o.aw_valid = 1'b1;
-          slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
-          wr_fifo_push       = mst_rsp_i.aw_ready;
-          if (slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+          mgr_req_o.aw_valid = 1'b1;
+          sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
+          wr_fifo_push       = mgr_rsp_i.aw_ready;
+          if (sbr_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
             // Overwrite the read ID with the one from AW
-            ar_id        = slv_req_i.aw.id;
-            rd_fifo_push = mst_rsp_i.aw_ready;
+            ar_id        = sbr_req_i.aw.id;
+            rd_fifo_push = mgr_rsp_i.aw_ready;
           end
-          if (mst_rsp_i.aw_ready) begin
+          if (mgr_rsp_i.aw_ready) begin
             state_d = AtopExecute;
           end
         end
@@ -138,12 +138,12 @@ module axi_serializer #(
     endcase
 
     // Gate B handshake with empty flag output of Write FIFO.
-    slv_rsp_o.b_valid = mst_rsp_i.b_valid & ~wr_fifo_empty;
-    mst_req_o.b_ready = slv_req_i.b_ready & ~wr_fifo_empty;
+    sbr_rsp_o.b_valid = mgr_rsp_i.b_valid & ~wr_fifo_empty;
+    mgr_req_o.b_ready = sbr_req_i.b_ready & ~wr_fifo_empty;
 
     // Gate R handshake with empty flag output of Read FIFO.
-    slv_rsp_o.r_valid = mst_rsp_i.r_valid & ~rd_fifo_empty;
-    mst_req_o.r_ready = slv_req_i.r_ready  & ~rd_fifo_empty;
+    sbr_rsp_o.r_valid = mgr_rsp_i.r_valid & ~rd_fifo_empty;
+    mgr_req_o.r_ready = sbr_req_i.r_ready & ~rd_fifo_empty;
   end
 
   fifo_v3 #(
@@ -164,7 +164,7 @@ module axi_serializer #(
     .usage_o    ( /*not used*/  )
   );
   // Assign as this condition is needed in FSM
-  assign rd_fifo_pop = slv_rsp_o.r_valid & slv_req_i.r_ready & slv_rsp_o.r.last;
+  assign rd_fifo_pop = sbr_rsp_o.r_valid & sbr_req_i.r_ready & sbr_rsp_o.r.last;
 
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0         ),
@@ -175,7 +175,7 @@ module axi_serializer #(
     .rst_ni,
     .flush_i    ( 1'b0            ),
     .testmode_i ( 1'b0            ),
-    .data_i     ( slv_req_i.aw.id ),
+    .data_i     ( sbr_req_i.aw.id ),
     .push_i     ( wr_fifo_push    ),
     .full_o     ( wr_fifo_full    ),
     .data_o     ( b_id            ),
@@ -184,7 +184,7 @@ module axi_serializer #(
     .usage_o    ( /*not used*/    )
   );
   // Assign as this condition is needed in FSM
-  assign wr_fifo_pop = slv_rsp_o.b_valid & slv_req_i.b_ready;
+  assign wr_fifo_pop = sbr_rsp_o.b_valid & sbr_req_i.b_ready;
 
   `FFARN(state_q, state_d, AtopIdle, clk_i, rst_ni)
 
@@ -199,19 +199,19 @@ module axi_serializer #(
   end
   default disable iff (~rst_ni);
   aw_lost : assert property( @(posedge clk_i)
-      (slv_req_i.aw_valid & slv_rsp_o.aw_ready |-> mst_req_o.aw_valid & mst_rsp_i.aw_ready))
+      (sbr_req_i.aw_valid & sbr_rsp_o.aw_ready |-> mgr_req_o.aw_valid & mgr_rsp_i.aw_ready))
     else $error("AW beat lost.");
   w_lost  : assert property( @(posedge clk_i)
-      (slv_req_i.w_valid & slv_rsp_o.w_ready |-> mst_req_o.w_valid & mst_rsp_i.w_ready))
+      (sbr_req_i.w_valid & sbr_rsp_o.w_ready |-> mgr_req_o.w_valid & mgr_rsp_i.w_ready))
     else $error("W beat lost.");
   b_lost  : assert property( @(posedge clk_i)
-      (mst_rsp_i.b_valid & mst_req_o.b_ready |-> slv_rsp_o.b_valid & slv_req_i.b_ready))
+      (mgr_rsp_i.b_valid & mgr_req_o.b_ready |-> sbr_rsp_o.b_valid & sbr_req_i.b_ready))
     else $error("B beat lost.");
   ar_lost : assert property( @(posedge clk_i)
-      (slv_req_i.ar_valid & slv_rsp_o.ar_ready |-> mst_req_o.ar_valid & mst_rsp_i.ar_ready))
+      (sbr_req_i.ar_valid & sbr_rsp_o.ar_ready |-> mgr_req_o.ar_valid & mgr_rsp_i.ar_ready))
     else $error("AR beat lost.");
   r_lost :  assert property( @(posedge clk_i)
-      (mst_rsp_i.r_valid & mst_req_o.r_ready |-> slv_rsp_o.r_valid & slv_req_i.r_ready))
+      (mgr_rsp_i.r_valid & mgr_req_o.r_ready |-> sbr_rsp_o.r_valid & sbr_req_i.r_ready))
     else $error("R beat lost.");
 `endif
 // pragma translate_on
@@ -238,10 +238,10 @@ module axi_serializer_intf #(
   input  logic    clk_i,
   /// Asynchronous reset, active low
   input  logic    rst_ni,
-  /// AXI4+ATOP Slave modport
-  AXI_BUS.Slave   slv,
-  /// AXI4+ATOP Master modport
-  AXI_BUS.Master  mst
+  /// AXI4+ATOP Subordinate modport
+  AXI_BUS.Subordinate   sbr,
+  /// AXI4+ATOP Manager modport
+  AXI_BUS.Manager  mgr
 );
 
   typedef logic [AXI_ID_WIDTH    -1:0] id_t;
@@ -256,12 +256,12 @@ module axi_serializer_intf #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
-  axi_req_t slv_req,  mst_req;
-  axi_rsp_t slv_rsp, mst_rsp;
-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
+  axi_req_t sbr_req,  mgr_req;
+  axi_rsp_t sbr_rsp, mgr_rsp;
+  `AXI_ASSIGN_TO_REQ(sbr_req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, sbr_rsp)
+  `AXI_ASSIGN_FROM_REQ(mgr, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, mgr)
 
   axi_serializer #(
     .MaxReadTxns  ( MAX_READ_TXNS  ),
@@ -272,10 +272,10 @@ module axi_serializer_intf #(
   ) i_axi_serializer (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rsp ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rsp )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
 // pragma translate_off

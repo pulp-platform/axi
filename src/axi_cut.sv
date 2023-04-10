@@ -32,12 +32,12 @@ module axi_cut #(
 ) (
   input logic      clk_i,
   input logic      rst_ni,
-  // salve port
-  input  axi_req_t slv_req_i,
-  output axi_rsp_t slv_rsp_o,
-  // master port
-  output axi_req_t mst_req_o,
-  input  axi_rsp_t mst_rsp_i
+  // subordinate port
+  input  axi_req_t sbr_req_i,
+  output axi_rsp_t sbr_rsp_o,
+  // manager port
+  output axi_req_t mgr_req_o,
+  input  axi_rsp_t mgr_rsp_i
 );
 
   // a spill register for each channel
@@ -47,12 +47,12 @@ module axi_cut #(
   ) i_reg_aw (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
-    .valid_i ( slv_req_i.aw_valid ),
-    .ready_o ( slv_rsp_o.aw_ready ),
-    .data_i  ( slv_req_i.aw       ),
-    .valid_o ( mst_req_o.aw_valid ),
-    .ready_i ( mst_rsp_i.aw_ready ),
-    .data_o  ( mst_req_o.aw       )
+    .valid_i ( sbr_req_i.aw_valid ),
+    .ready_o ( sbr_rsp_o.aw_ready ),
+    .data_i  ( sbr_req_i.aw       ),
+    .valid_o ( mgr_req_o.aw_valid ),
+    .ready_i ( mgr_rsp_i.aw_ready ),
+    .data_o  ( mgr_req_o.aw       )
   );
 
   spill_register #(
@@ -61,12 +61,12 @@ module axi_cut #(
   ) i_reg_w  (
     .clk_i   ( clk_i             ),
     .rst_ni  ( rst_ni            ),
-    .valid_i ( slv_req_i.w_valid ),
-    .ready_o ( slv_rsp_o.w_ready ),
-    .data_i  ( slv_req_i.w       ),
-    .valid_o ( mst_req_o.w_valid ),
-    .ready_i ( mst_rsp_i.w_ready ),
-    .data_o  ( mst_req_o.w       )
+    .valid_i ( sbr_req_i.w_valid ),
+    .ready_o ( sbr_rsp_o.w_ready ),
+    .data_i  ( sbr_req_i.w       ),
+    .valid_o ( mgr_req_o.w_valid ),
+    .ready_i ( mgr_rsp_i.w_ready ),
+    .data_o  ( mgr_req_o.w       )
   );
 
   spill_register #(
@@ -75,12 +75,12 @@ module axi_cut #(
   ) i_reg_b  (
     .clk_i   ( clk_i             ),
     .rst_ni  ( rst_ni            ),
-    .valid_i ( mst_rsp_i.b_valid ),
-    .ready_o ( mst_req_o.b_ready ),
-    .data_i  ( mst_rsp_i.b       ),
-    .valid_o ( slv_rsp_o.b_valid ),
-    .ready_i ( slv_req_i.b_ready ),
-    .data_o  ( slv_rsp_o.b       )
+    .valid_i ( mgr_rsp_i.b_valid ),
+    .ready_o ( mgr_req_o.b_ready ),
+    .data_i  ( mgr_rsp_i.b       ),
+    .valid_o ( sbr_rsp_o.b_valid ),
+    .ready_i ( sbr_req_i.b_ready ),
+    .data_o  ( sbr_rsp_o.b       )
   );
 
   spill_register #(
@@ -89,12 +89,12 @@ module axi_cut #(
   ) i_reg_ar (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
-    .valid_i ( slv_req_i.ar_valid ),
-    .ready_o ( slv_rsp_o.ar_ready ),
-    .data_i  ( slv_req_i.ar       ),
-    .valid_o ( mst_req_o.ar_valid ),
-    .ready_i ( mst_rsp_i.ar_ready ),
-    .data_o  ( mst_req_o.ar       )
+    .valid_i ( sbr_req_i.ar_valid ),
+    .ready_o ( sbr_rsp_o.ar_ready ),
+    .data_i  ( sbr_req_i.ar       ),
+    .valid_o ( mgr_req_o.ar_valid ),
+    .ready_i ( mgr_rsp_i.ar_ready ),
+    .data_o  ( mgr_req_o.ar       )
   );
 
   spill_register #(
@@ -103,12 +103,12 @@ module axi_cut #(
   ) i_reg_r  (
     .clk_i   ( clk_i             ),
     .rst_ni  ( rst_ni            ),
-    .valid_i ( mst_rsp_i.r_valid ),
-    .ready_o ( mst_req_o.r_ready ),
-    .data_i  ( mst_rsp_i.r       ),
-    .valid_o ( slv_rsp_o.r_valid ),
-    .ready_i ( slv_req_i.r_ready ),
-    .data_o  ( slv_rsp_o.r       )
+    .valid_i ( mgr_rsp_i.r_valid ),
+    .ready_o ( mgr_req_o.r_ready ),
+    .data_i  ( mgr_rsp_i.r       ),
+    .valid_o ( sbr_rsp_o.r_valid ),
+    .ready_i ( sbr_req_i.r_ready ),
+    .data_o  ( sbr_rsp_o.r       )
   );
 endmodule
 
@@ -130,8 +130,8 @@ module axi_cut_intf #(
 ) (
   input logic     clk_i  ,
   input logic     rst_ni ,
-  AXI_BUS.Slave   in     ,
-  AXI_BUS.Master  out
+  AXI_BUS.Subordinate   in     ,
+  AXI_BUS.Manager  out
 );
 
   typedef logic [ID_WIDTH-1:0]     id_t;
@@ -148,14 +148,14 @@ module axi_cut_intf #(
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t slv_req,  mst_req;
-  axi_rsp_t slv_rsp, mst_rsp;
+  axi_req_t sbr_req, mgr_req;
+  axi_rsp_t sbr_rsp, mgr_rsp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_ASSIGN_FROM_RSP(in, slv_rsp)
+  `AXI_ASSIGN_TO_REQ(sbr_req, in)
+  `AXI_ASSIGN_FROM_RSP(in, sbr_rsp)
 
-  `AXI_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_ASSIGN_TO_RSP(mst_rsp, out)
+  `AXI_ASSIGN_FROM_REQ(out, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, out)
 
   axi_cut #(
     .Bypass     (    BYPASS ),
@@ -169,10 +169,10 @@ module axi_cut_intf #(
   ) i_axi_cut (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rep ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rep )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
   // Check the invariants.
@@ -206,8 +206,8 @@ module axi_lite_cut_intf #(
 ) (
   input logic     clk_i  ,
   input logic     rst_ni ,
-  AXI_LITE.Slave  in     ,
-  AXI_LITE.Master out
+  AXI_LITE.Subordinate  in     ,
+  AXI_LITE.Manager out
 );
 
   typedef logic [ADDR_WIDTH-1:0]   addr_t;
@@ -222,14 +222,14 @@ module axi_lite_cut_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  axi_lite_req_t  slv_req,  mst_req;
-  axi_lite_rsp_t  slv_rsp, mst_rsp;
+  axi_lite_req_t  sbr_req, mgr_req;
+  axi_lite_rsp_t  sbr_rsp, mgr_rsp;
 
-  `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_LITE_ASSIGN_FROM_RSP(in, slv_rsp)
+  `AXI_LITE_ASSIGN_TO_REQ(sbr_req, in)
+  `AXI_LITE_ASSIGN_FROM_RSP(in, sbr_rsp)
 
-  `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, out)
+  `AXI_LITE_ASSIGN_FROM_REQ(out, mgr_req)
+  `AXI_LITE_ASSIGN_TO_RSP(mgr_rsp, out)
 
   axi_cut #(
     .Bypass     (         BYPASS ),
@@ -243,10 +243,10 @@ module axi_lite_cut_intf #(
   ) i_axi_cut (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rsp ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rsp )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
   // Check the invariants.

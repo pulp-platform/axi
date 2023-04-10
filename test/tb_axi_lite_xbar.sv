@@ -14,8 +14,8 @@
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 // Directed Random Verification Testbench for `axi_lite_xbar`:  The crossbar is instantiated with
-// a number of random axi master and slave modules. Each random master executes a fixed number of
-// writes and reads over the whole addess map. All masters simultaneously issue transactions
+// a number of random axi manager and subordinate modules. Each random manager executes a fixed number of
+// writes and reads over the whole addess map. All managers simultaneously issue transactions
 // through the crossbar, thereby fully saturating all its bandwidth.
 
 `include "axi/typedef.svh"
@@ -23,11 +23,11 @@
 
 module tb_axi_lite_xbar;
   // Dut parameters
-  localparam int unsigned NumMasters   = 32'd6;    // How many Masters there are
-  localparam int unsigned NumSlaves    = 32'd8;    // How many Slaves  there are
-  // Random master no Transactions
-  localparam int unsigned NumWrites   = 32'd10000;  // How many writes per master
-  localparam int unsigned NumReads    = 32'd10000;  // How many reads per master
+  localparam int unsigned NumManagers   = 32'd6;    // How many Managers there are
+  localparam int unsigned NumSubordinates    = 32'd8;    // How many Subordinates  there are
+  // Random manager no Transactions
+  localparam int unsigned NumWrites   = 32'd10000;  // How many writes per manager
+  localparam int unsigned NumReads    = 32'd10000;  // How many reads per manager
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
@@ -38,10 +38,10 @@ module tb_axi_lite_xbar;
   localparam int unsigned StrbWidth      =  DataWidth / 32'd8;
   // in the bench can change this variables which are set here freely
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NumSlvPorts:        NumMasters,
-    NumMstPorts:        NumSlaves,
-    MaxMstTrans:        32'd10,
-    MaxSlvTrans:        32'd6,
+    NumSbrPorts:        NumManagers,
+    NumMgrPorts:        NumSubordinates,
+    MaxMgrTrans:        32'd10,
+    MaxSbrTrans:        32'd6,
     FallThrough:        1'b0,
     LatencyMode:        axi_pkg::CUT_ALL_AX,
     AddrWidth:          AddrWidth,
@@ -65,7 +65,7 @@ module tb_axi_lite_xbar;
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::axi_lite_rand_master #(
+  typedef axi_test::axi_lite_rand_manager #(
     // AXI interface parameters
     .AW ( AddrWidth          ),
     .DW ( DataWidth          ),
@@ -76,15 +76,15 @@ module tb_axi_lite_xbar;
     .MAX_ADDR ( 32'h0001_3000 ),
     .MAX_READ_TXNS  ( 10 ),
     .MAX_WRITE_TXNS ( 10 )
-  ) rand_lite_master_t;
-  typedef axi_test::axi_lite_rand_slave #(
+  ) rand_lite_manager_t;
+  typedef axi_test::axi_lite_rand_subordinate #(
     // AXI interface parameters
     .AW ( AddrWidth          ),
     .DW ( DataWidth          ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
     .TT ( TestTime           )
-  ) rand_lite_slave_t;
+  ) rand_lite_subordinate_t;
 
   // -------------
   // DUT signals
@@ -92,7 +92,7 @@ module tb_axi_lite_xbar;
   logic clk;
   // DUT signals
   logic rst_n;
-  logic [NumMasters-1:0] end_of_sim;
+  logic [NumManagers-1:0] end_of_sim;
 
   // -------------------------------
   // AXI Interfaces
@@ -100,58 +100,58 @@ module tb_axi_lite_xbar;
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master [NumMasters-1:0] ();
+  ) manager [NumManagers-1:0] ();
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth      ),
     .AXI_DATA_WIDTH ( DataWidth      )
-  ) master_dv [NumMasters-1:0] (clk);
-  for (genvar i = 0; i < NumMasters; i++) begin : gen_conn_dv_masters
-    `AXI_LITE_ASSIGN(master[i], master_dv[i])
+  ) manager_dv [NumManagers-1:0] (clk);
+  for (genvar i = 0; i < NumManagers; i++) begin : gen_conn_dv_managers
+    `AXI_LITE_ASSIGN(manager[i], manager_dv[i])
   end
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH ( AddrWidth     ),
     .AXI_DATA_WIDTH ( DataWidth     )
-  ) slave [NumSlaves-1:0] ();
+  ) subordinate [NumSubordinates-1:0] ();
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth     ),
     .AXI_DATA_WIDTH ( DataWidth     )
-  ) slave_dv [NumSlaves-1:0](clk);
-  for (genvar i = 0; i < NumSlaves; i++) begin : gen_conn_dv_slaves
-    `AXI_LITE_ASSIGN(slave_dv[i], slave[i])
+  ) subordinate_dv [NumSubordinates-1:0](clk);
+  for (genvar i = 0; i < NumSubordinates; i++) begin : gen_conn_dv_subordinates
+    `AXI_LITE_ASSIGN(subordinate_dv[i], subordinate[i])
   end
   // -------------------------------
-  // AXI Rand Masters and Slaves
+  // AXI Rand Managers and Subordinates
   // -------------------------------
-  // Masters control simulation run time
-  for (genvar i = 0; i < NumMasters; i++) begin : gen_rand_master
+  // Managers control simulation run time
+  for (genvar i = 0; i < NumManagers; i++) begin : gen_rand_manager
     initial begin : proc_generate_traffic
-      automatic rand_lite_master_t lite_axi_master = new ( master_dv[i], $sformatf("MST_%0d", i));
+      automatic rand_lite_manager_t lite_axi_manager = new ( manager_dv[i], $sformatf("MGR_%0d", i));
       automatic data_t          data = '0;
       automatic axi_pkg::resp_t resp = '0;
       end_of_sim[i] <= 1'b0;
-      lite_axi_master.reset();
+      lite_axi_manager.reset();
       @(posedge rst_n);
-      lite_axi_master.write(32'h0000_1100, axi_pkg::prot_t'('0), 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
-      lite_axi_master.read(32'h0000_e100, axi_pkg::prot_t'('0), data, resp);
-      lite_axi_master.run(NumReads, NumWrites);
+      lite_axi_manager.write(32'h0000_1100, axi_pkg::prot_t'('0), 64'hDEADBEEFDEADBEEF, 8'hFF, resp);
+      lite_axi_manager.read(32'h0000_e100, axi_pkg::prot_t'('0), data, resp);
+      lite_axi_manager.run(NumReads, NumWrites);
       end_of_sim[i] <= 1'b1;
     end
   end
 
-  for (genvar i = 0; i < NumSlaves; i++) begin : gen_rand_slave
+  for (genvar i = 0; i < NumSubordinates; i++) begin : gen_rand_subordinate
     initial begin : proc_recieve_traffic
-      automatic rand_lite_slave_t lite_axi_slave = new( slave_dv[i] , $sformatf("SLV_%0d", i));
-      lite_axi_slave.reset();
+      automatic rand_lite_subordinate_t lite_axi_subordinate = new( subordinate_dv[i] , $sformatf("SBR_%0d", i));
+      lite_axi_subordinate.reset();
       @(posedge rst_n);
-      lite_axi_slave.run();
+      lite_axi_subordinate.run();
     end
   end
 
   initial begin : proc_stop_sim
     wait (&end_of_sim);
     repeat (1000) @(posedge clk);
-    $display("Simulation stopped as all Masters transferred their data, Success.",);
+    $display("Simulation stopped as all Managers transferred their data, Success.",);
     $stop();
   end
 
@@ -176,10 +176,10 @@ module tb_axi_lite_xbar;
     .clk_i                  ( clk     ),
     .rst_ni                 ( rst_n   ),
     .test_i                 ( 1'b0    ),
-    .slv_ports              ( master  ),
-    .mst_ports              ( slave   ),
+    .sbr_ports              ( manager  ),
+    .mgr_ports              ( subordinate   ),
     .addr_map_i             ( AddrMap ),
-    .en_default_mst_port_i  ( '0      ),
-    .default_mst_port_i     ( '0      )
+    .en_default_mgr_port_i  ( '0      ),
+    .default_mgr_port_i     ( '0      )
   );
 endmodule

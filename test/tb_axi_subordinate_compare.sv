@@ -7,8 +7,8 @@
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-/// Testbench for `axi_slave_compare`
-module tb_axi_slave_compare #(
+/// Testbench for `axi_subordinate_compare`
+module tb_axi_subordinate_compare #(
   // TB Parameters
   parameter time TbTclk = 10ns,
   // Module Parameters
@@ -67,7 +67,7 @@ module tb_axi_slave_compare #(
   `AXI_ASSIGN_TO_REQ(axi_req, axi)
   `AXI_ASSIGN_FROM_RSP(axi, axi_rsp)
 
-  axi_slave_compare #(
+  axi_subordinate_compare #(
     .IdWidth        ( TbIdWidth       ),
     .FifoDepth      ( 32'd16          ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
@@ -81,8 +81,8 @@ module tb_axi_slave_compare #(
     .clk_i          ( clk           ),
     .rst_ni         ( rst_n         ),
     .testmode_i     ( 1'b0          ),
-    .axi_mst_req_i  ( axi_req       ),
-    .axi_mst_rsp_o  ( axi_rsp       ),
+    .axi_mgr_req_i  ( axi_req       ),
+    .axi_mgr_rsp_o  ( axi_rsp       ),
     .axi_ref_req_o  ( axi_req_a_out ),
     .axi_ref_rsp_i  ( axi_rsp_a_out ),
     .axi_test_req_o ( axi_req_b_out ),
@@ -138,10 +138,10 @@ module tb_axi_slave_compare #(
   ) i_axi_multicut (
     .clk_i     ( clk           ),
     .rst_ni    ( rst_n         ),
-    .slv_req_i ( axi_req_b_out ),
-    .slv_rsp_o ( axi_rsp_b_out ),
-    .mst_req_o ( axi_req_b_dly ),
-    .mst_rsp_i ( axi_rsp_b_dly )
+    .sbr_req_i ( axi_req_b_out ),
+    .sbr_rsp_o ( axi_rsp_b_out ),
+    .mgr_req_o ( axi_req_b_dly ),
+    .mgr_rsp_i ( axi_rsp_b_dly )
   );
 
   axi_sim_mem #(
@@ -183,7 +183,7 @@ module tb_axi_slave_compare #(
     automatic drv_t::w_beat_t w_beat = new;
     automatic drv_t::b_beat_t b_beat;
     automatic drv_t::r_beat_t r_beat;
-    drv.reset_master();
+    drv.reset_manager();
     wait (rst_n);
     // AW
 `ifdef XSIM

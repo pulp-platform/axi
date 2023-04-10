@@ -71,7 +71,7 @@ module tb_axi_sim_mem #(
   ) i_sim_mem (
     .clk_i   (clk),
     .rst_ni  (rst_n),
-    .axi_slv (axi)
+    .axi_sbr (axi)
   );
 
   // Simply read and write a random memory region.
@@ -82,7 +82,7 @@ module tb_axi_sim_mem #(
     automatic drv_t::w_beat_t w_beat = new;
     automatic drv_t::b_beat_t b_beat;
     automatic drv_t::r_beat_t r_beat;
-    drv.reset_master();
+    drv.reset_manager();
     wait (rst_n);
     // AW
 `ifdef XSIM

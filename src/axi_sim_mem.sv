@@ -9,7 +9,7 @@
 
 `include "axi/typedef.svh"
 
-/// Infinite (Simulation-Only) Memory with AXI Slave Port
+/// Infinite (Simulation-Only) Memory with AXI Subordinate Port
 ///
 /// The memory array is named `mem`, and it is *not* initialized or reset.  This makes it possible to
 /// load the memory of this module in simulation with an external `$readmem*` command, e.g.,
@@ -348,7 +348,7 @@ module axi_sim_mem_intf #(
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
-  AXI_BUS.Slave                     axi_slv,
+  AXI_BUS.Subordinate                     axi_sbr,
   output logic                      mon_w_valid_o,
   output logic [AXI_ADDR_WIDTH-1:0] mon_w_addr_o,
   output logic [AXI_DATA_WIDTH-1:0] mon_w_data_o,
@@ -375,8 +375,8 @@ module axi_sim_mem_intf #(
   axi_req_t   axi_req;
   axi_rsp_t  axi_rsp;
 
-  `AXI_ASSIGN_TO_REQ(axi_req, axi_slv)
-  `AXI_ASSIGN_FROM_RSP(axi_slv, axi_rsp)
+  `AXI_ASSIGN_TO_REQ(axi_req, axi_sbr)
+  `AXI_ASSIGN_FROM_RSP(axi_sbr, axi_rsp)
 
   axi_sim_mem #(
     .AddrWidth          (AXI_ADDR_WIDTH),

@@ -19,7 +19,7 @@
 ///
 /// This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them
 /// accessible on two interfaces:
-/// - as memory-mapped AXI4-Lite slave (ports `axi_req_i` and `axi_rsp_o`), and
+/// - as memory-mapped AXI4-Lite subordinate (ports `axi_req_i` and `axi_rsp_o`), and
 /// - as wires to directly attach other hardware logic (ports `reg_d_i`, `reg_load_i`, `reg_q_o`,
 ///   `wr_active_o`, `rd_active_o`).
 ///
@@ -100,9 +100,9 @@ module axi_lite_regs #(
   input  logic clk_i,
   /// Asynchronous reset, active low
   input  logic rst_ni,
-  /// AXI4-Lite slave request
+  /// AXI4-Lite subordinate request
   input  axi_lite_req_t axi_req_i,
-  /// AXI4-Lite slave response
+  /// AXI4-Lite subordinate response
   output axi_lite_rsp_t axi_rsp_o,
   /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
   /// signal is asserted regardless of the value of `ReadOnly` and can therefore be used by
@@ -347,7 +347,7 @@ module axi_lite_regs #(
     .default_idx_i    ( '0                         )
   );
 
-  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
+  // Add a cycle delay on AXI response, cut all comb paths between subordinate port inputs and outputs.
   spill_register #(
     .T      ( b_chan_lite_t ),
     .Bypass ( 1'b0          )
@@ -362,7 +362,7 @@ module axi_lite_regs #(
     .data_o  ( axi_rsp_o.b       )
   );
 
-  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
+  // Add a cycle delay on AXI response, cut all comb paths between subordinate port inputs and outputs.
   spill_register #(
     .T      ( r_chan_lite_t ),
     .Bypass ( 1'b0          )
@@ -422,7 +422,7 @@ module axi_lite_regs_intf #(
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
-  AXI_LITE.Slave                    slv,
+  AXI_LITE.Subordinate                    sbr,
   output logic  [REG_NUM_BYTES-1:0] wr_active_o,
   output logic  [REG_NUM_BYTES-1:0] rd_active_o,
   input  byte_t [REG_NUM_BYTES-1:0] reg_d_i,
@@ -444,8 +444,8 @@ module axi_lite_regs_intf #(
   axi_lite_req_t axi_lite_req;
   axi_lite_rsp_t axi_lite_rsp;
 
-  `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RSP(slv, axi_lite_rsp)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, sbr)
+  `AXI_LITE_ASSIGN_FROM_RSP(sbr, axi_lite_rsp)
 
   axi_lite_regs #(
     .RegNumBytes    ( REG_NUM_BYTES  ),
@@ -473,10 +473,10 @@ module axi_lite_regs_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      assert (AXI_ADDR_WIDTH == $bits(slv.aw_addr))
-          else $fatal(1, "AXI_ADDR_WIDTH does not match slv interface!");
-      assert (AXI_DATA_WIDTH == $bits(slv.w_data))
-          else $fatal(1, "AXI_DATA_WIDTH does not match slv interface!");
+      assert (AXI_ADDR_WIDTH == $bits(sbr.aw_addr))
+          else $fatal(1, "AXI_ADDR_WIDTH does not match sbr interface!");
+      assert (AXI_DATA_WIDTH == $bits(sbr.w_data))
+          else $fatal(1, "AXI_DATA_WIDTH does not match sbr interface!");
     end
   `endif
   // pragma translate_on

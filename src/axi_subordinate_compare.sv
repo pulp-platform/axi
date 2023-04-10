@@ -13,11 +13,11 @@
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
-/// Synthesizable test module comparing two AXI slaves of the same type.
-/// The reference response is always passed to the master, whereas the test response
+/// Synthesizable test module comparing two AXI subordinates of the same type.
+/// The reference response is always passed to the manager, whereas the test response
 /// is discarded after handshaking.
 /// This module is meant to be used in FPGA-based verification.
-module axi_slave_compare #(
+module axi_subordinate_compare #(
     /// ID width of the AXI4+ATOP interface
     parameter int unsigned IdWidth = 32'd0,
     /// FIFO depth
@@ -32,9 +32,9 @@ module axi_slave_compare #(
     parameter type axi_ar_chan_t = logic,
     /// R channel type of the AXI4+ATOP interface
     parameter type axi_r_chan_t  = logic,
-    /// Request struct type of the AXI4+ATOP slave port
+    /// Request struct type of the AXI4+ATOP subordinate port
     parameter type axi_req_t     = logic,
-    /// Response struct type of the AXI4+ATOP slave port
+    /// Response struct type of the AXI4+ATOP subordinate port
     parameter type axi_rsp_t     = logic,
     /// ID type (*do not overwrite*)
     parameter type id_t          = logic [2**IdWidth-1:0]
@@ -46,9 +46,9 @@ module axi_slave_compare #(
     /// Testmode
     input  logic     testmode_i,
     /// AXI4+ATOP channel request in
-    input  axi_req_t axi_mst_req_i,
+    input  axi_req_t axi_mgr_req_i,
     /// AXI4+ATOP channel response out
-    output axi_rsp_t axi_mst_rsp_o,
+    output axi_rsp_t axi_mgr_rsp_o,
     /// AXI4+ATOP reference channel request out
     output axi_req_t axi_ref_req_o,
     /// AXI4+ATOP reference channel response in
@@ -84,17 +84,17 @@ module axi_slave_compare #(
     logic w_valid_test,  w_ready_test;
     logic ar_valid_test, ar_ready_test;
 
-    logic aw_ready_mst;
-    logic w_ready_mst;
-    logic ar_ready_mst;
+    logic aw_ready_mgr;
+    logic w_ready_mgr;
+    logic ar_ready_mgr;
 
     stream_fork #(
         .N_OUP   ( 32'd2  )
     ) i_stream_fork_aw (
         .clk_i,
         .rst_ni,
-        .valid_i ( axi_mst_req_i.aw_valid          ),
-        .ready_o ( aw_ready_mst                    ),
+        .valid_i ( axi_mgr_req_i.aw_valid          ),
+        .ready_o ( aw_ready_mgr                    ),
         .valid_o ( { aw_valid_ref, aw_valid_test } ),
         .ready_i ( { aw_ready_ref, aw_ready_test } )
     );
@@ -104,8 +104,8 @@ module axi_slave_compare #(
       ) i_stream_fork_ar (
         .clk_i,
         .rst_ni,
-        .valid_i ( axi_mst_req_i.ar_valid          ),
-        .ready_o ( ar_ready_mst                    ),
+        .valid_i ( axi_mgr_req_i.ar_valid          ),
+        .ready_o ( ar_ready_mgr                    ),
         .valid_o ( { ar_valid_ref, ar_valid_test } ),
         .ready_i ( { ar_ready_ref, ar_ready_test } )
     );
@@ -115,8 +115,8 @@ module axi_slave_compare #(
     ) i_stream_fork_w (
         .clk_i,
         .rst_ni,
-        .valid_i ( axi_mst_req_i.w_valid         ),
-        .ready_o ( w_ready_mst                   ),
+        .valid_i ( axi_mgr_req_i.w_valid         ),
+        .ready_o ( w_ready_mgr                   ),
         .valid_o ( { w_valid_ref, w_valid_test } ),
         .ready_i ( { w_ready_ref, w_ready_test } )
     );
@@ -124,8 +124,8 @@ module axi_slave_compare #(
   // assemble buses
   always_comb begin
     // request
-    `AXI_SET_REQ_STRUCT(axi_ref_req_in, axi_mst_req_i)
-    `AXI_SET_REQ_STRUCT(axi_test_req_in, axi_mst_req_i)
+    `AXI_SET_REQ_STRUCT(axi_ref_req_in, axi_mgr_req_i)
+    `AXI_SET_REQ_STRUCT(axi_test_req_in, axi_mgr_req_i)
     // overwrite valids in requests
     axi_ref_req_in.aw_valid  = aw_valid_ref;
     axi_ref_req_in.ar_valid  = ar_valid_ref;
@@ -141,11 +141,11 @@ module axi_slave_compare #(
     ar_ready_test = axi_test_rsp_in.ar_ready;
     w_ready_test  = axi_test_rsp_in.w_ready;
     // response
-    `AXI_SET_RSP_STRUCT(axi_mst_rsp_o, axi_ref_rsp_in)
+    `AXI_SET_RSP_STRUCT(axi_mgr_rsp_o, axi_ref_rsp_in)
     // overwrite readies
-    axi_mst_rsp_o.aw_ready  = aw_ready_mst;
-    axi_mst_rsp_o.w_ready   = w_ready_mst;
-    axi_mst_rsp_o.ar_ready  = ar_ready_mst;
+    axi_mgr_rsp_o.aw_ready  = aw_ready_mgr;
+    axi_mgr_rsp_o.w_ready   = w_ready_mgr;
+    axi_mgr_rsp_o.ar_ready  = ar_ready_mgr;
     // b interface is not used
     axi_test_req_in.r_ready = '1;
     axi_test_req_in.b_ready = '1;

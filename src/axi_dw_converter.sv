@@ -17,94 +17,94 @@
 
 module axi_dw_converter #(
     parameter int unsigned MaxReads         = 1    , // Number of outstanding reads
-    parameter int unsigned SlvPortDataWidth = 8    , // Data width of the slv port
-    parameter int unsigned MstPortDataWidth = 8    , // Data width of the mst port
+    parameter int unsigned SbrPortDataWidth = 8    , // Data width of the sbr port
+    parameter int unsigned MgrPortDataWidth = 8    , // Data width of the mgr port
     parameter int unsigned AddrWidth        = 1    , // Address width
     parameter int unsigned IdWidth          = 1    , // ID width
     parameter type aw_chan_t                = logic, // AW Channel Type
-    parameter type mst_w_chan_t             = logic, //  W Channel Type for the mst port
-    parameter type slv_w_chan_t             = logic, //  W Channel Type for the slv port
+    parameter type mgr_w_chan_t             = logic, //  W Channel Type for the mgr port
+    parameter type sbr_w_chan_t             = logic, //  W Channel Type for the sbr port
     parameter type b_chan_t                 = logic, //  B Channel Type
     parameter type ar_chan_t                = logic, // AR Channel Type
-    parameter type mst_r_chan_t             = logic, //  R Channel Type for the mst port
-    parameter type slv_r_chan_t             = logic, //  R Channel Type for the slv port
-    parameter type mst_port_axi_req_t       = logic, // AXI Request Type for mst ports
-    parameter type mst_port_axi_rsp_t       = logic, // AXI Response Type for mst ports
-    parameter type slv_port_axi_req_t       = logic, // AXI Request Type for slv ports
-    parameter type slv_port_axi_rsp_t       = logic  // AXI Response Type for slv ports
+    parameter type mgr_r_chan_t             = logic, //  R Channel Type for the mgr port
+    parameter type sbr_r_chan_t             = logic, //  R Channel Type for the sbr port
+    parameter type mgr_port_axi_req_t       = logic, // AXI Request Type for mgr ports
+    parameter type mgr_port_axi_rsp_t       = logic, // AXI Response Type for mgr ports
+    parameter type sbr_port_axi_req_t       = logic, // AXI Request Type for sbr ports
+    parameter type sbr_port_axi_rsp_t       = logic  // AXI Response Type for sbr ports
   ) (
     input  logic              clk_i,
     input  logic              rst_ni,
-    // Slave interface
-    input  slv_port_axi_req_t slv_req_i,
-    output slv_port_axi_rsp_t slv_rsp_o,
-    // Master interface
-    output mst_port_axi_req_t mst_req_o,
-    input  mst_port_axi_rsp_t mst_rsp_i
+    // Subordinate interface
+    input  sbr_port_axi_req_t sbr_req_i,
+    output sbr_port_axi_rsp_t sbr_rsp_o,
+    // Manager interface
+    output mgr_port_axi_req_t mgr_req_o,
+    input  mgr_port_axi_rsp_t mgr_rsp_i
   );
 
-  if (MstPortDataWidth == SlvPortDataWidth) begin: gen_no_dw_conversion
-    assign mst_req_o = slv_req_i ;
-    assign slv_rsp_o = mst_rsp_i;
+  if (MgrPortDataWidth == SbrPortDataWidth) begin: gen_no_dw_conversion
+    assign mgr_req_o = sbr_req_i ;
+    assign sbr_rsp_o = mgr_rsp_i;
   end : gen_no_dw_conversion
 
-  if (MstPortDataWidth > SlvPortDataWidth) begin: gen_dw_upsize
+  if (MgrPortDataWidth > SbrPortDataWidth) begin: gen_dw_upsize
     axi_dw_upsizer #(
       .MaxReads           (MaxReads        ),
-      .SlvPortDataWidth   (SlvPortDataWidth),
-      .MstPortDataWidth   (MstPortDataWidth),
+      .SbrPortDataWidth   (SbrPortDataWidth),
+      .MgrPortDataWidth   (MgrPortDataWidth),
       .AddrWidth          (AddrWidth       ),
       .IdWidth            (IdWidth         ),
       .aw_chan_t          (aw_chan_t          ),
-      .mst_w_chan_t       (mst_w_chan_t       ),
-      .slv_w_chan_t       (slv_w_chan_t       ),
+      .mgr_w_chan_t       (mgr_w_chan_t       ),
+      .sbr_w_chan_t       (sbr_w_chan_t       ),
       .b_chan_t           (b_chan_t           ),
       .ar_chan_t          (ar_chan_t          ),
-      .mst_r_chan_t       (mst_r_chan_t       ),
-      .slv_r_chan_t       (slv_r_chan_t       ),
-      .mst_port_axi_req_t (mst_port_axi_req_t ),
-      .mst_port_axi_rsp_t (mst_port_axi_rsp_t ),
-      .slv_port_axi_req_t (slv_port_axi_req_t ),
-      .slv_port_axi_rsp_t (slv_port_axi_rsp_t )
+      .mgr_r_chan_t       (mgr_r_chan_t       ),
+      .sbr_r_chan_t       (sbr_r_chan_t       ),
+      .mgr_port_axi_req_t (mgr_port_axi_req_t ),
+      .mgr_port_axi_rsp_t (mgr_port_axi_rsp_t ),
+      .sbr_port_axi_req_t (sbr_port_axi_req_t ),
+      .sbr_port_axi_rsp_t (sbr_port_axi_rsp_t )
     ) i_axi_dw_upsizer (
       .clk_i     (clk_i    ),
       .rst_ni    (rst_ni   ),
-      // Slave interface
-      .slv_req_i (slv_req_i),
-      .slv_rsp_o (slv_rsp_o),
-      // Master interface
-      .mst_req_o (mst_req_o),
-      .mst_rsp_i (mst_rsp_i)
+      // Subordinate interface
+      .sbr_req_i (sbr_req_i),
+      .sbr_rsp_o (sbr_rsp_o),
+      // Manager interface
+      .mgr_req_o (mgr_req_o),
+      .mgr_rsp_i (mgr_rsp_i)
     );
   end : gen_dw_upsize
 
-  if (MstPortDataWidth < SlvPortDataWidth) begin: gen_dw_downsize
+  if (MgrPortDataWidth < SbrPortDataWidth) begin: gen_dw_downsize
     axi_dw_downsizer #(
       .MaxReads           (MaxReads        ),
-      .SlvPortDataWidth   (SlvPortDataWidth),
-      .MstPortDataWidth   (MstPortDataWidth),
+      .SbrPortDataWidth   (SbrPortDataWidth),
+      .MgrPortDataWidth   (MgrPortDataWidth),
       .AddrWidth          (AddrWidth       ),
       .IdWidth            (IdWidth         ),
       .aw_chan_t          (aw_chan_t          ),
-      .mst_w_chan_t       (mst_w_chan_t       ),
-      .slv_w_chan_t       (slv_w_chan_t       ),
+      .mgr_w_chan_t       (mgr_w_chan_t       ),
+      .sbr_w_chan_t       (sbr_w_chan_t       ),
       .b_chan_t           (b_chan_t           ),
       .ar_chan_t          (ar_chan_t          ),
-      .mst_r_chan_t       (mst_r_chan_t       ),
-      .slv_r_chan_t       (slv_r_chan_t       ),
-      .mst_port_axi_req_t (mst_port_axi_req_t ),
-      .mst_port_axi_rsp_t (mst_port_axi_rsp_t ),
-      .slv_port_axi_req_t (slv_port_axi_req_t ),
-      .slv_port_axi_rsp_t (slv_port_axi_rsp_t )
+      .mgr_r_chan_t       (mgr_r_chan_t       ),
+      .sbr_r_chan_t       (sbr_r_chan_t       ),
+      .mgr_port_axi_req_t (mgr_port_axi_req_t ),
+      .mgr_port_axi_rsp_t (mgr_port_axi_rsp_t ),
+      .sbr_port_axi_req_t (sbr_port_axi_req_t ),
+      .sbr_port_axi_rsp_t (sbr_port_axi_rsp_t )
     ) i_axi_dw_downsizer (
       .clk_i     (clk_i    ),
       .rst_ni    (rst_ni   ),
-      // Slave interface
-      .slv_req_i (slv_req_i),
-      .slv_rsp_o (slv_rsp_o),
-      // Master interface
-      .mst_req_o (mst_req_o),
-      .mst_rsp_i (mst_rsp_i)
+      // Subordinate interface
+      .sbr_req_i (sbr_req_i),
+      .sbr_rsp_o (sbr_rsp_o),
+      // Manager interface
+      .mgr_req_o (mgr_req_o),
+      .mgr_rsp_i (mgr_rsp_i)
     );
   end : gen_dw_downsize
 
@@ -118,73 +118,73 @@ endmodule : axi_dw_converter
 module axi_dw_converter_intf #(
     parameter int unsigned AXI_ID_WIDTH            = 1,
     parameter int unsigned AXI_ADDR_WIDTH          = 1,
-    parameter int unsigned AXI_SLV_PORT_DATA_WIDTH = 8,
-    parameter int unsigned AXI_MST_PORT_DATA_WIDTH = 8,
+    parameter int unsigned AXI_SBR_PORT_DATA_WIDTH = 8,
+    parameter int unsigned AXI_MGR_PORT_DATA_WIDTH = 8,
     parameter int unsigned AXI_USER_WIDTH          = 0,
     parameter int unsigned AXI_MAX_READS           = 8
   ) (
     input          logic clk_i,
     input          logic rst_ni,
-    AXI_BUS.Slave        slv,
-    AXI_BUS.Master       mst
+    AXI_BUS.Subordinate        sbr,
+    AXI_BUS.Manager       mgr
   );
 
   typedef logic [AXI_ID_WIDTH-1:0] id_t                   ;
   typedef logic [AXI_ADDR_WIDTH-1:0] addr_t               ;
-  typedef logic [AXI_MST_PORT_DATA_WIDTH-1:0] mst_data_t  ;
-  typedef logic [AXI_MST_PORT_DATA_WIDTH/8-1:0] mst_strb_t;
-  typedef logic [AXI_SLV_PORT_DATA_WIDTH-1:0] slv_data_t  ;
-  typedef logic [AXI_SLV_PORT_DATA_WIDTH/8-1:0] slv_strb_t;
+  typedef logic [AXI_MGR_PORT_DATA_WIDTH-1:0] mgr_data_t  ;
+  typedef logic [AXI_MGR_PORT_DATA_WIDTH/8-1:0] mgr_strb_t;
+  typedef logic [AXI_SBR_PORT_DATA_WIDTH-1:0] sbr_data_t  ;
+  typedef logic [AXI_SBR_PORT_DATA_WIDTH/8-1:0] sbr_strb_t;
   typedef logic [AXI_USER_WIDTH-1:0] user_t               ;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, mst_data_t, mst_strb_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, slv_data_t, slv_strb_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mgr_w_chan_t, mgr_data_t, mgr_strb_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(sbr_w_chan_t, sbr_data_t, sbr_strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, mst_data_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, slv_data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(mst_port_axi_req_t, aw_chan_t, mst_w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RSP_T(mst_port_axi_rsp_t, b_chan_t, mst_r_chan_t)
-  `AXI_TYPEDEF_REQ_T(slv_port_axi_req_t, aw_chan_t, slv_w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RSP_T(slv_port_axi_rsp_t, b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_R_CHAN_T(mgr_r_chan_t, mgr_data_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(sbr_r_chan_t, sbr_data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(mgr_port_axi_req_t, aw_chan_t, mgr_w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(mgr_port_axi_rsp_t, b_chan_t, mgr_r_chan_t)
+  `AXI_TYPEDEF_REQ_T(sbr_port_axi_req_t, aw_chan_t, sbr_w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(sbr_port_axi_rsp_t, b_chan_t, sbr_r_chan_t)
 
-  slv_port_axi_req_t slv_req;
-  slv_port_axi_rsp_t slv_rsp;
-  mst_port_axi_req_t mst_req;
-  mst_port_axi_rsp_t mst_rsp;
+  sbr_port_axi_req_t sbr_req;
+  sbr_port_axi_rsp_t sbr_rsp;
+  mgr_port_axi_req_t mgr_req;
+  mgr_port_axi_rsp_t mgr_rsp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
+  `AXI_ASSIGN_TO_REQ(sbr_req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, sbr_rsp)
 
-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
+  `AXI_ASSIGN_FROM_REQ(mgr, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, mgr)
 
   axi_dw_converter #(
     .MaxReads           ( AXI_MAX_READS           ),
-    .SlvPortDataWidth   ( AXI_SLV_PORT_DATA_WIDTH ),
-    .MstPortDataWidth   ( AXI_MST_PORT_DATA_WIDTH ),
+    .SbrPortDataWidth   ( AXI_SBR_PORT_DATA_WIDTH ),
+    .MgrPortDataWidth   ( AXI_MGR_PORT_DATA_WIDTH ),
     .AddrWidth          ( AXI_ADDR_WIDTH          ),
     .IdWidth            ( AXI_ID_WIDTH            ),
     .aw_chan_t          ( aw_chan_t               ),
-    .mst_w_chan_t       ( mst_w_chan_t            ),
-    .slv_w_chan_t       ( slv_w_chan_t            ),
+    .mgr_w_chan_t       ( mgr_w_chan_t            ),
+    .sbr_w_chan_t       ( sbr_w_chan_t            ),
     .b_chan_t           ( b_chan_t                ),
     .ar_chan_t          ( ar_chan_t               ),
-    .mst_r_chan_t       ( mst_r_chan_t            ),
-    .slv_r_chan_t       ( slv_r_chan_t            ),
-    .mst_port_axi_req_t ( mst_port_axi_req_t               ),
-    .mst_port_axi_rsp_t ( mst_port_axi_rsp_t               ),
-    .slv_port_axi_req_t ( slv_port_axi_req_t               ),
-    .slv_port_axi_rsp_t ( slv_port_axi_rsp_t               )
+    .mgr_r_chan_t       ( mgr_r_chan_t            ),
+    .sbr_r_chan_t       ( sbr_r_chan_t            ),
+    .mgr_port_axi_req_t ( mgr_port_axi_req_t               ),
+    .mgr_port_axi_rsp_t ( mgr_port_axi_rsp_t               ),
+    .sbr_port_axi_req_t ( sbr_port_axi_req_t               ),
+    .sbr_port_axi_rsp_t ( sbr_port_axi_rsp_t               )
   ) i_axi_dw_converter (
     .clk_i      ( clk_i    ),
     .rst_ni     ( rst_ni   ),
-    // slave port
-    .slv_req_i  ( slv_req  ),
-    .slv_rsp_o ( slv_rsp ),
-    // master port
-    .mst_req_o  ( mst_req  ),
-    .mst_rsp_i ( mst_rsp )
+    // subordinate port
+    .sbr_req_i  ( sbr_req  ),
+    .sbr_rsp_o ( sbr_rsp ),
+    // manager port
+    .mgr_req_o  ( mgr_req  ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
 endmodule : axi_dw_converter_intf

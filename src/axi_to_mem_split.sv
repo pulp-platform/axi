@@ -51,28 +51,28 @@ module axi_to_mem_split #(
   input logic                              rst_ni,
   /// The unit is busy handling an AXI4+ATOP request.
   output logic                             busy_o,
-  /// AXI4+ATOP slave port, request input.
+  /// AXI4+ATOP subordinate port, request input.
   input  axi_req_t                         axi_req_i,
-  /// AXI4+ATOP slave port, response output.
+  /// AXI4+ATOP subordinate port, response output.
   output axi_rsp_t                         axi_rsp_o,
-  /// Memory stream master, request is valid for this bank.
+  /// Memory stream manager, request is valid for this bank.
   output logic           [NumMemPorts-1:0] mem_req_o,
-  /// Memory stream master, request can be granted by this bank.
+  /// Memory stream manager, request can be granted by this bank.
   input  logic           [NumMemPorts-1:0] mem_gnt_i,
-  /// Memory stream master, byte address of the request.
+  /// Memory stream manager, byte address of the request.
   output addr_t          [NumMemPorts-1:0] mem_addr_o,   // byte address
-  /// Memory stream master, write data for this bank. Valid when `mem_req_o`.
+  /// Memory stream manager, write data for this bank. Valid when `mem_req_o`.
   output mem_data_t      [NumMemPorts-1:0] mem_wdata_o,  // write data
-  /// Memory stream master, byte-wise strobe (byte enable).
+  /// Memory stream manager, byte-wise strobe (byte enable).
   output mem_strb_t      [NumMemPorts-1:0] mem_strb_o,   // byte-wise strobe
-  /// Memory stream master, `axi_pkg::atop_t` signal associated with this request.
+  /// Memory stream manager, `axi_pkg::atop_t` signal associated with this request.
   output axi_pkg::atop_t [NumMemPorts-1:0] mem_atop_o,   // atomic operation
-  /// Memory stream master, write enable. Then asserted store of `mem_w_data` is requested.
+  /// Memory stream manager, write enable. Then asserted store of `mem_w_data` is requested.
   output logic           [NumMemPorts-1:0] mem_we_o,     // write enable
-  /// Memory stream master, response is valid. This module expects always a response valid for a
+  /// Memory stream manager, response is valid. This module expects always a response valid for a
   /// request regardless if the request was a write or a read.
   input  logic           [NumMemPorts-1:0] mem_rvalid_i, // response valid
-  /// Memory stream master, read response data.
+  /// Memory stream manager, read response data.
   input  mem_data_t      [NumMemPorts-1:0] mem_rdata_i   // read data
 );
 
@@ -87,12 +87,12 @@ module axi_to_mem_split #(
   ) i_axi_rw_split (
     .clk_i,
     .rst_ni,
-    .slv_req_i       ( axi_req_i       ),
-    .slv_rsp_o       ( axi_rsp_o       ),
-    .mst_read_req_o  ( axi_read_req    ),
-    .mst_read_rsp_i  ( axi_read_rsp    ),
-    .mst_write_req_o ( axi_write_req   ),
-    .mst_write_rsp_i ( axi_write_rsp   )
+    .sbr_req_i       ( axi_req_i       ),
+    .sbr_rsp_o       ( axi_rsp_o       ),
+    .mgr_read_req_o  ( axi_read_req    ),
+    .mgr_read_rsp_i  ( axi_read_rsp    ),
+    .mgr_write_req_o ( axi_write_req   ),
+    .mgr_write_rsp_i ( axi_write_rsp   )
   );
 
   assign busy_o = read_busy || write_busy;
@@ -187,8 +187,8 @@ module axi_to_mem_split_intf #(
   input  logic                               rst_ni,
   /// See `axi_to_mem_split`, port `busy_o`.
   output logic                               busy_o,
-  /// AXI4+ATOP slave interface port.
-  AXI_BUS.Slave                              axi_bus,
+  /// AXI4+ATOP subordinate interface port.
+  AXI_BUS.Subordinate                              axi_bus,
   /// See `axi_to_mem_split`, port `mem_req_o`.
   output logic           [NUM_MEM_PORTS-1:0] mem_req_o,
   /// See `axi_to_mem_split`, port `mem_gnt_i`.

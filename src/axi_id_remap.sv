@@ -16,121 +16,121 @@
 
 `include "common_cells/registers.svh"
 
-/// Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.
+/// Remap AXI IDs from wide IDs at the subordinate port to narrower IDs at the manager port.
 ///
 /// This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely
-/// used ID space.  This scenario occurs, for example, when an AXI master has wide ID ports but
+/// used ID space.  This scenario occurs, for example, when an AXI manager has wide ID ports but
 /// effectively only uses a (not necessarily contiguous) subset of IDs.
 ///
 /// This module retains the independence of IDs.  That is, if two transactions have different IDs at
-/// the slave port of this module, they are guaranteed to have different IDs at the master port of
-/// this module.  This implies a lower bound on the [width of IDs on the master
-/// port](#parameter.MstPortIdWidth).  If you require narrower master port IDs and can forgo ID
+/// the subordinate port of this module, they are guaranteed to have different IDs at the manager port of
+/// this module.  This implies a lower bound on the [width of IDs on the manager
+/// port](#parameter.MgrPortIdWidth).  If you require narrower manager port IDs and can forgo ID
 /// independence, use [`axi_id_serialize`](module.axi_id_serialize) instead.
 ///
 /// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
 module axi_id_remap #(
-  /// ID width of the AXI4+ATOP slave port.
-  parameter int unsigned SlvPortIdWidth = 32'd0,
-  /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
+  /// ID width of the AXI4+ATOP subordinate port.
+  parameter int unsigned SbrPortIdWidth = 32'd0,
+  /// Maximum number of different IDs that can be in flight at the subordinate port.  Reads and writes are
   /// counted separately (except for ATOPs, which count as both read and write).
   ///
   /// It is legal for upstream to have transactions with more unique IDs than the maximum given by
   /// this parameter in flight, but a transaction exceeding the maximum will be stalled until all
   /// transactions of another ID complete.
   ///
-  /// The maximum value of this parameter is `2**SlvPortIdWidth`.
-  parameter int unsigned SlvPortMaxUniqIds = 32'd0,
+  /// The maximum value of this parameter is `2**SbrPortIdWidth`.
+  parameter int unsigned SbrPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID.
   ///
   /// It is legal for upstream to have more transactions than the maximum given by this parameter in
   /// flight for any ID, but a transaction exceeding the maximum will be stalled until another
   /// transaction with the same ID completes.
   parameter int unsigned MaxTxnsPerId = 32'd0,
-  /// ID width of the AXI4+ATOP master port.
+  /// ID width of the AXI4+ATOP manager port.
   ///
-  /// The minimum value of this parameter is the ceiled binary logarithm of `SlvPortMaxUniqIds`,
-  /// because IDs at the master port must be wide enough to represent IDs up to
-  /// `SlvPortMaxUniqIds-1`.
+  /// The minimum value of this parameter is the ceiled binary logarithm of `SbrPortMaxUniqIds`,
+  /// because IDs at the manager port must be wide enough to represent IDs up to
+  /// `SbrPortMaxUniqIds-1`.
   ///
-  /// If master IDs are wider than the minimum, they are extended by prepending zeros.
-  parameter int unsigned MstPortIdWidth = 32'd0,
-  /// Request struct type of the AXI4+ATOP slave port.
+  /// If manager IDs are wider than the minimum, they are extended by prepending zeros.
+  parameter int unsigned MgrPortIdWidth = 32'd0,
+  /// Request struct type of the AXI4+ATOP subordinate port.
   ///
-  /// The width of all IDs in this struct must match `SlvPortIdWidth`.
-  parameter type slv_port_axi_req_t = logic,
-  /// Response struct type of the AXI4+ATOP slave port.
+  /// The width of all IDs in this struct must match `SbrPortIdWidth`.
+  parameter type sbr_port_axi_req_t = logic,
+  /// Response struct type of the AXI4+ATOP subordinate port.
   ///
-  /// The width of all IDs in this struct must match `SlvPortIdWidth`.
-  parameter type slv_port_axi_rsp_t = logic,
-  /// Request struct type of the AXI4+ATOP master port
+  /// The width of all IDs in this struct must match `SbrPortIdWidth`.
+  parameter type sbr_port_axi_rsp_t = logic,
+  /// Request struct type of the AXI4+ATOP manager port
   ///
-  /// The width of all IDs in this struct must match `MstPortIdWidth`.
-  parameter type mst_port_axi_req_t = logic,
-  /// Response struct type of the AXI4+ATOP master port
+  /// The width of all IDs in this struct must match `MgrPortIdWidth`.
+  parameter type mgr_port_axi_req_t = logic,
+  /// Response struct type of the AXI4+ATOP manager port
   ///
-  /// The width of all IDs in this struct must match `MstPortIdWidth`.
-  parameter type mst_port_axi_rsp_t = logic
+  /// The width of all IDs in this struct must match `MgrPortIdWidth`.
+  parameter type mgr_port_axi_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
   input  logic              clk_i,
   /// Asynchronous reset, active low
   input  logic              rst_ni,
-  /// Slave port request
-  input  slv_port_axi_req_t slv_req_i,
-  /// Slave port response
-  output slv_port_axi_rsp_t slv_rsp_o,
-  /// Master port request
-  output mst_port_axi_req_t mst_req_o,
-  /// Master port response
-  input  mst_port_axi_rsp_t mst_rsp_i
+  /// Subordinate port request
+  input  sbr_port_axi_req_t sbr_req_i,
+  /// Subordinate port response
+  output sbr_port_axi_rsp_t sbr_rsp_o,
+  /// Manager port request
+  output mgr_port_axi_req_t mgr_req_o,
+  /// Manager port response
+  input  mgr_port_axi_rsp_t mgr_rsp_i
 );
 
   // Feed all signals that are not ID or flow control of AW and AR through.
-  assign mst_req_o.aw.addr   = slv_req_i.aw.addr;
-  assign mst_req_o.aw.len    = slv_req_i.aw.len;
-  assign mst_req_o.aw.size   = slv_req_i.aw.size;
-  assign mst_req_o.aw.burst  = slv_req_i.aw.burst;
-  assign mst_req_o.aw.lock   = slv_req_i.aw.lock;
-  assign mst_req_o.aw.cache  = slv_req_i.aw.cache;
-  assign mst_req_o.aw.prot   = slv_req_i.aw.prot;
-  assign mst_req_o.aw.qos    = slv_req_i.aw.qos;
-  assign mst_req_o.aw.region = slv_req_i.aw.region;
-  assign mst_req_o.aw.atop   = slv_req_i.aw.atop;
-  assign mst_req_o.aw.user   = slv_req_i.aw.user;
+  assign mgr_req_o.aw.addr   = sbr_req_i.aw.addr;
+  assign mgr_req_o.aw.len    = sbr_req_i.aw.len;
+  assign mgr_req_o.aw.size   = sbr_req_i.aw.size;
+  assign mgr_req_o.aw.burst  = sbr_req_i.aw.burst;
+  assign mgr_req_o.aw.lock   = sbr_req_i.aw.lock;
+  assign mgr_req_o.aw.cache  = sbr_req_i.aw.cache;
+  assign mgr_req_o.aw.prot   = sbr_req_i.aw.prot;
+  assign mgr_req_o.aw.qos    = sbr_req_i.aw.qos;
+  assign mgr_req_o.aw.region = sbr_req_i.aw.region;
+  assign mgr_req_o.aw.atop   = sbr_req_i.aw.atop;
+  assign mgr_req_o.aw.user   = sbr_req_i.aw.user;
 
-  assign mst_req_o.w         = slv_req_i.w;
-  assign mst_req_o.w_valid   = slv_req_i.w_valid;
-  assign slv_rsp_o.w_ready   = mst_rsp_i.w_ready;
+  assign mgr_req_o.w         = sbr_req_i.w;
+  assign mgr_req_o.w_valid   = sbr_req_i.w_valid;
+  assign sbr_rsp_o.w_ready   = mgr_rsp_i.w_ready;
 
-  assign slv_rsp_o.b.resp    = mst_rsp_i.b.resp;
-  assign slv_rsp_o.b.user    = mst_rsp_i.b.user;
-  assign slv_rsp_o.b_valid   = mst_rsp_i.b_valid;
-  assign mst_req_o.b_ready   = slv_req_i.b_ready;
+  assign sbr_rsp_o.b.resp    = mgr_rsp_i.b.resp;
+  assign sbr_rsp_o.b.user    = mgr_rsp_i.b.user;
+  assign sbr_rsp_o.b_valid   = mgr_rsp_i.b_valid;
+  assign mgr_req_o.b_ready   = sbr_req_i.b_ready;
 
-  assign mst_req_o.ar.addr   = slv_req_i.ar.addr;
-  assign mst_req_o.ar.len    = slv_req_i.ar.len;
-  assign mst_req_o.ar.size   = slv_req_i.ar.size;
-  assign mst_req_o.ar.burst  = slv_req_i.ar.burst;
-  assign mst_req_o.ar.lock   = slv_req_i.ar.lock;
-  assign mst_req_o.ar.cache  = slv_req_i.ar.cache;
-  assign mst_req_o.ar.prot   = slv_req_i.ar.prot;
-  assign mst_req_o.ar.qos    = slv_req_i.ar.qos;
-  assign mst_req_o.ar.region = slv_req_i.ar.region;
-  assign mst_req_o.ar.user   = slv_req_i.ar.user;
+  assign mgr_req_o.ar.addr   = sbr_req_i.ar.addr;
+  assign mgr_req_o.ar.len    = sbr_req_i.ar.len;
+  assign mgr_req_o.ar.size   = sbr_req_i.ar.size;
+  assign mgr_req_o.ar.burst  = sbr_req_i.ar.burst;
+  assign mgr_req_o.ar.lock   = sbr_req_i.ar.lock;
+  assign mgr_req_o.ar.cache  = sbr_req_i.ar.cache;
+  assign mgr_req_o.ar.prot   = sbr_req_i.ar.prot;
+  assign mgr_req_o.ar.qos    = sbr_req_i.ar.qos;
+  assign mgr_req_o.ar.region = sbr_req_i.ar.region;
+  assign mgr_req_o.ar.user   = sbr_req_i.ar.user;
 
-  assign slv_rsp_o.r.data    = mst_rsp_i.r.data;
-  assign slv_rsp_o.r.resp    = mst_rsp_i.r.resp;
-  assign slv_rsp_o.r.last    = mst_rsp_i.r.last;
-  assign slv_rsp_o.r.user    = mst_rsp_i.r.user;
-  assign slv_rsp_o.r_valid   = mst_rsp_i.r_valid;
-  assign mst_req_o.r_ready   = slv_req_i.r_ready;
+  assign sbr_rsp_o.r.data    = mgr_rsp_i.r.data;
+  assign sbr_rsp_o.r.resp    = mgr_rsp_i.r.resp;
+  assign sbr_rsp_o.r.last    = mgr_rsp_i.r.last;
+  assign sbr_rsp_o.r.user    = mgr_rsp_i.r.user;
+  assign sbr_rsp_o.r_valid   = mgr_rsp_i.r_valid;
+  assign mgr_req_o.r_ready   = sbr_req_i.r_ready;
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(SlvPortMaxUniqIds);
-  typedef logic [SlvPortMaxUniqIds-1:0]  field_t;
-  typedef logic [SlvPortIdWidth-1:0]     id_inp_t;
+  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(SbrPortMaxUniqIds);
+  typedef logic [SbrPortMaxUniqIds-1:0]  field_t;
+  typedef logic [SbrPortIdWidth-1:0]     id_inp_t;
   typedef logic [IdxWidth-1:0]           idx_t;
   field_t   wr_free,          rd_free,          both_free;
   id_inp_t                    rd_push_inp_id;
@@ -143,8 +143,8 @@ module axi_id_remap #(
             wr_push,          rd_push;
 
   axi_id_remap_table #(
-    .InpIdWidth     ( SlvPortIdWidth     ),
-    .MaxUniqInpIds  ( SlvPortMaxUniqIds  ),
+    .InpIdWidth     ( SbrPortIdWidth     ),
+    .MaxUniqInpIds  ( SbrPortMaxUniqIds  ),
     .MaxTxnsPerId   ( MaxTxnsPerId       )
   ) i_wr_table (
     .clk_i,
@@ -153,19 +153,19 @@ module axi_id_remap #(
     .free_oup_id_o   ( wr_free_oup_id                         ),
     .full_o          ( wr_full                                ),
     .push_i          ( wr_push                                ),
-    .push_inp_id_i   ( slv_req_i.aw.id                        ),
+    .push_inp_id_i   ( sbr_req_i.aw.id                        ),
     .push_oup_id_i   ( wr_push_oup_id                         ),
-    .exists_inp_id_i ( slv_req_i.aw.id                        ),
+    .exists_inp_id_i ( sbr_req_i.aw.id                        ),
     .exists_o        ( wr_exists                              ),
     .exists_oup_id_o ( wr_exists_id                           ),
     .exists_full_o   ( wr_exists_full                         ),
-    .pop_i           ( slv_rsp_o.b_valid && slv_req_i.b_ready ),
-    .pop_oup_id_i    ( mst_rsp_i.b.id[IdxWidth-1:0]           ),
-    .pop_inp_id_o    ( slv_rsp_o.b.id                         )
+    .pop_i           ( sbr_rsp_o.b_valid && sbr_req_i.b_ready ),
+    .pop_oup_id_i    ( mgr_rsp_i.b.id[IdxWidth-1:0]           ),
+    .pop_inp_id_o    ( sbr_rsp_o.b.id                         )
   );
   axi_id_remap_table #(
-    .InpIdWidth     ( SlvPortIdWidth     ),
-    .MaxUniqInpIds  ( SlvPortMaxUniqIds  ),
+    .InpIdWidth     ( SbrPortIdWidth     ),
+    .MaxUniqInpIds  ( SbrPortMaxUniqIds  ),
     .MaxTxnsPerId   ( MaxTxnsPerId       )
   ) i_rd_table (
     .clk_i,
@@ -176,17 +176,17 @@ module axi_id_remap #(
     .push_i           ( rd_push                                                    ),
     .push_inp_id_i    ( rd_push_inp_id                                             ),
     .push_oup_id_i    ( rd_push_oup_id                                             ),
-    .exists_inp_id_i  ( slv_req_i.ar.id                                            ),
+    .exists_inp_id_i  ( sbr_req_i.ar.id                                            ),
     .exists_o         ( rd_exists                                                  ),
     .exists_oup_id_o  ( rd_exists_id                                               ),
     .exists_full_o    ( rd_exists_full                                             ),
-    .pop_i            ( slv_rsp_o.r_valid && slv_req_i.r_ready && slv_rsp_o.r.last ),
-    .pop_oup_id_i     ( mst_rsp_i.r.id[IdxWidth-1:0]                               ),
-    .pop_inp_id_o     ( slv_rsp_o.r.id                                             )
+    .pop_i            ( sbr_rsp_o.r_valid && sbr_req_i.r_ready && sbr_rsp_o.r.last ),
+    .pop_oup_id_i     ( mgr_rsp_i.r.id[IdxWidth-1:0]                               ),
+    .pop_inp_id_o     ( sbr_rsp_o.r.id                                             )
   );
   assign both_free = wr_free & rd_free;
   lzc #(
-    .WIDTH  ( SlvPortMaxUniqIds  ),
+    .WIDTH  ( SbrPortMaxUniqIds  ),
     .MODE   ( 1'b0               )
   ) i_lzc (
     .in_i     ( both_free        ),
@@ -195,9 +195,9 @@ module axi_id_remap #(
   );
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
-  localparam ZeroWidth = MstPortIdWidth - IdxWidth;
-  assign mst_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
-  assign mst_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
+  localparam ZeroWidth = MgrPortIdWidth - IdxWidth;
+  assign mgr_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
+  assign mgr_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
 
   // Handle requests.
   enum logic [1:0] {Ready, HoldAR, HoldAW, HoldAx} state_d, state_q;
@@ -205,12 +205,12 @@ module axi_id_remap #(
         aw_id_d, aw_id_q;
   logic ar_prio_d, ar_prio_q;
   always_comb begin
-    mst_req_o.aw_valid = 1'b0;
-    slv_rsp_o.aw_ready = 1'b0;
+    mgr_req_o.aw_valid = 1'b0;
+    sbr_rsp_o.aw_ready = 1'b0;
     wr_push            = 1'b0;
     wr_push_oup_id     =   '0;
-    mst_req_o.ar_valid = 1'b0;
-    slv_rsp_o.ar_ready = 1'b0;
+    mgr_req_o.ar_valid = 1'b0;
+    sbr_rsp_o.ar_ready = 1'b0;
     rd_push            = 1'b0;
     rd_push_inp_id     =   '0;
     rd_push_oup_id     =   '0;
@@ -222,48 +222,48 @@ module axi_id_remap #(
     unique case (state_q)
       Ready: begin
         // Reads
-        if (slv_req_i.ar_valid) begin
+        if (sbr_req_i.ar_valid) begin
           // If a burst with the same input ID is already in flight or there are free output IDs:
           if ((rd_exists && !rd_exists_full) || (!rd_exists && !rd_full)) begin
             // Determine the output ID: if another in-flight burst had the same input ID, we must
             // reuse its output ID to maintain ordering; else, we assign the next free ID.
-            rd_push_inp_id     = slv_req_i.ar.id;
+            rd_push_inp_id     = sbr_req_i.ar.id;
             rd_push_oup_id     = rd_exists ? rd_exists_id : rd_free_oup_id;
             // Forward the AR and push a new entry to the read table.
-            mst_req_o.ar_valid = 1'b1;
+            mgr_req_o.ar_valid = 1'b1;
             rd_push            = 1'b1;
           end
         end
 
         // Writes
-        if (slv_req_i.aw_valid) begin
+        if (sbr_req_i.aw_valid) begin
           // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
           // on the write direction.
-          if (!slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+          if (!sbr_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
             // If a burst with the same input ID is already in flight or there are free output IDs:
             if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
               // Determine the output ID: if another in-flight burst had the same input ID, we must
               // reuse its output ID to maintain ordering; else, we assign the next free ID.
               wr_push_oup_id     = wr_exists ? wr_exists_id : wr_free_oup_id;
               // Forward the AW and push a new entry to the write table.
-              mst_req_o.aw_valid = 1'b1;
+              mgr_req_o.aw_valid = 1'b1;
               wr_push            = 1'b1;
             end
           // If this is an ATOP that gives rise to an R response, we must remap to an ID that is
           // free on both read and write direction and push also to the read table.
           // Only allowed if AR does not have arbitration priority
-          end else if (!(ar_prio_q && mst_req_o.ar_valid)) begin
+          end else if (!(ar_prio_q && mgr_req_o.ar_valid)) begin
             // Nullify a potential AR at our output.  This is legal in this state.
-            mst_req_o.ar_valid = 1'b0;
-            slv_rsp_o.ar_ready = 1'b0;
+            mgr_req_o.ar_valid = 1'b0;
+            sbr_rsp_o.ar_ready = 1'b0;
             rd_push            = 1'b0;
             if ((|both_free)) begin
               // Use an output ID that is free in both directions.
               wr_push_oup_id = both_free_oup_id;
-              rd_push_inp_id = slv_req_i.aw.id;
+              rd_push_inp_id = sbr_req_i.aw.id;
               rd_push_oup_id = both_free_oup_id;
               // Forward the AW and push a new entry to both tables.
-              mst_req_o.aw_valid = 1'b1;
+              mgr_req_o.aw_valid = 1'b1;
               rd_push            = 1'b1;
               wr_push            = 1'b1;
               // Give AR priority in the next cycle (so ATOPs cannot infinitely preempt ARs).
@@ -273,69 +273,69 @@ module axi_id_remap #(
         end
 
         // Hold AR, AW, or both if they are valid but not yet ready.
-        if (mst_req_o.ar_valid) begin
-          slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
-          if (!mst_rsp_i.ar_ready) begin
+        if (mgr_req_o.ar_valid) begin
+          sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
+          if (!mgr_rsp_i.ar_ready) begin
             ar_id_d = rd_push_oup_id;
           end
         end
-        if (mst_req_o.aw_valid) begin
-          slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
-          if (!mst_rsp_i.aw_ready) begin
+        if (mgr_req_o.aw_valid) begin
+          sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
+          if (!mgr_rsp_i.aw_ready) begin
             aw_id_d = wr_push_oup_id;
           end
         end
-        if ({mst_req_o.ar_valid, mst_rsp_i.ar_ready,
-             mst_req_o.aw_valid, mst_rsp_i.aw_ready} == 4'b1010) begin
+        if ({mgr_req_o.ar_valid, mgr_rsp_i.ar_ready,
+             mgr_req_o.aw_valid, mgr_rsp_i.aw_ready} == 4'b1010) begin
           state_d = HoldAx;
-        end else if ({mst_req_o.ar_valid, mst_rsp_i.ar_ready} == 2'b10) begin
+        end else if ({mgr_req_o.ar_valid, mgr_rsp_i.ar_ready} == 2'b10) begin
           state_d = HoldAR;
-        end else if ({mst_req_o.aw_valid, mst_rsp_i.aw_ready} == 2'b10) begin
+        end else if ({mgr_req_o.aw_valid, mgr_rsp_i.aw_ready} == 2'b10) begin
           state_d = HoldAW;
         end else begin
           state_d = Ready;
         end
 
-        if (mst_req_o.ar_valid && mst_rsp_i.ar_ready) begin
+        if (mgr_req_o.ar_valid && mgr_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
 
       HoldAR: begin
-        // Drive `mst_req_o.ar.id` through `rd_push_oup_id`.
+        // Drive `mgr_req_o.ar.id` through `rd_push_oup_id`.
         rd_push_oup_id      = ar_id_q;
-        mst_req_o.ar_valid  = 1'b1;
-        slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
-        if (mst_rsp_i.ar_ready) begin
+        mgr_req_o.ar_valid  = 1'b1;
+        sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
+        if (mgr_rsp_i.ar_ready) begin
           state_d = Ready;
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
 
       HoldAW: begin
-        // Drive mst_req_o.aw.id through `wr_push_oup_id`.
+        // Drive mgr_req_o.aw.id through `wr_push_oup_id`.
         wr_push_oup_id      = aw_id_q;
-        mst_req_o.aw_valid  = 1'b1;
-        slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
-        if (mst_rsp_i.aw_ready) begin
+        mgr_req_o.aw_valid  = 1'b1;
+        sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
+        if (mgr_rsp_i.aw_ready) begin
           state_d = Ready;
         end
       end
 
       HoldAx: begin
         rd_push_oup_id     = ar_id_q;
-        mst_req_o.ar_valid = 1'b1;
-        slv_rsp_o.ar_ready = mst_rsp_i.ar_ready;
+        mgr_req_o.ar_valid = 1'b1;
+        sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
         wr_push_oup_id     = aw_id_q;
-        mst_req_o.aw_valid = 1'b1;
-        slv_rsp_o.aw_ready = mst_rsp_i.aw_ready;
-        unique case ({mst_rsp_i.ar_ready, mst_rsp_i.aw_ready})
+        mgr_req_o.aw_valid = 1'b1;
+        sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
+        unique case ({mgr_rsp_i.ar_ready, mgr_rsp_i.aw_ready})
           2'b01:   state_d = HoldAR;
           2'b10:   state_d = HoldAW;
           2'b11:   state_d = Ready;
           default: /*do nothing / stay in this state*/;
         endcase
-        if (mst_rsp_i.ar_ready) begin
+        if (mgr_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
@@ -353,50 +353,50 @@ module axi_id_remap #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
-    assert(SlvPortIdWidth > 32'd0)
-      else $fatal(1, "Parameter SlvPortIdWidth has to be larger than 0!");
-    assert(MstPortIdWidth >= IdxWidth)
-      else $fatal(1, "Parameter MstPortIdWidth has to be at least IdxWidth!");
-    assert (SlvPortMaxUniqIds > 0)
-      else $fatal(1, "Parameter SlvPortMaxUniqIds has to be larger than 0!");
-    assert (SlvPortMaxUniqIds <= 2**SlvPortIdWidth)
-      else $fatal(1, "Parameter SlvPortMaxUniqIds may be at most 2**SlvPortIdWidth!");
+    assert(SbrPortIdWidth > 32'd0)
+      else $fatal(1, "Parameter SbrPortIdWidth has to be larger than 0!");
+    assert(MgrPortIdWidth >= IdxWidth)
+      else $fatal(1, "Parameter MgrPortIdWidth has to be at least IdxWidth!");
+    assert (SbrPortMaxUniqIds > 0)
+      else $fatal(1, "Parameter SbrPortMaxUniqIds has to be larger than 0!");
+    assert (SbrPortMaxUniqIds <= 2**SbrPortIdWidth)
+      else $fatal(1, "Parameter SbrPortMaxUniqIds may be at most 2**SbrPortIdWidth!");
     assert (MaxTxnsPerId > 0)
       else $fatal(1, "Parameter MaxTxnsPerId has to be larger than 0!");
-    assert($bits(slv_req_i.aw.addr) == $bits(mst_req_o.aw.addr))
+    assert($bits(sbr_req_i.aw.addr) == $bits(mgr_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
-    assert($bits(slv_req_i.w.data) == $bits(mst_req_o.w.data))
+    assert($bits(sbr_req_i.w.data) == $bits(mgr_req_o.w.data))
       else $fatal(1, "AXI W data widths are not equal!");
-    assert($bits(slv_req_i.w.user) == $bits(mst_req_o.w.user))
+    assert($bits(sbr_req_i.w.user) == $bits(mgr_req_o.w.user))
       else $fatal(1, "AXI W user widths are not equal!");
-    assert($bits(slv_req_i.ar.addr) == $bits(mst_req_o.ar.addr))
+    assert($bits(sbr_req_i.ar.addr) == $bits(mgr_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(slv_rsp_o.r.data) == $bits(mst_rsp_i.r.data))
+    assert($bits(sbr_rsp_o.r.data) == $bits(mgr_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
-    assert ($bits(slv_req_i.aw.id) == SlvPortIdWidth);
-    assert ($bits(slv_rsp_o.b.id) == SlvPortIdWidth);
-    assert ($bits(slv_req_i.ar.id) == SlvPortIdWidth);
-    assert ($bits(slv_rsp_o.r.id) == SlvPortIdWidth);
-    assert ($bits(mst_req_o.aw.id) == MstPortIdWidth);
-    assert ($bits(mst_rsp_i.b.id) == MstPortIdWidth);
-    assert ($bits(mst_req_o.ar.id) == MstPortIdWidth);
-    assert ($bits(mst_rsp_i.r.id) == MstPortIdWidth);
+    assert ($bits(sbr_req_i.aw.id) == SbrPortIdWidth);
+    assert ($bits(sbr_rsp_o.b.id) == SbrPortIdWidth);
+    assert ($bits(sbr_req_i.ar.id) == SbrPortIdWidth);
+    assert ($bits(sbr_rsp_o.r.id) == SbrPortIdWidth);
+    assert ($bits(mgr_req_o.aw.id) == MgrPortIdWidth);
+    assert ($bits(mgr_rsp_i.b.id) == MgrPortIdWidth);
+    assert ($bits(mgr_req_o.ar.id) == MgrPortIdWidth);
+    assert ($bits(mgr_rsp_i.r.id) == MgrPortIdWidth);
   end
   default disable iff (!rst_ni);
-  assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_rsp_o.aw_ready
-      |-> mst_req_o.aw_valid && mst_rsp_i.aw_ready);
-  assert property (@(posedge clk_i) mst_rsp_i.b_valid && mst_req_o.b_ready
-      |-> slv_rsp_o.b_valid && slv_req_i.b_ready);
-  assert property (@(posedge clk_i) slv_req_i.ar_valid && slv_rsp_o.ar_ready
-      |-> mst_req_o.ar_valid && mst_rsp_i.ar_ready);
-  assert property (@(posedge clk_i) mst_rsp_i.r_valid && mst_req_o.r_ready
-      |-> slv_rsp_o.r_valid && slv_req_i.r_ready);
-  assert property (@(posedge clk_i) slv_rsp_o.r_valid
-      |-> slv_rsp_o.r.last == mst_rsp_i.r.last);
-  assert property (@(posedge clk_i) mst_req_o.ar_valid && !mst_rsp_i.ar_ready
-      |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
-  assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_rsp_i.aw_ready
-      |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
+  assert property (@(posedge clk_i) sbr_req_i.aw_valid && sbr_rsp_o.aw_ready
+      |-> mgr_req_o.aw_valid && mgr_rsp_i.aw_ready);
+  assert property (@(posedge clk_i) mgr_rsp_i.b_valid && mgr_req_o.b_ready
+      |-> sbr_rsp_o.b_valid && sbr_req_i.b_ready);
+  assert property (@(posedge clk_i) sbr_req_i.ar_valid && sbr_rsp_o.ar_ready
+      |-> mgr_req_o.ar_valid && mgr_rsp_i.ar_ready);
+  assert property (@(posedge clk_i) mgr_rsp_i.r_valid && mgr_req_o.r_ready
+      |-> sbr_rsp_o.r_valid && sbr_req_i.r_ready);
+  assert property (@(posedge clk_i) sbr_rsp_o.r_valid
+      |-> sbr_rsp_o.r.last == mgr_rsp_i.r.last);
+  assert property (@(posedge clk_i) mgr_req_o.ar_valid && !mgr_rsp_i.ar_ready
+      |=> mgr_req_o.ar_valid && $stable(mgr_req_o.ar.id));
+  assert property (@(posedge clk_i) mgr_req_o.aw_valid && !mgr_rsp_i.aw_ready
+      |=> mgr_req_o.aw_valid && $stable(mgr_req_o.aw.id));
   `endif
   // pragma translate_on
 endmodule
@@ -581,80 +581,80 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
-  parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
+  parameter int unsigned AXI_SBR_PORT_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_SBR_PORT_MAX_UNIQ_IDS = 32'd0,
   parameter int unsigned AXI_MAX_TXNS_PER_ID = 32'd0,
-  parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_MGR_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
   parameter int unsigned AXI_USER_WIDTH = 32'd0
 ) (
   input logic     clk_i,
   input logic     rst_ni,
-  AXI_BUS.Slave   slv,
-  AXI_BUS.Master  mst
+  AXI_BUS.Subordinate   sbr,
+  AXI_BUS.Manager  mgr
 );
-  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] slv_id_t;
-  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] mst_id_t;
+  typedef logic [AXI_SBR_PORT_ID_WIDTH-1:0] sbr_id_t;
+  typedef logic [AXI_MGR_PORT_ID_WIDTH-1:0] mgr_id_t;
   typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(slv_port_axi_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
-  `AXI_TYPEDEF_RSP_T(slv_port_axi_rsp_t, slv_b_chan_t, slv_r_chan_t)
+  `AXI_TYPEDEF_AW_CHAN_T(sbr_aw_chan_t, axi_addr_t, sbr_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(sbr_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(sbr_b_chan_t, sbr_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(sbr_ar_chan_t, axi_addr_t, sbr_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(sbr_r_chan_t, axi_data_t, sbr_id_t, axi_user_t)
+  `AXI_TYPEDEF_REQ_T(sbr_port_axi_req_t, sbr_aw_chan_t, sbr_w_chan_t, sbr_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(sbr_port_axi_rsp_t, sbr_b_chan_t, sbr_r_chan_t)
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_REQ_T(mst_port_axi_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
-  `AXI_TYPEDEF_RSP_T(mst_port_axi_rsp_t, mst_b_chan_t, mst_r_chan_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mgr_aw_chan_t, axi_addr_t, mgr_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mgr_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mgr_b_chan_t, mgr_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mgr_ar_chan_t, axi_addr_t, mgr_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mgr_r_chan_t, axi_data_t, mgr_id_t, axi_user_t)
+  `AXI_TYPEDEF_REQ_T(mgr_port_axi_req_t, mgr_aw_chan_t, mgr_w_chan_t, mgr_ar_chan_t)
+  `AXI_TYPEDEF_RSP_T(mgr_port_axi_rsp_t, mgr_b_chan_t, mgr_r_chan_t)
 
-  slv_port_axi_req_t slv_req;
-  slv_port_axi_rsp_t slv_rsp;
-  mst_port_axi_req_t mst_req;
-  mst_port_axi_rsp_t mst_rsp;
+  sbr_port_axi_req_t sbr_req;
+  sbr_port_axi_rsp_t sbr_rsp;
+  mgr_port_axi_req_t mgr_req;
+  mgr_port_axi_rsp_t mgr_rsp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RSP(slv, slv_rsp)
-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RSP(mst_rsp, mst)
+  `AXI_ASSIGN_TO_REQ(sbr_req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, sbr_rsp)
+  `AXI_ASSIGN_FROM_REQ(mgr, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, mgr)
 
   axi_id_remap #(
-    .SlvPortIdWidth     ( AXI_SLV_PORT_ID_WIDTH     ),
-    .SlvPortMaxUniqIds  ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
+    .SbrPortIdWidth     ( AXI_SBR_PORT_ID_WIDTH     ),
+    .SbrPortMaxUniqIds  ( AXI_SBR_PORT_MAX_UNIQ_IDS ),
     .MaxTxnsPerId       ( AXI_MAX_TXNS_PER_ID       ),
-    .MstPortIdWidth     ( AXI_MST_PORT_ID_WIDTH     ),
-    .slv_port_axi_req_t ( slv_port_axi_req_t        ),
-    .slv_port_axi_rsp_t ( slv_port_axi_rsp_t        ),
-    .mst_port_axi_req_t ( mst_port_axi_req_t        ),
-    .mst_port_axi_rsp_t ( mst_port_axi_rsp_t        )
+    .MgrPortIdWidth     ( AXI_MGR_PORT_ID_WIDTH     ),
+    .sbr_port_axi_req_t ( sbr_port_axi_req_t        ),
+    .sbr_port_axi_rsp_t ( sbr_port_axi_rsp_t        ),
+    .mgr_port_axi_req_t ( mgr_port_axi_req_t        ),
+    .mgr_port_axi_rsp_t ( mgr_port_axi_rsp_t        )
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rsp ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rsp )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
   // pragma translate_off
   `ifndef VERILATOR
     initial begin
-      assert (slv.AXI_ID_WIDTH   == AXI_SLV_PORT_ID_WIDTH);
-      assert (slv.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
-      assert (slv.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
-      assert (slv.AXI_USER_WIDTH == AXI_USER_WIDTH);
-      assert (mst.AXI_ID_WIDTH   == AXI_MST_PORT_ID_WIDTH);
-      assert (mst.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
-      assert (mst.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
-      assert (mst.AXI_USER_WIDTH == AXI_USER_WIDTH);
+      assert (sbr.AXI_ID_WIDTH   == AXI_SBR_PORT_ID_WIDTH);
+      assert (sbr.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (sbr.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (sbr.AXI_USER_WIDTH == AXI_USER_WIDTH);
+      assert (mgr.AXI_ID_WIDTH   == AXI_MGR_PORT_ID_WIDTH);
+      assert (mgr.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
+      assert (mgr.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
+      assert (mgr.AXI_USER_WIDTH == AXI_USER_WIDTH);
     end
   `endif
   // pragma translate_on

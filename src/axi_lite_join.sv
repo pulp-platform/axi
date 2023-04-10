@@ -17,8 +17,8 @@
 
 /// A connector that joins two AXI-Lite interfaces.
 module axi_lite_join_intf (
-  AXI_LITE.Slave  in,
-  AXI_LITE.Master out
+  AXI_LITE.Subordinate  in,
+  AXI_LITE.Manager out
 );
 
   `AXI_LITE_ASSIGN(out, in)

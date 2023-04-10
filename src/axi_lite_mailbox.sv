@@ -12,7 +12,7 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
-// Description: A mailbox with two AXI4-Lite slave ports and associated interrupt requests.
+// Description: A mailbox with two AXI4-Lite subordinate ports and associated interrupt requests.
 //              See `doc/axi_lite_mailbox.md` for the documentation, including the definition
 //              of parameters and ports.
 
@@ -32,9 +32,9 @@ module axi_lite_mailbox #(
   input  logic                clk_i,       // Clock
   input  logic                rst_ni,      // Asynchronous reset active low
   input  logic                test_i,      // Testmode enable
-  // slave ports [1:0]
-  input  axi_lite_req_t [1:0] slv_reqs_i,
-  output axi_lite_rsp_t [1:0] slv_rsps_o,
+  // subordinate ports [1:0]
+  input  axi_lite_req_t [1:0] sbr_reqs_i,
+  output axi_lite_rsp_t [1:0] sbr_rsps_o,
   output logic          [1:0] irq_o,       // interrupt output for each port
   input  addr_t         [1:0] base_addr_i  // base address for each port
 );
@@ -50,11 +50,11 @@ module axi_lite_mailbox #(
   logic   [1:0] w_mbox_flush, r_mbox_flush; // index is port
   data_t  [1:0] mbox_w_data,  mbox_r_data;  // index is port
   usage_t [1:0] mbox_usage;                 // index is the instantiated mailbox FIFO
-  // interrupt request from this slave port, level triggered, active high --> convert
-  logic   [1:0] slv_irq;
+  // interrupt request from this subordinate port, level triggered, active high --> convert
+  logic   [1:0] sbr_irq;
   logic   [1:0] clear_irq;
 
-  axi_lite_mailbox_slave #(
+  axi_lite_mailbox_subordinate #(
     .MailboxDepth   ( MailboxDepth   ),
     .AddrWidth      ( AddrWidth      ),
     .DataWidth      ( DataWidth      ),
@@ -63,13 +63,13 @@ module axi_lite_mailbox #(
     .addr_t         ( addr_t         ),
     .data_t         ( data_t         ),
     .usage_t        ( usage_t        )  // fill pointer from MBOX FIFO
-  ) i_slv_port_0 (
+  ) i_sbr_port_0 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    // slave port
-    .slv_req_i      ( slv_reqs_i[0]   ),
-    .slv_rsp_o      ( slv_rsps_o[0]   ),
-    .base_addr_i    ( base_addr_i[0]  ), // base address for the slave port
+    // subordinate port
+    .sbr_req_i      ( sbr_reqs_i[0]   ),
+    .sbr_rsp_o      ( sbr_rsps_o[0]   ),
+    .base_addr_i    ( base_addr_i[0]  ), // base address for the subordinate port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[0]  ),
     .mbox_w_full_i  ( mbox_full[0]    ),
@@ -83,11 +83,11 @@ module axi_lite_mailbox #(
     .mbox_r_flush_o ( r_mbox_flush[0] ),
     .mbox_r_usage_i ( mbox_usage[1]   ),
     // interrupt output, level triggered, active high, conversion in top
-    .irq_o          ( slv_irq[0]      ),
+    .irq_o          ( sbr_irq[0]      ),
     .clear_irq_o    ( clear_irq[0]    )
   );
 
-  axi_lite_mailbox_slave #(
+  axi_lite_mailbox_subordinate #(
     .MailboxDepth   ( MailboxDepth   ),
     .AddrWidth      ( AddrWidth      ),
     .DataWidth      ( DataWidth      ),
@@ -96,13 +96,13 @@ module axi_lite_mailbox #(
     .addr_t         ( addr_t         ),
     .data_t         ( data_t         ),
     .usage_t        ( usage_t        )  // fill pointer from MBOX FIFO
-  ) i_slv_port_1 (
+  ) i_sbr_port_1 (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    // slave port
-    .slv_req_i      ( slv_reqs_i[1]   ),
-    .slv_rsp_o      ( slv_rsps_o[1]   ),
-    .base_addr_i    ( base_addr_i[1]  ), // base address for the slave port
+    // subordinate port
+    .sbr_req_i      ( sbr_reqs_i[1]   ),
+    .sbr_rsp_o      ( sbr_rsps_o[1]   ),
+    .base_addr_i    ( base_addr_i[1]  ), // base address for the subordinate port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[1]  ),
     .mbox_w_full_i  ( mbox_full[1]    ),
@@ -116,7 +116,7 @@ module axi_lite_mailbox #(
     .mbox_r_flush_o ( r_mbox_flush[1] ),
     .mbox_r_usage_i ( mbox_usage[0]   ),
     // interrupt output, level triggered, active high, conversion in top
-    .irq_o          ( slv_irq[1]      ),
+    .irq_o          ( sbr_irq[1]      ),
     .clear_irq_o    ( clear_irq[1]    )
   );
 
@@ -174,7 +174,7 @@ module axi_lite_mailbox #(
         if (clear_irq[i]) begin
           irq_d      = 1'b0;
           update_irq = 1'b1;
-        end else if (!irq_q && slv_irq[i]) begin
+        end else if (!irq_q && sbr_irq[i]) begin
           irq_d      = 1'b1;
           update_irq = 1'b1;
           irq_o[i]   = IrqActHigh; // on update of the register pulse the irq signal
@@ -183,7 +183,7 @@ module axi_lite_mailbox #(
 
       `FFLARN(irq_q, irq_d, update_irq, '0, clk_i, rst_ni)
     end else begin : gen_irq_level
-      assign irq_o[i] = (IrqActHigh) ? slv_irq[i] : ~slv_irq[i];
+      assign irq_o[i] = (IrqActHigh) ? sbr_irq[i] : ~sbr_irq[i];
     end
   end
 
@@ -200,8 +200,8 @@ endmodule
 
 `include "axi/typedef.svh"
 
-// slave port module
-module axi_lite_mailbox_slave #(
+// subordinate port module
+module axi_lite_mailbox_subordinate #(
   parameter int unsigned MailboxDepth   = 32'd16,
   parameter int unsigned AddrWidth      = 32'd32,
   parameter int unsigned DataWidth      = 32'd32,
@@ -213,10 +213,10 @@ module axi_lite_mailbox_slave #(
 ) (
   input  logic          clk_i,   // Clock
   input  logic          rst_ni,  // Asynchronous reset active low
-  // slave port
-  input  axi_lite_req_t slv_req_i,
-  output axi_lite_rsp_t slv_rsp_o,
-  input  addr_t         base_addr_i, // base address for the slave port
+  // subordinate port
+  input  axi_lite_req_t sbr_req_i,
+  output axi_lite_rsp_t sbr_rsp_o,
+  input  addr_t         base_addr_i, // base address for the subordinate port
   // write FIFO port
   output data_t         mbox_w_data_o,
   input  logic          mbox_w_full_i,
@@ -300,7 +300,7 @@ module axi_lite_mailbox_slave #(
 
   // Mailbox FIFO data assignments
   for (genvar i = 0; i < (DataWidth/8); i++) begin : gen_w_mbox_data
-    assign mbox_w_data_o[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : '0;
+    assign mbox_w_data_o[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : '0;
   end
 
   // combinational mailbox register assignments, for the read only registers
@@ -313,12 +313,12 @@ module axi_lite_mailbox_slave #(
   assign irq_o    = |irqp_q;                          // generate an active-high level irq
 
   always_comb begin
-    // slave port channel outputs for the AW, W and R channel, other driven from spill register
-    slv_rsp_o.aw_ready = 1'b0;
-    slv_rsp_o.w_ready  = 1'b0;
+    // subordinate port channel outputs for the AW, W and R channel, other driven from spill register
+    sbr_rsp_o.aw_ready = 1'b0;
+    sbr_rsp_o.w_ready  = 1'b0;
     b_chan             = '{resp: axi_pkg::RESP_SLVERR};
     b_valid            = 1'b0;
-    slv_rsp_o.ar_ready = 1'b0;
+    sbr_rsp_o.ar_ready = 1'b0;
     r_chan             = '{data: '0, resp: axi_pkg::RESP_SLVERR};
     r_valid            = 1'b0;
     // Default assignments for the internal registers
@@ -360,11 +360,11 @@ module axi_lite_mailbox_slave #(
     // it will generate a new irq when it is edge triggered, or the level will stay at its
     // active state.
 
-    // Check if there is a pending read request on the slave port.
-    if (slv_req_i.ar_valid) begin
+    // Check if there is a pending read request on the subordinate port.
+    if (sbr_req_i.ar_valid) begin
       // set the right read channel output depending on the address decoding
       if (dec_r_valid) begin
-        // when decode not valid, send the default slaveerror
+        // when decode not valid, send the default subordinateerror
         // read the right register when the transfer happens and decode is valid
         unique case (reg_e'(r_reg_idx))
           MBOXW: r_chan = '{data: data_t'( 32'hFEEDC0DE ), resp: axi_pkg::RESP_OKAY};
@@ -397,7 +397,7 @@ module axi_lite_mailbox_slave #(
       end
       r_valid = 1'b1;
       if (r_ready) begin
-        slv_rsp_o.ar_ready = 1'b1;
+        sbr_rsp_o.ar_ready = 1'b1;
       end
     end // read register
 
@@ -405,7 +405,7 @@ module axi_lite_mailbox_slave #(
     // Write registers
     // -------------------------------------------
     // Wait for control and write data to be valid.
-    if (slv_req_i.aw_valid && slv_req_i.w_valid) begin
+    if (sbr_req_i.aw_valid && sbr_req_i.w_valid) begin
       // Can do the handshake here as the b response goes into a spill register with latency one.
       // Without the B spill register, the B channel would violate the AXI stable requirement.
       b_valid = 1'b1;
@@ -429,7 +429,7 @@ module axi_lite_mailbox_slave #(
             // ERROR:  read only
             WIRQT:  begin
               for (int unsigned i = 0; i < DataWidth/8; i++) begin
-                wirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                wirqt_d[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (wirqt_d >= data_t'(MailboxDepth)) begin
                 // the `-1` is to have the interrupt fireing when the FIFO is comletely full
@@ -440,7 +440,7 @@ module axi_lite_mailbox_slave #(
             end
             RIRQT:  begin
               for (int unsigned i = 0; i < DataWidth/8; i++) begin
-                rirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                rirqt_d[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (rirqt_d >= data_t'(MailboxDepth)) begin
               // Threshold to maximal value, minus two to prevent overflow in usage
@@ -451,37 +451,37 @@ module axi_lite_mailbox_slave #(
             end
             IRQS:   begin
               // Acknowledge and clear the register by asserting the respective one
-              if (slv_req_i.w.strb[0]) begin
+              if (sbr_req_i.w.strb[0]) begin
                 // *_d signal is set in the beginning of this process, prevent accidental
                 // overwrite of not acknowledged irq
-                irqs_d[2]   = slv_req_i.w.data[2] ? 1'b0 : irqs_d[2]; // Error irq status
-                irqs_d[1]   = slv_req_i.w.data[1] ? 1'b0 : irqs_d[1]; // Read  irq status
-                irqs_d[0]   = slv_req_i.w.data[0] ? 1'b0 : irqs_d[0]; // Write irq status
+                irqs_d[2]   = sbr_req_i.w.data[2] ? 1'b0 : irqs_d[2]; // Error irq status
+                irqs_d[1]   = sbr_req_i.w.data[1] ? 1'b0 : irqs_d[1]; // Read  irq status
+                irqs_d[0]   = sbr_req_i.w.data[0] ? 1'b0 : irqs_d[0]; // Write irq status
                 clear_irq_o = 1'b1;
                 update_regs = 1'b1;
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             IRQEN:  begin
-              if (slv_req_i.w.strb[0]) begin
-                irqen_d[2:0]  = slv_req_i.w.data[2:0]; // set the irq enable bits
+              if (sbr_req_i.w.strb[0]) begin
+                irqen_d[2:0]  = sbr_req_i.w.data[2:0]; // set the irq enable bits
                 update_regs = 1'b1;
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             // IRQP: read only
             CTRL:   begin
-              if (slv_req_i.w.strb[0]) begin
-                mbox_r_flush_o = slv_req_i.w.data[1]; // Flush read  FIFO
-                mbox_w_flush_o = slv_req_i.w.data[0]; // Flush write FIFO
+              if (sbr_req_i.w.strb[0]) begin
+                mbox_r_flush_o = sbr_req_i.w.data[1]; // Flush read  FIFO
+                mbox_w_flush_o = sbr_req_i.w.data[0]; // Flush write FIFO
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             default : /* use default b_chan */;
           endcase
         end
-        slv_rsp_o.aw_ready = 1'b1;
-        slv_rsp_o.w_ready  = 1'b1;
+        sbr_rsp_o.aw_ready = 1'b1;
+        sbr_rsp_o.w_ready  = 1'b1;
       end // if (b_ready): Does not violate AXI spec, because the ready comes from an internal
           // spill register and does not propagate the ready from the b channel.
     end // write register
@@ -495,7 +495,7 @@ module axi_lite_mailbox_slave #(
     .addr_t   ( addr_t  ),
     .rule_t   ( rule_t  )
   ) i_waddr_decode (
-    .addr_i           ( slv_req_i.aw.addr ),
+    .addr_i           ( sbr_req_i.aw.addr ),
     .addr_map_i       ( addr_map          ),
     .idx_o            ( w_reg_idx         ),
     .dec_valid_o      ( dec_w_valid       ),
@@ -511,9 +511,9 @@ module axi_lite_mailbox_slave #(
     .valid_i ( b_valid           ),
     .ready_o ( b_ready           ),
     .data_i  ( b_chan            ),
-    .valid_o ( slv_rsp_o.b_valid ),
-    .ready_i ( slv_req_i.b_ready ),
-    .data_o  ( slv_rsp_o.b       )
+    .valid_o ( sbr_rsp_o.b_valid ),
+    .ready_i ( sbr_req_i.b_ready ),
+    .data_o  ( sbr_rsp_o.b       )
   );
   addr_decode #(
     .NoIndices( NumRegs ),
@@ -521,7 +521,7 @@ module axi_lite_mailbox_slave #(
     .addr_t   ( addr_t  ),
     .rule_t   ( rule_t  )
   ) i_raddr_decode (
-    .addr_i           ( slv_req_i.ar.addr ),
+    .addr_i           ( sbr_req_i.ar.addr ),
     .addr_map_i       ( addr_map          ),
     .idx_o            ( r_reg_idx         ),
     .dec_valid_o      ( dec_r_valid       ),
@@ -537,17 +537,17 @@ module axi_lite_mailbox_slave #(
     .valid_i ( r_valid           ),
     .ready_o ( r_ready           ),
     .data_i  ( r_chan            ),
-    .valid_o ( slv_rsp_o.r_valid ),
-    .ready_i ( slv_req_i.r_ready ),
-    .data_o  ( slv_rsp_o.r       )
+    .valid_o ( sbr_rsp_o.r_valid ),
+    .ready_i ( sbr_req_i.r_ready ),
+    .data_o  ( sbr_rsp_o.r       )
   );
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : proc_check_params
-    assert (AddrWidth == $bits(slv_req_i.aw.addr)) else $fatal(1, "AW AddrWidth mismatch");
-    assert (DataWidth == $bits(slv_req_i.w.data))  else $fatal(1, " W DataWidth mismatch");
-    assert (AddrWidth == $bits(slv_req_i.ar.addr)) else $fatal(1, "AR AddrWidth mismatch");
-    assert (DataWidth == $bits(slv_rsp_o.r.data))  else $fatal(1, " R DataWidth mismatch");
+    assert (AddrWidth == $bits(sbr_req_i.aw.addr)) else $fatal(1, "AW AddrWidth mismatch");
+    assert (DataWidth == $bits(sbr_req_i.w.data))  else $fatal(1, " W DataWidth mismatch");
+    assert (AddrWidth == $bits(sbr_req_i.ar.addr)) else $fatal(1, "AR AddrWidth mismatch");
+    assert (DataWidth == $bits(sbr_rsp_o.r.data))  else $fatal(1, " R DataWidth mismatch");
   end
   `endif
   // pragma translate_on
@@ -567,7 +567,7 @@ module axi_lite_mailbox_intf #(
   input  logic         clk_i,      // Clock
   input  logic         rst_ni,     // Asynchronous reset active low
   input  logic         test_i,     // Testmode enable
-  AXI_LITE.Slave       slv [1:0],  // slave ports [1:0]
+  AXI_LITE.Subordinate       sbr [1:0],  // subordinate ports [1:0]
   output logic   [1:0] irq_o,      // interrupt output for each port
   input  addr_t  [1:0] base_addr_i // base address for each port
 );
@@ -581,12 +581,12 @@ module axi_lite_mailbox_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_lite_t, r_chan_lite_t)
 
-  axi_lite_req_t [1:0] slv_reqs;
-  axi_lite_rsp_t [1:0] slv_rsps;
+  axi_lite_req_t [1:0] sbr_reqs;
+  axi_lite_rsp_t [1:0] sbr_rsps;
 
   for (genvar i = 0; i < 2; i++) begin : gen_port_assign
-    `AXI_LITE_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
-    `AXI_LITE_ASSIGN_FROM_RSP(slv[i], slv_rsps[i])
+    `AXI_LITE_ASSIGN_TO_REQ(sbr_reqs[i], sbr[i])
+    `AXI_LITE_ASSIGN_FROM_RSP(sbr[i], sbr_rsps[i])
   end
 
   axi_lite_mailbox #(
@@ -601,9 +601,9 @@ module axi_lite_mailbox_intf #(
     .clk_i,      // Clock
     .rst_ni,     // Asynchronous reset active low
     .test_i,     // Testmode enable
-    // slave ports [1:0]
-    .slv_reqs_i ( slv_reqs ),
-    .slv_rsps_o ( slv_rsps ),
+    // subordinate ports [1:0]
+    .sbr_reqs_i ( sbr_reqs ),
+    .sbr_rsps_o ( sbr_rsps ),
     .irq_o,      // interrupt output for each port
     .base_addr_i // base address for each port
   );
@@ -611,13 +611,13 @@ module axi_lite_mailbox_intf #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assert (slv[0].AXI_ADDR_WIDTH == AXI_ADDR_WIDTH)
+    assert (sbr[0].AXI_ADDR_WIDTH == AXI_ADDR_WIDTH)
         else $fatal(1, "LITE Interface [0] AXI_ADDR_WIDTH missmatch!");
-    assert (slv[1].AXI_ADDR_WIDTH == AXI_ADDR_WIDTH)
+    assert (sbr[1].AXI_ADDR_WIDTH == AXI_ADDR_WIDTH)
         else $fatal(1, "LITE Interface [1] AXI_ADDR_WIDTH missmatch!");
-    assert (slv[0].AXI_DATA_WIDTH == AXI_DATA_WIDTH)
+    assert (sbr[0].AXI_DATA_WIDTH == AXI_DATA_WIDTH)
         else $fatal(1, "LITE Interface [0] AXI_DATA_WIDTH missmatch!");
-    assert (slv[1].AXI_DATA_WIDTH == AXI_DATA_WIDTH)
+    assert (sbr[1].AXI_DATA_WIDTH == AXI_DATA_WIDTH)
         else $fatal(1, "LITE Interface [1] AXI_DATA_WIDTH missmatch!");
   end
   `endif

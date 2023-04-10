@@ -12,7 +12,7 @@
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 `include "common_cells/registers.svh"
-/// AXI4+ATOP slave module which translates AXI bursts into a memory stream.
+/// AXI4+ATOP subordinate module which translates AXI bursts into a memory stream.
 /// If both read and write channels of the AXI4+ATOP are active, both will have an
 /// utilization of 50%.
 module axi_to_mem #(
@@ -49,28 +49,28 @@ module axi_to_mem #(
   input  logic                           rst_ni,
   /// The unit is busy handling an AXI4+ATOP request.
   output logic                           busy_o,
-  /// AXI4+ATOP slave port, request input.
+  /// AXI4+ATOP subordinate port, request input.
   input  axi_req_t                       axi_req_i,
-  /// AXI4+ATOP slave port, response output.
+  /// AXI4+ATOP subordinate port, response output.
   output axi_rsp_t                       axi_rsp_o,
-  /// Memory stream master, request is valid for this bank.
+  /// Memory stream manager, request is valid for this bank.
   output logic           [NumBanks-1:0]  mem_req_o,
-  /// Memory stream master, request can be granted by this bank.
+  /// Memory stream manager, request can be granted by this bank.
   input  logic           [NumBanks-1:0]  mem_gnt_i,
-  /// Memory stream master, byte address of the request.
+  /// Memory stream manager, byte address of the request.
   output addr_t          [NumBanks-1:0]  mem_addr_o,
-  /// Memory stream master, write data for this bank. Valid when `mem_req_o`.
+  /// Memory stream manager, write data for this bank. Valid when `mem_req_o`.
   output mem_data_t      [NumBanks-1:0]  mem_wdata_o,
-  /// Memory stream master, byte-wise strobe (byte enable).
+  /// Memory stream manager, byte-wise strobe (byte enable).
   output mem_strb_t      [NumBanks-1:0]  mem_strb_o,
-  /// Memory stream master, `axi_pkg::atop_t` signal associated with this request.
+  /// Memory stream manager, `axi_pkg::atop_t` signal associated with this request.
   output axi_pkg::atop_t [NumBanks-1:0]  mem_atop_o,
-  /// Memory stream master, write enable. Then asserted store of `mem_w_data` is requested.
+  /// Memory stream manager, write enable. Then asserted store of `mem_w_data` is requested.
   output logic           [NumBanks-1:0]  mem_we_o,
-  /// Memory stream master, response is valid. This module expects always a response valid for a
+  /// Memory stream manager, response is valid. This module expects always a response valid for a
   /// request regardless if the request was a write or a read.
   input  logic           [NumBanks-1:0]  mem_rvalid_i,
-  /// Memory stream master, read response data.
+  /// Memory stream manager, read response data.
   input  mem_data_t      [NumBanks-1:0]  mem_rdata_i
 );
 
@@ -495,8 +495,8 @@ module axi_to_mem_intf #(
   input  logic                            rst_ni,
   /// See `axi_to_mem`, port `busy_o`.
   output logic                            busy_o,
-  /// AXI4+ATOP slave interface port.
-  AXI_BUS.Slave                           slv,
+  /// AXI4+ATOP subordinate interface port.
+  AXI_BUS.Subordinate                           sbr,
   /// See `axi_to_mem`, port `mem_req_o`.
   output logic           [NUM_BANKS-1:0]  mem_req_o,
   /// See `axi_to_mem`, port `mem_gnt_i`.
@@ -527,10 +527,10 @@ module axi_to_mem_intf #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RSP_T(rsp_t, b_chan_t, r_chan_t)
-  req_t   req;
+  req_t  req;
   rsp_t  rsp;
-  `AXI_ASSIGN_TO_REQ(req, slv)
-  `AXI_ASSIGN_FROM_RSP(slv, rsp)
+  `AXI_ASSIGN_TO_REQ(req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, rsp)
   axi_to_mem #(
     .axi_req_t    ( req_t          ),
     .axi_rsp_t    ( rsp_t          ),

@@ -32,26 +32,26 @@ module axi_multicut #(
 ) (
   input  logic     clk_i,   // Clock
   input  logic     rst_ni,  // Asynchronous reset active low
-  // slave port
-  input  axi_req_t slv_req_i,
-  output axi_rsp_t slv_rsp_o,
-  // master port
-  output axi_req_t mst_req_o,
-  input  axi_rsp_t mst_rsp_i
+  // subordinate port
+  input  axi_req_t sbr_req_i,
+  output axi_rsp_t sbr_rsp_o,
+  // manager port
+  output axi_req_t mgr_req_o,
+  input  axi_rsp_t mgr_rsp_i
 );
 
   if (NumCuts == '0) begin : gen_no_cut
     // degenerate case, connect input to output
-    assign mst_req_o = slv_req_i;
-    assign slv_rsp_o = mst_rsp_i;
+    assign mgr_req_o = sbr_req_i;
+    assign sbr_rsp_o = mgr_rsp_i;
   end else begin : gen_axi_cut
     // instantiate all needed cuts
     axi_req_t [NumCuts:0] cut_req;
     axi_rsp_t [NumCuts:0] cut_rsp;
 
-    // connect slave to the lowest index
-    assign cut_req[0] = slv_req_i;
-    assign slv_rsp_o  = cut_rsp[0];
+    // connect subordinate to the lowest index
+    assign cut_req[0] = sbr_req_i;
+    assign sbr_rsp_o  = cut_rsp[0];
 
     // AXI cuts
     for (genvar i = 0; i < NumCuts; i++) begin : gen_axi_cuts
@@ -67,16 +67,16 @@ module axi_multicut #(
       ) i_cut (
         .clk_i,
         .rst_ni,
-        .slv_req_i ( cut_req[i]   ),
-        .slv_rsp_o ( cut_rsp[i]   ),
-        .mst_req_o ( cut_req[i+1] ),
-        .mst_rsp_i ( cut_rsp[i+1] )
+        .sbr_req_i ( cut_req[i]   ),
+        .sbr_rsp_o ( cut_rsp[i]   ),
+        .mgr_req_o ( cut_req[i+1] ),
+        .mgr_rsp_i ( cut_rsp[i+1] )
       );
     end
 
-    // connect master to the highest index
-    assign mst_req_o        = cut_req[NumCuts];
-    assign cut_rsp[NumCuts] = mst_rsp_i;
+    // connect manager to the highest index
+    assign mgr_req_o        = cut_req[NumCuts];
+    assign cut_rsp[NumCuts] = mgr_rsp_i;
   end
 
   // Check the invariants
@@ -102,8 +102,8 @@ module axi_multicut_intf #(
 ) (
   input logic    clk_i,
   input logic    rst_ni,
-  AXI_BUS.Slave  in,
-  AXI_BUS.Master out
+  AXI_BUS.Subordinate  in,
+  AXI_BUS.Manager out
 );
 
   typedef logic [ID_WIDTH-1:0]     id_t;
@@ -120,14 +120,14 @@ module axi_multicut_intf #(
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t slv_req,  mst_req;
-  axi_rsp_t slv_rsp, mst_rsp;
+  axi_req_t sbr_req,  mgr_req;
+  axi_rsp_t sbr_rsp, mgr_rsp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_ASSIGN_FROM_RSP(in, slv_rsp)
+  `AXI_ASSIGN_TO_REQ(sbr_req, in)
+  `AXI_ASSIGN_FROM_RSP(in, sbr_rsp)
 
-  `AXI_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_ASSIGN_TO_RSP(mst_rsp, out)
+  `AXI_ASSIGN_FROM_REQ(out, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, out)
 
   axi_multicut #(
     .NumCuts   (  NUM_CUTS ),
@@ -141,10 +141,10 @@ module axi_multicut_intf #(
   ) i_axi_multicut (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rsp ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rsp )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
   // Check the invariants.
@@ -178,8 +178,8 @@ module axi_lite_multicut_intf #(
 ) (
   input logic     clk_i  ,
   input logic     rst_ni ,
-  AXI_LITE.Slave  in     ,
-  AXI_LITE.Master out
+  AXI_LITE.Subordinate  in     ,
+  AXI_LITE.Manager out
 );
 
   typedef logic [ADDR_WIDTH-1:0]   addr_t;
@@ -194,14 +194,14 @@ module axi_lite_multicut_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t slv_req, mst_req;
-  axi_rsp_t slv_rsp, mst_rsp;
+  axi_req_t sbr_req,  mgr_req;
+  axi_rsp_t sbr_rsp, mgr_rsp;
 
-  `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
-  `AXI_LITE_ASSIGN_FROM_RSP(in, slv_rsp)
+  `AXI_LITE_ASSIGN_TO_REQ(sbr_req, in)
+  `AXI_LITE_ASSIGN_FROM_RSP(in, sbr_rsp)
 
-  `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
-  `AXI_LITE_ASSIGN_TO_RSP(mst_rsp, out)
+  `AXI_LITE_ASSIGN_FROM_REQ(out, mgr_req)
+  `AXI_LITE_ASSIGN_TO_RSP(mgr_rsp, out)
 
   axi_multicut #(
     .NumCuts   (  NUM_CUTS ),
@@ -215,10 +215,10 @@ module axi_lite_multicut_intf #(
   ) i_axi_multicut (
     .clk_i,
     .rst_ni,
-    .slv_req_i ( slv_req ),
-    .slv_rsp_o ( slv_rsp ),
-    .mst_req_o ( mst_req ),
-    .mst_rsp_i ( mst_rsp )
+    .sbr_req_i ( sbr_req ),
+    .sbr_rsp_o ( sbr_rsp ),
+    .mgr_req_o ( mgr_req ),
+    .mgr_rsp_i ( mgr_rsp )
   );
 
   // Check the invariants.

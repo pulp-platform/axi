@@ -15,7 +15,7 @@
 
 // Description: AXI4-Lite to APB4 bridge
 //
-// This module has one AXI4-Lite slave port and is capable of generating
+// This module has one AXI4-Lite subordinate port and is capable of generating
 // APB4 requests for multiple APB4 slave modules. The address and data widths
 // of AXI4-Lite and APB4 have to be the same for both ports and are enforced over assertions.
 // The selection of the APB4 slave is handled by the `addr_decode` module from `common_cells`.
@@ -62,7 +62,7 @@ module axi_lite_to_apb #(
 ) (
   input  logic                        clk_i,     // Clock
   input  logic                        rst_ni,    // Asynchronous reset active low
-  // AXI LITE slave port
+  // AXI LITE subordinate port
   input  axi_lite_req_t               axi_lite_req_i,
   output axi_lite_rsp_t               axi_lite_rsp_o,
   // APB master port
@@ -96,7 +96,7 @@ module axi_lite_to_apb #(
   } apb_state_e;
 
 
-  // Signals from AXI4-Lite slave to arbitration tree
+  // Signals from AXI4-Lite subordinate to arbitration tree
   int_req_t [1:0] axi_req;
   logic [1:0]     axi_req_valid, axi_req_ready;
 
@@ -107,7 +107,7 @@ module axi_lite_to_apb #(
   logic           axi_rresp_valid, axi_rresp_ready;
 
   // -----------------------------------------------------------------------------------------------
-  // AXI4-Lite slave
+  // AXI4-Lite subordinate
   // -----------------------------------------------------------------------------------------------
   // read request
   assign axi_req[RD] = '{
@@ -396,8 +396,8 @@ module axi_lite_to_apb_intf #(
 ) (
   input  logic                     clk_i,     // Clock
   input  logic                     rst_ni,    // Asynchronous reset active low
-  // AXI LITE slave port
-  AXI_LITE.Slave                   slv,
+  // AXI LITE subordinate port
+  AXI_LITE.Subordinate                   sbr,
   // APB master port
   output addr_t                    paddr_o,
   output logic  [2:0]              pprot_o,
@@ -444,8 +444,8 @@ module axi_lite_to_apb_intf #(
   apb_rsp_t   [NumApbSlaves-1:0] apb_rsp;
   logic       [SelIdxWidth-1:0]  apb_sel;
 
-  `AXI_LITE_ASSIGN_TO_REQ(axi_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RSP(slv, axi_rsp)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_req, sbr)
+  `AXI_LITE_ASSIGN_FROM_RSP(sbr, axi_rsp)
 
   onehot_to_bin #(
     .ONEHOT_WIDTH ( NumApbSlaves )
@@ -482,7 +482,7 @@ module axi_lite_to_apb_intf #(
   ) i_axi_lite_to_apb (
     .clk_i,     // Clock
     .rst_ni,    // Asynchronous reset active low
-    // AXI LITE slave port
+    // AXI LITE subordinate port
     .axi_lite_req_i ( axi_req ),
     .axi_lite_rsp_o ( axi_rsp ),
     // APB master port

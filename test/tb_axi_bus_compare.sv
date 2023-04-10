@@ -209,10 +209,10 @@ module tb_axi_bus_compare #(
   ) i_axi_multicut (
     .clk_i     ( clk           ),
     .rst_ni    ( rst_n         ),
-    .slv_req_i ( axi_req_b_out ),
-    .slv_rsp_o ( axi_rsp_b_out ),
-    .mst_req_o ( axi_req_b_dly ),
-    .mst_rsp_i ( axi_rsp_b_dly )
+    .sbr_req_i ( axi_req_b_out ),
+    .sbr_rsp_o ( axi_rsp_b_out ),
+    .mgr_req_o ( axi_req_b_dly ),
+    .mgr_rsp_i ( axi_rsp_b_dly )
   );
 
   axi_sim_mem #(
@@ -254,7 +254,7 @@ module tb_axi_bus_compare #(
     automatic drv_t::w_beat_t w_beat = new;
     automatic drv_t::b_beat_t b_beat;
     automatic drv_t::r_beat_t r_beat;
-    drv.reset_master();
+    drv.reset_manager();
     wait (rst_n);
     // AW
 `ifdef XSIM

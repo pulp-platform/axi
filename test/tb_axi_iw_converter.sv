@@ -39,13 +39,13 @@ endclass
 
 module tb_axi_iw_converter #(
   // DUT Parameters
-  parameter int unsigned TbSlvPortIdWidth = 32'd0,
-  parameter int unsigned TbMstPortIdWidth = 32'd0,
-  parameter int unsigned TbSlvPortMaxUniqIds = 32'd0,
-  parameter int unsigned TbSlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned TbSlvPortMaxTxns = 32'd0,
-  parameter int unsigned TbMstPortMaxUniqIds = 32'd0,
-  parameter int unsigned TbMstPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned TbSbrPortIdWidth = 32'd0,
+  parameter int unsigned TbMgrPortIdWidth = 32'd0,
+  parameter int unsigned TbSbrPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbSbrPortMaxTxnsPerId = 32'd0,
+  parameter int unsigned TbSbrPortMaxTxns = 32'd0,
+  parameter int unsigned TbMgrPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbMgrPortMaxTxnsPerId = 32'd0,
   parameter int unsigned TbAddrWidth = 32'd32,
   parameter int unsigned TbDataWidth = 32'd32,
   parameter int unsigned TbUserWidth = 32'd4,
@@ -63,11 +63,11 @@ module tb_axi_iw_converter #(
   localparam time TestTime = 8ns;
 
   // Driver definitions
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
     .AW ( TbAddrWidth       ),
     .DW ( TbDataWidth       ),
-    .IW ( TbSlvPortIdWidth  ),
+    .IW ( TbSbrPortIdWidth  ),
     .UW ( TbUserWidth       ),
     // Stimuli application and test time
     .TA ( ApplTime           ),
@@ -77,17 +77,17 @@ module tb_axi_iw_converter #(
     .MAX_WRITE_TXNS ( 20     ),
     .AXI_EXCLS      ( TbEnExcl ),
     .AXI_ATOPS      ( TbEnAtop )
-  ) rand_axi_master_t;
-  typedef axi_test::axi_rand_slave #(
+  ) rand_axi_manager_t;
+  typedef axi_test::axi_rand_subordinate #(
     // AXI interface parameters
     .AW ( TbAddrWidth      ),
     .DW ( TbDataWidth      ),
-    .IW ( TbMstPortIdWidth ),
+    .IW ( TbMgrPortIdWidth ),
     .UW ( TbUserWidth      ),
     // Stimuli application and test time
     .TA ( ApplTime         ),
     .TT ( TestTime         )
-  ) rand_axi_slave_t;
+  ) rand_axi_subordinate_t;
 
   // TB signals
   logic clk, rst_n, sim_done;
@@ -106,14 +106,14 @@ module tb_axi_iw_converter #(
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( TbAddrWidth       ),
     .AXI_DATA_WIDTH ( TbDataWidth       ),
-    .AXI_ID_WIDTH   ( TbSlvPortIdWidth  ),
+    .AXI_ID_WIDTH   ( TbSbrPortIdWidth  ),
     .AXI_USER_WIDTH ( TbUserWidth       )
   ) axi_upstream_dv (clk);
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( TbAddrWidth       ),
     .AXI_DATA_WIDTH ( TbDataWidth       ),
-    .AXI_ID_WIDTH   ( TbSlvPortIdWidth  ),
+    .AXI_ID_WIDTH   ( TbSbrPortIdWidth  ),
     .AXI_USER_WIDTH ( TbUserWidth       )
   ) axi_upstream();
 
@@ -122,36 +122,36 @@ module tb_axi_iw_converter #(
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( TbAddrWidth      ),
     .AXI_DATA_WIDTH ( TbDataWidth      ),
-    .AXI_ID_WIDTH   ( TbMstPortIdWidth ),
+    .AXI_ID_WIDTH   ( TbMgrPortIdWidth ),
     .AXI_USER_WIDTH ( TbUserWidth      )
   ) axi_downstream_dv (clk);
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( TbAddrWidth      ),
     .AXI_DATA_WIDTH ( TbDataWidth      ),
-    .AXI_ID_WIDTH   ( TbMstPortIdWidth ),
+    .AXI_ID_WIDTH   ( TbMgrPortIdWidth ),
     .AXI_USER_WIDTH ( TbUserWidth      )
   ) axi_downstream();
 
   `AXI_ASSIGN(axi_downstream_dv, axi_downstream);
 
-  initial begin : proc_rand_master
-    automatic rand_axi_master_t axi_master = new(axi_upstream_dv);
+  initial begin : proc_rand_manager
+    automatic rand_axi_manager_t axi_manager = new(axi_upstream_dv);
     sim_done = 1'b0;
     @(posedge rst_n);
-    axi_master.reset();
-    axi_master.add_memory_region('0, '1, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_manager.reset();
+    axi_manager.add_memory_region('0, '1, axi_pkg::DEVICE_NONBUFFERABLE);
     repeat (5) @(posedge clk);
-    axi_master.run(TbNumReadTxns, TbNumWriteTxns);
+    axi_manager.run(TbNumReadTxns, TbNumWriteTxns);
 
     sim_done = 1'b1;
   end
 
-  initial begin : proc_rand_slave
-    automatic rand_axi_slave_t axi_slave = new(axi_downstream_dv);
+  initial begin : proc_rand_subordinate
+    automatic rand_axi_subordinate_t axi_subordinate = new(axi_downstream_dv);
     @(posedge rst_n);
-    axi_slave.reset();
-    axi_slave.run();
+    axi_subordinate.reset();
+    axi_subordinate.run();
   end
 
   initial begin : proc_sim_stop
@@ -162,28 +162,28 @@ module tb_axi_iw_converter #(
   end
 
   axi_iw_converter_intf #(
-    .AXI_SLV_PORT_ID_WIDTH        ( TbSlvPortIdWidth       ),
-    .AXI_MST_PORT_ID_WIDTH        ( TbMstPortIdWidth       ),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS    ( TbSlvPortMaxUniqIds    ),
-    .AXI_SLV_PORT_MAX_TXNS_PER_ID ( TbSlvPortMaxTxnsPerId  ),
-    .AXI_SLV_PORT_MAX_TXNS        ( TbSlvPortMaxTxns       ),
-    .AXI_MST_PORT_MAX_UNIQ_IDS    ( TbMstPortMaxUniqIds    ),
-    .AXI_MST_PORT_MAX_TXNS_PER_ID ( TbMstPortMaxTxnsPerId  ),
+    .AXI_SBR_PORT_ID_WIDTH        ( TbSbrPortIdWidth       ),
+    .AXI_MGR_PORT_ID_WIDTH        ( TbMgrPortIdWidth       ),
+    .AXI_SBR_PORT_MAX_UNIQ_IDS    ( TbSbrPortMaxUniqIds    ),
+    .AXI_SBR_PORT_MAX_TXNS_PER_ID ( TbSbrPortMaxTxnsPerId  ),
+    .AXI_SBR_PORT_MAX_TXNS        ( TbSbrPortMaxTxns       ),
+    .AXI_MGR_PORT_MAX_UNIQ_IDS    ( TbMgrPortMaxUniqIds    ),
+    .AXI_MGR_PORT_MAX_TXNS_PER_ID ( TbMgrPortMaxTxnsPerId  ),
     .AXI_ADDR_WIDTH               ( TbAddrWidth            ),
     .AXI_DATA_WIDTH               ( TbDataWidth            ),
     .AXI_USER_WIDTH               ( TbUserWidth            )
   ) i_dut (
     .clk_i  ( clk            ),
     .rst_ni ( rst_n          ),
-    .slv    ( axi_upstream   ),
-    .mst    ( axi_downstream )
+    .sbr    ( axi_upstream   ),
+    .mgr    ( axi_downstream )
   );
 
-  typedef rand_axi_master_t::addr_t           addr_t;
-  typedef rand_axi_master_t::data_t           data_t;
-  typedef rand_axi_master_t::id_t             id_t;
-  typedef logic[rand_axi_master_t::DW/8-1:0]  strb_t;
-  typedef rand_axi_master_t::user_t           user_t;
+  typedef rand_axi_manager_t::addr_t           addr_t;
+  typedef rand_axi_manager_t::data_t           data_t;
+  typedef rand_axi_manager_t::id_t             id_t;
+  typedef logic[rand_axi_manager_t::DW/8-1:0]  strb_t;
+  typedef rand_axi_manager_t::user_t           user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_beat_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_beat_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(ar_beat_t, addr_t, id_t, user_t)

@@ -130,7 +130,7 @@ module tb_axi_cdc #(
     .dst        (downstream)
   );
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     .AW                   (AXI_AW),
     .DW                   (AXI_DW),
     .IW                   (AXI_IW),
@@ -146,15 +146,15 @@ module tb_axi_cdc #(
     .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES),
     .AXI_MAX_BURST_LEN    (16)
-  ) axi_master_t;
-  axi_master_t axi_master = new(upstream_dv);
+  ) axi_manager_t;
+  axi_manager_t axi_manager = new(upstream_dv);
 
   initial begin
     wait (upstream_rst_n);
-    axi_master.run(N_RD_TXNS, N_WR_TXNS);
+    axi_manager.run(N_RD_TXNS, N_WR_TXNS);
   end
 
-  typedef axi_test::axi_rand_slave #(
+  typedef axi_test::axi_rand_subordinate #(
     .AW                   (AXI_AW),
     .DW                   (AXI_DW),
     .IW                   (AXI_IW),
@@ -167,32 +167,32 @@ module tb_axi_cdc #(
     .R_MAX_WAIT_CYCLES    (RESP_MAX_WAIT_CYCLES),
     .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES)
-  ) axi_slave_t;
-  axi_slave_t axi_slave = new(downstream_dv);
+  ) axi_subordinate_t;
+  axi_subordinate_t axi_subordinate = new(downstream_dv);
 
   initial begin
     wait (downstream_rst_n);
-    axi_slave.run();
+    axi_subordinate.run();
   end
 
-  ar_chan_t   mst_ar, slv_ar, ar_queue[$];
-  aw_chan_t   mst_aw, slv_aw, aw_queue[$];
-  b_chan_t    mst_b,  slv_b,  b_queue[$];
-  r_chan_t    mst_r,  slv_r,  r_queue[$];
-  w_chan_t    mst_w,  slv_w,  w_queue[$];
+  ar_chan_t   mgr_ar, sbr_ar, ar_queue[$];
+  aw_chan_t   mgr_aw, sbr_aw, aw_queue[$];
+  b_chan_t    mgr_b,  sbr_b,  b_queue[$];
+  r_chan_t    mgr_r,  sbr_r,  r_queue[$];
+  w_chan_t    mgr_w,  sbr_w,  w_queue[$];
 
-  `AXI_ASSIGN_TO_AR(mst_ar, upstream)
-  `AXI_ASSIGN_TO_AR(slv_ar, downstream)
-  `AXI_ASSIGN_TO_AW(mst_aw, upstream)
-  `AXI_ASSIGN_TO_AW(slv_aw, downstream)
-  `AXI_ASSIGN_TO_B(mst_b, upstream)
-  `AXI_ASSIGN_TO_B(slv_b, downstream)
-  `AXI_ASSIGN_TO_R(mst_r, upstream)
-  `AXI_ASSIGN_TO_R(slv_r, downstream)
-  `AXI_ASSIGN_TO_W(mst_w, upstream)
-  `AXI_ASSIGN_TO_W(slv_w, downstream)
+  `AXI_ASSIGN_TO_AR(mgr_ar, upstream)
+  `AXI_ASSIGN_TO_AR(sbr_ar, downstream)
+  `AXI_ASSIGN_TO_AW(mgr_aw, upstream)
+  `AXI_ASSIGN_TO_AW(sbr_aw, downstream)
+  `AXI_ASSIGN_TO_B(mgr_b, upstream)
+  `AXI_ASSIGN_TO_B(sbr_b, downstream)
+  `AXI_ASSIGN_TO_R(mgr_r, upstream)
+  `AXI_ASSIGN_TO_R(sbr_r, downstream)
+  `AXI_ASSIGN_TO_W(mgr_w, upstream)
+  `AXI_ASSIGN_TO_W(sbr_w, downstream)
 
-  logic mst_done = 1'b0;
+  logic mgr_done = 1'b0;
   // Monitor and check upstream
   initial begin
     automatic b_chan_t exp_b;
@@ -202,28 +202,28 @@ module tb_axi_cdc #(
       @(posedge upstream_clk);
       #(TT_UPSTREAM);
       if (upstream.aw_valid && upstream.aw_ready) begin
-        aw_queue.push_back(mst_aw);
+        aw_queue.push_back(mgr_aw);
       end
       if (upstream.w_valid && upstream.w_ready) begin
-        w_queue.push_back(mst_w);
+        w_queue.push_back(mgr_w);
       end
       if (upstream.b_valid && upstream.b_ready) begin
         exp_b = b_queue.pop_front();
-        assert (mst_b == exp_b);
+        assert (mgr_b == exp_b);
         wr_cnt++;
       end
       if (upstream.ar_valid && upstream.ar_ready) begin
-        ar_queue.push_back(mst_ar);
+        ar_queue.push_back(mgr_ar);
       end
       if (upstream.r_valid && upstream.r_ready) begin
         exp_r = r_queue.pop_front();
-        assert (mst_r == exp_r);
+        assert (mgr_r == exp_r);
         if (upstream.r_last) begin
           rd_cnt++;
         end
       end
       if (rd_cnt == N_RD_TXNS && wr_cnt == N_WR_TXNS) begin
-        mst_done = 1'b1;
+        mgr_done = 1'b1;
       end
     end
   end
@@ -238,28 +238,28 @@ module tb_axi_cdc #(
       #(TT_DOWNSTREAM);
       if (downstream.aw_valid && downstream.aw_ready) begin
         exp_aw = aw_queue.pop_front();
-        assert (slv_aw == exp_aw);
+        assert (sbr_aw == exp_aw);
       end
       if (downstream.w_valid && downstream.w_ready) begin
         exp_w = w_queue.pop_front();
-        assert (slv_w == exp_w);
+        assert (sbr_w == exp_w);
       end
       if (downstream.b_valid && downstream.b_ready) begin
-        b_queue.push_back(slv_b);
+        b_queue.push_back(sbr_b);
       end
       if (downstream.ar_valid && downstream.ar_ready) begin
         exp_ar = ar_queue.pop_front();
-        assert (slv_ar == exp_ar);
+        assert (sbr_ar == exp_ar);
       end
       if (downstream.r_valid && downstream.r_ready) begin
-        r_queue.push_back(slv_r);
+        r_queue.push_back(sbr_r);
       end
     end
   end
 
   // Terminate simulation after all transactions have completed.
   initial begin
-   wait (mst_done);
+   wait (mgr_done);
    #(10*TCLK_UPSTREAM);
    $finish();
   end

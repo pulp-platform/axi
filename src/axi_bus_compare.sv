@@ -30,9 +30,9 @@ module axi_bus_compare #(
     parameter type axi_ar_chan_t = logic,
     /// R channel type of the AXI4+ATOP interface
     parameter type axi_r_chan_t  = logic,
-    /// Request struct type of the AXI4+ATOP slave port
+    /// Request struct type of the AXI4+ATOP subordinate port
     parameter type axi_req_t     = logic,
-    /// Response struct type of the AXI4+ATOP slave port
+    /// Response struct type of the AXI4+ATOP subordinate port
     parameter type axi_rsp_t     = logic,
     /// ID type (*do not overwrite*)
     parameter type id_t          = logic [2**IdWidth-1:0]

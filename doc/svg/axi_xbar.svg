@@ -922,7 +922,7 @@
          y="33.000008"
          style="text-align:start;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0000ff;fill-opacity:1"
-           id="tspan10618">slv_port [3</tspan><tspan
+           id="tspan10618">sbr_port [3</tspan><tspan
            style="font-size:5.64444447px;fill:#0000ff;fill-opacity:1"
            id="tspan10622">]</tspan></tspan></text>
     <ellipse
@@ -986,7 +986,7 @@
          y="227"
          style="text-align:start;text-anchor:start;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332;"><tspan
            style="font-size:5.64444447px;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332;"
-           id="tspan10618-9">mst_port [3</tspan><tspan
+           id="tspan10618-9">mgr_port [3</tspan><tspan
            style="font-size:5.64444447px;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332;"
            id="tspan10622-6">]</tspan></tspan></text>
     <path
@@ -1113,7 +1113,7 @@
          y="33"
          style="text-align:start;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-0">slv_port [2]</tspan></tspan></text>
+           id="tspan10618-0">sbr_port [2]</tspan></tspan></text>
     <ellipse
        style="fill:#ff6400;fill-opacity:1;stroke:none;stroke-width:0.38738841;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path10624-0"
@@ -1175,7 +1175,7 @@
          y="226.99998"
          style="text-align:start;text-anchor:start;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-9-9">mst_port [2]</tspan></tspan></text>
+           id="tspan10618-9-9">mgr_port [2]</tspan></tspan></text>
     <path
        style="fill:#0064ff;fill-opacity:1;stroke:#0064ff;stroke-width:1.00157475;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal;filter:url(#filter8341-5-9-6-2-4)"
        d="m 122.86156,734.31856 7.55906,15.11811 7.55905,-15.11811 z"
@@ -1380,7 +1380,7 @@
          y="33.000008"
          style="text-align:start;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-93">slv_port [1]</tspan></tspan></text>
+           id="tspan10618-93">sbr_port [1]</tspan></tspan></text>
     <ellipse
        style="fill:#ff6400;fill-opacity:1;stroke:none;stroke-width:0.38738841;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path10624-8"
@@ -1442,7 +1442,7 @@
          y="226.99998"
          style="text-align:start;text-anchor:start;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-9-7">mst_port [1]</tspan></tspan></text>
+           id="tspan10618-9-7">mgr_port [1]</tspan></tspan></text>
     <path
        style="fill:#0064ff;fill-opacity:1;stroke:#0064ff;stroke-width:1.00157475;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal;filter:url(#filter8341-5-9-6-2-7)"
        d="m 122.86156,734.31856 7.55906,15.11811 7.55905,-15.11811 z"
@@ -1647,7 +1647,7 @@
          y="33.000008"
          style="text-align:start;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-1">slv_port [0]</tspan></tspan></text>
+           id="tspan10618-1">sbr_port [0]</tspan></tspan></text>
     <ellipse
        style="fill:#ff6400;fill-opacity:1;stroke:none;stroke-width:0.38738841;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path10624-2"
@@ -1702,7 +1702,7 @@
          y="226.99998"
          style="text-align:start;text-anchor:start;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"><tspan
            style="font-size:5.64444447px;fill:#0064ff;fill-opacity:1;stroke-width:0.26458332"
-           id="tspan10618-9-1">mst_port [0]</tspan></tspan></text>
+           id="tspan10618-9-1">mgr_port [0]</tspan></tspan></text>
     <path
        style="fill:#0064ff;fill-opacity:1;stroke:#0064ff;stroke-width:1.00157475;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal;filter:url(#filter8341-5-9-6-2-73)"
        d="m 122.86156,734.31856 7.55906,15.11811 7.55905,-15.11811 z"
@@ -1954,7 +1954,7 @@
          x="-66.75032"
          y="96.458633"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.52777767px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#2ca089;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan11845">default_mst_port[3]</tspan></text>
+         id="tspan11845">default_mgr_port[3]</tspan></text>
     <path
        style="fill:none;stroke:#2ca089;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 92,79.000007 5.999999,0 L 98,27.000008"
@@ -1978,7 +1978,7 @@
          x="-66.750328"
          y="185.92958"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.52777767px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#2ca089;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan11845-7">default_mst_port[2]</tspan></text>
+         id="tspan11845-7">default_mgr_port[2]</tspan></text>
     <path
        style="fill:none;stroke:#2ca089;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 182,79.000008 6,0 0,-52"
@@ -2002,7 +2002,7 @@
          x="-66.75032"
          y="275.92932"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.52777767px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#2ca089;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan11845-1">default_mst_port[1]</tspan></text>
+         id="tspan11845-1">default_mgr_port[1]</tspan></text>
     <path
        style="fill:none;stroke:#2ca089;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 272,79.000004 6,0 0,-51.999996"
@@ -2026,7 +2026,7 @@
          x="-66.75032"
          y="366.4585"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.52777767px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#2ca089;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan11845-2">default_mst_port[0]</tspan></text>
+         id="tspan11845-2">default_mgr_port[0]</tspan></text>
     <path
        style="fill:none;stroke:#2ca089;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 362,79.000004 6,0 0,-51.999996"

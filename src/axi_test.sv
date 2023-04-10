@@ -42,7 +42,7 @@ package axi_test;
       this.axi = axi;
     endfunction
 
-    function void reset_master();
+    function void reset_manager();
       axi.aw_addr  <= '0;
       axi.aw_prot  <= '0;
       axi.aw_valid <= '0;
@@ -56,7 +56,7 @@ package axi_test;
       axi.r_ready  <= '0;
     endfunction
 
-    function void reset_slave();
+    function void reset_subordinate();
       axi.aw_ready <= '0;
       axi.w_ready  <= '0;
       axi.b_resp   <= '0;
@@ -310,7 +310,7 @@ package axi_test;
       this.axi = axi;
     endfunction
 
-    function void reset_master();
+    function void reset_manager();
       axi.aw_id     <= '0;
       axi.aw_addr   <= '0;
       axi.aw_len    <= '0;
@@ -345,7 +345,7 @@ package axi_test;
       axi.r_ready   <= '0;
     endfunction
 
-    function void reset_slave();
+    function void reset_subordinate();
       axi.aw_ready  <= '0;
       axi.w_ready   <= '0;
       axi.b_id      <= '0;
@@ -678,7 +678,7 @@ package axi_test;
 
   endclass
 
-  class axi_rand_master #(
+  class axi_rand_manager #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -794,7 +794,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      drv.reset_master();
+      drv.reset_manager();
       r_flight_cnt = '{default: 0};
       w_flight_cnt = '{default: 0};
       tot_r_flight_cnt = 0;
@@ -1060,7 +1060,7 @@ package axi_test;
         )) return 1'b0;
       end
       if (UNIQUE_IDS) begin
-        // This master may only emit transactions with an ID that is unique among all in-flight
+        // This manager may only emit transactions with an ID that is unique among all in-flight
         // transactions in the same direction.
         if (is_read && r_flight_cnt[beat.ax_id] != 0) return 1'b0;
         if (!is_read && w_flight_cnt[beat.ax_id] != 0) return 1'b0;
@@ -1258,7 +1258,7 @@ package axi_test;
 
   endclass
 
-  class axi_rand_slave #(
+  class axi_rand_subordinate #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -1318,7 +1318,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      this.drv.reset_slave();
+      this.drv.reset_subordinate();
       this.memory_q.delete();
     endfunction
 
@@ -1490,8 +1490,8 @@ package axi_test;
 
   endclass
 
-  // AXI4-Lite random master and slave
-  class axi_lite_rand_master #(
+  // AXI4-Lite random manager and subordinate
+  class axi_lite_rand_manager #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
@@ -1540,7 +1540,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      drv.reset_master();
+      drv.reset_manager();
     endfunction
 
     task automatic rand_wait(input int unsigned min, max);
@@ -1660,7 +1660,7 @@ package axi_test;
     endtask : read
   endclass
 
-  class axi_lite_rand_slave #(
+  class axi_lite_rand_subordinate #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
@@ -1703,7 +1703,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      this.drv.reset_slave();
+      this.drv.reset_subordinate();
     endfunction
 
     task automatic rand_wait(input int unsigned min, max);

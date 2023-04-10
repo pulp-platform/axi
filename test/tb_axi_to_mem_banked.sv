@@ -48,7 +48,7 @@ module tb_axi_to_mem_banked #(
   typedef logic [AddrWidth-1:0] axi_addr_t;
 
   // AXI test defines
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
     .AW ( AddrWidth ),
     .DW ( TbDataWidth ),
@@ -75,7 +75,7 @@ module tb_axi_to_mem_banked #(
     .AXI_BURST_FIXED      ( 1'b0 ),
     .AXI_BURST_INCR       ( 1'b1 ),
     .AXI_BURST_WRAP       ( 1'b0 )
-  ) axi_rand_master_t;
+  ) axi_rand_manager_t;
 
   // memory defines
   localparam int unsigned MemAddrWidth = $clog2(TbNumWords);
@@ -125,16 +125,16 @@ module tb_axi_to_mem_banked #(
   `AXI_ASSIGN(mem_axi, mem_axi_dv)
 
   // stimuli generation
-  initial begin : proc_axi_master
-    static axi_rand_master_t axi_rand_master = new ( mem_axi_dv );
+  initial begin : proc_axi_manager
+    static axi_rand_manager_t axi_rand_manager = new ( mem_axi_dv );
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
     @(posedge clk);
     @(posedge clk);
 
-    axi_rand_master.run(TbNumReads, TbNumWrites);
+    axi_rand_manager.run(TbNumReads, TbNumWrites);
     end_of_sim <= 1'b1;
   end
 
@@ -200,7 +200,7 @@ module tb_axi_to_mem_banked #(
     .rst_ni            ( rst_n     ),
     .test_i            ( 1'b0      ),
     .axi_to_mem_busy_o ( dut_busy  ),
-    .slv               ( mem_axi   ),
+    .sbr               ( mem_axi   ),
     .mem_req_o         ( mem_req   ),
     .mem_gnt_i         ( mem_gnt   ),
     .mem_add_o         ( mem_addr  ), // byte address

@@ -16,12 +16,12 @@
 `include "axi/assign.svh"
 
 module tb_axi_isolate #(
-    parameter int unsigned NumWrites = 50000,  // How many writes per master
-    parameter int unsigned NumReads  = 30000   // How many reads per master
+    parameter int unsigned NumWrites = 50000,  // How many writes per manager
+    parameter int unsigned NumReads  = 30000   // How many reads per manager
   );
-  // Random master no Transactions
+  // Random manager no Transactions
   localparam int unsigned NumPendingDut = 16;
-  // Random Master Atomics
+  // Random Manager Atomics
   localparam int unsigned MaxAW      = 32'd30;
   localparam int unsigned MaxAR      = 32'd30;
   localparam bit          EnAtop     = 1'b1;
@@ -38,7 +38,7 @@ module tb_axi_isolate #(
   localparam int unsigned PrintTnx = 1000;
 
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
     .AW ( AddrWidth ),
     .DW ( DataWidth ),
@@ -51,8 +51,8 @@ module tb_axi_isolate #(
     .MAX_READ_TXNS  ( MaxAR  ),
     .MAX_WRITE_TXNS ( MaxAW  ),
     .AXI_ATOPS      ( EnAtop )
-  ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  ) axi_rand_manager_t;
+  typedef axi_test::axi_rand_subordinate #(
     // AXI interface parameters
     .AW ( AddrWidth ),
     .DW ( DataWidth ),
@@ -61,7 +61,7 @@ module tb_axi_isolate #(
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
-  ) axi_rand_slave_t;
+  ) axi_rand_subordinate_t;
 
   // -------------
   // DUT signals
@@ -78,28 +78,28 @@ module tb_axi_isolate #(
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) master ();
+  ) manager ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) master_dv (clk);
+  ) manager_dv (clk);
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) slave ();
+  ) subordinate ();
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( AddrWidth ),
     .AXI_DATA_WIDTH ( DataWidth ),
     .AXI_ID_WIDTH   ( IdWidth   ),
     .AXI_USER_WIDTH ( UserWidth )
-  ) slave_dv (clk);
+  ) subordinate_dv (clk);
 
-  `AXI_ASSIGN           ( master,  master_dv )
-  `AXI_ASSIGN           ( slave_dv, slave    )
+  `AXI_ASSIGN           ( manager,  manager_dv )
+  `AXI_ASSIGN           ( subordinate_dv, subordinate    )
 
   //-----------------------------------
   // Clock generator
@@ -124,31 +124,31 @@ module tb_axi_isolate #(
   ) i_dut (
     .clk_i      ( clk      ), // clock
     .rst_ni     ( rst_n    ), // asynchronous reset active low
-    .slv        ( master   ), // slave port
-    .mst        ( slave    ), // master port
-    .isolate_i  ( isolate  ), // isolate master port from slave port
-    .isolated_o ( isolated )  // master port is isolated from slave port
+    .sbr        ( manager   ), // subordinate port
+    .mgr        ( subordinate    ), // manager port
+    .isolate_i  ( isolate  ), // isolate manager port from subordinate port
+    .isolated_o ( isolated )  // manager port is isolated from subordinate port
   );
 
-  initial begin : proc_axi_master
-    automatic axi_rand_master_t axi_rand_master = new(master_dv);
+  initial begin : proc_axi_manager
+    automatic axi_rand_manager_t axi_rand_manager = new(manager_dv);
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
-    axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_manager.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NumReads, NumWrites);
+    axi_rand_manager.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
   end
 
-  initial begin : proc_axi_slave
-    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
-    axi_rand_slave.reset();
+  initial begin : proc_axi_subordinate
+    automatic axi_rand_subordinate_t  axi_rand_subordinate  = new(subordinate_dv);
+    axi_rand_subordinate.reset();
     @(posedge rst_n);
-    axi_rand_slave.run();
+    axi_rand_subordinate.run();
   end
 
   initial begin : proc_sim_ctl
@@ -171,10 +171,10 @@ module tb_axi_isolate #(
     forever begin
       @(posedge clk);
       #TestTime;
-      if (master.aw_valid && master.aw_ready) begin
+      if (manager.aw_valid && manager.aw_ready) begin
         aw++;
       end
-      if (master.ar_valid && master.ar_ready) begin
+      if (manager.ar_valid && manager.ar_ready) begin
         ar++;
       end
 
@@ -204,19 +204,19 @@ module tb_axi_isolate #(
 
   default disable iff (!rst_n);
   aw_unstable: assert property (@(posedge clk)
-      (slave.aw_valid && !slave.aw_ready) |=> $stable(slave.aw_addr)) else
+      (subordinate.aw_valid && !subordinate.aw_ready) |=> $stable(subordinate.aw_addr)) else
       $fatal(1, "AW is unstable.");
   w_unstable:  assert property (@(posedge clk)
-      (slave.w_valid  && !slave.w_ready)  |=> $stable(slave.w_data)) else
+      (subordinate.w_valid  && !subordinate.w_ready)  |=> $stable(subordinate.w_data)) else
       $fatal(1, "W is unstable.");
   b_unstable:  assert property (@(posedge clk)
-      (master.b_valid && !master.b_ready) |=> $stable(master.b_resp)) else
+      (manager.b_valid && !manager.b_ready) |=> $stable(manager.b_resp)) else
       $fatal(1, "B is unstable.");
   ar_unstable: assert property (@(posedge clk)
-      (slave.ar_valid && !slave.ar_ready) |=> $stable(slave.ar_addr)) else
+      (subordinate.ar_valid && !subordinate.ar_ready) |=> $stable(subordinate.ar_addr)) else
       $fatal(1, "AR is unstable.");
   r_unstable:  assert property (@(posedge clk)
-      (master.r_valid && !master.r_ready) |=> $stable(master.r_data)) else
+      (manager.r_valid && !manager.r_ready) |=> $stable(manager.r_data)) else
       $fatal(1, "R is unstable.");
 
 

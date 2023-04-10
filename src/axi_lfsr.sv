@@ -94,10 +94,10 @@ module axi_lfsr #(
         .clk_i,
         .rst_ni,
         .test_i    ( testmode_i   ),
-        .slv_req_i ( req_i        ),
-        .slv_rsp_o ( rsp_o        ),
-        .mst_req_o ( axi_lite_req ),
-        .mst_rsp_i ( axi_lite_rsp )
+        .sbr_req_i ( req_i        ),
+        .sbr_rsp_o ( rsp_o        ),
+        .mgr_req_o ( axi_lite_req ),
+        .mgr_rsp_i ( axi_lite_rsp )
     );
 
     axi_lite_lfsr #(

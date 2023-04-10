@@ -18,8 +18,8 @@ module tb_axi_dw_downsizer #(
     // AXI Parameters
     parameter int unsigned TbAddrWidth        = 64  ,
     parameter int unsigned TbIdWidth          = 4   ,
-    parameter int unsigned TbSlvPortDataWidth = 64  ,
-    parameter int unsigned TbMstPortDataWidth = 32  ,
+    parameter int unsigned TbSbrPortDataWidth = 64  ,
+    parameter int unsigned TbMgrPortDataWidth = 32  ,
     parameter int unsigned TbUserWidth        = 8   ,
     // TB Parameters
     parameter time TbCyclTime                 = 10ns,
@@ -47,29 +47,29 @@ module tb_axi_dw_downsizer #(
    *  AXI  *
    *********/
 
-  // Master port
+  // Manager port
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(TbAddrWidth       ),
-    .AXI_DATA_WIDTH(TbSlvPortDataWidth),
+    .AXI_DATA_WIDTH(TbSbrPortDataWidth),
     .AXI_ID_WIDTH  (TbIdWidth         ),
     .AXI_USER_WIDTH(TbUserWidth       )
-  ) master_dv (
+  ) manager_dv (
     .clk_i(clk)
   );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(TbAddrWidth       ),
-    .AXI_DATA_WIDTH(TbSlvPortDataWidth),
+    .AXI_DATA_WIDTH(TbSbrPortDataWidth),
     .AXI_ID_WIDTH  (TbIdWidth         ),
     .AXI_USER_WIDTH(TbUserWidth       )
-  ) master ();
+  ) manager ();
 
-  `AXI_ASSIGN(master, master_dv)
+  `AXI_ASSIGN(manager, manager_dv)
 
-  axi_test::axi_rand_master #(
+  axi_test::axi_rand_manager #(
     .AW             (TbAddrWidth       ),
-    .DW             (TbSlvPortDataWidth),
+    .DW             (TbSbrPortDataWidth),
     .IW             (TbIdWidth         ),
     .UW             (TbUserWidth       ),
     .TA             (TbApplTime        ),
@@ -78,36 +78,36 @@ module tb_axi_dw_downsizer #(
     .MAX_WRITE_TXNS (8                 ),
     .AXI_BURST_FIXED(1'b0              ),
     .AXI_ATOPS      (1'b1              )
-  ) master_drv = new (master_dv);
+  ) manager_drv = new (manager_dv);
 
-  // Slave port
+  // Subordinate port
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(TbAddrWidth       ),
-    .AXI_DATA_WIDTH(TbMstPortDataWidth),
+    .AXI_DATA_WIDTH(TbMgrPortDataWidth),
     .AXI_ID_WIDTH  (TbIdWidth         ),
     .AXI_USER_WIDTH(TbUserWidth       )
-  ) slave_dv (
+  ) subordinate_dv (
     .clk_i(clk)
   );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(TbAddrWidth       ),
-    .AXI_DATA_WIDTH(TbMstPortDataWidth),
+    .AXI_DATA_WIDTH(TbMgrPortDataWidth),
     .AXI_ID_WIDTH  (TbIdWidth         ),
     .AXI_USER_WIDTH(TbUserWidth       )
-  ) slave ();
+  ) subordinate ();
 
-  axi_test::axi_rand_slave #(
+  axi_test::axi_rand_subordinate #(
     .AW(TbAddrWidth       ),
-    .DW(TbMstPortDataWidth),
+    .DW(TbMgrPortDataWidth),
     .IW(TbIdWidth         ),
     .UW(TbUserWidth       ),
     .TA(TbApplTime        ),
     .TT(TbTestTime        )
-  ) slave_drv = new (slave_dv);
+  ) subordinate_drv = new (subordinate_dv);
 
-  `AXI_ASSIGN(slave_dv, slave)
+  `AXI_ASSIGN(subordinate_dv, subordinate)
 
   /*********
    *  DUT  *
@@ -117,14 +117,14 @@ module tb_axi_dw_downsizer #(
     .AXI_MAX_READS          (4                 ),
     .AXI_ADDR_WIDTH         (TbAddrWidth       ),
     .AXI_ID_WIDTH           (TbIdWidth         ),
-    .AXI_SLV_PORT_DATA_WIDTH(TbSlvPortDataWidth),
-    .AXI_MST_PORT_DATA_WIDTH(TbMstPortDataWidth),
+    .AXI_SBR_PORT_DATA_WIDTH(TbSbrPortDataWidth),
+    .AXI_MGR_PORT_DATA_WIDTH(TbMgrPortDataWidth),
     .AXI_USER_WIDTH         (TbUserWidth       )
   ) i_dw_converter (
     .clk_i (clk   ),
     .rst_ni(rst_n ),
-    .slv   (master),
-    .mst   (slave )
+    .sbr   (manager),
+    .mgr   (subordinate )
   );
 
   /*************
@@ -135,17 +135,17 @@ module tb_axi_dw_downsizer #(
     eos = 1'b0;
 
     // Configuration
-    slave_drv.reset()                                                                                ;
-    master_drv.reset()                                                                               ;
-    master_drv.add_memory_region({TbAddrWidth{1'b0}}, {TbAddrWidth{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    subordinate_drv.reset()                                                                                ;
+    manager_drv.reset()                                                                               ;
+    manager_drv.add_memory_region({TbAddrWidth{1'b0}}, {TbAddrWidth{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
 
     // Wait for the reset before sending requests
     @(posedge rst_n);
 
     fork
       // Act as a sink
-      slave_drv.run()         ;
-      master_drv.run(200, 200);
+      subordinate_drv.run()         ;
+      manager_drv.run(200, 200);
     join_any
 
     // Done
@@ -160,12 +160,12 @@ module tb_axi_dw_downsizer #(
   initial begin : proc_monitor
     static tb_axi_dw_pkg::axi_dw_downsizer_monitor #(
       .AddrWidth       (TbAddrWidth       ),
-      .MstPortDataWidth(TbMstPortDataWidth),
-      .SlvPortDataWidth(TbSlvPortDataWidth),
+      .MgrPortDataWidth(TbMgrPortDataWidth),
+      .SbrPortDataWidth(TbSbrPortDataWidth),
       .IdWidth         (TbIdWidth         ),
       .UserWidth       (TbUserWidth       ),
       .TimeTest        (TbTestTime        )
-    ) monitor = new (master_dv, slave_dv);
+    ) monitor = new (manager_dv, subordinate_dv);
     fork
       monitor.run();
       forever begin

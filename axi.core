@@ -44,12 +44,12 @@ filesets:
       - src/axi_rw_join.sv
       - src/axi_rw_split.sv
       - src/axi_serializer.sv
-      - src/axi_slave_compare.sv
+      - src/axi_subordinate_compare.sv
       - src/axi_throttle.sv
       - src/axi_to_mem.sv
       # Level 3
       - src/axi_cdc.sv
-      - src/axi_err_slv.sv
+      - src/axi_err_sbr.sv
       - src/axi_dw_converter.sv
       - src/axi_from_mem.sv
       - src/axi_id_serialize.sv
@@ -95,7 +95,7 @@ filesets:
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
-      - test/tb_axi_slave_compare.sv
+      - test/tb_axi_subordinate_compare.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
@@ -116,34 +116,34 @@ generators:
       module where the interconnect wrapper is intended to be used.
 
       Parameters:
-        masters: A dictionary where each key names a master interface connecting
+        managers: A dictionary where each key names a manager interface connecting
                  to the interconnect and the associated value contains
                  configuration for that interface.
 
-                   id_width (int): Width of the id signals for the master
+                   id_width (int): Width of the id signals for the manager
 
-        slaves: A dictionary  where each key names a slave interface connecting
+        subordinates: A dictionary  where each key names a subordinate interface connecting
                  to the interconnect and the associated value contains
                  configuration for that interface. The following configuration
                  keys are defined
 
-                   offset (int): Base address for the slave
-                   size   (int): Size of the allocated memory map for the slave
+                   offset (int): Base address for the subordinate
+                   size   (int): Size of the allocated memory map for the subordinate
 
       Example usage:
         The following config will generate an interconnect wrapper to which two
-        AXI4 master interfaces (dma and ibus) with different id widths are
-        connected, and connects downstream to three AXI4 slaves (rom, gpio, ram)
+        AXI4 manager interfaces (dma and ibus) with different id widths are
+        connected, and connects downstream to three AXI4 subordinates (rom, gpio, ram)
 
         soc_intercon:
           generator: axi_intercon_gen
           parameters:
-            masters:
+            managers:
               dma:
                 id_width : 1
               ibus:
                 id_width : 2
-            slaves:
+            subordinates:
               ram:
                 offset : 0
                 size: 0x10000000

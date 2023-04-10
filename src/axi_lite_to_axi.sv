@@ -24,64 +24,64 @@ module axi_lite_to_axi #(
   parameter type      axi_req_t = logic,
   parameter type      axi_rsp_t = logic
 ) (
-  // Slave AXI LITE port
-  input  axi_lite_req_t   slv_req_lite_i,
-  output axi_lite_rsp_t   slv_rsp_lite_o,
-  input  axi_pkg::cache_t slv_aw_cache_i,
-  input  axi_pkg::cache_t slv_ar_cache_i,
-  // Master AXI port
-  output axi_req_t        mst_req_o,
-  input  axi_rsp_t        mst_rsp_i
+  // Subordinate AXI LITE port
+  input  axi_lite_req_t   sbr_req_lite_i,
+  output axi_lite_rsp_t   sbr_rsp_lite_o,
+  input  axi_pkg::cache_t sbr_aw_cache_i,
+  input  axi_pkg::cache_t sbr_ar_cache_i,
+  // Manager AXI port
+  output axi_req_t        mgr_req_o,
+  input  axi_rsp_t        mgr_rsp_i
 );
   localparam int unsigned Size = axi_pkg::size_t'($unsigned($clog2(DataWidth/8)));
 
   // request assign
-  assign mst_req_o = '{
+  assign mgr_req_o = '{
     aw: '{
-      addr:  slv_req_lite_i.aw.addr,
-      prot:  slv_req_lite_i.aw.prot,
+      addr:  sbr_req_lite_i.aw.addr,
+      prot:  sbr_req_lite_i.aw.prot,
       size:  Size,
       burst: axi_pkg::BURST_FIXED,
-      cache: slv_aw_cache_i,
+      cache: sbr_aw_cache_i,
       default: '0
     },
-    aw_valid: slv_req_lite_i.aw_valid,
+    aw_valid: sbr_req_lite_i.aw_valid,
     w: '{
-      data: slv_req_lite_i.w.data,
-      strb: slv_req_lite_i.w.strb,
+      data: sbr_req_lite_i.w.data,
+      strb: sbr_req_lite_i.w.strb,
       last: 1'b1,
       default: '0
     },
-    w_valid: slv_req_lite_i.w_valid,
-    b_ready: slv_req_lite_i.b_ready,
+    w_valid: sbr_req_lite_i.w_valid,
+    b_ready: sbr_req_lite_i.b_ready,
     ar: '{
-      addr:  slv_req_lite_i.ar.addr,
-      prot:  slv_req_lite_i.ar.prot,
+      addr:  sbr_req_lite_i.ar.addr,
+      prot:  sbr_req_lite_i.ar.prot,
       size:  Size,
       burst: axi_pkg::BURST_FIXED,
-      cache: slv_ar_cache_i,
+      cache: sbr_ar_cache_i,
       default: '0
     },
-    ar_valid: slv_req_lite_i.ar_valid,
-    r_ready:  slv_req_lite_i.r_ready,
+    ar_valid: sbr_req_lite_i.ar_valid,
+    r_ready:  sbr_req_lite_i.r_ready,
     default:   '0
   };
   // response assign
-  assign slv_rsp_lite_o = '{
-    aw_ready: mst_rsp_i.aw_ready,
-    w_ready:  mst_rsp_i.w_ready,
+  assign sbr_rsp_lite_o = '{
+    aw_ready: mgr_rsp_i.aw_ready,
+    w_ready:  mgr_rsp_i.w_ready,
     b: '{
-      resp: mst_rsp_i.b.resp,
+      resp: mgr_rsp_i.b.resp,
       default: '0
     },
-    b_valid:  mst_rsp_i.b_valid,
-    ar_ready: mst_rsp_i.ar_ready,
+    b_valid:  mgr_rsp_i.b_valid,
+    ar_ready: mgr_rsp_i.ar_ready,
     r: '{
-      data: mst_rsp_i.r.data,
-      resp: mst_rsp_i.r.resp,
+      data: mgr_rsp_i.r.data,
+      resp: mgr_rsp_i.r.resp,
       default: '0
     },
-    r_valid: mst_rsp_i.r_valid,
+    r_valid: mgr_rsp_i.r_valid,
     default: '0
   };
 
@@ -97,10 +97,10 @@ endmodule
 module axi_lite_to_axi_intf #(
   parameter int unsigned AXI_DATA_WIDTH = 32'd0
 ) (
-  AXI_LITE.Slave  in,
-  input axi_pkg::cache_t slv_aw_cache_i,
-  input axi_pkg::cache_t slv_ar_cache_i,
-  AXI_BUS.Master  out
+  AXI_LITE.Subordinate  in,
+  input axi_pkg::cache_t sbr_aw_cache_i,
+  input axi_pkg::cache_t sbr_ar_cache_i,
+  AXI_BUS.Manager  out
 );
   localparam int unsigned Size = axi_pkg::size_t'($unsigned($clog2(AXI_DATA_WIDTH/8)));
 
@@ -118,7 +118,7 @@ module axi_lite_to_axi_intf #(
   assign out.aw_size   = Size;
   assign out.aw_burst  = axi_pkg::BURST_FIXED;
   assign out.aw_lock   = '0;
-  assign out.aw_cache  = slv_aw_cache_i;
+  assign out.aw_cache  = sbr_aw_cache_i;
   assign out.aw_prot   = '0;
   assign out.aw_qos    = '0;
   assign out.aw_region = '0;
@@ -144,7 +144,7 @@ module axi_lite_to_axi_intf #(
   assign out.ar_size   = Size;
   assign out.ar_burst  = axi_pkg::BURST_FIXED;
   assign out.ar_lock   = '0;
-  assign out.ar_cache  = slv_ar_cache_i;
+  assign out.ar_cache  = sbr_ar_cache_i;
   assign out.ar_prot   = '0;
   assign out.ar_qos    = '0;
   assign out.ar_region = '0;

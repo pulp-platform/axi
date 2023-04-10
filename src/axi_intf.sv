@@ -82,7 +82,7 @@ interface AXI_BUS #(
   logic             r_valid;
   logic             r_ready;
 
-  modport Master (
+  modport Manager (
     output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, input aw_ready,
     output w_data, w_strb, w_last, w_user, w_valid, input w_ready,
     input b_id, b_resp, b_user, b_valid, output b_ready,
@@ -90,7 +90,7 @@ interface AXI_BUS #(
     input r_id, r_data, r_resp, r_last, r_user, r_valid, output r_ready
   );
 
-  modport Slave (
+  modport Subordinate (
     input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, output aw_ready,
     input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
     output b_id, b_resp, b_user, b_valid, input b_ready,
@@ -177,7 +177,7 @@ interface AXI_BUS_DV #(
   logic             r_valid;
   logic             r_ready;
 
-  modport Master (
+  modport Manager (
     output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, input aw_ready,
     output w_data, w_strb, w_last, w_user, w_valid, input w_ready,
     input b_id, b_resp, b_user, b_valid, output b_ready,
@@ -185,7 +185,7 @@ interface AXI_BUS_DV #(
     input r_id, r_data, r_resp, r_last, r_user, r_valid, output r_ready
   );
 
-  modport Slave (
+  modport Subordinate (
     input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_valid, output aw_ready,
     input w_data, w_strb, w_last, w_user, w_valid, output w_ready,
     output b_id, b_resp, b_user, b_valid, input b_ready,
@@ -324,7 +324,7 @@ interface AXI_BUS_ASYNC
   buffer_t          r_writetoken;
   buffer_t          r_readpointer;
 
-  modport Master (
+  modport Manager (
     output aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_writetoken, input aw_readpointer,
     output w_data, w_strb, w_last, w_user, w_writetoken, input w_readpointer,
     input b_id, b_resp, b_user, b_writetoken, output b_readpointer,
@@ -332,7 +332,7 @@ interface AXI_BUS_ASYNC
     input r_id, r_data, r_resp, r_last, r_user, r_writetoken, output r_readpointer
   );
 
-  modport Slave (
+  modport Subordinate (
     input aw_id, aw_addr, aw_len, aw_size, aw_burst, aw_lock, aw_cache, aw_prot, aw_qos, aw_region, aw_atop, aw_user, aw_writetoken, output aw_readpointer,
     input w_data, w_strb, w_last, w_user, w_writetoken, output w_readpointer,
     output b_id, b_resp, b_user, b_writetoken, input b_readpointer,
@@ -379,14 +379,14 @@ interface AXI_BUS_ASYNC_GRAY #(
                                 ar_wptr,  ar_rptr,
                                 r_wptr,   r_rptr;
 
-  modport Master (
+  modport Manager (
     output aw_data, aw_wptr, input aw_rptr,
     output w_data, w_wptr, input w_rptr,
     input b_data, b_wptr, output b_rptr,
     output ar_data, ar_wptr, input ar_rptr,
     input r_data, r_wptr, output r_rptr);
 
-  modport Slave (
+  modport Subordinate (
     input aw_data, aw_wptr, output aw_rptr,
     input w_data, w_wptr, output w_rptr,
     output b_data, b_wptr, input b_rptr,
@@ -433,7 +433,7 @@ interface AXI_LITE #(
   logic           r_valid;
   logic           r_ready;
 
-  modport Master (
+  modport Manager (
     output aw_addr, aw_prot, aw_valid, input aw_ready,
     output w_data, w_strb, w_valid, input w_ready,
     input b_resp, b_valid, output b_ready,
@@ -441,7 +441,7 @@ interface AXI_LITE #(
     input r_data, r_resp, r_valid, output r_ready
   );
 
-  modport Slave (
+  modport Subordinate (
     input aw_addr, aw_prot, aw_valid, output aw_ready,
     input w_data, w_strb, w_valid, output w_ready,
     output b_resp, b_valid, input b_ready,
@@ -499,7 +499,7 @@ interface AXI_LITE_DV #(
   logic           r_valid;
   logic           r_ready;
 
-  modport Master (
+  modport Manager (
     output aw_addr, aw_prot, aw_valid, input aw_ready,
     output w_data, w_strb, w_valid, input w_ready,
     input b_resp, b_valid, output b_ready,
@@ -507,7 +507,7 @@ interface AXI_LITE_DV #(
     input r_data, r_resp, r_valid, output r_ready
   );
 
-  modport Slave (
+  modport Subordinate (
     input aw_addr, aw_prot, aw_valid, output aw_ready,
     input w_data, w_strb, w_valid, output w_ready,
     output b_resp, b_valid, input b_ready,
@@ -556,14 +556,14 @@ interface AXI_LITE_ASYNC_GRAY #(
                                 ar_wptr,  ar_rptr,
                                 r_wptr,   r_rptr;
 
-  modport Master (
+  modport Manager (
     output aw_data, aw_wptr, input aw_rptr,
     output w_data, w_wptr, input w_rptr,
     input b_data, b_wptr, output b_rptr,
     output ar_data, ar_wptr, input ar_rptr,
     input r_data, r_wptr, output r_rptr);
 
-  modport Slave (
+  modport Subordinate (
     input aw_data, aw_wptr, output aw_rptr,
     input w_data, w_wptr, output w_rptr,
     output b_data, b_wptr, input b_rptr,
