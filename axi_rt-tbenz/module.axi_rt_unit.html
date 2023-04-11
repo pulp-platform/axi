@@ -5,27 +5,76 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_rt_unit</a></h1>
 <div class="docblock">
+<p>Real-time unit: fragments and throttles transactions</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.NumPending" class="impl"><code class="in-band">NumPending<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.WBufferDepth" class="impl"><code class="in-band">WBufferDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.NumAddrRegions" class="impl"><code class="in-band">NumAddrRegions<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.NumRules" class="impl"><code class="in-band">NumRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NumPending" class="impl"><code class="in-band">NumPending<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.PeriodWidth" class="impl"><code class="in-band">PeriodWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.BudgetWidth" class="impl"><code class="in-band">BudgetWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.rt_rule_t" class="impl"><code class="in-band">rt_rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.addr_t" class="impl"><code class="in-band">addr_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band">aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+></div><h3 id="parameter.IdxWWidth" class="impl"><code class="in-band">IdxWWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.IdxAwWidth" class="impl"><code class="in-band">IdxAwWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.idx_w_t" class="impl"><code class="in-band">idx_w_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.idx_aw_t" class="impl"><code class="in-band">idx_aw_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.period_t" class="impl"><code class="in-band">period_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.budget_t" class="impl"><code class="in-band">budget_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
+></div><h3 id="parameter.NumBytesWidth" class="impl"><code class="in-band">NumBytesWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>the maximum amount of bytes one AXI transfer can have</p>
+</div><h3 id="parameter.NumRegionWidth" class="impl"><code class="in-band">NumRegionWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+><p>index with of the regions</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="port.len_limit_i" class="impl"><code class="in-band">len_limit_i<span class="type-annotation">: input  axi_pkg::len_t</span></code></h3><div class="docblock"
+></div><h3 id="port.num_w_pending_o" class="impl"><code class="in-band">num_w_pending_o<span class="type-annotation">: output idx_w_t</span></code></h3><div class="docblock"
+></div><h3 id="port.num_aw_pending_o" class="impl"><code class="in-band">num_aw_pending_o<span class="type-annotation">: output idx_aw_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.rt_rule_i" class="impl"><code class="in-band">rt_rule_i<span class="type-annotation">: input  rt_rule_t [NumRules-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.w_decode_error_o" class="impl"><code class="in-band">w_decode_error_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+></div><h3 id="port.r_decode_error_o" class="impl"><code class="in-band">r_decode_error_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+></div><h3 id="port.imtu_enable_i" class="impl"><code class="in-band">imtu_enable_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.imtu_abort_i" class="impl"><code class="in-band">imtu_abort_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.w_budget_i" class="impl"><code class="in-band">w_budget_i<span class="type-annotation">: input  budget_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.w_budget_left_o" class="impl"><code class="in-band">w_budget_left_o<span class="type-annotation">: output budget_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.w_period_i" class="impl"><code class="in-band">w_period_i<span class="type-annotation">: input  period_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.w_period_left_o" class="impl"><code class="in-band">w_period_left_o<span class="type-annotation">: output period_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.r_budget_i" class="impl"><code class="in-band">r_budget_i<span class="type-annotation">: input  budget_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.r_budget_left_o" class="impl"><code class="in-band">r_budget_left_o<span class="type-annotation">: output budget_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.r_period_i" class="impl"><code class="in-band">r_period_i<span class="type-annotation">: input  period_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.r_period_left_o" class="impl"><code class="in-band">r_period_left_o<span class="type-annotation">: output period_t [NumAddrRegions-1:0]</span></code></h3><div class="docblock"
+></div><h3 id="port.isolate_o" class="impl"><code class="in-band">isolate_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+></div><h3 id="port.isolated_o" class="impl"><code class="in-band">isolated_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
+></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.ax_bytes_t.html">ax_bytes_t</a></td><td><p>maximum amount of bytes in a transfer type</p>
+</td></tr><tr><td><a class="type" href="type.region_idx_t.html">region_idx_t</a></td><td><p>maximum amount of bytes in a transfer type</p>
+</td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.iso_req" class="impl"><code class="in-band">iso_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.cut_req" class="impl"><code class="in-band">cut_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fwd_req" class="impl"><code class="in-band">fwd_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.iso_resp" class="impl"><code class="in-band">iso_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.cut_resp" class="impl"><code class="in-band">cut_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.fwd_resp" class="impl"><code class="in-band">fwd_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.aw_bytes" class="impl"><code class="in-band">aw_bytes<span class="type-annotation">: ax_bytes_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.ar_bytes" class="impl"><code class="in-band">ar_bytes<span class="type-annotation">: ax_bytes_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.aw_region" class="impl"><code class="in-band">aw_region<span class="type-annotation">: region_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.ar_region" class="impl"><code class="in-band">ar_region<span class="type-annotation">: region_idx_t</span></code></h3><div class="docblock"
 ></div></section>
 </body>
 </html>
