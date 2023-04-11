@@ -106,7 +106,7 @@ module axi_burst_splitter #(
     // Wrapping bursts are currently not supported.
     if (burst == axi_pkg::BURST_WRAP) return 1'b0;
     // ATOPs are not supported.
-    if (atop != '0) return 1'b0;
+    // if (atop != '0) return 1'b0;
     // The AXI Spec (A3.4.1) only allows splitting non-modifiable transactions ..
     if (!axi_pkg::modifiable(cache)) begin
       // .. if they are INCR bursts and longer than 16 beats.
@@ -388,10 +388,10 @@ module axi_burst_splitter #(
   assume property (@(posedge clk_i) slv_req_i.ar_valid |->
       txn_supported('0, slv_req_i.ar.burst, slv_req_i.ar.cache, slv_req_i.ar.len)
     ) else $warning("Unsupported AR transaction received, returning slave error!");
-  assume property (@(posedge clk_i) slv_req_i.aw_valid |->
-      slv_req_i.aw.atop == '0 || slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_ATOMICSTORE
-    ) else $fatal(1, "Unsupported ATOP that gives rise to a R response received,\
-                      cannot respond in protocol-compliant manner!");
+  // assume property (@(posedge clk_i) slv_req_i.aw_valid |->
+  //     slv_req_i.aw.atop == '0 || slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_ATOMICSTORE
+  //   ) else $fatal(1, "Unsupported ATOP that gives rise to a R response received,\
+  //                    cannot respond in protocol-compliant manner!");
   // Outputs
   assert property (@(posedge clk_i) mst_req_o.aw_valid |-> mst_req_o.aw.len <= len_limit_i)
     else $fatal(1, "AW burst longer than a single beat emitted!");

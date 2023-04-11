@@ -65,12 +65,14 @@ module tb_axi_rt_unit #(
   } rt_rule_t;
 
   /// Number of Address Rules
-  localparam int unsigned NumAddrRegions = 32'd2;
+  localparam int unsigned NumAddrRegions = 32'd3;
+  localparam int unsigned NumRules       = 32'd3;
 
   /// example rule
-  localparam rt_rule_t [NumAddrRegions-1:0] RtAddrmap = '{
-    '{ idx: 8'h00, start_addr: 'h00000000, end_addr: 'h80000000 },
-    '{ idx: 8'h01, start_addr: 'h80000000, end_addr: 'hffffffff }
+  localparam rt_rule_t [NumRules-1:0] RtAddrmap = '{
+    '{ idx: 8'h00, start_addr: 'h00000000, end_addr: 'h00001000 },
+    '{ idx: 8'h01, start_addr: 'h00001000, end_addr: 'h00002000 },
+    '{ idx: 8'h02, start_addr: 'h00002000, end_addr: 'h00003000 }
   };
 
   /// Random AXI slave type
@@ -218,21 +220,43 @@ module tb_axi_rt_unit #(
     .DataWidth      ( AxiDataWidth   ),
     .IdWidth        ( AxiIdWidth     ),
     .UserWidth      ( AxiUserWidth   ),
-    .NumAddrRegions ( NumAddrRegions ),
-    .NumRules       ( NumAddrRegions ),
     .NumPending     ( 32'd16         ),
+    .WBufferDepth   ( 32'd512        ),
+    .NumAddrRegions ( NumAddrRegions ),
+    .NumRules       ( NumRules       ),
+    .BudgetWidth    ( 32'd32         ),
+    .PeriodWidth    ( 32'd32         ),
     .rt_rule_t      ( rt_rule_t      ),
     .addr_t         ( addr_t         ),
+    .aw_chan_t      ( axi_aw_chan_t  ),
+    .w_chan_t       ( axi_w_chan_t   ),
     .axi_req_t      ( axi_req_t      ),
     .axi_resp_t     ( axi_resp_t     )
   ) i_axi_rt_unit (
-    .clk_i          ( clk            ),
-    .rst_ni         ( rst_n          ),
-    .slv_req_i      ( master_req     ),
-    .slv_resp_o     ( master_rsp     ),
-    .mst_req_o      ( slave_req      ),
-    .mst_resp_i     ( slave_rsp      ),
-    .rt_rule_i      ( RtAddrmap      )
+    .clk_i            ( clk            ),
+    .rst_ni           ( rst_n          ),
+    .slv_req_i        ( master_req     ),
+    .slv_resp_o       ( master_rsp     ),
+    .mst_req_o        ( slave_req      ),
+    .mst_resp_i       ( slave_rsp      ),
+    .len_limit_i      ( 'd0            ),
+    .num_w_pending_o  ( ),
+    .num_aw_pending_o ( ),
+    .rt_rule_i        ( RtAddrmap      ),
+    .w_decode_error_o ( ),
+    .r_decode_error_o ( ),
+    .imtu_enable_i    ( 1'b1           ),
+    .imtu_abort_i     ( 1'b0           ),
+    .r_budget_i       ( {32'd1, 32'd1, 32'd1} ),
+    .r_budget_left_o  ( ),
+    .r_period_i       ( {32'd100, 32'd100, 32'd100} ),
+    .r_period_left_o  ( ),
+    .w_budget_i       ( {32'd1, 32'd1, 32'd1} ),
+    .w_budget_left_o  ( ),
+    .w_period_i       ( {32'd100, 32'd100, 32'd100} ),
+    .w_period_left_o  ( ),
+    .isolate_o        ( ),
+    .isolated_o       ( )
   );
 
 
