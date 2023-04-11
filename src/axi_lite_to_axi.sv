@@ -30,13 +30,13 @@ module axi_lite_to_axi #(
   input  axi_pkg::cache_t sbr_aw_cache_i,
   input  axi_pkg::cache_t sbr_ar_cache_i,
   // Manager AXI port
-  output axi_req_t        mgr_req_o,
-  input  axi_rsp_t        mgr_rsp_i
+  output axi_req_t        mgr_port_req_o,
+  input  axi_rsp_t        mgr_port_rsp_i
 );
   localparam int unsigned Size = axi_pkg::size_t'($unsigned($clog2(DataWidth/8)));
 
   // request assign
-  assign mgr_req_o = '{
+  assign mgr_port_req_o = '{
     aw: '{
       addr:  sbr_req_lite_i.aw.addr,
       prot:  sbr_req_lite_i.aw.prot,
@@ -68,20 +68,20 @@ module axi_lite_to_axi #(
   };
   // response assign
   assign sbr_rsp_lite_o = '{
-    aw_ready: mgr_rsp_i.aw_ready,
-    w_ready:  mgr_rsp_i.w_ready,
+    aw_ready: mgr_port_rsp_i.aw_ready,
+    w_ready:  mgr_port_rsp_i.w_ready,
     b: '{
-      resp: mgr_rsp_i.b.resp,
+      resp: mgr_port_rsp_i.b.resp,
       default: '0
     },
-    b_valid:  mgr_rsp_i.b_valid,
-    ar_ready: mgr_rsp_i.ar_ready,
+    b_valid:  mgr_port_rsp_i.b_valid,
+    ar_ready: mgr_port_rsp_i.ar_ready,
     r: '{
-      data: mgr_rsp_i.r.data,
-      resp: mgr_rsp_i.r.resp,
+      data: mgr_port_rsp_i.r.data,
+      resp: mgr_port_rsp_i.r.resp,
       default: '0
     },
-    r_valid: mgr_rsp_i.r_valid,
+    r_valid: mgr_port_rsp_i.r_valid,
     default: '0
   };
 

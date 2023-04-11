@@ -36,16 +36,16 @@ module axi_dw_converter #(
     input  logic              clk_i,
     input  logic              rst_ni,
     // Subordinate interface
-    input  sbr_port_axi_req_t sbr_req_i,
-    output sbr_port_axi_rsp_t sbr_rsp_o,
+    input  sbr_port_axi_req_t sbr_port_req_i,
+    output sbr_port_axi_rsp_t sbr_port_rsp_o,
     // Manager interface
-    output mgr_port_axi_req_t mgr_req_o,
-    input  mgr_port_axi_rsp_t mgr_rsp_i
+    output mgr_port_axi_req_t mgr_port_req_o,
+    input  mgr_port_axi_rsp_t mgr_port_rsp_i
   );
 
   if (MgrPortDataWidth == SbrPortDataWidth) begin: gen_no_dw_conversion
-    assign mgr_req_o = sbr_req_i ;
-    assign sbr_rsp_o = mgr_rsp_i;
+    assign mgr_port_req_o = sbr_port_req_i ;
+    assign sbr_port_rsp_o = mgr_port_rsp_i;
   end : gen_no_dw_conversion
 
   if (MgrPortDataWidth > SbrPortDataWidth) begin: gen_dw_upsize
@@ -70,11 +70,11 @@ module axi_dw_converter #(
       .clk_i     (clk_i    ),
       .rst_ni    (rst_ni   ),
       // Subordinate interface
-      .sbr_req_i (sbr_req_i),
-      .sbr_rsp_o (sbr_rsp_o),
+      .sbr_port_req_i (sbr_port_req_i),
+      .sbr_port_rsp_o (sbr_port_rsp_o),
       // Manager interface
-      .mgr_req_o (mgr_req_o),
-      .mgr_rsp_i (mgr_rsp_i)
+      .mgr_port_req_o (mgr_port_req_o),
+      .mgr_port_rsp_i (mgr_port_rsp_i)
     );
   end : gen_dw_upsize
 
@@ -100,11 +100,11 @@ module axi_dw_converter #(
       .clk_i     (clk_i    ),
       .rst_ni    (rst_ni   ),
       // Subordinate interface
-      .sbr_req_i (sbr_req_i),
-      .sbr_rsp_o (sbr_rsp_o),
+      .sbr_port_req_i (sbr_port_req_i),
+      .sbr_port_rsp_o (sbr_port_rsp_o),
       // Manager interface
-      .mgr_req_o (mgr_req_o),
-      .mgr_rsp_i (mgr_rsp_i)
+      .mgr_port_req_o (mgr_port_req_o),
+      .mgr_port_rsp_i (mgr_port_rsp_i)
     );
   end : gen_dw_downsize
 
@@ -180,11 +180,11 @@ module axi_dw_converter_intf #(
     .clk_i      ( clk_i    ),
     .rst_ni     ( rst_ni   ),
     // subordinate port
-    .sbr_req_i  ( sbr_req  ),
-    .sbr_rsp_o ( sbr_rsp ),
+    .sbr_port_req_i  ( sbr_req  ),
+    .sbr_port_rsp_o ( sbr_rsp ),
     // manager port
-    .mgr_req_o  ( mgr_req  ),
-    .mgr_rsp_i ( mgr_rsp )
+    .mgr_port_req_o  ( mgr_req  ),
+    .mgr_port_rsp_i ( mgr_rsp )
   );
 
 endmodule : axi_dw_converter_intf

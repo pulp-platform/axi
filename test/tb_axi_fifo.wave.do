@@ -151,35 +151,35 @@ add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/data_o
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/pop_i
 add wave -noupdate -divider {DUT Ports}
-add wave -noupdate -expand -group {DUT sbr AW} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.aw_valid
+add wave -noupdate -expand -group {DUT sbr AW} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.aw_valid
 add wave -noupdate -expand -group {DUT sbr AW} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.aw_ready
-add wave -noupdate -expand -group {DUT sbr AW} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.aw
-add wave -noupdate -expand -group {DUT sbr W} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.w
-add wave -noupdate -expand -group {DUT sbr W} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.w_valid
+add wave -noupdate -expand -group {DUT sbr AW} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.aw
+add wave -noupdate -expand -group {DUT sbr W} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.w
+add wave -noupdate -expand -group {DUT sbr W} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.w_valid
 add wave -noupdate -expand -group {DUT sbr W} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.w_ready
 add wave -noupdate -expand -group {DUT sbr B} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.b_valid
-add wave -noupdate -expand -group {DUT sbr B} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.b_ready
+add wave -noupdate -expand -group {DUT sbr B} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.b_ready
 add wave -noupdate -expand -group {DUT sbr B} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.b
-add wave -noupdate -expand -group {DUT sbr AR} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.ar_valid
+add wave -noupdate -expand -group {DUT sbr AR} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.ar_valid
 add wave -noupdate -expand -group {DUT sbr AR} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.ar_ready
-add wave -noupdate -expand -group {DUT sbr AR} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.ar
+add wave -noupdate -expand -group {DUT sbr AR} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.ar
 add wave -noupdate -expand -group {DUT sbr R} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.r_valid
-add wave -noupdate -expand -group {DUT sbr R} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_req_i.r_ready
+add wave -noupdate -expand -group {DUT sbr R} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_port_req_i.r_ready
 add wave -noupdate -expand -group {DUT sbr R} /tb_axi_fifo/i_dut/i_axi_fifo/sbr_resp_o.r
-add wave -noupdate -expand -group {DUT mgr AW} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.aw_valid
+add wave -noupdate -expand -group {DUT mgr AW} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.aw_valid
 add wave -noupdate -expand -group {DUT mgr AW} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.aw_ready
-add wave -noupdate -expand -group {DUT mgr AW} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.aw
-add wave -noupdate -expand -group {DUT mgr W} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.w
-add wave -noupdate -expand -group {DUT mgr W} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.w_valid
+add wave -noupdate -expand -group {DUT mgr AW} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.aw
+add wave -noupdate -expand -group {DUT mgr W} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.w
+add wave -noupdate -expand -group {DUT mgr W} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.w_valid
 add wave -noupdate -expand -group {DUT mgr W} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.w_ready
 add wave -noupdate -expand -group {DUT mgr B} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.b_valid
-add wave -noupdate -expand -group {DUT mgr B} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.b_ready
+add wave -noupdate -expand -group {DUT mgr B} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.b_ready
 add wave -noupdate -expand -group {DUT mgr B} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.b
-add wave -noupdate -expand -group {DUT mgr AR} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.ar_valid
+add wave -noupdate -expand -group {DUT mgr AR} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.ar_valid
 add wave -noupdate -expand -group {DUT mgr AR} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.ar_ready
-add wave -noupdate -expand -group {DUT mgr AR} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.ar
+add wave -noupdate -expand -group {DUT mgr AR} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.ar
 add wave -noupdate -expand -group {DUT mgr R} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.r_valid
-add wave -noupdate -expand -group {DUT mgr R} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_req_o.r_ready
+add wave -noupdate -expand -group {DUT mgr R} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_port_req_o.r_ready
 add wave -noupdate -expand -group {DUT mgr R} /tb_axi_fifo/i_dut/i_axi_fifo/mgr_resp_i.r
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {70 ns} 0}

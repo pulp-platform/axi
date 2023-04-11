@@ -209,10 +209,10 @@ module tb_axi_bus_compare #(
   ) i_axi_multicut (
     .clk_i     ( clk           ),
     .rst_ni    ( rst_n         ),
-    .sbr_req_i ( axi_req_b_out ),
-    .sbr_rsp_o ( axi_rsp_b_out ),
-    .mgr_req_o ( axi_req_b_dly ),
-    .mgr_rsp_i ( axi_rsp_b_dly )
+    .sbr_port_req_i ( axi_req_b_out ),
+    .sbr_port_rsp_o ( axi_rsp_b_out ),
+    .mgr_port_req_o ( axi_req_b_dly ),
+    .mgr_port_rsp_i ( axi_rsp_b_dly )
   );
 
   axi_sim_mem #(

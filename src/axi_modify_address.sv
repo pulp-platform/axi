@@ -26,59 +26,59 @@ module axi_modify_address #(
   parameter type axi_rsp_t = logic
 ) (
   /// Subordinate port request
-  input  sbr_port_axi_req_t  sbr_req_i,
+  input  sbr_port_axi_req_t  sbr_port_req_i,
   /// Subordinate port response
-  output axi_rsp_t sbr_rsp_o,
+  output axi_rsp_t sbr_port_rsp_o,
   /// AW address on manager port; must remain stable while an AW handshake is pending.
   input  mgr_addr_t mgr_aw_addr_i,
   /// AR address on manager port; must remain stable while an AR handshake is pending.
   input  mgr_addr_t mgr_ar_addr_i,
   /// Manager port request
-  output mgr_port_axi_req_t  mgr_req_o,
+  output mgr_port_axi_req_t  mgr_port_req_o,
   /// Manager port response
-  input  axi_rsp_t mgr_rsp_i
+  input  axi_rsp_t mgr_port_rsp_i
 );
 
-  assign mgr_req_o = '{
+  assign mgr_port_req_o = '{
     aw: '{
-      id:     sbr_req_i.aw.id,
+      id:     sbr_port_req_i.aw.id,
       addr:   mgr_aw_addr_i,
-      len:    sbr_req_i.aw.len,
-      size:   sbr_req_i.aw.size,
-      burst:  sbr_req_i.aw.burst,
-      lock:   sbr_req_i.aw.lock,
-      cache:  sbr_req_i.aw.cache,
-      prot:   sbr_req_i.aw.prot,
-      qos:    sbr_req_i.aw.qos,
-      region: sbr_req_i.aw.region,
-      atop:   sbr_req_i.aw.atop,
-      user:   sbr_req_i.aw.user,
+      len:    sbr_port_req_i.aw.len,
+      size:   sbr_port_req_i.aw.size,
+      burst:  sbr_port_req_i.aw.burst,
+      lock:   sbr_port_req_i.aw.lock,
+      cache:  sbr_port_req_i.aw.cache,
+      prot:   sbr_port_req_i.aw.prot,
+      qos:    sbr_port_req_i.aw.qos,
+      region: sbr_port_req_i.aw.region,
+      atop:   sbr_port_req_i.aw.atop,
+      user:   sbr_port_req_i.aw.user,
       default: '0
     },
-    aw_valid: sbr_req_i.aw_valid,
-    w:        sbr_req_i.w,
-    w_valid:  sbr_req_i.w_valid,
-    b_ready:  sbr_req_i.b_ready,
+    aw_valid: sbr_port_req_i.aw_valid,
+    w:        sbr_port_req_i.w,
+    w_valid:  sbr_port_req_i.w_valid,
+    b_ready:  sbr_port_req_i.b_ready,
     ar: '{
-      id:     sbr_req_i.ar.id,
+      id:     sbr_port_req_i.ar.id,
       addr:   mgr_ar_addr_i,
-      len:    sbr_req_i.ar.len,
-      size:   sbr_req_i.ar.size,
-      burst:  sbr_req_i.ar.burst,
-      lock:   sbr_req_i.ar.lock,
-      cache:  sbr_req_i.ar.cache,
-      prot:   sbr_req_i.ar.prot,
-      qos:    sbr_req_i.ar.qos,
-      region: sbr_req_i.ar.region,
-      user:   sbr_req_i.ar.user,
+      len:    sbr_port_req_i.ar.len,
+      size:   sbr_port_req_i.ar.size,
+      burst:  sbr_port_req_i.ar.burst,
+      lock:   sbr_port_req_i.ar.lock,
+      cache:  sbr_port_req_i.ar.cache,
+      prot:   sbr_port_req_i.ar.prot,
+      qos:    sbr_port_req_i.ar.qos,
+      region: sbr_port_req_i.ar.region,
+      user:   sbr_port_req_i.ar.user,
       default: '0
     },
-    ar_valid: sbr_req_i.ar_valid,
-    r_ready:  sbr_req_i.r_ready,
+    ar_valid: sbr_port_req_i.ar_valid,
+    r_ready:  sbr_port_req_i.r_ready,
     default: '0
   };
 
-  assign sbr_rsp_o = mgr_rsp_i;
+  assign sbr_port_rsp_o = mgr_port_rsp_i;
 endmodule
 
 
@@ -143,10 +143,10 @@ module axi_modify_address_intf #(
     .mgr_port_axi_req_t ( mgr_port_axi_req_t ),
     .axi_rsp_t          ( axi_rsp_t          )
   ) i_axi_modify_address (
-    .sbr_req_i    ( sbr_req ),
-    .sbr_rsp_o    ( sbr_rsp ),
-    .mgr_req_o    ( mgr_req ),
-    .mgr_rsp_i    ( mgr_rsp ),
+    .sbr_port_req_i    ( sbr_req ),
+    .sbr_port_rsp_o    ( sbr_rsp ),
+    .mgr_port_req_o    ( mgr_req ),
+    .mgr_port_rsp_i    ( mgr_rsp ),
     .mgr_aw_addr_i,
     .mgr_ar_addr_i
   );

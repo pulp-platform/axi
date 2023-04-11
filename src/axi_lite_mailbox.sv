@@ -33,8 +33,8 @@ module axi_lite_mailbox #(
   input  logic                rst_ni,      // Asynchronous reset active low
   input  logic                test_i,      // Testmode enable
   // subordinate ports [1:0]
-  input  axi_lite_req_t [1:0] sbr_reqs_i,
-  output axi_lite_rsp_t [1:0] sbr_rsps_o,
+  input  axi_lite_req_t [1:0] sbr_ports_req_i,
+  output axi_lite_rsp_t [1:0] sbr_ports_rsp_o,
   output logic          [1:0] irq_o,       // interrupt output for each port
   input  addr_t         [1:0] base_addr_i  // base address for each port
 );
@@ -67,8 +67,8 @@ module axi_lite_mailbox #(
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
     // subordinate port
-    .sbr_req_i      ( sbr_reqs_i[0]   ),
-    .sbr_rsp_o      ( sbr_rsps_o[0]   ),
+    .sbr_port_req_i      ( sbr_ports_req_i[0]   ),
+    .sbr_port_rsp_o      ( sbr_ports_rsp_o[0]   ),
     .base_addr_i    ( base_addr_i[0]  ), // base address for the subordinate port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[0]  ),
@@ -100,8 +100,8 @@ module axi_lite_mailbox #(
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
     // subordinate port
-    .sbr_req_i      ( sbr_reqs_i[1]   ),
-    .sbr_rsp_o      ( sbr_rsps_o[1]   ),
+    .sbr_port_req_i      ( sbr_ports_req_i[1]   ),
+    .sbr_port_rsp_o      ( sbr_ports_rsp_o[1]   ),
     .base_addr_i    ( base_addr_i[1]  ), // base address for the subordinate port
     // write FIFO port
     .mbox_w_data_o  ( mbox_w_data[1]  ),
@@ -214,8 +214,8 @@ module axi_lite_mailbox_subordinate #(
   input  logic          clk_i,   // Clock
   input  logic          rst_ni,  // Asynchronous reset active low
   // subordinate port
-  input  axi_lite_req_t sbr_req_i,
-  output axi_lite_rsp_t sbr_rsp_o,
+  input  axi_lite_req_t sbr_port_req_i,
+  output axi_lite_rsp_t sbr_port_rsp_o,
   input  addr_t         base_addr_i, // base address for the subordinate port
   // write FIFO port
   output data_t         mbox_w_data_o,
@@ -300,7 +300,7 @@ module axi_lite_mailbox_subordinate #(
 
   // Mailbox FIFO data assignments
   for (genvar i = 0; i < (DataWidth/8); i++) begin : gen_w_mbox_data
-    assign mbox_w_data_o[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : '0;
+    assign mbox_w_data_o[i*8+:8] = sbr_port_req_i.w.strb[i] ? sbr_port_req_i.w.data[i*8+:8] : '0;
   end
 
   // combinational mailbox register assignments, for the read only registers
@@ -314,11 +314,11 @@ module axi_lite_mailbox_subordinate #(
 
   always_comb begin
     // subordinate port channel outputs for the AW, W and R channel, other driven from spill register
-    sbr_rsp_o.aw_ready = 1'b0;
-    sbr_rsp_o.w_ready  = 1'b0;
+    sbr_port_rsp_o.aw_ready = 1'b0;
+    sbr_port_rsp_o.w_ready  = 1'b0;
     b_chan             = '{resp: axi_pkg::RESP_SLVERR};
     b_valid            = 1'b0;
-    sbr_rsp_o.ar_ready = 1'b0;
+    sbr_port_rsp_o.ar_ready = 1'b0;
     r_chan             = '{data: '0, resp: axi_pkg::RESP_SLVERR};
     r_valid            = 1'b0;
     // Default assignments for the internal registers
@@ -361,7 +361,7 @@ module axi_lite_mailbox_subordinate #(
     // active state.
 
     // Check if there is a pending read request on the subordinate port.
-    if (sbr_req_i.ar_valid) begin
+    if (sbr_port_req_i.ar_valid) begin
       // set the right read channel output depending on the address decoding
       if (dec_r_valid) begin
         // when decode not valid, send the default subordinateerror
@@ -397,7 +397,7 @@ module axi_lite_mailbox_subordinate #(
       end
       r_valid = 1'b1;
       if (r_ready) begin
-        sbr_rsp_o.ar_ready = 1'b1;
+        sbr_port_rsp_o.ar_ready = 1'b1;
       end
     end // read register
 
@@ -405,7 +405,7 @@ module axi_lite_mailbox_subordinate #(
     // Write registers
     // -------------------------------------------
     // Wait for control and write data to be valid.
-    if (sbr_req_i.aw_valid && sbr_req_i.w_valid) begin
+    if (sbr_port_req_i.aw_valid && sbr_port_req_i.w_valid) begin
       // Can do the handshake here as the b response goes into a spill register with latency one.
       // Without the B spill register, the B channel would violate the AXI stable requirement.
       b_valid = 1'b1;
@@ -429,7 +429,7 @@ module axi_lite_mailbox_subordinate #(
             // ERROR:  read only
             WIRQT:  begin
               for (int unsigned i = 0; i < DataWidth/8; i++) begin
-                wirqt_d[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                wirqt_d[i*8+:8] = sbr_port_req_i.w.strb[i] ? sbr_port_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (wirqt_d >= data_t'(MailboxDepth)) begin
                 // the `-1` is to have the interrupt fireing when the FIFO is comletely full
@@ -440,7 +440,7 @@ module axi_lite_mailbox_subordinate #(
             end
             RIRQT:  begin
               for (int unsigned i = 0; i < DataWidth/8; i++) begin
-                rirqt_d[i*8+:8] = sbr_req_i.w.strb[i] ? sbr_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                rirqt_d[i*8+:8] = sbr_port_req_i.w.strb[i] ? sbr_port_req_i.w.data[i*8+:8] : 8'b0000_0000;
               end
               if (rirqt_d >= data_t'(MailboxDepth)) begin
               // Threshold to maximal value, minus two to prevent overflow in usage
@@ -451,37 +451,37 @@ module axi_lite_mailbox_subordinate #(
             end
             IRQS:   begin
               // Acknowledge and clear the register by asserting the respective one
-              if (sbr_req_i.w.strb[0]) begin
+              if (sbr_port_req_i.w.strb[0]) begin
                 // *_d signal is set in the beginning of this process, prevent accidental
                 // overwrite of not acknowledged irq
-                irqs_d[2]   = sbr_req_i.w.data[2] ? 1'b0 : irqs_d[2]; // Error irq status
-                irqs_d[1]   = sbr_req_i.w.data[1] ? 1'b0 : irqs_d[1]; // Read  irq status
-                irqs_d[0]   = sbr_req_i.w.data[0] ? 1'b0 : irqs_d[0]; // Write irq status
+                irqs_d[2]   = sbr_port_req_i.w.data[2] ? 1'b0 : irqs_d[2]; // Error irq status
+                irqs_d[1]   = sbr_port_req_i.w.data[1] ? 1'b0 : irqs_d[1]; // Read  irq status
+                irqs_d[0]   = sbr_port_req_i.w.data[0] ? 1'b0 : irqs_d[0]; // Write irq status
                 clear_irq_o = 1'b1;
                 update_regs = 1'b1;
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             IRQEN:  begin
-              if (sbr_req_i.w.strb[0]) begin
-                irqen_d[2:0]  = sbr_req_i.w.data[2:0]; // set the irq enable bits
+              if (sbr_port_req_i.w.strb[0]) begin
+                irqen_d[2:0]  = sbr_port_req_i.w.data[2:0]; // set the irq enable bits
                 update_regs = 1'b1;
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             // IRQP: read only
             CTRL:   begin
-              if (sbr_req_i.w.strb[0]) begin
-                mbox_r_flush_o = sbr_req_i.w.data[1]; // Flush read  FIFO
-                mbox_w_flush_o = sbr_req_i.w.data[0]; // Flush write FIFO
+              if (sbr_port_req_i.w.strb[0]) begin
+                mbox_r_flush_o = sbr_port_req_i.w.data[1]; // Flush read  FIFO
+                mbox_w_flush_o = sbr_port_req_i.w.data[0]; // Flush write FIFO
               end
               b_chan = '{resp: axi_pkg::RESP_OKAY};
             end
             default : /* use default b_chan */;
           endcase
         end
-        sbr_rsp_o.aw_ready = 1'b1;
-        sbr_rsp_o.w_ready  = 1'b1;
+        sbr_port_rsp_o.aw_ready = 1'b1;
+        sbr_port_rsp_o.w_ready  = 1'b1;
       end // if (b_ready): Does not violate AXI spec, because the ready comes from an internal
           // spill register and does not propagate the ready from the b channel.
     end // write register
@@ -495,7 +495,7 @@ module axi_lite_mailbox_subordinate #(
     .addr_t   ( addr_t  ),
     .rule_t   ( rule_t  )
   ) i_waddr_decode (
-    .addr_i           ( sbr_req_i.aw.addr ),
+    .addr_i           ( sbr_port_req_i.aw.addr ),
     .addr_map_i       ( addr_map          ),
     .idx_o            ( w_reg_idx         ),
     .dec_valid_o      ( dec_w_valid       ),
@@ -511,9 +511,9 @@ module axi_lite_mailbox_subordinate #(
     .valid_i ( b_valid           ),
     .ready_o ( b_ready           ),
     .data_i  ( b_chan            ),
-    .valid_o ( sbr_rsp_o.b_valid ),
-    .ready_i ( sbr_req_i.b_ready ),
-    .data_o  ( sbr_rsp_o.b       )
+    .valid_o ( sbr_port_rsp_o.b_valid ),
+    .ready_i ( sbr_port_req_i.b_ready ),
+    .data_o  ( sbr_port_rsp_o.b       )
   );
   addr_decode #(
     .NoIndices( NumRegs ),
@@ -521,7 +521,7 @@ module axi_lite_mailbox_subordinate #(
     .addr_t   ( addr_t  ),
     .rule_t   ( rule_t  )
   ) i_raddr_decode (
-    .addr_i           ( sbr_req_i.ar.addr ),
+    .addr_i           ( sbr_port_req_i.ar.addr ),
     .addr_map_i       ( addr_map          ),
     .idx_o            ( r_reg_idx         ),
     .dec_valid_o      ( dec_r_valid       ),
@@ -537,17 +537,17 @@ module axi_lite_mailbox_subordinate #(
     .valid_i ( r_valid           ),
     .ready_o ( r_ready           ),
     .data_i  ( r_chan            ),
-    .valid_o ( sbr_rsp_o.r_valid ),
-    .ready_i ( sbr_req_i.r_ready ),
-    .data_o  ( sbr_rsp_o.r       )
+    .valid_o ( sbr_port_rsp_o.r_valid ),
+    .ready_i ( sbr_port_req_i.r_ready ),
+    .data_o  ( sbr_port_rsp_o.r       )
   );
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : proc_check_params
-    assert (AddrWidth == $bits(sbr_req_i.aw.addr)) else $fatal(1, "AW AddrWidth mismatch");
-    assert (DataWidth == $bits(sbr_req_i.w.data))  else $fatal(1, " W DataWidth mismatch");
-    assert (AddrWidth == $bits(sbr_req_i.ar.addr)) else $fatal(1, "AR AddrWidth mismatch");
-    assert (DataWidth == $bits(sbr_rsp_o.r.data))  else $fatal(1, " R DataWidth mismatch");
+    assert (AddrWidth == $bits(sbr_port_req_i.aw.addr)) else $fatal(1, "AW AddrWidth mismatch");
+    assert (DataWidth == $bits(sbr_port_req_i.w.data))  else $fatal(1, " W DataWidth mismatch");
+    assert (AddrWidth == $bits(sbr_port_req_i.ar.addr)) else $fatal(1, "AR AddrWidth mismatch");
+    assert (DataWidth == $bits(sbr_port_rsp_o.r.data))  else $fatal(1, " R DataWidth mismatch");
   end
   `endif
   // pragma translate_on
@@ -602,8 +602,8 @@ module axi_lite_mailbox_intf #(
     .rst_ni,     // Asynchronous reset active low
     .test_i,     // Testmode enable
     // subordinate ports [1:0]
-    .sbr_reqs_i ( sbr_reqs ),
-    .sbr_rsps_o ( sbr_rsps ),
+    .sbr_ports_req_i ( sbr_reqs ),
+    .sbr_ports_rsp_o ( sbr_rsps ),
     .irq_o,      // interrupt output for each port
     .base_addr_i // base address for each port
   );

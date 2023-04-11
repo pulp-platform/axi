@@ -87,13 +87,13 @@ module axi_xp #(
   /// Test mode enable
   input  logic                         test_en_i,
   /// Subordinate ports request
-  input  axi_req_t [NumSbrPorts-1:0]   sbr_req_i,
+  input  axi_req_t [NumSbrPorts-1:0]   sbr_port_req_i,
   /// Subordinate ports response
-  output axi_rsp_t [NumSbrPorts-1:0]   sbr_rsp_o,
+  output axi_rsp_t [NumSbrPorts-1:0]   sbr_port_rsp_o,
   /// Manager ports request
-  output axi_req_t [NumMgrPorts-1:0]   mgr_req_o,
+  output axi_req_t [NumMgrPorts-1:0]   mgr_port_req_o,
   /// Manager ports response
-  input  axi_rsp_t [NumMgrPorts-1:0]   mgr_rsp_i,
+  input  axi_rsp_t [NumMgrPorts-1:0]   mgr_port_rsp_i,
   /// Address map for transferring transactions from subordinate to manager ports
   input  rule_t    [NumAddrRules-1:0]  addr_map_i
 );
@@ -136,8 +136,8 @@ module axi_xp #(
     .clk_i,
     .rst_ni,
     .test_i                 ( test_en_i                               ),
-    .sbr_ports_req_i        ( sbr_req_i                               ),
-    .sbr_ports_rsp_o        ( sbr_rsp_o                               ),
+    .sbr_ports_req_i        ( sbr_port_req_i                               ),
+    .sbr_ports_rsp_o        ( sbr_port_rsp_o                               ),
     .mgr_ports_req_o        ( xbar_req                                ),
     .mgr_ports_rsp_i        ( xbar_rsp                                ),
     .addr_map_i,
@@ -158,10 +158,10 @@ module axi_xp #(
     ) i_axi_id_remap (
       .clk_i,
       .rst_ni,
-      .sbr_req_i ( xbar_req[i]  ),
-      .sbr_rsp_o ( xbar_rsp[i]  ),
-      .mgr_req_o ( mgr_req_o[i] ),
-      .mgr_rsp_i ( mgr_rsp_i[i] )
+      .sbr_port_req_i ( xbar_req[i]  ),
+      .sbr_port_rsp_o ( xbar_rsp[i]  ),
+      .mgr_port_req_o ( mgr_port_req_o[i] ),
+      .mgr_port_rsp_i ( mgr_port_rsp_i[i] )
     );
   end
 
@@ -246,10 +246,10 @@ import cf_math_pkg::idx_width;
     .clk_i,
     .rst_ni,
     .test_en_i,
-    .sbr_req_i (sbr_reqs),
-    .sbr_rsp_o (sbr_rsps),
-    .mgr_req_o (mgr_reqs),
-    .mgr_rsp_i (mgr_rsps),
+    .sbr_port_req_i (sbr_reqs),
+    .sbr_port_rsp_o (sbr_rsps),
+    .mgr_port_req_o (mgr_reqs),
+    .mgr_port_rsp_i (mgr_rsps),
     .addr_map_i
   );
 

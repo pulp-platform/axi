@@ -46,11 +46,11 @@ module axi_lite_mux #(
   input  logic                            rst_ni,   // Asynchronous reset active low
   input  logic                            test_i,   // Test Mode enable
   // subordinate ports (AXI4-Lite inputs), connect manager modules here
-  input  axi_lite_req_t [NumSbrPorts-1:0] sbr_reqs_i,
-  output axi_lite_rsp_t [NumSbrPorts-1:0] sbr_rsps_o,
+  input  axi_lite_req_t [NumSbrPorts-1:0] sbr_ports_req_i,
+  output axi_lite_rsp_t [NumSbrPorts-1:0] sbr_ports_rsp_o,
   // manager port (AXI4-Lite output), connect subordinate module here
-  output axi_lite_req_t                   mgr_req_o,
-  input  axi_lite_rsp_t                   mgr_rsp_i
+  output axi_lite_req_t                   mgr_port_req_o,
+  input  axi_lite_rsp_t                   mgr_port_rsp_i
 );
   // pass through if only one subordinate port
   if (NumSbrPorts == 32'h1) begin : gen_no_mux
@@ -60,12 +60,12 @@ module axi_lite_mux #(
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_reqs_i[0].aw_valid   ),
-      .ready_o ( sbr_rsps_o[0].aw_ready   ),
-      .data_i  ( sbr_reqs_i[0].aw         ),
-      .valid_o ( mgr_req_o.aw_valid       ),
-      .ready_i ( mgr_rsp_i.aw_ready       ),
-      .data_o  ( mgr_req_o.aw             )
+      .valid_i ( sbr_ports_req_i[0].aw_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].aw_ready   ),
+      .data_i  ( sbr_ports_req_i[0].aw         ),
+      .valid_o ( mgr_port_req_o.aw_valid       ),
+      .ready_i ( mgr_port_rsp_i.aw_ready       ),
+      .data_o  ( mgr_port_req_o.aw             )
     );
     spill_register #(
       .T       ( w_chan_t ),
@@ -73,12 +73,12 @@ module axi_lite_mux #(
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
-      .valid_i ( sbr_reqs_i[0].w_valid   ),
-      .ready_o ( sbr_rsps_o[0].w_ready   ),
-      .data_i  ( sbr_reqs_i[0].w         ),
-      .valid_o ( mgr_req_o.w_valid       ),
-      .ready_i ( mgr_rsp_i.w_ready       ),
-      .data_o  ( mgr_req_o.w             )
+      .valid_i ( sbr_ports_req_i[0].w_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].w_ready   ),
+      .data_i  ( sbr_ports_req_i[0].w         ),
+      .valid_o ( mgr_port_req_o.w_valid       ),
+      .ready_i ( mgr_port_rsp_i.w_ready       ),
+      .data_o  ( mgr_port_req_o.w             )
     );
     spill_register #(
       .T       ( b_chan_t ),
@@ -86,12 +86,12 @@ module axi_lite_mux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                 ),
       .rst_ni  ( rst_ni                ),
-      .valid_i ( mgr_rsp_i.b_valid     ),
-      .ready_o ( mgr_req_o.b_ready     ),
-      .data_i  ( mgr_rsp_i.b           ),
-      .valid_o ( sbr_rsps_o[0].b_valid ),
-      .ready_i ( sbr_reqs_i[0].b_ready ),
-      .data_o  ( sbr_rsps_o[0].b       )
+      .valid_i ( mgr_port_rsp_i.b_valid     ),
+      .ready_o ( mgr_port_req_o.b_ready     ),
+      .data_i  ( mgr_port_rsp_i.b           ),
+      .valid_o ( sbr_ports_rsp_o[0].b_valid ),
+      .ready_i ( sbr_ports_req_i[0].b_ready ),
+      .data_o  ( sbr_ports_rsp_o[0].b       )
     );
     spill_register #(
       .T       ( ar_chan_t ),
@@ -99,12 +99,12 @@ module axi_lite_mux #(
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_reqs_i[0].ar_valid   ),
-      .ready_o ( sbr_rsps_o[0].ar_ready   ),
-      .data_i  ( sbr_reqs_i[0].ar         ),
-      .valid_o ( mgr_req_o.ar_valid       ),
-      .ready_i ( mgr_rsp_i.ar_ready       ),
-      .data_o  ( mgr_req_o.ar             )
+      .valid_i ( sbr_ports_req_i[0].ar_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].ar_ready   ),
+      .data_i  ( sbr_ports_req_i[0].ar         ),
+      .valid_o ( mgr_port_req_o.ar_valid       ),
+      .ready_i ( mgr_port_rsp_i.ar_ready       ),
+      .data_o  ( mgr_port_req_o.ar             )
     );
     spill_register #(
       .T       ( r_chan_t ),
@@ -112,12 +112,12 @@ module axi_lite_mux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                 ),
       .rst_ni  ( rst_ni                ),
-      .valid_i ( mgr_rsp_i.r_valid     ),
-      .ready_o ( mgr_req_o.r_ready     ),
-      .data_i  ( mgr_rsp_i.r           ),
-      .valid_o ( sbr_rsps_o[0].r_valid ),
-      .ready_i ( sbr_reqs_i[0].r_ready ),
-      .data_o  ( sbr_rsps_o[0].r       )
+      .valid_i ( mgr_port_rsp_i.r_valid     ),
+      .ready_o ( mgr_port_req_o.r_ready     ),
+      .data_i  ( mgr_port_rsp_i.r           ),
+      .valid_o ( sbr_ports_rsp_o[0].r_valid ),
+      .ready_i ( sbr_ports_req_i[0].r_ready ),
+      .data_o  ( sbr_ports_rsp_o[0].r       )
     );
 
   // other non degenerate cases
@@ -190,9 +190,9 @@ module axi_lite_mux #(
     //--------------------------------------
     // unpach AW channel from request/response array
     for (genvar i = 0; i < NumSbrPorts; i++) begin : gen_aw_arb_input
-      assign sbr_aw_chans[i]         = sbr_reqs_i[i].aw;
-      assign sbr_aw_valids[i]        = sbr_reqs_i[i].aw_valid;
-      assign sbr_rsps_o[i].aw_ready = sbr_aw_readies[i];
+      assign sbr_aw_chans[i]         = sbr_ports_req_i[i].aw;
+      assign sbr_aw_valids[i]        = sbr_ports_req_i[i].aw_valid;
+      assign sbr_ports_rsp_o[i].aw_ready = sbr_aw_readies[i];
     end
     rr_arb_tree #(
       .NumIn    ( NumSbrPorts ),
@@ -274,19 +274,19 @@ module axi_lite_mux #(
       .valid_i ( mgr_aw_valid        ),
       .ready_o ( mgr_aw_ready        ),
       .data_i  ( mgr_aw_chan         ),
-      .valid_o ( mgr_req_o.aw_valid  ),
-      .ready_i ( mgr_rsp_i.aw_ready  ),
-      .data_o  ( mgr_req_o.aw        )
+      .valid_o ( mgr_port_req_o.aw_valid  ),
+      .ready_i ( mgr_port_rsp_i.aw_ready  ),
+      .data_o  ( mgr_port_req_o.aw        )
     );
 
     //--------------------------------------
     // W Channel
     //--------------------------------------
     // multiplexer
-    assign mgr_w_chan      = sbr_reqs_i[w_select].w;
-    assign mgr_w_valid     = (!w_fifo_empty && !b_fifo_full) ? sbr_reqs_i[w_select].w_valid  : 1'b0;
+    assign mgr_w_chan      = sbr_ports_req_i[w_select].w;
+    assign mgr_w_valid     = (!w_fifo_empty && !b_fifo_full) ? sbr_ports_req_i[w_select].w_valid  : 1'b0;
     for (genvar i = 0; i < NumSbrPorts; i++) begin : gen_sbr_w_ready
-      assign sbr_rsps_o[i].w_ready =  mgr_w_ready & ~w_fifo_empty &
+      assign sbr_ports_rsp_o[i].w_ready =  mgr_w_ready & ~w_fifo_empty &
                                       ~b_fifo_full & (w_select == select_t'(i));
     end
     assign w_fifo_pop      = mgr_w_valid & mgr_w_ready;
@@ -318,9 +318,9 @@ module axi_lite_mux #(
       .valid_i ( mgr_w_valid        ),
       .ready_o ( mgr_w_ready        ),
       .data_i  ( mgr_w_chan         ),
-      .valid_o ( mgr_req_o.w_valid  ),
-      .ready_i ( mgr_rsp_i.w_ready  ),
-      .data_o  ( mgr_req_o.w        )
+      .valid_o ( mgr_port_req_o.w_valid  ),
+      .ready_i ( mgr_port_rsp_i.w_ready  ),
+      .data_o  ( mgr_port_req_o.w        )
     );
 
     //--------------------------------------
@@ -328,10 +328,10 @@ module axi_lite_mux #(
     //--------------------------------------
     // replicate B channels
     for (genvar i = 0; i < NumSbrPorts; i++) begin : gen_sbr_resps_b
-      assign sbr_rsps_o[i].b       = mgr_b_chan;
-      assign sbr_rsps_o[i].b_valid = mgr_b_valid & ~b_fifo_empty & (b_select == select_t'(i));
+      assign sbr_ports_rsp_o[i].b       = mgr_b_chan;
+      assign sbr_ports_rsp_o[i].b_valid = mgr_b_valid & ~b_fifo_empty & (b_select == select_t'(i));
     end
-    assign mgr_b_ready    = ~b_fifo_empty & sbr_reqs_i[b_select].b_ready;
+    assign mgr_b_ready    = ~b_fifo_empty & sbr_ports_req_i[b_select].b_ready;
     assign b_fifo_pop     = mgr_b_valid & mgr_b_ready;
 
     spill_register #(
@@ -340,9 +340,9 @@ module axi_lite_mux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i             ),
       .rst_ni  ( rst_ni            ),
-      .valid_i ( mgr_rsp_i.b_valid ),
-      .ready_o ( mgr_req_o.b_ready ),
-      .data_i  ( mgr_rsp_i.b       ),
+      .valid_i ( mgr_port_rsp_i.b_valid ),
+      .ready_o ( mgr_port_req_o.b_ready ),
+      .data_i  ( mgr_port_rsp_i.b       ),
       .valid_o ( mgr_b_valid       ),
       .ready_i ( mgr_b_ready       ),
       .data_o  ( mgr_b_chan        )
@@ -353,9 +353,9 @@ module axi_lite_mux #(
     //--------------------------------------
     // unpack AR channel from request/response struct
     for (genvar i = 0; i < NumSbrPorts; i++) begin : gen_ar_arb_input
-      assign sbr_ar_chans[i]         = sbr_reqs_i[i].ar;
-      assign sbr_ar_valids[i]        = sbr_reqs_i[i].ar_valid;
-      assign sbr_rsps_o[i].ar_ready = sbr_ar_readies[i];
+      assign sbr_ar_chans[i]         = sbr_ports_req_i[i].ar;
+      assign sbr_ar_valids[i]        = sbr_ports_req_i[i].ar_valid;
+      assign sbr_ports_rsp_o[i].ar_ready = sbr_ar_readies[i];
     end
     rr_arb_tree #(
       .NumIn    ( NumSbrPorts ),
@@ -409,9 +409,9 @@ module axi_lite_mux #(
       .valid_i ( mgr_ar_valid        ),
       .ready_o ( mgr_ar_ready        ),
       .data_i  ( mgr_ar_chan         ),
-      .valid_o ( mgr_req_o.ar_valid  ),
-      .ready_i ( mgr_rsp_i.ar_ready  ),
-      .data_o  ( mgr_req_o.ar        )
+      .valid_o ( mgr_port_req_o.ar_valid  ),
+      .ready_i ( mgr_port_rsp_i.ar_ready  ),
+      .data_o  ( mgr_port_req_o.ar        )
     );
 
     //--------------------------------------
@@ -419,10 +419,10 @@ module axi_lite_mux #(
     //--------------------------------------
     // replicate R channels
     for (genvar i = 0; i < NumSbrPorts; i++) begin : gen_sbr_rsps_r
-      assign sbr_rsps_o[i].r       = mgr_r_chan;
-      assign sbr_rsps_o[i].r_valid = mgr_r_valid & ~r_fifo_empty & (r_select == select_t'(i));
+      assign sbr_ports_rsp_o[i].r       = mgr_r_chan;
+      assign sbr_ports_rsp_o[i].r_valid = mgr_r_valid & ~r_fifo_empty & (r_select == select_t'(i));
     end
-    assign mgr_r_ready    = ~r_fifo_empty & sbr_reqs_i[r_select].r_ready;
+    assign mgr_r_ready    = ~r_fifo_empty & sbr_ports_req_i[r_select].r_ready;
     assign r_fifo_pop     = mgr_r_valid & mgr_r_ready;
 
     spill_register #(
@@ -431,9 +431,9 @@ module axi_lite_mux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i             ),
       .rst_ni  ( rst_ni            ),
-      .valid_i ( mgr_rsp_i.r_valid ),
-      .ready_o ( mgr_req_o.r_ready ),
-      .data_i  ( mgr_rsp_i.r       ),
+      .valid_i ( mgr_port_rsp_i.r_valid ),
+      .ready_o ( mgr_port_req_o.r_ready ),
+      .data_i  ( mgr_port_rsp_i.r       ),
       .valid_o ( mgr_r_valid       ),
       .ready_i ( mgr_r_ready       ),
       .data_o  ( mgr_r_chan        )
@@ -522,10 +522,10 @@ module axi_lite_mux_intf #(
     .clk_i,  // Clock
     .rst_ni, // Asynchronous reset active low
     .test_i, // Test Mode enable
-    .sbr_reqs_i ( sbr_reqs ),
-    .sbr_rsps_o ( sbr_rsps ),
-    .mgr_req_o  ( mgr_req  ),
-    .mgr_rsp_i  ( mgr_rsp  )
+    .sbr_ports_req_i ( sbr_reqs ),
+    .sbr_ports_rsp_o ( sbr_rsps ),
+    .mgr_port_req_o  ( mgr_req  ),
+    .mgr_port_rsp_i  ( mgr_rsp  )
   );
 
   // pragma translate_off

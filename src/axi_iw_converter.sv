@@ -99,13 +99,13 @@ module axi_iw_converter #(
   /// Asynchronous reset, active low
   input  logic              rst_ni,
   /// Subordinate port request
-  input  sbr_port_axi_req_t sbr_req_i,
+  input  sbr_port_axi_req_t sbr_port_req_i,
   /// Subordinate port response
-  output sbr_port_axi_rsp_t sbr_rsp_o,
+  output sbr_port_axi_rsp_t sbr_port_rsp_o,
   /// Manager port request
-  output mgr_port_axi_req_t mgr_req_o,
+  output mgr_port_axi_req_t mgr_port_req_o,
   /// Manager port response
-  input  mgr_port_axi_rsp_t mgr_rsp_i
+  input  mgr_port_axi_rsp_t mgr_port_rsp_i
 );
 
   typedef logic [AddrWidth-1:0]      addr_t;
@@ -138,10 +138,10 @@ module axi_iw_converter #(
       ) i_axi_id_remap (
         .clk_i,
         .rst_ni,
-        .sbr_req_i ( sbr_req_i ),
-        .sbr_rsp_o ( sbr_rsp_o ),
-        .mgr_req_o ( mgr_req_o ),
-        .mgr_rsp_i ( mgr_rsp_i )
+        .sbr_port_req_i ( sbr_port_req_i ),
+        .sbr_port_rsp_o ( sbr_port_rsp_o ),
+        .mgr_port_req_o ( mgr_port_req_o ),
+        .mgr_port_rsp_i ( mgr_port_rsp_i )
       );
     end else begin : gen_serialize
       axi_id_serialize #(
@@ -160,10 +160,10 @@ module axi_iw_converter #(
       ) i_axi_id_serialize (
         .clk_i,
         .rst_ni,
-        .sbr_req_i ( sbr_req_i ),
-        .sbr_rsp_o ( sbr_rsp_o ),
-        .mgr_req_o ( mgr_req_o ),
-        .mgr_rsp_i ( mgr_rsp_i )
+        .sbr_port_req_i ( sbr_port_req_i ),
+        .sbr_port_rsp_o ( sbr_port_rsp_o ),
+        .mgr_port_req_o ( mgr_port_req_o ),
+        .mgr_port_rsp_i ( mgr_port_rsp_i )
       );
       end
   end else if (MgrPortIdWidth > SbrPortIdWidth) begin : gen_upsize
@@ -183,40 +183,40 @@ module axi_iw_converter #(
       .mgr_r_chan_t   ( mgr_r_t         )
     ) i_axi_id_prepend (
       .pre_id_i         ( '0                 ),
-      .sbr_aw_chans_i   ( sbr_req_i.aw       ),
-      .sbr_aw_valids_i  ( sbr_req_i.aw_valid ),
-      .sbr_aw_readies_o ( sbr_rsp_o.aw_ready ),
-      .sbr_w_chans_i    ( sbr_req_i.w        ),
-      .sbr_w_valids_i   ( sbr_req_i.w_valid  ),
-      .sbr_w_readies_o  ( sbr_rsp_o.w_ready  ),
-      .sbr_b_chans_o    ( sbr_rsp_o.b        ),
-      .sbr_b_valids_o   ( sbr_rsp_o.b_valid  ),
-      .sbr_b_readies_i  ( sbr_req_i.b_ready  ),
-      .sbr_ar_chans_i   ( sbr_req_i.ar       ),
-      .sbr_ar_valids_i  ( sbr_req_i.ar_valid ),
-      .sbr_ar_readies_o ( sbr_rsp_o.ar_ready ),
-      .sbr_r_chans_o    ( sbr_rsp_o.r        ),
-      .sbr_r_valids_o   ( sbr_rsp_o.r_valid  ),
-      .sbr_r_readies_i  ( sbr_req_i.r_ready  ),
-      .mgr_aw_chans_o   ( mgr_req_o.aw       ),
-      .mgr_aw_valids_o  ( mgr_req_o.aw_valid ),
-      .mgr_aw_readies_i ( mgr_rsp_i.aw_ready ),
-      .mgr_w_chans_o    ( mgr_req_o.w        ),
-      .mgr_w_valids_o   ( mgr_req_o.w_valid  ),
-      .mgr_w_readies_i  ( mgr_rsp_i.w_ready  ),
-      .mgr_b_chans_i    ( mgr_rsp_i.b        ),
-      .mgr_b_valids_i   ( mgr_rsp_i.b_valid  ),
-      .mgr_b_readies_o  ( mgr_req_o.b_ready  ),
-      .mgr_ar_chans_o   ( mgr_req_o.ar       ),
-      .mgr_ar_valids_o  ( mgr_req_o.ar_valid ),
-      .mgr_ar_readies_i ( mgr_rsp_i.ar_ready ),
-      .mgr_r_chans_i    ( mgr_rsp_i.r        ),
-      .mgr_r_valids_i   ( mgr_rsp_i.r_valid  ),
-      .mgr_r_readies_o  ( mgr_req_o.r_ready  )
+      .sbr_aw_chans_i   ( sbr_port_req_i.aw       ),
+      .sbr_aw_valids_i  ( sbr_port_req_i.aw_valid ),
+      .sbr_aw_readies_o ( sbr_port_rsp_o.aw_ready ),
+      .sbr_w_chans_i    ( sbr_port_req_i.w        ),
+      .sbr_w_valids_i   ( sbr_port_req_i.w_valid  ),
+      .sbr_w_readies_o  ( sbr_port_rsp_o.w_ready  ),
+      .sbr_b_chans_o    ( sbr_port_rsp_o.b        ),
+      .sbr_b_valids_o   ( sbr_port_rsp_o.b_valid  ),
+      .sbr_b_readies_i  ( sbr_port_req_i.b_ready  ),
+      .sbr_ar_chans_i   ( sbr_port_req_i.ar       ),
+      .sbr_ar_valids_i  ( sbr_port_req_i.ar_valid ),
+      .sbr_ar_readies_o ( sbr_port_rsp_o.ar_ready ),
+      .sbr_r_chans_o    ( sbr_port_rsp_o.r        ),
+      .sbr_r_valids_o   ( sbr_port_rsp_o.r_valid  ),
+      .sbr_r_readies_i  ( sbr_port_req_i.r_ready  ),
+      .mgr_aw_chans_o   ( mgr_port_req_o.aw       ),
+      .mgr_aw_valids_o  ( mgr_port_req_o.aw_valid ),
+      .mgr_aw_readies_i ( mgr_port_rsp_i.aw_ready ),
+      .mgr_w_chans_o    ( mgr_port_req_o.w        ),
+      .mgr_w_valids_o   ( mgr_port_req_o.w_valid  ),
+      .mgr_w_readies_i  ( mgr_port_rsp_i.w_ready  ),
+      .mgr_b_chans_i    ( mgr_port_rsp_i.b        ),
+      .mgr_b_valids_i   ( mgr_port_rsp_i.b_valid  ),
+      .mgr_b_readies_o  ( mgr_port_req_o.b_ready  ),
+      .mgr_ar_chans_o   ( mgr_port_req_o.ar       ),
+      .mgr_ar_valids_o  ( mgr_port_req_o.ar_valid ),
+      .mgr_ar_readies_i ( mgr_port_rsp_i.ar_ready ),
+      .mgr_r_chans_i    ( mgr_port_rsp_i.r        ),
+      .mgr_r_valids_i   ( mgr_port_rsp_i.r_valid  ),
+      .mgr_r_readies_o  ( mgr_port_req_o.r_ready  )
     );
   end else begin : gen_passthrough
-    assign mgr_req_o = sbr_req_i;
-    assign sbr_rsp_o = mgr_rsp_i;
+    assign mgr_port_req_o = sbr_port_req_i;
+    assign sbr_port_rsp_o = mgr_port_rsp_i;
   end
 
   // pragma translate_off
@@ -241,13 +241,13 @@ module axi_iw_converter #(
       assert(MgrPortMaxTxnsPerId > 32'd0)
         else $fatal(1, "Parameter MgrPortMaxTxnsPerId has to be larger than 0!");
     end
-    assert($bits(sbr_req_i.aw.addr) == $bits(mgr_req_o.aw.addr))
+    assert($bits(sbr_port_req_i.aw.addr) == $bits(mgr_port_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
-    assert($bits(sbr_req_i.w.data) == $bits(mgr_req_o.w.data))
+    assert($bits(sbr_port_req_i.w.data) == $bits(mgr_port_req_o.w.data))
       else $fatal(1, "AXI W data widths are not equal!");
-    assert($bits(sbr_req_i.ar.addr) == $bits(mgr_req_o.ar.addr))
+    assert($bits(sbr_port_req_i.ar.addr) == $bits(mgr_port_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(sbr_rsp_o.r.data) == $bits(mgr_rsp_i.r.data))
+    assert($bits(sbr_port_rsp_o.r.data) == $bits(mgr_port_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
   end
   `endif
@@ -328,10 +328,10 @@ module axi_iw_converter_intf #(
   ) i_axi_iw_converter (
     .clk_i,
     .rst_ni,
-    .sbr_req_i ( sbr_req ),
-    .sbr_rsp_o ( sbr_rsp ),
-    .mgr_req_o ( mgr_req ),
-    .mgr_rsp_i ( mgr_rsp )
+    .sbr_port_req_i ( sbr_req ),
+    .sbr_port_rsp_o ( sbr_rsp ),
+    .mgr_port_req_o ( mgr_req ),
+    .mgr_port_rsp_i ( mgr_rsp )
   );
   // pragma translate_off
   `ifndef VERILATOR

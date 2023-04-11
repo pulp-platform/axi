@@ -33,11 +33,11 @@ module axi_delayer #(
   input  logic     clk_i,      // Clock
   input  logic     rst_ni,     // Asynchronous reset active low
   // subordinate port
-  input  axi_req_t sbr_req_i,
-  output axi_rsp_t sbr_rsp_o,
+  input  axi_req_t sbr_port_req_i,
+  output axi_rsp_t sbr_port_rsp_o,
   // manager port
-  output axi_req_t mgr_req_o,
-  input  axi_rsp_t mgr_rsp_i
+  output axi_req_t mgr_port_req_o,
+  input  axi_rsp_t mgr_port_rsp_i
 );
   // AW
   stream_delay #(
@@ -47,12 +47,12 @@ module axi_delayer #(
   ) i_stream_delay_aw (
     .clk_i,
     .rst_ni,
-    .payload_i ( sbr_req_i.aw       ),
-    .ready_o   ( sbr_rsp_o.aw_ready ),
-    .valid_i   ( sbr_req_i.aw_valid ),
-    .payload_o ( mgr_req_o.aw       ),
-    .ready_i   ( mgr_rsp_i.aw_ready ),
-    .valid_o   ( mgr_req_o.aw_valid )
+    .payload_i ( sbr_port_req_i.aw       ),
+    .ready_o   ( sbr_port_rsp_o.aw_ready ),
+    .valid_i   ( sbr_port_req_i.aw_valid ),
+    .payload_o ( mgr_port_req_o.aw       ),
+    .ready_i   ( mgr_port_rsp_i.aw_ready ),
+    .valid_o   ( mgr_port_req_o.aw_valid )
   );
 
   // AR
@@ -63,12 +63,12 @@ module axi_delayer #(
   ) i_stream_delay_ar (
     .clk_i,
     .rst_ni,
-    .payload_i ( sbr_req_i.ar       ),
-    .ready_o   ( sbr_rsp_o.ar_ready ),
-    .valid_i   ( sbr_req_i.ar_valid ),
-    .payload_o ( mgr_req_o.ar       ),
-    .ready_i   ( mgr_rsp_i.ar_ready ),
-    .valid_o   ( mgr_req_o.ar_valid )
+    .payload_i ( sbr_port_req_i.ar       ),
+    .ready_o   ( sbr_port_rsp_o.ar_ready ),
+    .valid_i   ( sbr_port_req_i.ar_valid ),
+    .payload_o ( mgr_port_req_o.ar       ),
+    .ready_i   ( mgr_port_rsp_i.ar_ready ),
+    .valid_o   ( mgr_port_req_o.ar_valid )
   );
 
   // W
@@ -79,12 +79,12 @@ module axi_delayer #(
   ) i_stream_delay_w (
     .clk_i,
     .rst_ni,
-    .payload_i ( sbr_req_i.w       ),
-    .ready_o   ( sbr_rsp_o.w_ready ),
-    .valid_i   ( sbr_req_i.w_valid ),
-    .payload_o ( mgr_req_o.w       ),
-    .ready_i   ( mgr_rsp_i.w_ready ),
-    .valid_o   ( mgr_req_o.w_valid )
+    .payload_i ( sbr_port_req_i.w       ),
+    .ready_o   ( sbr_port_rsp_o.w_ready ),
+    .valid_i   ( sbr_port_req_i.w_valid ),
+    .payload_o ( mgr_port_req_o.w       ),
+    .ready_i   ( mgr_port_rsp_i.w_ready ),
+    .valid_o   ( mgr_port_req_o.w_valid )
   );
 
   // B
@@ -95,12 +95,12 @@ module axi_delayer #(
   ) i_stream_delay_b (
     .clk_i,
     .rst_ni,
-    .payload_i ( mgr_rsp_i.b       ),
-    .ready_o   ( mgr_req_o.b_ready ),
-    .valid_i   ( mgr_rsp_i.b_valid ),
-    .payload_o ( sbr_rsp_o.b       ),
-    .ready_i   ( sbr_req_i.b_ready ),
-    .valid_o   ( sbr_rsp_o.b_valid )
+    .payload_i ( mgr_port_rsp_i.b       ),
+    .ready_o   ( mgr_port_req_o.b_ready ),
+    .valid_i   ( mgr_port_rsp_i.b_valid ),
+    .payload_o ( sbr_port_rsp_o.b       ),
+    .ready_i   ( sbr_port_req_i.b_ready ),
+    .valid_o   ( sbr_port_rsp_o.b_valid )
   );
 
   // R
@@ -111,12 +111,12 @@ module axi_delayer #(
   ) i_stream_delay_r (
     .clk_i,
     .rst_ni,
-    .payload_i ( mgr_rsp_i.r       ),
-    .ready_o   ( mgr_req_o.r_ready ),
-    .valid_i   ( mgr_rsp_i.r_valid ),
-    .payload_o ( sbr_rsp_o.r       ),
-    .ready_i   ( sbr_req_i.r_ready ),
-    .valid_o   ( sbr_rsp_o.r_valid )
+    .payload_i ( mgr_port_rsp_i.r       ),
+    .ready_o   ( mgr_port_req_o.r_ready ),
+    .valid_i   ( mgr_port_rsp_i.r_valid ),
+    .payload_o ( sbr_port_rsp_o.r       ),
+    .ready_i   ( sbr_port_req_i.r_ready ),
+    .valid_o   ( sbr_port_rsp_o.r_valid )
   );
 endmodule
 
@@ -179,10 +179,10 @@ module axi_delayer_intf #(
   ) i_axi_delayer (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    .sbr_req_i ( sbr_req ),
-    .sbr_rsp_o ( sbr_rsp ),
-    .mgr_req_o ( mgr_req ),
-    .mgr_rsp_i ( mgr_rsp )
+    .sbr_port_req_i ( sbr_req ),
+    .sbr_port_rsp_o ( sbr_rsp ),
+    .mgr_port_req_o ( mgr_req ),
+    .mgr_port_rsp_i ( mgr_rsp )
   );
 
 // pragma translate_off

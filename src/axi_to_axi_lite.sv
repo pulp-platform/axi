@@ -32,11 +32,11 @@ module axi_to_axi_lite #(
   input  logic          rst_ni,   // Asynchronous reset active low
   input  logic          test_i,   // Testmode enable
   // subordinate port full AXI4+ATOP
-  input  axi_req_t      sbr_req_i,
-  output axi_rsp_t      sbr_rsp_o,
+  input  axi_req_t      sbr_port_req_i,
+  output axi_rsp_t      sbr_port_rsp_o,
   // manager port AXI4-Lite
-  output axi_lite_req_t mgr_req_o,
-  input  axi_lite_rsp_t mgr_rsp_i
+  output axi_lite_req_t mgr_port_req_o,
+  input  axi_lite_rsp_t mgr_port_rsp_i
 );
   // full bus declarations
   axi_req_t filtered_req, splitted_req;
@@ -51,10 +51,10 @@ module axi_to_axi_lite #(
   ) i_axi_atop_filter(
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
-    .sbr_req_i ( sbr_req_i    ),
-    .sbr_rsp_o ( sbr_rsp_o    ),
-    .mgr_req_o ( filtered_req ),
-    .mgr_rsp_i ( filtered_rsp )
+    .sbr_port_req_i ( sbr_port_req_i    ),
+    .sbr_port_rsp_o ( sbr_port_rsp_o    ),
+    .mgr_port_req_o ( filtered_req ),
+    .mgr_port_rsp_i ( filtered_rsp )
   );
 
   // burst splitter so that the id reflect module has no burst accessing it
@@ -70,10 +70,10 @@ module axi_to_axi_lite #(
   ) i_axi_burst_splitter (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
-    .sbr_req_i ( filtered_req ),
-    .sbr_rsp_o ( filtered_rsp ),
-    .mgr_req_o ( splitted_req ),
-    .mgr_rsp_i ( splitted_rsp )
+    .sbr_port_req_i ( filtered_req ),
+    .sbr_port_rsp_o ( filtered_rsp ),
+    .mgr_port_req_o ( splitted_req ),
+    .mgr_port_rsp_i ( splitted_rsp )
   );
 
   // ID reflect module handles the conversion from the full AXI to AXI lite on the wireing
@@ -90,10 +90,10 @@ module axi_to_axi_lite #(
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
     .test_i    ( test_i       ),
-    .sbr_req_i ( splitted_req ),
-    .sbr_rsp_o ( splitted_rsp ),
-    .mgr_req_o ( mgr_req_o    ),
-    .mgr_rsp_i ( mgr_rsp_i    )
+    .sbr_port_req_i ( splitted_req ),
+    .sbr_port_rsp_o ( splitted_rsp ),
+    .mgr_port_req_o ( mgr_port_req_o    ),
+    .mgr_port_rsp_i ( mgr_port_rsp_i    )
   );
 
   // Assertions, check params
@@ -127,11 +127,11 @@ module axi_to_axi_lite_id_reflect #(
   input  logic          rst_ni,   // Asynchronous reset active low
   input  logic          test_i,   // Testmode enable
   // subordinate port full AXI
-  input  axi_req_t      sbr_req_i,
-  output axi_rsp_t      sbr_rsp_o,
+  input  axi_req_t      sbr_port_req_i,
+  output axi_rsp_t      sbr_port_rsp_o,
   // manager port AXI LITE
-  output axi_lite_req_t mgr_req_o,
-  input  axi_lite_rsp_t mgr_rsp_i
+  output axi_lite_req_t mgr_port_req_o,
+  input  axi_lite_rsp_t mgr_port_rsp_i
 );
   typedef logic [IdWidth-1:0] id_t;
 
@@ -139,30 +139,30 @@ module axi_to_axi_lite_id_reflect #(
   logic aw_full, aw_empty, aw_push, aw_pop, ar_full, ar_empty, ar_push, ar_pop;
   id_t  aw_reflect_id, ar_reflect_id;
 
-  assign sbr_rsp_o = '{
-    aw_ready: mgr_rsp_i.aw_ready & ~aw_full,
-    w_ready:  mgr_rsp_i.w_ready,
+  assign sbr_port_rsp_o = '{
+    aw_ready: mgr_port_rsp_i.aw_ready & ~aw_full,
+    w_ready:  mgr_port_rsp_i.w_ready,
     b: '{
       id:       aw_reflect_id,
-      resp:     mgr_rsp_i.b.resp,
+      resp:     mgr_port_rsp_i.b.resp,
       default:  '0
     },
-    b_valid:  mgr_rsp_i.b_valid  & ~aw_empty,
-    ar_ready: mgr_rsp_i.ar_ready & ~ar_full,
+    b_valid:  mgr_port_rsp_i.b_valid  & ~aw_empty,
+    ar_ready: mgr_port_rsp_i.ar_ready & ~ar_full,
     r: '{
       id:       ar_reflect_id,
-      data:     mgr_rsp_i.r.data,
-      resp:     mgr_rsp_i.r.resp,
+      data:     mgr_port_rsp_i.r.data,
+      resp:     mgr_port_rsp_i.r.resp,
       last:     1'b1,
       default:  '0
     },
-    r_valid: mgr_rsp_i.r_valid & ~ar_empty,
+    r_valid: mgr_port_rsp_i.r_valid & ~ar_empty,
     default: '0
   };
 
   // Write ID reflection
-  assign aw_push = mgr_req_o.aw_valid & sbr_rsp_o.aw_ready;
-  assign aw_pop  = sbr_rsp_o.b_valid & mgr_req_o.b_ready;
+  assign aw_push = mgr_port_req_o.aw_valid & sbr_port_rsp_o.aw_ready;
+  assign aw_pop  = sbr_port_rsp_o.b_valid & mgr_port_req_o.b_ready;
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough  ),
     .DEPTH        ( MaxWriteTxns ),
@@ -175,15 +175,15 @@ module axi_to_axi_lite_id_reflect #(
     .full_o    ( aw_full         ),
     .empty_o   ( aw_empty        ),
     .usage_o   ( /*not used*/    ),
-    .data_i    ( sbr_req_i.aw.id ),
+    .data_i    ( sbr_port_req_i.aw.id ),
     .push_i    ( aw_push         ),
     .data_o    ( aw_reflect_id   ),
     .pop_i     ( aw_pop          )
   );
 
   // Read ID reflection
-  assign ar_push = mgr_req_o.ar_valid & sbr_rsp_o.ar_ready;
-  assign ar_pop  = sbr_rsp_o.r_valid & mgr_req_o.r_ready;
+  assign ar_push = mgr_port_req_o.ar_valid & sbr_port_rsp_o.ar_ready;
+  assign ar_pop  = sbr_port_rsp_o.r_valid & mgr_port_req_o.r_ready;
   fifo_v3 #(
     .FALL_THROUGH ( FallThrough ),
     .DEPTH        ( MaxReadTxns ),
@@ -196,30 +196,30 @@ module axi_to_axi_lite_id_reflect #(
     .full_o    ( ar_full         ),
     .empty_o   ( ar_empty        ),
     .usage_o   ( /*not used*/    ),
-    .data_i    ( sbr_req_i.ar.id ),
+    .data_i    ( sbr_port_req_i.ar.id ),
     .push_i    ( ar_push         ),
     .data_o    ( ar_reflect_id   ),
     .pop_i     ( ar_pop          )
   );
 
-  assign mgr_req_o = '{
+  assign mgr_port_req_o = '{
     aw: '{
-      addr: sbr_req_i.aw.addr,
-      prot: sbr_req_i.aw.prot
+      addr: sbr_port_req_i.aw.addr,
+      prot: sbr_port_req_i.aw.prot
     },
-    aw_valid: sbr_req_i.aw_valid & ~aw_full,
+    aw_valid: sbr_port_req_i.aw_valid & ~aw_full,
     w: '{
-      data: sbr_req_i.w.data,
-      strb: sbr_req_i.w.strb
+      data: sbr_port_req_i.w.data,
+      strb: sbr_port_req_i.w.strb
     },
-    w_valid:  sbr_req_i.w_valid,
-    b_ready:  sbr_req_i.b_ready & ~aw_empty,
+    w_valid:  sbr_port_req_i.w_valid,
+    b_ready:  sbr_port_req_i.b_ready & ~aw_empty,
     ar: '{
-      addr: sbr_req_i.ar.addr,
-      prot: sbr_req_i.ar.prot
+      addr: sbr_port_req_i.ar.addr,
+      prot: sbr_port_req_i.ar.prot
     },
-    ar_valid: sbr_req_i.ar_valid & ~ar_full,
-    r_ready:  sbr_req_i.r_ready  & ~ar_empty,
+    ar_valid: sbr_port_req_i.ar_valid & ~ar_full,
+    r_ready:  sbr_port_req_i.r_ready  & ~ar_empty,
     default:  '0
   };
 
@@ -227,17 +227,17 @@ module axi_to_axi_lite_id_reflect #(
   // pragma translate_off
   `ifndef VERILATOR
   aw_atop: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                        sbr_req_i.aw_valid |-> (sbr_req_i.aw.atop == '0)) else
-    $fatal(1, "Module does not support atomics. Value observed: %0b", sbr_req_i.aw.atop);
+                        sbr_port_req_i.aw_valid |-> (sbr_port_req_i.aw.atop == '0)) else
+    $fatal(1, "Module does not support atomics. Value observed: %0b", sbr_port_req_i.aw.atop);
   aw_axi_len: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                        sbr_req_i.aw_valid |-> (sbr_req_i.aw.len == '0)) else
-    $fatal(1, "AW request length has to be zero. Value observed: %0b", sbr_req_i.aw.len);
+                        sbr_port_req_i.aw_valid |-> (sbr_port_req_i.aw.len == '0)) else
+    $fatal(1, "AW request length has to be zero. Value observed: %0b", sbr_port_req_i.aw.len);
   w_axi_last: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                        sbr_req_i.w_valid |-> (sbr_req_i.w.last == 1'b1)) else
-    $fatal(1, "W last signal has to be one. Value observed: %0b", sbr_req_i.w.last);
+                        sbr_port_req_i.w_valid |-> (sbr_port_req_i.w.last == 1'b1)) else
+    $fatal(1, "W last signal has to be one. Value observed: %0b", sbr_port_req_i.w.last);
   ar_axi_len: assume property( @(posedge clk_i) disable iff (~rst_ni)
-                        sbr_req_i.ar_valid |-> (sbr_req_i.ar.len == '0)) else
-    $fatal(1, "AR request length has to be zero. Value observed: %0b", sbr_req_i.ar.len);
+                        sbr_port_req_i.ar_valid |-> (sbr_port_req_i.ar.len == '0)) else
+    $fatal(1, "AR request length has to be zero. Value observed: %0b", sbr_port_req_i.ar.len);
   `endif
   // pragma translate_on
 endmodule
@@ -313,10 +313,10 @@ module axi_to_axi_lite_intf #(
     .rst_ni    ( rst_ni     ),
     .test_i    ( testmode_i ),
     // subordinate port full AXI4+ATOP
-    .sbr_req_i ( full_req   ),
-    .sbr_rsp_o ( full_rsp   ),
+    .sbr_port_req_i ( full_req   ),
+    .sbr_port_rsp_o ( full_rsp   ),
     // manager port AXI4-Lite
-    .mgr_req_o ( lite_req   ),
-    .mgr_rsp_i ( lite_rsp   )
+    .mgr_port_req_o ( lite_req   ),
+    .mgr_port_rsp_i ( lite_rsp   )
   );
 endmodule

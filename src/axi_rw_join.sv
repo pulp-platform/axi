@@ -34,8 +34,8 @@ module axi_rw_join #(
   output axi_rsp_t sbr_write_rsp_o,
 
   // Read / Write Manager
-  output axi_req_t mgr_req_o,
-  input  axi_rsp_t mgr_rsp_i
+  output axi_req_t mgr_port_req_o,
+  input  axi_rsp_t mgr_port_rsp_i
 );
 
   //--------------------------------------
@@ -43,8 +43,8 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Assign Read Structs
-  `AXI_ASSIGN_AR_STRUCT ( mgr_req_o.ar      , sbr_read_req_i.ar  )
-  `AXI_ASSIGN_R_STRUCT  ( sbr_read_rsp_o.r  , mgr_rsp_i.r        )
+  `AXI_ASSIGN_AR_STRUCT ( mgr_port_req_o.ar      , sbr_read_req_i.ar  )
+  `AXI_ASSIGN_R_STRUCT  ( sbr_read_rsp_o.r  , mgr_port_rsp_i.r        )
 
   // Read B channel data
   assign sbr_read_rsp_o.b         = '0;
@@ -55,12 +55,12 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Read AR channel handshake
-  assign mgr_req_o.ar_valid       = sbr_read_req_i.ar_valid;
-  assign sbr_read_rsp_o.ar_ready  = mgr_rsp_i.ar_ready;
+  assign mgr_port_req_o.ar_valid       = sbr_read_req_i.ar_valid;
+  assign sbr_read_rsp_o.ar_ready  = mgr_port_rsp_i.ar_ready;
 
   // Read R channel handshake
-  assign sbr_read_rsp_o.r_valid   = mgr_rsp_i.r_valid;
-  assign mgr_req_o.r_ready        = sbr_read_req_i.r_ready;
+  assign sbr_read_rsp_o.r_valid   = mgr_port_rsp_i.r_valid;
+  assign mgr_port_req_o.r_ready        = sbr_read_req_i.r_ready;
 
   // Read AW, W and B handshake
   assign sbr_read_rsp_o.aw_ready  = 1'b0;
@@ -76,9 +76,9 @@ module axi_rw_join #(
   //--------------------------------------
 
   // Assign Write Structs
-  `AXI_ASSIGN_AW_STRUCT ( mgr_req_o.aw      , sbr_write_req_i.aw )
-  `AXI_ASSIGN_W_STRUCT  ( mgr_req_o.w       , sbr_write_req_i.w  )
-  `AXI_ASSIGN_B_STRUCT  ( sbr_write_rsp_o.b , mgr_rsp_i.b        )
+  `AXI_ASSIGN_AW_STRUCT ( mgr_port_req_o.aw      , sbr_write_req_i.aw )
+  `AXI_ASSIGN_W_STRUCT  ( mgr_port_req_o.w       , sbr_write_req_i.w  )
+  `AXI_ASSIGN_B_STRUCT  ( sbr_write_rsp_o.b , mgr_port_rsp_i.b        )
 
   // Write R channel data
   assign sbr_write_rsp_o.r        = '0;
@@ -96,15 +96,15 @@ module axi_rw_join #(
   `ASSERT_NEVER(sbr_write_req_ar_valid, sbr_write_req_i.ar_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
-  assign mgr_req_o.aw_valid       = sbr_write_req_i.aw_valid;
-  assign sbr_write_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
+  assign mgr_port_req_o.aw_valid       = sbr_write_req_i.aw_valid;
+  assign sbr_write_rsp_o.aw_ready = mgr_port_rsp_i.aw_ready;
 
   // Write W channel handshake
-  assign mgr_req_o.w_valid        = sbr_write_req_i.w_valid;
-  assign sbr_write_rsp_o.w_ready  = mgr_rsp_i.w_ready;
+  assign mgr_port_req_o.w_valid        = sbr_write_req_i.w_valid;
+  assign sbr_write_rsp_o.w_ready  = mgr_port_rsp_i.w_ready;
 
   // Write B channel handshake
-  assign sbr_write_rsp_o.b_valid  = mgr_rsp_i.b_valid;
-  assign mgr_req_o.b_ready        = sbr_write_req_i.b_ready;
+  assign sbr_write_rsp_o.b_valid  = mgr_port_rsp_i.b_valid;
+  assign mgr_port_req_o.b_ready        = sbr_write_req_i.b_ready;
 
 endmodule : axi_rw_join

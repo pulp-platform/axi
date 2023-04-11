@@ -77,54 +77,54 @@ module axi_id_remap #(
   /// Asynchronous reset, active low
   input  logic              rst_ni,
   /// Subordinate port request
-  input  sbr_port_axi_req_t sbr_req_i,
+  input  sbr_port_axi_req_t sbr_port_req_i,
   /// Subordinate port response
-  output sbr_port_axi_rsp_t sbr_rsp_o,
+  output sbr_port_axi_rsp_t sbr_port_rsp_o,
   /// Manager port request
-  output mgr_port_axi_req_t mgr_req_o,
+  output mgr_port_axi_req_t mgr_port_req_o,
   /// Manager port response
-  input  mgr_port_axi_rsp_t mgr_rsp_i
+  input  mgr_port_axi_rsp_t mgr_port_rsp_i
 );
 
   // Feed all signals that are not ID or flow control of AW and AR through.
-  assign mgr_req_o.aw.addr   = sbr_req_i.aw.addr;
-  assign mgr_req_o.aw.len    = sbr_req_i.aw.len;
-  assign mgr_req_o.aw.size   = sbr_req_i.aw.size;
-  assign mgr_req_o.aw.burst  = sbr_req_i.aw.burst;
-  assign mgr_req_o.aw.lock   = sbr_req_i.aw.lock;
-  assign mgr_req_o.aw.cache  = sbr_req_i.aw.cache;
-  assign mgr_req_o.aw.prot   = sbr_req_i.aw.prot;
-  assign mgr_req_o.aw.qos    = sbr_req_i.aw.qos;
-  assign mgr_req_o.aw.region = sbr_req_i.aw.region;
-  assign mgr_req_o.aw.atop   = sbr_req_i.aw.atop;
-  assign mgr_req_o.aw.user   = sbr_req_i.aw.user;
+  assign mgr_port_req_o.aw.addr   = sbr_port_req_i.aw.addr;
+  assign mgr_port_req_o.aw.len    = sbr_port_req_i.aw.len;
+  assign mgr_port_req_o.aw.size   = sbr_port_req_i.aw.size;
+  assign mgr_port_req_o.aw.burst  = sbr_port_req_i.aw.burst;
+  assign mgr_port_req_o.aw.lock   = sbr_port_req_i.aw.lock;
+  assign mgr_port_req_o.aw.cache  = sbr_port_req_i.aw.cache;
+  assign mgr_port_req_o.aw.prot   = sbr_port_req_i.aw.prot;
+  assign mgr_port_req_o.aw.qos    = sbr_port_req_i.aw.qos;
+  assign mgr_port_req_o.aw.region = sbr_port_req_i.aw.region;
+  assign mgr_port_req_o.aw.atop   = sbr_port_req_i.aw.atop;
+  assign mgr_port_req_o.aw.user   = sbr_port_req_i.aw.user;
 
-  assign mgr_req_o.w         = sbr_req_i.w;
-  assign mgr_req_o.w_valid   = sbr_req_i.w_valid;
-  assign sbr_rsp_o.w_ready   = mgr_rsp_i.w_ready;
+  assign mgr_port_req_o.w         = sbr_port_req_i.w;
+  assign mgr_port_req_o.w_valid   = sbr_port_req_i.w_valid;
+  assign sbr_port_rsp_o.w_ready   = mgr_port_rsp_i.w_ready;
 
-  assign sbr_rsp_o.b.resp    = mgr_rsp_i.b.resp;
-  assign sbr_rsp_o.b.user    = mgr_rsp_i.b.user;
-  assign sbr_rsp_o.b_valid   = mgr_rsp_i.b_valid;
-  assign mgr_req_o.b_ready   = sbr_req_i.b_ready;
+  assign sbr_port_rsp_o.b.resp    = mgr_port_rsp_i.b.resp;
+  assign sbr_port_rsp_o.b.user    = mgr_port_rsp_i.b.user;
+  assign sbr_port_rsp_o.b_valid   = mgr_port_rsp_i.b_valid;
+  assign mgr_port_req_o.b_ready   = sbr_port_req_i.b_ready;
 
-  assign mgr_req_o.ar.addr   = sbr_req_i.ar.addr;
-  assign mgr_req_o.ar.len    = sbr_req_i.ar.len;
-  assign mgr_req_o.ar.size   = sbr_req_i.ar.size;
-  assign mgr_req_o.ar.burst  = sbr_req_i.ar.burst;
-  assign mgr_req_o.ar.lock   = sbr_req_i.ar.lock;
-  assign mgr_req_o.ar.cache  = sbr_req_i.ar.cache;
-  assign mgr_req_o.ar.prot   = sbr_req_i.ar.prot;
-  assign mgr_req_o.ar.qos    = sbr_req_i.ar.qos;
-  assign mgr_req_o.ar.region = sbr_req_i.ar.region;
-  assign mgr_req_o.ar.user   = sbr_req_i.ar.user;
+  assign mgr_port_req_o.ar.addr   = sbr_port_req_i.ar.addr;
+  assign mgr_port_req_o.ar.len    = sbr_port_req_i.ar.len;
+  assign mgr_port_req_o.ar.size   = sbr_port_req_i.ar.size;
+  assign mgr_port_req_o.ar.burst  = sbr_port_req_i.ar.burst;
+  assign mgr_port_req_o.ar.lock   = sbr_port_req_i.ar.lock;
+  assign mgr_port_req_o.ar.cache  = sbr_port_req_i.ar.cache;
+  assign mgr_port_req_o.ar.prot   = sbr_port_req_i.ar.prot;
+  assign mgr_port_req_o.ar.qos    = sbr_port_req_i.ar.qos;
+  assign mgr_port_req_o.ar.region = sbr_port_req_i.ar.region;
+  assign mgr_port_req_o.ar.user   = sbr_port_req_i.ar.user;
 
-  assign sbr_rsp_o.r.data    = mgr_rsp_i.r.data;
-  assign sbr_rsp_o.r.resp    = mgr_rsp_i.r.resp;
-  assign sbr_rsp_o.r.last    = mgr_rsp_i.r.last;
-  assign sbr_rsp_o.r.user    = mgr_rsp_i.r.user;
-  assign sbr_rsp_o.r_valid   = mgr_rsp_i.r_valid;
-  assign mgr_req_o.r_ready   = sbr_req_i.r_ready;
+  assign sbr_port_rsp_o.r.data    = mgr_port_rsp_i.r.data;
+  assign sbr_port_rsp_o.r.resp    = mgr_port_rsp_i.r.resp;
+  assign sbr_port_rsp_o.r.last    = mgr_port_rsp_i.r.last;
+  assign sbr_port_rsp_o.r.user    = mgr_port_rsp_i.r.user;
+  assign sbr_port_rsp_o.r_valid   = mgr_port_rsp_i.r_valid;
+  assign mgr_port_req_o.r_ready   = sbr_port_req_i.r_ready;
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
@@ -153,15 +153,15 @@ module axi_id_remap #(
     .free_oup_id_o   ( wr_free_oup_id                         ),
     .full_o          ( wr_full                                ),
     .push_i          ( wr_push                                ),
-    .push_inp_id_i   ( sbr_req_i.aw.id                        ),
+    .push_inp_id_i   ( sbr_port_req_i.aw.id                        ),
     .push_oup_id_i   ( wr_push_oup_id                         ),
-    .exists_inp_id_i ( sbr_req_i.aw.id                        ),
+    .exists_inp_id_i ( sbr_port_req_i.aw.id                        ),
     .exists_o        ( wr_exists                              ),
     .exists_oup_id_o ( wr_exists_id                           ),
     .exists_full_o   ( wr_exists_full                         ),
-    .pop_i           ( sbr_rsp_o.b_valid && sbr_req_i.b_ready ),
-    .pop_oup_id_i    ( mgr_rsp_i.b.id[IdxWidth-1:0]           ),
-    .pop_inp_id_o    ( sbr_rsp_o.b.id                         )
+    .pop_i           ( sbr_port_rsp_o.b_valid && sbr_port_req_i.b_ready ),
+    .pop_oup_id_i    ( mgr_port_rsp_i.b.id[IdxWidth-1:0]           ),
+    .pop_inp_id_o    ( sbr_port_rsp_o.b.id                         )
   );
   axi_id_remap_table #(
     .InpIdWidth     ( SbrPortIdWidth     ),
@@ -176,13 +176,13 @@ module axi_id_remap #(
     .push_i           ( rd_push                                                    ),
     .push_inp_id_i    ( rd_push_inp_id                                             ),
     .push_oup_id_i    ( rd_push_oup_id                                             ),
-    .exists_inp_id_i  ( sbr_req_i.ar.id                                            ),
+    .exists_inp_id_i  ( sbr_port_req_i.ar.id                                            ),
     .exists_o         ( rd_exists                                                  ),
     .exists_oup_id_o  ( rd_exists_id                                               ),
     .exists_full_o    ( rd_exists_full                                             ),
-    .pop_i            ( sbr_rsp_o.r_valid && sbr_req_i.r_ready && sbr_rsp_o.r.last ),
-    .pop_oup_id_i     ( mgr_rsp_i.r.id[IdxWidth-1:0]                               ),
-    .pop_inp_id_o     ( sbr_rsp_o.r.id                                             )
+    .pop_i            ( sbr_port_rsp_o.r_valid && sbr_port_req_i.r_ready && sbr_port_rsp_o.r.last ),
+    .pop_oup_id_i     ( mgr_port_rsp_i.r.id[IdxWidth-1:0]                               ),
+    .pop_inp_id_o     ( sbr_port_rsp_o.r.id                                             )
   );
   assign both_free = wr_free & rd_free;
   lzc #(
@@ -196,8 +196,8 @@ module axi_id_remap #(
 
   // Zero-extend output IDs if the output IDs is are wider than the IDs from the tables.
   localparam ZeroWidth = MgrPortIdWidth - IdxWidth;
-  assign mgr_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
-  assign mgr_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
+  assign mgr_port_req_o.ar.id = {{ZeroWidth{1'b0}}, rd_push_oup_id};
+  assign mgr_port_req_o.aw.id = {{ZeroWidth{1'b0}}, wr_push_oup_id};
 
   // Handle requests.
   enum logic [1:0] {Ready, HoldAR, HoldAW, HoldAx} state_d, state_q;
@@ -205,12 +205,12 @@ module axi_id_remap #(
         aw_id_d, aw_id_q;
   logic ar_prio_d, ar_prio_q;
   always_comb begin
-    mgr_req_o.aw_valid = 1'b0;
-    sbr_rsp_o.aw_ready = 1'b0;
+    mgr_port_req_o.aw_valid = 1'b0;
+    sbr_port_rsp_o.aw_ready = 1'b0;
     wr_push            = 1'b0;
     wr_push_oup_id     =   '0;
-    mgr_req_o.ar_valid = 1'b0;
-    sbr_rsp_o.ar_ready = 1'b0;
+    mgr_port_req_o.ar_valid = 1'b0;
+    sbr_port_rsp_o.ar_ready = 1'b0;
     rd_push            = 1'b0;
     rd_push_inp_id     =   '0;
     rd_push_oup_id     =   '0;
@@ -222,48 +222,48 @@ module axi_id_remap #(
     unique case (state_q)
       Ready: begin
         // Reads
-        if (sbr_req_i.ar_valid) begin
+        if (sbr_port_req_i.ar_valid) begin
           // If a burst with the same input ID is already in flight or there are free output IDs:
           if ((rd_exists && !rd_exists_full) || (!rd_exists && !rd_full)) begin
             // Determine the output ID: if another in-flight burst had the same input ID, we must
             // reuse its output ID to maintain ordering; else, we assign the next free ID.
-            rd_push_inp_id     = sbr_req_i.ar.id;
+            rd_push_inp_id     = sbr_port_req_i.ar.id;
             rd_push_oup_id     = rd_exists ? rd_exists_id : rd_free_oup_id;
             // Forward the AR and push a new entry to the read table.
-            mgr_req_o.ar_valid = 1'b1;
+            mgr_port_req_o.ar_valid = 1'b1;
             rd_push            = 1'b1;
           end
         end
 
         // Writes
-        if (sbr_req_i.aw_valid) begin
+        if (sbr_port_req_i.aw_valid) begin
           // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
           // on the write direction.
-          if (!sbr_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+          if (!sbr_port_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
             // If a burst with the same input ID is already in flight or there are free output IDs:
             if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
               // Determine the output ID: if another in-flight burst had the same input ID, we must
               // reuse its output ID to maintain ordering; else, we assign the next free ID.
               wr_push_oup_id     = wr_exists ? wr_exists_id : wr_free_oup_id;
               // Forward the AW and push a new entry to the write table.
-              mgr_req_o.aw_valid = 1'b1;
+              mgr_port_req_o.aw_valid = 1'b1;
               wr_push            = 1'b1;
             end
           // If this is an ATOP that gives rise to an R response, we must remap to an ID that is
           // free on both read and write direction and push also to the read table.
           // Only allowed if AR does not have arbitration priority
-          end else if (!(ar_prio_q && mgr_req_o.ar_valid)) begin
+          end else if (!(ar_prio_q && mgr_port_req_o.ar_valid)) begin
             // Nullify a potential AR at our output.  This is legal in this state.
-            mgr_req_o.ar_valid = 1'b0;
-            sbr_rsp_o.ar_ready = 1'b0;
+            mgr_port_req_o.ar_valid = 1'b0;
+            sbr_port_rsp_o.ar_ready = 1'b0;
             rd_push            = 1'b0;
             if ((|both_free)) begin
               // Use an output ID that is free in both directions.
               wr_push_oup_id = both_free_oup_id;
-              rd_push_inp_id = sbr_req_i.aw.id;
+              rd_push_inp_id = sbr_port_req_i.aw.id;
               rd_push_oup_id = both_free_oup_id;
               // Forward the AW and push a new entry to both tables.
-              mgr_req_o.aw_valid = 1'b1;
+              mgr_port_req_o.aw_valid = 1'b1;
               rd_push            = 1'b1;
               wr_push            = 1'b1;
               // Give AR priority in the next cycle (so ATOPs cannot infinitely preempt ARs).
@@ -273,69 +273,69 @@ module axi_id_remap #(
         end
 
         // Hold AR, AW, or both if they are valid but not yet ready.
-        if (mgr_req_o.ar_valid) begin
-          sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
-          if (!mgr_rsp_i.ar_ready) begin
+        if (mgr_port_req_o.ar_valid) begin
+          sbr_port_rsp_o.ar_ready = mgr_port_rsp_i.ar_ready;
+          if (!mgr_port_rsp_i.ar_ready) begin
             ar_id_d = rd_push_oup_id;
           end
         end
-        if (mgr_req_o.aw_valid) begin
-          sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
-          if (!mgr_rsp_i.aw_ready) begin
+        if (mgr_port_req_o.aw_valid) begin
+          sbr_port_rsp_o.aw_ready = mgr_port_rsp_i.aw_ready;
+          if (!mgr_port_rsp_i.aw_ready) begin
             aw_id_d = wr_push_oup_id;
           end
         end
-        if ({mgr_req_o.ar_valid, mgr_rsp_i.ar_ready,
-             mgr_req_o.aw_valid, mgr_rsp_i.aw_ready} == 4'b1010) begin
+        if ({mgr_port_req_o.ar_valid, mgr_port_rsp_i.ar_ready,
+             mgr_port_req_o.aw_valid, mgr_port_rsp_i.aw_ready} == 4'b1010) begin
           state_d = HoldAx;
-        end else if ({mgr_req_o.ar_valid, mgr_rsp_i.ar_ready} == 2'b10) begin
+        end else if ({mgr_port_req_o.ar_valid, mgr_port_rsp_i.ar_ready} == 2'b10) begin
           state_d = HoldAR;
-        end else if ({mgr_req_o.aw_valid, mgr_rsp_i.aw_ready} == 2'b10) begin
+        end else if ({mgr_port_req_o.aw_valid, mgr_port_rsp_i.aw_ready} == 2'b10) begin
           state_d = HoldAW;
         end else begin
           state_d = Ready;
         end
 
-        if (mgr_req_o.ar_valid && mgr_rsp_i.ar_ready) begin
+        if (mgr_port_req_o.ar_valid && mgr_port_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
 
       HoldAR: begin
-        // Drive `mgr_req_o.ar.id` through `rd_push_oup_id`.
+        // Drive `mgr_port_req_o.ar.id` through `rd_push_oup_id`.
         rd_push_oup_id      = ar_id_q;
-        mgr_req_o.ar_valid  = 1'b1;
-        sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
-        if (mgr_rsp_i.ar_ready) begin
+        mgr_port_req_o.ar_valid  = 1'b1;
+        sbr_port_rsp_o.ar_ready = mgr_port_rsp_i.ar_ready;
+        if (mgr_port_rsp_i.ar_ready) begin
           state_d = Ready;
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
 
       HoldAW: begin
-        // Drive mgr_req_o.aw.id through `wr_push_oup_id`.
+        // Drive mgr_port_req_o.aw.id through `wr_push_oup_id`.
         wr_push_oup_id      = aw_id_q;
-        mgr_req_o.aw_valid  = 1'b1;
-        sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
-        if (mgr_rsp_i.aw_ready) begin
+        mgr_port_req_o.aw_valid  = 1'b1;
+        sbr_port_rsp_o.aw_ready = mgr_port_rsp_i.aw_ready;
+        if (mgr_port_rsp_i.aw_ready) begin
           state_d = Ready;
         end
       end
 
       HoldAx: begin
         rd_push_oup_id     = ar_id_q;
-        mgr_req_o.ar_valid = 1'b1;
-        sbr_rsp_o.ar_ready = mgr_rsp_i.ar_ready;
+        mgr_port_req_o.ar_valid = 1'b1;
+        sbr_port_rsp_o.ar_ready = mgr_port_rsp_i.ar_ready;
         wr_push_oup_id     = aw_id_q;
-        mgr_req_o.aw_valid = 1'b1;
-        sbr_rsp_o.aw_ready = mgr_rsp_i.aw_ready;
-        unique case ({mgr_rsp_i.ar_ready, mgr_rsp_i.aw_ready})
+        mgr_port_req_o.aw_valid = 1'b1;
+        sbr_port_rsp_o.aw_ready = mgr_port_rsp_i.aw_ready;
+        unique case ({mgr_port_rsp_i.ar_ready, mgr_port_rsp_i.aw_ready})
           2'b01:   state_d = HoldAR;
           2'b10:   state_d = HoldAW;
           2'b11:   state_d = Ready;
           default: /*do nothing / stay in this state*/;
         endcase
-        if (mgr_rsp_i.ar_ready) begin
+        if (mgr_port_rsp_i.ar_ready) begin
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
         end
       end
@@ -363,40 +363,40 @@ module axi_id_remap #(
       else $fatal(1, "Parameter SbrPortMaxUniqIds may be at most 2**SbrPortIdWidth!");
     assert (MaxTxnsPerId > 0)
       else $fatal(1, "Parameter MaxTxnsPerId has to be larger than 0!");
-    assert($bits(sbr_req_i.aw.addr) == $bits(mgr_req_o.aw.addr))
+    assert($bits(sbr_port_req_i.aw.addr) == $bits(mgr_port_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
-    assert($bits(sbr_req_i.w.data) == $bits(mgr_req_o.w.data))
+    assert($bits(sbr_port_req_i.w.data) == $bits(mgr_port_req_o.w.data))
       else $fatal(1, "AXI W data widths are not equal!");
-    assert($bits(sbr_req_i.w.user) == $bits(mgr_req_o.w.user))
+    assert($bits(sbr_port_req_i.w.user) == $bits(mgr_port_req_o.w.user))
       else $fatal(1, "AXI W user widths are not equal!");
-    assert($bits(sbr_req_i.ar.addr) == $bits(mgr_req_o.ar.addr))
+    assert($bits(sbr_port_req_i.ar.addr) == $bits(mgr_port_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(sbr_rsp_o.r.data) == $bits(mgr_rsp_i.r.data))
+    assert($bits(sbr_port_rsp_o.r.data) == $bits(mgr_port_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
-    assert ($bits(sbr_req_i.aw.id) == SbrPortIdWidth);
-    assert ($bits(sbr_rsp_o.b.id) == SbrPortIdWidth);
-    assert ($bits(sbr_req_i.ar.id) == SbrPortIdWidth);
-    assert ($bits(sbr_rsp_o.r.id) == SbrPortIdWidth);
-    assert ($bits(mgr_req_o.aw.id) == MgrPortIdWidth);
-    assert ($bits(mgr_rsp_i.b.id) == MgrPortIdWidth);
-    assert ($bits(mgr_req_o.ar.id) == MgrPortIdWidth);
-    assert ($bits(mgr_rsp_i.r.id) == MgrPortIdWidth);
+    assert ($bits(sbr_port_req_i.aw.id) == SbrPortIdWidth);
+    assert ($bits(sbr_port_rsp_o.b.id) == SbrPortIdWidth);
+    assert ($bits(sbr_port_req_i.ar.id) == SbrPortIdWidth);
+    assert ($bits(sbr_port_rsp_o.r.id) == SbrPortIdWidth);
+    assert ($bits(mgr_port_req_o.aw.id) == MgrPortIdWidth);
+    assert ($bits(mgr_port_rsp_i.b.id) == MgrPortIdWidth);
+    assert ($bits(mgr_port_req_o.ar.id) == MgrPortIdWidth);
+    assert ($bits(mgr_port_rsp_i.r.id) == MgrPortIdWidth);
   end
   default disable iff (!rst_ni);
-  assert property (@(posedge clk_i) sbr_req_i.aw_valid && sbr_rsp_o.aw_ready
-      |-> mgr_req_o.aw_valid && mgr_rsp_i.aw_ready);
-  assert property (@(posedge clk_i) mgr_rsp_i.b_valid && mgr_req_o.b_ready
-      |-> sbr_rsp_o.b_valid && sbr_req_i.b_ready);
-  assert property (@(posedge clk_i) sbr_req_i.ar_valid && sbr_rsp_o.ar_ready
-      |-> mgr_req_o.ar_valid && mgr_rsp_i.ar_ready);
-  assert property (@(posedge clk_i) mgr_rsp_i.r_valid && mgr_req_o.r_ready
-      |-> sbr_rsp_o.r_valid && sbr_req_i.r_ready);
-  assert property (@(posedge clk_i) sbr_rsp_o.r_valid
-      |-> sbr_rsp_o.r.last == mgr_rsp_i.r.last);
-  assert property (@(posedge clk_i) mgr_req_o.ar_valid && !mgr_rsp_i.ar_ready
-      |=> mgr_req_o.ar_valid && $stable(mgr_req_o.ar.id));
-  assert property (@(posedge clk_i) mgr_req_o.aw_valid && !mgr_rsp_i.aw_ready
-      |=> mgr_req_o.aw_valid && $stable(mgr_req_o.aw.id));
+  assert property (@(posedge clk_i) sbr_port_req_i.aw_valid && sbr_port_rsp_o.aw_ready
+      |-> mgr_port_req_o.aw_valid && mgr_port_rsp_i.aw_ready);
+  assert property (@(posedge clk_i) mgr_port_rsp_i.b_valid && mgr_port_req_o.b_ready
+      |-> sbr_port_rsp_o.b_valid && sbr_port_req_i.b_ready);
+  assert property (@(posedge clk_i) sbr_port_req_i.ar_valid && sbr_port_rsp_o.ar_ready
+      |-> mgr_port_req_o.ar_valid && mgr_port_rsp_i.ar_ready);
+  assert property (@(posedge clk_i) mgr_port_rsp_i.r_valid && mgr_port_req_o.r_ready
+      |-> sbr_port_rsp_o.r_valid && sbr_port_req_i.r_ready);
+  assert property (@(posedge clk_i) sbr_port_rsp_o.r_valid
+      |-> sbr_port_rsp_o.r.last == mgr_port_rsp_i.r.last);
+  assert property (@(posedge clk_i) mgr_port_req_o.ar_valid && !mgr_port_rsp_i.ar_ready
+      |=> mgr_port_req_o.ar_valid && $stable(mgr_port_req_o.ar.id));
+  assert property (@(posedge clk_i) mgr_port_req_o.aw_valid && !mgr_port_rsp_i.aw_ready
+      |=> mgr_port_req_o.aw_valid && $stable(mgr_port_req_o.aw.id));
   `endif
   // pragma translate_on
 endmodule
@@ -639,10 +639,10 @@ module axi_id_remap_intf #(
   ) i_axi_id_remap (
     .clk_i,
     .rst_ni,
-    .sbr_req_i ( sbr_req ),
-    .sbr_rsp_o ( sbr_rsp ),
-    .mgr_req_o ( mgr_req ),
-    .mgr_rsp_i ( mgr_rsp )
+    .sbr_port_req_i ( sbr_req ),
+    .sbr_port_rsp_o ( sbr_rsp ),
+    .mgr_port_req_o ( mgr_req ),
+    .mgr_port_rsp_i ( mgr_rsp )
   );
   // pragma translate_off
   `ifndef VERILATOR

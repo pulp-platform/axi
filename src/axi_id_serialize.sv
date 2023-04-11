@@ -62,13 +62,13 @@ module axi_id_serialize #(
   /// Asynchronous reset, active low
   input  logic              rst_ni,
   /// Subordinate port request
-  input  sbr_port_axi_req_t sbr_req_i,
+  input  sbr_port_axi_req_t sbr_port_req_i,
   /// Subordinate port response
-  output sbr_port_axi_rsp_t sbr_rsp_o,
+  output sbr_port_axi_rsp_t sbr_port_rsp_o,
   /// Manager port request
-  output mgr_port_axi_req_t mgr_req_o,
+  output mgr_port_axi_req_t mgr_port_req_o,
   /// Manager port response
-  input  mgr_port_axi_rsp_t mgr_rsp_i
+  input  mgr_port_axi_rsp_t mgr_port_rsp_i
 );
 
   /// Number of bits of the subordinate port ID that determine the mapping to the manager port ID
@@ -144,8 +144,8 @@ module axi_id_serialize #(
   `AXI_TYPEDEF_R_CHAN_T(mgr_r_t, data_t, mgr_id_t, user_t)
 
   select_t sbr_aw_select, sbr_ar_select;
-  assign sbr_aw_select = select_t'(sbr_req_i.aw.id % MgrPortMaxUniqIds); // TODO: customizable base
-  assign sbr_ar_select = select_t'(sbr_req_i.ar.id % MgrPortMaxUniqIds);
+  assign sbr_aw_select = select_t'(sbr_port_req_i.aw.id % MgrPortMaxUniqIds); // TODO: customizable base
+  assign sbr_ar_select = select_t'(sbr_port_req_i.ar.id % MgrPortMaxUniqIds);
 
   sbr_port_axi_req_t [MgrPortMaxUniqIds-1:0] to_serializer_reqs;
   sbr_port_axi_rsp_t [MgrPortMaxUniqIds-1:0] to_serializer_rsps;
@@ -172,12 +172,12 @@ module axi_id_serialize #(
     .clk_i,
     .rst_ni,
     .test_i          ( 1'b0               ),
-    .sbr_req_i       ( sbr_req_i          ),
+    .sbr_port_req_i       ( sbr_port_req_i          ),
     .sbr_aw_select_i ( sbr_aw_select      ),
     .sbr_ar_select_i ( sbr_ar_select      ),
-    .sbr_rsp_o       ( sbr_rsp_o          ),
-    .mgr_reqs_o      ( to_serializer_reqs ),
-    .mgr_rsps_i      ( to_serializer_rsps )
+    .sbr_port_rsp_o       ( sbr_port_rsp_o          ),
+    .mgr_ports_req_o      ( to_serializer_reqs ),
+    .mgr_ports_rsp_i      ( to_serializer_rsps )
   );
 
   sbr_port_axi_req_t [MgrPortMaxUniqIds-1:0] tmp_serializer_reqs;
@@ -195,10 +195,10 @@ module axi_id_serialize #(
     ) i_axi_serializer (
       .clk_i,
       .rst_ni,
-      .sbr_req_i ( to_serializer_reqs[i]  ),
-      .sbr_rsp_o ( to_serializer_rsps[i]  ),
-      .mgr_req_o ( tmp_serializer_reqs[i] ),
-      .mgr_rsp_i ( tmp_serializer_rsps[i] )
+      .sbr_port_req_i ( to_serializer_reqs[i]  ),
+      .sbr_port_rsp_o ( to_serializer_rsps[i]  ),
+      .mgr_port_req_o ( tmp_serializer_reqs[i] ),
+      .mgr_port_rsp_i ( tmp_serializer_rsps[i] )
     );
     always_comb begin
       `AXI_SET_REQ_STRUCT(from_serializer_reqs[i], tmp_serializer_reqs[i])
@@ -242,21 +242,21 @@ module axi_id_serialize #(
     .clk_i,
     .rst_ni,
     .test_i     ( 1'b0                  ),
-    .sbr_reqs_i ( from_serializer_reqs  ),
-    .sbr_rsps_o ( from_serializer_rsps  ),
-    .mgr_req_o  ( axi_mux_req           ),
-    .mgr_rsp_i  ( axi_mux_rsp           )
+    .sbr_ports_req_i ( from_serializer_reqs  ),
+    .sbr_ports_rsp_o ( from_serializer_rsps  ),
+    .mgr_port_req_o  ( axi_mux_req           ),
+    .mgr_port_rsp_i  ( axi_mux_rsp           )
   );
 
   // Shift the ID one down if needed, as mux prepends IDs
   if (MuxIdWidth > 32'd1) begin : gen_id_shift
     always_comb begin
-      `AXI_SET_REQ_STRUCT(mgr_req_o, axi_mux_req)
-      mgr_req_o.aw.id = mgr_id_t'(axi_mux_req.aw.id >> 32'd1);
-      mgr_req_o.ar.id = mgr_id_t'(axi_mux_req.ar.id >> 32'd1);
-      `AXI_SET_RSP_STRUCT(axi_mux_rsp, mgr_rsp_i)
-      axi_mux_rsp.b.id = mux_id_t'(mgr_rsp_i.b.id << 32'd1);
-      axi_mux_rsp.r.id = mux_id_t'(mgr_rsp_i.r.id << 32'd1);
+      `AXI_SET_REQ_STRUCT(mgr_port_req_o, axi_mux_req)
+      mgr_port_req_o.aw.id = mgr_id_t'(axi_mux_req.aw.id >> 32'd1);
+      mgr_port_req_o.ar.id = mgr_id_t'(axi_mux_req.ar.id >> 32'd1);
+      `AXI_SET_RSP_STRUCT(axi_mux_rsp, mgr_port_rsp_i)
+      axi_mux_rsp.b.id = mux_id_t'(mgr_port_rsp_i.b.id << 32'd1);
+      axi_mux_rsp.r.id = mux_id_t'(mgr_port_rsp_i.r.id << 32'd1);
     end
   end else begin : gen_no_id_shift
     axi_id_prepend #(
@@ -290,21 +290,21 @@ module axi_id_serialize #(
       .sbr_r_chans_o    ( axi_mux_rsp.r        ),
       .sbr_r_valids_o   ( axi_mux_rsp.r_valid  ),
       .sbr_r_readies_i  ( axi_mux_req.r_ready  ),
-      .mgr_aw_chans_o   ( mgr_req_o.aw         ),
-      .mgr_aw_valids_o  ( mgr_req_o.aw_valid   ),
-      .mgr_aw_readies_i ( mgr_rsp_i.aw_ready   ),
-      .mgr_w_chans_o    ( mgr_req_o.w          ),
-      .mgr_w_valids_o   ( mgr_req_o.w_valid    ),
-      .mgr_w_readies_i  ( mgr_rsp_i.w_ready    ),
-      .mgr_b_chans_i    ( mgr_rsp_i.b          ),
-      .mgr_b_valids_i   ( mgr_rsp_i.b_valid    ),
-      .mgr_b_readies_o  ( mgr_req_o.b_ready    ),
-      .mgr_ar_chans_o   ( mgr_req_o.ar         ),
-      .mgr_ar_valids_o  ( mgr_req_o.ar_valid   ),
-      .mgr_ar_readies_i ( mgr_rsp_i.ar_ready   ),
-      .mgr_r_chans_i    ( mgr_rsp_i.r          ),
-      .mgr_r_valids_i   ( mgr_rsp_i.r_valid    ),
-      .mgr_r_readies_o  ( mgr_req_o.r_ready    )
+      .mgr_aw_chans_o   ( mgr_port_req_o.aw         ),
+      .mgr_aw_valids_o  ( mgr_port_req_o.aw_valid   ),
+      .mgr_aw_readies_i ( mgr_port_rsp_i.aw_ready   ),
+      .mgr_w_chans_o    ( mgr_port_req_o.w          ),
+      .mgr_w_valids_o   ( mgr_port_req_o.w_valid    ),
+      .mgr_w_readies_i  ( mgr_port_rsp_i.w_ready    ),
+      .mgr_b_chans_i    ( mgr_port_rsp_i.b          ),
+      .mgr_b_valids_i   ( mgr_port_rsp_i.b_valid    ),
+      .mgr_b_readies_o  ( mgr_port_req_o.b_ready    ),
+      .mgr_ar_chans_o   ( mgr_port_req_o.ar         ),
+      .mgr_ar_valids_o  ( mgr_port_req_o.ar_valid   ),
+      .mgr_ar_readies_i ( mgr_port_rsp_i.ar_ready   ),
+      .mgr_r_chans_i    ( mgr_port_rsp_i.r          ),
+      .mgr_r_valids_i   ( mgr_port_rsp_i.r_valid    ),
+      .mgr_r_readies_o  ( mgr_port_req_o.r_ready    )
     );
   end
 
@@ -321,13 +321,13 @@ module axi_id_serialize #(
       else $fatal(1, "Parameter MgrPortIdWidth has to be larger than 0!");
     assert(MgrPortIdWidth <= SbrPortIdWidth)
       else $fatal(1, "Downsize implies that MgrPortIdWidth <= SbrPortIdWidth!");
-    assert($bits(sbr_req_i.aw.addr) == $bits(mgr_req_o.aw.addr))
+    assert($bits(sbr_port_req_i.aw.addr) == $bits(mgr_port_req_o.aw.addr))
       else $fatal(1, "AXI AW address widths are not equal!");
-    assert($bits(sbr_req_i.w.data) == $bits(mgr_req_o.w.data))
+    assert($bits(sbr_port_req_i.w.data) == $bits(mgr_port_req_o.w.data))
       else $fatal(1, "AXI W data widths are not equal!");
-    assert($bits(sbr_req_i.ar.addr) == $bits(mgr_req_o.ar.addr))
+    assert($bits(sbr_port_req_i.ar.addr) == $bits(mgr_port_req_o.ar.addr))
       else $fatal(1, "AXI AR address widths are not equal!");
-    assert($bits(sbr_rsp_o.r.data) == $bits(mgr_rsp_i.r.data))
+    assert($bits(sbr_port_rsp_o.r.data) == $bits(mgr_port_rsp_i.r.data))
       else $fatal(1, "AXI R data widths are not equal!");
   end
   `endif
@@ -402,10 +402,10 @@ module axi_id_serialize_intf #(
   ) i_axi_id_serialize (
     .clk_i,
     .rst_ni,
-    .sbr_req_i ( sbr_req ),
-    .sbr_rsp_o ( sbr_rsp ),
-    .mgr_req_o ( mgr_req ),
-    .mgr_rsp_i ( mgr_rsp )
+    .sbr_port_req_i ( sbr_req ),
+    .sbr_port_rsp_o ( sbr_rsp ),
+    .mgr_port_req_o ( mgr_req ),
+    .mgr_port_rsp_i ( mgr_rsp )
   );
 
 // pragma translate_off

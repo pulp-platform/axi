@@ -30,8 +30,8 @@ module axi_err_sbr #(
   input  logic     rst_ni,  // Asynchronous reset active low
   input  logic     test_i,  // Testmode enable
   // subordinate port
-  input  axi_req_t sbr_req_i,
-  output axi_rsp_t sbr_rsp_o
+  input  axi_req_t sbr_port_req_i,
+  output axi_rsp_t sbr_port_rsp_o
 );
   typedef logic [IdWidth-1:0] id_t;
   typedef struct packed {
@@ -51,14 +51,14 @@ module axi_err_sbr #(
     ) i_atop_filter (
       .clk_i,
       .rst_ni,
-      .sbr_req_i ( sbr_req_i  ),
-      .sbr_rsp_o ( sbr_rsp_o  ),
-      .mgr_req_o ( err_req    ),
-      .mgr_rsp_i ( err_rsp    )
+      .sbr_port_req_i ( sbr_port_req_i  ),
+      .sbr_port_rsp_o ( sbr_port_rsp_o  ),
+      .mgr_port_req_o ( err_req    ),
+      .mgr_port_rsp_i ( err_rsp    )
     );
   end else begin
-    assign err_req    = sbr_req_i;
-    assign sbr_rsp_o = err_rsp;
+    assign err_req    = sbr_port_req_i;
+    assign sbr_port_rsp_o = err_rsp;
   end
 
   // w fifo
@@ -251,7 +251,7 @@ module axi_err_sbr #(
   end
   default disable iff (!rst_ni);
   if (!ATOPs) begin : gen_assert_atops_unsupported
-    assume property( @(posedge clk_i) (sbr_req_i.aw_valid |-> sbr_req_i.aw.atop == '0)) else
+    assume property( @(posedge clk_i) (sbr_port_req_i.aw_valid |-> sbr_port_req_i.aw.atop == '0)) else
      $fatal(1, "Got ATOP but not configured to support ATOPs!");
   end
   `endif

@@ -160,12 +160,12 @@ module axi_to_mem_banked #(
     .clk_i,
     .rst_ni,
     .test_i,
-    .sbr_req_i       ( axi_req_i    ),
+    .sbr_port_req_i       ( axi_req_i    ),
     .sbr_aw_select_i ( WriteAccess  ),
     .sbr_ar_select_i ( ReadAccess   ),
-    .sbr_rsp_o       ( axi_rsp_o    ),
-    .mgr_reqs_o      ( mem_axi_reqs ),
-    .mgr_rsps_i      ( mem_axi_rsps )
+    .sbr_port_rsp_o       ( axi_rsp_o    ),
+    .mgr_ports_req_o      ( mem_axi_reqs ),
+    .mgr_ports_rsp_i      ( mem_axi_rsps )
   );
 
   xbar_payload_t [1:0][BanksPerAxiChannel-1:0] inter_payload;

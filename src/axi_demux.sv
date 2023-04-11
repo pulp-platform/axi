@@ -64,13 +64,13 @@ module axi_demux #(
   input  logic                          rst_ni,
   input  logic                          test_i,
   // Subordinate Port
-  input  axi_req_t                      sbr_req_i,
+  input  axi_req_t                      sbr_port_req_i,
   input  select_t                       sbr_aw_select_i,
   input  select_t                       sbr_ar_select_i,
-  output axi_rsp_t                      sbr_rsp_o,
+  output axi_rsp_t                      sbr_port_rsp_o,
   // Manager Ports
-  output axi_req_t    [NumMgrPorts-1:0] mgr_reqs_o,
-  input  axi_rsp_t    [NumMgrPorts-1:0] mgr_rsps_i
+  output axi_req_t    [NumMgrPorts-1:0] mgr_ports_req_o,
+  input  axi_rsp_t    [NumMgrPorts-1:0] mgr_ports_rsp_i
 );
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
@@ -85,12 +85,12 @@ module axi_demux #(
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
-      .valid_i ( sbr_req_i.aw_valid      ),
-      .ready_o ( sbr_rsp_o.aw_ready      ),
-      .data_i  ( sbr_req_i.aw            ),
-      .valid_o ( mgr_reqs_o[0].aw_valid  ),
-      .ready_i ( mgr_rsps_i[0].aw_ready  ),
-      .data_o  ( mgr_reqs_o[0].aw        )
+      .valid_i ( sbr_port_req_i.aw_valid      ),
+      .ready_o ( sbr_port_rsp_o.aw_ready      ),
+      .data_i  ( sbr_port_req_i.aw            ),
+      .valid_o ( mgr_ports_req_o[0].aw_valid  ),
+      .ready_i ( mgr_ports_rsp_i[0].aw_ready  ),
+      .data_o  ( mgr_ports_req_o[0].aw        )
     );
     spill_register #(
       .T       ( w_chan_t  ),
@@ -98,12 +98,12 @@ module axi_demux #(
     ) i_w_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( sbr_req_i.w_valid      ),
-      .ready_o ( sbr_rsp_o.w_ready      ),
-      .data_i  ( sbr_req_i.w            ),
-      .valid_o ( mgr_reqs_o[0].w_valid  ),
-      .ready_i ( mgr_rsps_i[0].w_ready  ),
-      .data_o  ( mgr_reqs_o[0].w        )
+      .valid_i ( sbr_port_req_i.w_valid      ),
+      .ready_o ( sbr_port_rsp_o.w_ready      ),
+      .data_i  ( sbr_port_req_i.w            ),
+      .valid_o ( mgr_ports_req_o[0].w_valid  ),
+      .ready_i ( mgr_ports_rsp_i[0].w_ready  ),
+      .data_o  ( mgr_ports_req_o[0].w        )
     );
     spill_register #(
       .T       ( b_chan_t ),
@@ -111,12 +111,12 @@ module axi_demux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                 ),
       .rst_ni  ( rst_ni                ),
-      .valid_i ( mgr_rsps_i[0].b_valid ),
-      .ready_o ( mgr_reqs_o[0].b_ready ),
-      .data_i  ( mgr_rsps_i[0].b       ),
-      .valid_o ( sbr_rsp_o.b_valid     ),
-      .ready_i ( sbr_req_i.b_ready     ),
-      .data_o  ( sbr_rsp_o.b           )
+      .valid_i ( mgr_ports_rsp_i[0].b_valid ),
+      .ready_o ( mgr_ports_req_o[0].b_ready ),
+      .data_i  ( mgr_ports_rsp_i[0].b       ),
+      .valid_o ( sbr_port_rsp_o.b_valid     ),
+      .ready_i ( sbr_port_req_i.b_ready     ),
+      .data_o  ( sbr_port_rsp_o.b           )
     );
     spill_register #(
       .T       ( ar_chan_t  ),
@@ -124,12 +124,12 @@ module axi_demux #(
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
-      .valid_i ( sbr_req_i.ar_valid      ),
-      .ready_o ( sbr_rsp_o.ar_ready      ),
-      .data_i  ( sbr_req_i.ar            ),
-      .valid_o ( mgr_reqs_o[0].ar_valid  ),
-      .ready_i ( mgr_rsps_i[0].ar_ready  ),
-      .data_o  ( mgr_reqs_o[0].ar        )
+      .valid_i ( sbr_port_req_i.ar_valid      ),
+      .ready_o ( sbr_port_rsp_o.ar_ready      ),
+      .data_i  ( sbr_port_req_i.ar            ),
+      .valid_o ( mgr_ports_req_o[0].ar_valid  ),
+      .ready_i ( mgr_ports_rsp_i[0].ar_ready  ),
+      .data_o  ( mgr_ports_req_o[0].ar        )
     );
     spill_register #(
       .T       ( r_chan_t ),
@@ -137,12 +137,12 @@ module axi_demux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                 ),
       .rst_ni  ( rst_ni                ),
-      .valid_i ( mgr_rsps_i[0].r_valid ),
-      .ready_o ( mgr_reqs_o[0].r_ready ),
-      .data_i  ( mgr_rsps_i[0].r       ),
-      .valid_o ( sbr_rsp_o.r_valid     ),
-      .ready_i ( sbr_req_i.r_ready     ),
-      .data_o  ( sbr_rsp_o.r           )
+      .valid_i ( mgr_ports_rsp_i[0].r_valid ),
+      .ready_o ( mgr_ports_req_o[0].r_ready ),
+      .data_i  ( mgr_ports_rsp_i[0].r       ),
+      .valid_o ( sbr_port_rsp_o.r_valid     ),
+      .ready_i ( sbr_port_req_i.r_ready     ),
+      .data_o  ( sbr_port_rsp_o.r           )
     );
 
   // other non degenerate cases
@@ -232,9 +232,9 @@ module axi_demux #(
     ) i_aw_channel_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
-      .valid_i ( sbr_req_i.aw_valid ),
+      .valid_i ( sbr_port_req_i.aw_valid ),
       .ready_o ( sbr_aw_ready_chan  ),
-      .data_i  ( sbr_req_i.aw       ),
+      .data_i  ( sbr_port_req_i.aw       ),
       .valid_o ( sbr_aw_valid_chan  ),
       .ready_i ( sbr_aw_ready       ),
       .data_o  ( sbr_aw_chan        )
@@ -245,14 +245,14 @@ module axi_demux #(
     ) i_aw_select_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
-      .valid_i ( sbr_req_i.aw_valid ),
+      .valid_i ( sbr_port_req_i.aw_valid ),
       .ready_o ( sbr_aw_ready_sel   ),
       .data_i  ( sbr_aw_select_i    ),
       .valid_o ( sbr_aw_valid_sel   ),
       .ready_i ( sbr_aw_ready       ),
       .data_o  ( sbr_aw_select      )
     );
-    assign sbr_rsp_o.aw_ready = sbr_aw_ready_chan & sbr_aw_ready_sel;
+    assign sbr_port_rsp_o.aw_ready = sbr_aw_ready_chan & sbr_aw_ready_sel;
     assign sbr_aw_valid = sbr_aw_valid_chan & sbr_aw_valid_sel;
 
     // Control of the AW handshake
@@ -382,9 +382,9 @@ module axi_demux #(
     ) i_w_spill_reg(
       .clk_i   ( clk_i             ),
       .rst_ni  ( rst_ni            ),
-      .valid_i ( sbr_req_i.w_valid ),
-      .ready_o ( sbr_rsp_o.w_ready ),
-      .data_i  ( sbr_req_i.w       ),
+      .valid_i ( sbr_port_req_i.w_valid ),
+      .ready_o ( sbr_port_rsp_o.w_ready ),
+      .data_i  ( sbr_port_req_i.w       ),
       .valid_o ( sbr_w_valid       ),
       .ready_i ( sbr_w_ready       ),
       .data_o  ( sbr_w_chan        )
@@ -403,9 +403,9 @@ module axi_demux #(
       .valid_i ( sbr_b_valid       ),
       .ready_o ( sbr_b_ready       ),
       .data_i  ( sbr_b_chan        ),
-      .valid_o ( sbr_rsp_o.b_valid ),
-      .ready_i ( sbr_req_i.b_ready ),
-      .data_o  ( sbr_rsp_o.b       )
+      .valid_o ( sbr_port_rsp_o.b_valid ),
+      .ready_i ( sbr_port_req_i.b_ready ),
+      .data_o  ( sbr_port_rsp_o.b       )
     );
 
     // Arbitration of the different B responses
@@ -439,9 +439,9 @@ module axi_demux #(
     ) i_ar_chan_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
-      .valid_i ( sbr_req_i.ar_valid ),
+      .valid_i ( sbr_port_req_i.ar_valid ),
       .ready_o ( sbr_ar_ready_chan  ),
-      .data_i  ( sbr_req_i.ar       ),
+      .data_i  ( sbr_port_req_i.ar       ),
       .valid_o ( ar_valid_chan      ),
       .ready_i ( sbr_ar_ready       ),
       .data_o  ( sbr_ar_chan        )
@@ -452,14 +452,14 @@ module axi_demux #(
     ) i_ar_sel_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
-      .valid_i ( sbr_req_i.ar_valid ),
+      .valid_i ( sbr_port_req_i.ar_valid ),
       .ready_o ( sbr_ar_ready_sel   ),
       .data_i  ( sbr_ar_select_i    ),
       .valid_o ( ar_valid_sel       ),
       .ready_i ( sbr_ar_ready       ),
       .data_o  ( sbr_ar_select      )
     );
-    assign sbr_rsp_o.ar_ready = sbr_ar_ready_chan & sbr_ar_ready_sel;
+    assign sbr_port_rsp_o.ar_ready = sbr_ar_ready_chan & sbr_ar_ready_sel;
     assign sbr_ar_valid = ar_valid_chan & ar_valid_sel;
 
     // control of the AR handshake
@@ -555,9 +555,9 @@ module axi_demux #(
       .valid_i ( sbr_r_valid       ),
       .ready_o ( sbr_r_ready       ),
       .data_i  ( sbr_r_chan        ),
-      .valid_o ( sbr_rsp_o.r_valid ),
-      .ready_i ( sbr_req_i.r_ready ),
-      .data_o  ( sbr_rsp_o.r       )
+      .valid_o ( sbr_port_rsp_o.r_valid ),
+      .ready_i ( sbr_port_req_i.r_ready ),
+      .data_o  ( sbr_port_rsp_o.r       )
     );
 
     // Arbitration of the different r responses
@@ -580,54 +580,54 @@ module axi_demux #(
       .idx_o  (               )
     );
 
-   assign ar_ready = ar_valid & mgr_rsps_i[sbr_ar_select].ar_ready;
-   assign aw_ready = aw_valid & mgr_rsps_i[sbr_aw_select].aw_ready;
+   assign ar_ready = ar_valid & mgr_ports_rsp_i[sbr_ar_select].ar_ready;
+   assign aw_ready = aw_valid & mgr_ports_rsp_i[sbr_aw_select].aw_ready;
 
     // process that defines the individual demuxes and assignments for the arbitration
-    // as mgr_reqs_o has to be drivem from the same always comb block!
+    // as mgr_ports_req_o has to be drivem from the same always comb block!
     always_comb begin
       // default assignments
-      mgr_reqs_o  = '0;
+      mgr_ports_req_o  = '0;
       sbr_w_ready = 1'b0;
       w_cnt_down  = 1'b0;
 
       for (int unsigned i = 0; i < NumMgrPorts; i++) begin
         // AW channel
-        mgr_reqs_o[i].aw       = sbr_aw_chan;
-        mgr_reqs_o[i].aw_valid = 1'b0;
+        mgr_ports_req_o[i].aw       = sbr_aw_chan;
+        mgr_ports_req_o[i].aw_valid = 1'b0;
         if (aw_valid && (sbr_aw_select == i)) begin
-          mgr_reqs_o[i].aw_valid = 1'b1;
+          mgr_ports_req_o[i].aw_valid = 1'b1;
         end
 
         //  W channel
-        mgr_reqs_o[i].w       = sbr_w_chan;
-        mgr_reqs_o[i].w_valid = 1'b0;
+        mgr_ports_req_o[i].w       = sbr_w_chan;
+        mgr_ports_req_o[i].w_valid = 1'b0;
         if (w_select_valid && (w_select == i)) begin
-          mgr_reqs_o[i].w_valid = sbr_w_valid;
-          sbr_w_ready           = mgr_rsps_i[i].w_ready;
-          w_cnt_down            = sbr_w_valid & mgr_rsps_i[i].w_ready & sbr_w_chan.last;
+          mgr_ports_req_o[i].w_valid = sbr_w_valid;
+          sbr_w_ready           = mgr_ports_rsp_i[i].w_ready;
+          w_cnt_down            = sbr_w_valid & mgr_ports_rsp_i[i].w_ready & sbr_w_chan.last;
         end
 
         //  B channel
-        mgr_reqs_o[i].b_ready = mgr_b_readies[i];
+        mgr_ports_req_o[i].b_ready = mgr_b_readies[i];
 
         // AR channel
-        mgr_reqs_o[i].ar       = sbr_ar_chan;
-        mgr_reqs_o[i].ar_valid = 1'b0;
+        mgr_ports_req_o[i].ar       = sbr_ar_chan;
+        mgr_ports_req_o[i].ar_valid = 1'b0;
         if (ar_valid && (sbr_ar_select == i)) begin
-          mgr_reqs_o[i].ar_valid = 1'b1;
+          mgr_ports_req_o[i].ar_valid = 1'b1;
         end
 
         //  R channel
-        mgr_reqs_o[i].r_ready = mgr_r_readies[i];
+        mgr_ports_req_o[i].r_ready = mgr_r_readies[i];
       end
     end
     // unpack the response B and R channels for the arbitration
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_b_channels
-      assign mgr_b_chans[i]        = mgr_rsps_i[i].b;
-      assign mgr_b_valids[i]       = mgr_rsps_i[i].b_valid;
-      assign mgr_r_chans[i]        = mgr_rsps_i[i].r;
-      assign mgr_r_valids[i]       = mgr_rsps_i[i].r_valid;
+      assign mgr_b_chans[i]        = mgr_ports_rsp_i[i].b;
+      assign mgr_b_valids[i]       = mgr_ports_rsp_i[i].b_valid;
+      assign mgr_r_chans[i]        = mgr_ports_rsp_i[i].r;
+      assign mgr_r_valids[i]       = mgr_ports_rsp_i[i].r_valid;
     end
 
 
@@ -642,11 +642,11 @@ module axi_demux #(
         $fatal(1, "IdBits has to be equal or smaller than IdWidth.");
     end
     default disable iff (!rst_ni);
-    aw_select: assume property( @(posedge clk_i) (sbr_req_i.aw_valid |->
+    aw_select: assume property( @(posedge clk_i) (sbr_port_req_i.aw_valid |->
                                                  (sbr_aw_select_i < NumMgrPorts))) else
       $fatal(1, "sbr_aw_select_i is %d: AW has selected a subordinate that is not defined.\
                  NumMgrPorts: %d", sbr_aw_select_i, NumMgrPorts);
-    ar_select: assume property( @(posedge clk_i) (sbr_req_i.ar_valid |->
+    ar_select: assume property( @(posedge clk_i) (sbr_port_req_i.ar_valid |->
                                                  (sbr_ar_select_i < NumMgrPorts))) else
       $fatal(1, "sbr_ar_select_i is %d: AR has selected a subordinate that is not defined.\
                  NumMgrPorts: %d", sbr_ar_select_i, NumMgrPorts);
@@ -676,7 +676,7 @@ module axi_demux #(
     w_underflow: assert property( @(posedge clk_i)
         ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
         $fatal(1, "W counter underflowed!");
-    `ASSUME(NoAtopAllowed, !AtopSupport && sbr_req_i.aw_valid |-> sbr_req_i.aw.atop == '0)
+    `ASSUME(NoAtopAllowed, !AtopSupport && sbr_port_req_i.aw_valid |-> sbr_port_req_i.aw.atop == '0)
 `endif
 `endif
 // pragma translate_on
@@ -885,12 +885,12 @@ module axi_demux_intf #(
     .rst_ni,  // Asynchronous reset active low
     .test_i,  // Testmode enable
     // subordinate port
-    .sbr_req_i       ( sbr_req         ),
+    .sbr_port_req_i       ( sbr_req         ),
     .sbr_aw_select_i ( sbr_aw_select_i ),
     .sbr_ar_select_i ( sbr_ar_select_i ),
-    .sbr_rsp_o       ( sbr_rsp         ),
+    .sbr_port_rsp_o       ( sbr_rsp         ),
     // manager port
-    .mgr_reqs_o      ( mgr_req         ),
-    .mgr_rsps_i      ( mgr_rsp         )
+    .mgr_ports_req_o      ( mgr_req         ),
+    .mgr_ports_rsp_i      ( mgr_rsp         )
   );
 endmodule

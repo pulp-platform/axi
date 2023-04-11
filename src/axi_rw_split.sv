@@ -26,8 +26,8 @@ module axi_rw_split #(
   input  logic      clk_i,
   input  logic      rst_ni,
   // Read / Write Subordinate
-  input  axi_req_t sbr_req_i,
-  output axi_rsp_t sbr_rsp_o,
+  input  axi_req_t sbr_port_req_i,
+  output axi_rsp_t sbr_port_rsp_o,
 
   // Read Manager
   output axi_req_t mgr_read_req_o,
@@ -43,8 +43,8 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Assign Read channel structs
-  `AXI_ASSIGN_AR_STRUCT ( mgr_read_req_o.ar  , sbr_req_i.ar      )
-  `AXI_ASSIGN_R_STRUCT  ( sbr_rsp_o.r        , mgr_read_rsp_i.r  )
+  `AXI_ASSIGN_AR_STRUCT ( mgr_read_req_o.ar  , sbr_port_req_i.ar      )
+  `AXI_ASSIGN_R_STRUCT  ( sbr_port_rsp_o.r        , mgr_read_rsp_i.r  )
 
   // Read AW and W channel data
   assign mgr_read_req_o.aw        = '0;
@@ -56,12 +56,12 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Read AR channel handshake
-  assign mgr_read_req_o.ar_valid  = sbr_req_i.ar_valid;
-  assign sbr_rsp_o.ar_ready       = mgr_read_rsp_i.ar_ready;
+  assign mgr_read_req_o.ar_valid  = sbr_port_req_i.ar_valid;
+  assign sbr_port_rsp_o.ar_ready       = mgr_read_rsp_i.ar_ready;
 
   // Read R channel handshake
-  assign sbr_rsp_o.r_valid        = mgr_read_rsp_i.r_valid;
-  assign mgr_read_req_o.r_ready   = sbr_req_i.r_ready;
+  assign sbr_port_rsp_o.r_valid        = mgr_read_rsp_i.r_valid;
+  assign mgr_read_req_o.r_ready   = sbr_port_req_i.r_ready;
 
   // Read AW, W and B handshake
   assign mgr_read_req_o.aw_valid  = 1'b0;
@@ -77,9 +77,9 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Assign Write channel structs
-  `AXI_ASSIGN_AW_STRUCT ( mgr_write_req_o.aw , sbr_req_i.aw      )
-  `AXI_ASSIGN_W_STRUCT  ( mgr_write_req_o.w  , sbr_req_i.w       )
-  `AXI_ASSIGN_B_STRUCT  ( sbr_rsp_o.b        , mgr_write_rsp_i.b )
+  `AXI_ASSIGN_AW_STRUCT ( mgr_write_req_o.aw , sbr_port_req_i.aw      )
+  `AXI_ASSIGN_W_STRUCT  ( mgr_write_req_o.w  , sbr_port_req_i.w       )
+  `AXI_ASSIGN_B_STRUCT  ( sbr_port_rsp_o.b        , mgr_write_rsp_i.b )
 
   // Write AR channel data
   assign mgr_write_req_o.ar       = '0;
@@ -97,15 +97,15 @@ module axi_rw_split #(
   `ASSERT_NEVER(mgr_read_rsp_r_valid, mgr_read_rsp_i.r_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
-  assign mgr_write_req_o.aw_valid = sbr_req_i.aw_valid;
-  assign sbr_rsp_o.aw_ready       = mgr_write_rsp_i.aw_ready;
+  assign mgr_write_req_o.aw_valid = sbr_port_req_i.aw_valid;
+  assign sbr_port_rsp_o.aw_ready       = mgr_write_rsp_i.aw_ready;
 
   // Write W channel handshake
-  assign mgr_write_req_o.w_valid  = sbr_req_i.w_valid;
-  assign sbr_rsp_o.w_ready        = mgr_write_rsp_i.w_ready;
+  assign mgr_write_req_o.w_valid  = sbr_port_req_i.w_valid;
+  assign sbr_port_rsp_o.w_ready        = mgr_write_rsp_i.w_ready;
 
   // Write B channel handshake
-  assign sbr_rsp_o.b_valid        = mgr_write_rsp_i.b_valid;
-  assign mgr_write_req_o.b_ready  = sbr_req_i.b_ready;
+  assign sbr_port_rsp_o.b_valid        = mgr_write_rsp_i.b_valid;
+  assign mgr_write_req_o.b_ready  = sbr_port_req_i.b_ready;
 
 endmodule : axi_rw_split

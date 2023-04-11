@@ -87,8 +87,8 @@ module axi_to_mem_split #(
   ) i_axi_rw_split (
     .clk_i,
     .rst_ni,
-    .sbr_req_i       ( axi_req_i       ),
-    .sbr_rsp_o       ( axi_rsp_o       ),
+    .sbr_port_req_i       ( axi_req_i       ),
+    .sbr_port_rsp_o       ( axi_rsp_o       ),
     .mgr_read_req_o  ( axi_read_req    ),
     .mgr_read_rsp_i  ( axi_read_rsp    ),
     .mgr_write_req_o ( axi_write_req   ),

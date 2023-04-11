@@ -28,8 +28,8 @@ This table describes the ports of the module.
 | `clk_i`        | `input  logic`            | clock                                                  |
 | `rst_ni`       | `input  logic`            | asynchronous reset active low                          |
 | `test_i`       | `input  logic`            | testmode enable                                        |
-| `sbr_reqs_i`   | `input  req_lite_t [1:0]` | requests of the two AXI4-Lite ports                    |
-| `sbr_rsps_o`   | `output rsp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
+| `sbr_ports_req_i`   | `input  req_lite_t [1:0]` | requests of the two AXI4-Lite ports                    |
+| `sbr_ports_rsp_o`   | `output rsp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
 | `irq_o`        | `output logic      [1:0]` | interrupt output for each port                         |
 | `base_addr_i`  | `input  addr_t     [1:0]` | base address for each port                             |
 

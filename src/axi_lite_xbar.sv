@@ -157,12 +157,12 @@ module axi_lite_xbar #(
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
-      .sbr_req_i       ( sbr_ports_req_i[i] ),
+      .sbr_port_req_i       ( sbr_ports_req_i[i] ),
       .sbr_aw_select_i ( sbr_aw_select      ),
       .sbr_ar_select_i ( sbr_ar_select      ),
-      .sbr_rsp_o       ( sbr_ports_rsp_o[i] ),
-      .mgr_reqs_o      ( sbr_reqs[i]        ),
-      .mgr_rsps_i      ( sbr_rsps[i]        )
+      .sbr_port_rsp_o       ( sbr_ports_rsp_o[i] ),
+      .mgr_ports_req_o      ( sbr_reqs[i]        ),
+      .mgr_ports_rsp_i      ( sbr_rsps[i]        )
     );
 
     // connect the decode error module to the last index of the demux manager port
@@ -178,8 +178,8 @@ module axi_lite_xbar #(
       .sbr_rsp_lite_o ( sbr_rsps[i][Cfg.NumMgrPorts] ),
       .sbr_aw_cache_i ( 4'd0                         ),
       .sbr_ar_cache_i ( 4'd0                         ),
-      .mgr_req_o      ( decerr_req                   ),
-      .mgr_rsp_i      ( decerr_rsp                   )
+      .mgr_port_req_o      ( decerr_req                   ),
+      .mgr_port_rsp_i      ( decerr_rsp                   )
     );
 
     axi_err_sbr #(
@@ -195,8 +195,8 @@ module axi_lite_xbar #(
       .rst_ni    ( rst_ni     ),  // Asynchronous reset active low
       .test_i    ( test_i     ),  // Testmode enable
       // subordinate port
-      .sbr_req_i ( decerr_req ),
-      .sbr_rsp_o ( decerr_rsp )
+      .sbr_port_req_i ( decerr_req ),
+      .sbr_port_rsp_o ( decerr_rsp )
     );
   end
 
@@ -229,10 +229,10 @@ module axi_lite_xbar #(
       .clk_i,  // Clock
       .rst_ni, // Asynchronous reset active low
       .test_i, // Test Mode enable
-      .sbr_reqs_i ( mgr_reqs[i]        ),
-      .sbr_rsps_o ( mgr_rsps[i]        ),
-      .mgr_req_o  ( mgr_ports_req_o[i] ),
-      .mgr_rsp_i  ( mgr_ports_rsp_i[i] )
+      .sbr_ports_req_i ( mgr_reqs[i]        ),
+      .sbr_ports_rsp_o ( mgr_rsps[i]        ),
+      .mgr_port_req_o  ( mgr_ports_req_o[i] ),
+      .mgr_port_rsp_i  ( mgr_ports_rsp_i[i] )
     );
   end
 endmodule

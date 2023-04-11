@@ -35,32 +35,32 @@ module axi_fifo #(
     input  logic     rst_ni,  // Asynchronous reset active low
     input  logic     test_i,
     // subordinate port
-    input  axi_req_t sbr_req_i,
-    output axi_rsp_t sbr_rsp_o,
+    input  axi_req_t sbr_port_req_i,
+    output axi_rsp_t sbr_port_rsp_o,
     // manager port
-    output axi_req_t mgr_req_o,
-    input  axi_rsp_t mgr_rsp_i
+    output axi_req_t mgr_port_req_o,
+    input  axi_rsp_t mgr_port_rsp_i
 );
 
   if (Depth == '0) begin : gen_no_fifo
     // degenerate case, connect input to output
-    assign mgr_req_o = sbr_req_i;
-    assign sbr_rsp_o = mgr_rsp_i;
+    assign mgr_port_req_o = sbr_port_req_i;
+    assign sbr_port_rsp_o = mgr_port_rsp_i;
   end else begin : gen_axi_fifo
     logic aw_fifo_empty, ar_fifo_empty, w_fifo_empty, r_fifo_empty, b_fifo_empty;
     logic aw_fifo_full, ar_fifo_full, w_fifo_full, r_fifo_full, b_fifo_full;
 
-    assign mgr_req_o.aw_valid = ~aw_fifo_empty;
-    assign mgr_req_o.ar_valid = ~ar_fifo_empty;
-    assign mgr_req_o.w_valid  = ~w_fifo_empty;
-    assign sbr_rsp_o.r_valid  = ~r_fifo_empty;
-    assign sbr_rsp_o.b_valid  = ~b_fifo_empty;
+    assign mgr_port_req_o.aw_valid = ~aw_fifo_empty;
+    assign mgr_port_req_o.ar_valid = ~ar_fifo_empty;
+    assign mgr_port_req_o.w_valid  = ~w_fifo_empty;
+    assign sbr_port_rsp_o.r_valid  = ~r_fifo_empty;
+    assign sbr_port_rsp_o.b_valid  = ~b_fifo_empty;
 
-    assign sbr_rsp_o.aw_ready = ~aw_fifo_full;
-    assign sbr_rsp_o.ar_ready = ~ar_fifo_full;
-    assign sbr_rsp_o.w_ready  = ~w_fifo_full;
-    assign mgr_req_o.r_ready  = ~r_fifo_full;
-    assign mgr_req_o.b_ready  = ~b_fifo_full;
+    assign sbr_port_rsp_o.aw_ready = ~aw_fifo_full;
+    assign sbr_port_rsp_o.ar_ready = ~ar_fifo_full;
+    assign sbr_port_rsp_o.w_ready  = ~w_fifo_full;
+    assign mgr_port_req_o.r_ready  = ~r_fifo_full;
+    assign mgr_port_req_o.b_ready  = ~b_fifo_full;
 
     // A FiFo for each channel
     fifo_v3 #(
@@ -75,10 +75,10 @@ module axi_fifo #(
         .full_o    (aw_fifo_full),
         .empty_o   (aw_fifo_empty),
         .usage_o   (),
-        .data_i    (sbr_req_i.aw),
-        .push_i    (sbr_req_i.aw_valid && sbr_rsp_o.aw_ready),
-        .data_o    (mgr_req_o.aw),
-        .pop_i     (mgr_req_o.aw_valid && mgr_rsp_i.aw_ready)
+        .data_i    (sbr_port_req_i.aw),
+        .push_i    (sbr_port_req_i.aw_valid && sbr_port_rsp_o.aw_ready),
+        .data_o    (mgr_port_req_o.aw),
+        .pop_i     (mgr_port_req_o.aw_valid && mgr_port_rsp_i.aw_ready)
     );
     fifo_v3 #(
         .dtype(ar_chan_t),
@@ -92,10 +92,10 @@ module axi_fifo #(
         .full_o    (ar_fifo_full),
         .empty_o   (ar_fifo_empty),
         .usage_o   (),
-        .data_i    (sbr_req_i.ar),
-        .push_i    (sbr_req_i.ar_valid && sbr_rsp_o.ar_ready),
-        .data_o    (mgr_req_o.ar),
-        .pop_i     (mgr_req_o.ar_valid && mgr_rsp_i.ar_ready)
+        .data_i    (sbr_port_req_i.ar),
+        .push_i    (sbr_port_req_i.ar_valid && sbr_port_rsp_o.ar_ready),
+        .data_o    (mgr_port_req_o.ar),
+        .pop_i     (mgr_port_req_o.ar_valid && mgr_port_rsp_i.ar_ready)
     );
     fifo_v3 #(
         .dtype(w_chan_t),
@@ -109,10 +109,10 @@ module axi_fifo #(
         .full_o    (w_fifo_full),
         .empty_o   (w_fifo_empty),
         .usage_o   (),
-        .data_i    (sbr_req_i.w),
-        .push_i    (sbr_req_i.w_valid && sbr_rsp_o.w_ready),
-        .data_o    (mgr_req_o.w),
-        .pop_i     (mgr_req_o.w_valid && mgr_rsp_i.w_ready)
+        .data_i    (sbr_port_req_i.w),
+        .push_i    (sbr_port_req_i.w_valid && sbr_port_rsp_o.w_ready),
+        .data_o    (mgr_port_req_o.w),
+        .pop_i     (mgr_port_req_o.w_valid && mgr_port_rsp_i.w_ready)
     );
     fifo_v3 #(
         .dtype(r_chan_t),
@@ -126,10 +126,10 @@ module axi_fifo #(
         .full_o    (r_fifo_full),
         .empty_o   (r_fifo_empty),
         .usage_o   (),
-        .data_i    (mgr_rsp_i.r),
-        .push_i    (mgr_rsp_i.r_valid && mgr_req_o.r_ready),
-        .data_o    (sbr_rsp_o.r),
-        .pop_i     (sbr_rsp_o.r_valid && sbr_req_i.r_ready)
+        .data_i    (mgr_port_rsp_i.r),
+        .push_i    (mgr_port_rsp_i.r_valid && mgr_port_req_o.r_ready),
+        .data_o    (sbr_port_rsp_o.r),
+        .pop_i     (sbr_port_rsp_o.r_valid && sbr_port_req_i.r_ready)
     );
     fifo_v3 #(
         .dtype(b_chan_t),
@@ -143,10 +143,10 @@ module axi_fifo #(
         .full_o    (b_fifo_full),
         .empty_o   (b_fifo_empty),
         .usage_o   (),
-        .data_i    (mgr_rsp_i.b),
-        .push_i    (mgr_rsp_i.b_valid && mgr_req_o.b_ready),
-        .data_o    (sbr_rsp_o.b),
-        .pop_i     (sbr_rsp_o.b_valid && sbr_req_i.b_ready)
+        .data_i    (mgr_port_rsp_i.b),
+        .push_i    (mgr_port_rsp_i.b_valid && mgr_port_req_o.b_ready),
+        .data_o    (sbr_port_rsp_o.b),
+        .pop_i     (sbr_port_rsp_o.b_valid && sbr_port_req_i.b_ready)
     );
   end
 
@@ -216,10 +216,10 @@ module axi_fifo_intf #(
       .clk_i,
       .rst_ni,
       .test_i,
-      .sbr_req_i (sbr_req),
-      .sbr_rsp_o(sbr_rsp),
-      .mgr_req_o (mgr_req),
-      .mgr_rsp_i(mgr_rsp)
+      .sbr_port_req_i (sbr_req),
+      .sbr_port_rsp_o(sbr_rsp),
+      .mgr_port_req_o (mgr_req),
+      .mgr_port_rsp_i(mgr_rsp)
   );
 
   // Check the invariants.

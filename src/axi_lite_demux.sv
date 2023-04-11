@@ -47,13 +47,13 @@ module axi_lite_demux #(
   input  logic                            rst_ni,
   input  logic                            test_i,
   // subordinate port (AXI4-Lite input), connect manager module here
-  input  axi_lite_req_t                   sbr_req_i,
+  input  axi_lite_req_t                   sbr_port_req_i,
   input  select_t                         sbr_aw_select_i,
   input  select_t                         sbr_ar_select_i,
-  output axi_lite_rsp_t                   sbr_rsp_o,
+  output axi_lite_rsp_t                   sbr_port_rsp_o,
   // manager ports (AXI4-Lite outputs), connect subordinate modules here
-  output axi_lite_req_t [NumMgrPorts-1:0] mgr_reqs_o,
-  input  axi_lite_rsp_t [NumMgrPorts-1:0] mgr_rsps_i
+  output axi_lite_req_t [NumMgrPorts-1:0] mgr_ports_req_o,
+  input  axi_lite_rsp_t [NumMgrPorts-1:0] mgr_ports_rsp_i
 );
 
   //--------------------------------------
@@ -76,12 +76,12 @@ module axi_lite_demux #(
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_req_i.aw_valid       ),
-      .ready_o ( sbr_rsp_o.aw_ready       ),
-      .data_i  ( sbr_req_i.aw             ),
-      .valid_o ( mgr_reqs_o[0].aw_valid   ),
-      .ready_i ( mgr_rsps_i[0].aw_ready   ),
-      .data_o  ( mgr_reqs_o[0].aw         )
+      .valid_i ( sbr_port_req_i.aw_valid       ),
+      .ready_o ( sbr_port_rsp_o.aw_ready       ),
+      .data_i  ( sbr_port_req_i.aw             ),
+      .valid_o ( mgr_ports_req_o[0].aw_valid   ),
+      .ready_i ( mgr_ports_rsp_i[0].aw_ready   ),
+      .data_o  ( mgr_ports_req_o[0].aw         )
     );
     spill_register #(
       .T       ( w_chan_t  ),
@@ -89,12 +89,12 @@ module axi_lite_demux #(
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
-      .valid_i ( sbr_req_i.w_valid       ),
-      .ready_o ( sbr_rsp_o.w_ready       ),
-      .data_i  ( sbr_req_i.w             ),
-      .valid_o ( mgr_reqs_o[0].w_valid   ),
-      .ready_i ( mgr_rsps_i[0].w_ready   ),
-      .data_o  ( mgr_reqs_o[0].w         )
+      .valid_i ( sbr_port_req_i.w_valid       ),
+      .ready_o ( sbr_port_rsp_o.w_ready       ),
+      .data_i  ( sbr_port_req_i.w             ),
+      .valid_o ( mgr_ports_req_o[0].w_valid   ),
+      .ready_i ( mgr_ports_rsp_i[0].w_ready   ),
+      .data_o  ( mgr_ports_req_o[0].w         )
     );
     spill_register #(
       .T       ( b_chan_t ),
@@ -102,12 +102,12 @@ module axi_lite_demux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mgr_rsps_i[0].b_valid  ),
-      .ready_o ( mgr_reqs_o[0].b_ready  ),
-      .data_i  ( mgr_rsps_i[0].b        ),
-      .valid_o ( sbr_rsp_o.b_valid      ),
-      .ready_i ( sbr_req_i.b_ready      ),
-      .data_o  ( sbr_rsp_o.b            )
+      .valid_i ( mgr_ports_rsp_i[0].b_valid  ),
+      .ready_o ( mgr_ports_req_o[0].b_ready  ),
+      .data_i  ( mgr_ports_rsp_i[0].b        ),
+      .valid_o ( sbr_port_rsp_o.b_valid      ),
+      .ready_i ( sbr_port_req_i.b_ready      ),
+      .data_o  ( sbr_port_rsp_o.b            )
     );
     spill_register #(
       .T       ( ar_chan_t  ),
@@ -115,12 +115,12 @@ module axi_lite_demux #(
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_req_i.ar_valid       ),
-      .ready_o ( sbr_rsp_o.ar_ready       ),
-      .data_i  ( sbr_req_i.ar             ),
-      .valid_o ( mgr_reqs_o[0].ar_valid   ),
-      .ready_i ( mgr_rsps_i[0].ar_ready   ),
-      .data_o  ( mgr_reqs_o[0].ar         )
+      .valid_i ( sbr_port_req_i.ar_valid       ),
+      .ready_o ( sbr_port_rsp_o.ar_ready       ),
+      .data_i  ( sbr_port_req_i.ar             ),
+      .valid_o ( mgr_ports_req_o[0].ar_valid   ),
+      .ready_i ( mgr_ports_rsp_i[0].ar_ready   ),
+      .data_o  ( mgr_ports_req_o[0].ar         )
     );
     spill_register #(
       .T       ( r_chan_t ),
@@ -128,12 +128,12 @@ module axi_lite_demux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mgr_rsps_i[0].r_valid  ),
-      .ready_o ( mgr_reqs_o[0].r_ready  ),
-      .data_i  ( mgr_rsps_i[0].r        ),
-      .valid_o ( sbr_rsp_o.r_valid      ),
-      .ready_i ( sbr_req_i.r_ready      ),
-      .data_o  ( sbr_rsp_o.r            )
+      .valid_i ( mgr_ports_rsp_i[0].r_valid  ),
+      .ready_o ( mgr_ports_req_o[0].r_ready  ),
+      .data_i  ( mgr_ports_rsp_i[0].r        ),
+      .valid_o ( sbr_port_rsp_o.r_valid      ),
+      .ready_i ( sbr_port_req_i.r_ready      ),
+      .data_o  ( sbr_port_rsp_o.r            )
     );
 
   end else begin : gen_demux
@@ -203,15 +203,15 @@ module axi_lite_demux #(
     `endif
     aw_chan_select_flat_t sbr_aw_chan_select_in_flat,
                           sbr_aw_chan_select_out_flat;
-    assign sbr_aw_chan_select_in_flat = {sbr_req_i.aw, sbr_aw_select_i};
+    assign sbr_aw_chan_select_in_flat = {sbr_port_req_i.aw, sbr_aw_select_i};
     spill_register #(
       .T      ( aw_chan_select_flat_t         ),
       .Bypass ( ~SpillAw                      )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                        ),
       .rst_ni  ( rst_ni                       ),
-      .valid_i ( sbr_req_i.aw_valid           ),
-      .ready_o ( sbr_rsp_o.aw_ready           ),
+      .valid_i ( sbr_port_req_i.aw_valid           ),
+      .ready_o ( sbr_port_rsp_o.aw_ready           ),
       .data_i  ( sbr_aw_chan_select_in_flat   ),
       .valid_o ( sbr_aw_valid                 ),
       .ready_i ( sbr_aw_ready                 ),
@@ -221,9 +221,9 @@ module axi_lite_demux #(
 
     // replicate AW channel to the request output
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_mgr_aw
-      assign mgr_reqs_o[i].aw       = sbr_aw_chan.aw;
-      assign mgr_reqs_o[i].aw_valid = mgr_aw_valids[i];
-      assign mgr_aw_readies[i]      = mgr_rsps_i[i].aw_ready;
+      assign mgr_ports_req_o[i].aw       = sbr_aw_chan.aw;
+      assign mgr_ports_req_o[i].aw_valid = mgr_aw_valids[i];
+      assign mgr_aw_readies[i]      = mgr_ports_rsp_i[i].aw_ready;
     end
 
     // AW channel handshake control
@@ -294,9 +294,9 @@ module axi_lite_demux #(
     ) i_w_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
-      .valid_i ( sbr_req_i.w_valid  ),
-      .ready_o ( sbr_rsp_o.w_ready  ),
-      .data_i  ( sbr_req_i.w        ),
+      .valid_i ( sbr_port_req_i.w_valid  ),
+      .ready_o ( sbr_port_rsp_o.w_ready  ),
+      .data_i  ( sbr_port_req_i.w        ),
       .valid_o ( sbr_w_valid        ),
       .ready_i ( sbr_w_ready        ),
       .data_o  ( sbr_w_chan         )
@@ -304,11 +304,11 @@ module axi_lite_demux #(
 
     // replicate W channel
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_mgr_w
-      assign mgr_reqs_o[i].w       = sbr_w_chan;
-      assign mgr_reqs_o[i].w_valid = ~w_fifo_empty & ~b_fifo_full &
+      assign mgr_ports_req_o[i].w       = sbr_w_chan;
+      assign mgr_ports_req_o[i].w_valid = ~w_fifo_empty & ~b_fifo_full &
                                        sbr_w_valid & (w_select == select_t'(i));
     end
-    assign sbr_w_ready = ~w_fifo_empty & ~b_fifo_full & mgr_rsps_i[w_select].w_ready;
+    assign sbr_w_ready = ~w_fifo_empty & ~b_fifo_full & mgr_ports_rsp_i[w_select].w_ready;
     assign w_fifo_pop  = sbr_w_valid & sbr_w_ready;
 
     fifo_v3 #(
@@ -341,16 +341,16 @@ module axi_lite_demux #(
       .valid_i ( sbr_b_valid        ),
       .ready_o ( sbr_b_ready        ),
       .data_i  ( sbr_b_chan         ),
-      .valid_o ( sbr_rsp_o.b_valid  ),
-      .ready_i ( sbr_req_i.b_ready  ),
-      .data_o  ( sbr_rsp_o.b        )
+      .valid_o ( sbr_port_rsp_o.b_valid  ),
+      .ready_i ( sbr_port_req_i.b_ready  ),
+      .data_o  ( sbr_port_rsp_o.b        )
     );
 
     // connect the response if the FIFO has valid data in it
-    assign sbr_b_chan      = (!b_fifo_empty) ? mgr_rsps_i[b_select].b : '0;
-    assign sbr_b_valid     =  ~b_fifo_empty  & mgr_rsps_i[b_select].b_valid;
+    assign sbr_b_chan      = (!b_fifo_empty) ? mgr_ports_rsp_i[b_select].b : '0;
+    assign sbr_b_valid     =  ~b_fifo_empty  & mgr_ports_rsp_i[b_select].b_valid;
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_mgr_b
-      assign mgr_reqs_o[i].b_ready = ~b_fifo_empty & sbr_b_ready & (b_select == select_t'(i));
+      assign mgr_ports_req_o[i].b_ready = ~b_fifo_empty & sbr_b_ready & (b_select == select_t'(i));
     end
     assign b_fifo_pop = sbr_b_valid & sbr_b_ready;
 
@@ -365,15 +365,15 @@ module axi_lite_demux #(
     `endif
     ar_chan_select_flat_t sbr_ar_chan_select_in_flat,
                           sbr_ar_chan_select_out_flat;
-    assign sbr_ar_chan_select_in_flat = {sbr_req_i.ar, sbr_ar_select_i};
+    assign sbr_ar_chan_select_in_flat = {sbr_port_req_i.ar, sbr_ar_select_i};
     spill_register #(
       .T      ( ar_chan_select_flat_t         ),
       .Bypass ( ~SpillAr                      )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                        ),
       .rst_ni  ( rst_ni                       ),
-      .valid_i ( sbr_req_i.ar_valid           ),
-      .ready_o ( sbr_rsp_o.ar_ready           ),
+      .valid_i ( sbr_port_req_i.ar_valid           ),
+      .ready_o ( sbr_port_rsp_o.ar_ready           ),
       .data_i  ( sbr_ar_chan_select_in_flat   ),
       .valid_o ( sbr_ar_valid                 ),
       .ready_i ( sbr_ar_ready                 ),
@@ -383,11 +383,11 @@ module axi_lite_demux #(
 
     // replicate AR channel
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_mgr_ar
-      assign mgr_reqs_o[i].ar       = sbr_ar_chan.ar;
-      assign mgr_reqs_o[i].ar_valid = ~r_fifo_full & sbr_ar_valid &
+      assign mgr_ports_req_o[i].ar       = sbr_ar_chan.ar;
+      assign mgr_ports_req_o[i].ar_valid = ~r_fifo_full & sbr_ar_valid &
                                        (sbr_ar_chan.select == select_t'(i));
     end
-    assign sbr_ar_ready = ~r_fifo_full & mgr_rsps_i[sbr_ar_chan.select].ar_ready;
+    assign sbr_ar_ready = ~r_fifo_full & mgr_ports_rsp_i[sbr_ar_chan.select].ar_ready;
     assign r_fifo_push  = sbr_ar_valid & sbr_ar_ready;
 
     fifo_v3 #(
@@ -420,9 +420,9 @@ module axi_lite_demux #(
       .valid_i ( sbr_r_valid        ),
       .ready_o ( sbr_r_ready        ),
       .data_i  ( sbr_r_chan         ),
-      .valid_o ( sbr_rsp_o.r_valid  ),
-      .ready_i ( sbr_req_i.r_ready  ),
-      .data_o  ( sbr_rsp_o.r        )
+      .valid_o ( sbr_port_rsp_o.r_valid  ),
+      .ready_i ( sbr_port_req_i.r_ready  ),
+      .data_o  ( sbr_port_rsp_o.r        )
     );
 
     // connect the response if the FIFO has valid data in it
@@ -430,24 +430,24 @@ module axi_lite_demux #(
        sbr_r_chan  = '0;
        sbr_r_valid = '0;
        if (!r_fifo_empty) begin
-          sbr_r_chan  = mgr_rsps_i[r_select].r;
-          sbr_r_valid = mgr_rsps_i[r_select].r_valid;
+          sbr_r_chan  = mgr_ports_rsp_i[r_select].r;
+          sbr_r_valid = mgr_ports_rsp_i[r_select].r_valid;
        end
     end
 
     for (genvar i = 0; i < NumMgrPorts; i++) begin : gen_mgr_r
-      assign mgr_reqs_o[i].r_ready = ~r_fifo_empty & sbr_r_ready & (r_select == select_t'(i));
+      assign mgr_ports_req_o[i].r_ready = ~r_fifo_empty & sbr_r_ready & (r_select == select_t'(i));
     end
     assign r_fifo_pop      = sbr_r_valid & sbr_r_ready;
 
     // pragma translate_off
     `ifndef VERILATOR
     default disable iff (!rst_ni);
-    aw_select: assume property( @(posedge clk_i) (sbr_req_i.aw_valid |->
+    aw_select: assume property( @(posedge clk_i) (sbr_port_req_i.aw_valid |->
                                                  (sbr_aw_select_i < NumMgrPorts))) else
       $fatal(1, "sbr_aw_select_i is %d: AW has selected a subordinate that is not defined.\
                  NumMgrPorts: %d", sbr_aw_select_i, NumMgrPorts);
-    ar_select: assume property( @(posedge clk_i) (sbr_req_i.ar_valid |->
+    ar_select: assume property( @(posedge clk_i) (sbr_port_req_i.ar_valid |->
                                                  (sbr_ar_select_i < NumMgrPorts))) else
       $fatal(1, "sbr_ar_select_i is %d: AR has selected a subordinate that is not defined.\
                  NumMgrPorts: %d", sbr_ar_select_i, NumMgrPorts);
@@ -547,13 +547,13 @@ module axi_lite_demux_intf #(
     .rst_ni,
     .test_i,
     // subordinate Port
-    .sbr_req_i       ( sbr_req         ),
+    .sbr_port_req_i       ( sbr_req         ),
     .sbr_aw_select_i ( sbr_aw_select_i ), // must be stable while sbr_aw_valid_i
     .sbr_ar_select_i ( sbr_ar_select_i ), // must be stable while sbr_ar_valid_i
-    .sbr_rsp_o       ( sbr_rsp         ),
+    .sbr_port_rsp_o       ( sbr_rsp         ),
     // mgrer ports
-    .mgr_reqs_o      ( mgr_reqs        ),
-    .mgr_rsps_i      ( mgr_rsps        )
+    .mgr_ports_req_o      ( mgr_reqs        ),
+    .mgr_ports_rsp_i      ( mgr_rsps        )
   );
 
   // pragma translate_off

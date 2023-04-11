@@ -58,11 +58,11 @@ module axi_mux #(
   input  logic                                rst_ni,   // Asynchronous reset active low
   input  logic                                test_i,   // Test Mode enable
   // subordinate ports (AXI inputs), connect manager modules here
-  input  sbr_port_axi_req_t [NumSbrPorts-1:0] sbr_reqs_i,
-  output sbr_port_axi_rsp_t [NumSbrPorts-1:0] sbr_rsps_o,
+  input  sbr_port_axi_req_t [NumSbrPorts-1:0] sbr_ports_req_i,
+  output sbr_port_axi_rsp_t [NumSbrPorts-1:0] sbr_ports_rsp_o,
   // manager port (AXI outputs), connect subordinate modules here
-  output mgr_port_axi_req_t                   mgr_req_o,
-  input  mgr_port_axi_rsp_t                   mgr_rsp_i
+  output mgr_port_axi_req_t                   mgr_port_req_o,
+  input  mgr_port_axi_rsp_t                   mgr_port_rsp_i
 );
 
   localparam int unsigned MgrIdxBits = $clog2(NumSbrPorts);
@@ -76,12 +76,12 @@ module axi_mux #(
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_reqs_i[0].aw_valid   ),
-      .ready_o ( sbr_rsps_o[0].aw_ready   ),
-      .data_i  ( sbr_reqs_i[0].aw         ),
-      .valid_o ( mgr_req_o.aw_valid       ),
-      .ready_i ( mgr_rsp_i.aw_ready       ),
-      .data_o  ( mgr_req_o.aw             )
+      .valid_i ( sbr_ports_req_i[0].aw_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].aw_ready   ),
+      .data_i  ( sbr_ports_req_i[0].aw         ),
+      .valid_o ( mgr_port_req_o.aw_valid       ),
+      .ready_i ( mgr_port_rsp_i.aw_ready       ),
+      .data_o  ( mgr_port_req_o.aw             )
     );
     spill_register #(
       .T       ( w_chan_t ),
@@ -89,12 +89,12 @@ module axi_mux #(
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
-      .valid_i ( sbr_reqs_i[0].w_valid   ),
-      .ready_o ( sbr_rsps_o[0].w_ready   ),
-      .data_i  ( sbr_reqs_i[0].w         ),
-      .valid_o ( mgr_req_o.w_valid       ),
-      .ready_i ( mgr_rsp_i.w_ready       ),
-      .data_o  ( mgr_req_o.w             )
+      .valid_i ( sbr_ports_req_i[0].w_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].w_ready   ),
+      .data_i  ( sbr_ports_req_i[0].w         ),
+      .valid_o ( mgr_port_req_o.w_valid       ),
+      .ready_i ( mgr_port_rsp_i.w_ready       ),
+      .data_o  ( mgr_port_req_o.w             )
     );
     spill_register #(
       .T       ( mgr_b_chan_t ),
@@ -102,12 +102,12 @@ module axi_mux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mgr_rsp_i.b_valid      ),
-      .ready_o ( mgr_req_o.b_ready      ),
-      .data_i  ( mgr_rsp_i.b            ),
-      .valid_o ( sbr_rsps_o[0].b_valid  ),
-      .ready_i ( sbr_reqs_i[0].b_ready  ),
-      .data_o  ( sbr_rsps_o[0].b        )
+      .valid_i ( mgr_port_rsp_i.b_valid      ),
+      .ready_o ( mgr_port_req_o.b_ready      ),
+      .data_i  ( mgr_port_rsp_i.b            ),
+      .valid_o ( sbr_ports_rsp_o[0].b_valid  ),
+      .ready_i ( sbr_ports_req_i[0].b_ready  ),
+      .data_o  ( sbr_ports_rsp_o[0].b        )
     );
     spill_register #(
       .T       ( mgr_ar_chan_t ),
@@ -115,12 +115,12 @@ module axi_mux #(
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
-      .valid_i ( sbr_reqs_i[0].ar_valid   ),
-      .ready_o ( sbr_rsps_o[0].ar_ready   ),
-      .data_i  ( sbr_reqs_i[0].ar         ),
-      .valid_o ( mgr_req_o.ar_valid       ),
-      .ready_i ( mgr_rsp_i.ar_ready       ),
-      .data_o  ( mgr_req_o.ar             )
+      .valid_i ( sbr_ports_req_i[0].ar_valid   ),
+      .ready_o ( sbr_ports_rsp_o[0].ar_ready   ),
+      .data_i  ( sbr_ports_req_i[0].ar         ),
+      .valid_o ( mgr_port_req_o.ar_valid       ),
+      .ready_i ( mgr_port_rsp_i.ar_ready       ),
+      .data_o  ( mgr_port_req_o.ar             )
     );
     spill_register #(
       .T       ( mgr_r_chan_t ),
@@ -128,23 +128,23 @@ module axi_mux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
-      .valid_i ( mgr_rsp_i.r_valid      ),
-      .ready_o ( mgr_req_o.r_ready      ),
-      .data_i  ( mgr_rsp_i.r            ),
-      .valid_o ( sbr_rsps_o[0].r_valid  ),
-      .ready_i ( sbr_reqs_i[0].r_ready  ),
-      .data_o  ( sbr_rsps_o[0].r        )
+      .valid_i ( mgr_port_rsp_i.r_valid      ),
+      .ready_o ( mgr_port_req_o.r_ready      ),
+      .data_i  ( mgr_port_rsp_i.r            ),
+      .valid_o ( sbr_ports_rsp_o[0].r_valid  ),
+      .ready_i ( sbr_ports_req_i[0].r_ready  ),
+      .data_o  ( sbr_ports_rsp_o[0].r        )
     );
 // Validate parameters.
 // pragma translate_off
-    `ASSERT_INIT(CorrectIdWidthSbrAw, $bits(sbr_reqs_i[0].aw.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSbrB, $bits(sbr_rsps_o[0].b.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSbrAr, $bits(sbr_reqs_i[0].ar.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthSbrR, $bits(sbr_rsps_o[0].r.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMgrAw, $bits(mgr_req_o.aw.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMgrB, $bits(mgr_rsp_i.b.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMgrAr, $bits(mgr_req_o.ar.id) == SbrIDWidth)
-    `ASSERT_INIT(CorrectIdWidthMgrR, $bits(mgr_rsp_i.r.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSbrAw, $bits(sbr_ports_req_i[0].aw.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSbrB, $bits(sbr_ports_rsp_o[0].b.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSbrAr, $bits(sbr_ports_req_i[0].ar.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthSbrR, $bits(sbr_ports_rsp_o[0].r.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMgrAw, $bits(mgr_port_req_o.aw.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMgrB, $bits(mgr_port_rsp_i.b.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMgrAr, $bits(mgr_port_req_o.ar.id) == SbrIDWidth)
+    `ASSERT_INIT(CorrectIdWidthMgrR, $bits(mgr_port_rsp_i.r.id) == SbrIDWidth)
 // pragma translate_on
 
   // other non degenerate cases
@@ -225,21 +225,21 @@ module axi_mux #(
         .mgr_r_chan_t  ( mgr_r_chan_t        )
       ) i_id_prepend (
         .pre_id_i         ( switch_id_t'(i)        ),
-        .sbr_aw_chans_i   ( sbr_reqs_i[i].aw       ),
-        .sbr_aw_valids_i  ( sbr_reqs_i[i].aw_valid ),
-        .sbr_aw_readies_o ( sbr_rsps_o[i].aw_ready ),
-        .sbr_w_chans_i    ( sbr_reqs_i[i].w        ),
-        .sbr_w_valids_i   ( sbr_reqs_i[i].w_valid  ),
-        .sbr_w_readies_o  ( sbr_rsps_o[i].w_ready  ),
-        .sbr_b_chans_o    ( sbr_rsps_o[i].b        ),
-        .sbr_b_valids_o   ( sbr_rsps_o[i].b_valid  ),
-        .sbr_b_readies_i  ( sbr_reqs_i[i].b_ready  ),
-        .sbr_ar_chans_i   ( sbr_reqs_i[i].ar       ),
-        .sbr_ar_valids_i  ( sbr_reqs_i[i].ar_valid ),
-        .sbr_ar_readies_o ( sbr_rsps_o[i].ar_ready ),
-        .sbr_r_chans_o    ( sbr_rsps_o[i].r        ),
-        .sbr_r_valids_o   ( sbr_rsps_o[i].r_valid  ),
-        .sbr_r_readies_i  ( sbr_reqs_i[i].r_ready  ),
+        .sbr_aw_chans_i   ( sbr_ports_req_i[i].aw       ),
+        .sbr_aw_valids_i  ( sbr_ports_req_i[i].aw_valid ),
+        .sbr_aw_readies_o ( sbr_ports_rsp_o[i].aw_ready ),
+        .sbr_w_chans_i    ( sbr_ports_req_i[i].w        ),
+        .sbr_w_valids_i   ( sbr_ports_req_i[i].w_valid  ),
+        .sbr_w_readies_o  ( sbr_ports_rsp_o[i].w_ready  ),
+        .sbr_b_chans_o    ( sbr_ports_rsp_o[i].b        ),
+        .sbr_b_valids_o   ( sbr_ports_rsp_o[i].b_valid  ),
+        .sbr_b_readies_i  ( sbr_ports_req_i[i].b_ready  ),
+        .sbr_ar_chans_i   ( sbr_ports_req_i[i].ar       ),
+        .sbr_ar_valids_i  ( sbr_ports_req_i[i].ar_valid ),
+        .sbr_ar_readies_o ( sbr_ports_rsp_o[i].ar_ready ),
+        .sbr_r_chans_o    ( sbr_ports_rsp_o[i].r        ),
+        .sbr_r_valids_o   ( sbr_ports_rsp_o[i].r_valid  ),
+        .sbr_r_readies_i  ( sbr_ports_req_i[i].r_ready  ),
         .mgr_aw_chans_o   ( sbr_aw_chans[i]        ),
         .mgr_aw_valids_o  ( sbr_aw_valids[i]       ),
         .mgr_aw_readies_i ( sbr_aw_readies[i]      ),
@@ -341,9 +341,9 @@ module axi_mux #(
       .valid_i ( mgr_aw_valid        ),
       .ready_o ( mgr_aw_ready        ),
       .data_i  ( mgr_aw_chan         ),
-      .valid_o ( mgr_req_o.aw_valid  ),
-      .ready_i ( mgr_rsp_i.aw_ready ),
-      .data_o  ( mgr_req_o.aw        )
+      .valid_o ( mgr_port_req_o.aw_valid  ),
+      .ready_i ( mgr_port_rsp_i.aw_ready ),
+      .data_o  ( mgr_port_req_o.aw        )
     );
 
     //--------------------------------------
@@ -375,9 +375,9 @@ module axi_mux #(
       .valid_i ( mgr_w_valid        ),
       .ready_o ( mgr_w_ready        ),
       .data_i  ( mgr_w_chan         ),
-      .valid_o ( mgr_req_o.w_valid  ),
-      .ready_i ( mgr_rsp_i.w_ready  ),
-      .data_o  ( mgr_req_o.w        )
+      .valid_o ( mgr_port_req_o.w_valid  ),
+      .ready_i ( mgr_port_rsp_i.w_ready  ),
+      .data_o  ( mgr_port_req_o.w        )
     );
 
     //--------------------------------------
@@ -395,9 +395,9 @@ module axi_mux #(
     ) i_b_spill_reg (
       .clk_i   ( clk_i                      ),
       .rst_ni  ( rst_ni                     ),
-      .valid_i ( mgr_rsp_i.b_valid          ),
-      .ready_o ( mgr_req_o.b_ready          ),
-      .data_i  ( mgr_rsp_i.b                ),
+      .valid_i ( mgr_port_rsp_i.b_valid          ),
+      .ready_o ( mgr_port_req_o.b_ready          ),
+      .data_i  ( mgr_port_rsp_i.b                ),
       .valid_o ( mgr_b_valid                ),
       .ready_i ( sbr_b_readies[switch_b_id] ),
       .data_o  ( mgr_b_chan                 )
@@ -434,9 +434,9 @@ module axi_mux #(
       .valid_i ( ar_valid            ),
       .ready_o ( ar_ready            ),
       .data_i  ( mgr_ar_chan         ),
-      .valid_o ( mgr_req_o.ar_valid  ),
-      .ready_i ( mgr_rsp_i.ar_ready  ),
-      .data_o  ( mgr_req_o.ar        )
+      .valid_o ( mgr_port_req_o.ar_valid  ),
+      .ready_i ( mgr_port_rsp_i.ar_ready  ),
+      .data_o  ( mgr_port_req_o.ar        )
     );
 
     //--------------------------------------
@@ -454,9 +454,9 @@ module axi_mux #(
     ) i_r_spill_reg (
       .clk_i   ( clk_i                      ),
       .rst_ni  ( rst_ni                     ),
-      .valid_i ( mgr_rsp_i.r_valid          ),
-      .ready_o ( mgr_req_o.r_ready          ),
-      .data_i  ( mgr_rsp_i.r                ),
+      .valid_i ( mgr_port_rsp_i.r_valid          ),
+      .ready_o ( mgr_port_req_o.r_ready          ),
+      .data_i  ( mgr_port_rsp_i.r                ),
       .valid_o ( mgr_r_valid                ),
       .ready_i ( sbr_r_readies[switch_r_id] ),
       .data_o  ( mgr_r_chan                 )
@@ -473,21 +473,21 @@ module axi_mux #(
     assert (MgrIDWidth >= SbrIDWidth + $clog2(NumSbrPorts))
       else $fatal(1, "AXI ID width of manager ports must be wide enough to identify subordinate ports!");
     // Assert ID widths (one subordinate is sufficient since they all have the same type).
-    assert ($unsigned($bits(sbr_reqs_i[0].aw.id)) == SbrIDWidth)
+    assert ($unsigned($bits(sbr_ports_req_i[0].aw.id)) == SbrIDWidth)
       else $fatal(1, "ID width of AW channel of subordinate ports does not match parameter!");
-    assert ($unsigned($bits(sbr_reqs_i[0].ar.id)) == SbrIDWidth)
+    assert ($unsigned($bits(sbr_ports_req_i[0].ar.id)) == SbrIDWidth)
       else $fatal(1, "ID width of AR channel of subordinate ports does not match parameter!");
-    assert ($unsigned($bits(sbr_rsps_o[0].b.id)) == SbrIDWidth)
+    assert ($unsigned($bits(sbr_ports_rsp_o[0].b.id)) == SbrIDWidth)
       else $fatal(1, "ID width of B channel of subordinate ports does not match parameter!");
-    assert ($unsigned($bits(sbr_rsps_o[0].r.id)) == SbrIDWidth)
+    assert ($unsigned($bits(sbr_ports_rsp_o[0].r.id)) == SbrIDWidth)
       else $fatal(1, "ID width of R channel of subordinate ports does not match parameter!");
-    assert ($unsigned($bits(mgr_req_o.aw.id)) == MgrIDWidth)
+    assert ($unsigned($bits(mgr_port_req_o.aw.id)) == MgrIDWidth)
       else $fatal(1, "ID width of AW channel of manager port is wrong!");
-    assert ($unsigned($bits(mgr_req_o.ar.id)) == MgrIDWidth)
+    assert ($unsigned($bits(mgr_port_req_o.ar.id)) == MgrIDWidth)
       else $fatal(1, "ID width of AR channel of manager port is wrong!");
-    assert ($unsigned($bits(mgr_rsp_i.b.id)) == MgrIDWidth)
+    assert ($unsigned($bits(mgr_port_rsp_i.b.id)) == MgrIDWidth)
       else $fatal(1, "ID width of B channel of manager port is wrong!");
-    assert ($unsigned($bits(mgr_rsp_i.r.id)) == MgrIDWidth)
+    assert ($unsigned($bits(mgr_port_rsp_i.r.id)) == MgrIDWidth)
       else $fatal(1, "ID width of R channel of manager port is wrong!");
   end
 `endif
@@ -590,9 +590,9 @@ module axi_mux_intf #(
     .clk_i      ( clk_i    ), // Clock
     .rst_ni     ( rst_ni   ), // Asynchronous reset active low
     .test_i     ( test_i   ), // Test Mode enable
-    .sbr_reqs_i ( sbr_reqs ),
-    .sbr_rsps_o ( sbr_rsps ),
-    .mgr_req_o  ( mgr_req  ),
-    .mgr_rsp_i  ( mgr_rsp  )
+    .sbr_ports_req_i ( sbr_reqs ),
+    .sbr_ports_rsp_o ( sbr_rsps ),
+    .mgr_port_req_o  ( mgr_req  ),
+    .mgr_port_rsp_i  ( mgr_rsp  )
   );
 endmodule

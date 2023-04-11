@@ -117,8 +117,8 @@ module axi_from_mem #(
     .sbr_rsp_lite_o ( axi_lite_rsp    ),
     .sbr_aw_cache_i,
     .sbr_ar_cache_i,
-    .mgr_req_o      ( axi_req_o       ),
-    .mgr_rsp_i      ( axi_rsp_i       )
+    .mgr_port_req_o      ( axi_req_o       ),
+    .mgr_port_rsp_i      ( axi_rsp_i       )
   );
 
 endmodule

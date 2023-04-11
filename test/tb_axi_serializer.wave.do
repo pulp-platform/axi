@@ -2,9 +2,9 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/clk_i
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/rst_ni
-add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/sbr_req_i
+add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/sbr_port_req_i
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/sbr_resp_o
-add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/mgr_req_o
+add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/mgr_port_req_o
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/mgr_resp_i
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/rd_fifo_full
 add wave -noupdate /tb_axi_serializer/i_dut/i_axi_serializer/rd_fifo_empty

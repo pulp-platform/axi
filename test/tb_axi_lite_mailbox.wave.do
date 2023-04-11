@@ -5,7 +5,7 @@ add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/clk_i
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/rst_ni
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/test_i
 add wave -noupdate -divider Ports
-add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/sbr_reqs_i
+add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/sbr_ports_req_i
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/sbr_resps_o
 add wave -noupdate -divider IRQ
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/irq_o

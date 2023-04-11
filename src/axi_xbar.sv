@@ -217,12 +217,12 @@ import cf_math_pkg::idx_width;
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
-      .sbr_req_i       ( sbr_ports_req_i[i] ),
+      .sbr_port_req_i       ( sbr_ports_req_i[i] ),
       .sbr_aw_select_i ( sbr_aw_select      ),
       .sbr_ar_select_i ( sbr_ar_select      ),
-      .sbr_rsp_o       ( sbr_ports_rsp_o[i] ),
-      .mgr_reqs_o      ( sbr_reqs[i]        ),
-      .mgr_rsps_i      ( sbr_rsps[i]        )
+      .sbr_port_rsp_o       ( sbr_ports_rsp_o[i] ),
+      .mgr_ports_req_o      ( sbr_reqs[i]        ),
+      .mgr_ports_rsp_i      ( sbr_rsps[i]        )
     );
 
     axi_err_sbr #(
@@ -239,8 +239,8 @@ import cf_math_pkg::idx_width;
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
       // subordinate port
-      .sbr_req_i ( sbr_reqs[i][Cfg.NumMgrPorts]  ),
-      .sbr_rsp_o ( sbr_rsps[i][cfg_NumMgrPorts]  )
+      .sbr_port_req_i ( sbr_reqs[i][Cfg.NumMgrPorts]  ),
+      .sbr_port_rsp_o ( sbr_rsps[i][cfg_NumMgrPorts]  )
     );
   end
 
@@ -260,10 +260,10 @@ import cf_math_pkg::idx_width;
         ) i_axi_multicut_xbar_pipeline (
           .clk_i,
           .rst_ni,
-          .sbr_req_i ( sbr_reqs[i][j] ),
-          .sbr_rsp_o ( sbr_rsps[i][j] ),
-          .mgr_req_o ( mgr_reqs[j][i] ),
-          .mgr_rsp_i ( mgr_rsps[j][i] )
+          .sbr_port_req_i ( sbr_reqs[i][j] ),
+          .sbr_port_rsp_o ( sbr_rsps[i][j] ),
+          .mgr_port_req_o ( mgr_reqs[j][i] ),
+          .mgr_port_rsp_i ( mgr_rsps[j][i] )
         );
 
       end else begin : gen_no_connection
@@ -279,8 +279,8 @@ import cf_math_pkg::idx_width;
           .clk_i,
           .rst_ni,
           .test_i,
-          .sbr_req_i ( sbr_reqs[i][j] ),
-          .sbr_rsp_o ( sbr_rsps[i][j] )
+          .sbr_port_req_i ( sbr_reqs[i][j] ),
+          .sbr_port_rsp_o ( sbr_rsps[i][j] )
         );
       end
     end
@@ -314,10 +314,10 @@ import cf_math_pkg::idx_width;
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Test Mode enable
-      .sbr_reqs_i ( mgr_reqs[i]        ),
-      .sbr_rsps_o ( mgr_rsps[i]        ),
-      .mgr_req_o  ( mgr_ports_req_o[i] ),
-      .mgr_rsp_i  ( mgr_ports_rsp_i[i] )
+      .sbr_ports_req_i ( mgr_reqs[i]        ),
+      .sbr_ports_rsp_o ( mgr_rsps[i]        ),
+      .mgr_port_req_o  ( mgr_ports_req_o[i] ),
+      .mgr_port_rsp_i  ( mgr_ports_rsp_i[i] )
     );
   end
 
