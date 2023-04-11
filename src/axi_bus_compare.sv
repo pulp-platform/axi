@@ -17,7 +17,7 @@
 /// This module is meant to be used in FPGA-based verification.
 module axi_bus_compare #(
     /// ID width of the AXI4+ATOP interface
-    parameter int unsigned AxiIdWidth = 32'd0,
+    parameter int unsigned IdWidth = 32'd0,
     /// FIFO depth
     parameter int unsigned FifoDepth  = 32'd0,
     /// AW channel type of the AXI4+ATOP interface
@@ -30,12 +30,12 @@ module axi_bus_compare #(
     parameter type axi_ar_chan_t = logic,
     /// R channel type of the AXI4+ATOP interface
     parameter type axi_r_chan_t  = logic,
-    /// Request struct type of the AXI4+ATOP slave port
+    /// Request struct type of the AXI4+ATOP subordinate port
     parameter type axi_req_t     = logic,
-    /// Response struct type of the AXI4+ATOP slave port
+    /// Response struct type of the AXI4+ATOP subordinate port
     parameter type axi_rsp_t     = logic,
     /// ID type (*do not overwrite*)
-    parameter type id_t          = logic [2**AxiIdWidth-1:0]
+    parameter type id_t          = logic [2**IdWidth-1:0]
 )(
     /// Clock
     input  logic     clk_i,
@@ -138,17 +138,17 @@ module axi_bus_compare #(
     id_t  fifo_cmp_valid_ar_b;
     id_t  fifo_cmp_valid_r_b;
 
-    axi_aw_chan_t [2**AxiIdWidth-1:0] fifo_cmp_data_aw_a;
+    axi_aw_chan_t [2**IdWidth-1:0] fifo_cmp_data_aw_a;
     axi_w_chan_t                      fifo_cmp_data_w_a;
-    axi_b_chan_t  [2**AxiIdWidth-1:0] fifo_cmp_data_b_a;
-    axi_ar_chan_t [2**AxiIdWidth-1:0] fifo_cmp_data_ar_a;
-    axi_r_chan_t  [2**AxiIdWidth-1:0] fifo_cmp_data_r_a;
+    axi_b_chan_t  [2**IdWidth-1:0] fifo_cmp_data_b_a;
+    axi_ar_chan_t [2**IdWidth-1:0] fifo_cmp_data_ar_a;
+    axi_r_chan_t  [2**IdWidth-1:0] fifo_cmp_data_r_a;
 
-    axi_aw_chan_t [2**AxiIdWidth-1:0] fifo_cmp_data_aw_b;
+    axi_aw_chan_t [2**IdWidth-1:0] fifo_cmp_data_aw_b;
     axi_w_chan_t                      fifo_cmp_data_w_b;
-    axi_b_chan_t  [2**AxiIdWidth-1:0] fifo_cmp_data_b_b;
-    axi_ar_chan_t [2**AxiIdWidth-1:0] fifo_cmp_data_ar_b;
-    axi_r_chan_t  [2**AxiIdWidth-1:0] fifo_cmp_data_r_b;
+    axi_b_chan_t  [2**IdWidth-1:0] fifo_cmp_data_b_b;
+    axi_ar_chan_t [2**IdWidth-1:0] fifo_cmp_data_ar_b;
+    axi_r_chan_t  [2**IdWidth-1:0] fifo_cmp_data_r_b;
 
 
     //-----------------------------------
@@ -213,7 +213,7 @@ module axi_bus_compare #(
     //-----------------------------------
     // Channel A FIFOs
     //-----------------------------------
-    for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_fifos_a
+    for (genvar id = 0; id < 2**IdWidth; id++) begin : gen_fifos_a
 
         stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
@@ -413,7 +413,7 @@ module axi_bus_compare #(
     //-----------------------------------
     // Channel B FIFOs
     //-----------------------------------
-    for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_fifos_b
+    for (genvar id = 0; id < 2**IdWidth; id++) begin : gen_fifos_b
 
         stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
@@ -554,7 +554,7 @@ module axi_bus_compare #(
     //-----------------------------------
     // Comparison
     //-----------------------------------
-    for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_cmp
+    for (genvar id = 0; id < 2**IdWidth; id++) begin : gen_cmp
         assign aw_mismatch_o [id] = (fifo_cmp_valid_aw_a [id] & fifo_cmp_valid_aw_b [id]) ?
                                      fifo_cmp_data_aw_a  [id] == fifo_cmp_data_aw_b [id] : '0;
         assign b_mismatch_o  [id] = (fifo_cmp_valid_b_a  [id] & fifo_cmp_valid_b_b  [id]) ?

@@ -43,12 +43,12 @@ axi:
     - src/axi_rw_join.sv
     - src/axi_rw_split.sv
     - src/axi_serializer.sv
-    - src/axi_slave_compare.sv
+    - src/axi_subordinate_compare.sv
     - src/axi_throttle.sv
     - src/axi_to_mem.sv
     # Level 3
     - src/axi_cdc.sv
-    - src/axi_err_slv.sv
+    - src/axi_err_sbr.sv
     - src/axi_from_mem.sv
     - src/axi_dw_converter.sv
     - src/axi_id_serialize.sv

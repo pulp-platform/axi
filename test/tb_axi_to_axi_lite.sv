@@ -75,11 +75,11 @@ module tb_axi_to_axi_lite;
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
     .testmode_i ( 1'b0     ),
-    .slv        ( axi      ),
-    .mst        ( axi_lite )
+    .sbr        ( axi      ),
+    .mgr        ( axi_lite )
   );
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
     .AW ( AW ),
     .DW ( DW ),
@@ -92,11 +92,11 @@ module tb_axi_to_axi_lite;
     .MAX_READ_TXNS  ( MAX_READ_TXNS  ),
     .MAX_WRITE_TXNS ( MAX_WRITE_TXNS ),
     .AXI_ATOPS      ( AXI_ATOPS      )
-  ) axi_rand_master_t;
-  typedef axi_test::axi_lite_rand_slave #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) axi_lite_rand_slv_t;
+  ) axi_rand_manager_t;
+  typedef axi_test::axi_lite_rand_subordinate #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) axi_lite_rand_sbr_t;
 
-  axi_lite_rand_slv_t axi_lite_drv = new(axi_lite_dv, "axi_lite_rand_slave");
-  axi_rand_master_t   axi_drv      = new(axi_dv);
+  axi_lite_rand_sbr_t axi_lite_drv = new(axi_lite_dv, "axi_lite_rand_subordinate");
+  axi_rand_manager_t   axi_drv      = new(axi_dv);
 
   initial begin
     #tCK;

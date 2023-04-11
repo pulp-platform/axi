@@ -72,28 +72,28 @@
   `__AXI_TO_AR(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep)  \
   __opt_as __lhs.ar_valid = __rhs.ar_valid;                         \
   __opt_as __lhs.r_ready = __rhs.r_ready;
-`define __AXI_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
-  __opt_as __lhs.aw_ready = __rhs.aw_ready;                         \
-  __opt_as __lhs.ar_ready = __rhs.ar_ready;                         \
-  __opt_as __lhs.w_ready = __rhs.w_ready;                           \
-  __opt_as __lhs.b_valid = __rhs.b_valid;                           \
-  `__AXI_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)     \
-  __opt_as __lhs.r_valid = __rhs.r_valid;                           \
+`define __AXI_TO_RSP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+  __opt_as __lhs.aw_ready = __rhs.aw_ready;                        \
+  __opt_as __lhs.ar_ready = __rhs.ar_ready;                        \
+  __opt_as __lhs.w_ready = __rhs.w_ready;                          \
+  __opt_as __lhs.b_valid = __rhs.b_valid;                          \
+  `__AXI_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)    \
+  __opt_as __lhs.r_valid = __rhs.r_valid;                          \
   `__AXI_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Assigning one AXI4+ATOP interface to another, as if you would do `assign slv = mst;`
+// Assigning one AXI4+ATOP interface to another, as if you would do `assign sbr = mgr;`
 //
 // The channel assignments `AXI_ASSIGN_XX(dst, src)` assign all payload and the valid signal of the
 // `XX` channel from the `src` to the `dst` interface and they assign the ready signal from the
 // `src` to the `dst` interface.
 // The interface assignment `AXI_ASSIGN(dst, src)` assigns all channels including handshakes as if
-// `src` was the master of `dst`.
+// `src` was the manager of `dst`.
 //
 // Usage Example:
-// `AXI_ASSIGN(slv, mst)
+// `AXI_ASSIGN(sbr, mgr)
 // `AXI_ASSIGN_AW(dst, src)
 // `AXI_ASSIGN_R(dst, src)
 `define AXI_ASSIGN_AW(dst, src)               \
@@ -116,12 +116,12 @@
   `__AXI_TO_R(assign, dst.r, _, src.r, _)     \
   assign dst.r_valid  = src.r_valid;          \
   assign src.r_ready  = dst.r_ready;
-`define AXI_ASSIGN(slv, mst)  \
-  `AXI_ASSIGN_AW(slv, mst)    \
-  `AXI_ASSIGN_W(slv, mst)     \
-  `AXI_ASSIGN_B(mst, slv)     \
-  `AXI_ASSIGN_AR(slv, mst)    \
-  `AXI_ASSIGN_R(mst, slv)
+`define AXI_ASSIGN(sbr, mgr)  \
+  `AXI_ASSIGN_AW(sbr, mgr)    \
+  `AXI_ASSIGN_W(sbr, mgr)     \
+  `AXI_ASSIGN_B(mgr, sbr)     \
+  `AXI_ASSIGN_AR(sbr, mgr)    \
+  `AXI_ASSIGN_R(mgr, sbr)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -160,21 +160,21 @@
 // The request macro `AXI_SET_FROM_REQ(axi_if, req_struct)` sets all request channels (AW, W, AR)
 // and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the `axi_if`
 // interface from the signals in `req_struct`.
-// The response macro `AXI_SET_FROM_RESP(axi_if, resp_struct)` sets both response channels (B and R)
+// The response macro `AXI_SET_FROM_RSP(axi_if, rsp_struct)` sets both response channels (B and R)
 // and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the `axi_if`
-// interface from the signals in `resp_struct`.
+// interface from the signals in `rsp_struct`.
 //
 // Usage Example:
 // always_comb begin
 //   `AXI_SET_FROM_REQ(my_if, my_req_struct)
 // end
-`define AXI_SET_FROM_AW(axi_if, aw_struct)      `__AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
-`define AXI_SET_FROM_W(axi_if, w_struct)        `__AXI_TO_W(, axi_if.w, _, w_struct, .)
-`define AXI_SET_FROM_B(axi_if, b_struct)        `__AXI_TO_B(, axi_if.b, _, b_struct, .)
-`define AXI_SET_FROM_AR(axi_if, ar_struct)      `__AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
-`define AXI_SET_FROM_R(axi_if, r_struct)        `__AXI_TO_R(, axi_if.r, _, r_struct, .)
-`define AXI_SET_FROM_REQ(axi_if, req_struct)    `__AXI_TO_REQ(, axi_if, _, req_struct, .)
-`define AXI_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_TO_RESP(, axi_if, _, resp_struct, .)
+`define AXI_SET_FROM_AW(axi_if, aw_struct)    `__AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
+`define AXI_SET_FROM_W(axi_if, w_struct)      `__AXI_TO_W(, axi_if.w, _, w_struct, .)
+`define AXI_SET_FROM_B(axi_if, b_struct)      `__AXI_TO_B(, axi_if.b, _, b_struct, .)
+`define AXI_SET_FROM_AR(axi_if, ar_struct)    `__AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
+`define AXI_SET_FROM_R(axi_if, r_struct)      `__AXI_TO_R(, axi_if.r, _, r_struct, .)
+`define AXI_SET_FROM_REQ(axi_if, req_struct)  `__AXI_TO_REQ(, axi_if, _, req_struct, .)
+`define AXI_SET_FROM_RSP(axi_if, rsp_struct)  `__AXI_TO_RSP(, axi_if, _, rsp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -186,19 +186,19 @@
 // The request macro `AXI_ASSIGN_FROM_REQ(axi_if, req_struct)` assigns all request channels (AW, W,
 // AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
 // `axi_if` interface from the signals in `req_struct`.
-// The response macro `AXI_ASSIGN_FROM_RESP(axi_if, resp_struct)` assigns both response channels (B
+// The response macro `AXI_ASSIGN_FROM_RSP(axi_if, rsp_struct)` assigns both rsponse channels (B
 // and R) and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the
-// `axi_if` interface from the signals in `resp_struct`.
+// `axi_if` interface from the signals in `rsp_struct`.
 //
 // Usage Example:
 // `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct)
-`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
-`define AXI_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_TO_W(assign, axi_if.w, _, w_struct, .)
-`define AXI_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_TO_B(assign, axi_if.b, _, b_struct, .)
-`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
-`define AXI_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_TO_R(assign, axi_if.r, _, r_struct, .)
-`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_TO_REQ(assign, axi_if, _, req_struct, .)
-`define AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_TO_RESP(assign, axi_if, _, resp_struct, .)
+`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)   `__AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
+`define AXI_ASSIGN_FROM_W(axi_if, w_struct)     `__AXI_TO_W(assign, axi_if.w, _, w_struct, .)
+`define AXI_ASSIGN_FROM_B(axi_if, b_struct)     `__AXI_TO_B(assign, axi_if.b, _, b_struct, .)
+`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct)   `__AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
+`define AXI_ASSIGN_FROM_R(axi_if, r_struct)     `__AXI_TO_R(assign, axi_if.r, _, r_struct, .)
+`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct) `__AXI_TO_REQ(assign, axi_if, _, req_struct, .)
+`define AXI_ASSIGN_FROM_RSP(axi_if, rsp_struct) `__AXI_TO_RSP(assign, axi_if, _, rsp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -211,7 +211,7 @@
 // The request macro `AXI_SET_TO_REQ(axi_if, req_struct)` sets all signals of `req_struct` (i.e.,
 // request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR valid and
 // B and R ready)) to the signals in the `axi_if` interface.
-// The response macro `AXI_SET_TO_RESP(axi_if, resp_struct)` sets all signals of `resp_struct`
+// The response macro `AXI_SET_TO_RSP(axi_if, rsp_struct)` sets all signals of `rsp_struct`
 // (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
 // AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
@@ -219,13 +219,13 @@
 // always_comb begin
 //   `AXI_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_SET_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
-`define AXI_SET_TO_W(w_struct, axi_if)       `__AXI_TO_W(, w_struct, ., axi_if.w, _)
-`define AXI_SET_TO_B(b_struct, axi_if)       `__AXI_TO_B(, b_struct, ., axi_if.b, _)
-`define AXI_SET_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
-`define AXI_SET_TO_R(r_struct, axi_if)       `__AXI_TO_R(, r_struct, ., axi_if.r, _)
-`define AXI_SET_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(, req_struct, ., axi_if, _)
-`define AXI_SET_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(, resp_struct, ., axi_if, _)
+`define AXI_SET_TO_AW(aw_struct, axi_if)   `__AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
+`define AXI_SET_TO_W(w_struct, axi_if)     `__AXI_TO_W(, w_struct, ., axi_if.w, _)
+`define AXI_SET_TO_B(b_struct, axi_if)     `__AXI_TO_B(, b_struct, ., axi_if.b, _)
+`define AXI_SET_TO_AR(ar_struct, axi_if)   `__AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
+`define AXI_SET_TO_R(r_struct, axi_if)     `__AXI_TO_R(, r_struct, ., axi_if.r, _)
+`define AXI_SET_TO_REQ(req_struct, axi_if) `__AXI_TO_REQ(, req_struct, ., axi_if, _)
+`define AXI_SET_TO_RSP(rsp_struct, axi_if) `__AXI_TO_RSP(, rsp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -238,19 +238,19 @@
 // The request macro `AXI_ASSIGN_TO_REQ(axi_if, req_struct)` assigns all signals of `req_struct`
 // (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR
 // valid and B and R ready)) to the signals in the `axi_if` interface.
-// The response macro `AXI_ASSIGN_TO_RESP(axi_if, resp_struct)` assigns all signals of `resp_struct`
+// The response macro `AXI_ASSIGN_TO_RSP(axi_if, rsp_struct)` assigns all signals of `rsp_struct`
 // (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
 // AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
 // Usage Example:
 // `AXI_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
-`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_TO_W(assign, w_struct, ., axi_if.w, _)
-`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_TO_B(assign, b_struct, ., axi_if.b, _)
-`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
-`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_TO_R(assign, r_struct, ., axi_if.r, _)
-`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(assign, req_struct, ., axi_if, _)
-`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(assign, resp_struct, ., axi_if, _)
+`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)   `__AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
+`define AXI_ASSIGN_TO_W(w_struct, axi_if)     `__AXI_TO_W(assign, w_struct, ., axi_if.w, _)
+`define AXI_ASSIGN_TO_B(b_struct, axi_if)     `__AXI_TO_B(assign, b_struct, ., axi_if.b, _)
+`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)   `__AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
+`define AXI_ASSIGN_TO_R(r_struct, axi_if)     `__AXI_TO_R(assign, r_struct, ., axi_if.r, _)
+`define AXI_ASSIGN_TO_REQ(req_struct, axi_if) `__AXI_TO_REQ(assign, req_struct, ., axi_if, _)
+`define AXI_ASSIGN_TO_RSP(rsp_struct, axi_if) `__AXI_TO_RSP(assign, rsp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -263,7 +263,7 @@
 // The request macro `AXI_SET_REQ_STRUCT(lhs, rhs)` sets all fields of the `lhs` request struct to
 // the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR) payload
 // and request-side handshake signals (AW, W, and AR valid and B and R ready).
-// The response macro `AXI_SET_RESP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response struct
+// The response macro `AXI_SET_RSP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response struct
 // to the fields of the `rhs` response struct.  This includes all response channel (B and R) payload
 // and response-side handshake signals (B and R valid and AW, W, and R ready).
 //
@@ -271,13 +271,13 @@
 // always_comb begin
 //   `AXI_SET_REQ_STRUCT(my_req_struct, another_req_struct)
 // end
-`define AXI_SET_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(, lhs, ., rhs, .)
-`define AXI_SET_W_STRUCT(lhs, rhs)       `__AXI_TO_W(, lhs, ., rhs, .)
-`define AXI_SET_B_STRUCT(lhs, rhs)       `__AXI_TO_B(, lhs, ., rhs, .)
-`define AXI_SET_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(, lhs, ., rhs, .)
-`define AXI_SET_R_STRUCT(lhs, rhs)       `__AXI_TO_R(, lhs, ., rhs, .)
-`define AXI_SET_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(, lhs, ., rhs, .)
-`define AXI_SET_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(, lhs, ., rhs, .)
+`define AXI_SET_AW_STRUCT(lhs, rhs)   `__AXI_TO_AW(, lhs, ., rhs, .)
+`define AXI_SET_W_STRUCT(lhs, rhs)     `__AXI_TO_W(, lhs, ., rhs, .)
+`define AXI_SET_B_STRUCT(lhs, rhs)     `__AXI_TO_B(, lhs, ., rhs, .)
+`define AXI_SET_AR_STRUCT(lhs, rhs)   `__AXI_TO_AR(, lhs, ., rhs, .)
+`define AXI_SET_R_STRUCT(lhs, rhs)     `__AXI_TO_R(, lhs, ., rhs, .)
+`define AXI_SET_REQ_STRUCT(lhs, rhs) `__AXI_TO_REQ(, lhs, ., rhs, .)
+`define AXI_SET_RSP_STRUCT(lhs, rhs) `__AXI_TO_RSP(, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -290,19 +290,19 @@
 // The request macro `AXI_ASSIGN_REQ_STRUCT(lhs, rhs)` assigns all fields of the `lhs` request
 // struct to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR)
 // payload and request-side handshake signals (AW, W, and AR valid and B and R ready).
-// The response macro `AXI_ASSIGN_RESP_STRUCT(lhs, rhs)` assigns all fields of the `lhs` response
+// The response macro `AXI_ASSIGN_RSP_STRUCT(lhs, rhs)` assigns all fields of the `lhs` response
 // struct to the fields of the `rhs` response struct.  This includes all response channel (B and R)
 // payload and response-side handshake signals (B and R valid and AW, W, and R ready).
 //
 // Usage Example:
 // `AXI_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
-`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_TO_W(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_TO_B(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_TO_R(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)   `__AXI_TO_AW(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_W_STRUCT(lhs, rhs)     `__AXI_TO_W(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_B_STRUCT(lhs, rhs)     `__AXI_TO_B(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)   `__AXI_TO_AR(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_R_STRUCT(lhs, rhs)     `__AXI_TO_R(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs) `__AXI_TO_REQ(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_RSP_STRUCT(lhs, rhs) `__AXI_TO_RSP(assign, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -331,28 +331,28 @@
   `__AXI_LITE_TO_AX(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep) \
   __opt_as __lhs.ar_valid = __rhs.ar_valid;                             \
   __opt_as __lhs.r_ready = __rhs.r_ready;
-`define __AXI_LITE_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
-  __opt_as __lhs.aw_ready = __rhs.aw_ready;                               \
-  __opt_as __lhs.ar_ready = __rhs.ar_ready;                               \
-  __opt_as __lhs.w_ready = __rhs.w_ready;                                 \
-  __opt_as __lhs.b_valid = __rhs.b_valid;                                 \
-  `__AXI_LITE_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)      \
-  __opt_as __lhs.r_valid = __rhs.r_valid;                                 \
+`define __AXI_LITE_TO_RSP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
+  __opt_as __lhs.aw_ready = __rhs.aw_ready;                              \
+  __opt_as __lhs.ar_ready = __rhs.ar_ready;                              \
+  __opt_as __lhs.w_ready = __rhs.w_ready;                                \
+  __opt_as __lhs.b_valid = __rhs.b_valid;                                \
+  `__AXI_LITE_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)     \
+  __opt_as __lhs.r_valid = __rhs.r_valid;                                \
   `__AXI_LITE_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Assigning one AXI-Lite interface to another, as if you would do `assign slv = mst;`
+// Assigning one AXI-Lite interface to another, as if you would do `assign sbr = mgr;`
 //
 // The channel assignments `AXI_LITE_ASSIGN_XX(dst, src)` assign all payload and the valid signal of
 // the `XX` channel from the `src` to the `dst` interface and they assign the ready signal from the
 // `src` to the `dst` interface.
 // The interface assignment `AXI_LITE_ASSIGN(dst, src)` assigns all channels including handshakes as
-// if `src` was the master of `dst`.
+// if `src` was the manager of `dst`.
 //
 // Usage Example:
-// `AXI_LITE_ASSIGN(slv, mst)
+// `AXI_LITE_ASSIGN(sbr, mgr)
 // `AXI_LITE_ASSIGN_AW(dst, src)
 // `AXI_LITE_ASSIGN_R(dst, src)
 `define AXI_LITE_ASSIGN_AW(dst, src)              \
@@ -375,12 +375,12 @@
   `__AXI_LITE_TO_R(assign, dst.r, _, src.r, _)  \
   assign dst.r_valid  = src.r_valid;            \
   assign src.r_ready  = dst.r_ready;
-`define AXI_LITE_ASSIGN(slv, mst) \
-  `AXI_LITE_ASSIGN_AW(slv, mst)   \
-  `AXI_LITE_ASSIGN_W(slv, mst)    \
-  `AXI_LITE_ASSIGN_B(mst, slv)    \
-  `AXI_LITE_ASSIGN_AR(slv, mst)   \
-  `AXI_LITE_ASSIGN_R(mst, slv)
+`define AXI_LITE_ASSIGN(sbr, mgr) \
+  `AXI_LITE_ASSIGN_AW(sbr, mgr)   \
+  `AXI_LITE_ASSIGN_W(sbr, mgr)    \
+  `AXI_LITE_ASSIGN_B(mgr, sbr)    \
+  `AXI_LITE_ASSIGN_AR(sbr, mgr)   \
+  `AXI_LITE_ASSIGN_R(mgr, sbr)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -392,21 +392,21 @@
 // The request macro `AXI_LITE_SET_FROM_REQ(axi_if, req_struct)` sets all request channels (AW, W,
 // AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
 // `axi_if` interface from the signals in `req_struct`.
-// The response macro `AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)` sets both response channels (B
+// The response macro `AXI_LITE_SET_FROM_RSP(axi_if, rsp_struct)` sets both response channels (B
 // and R) and the response-side handshake signals (B and R valid and AW, W, and AR ready) of the
-// `axi_if` interface from the signals in `resp_struct`.
+// `axi_if` interface from the signals in `rsp_struct`.
 //
 // Usage Example:
 // always_comb begin
 //   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct)
 // end
-`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `__AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
-`define AXI_LITE_SET_FROM_W(axi_if, w_struct)        `__AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
-`define AXI_LITE_SET_FROM_B(axi_if, b_struct)        `__AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
-`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct)      `__AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
-`define AXI_LITE_SET_FROM_R(axi_if, r_struct)        `__AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
-`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct)    `__AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
-`define AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_LITE_TO_RESP(, axi_if, _, resp_struct, .)
+`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)    `__AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
+`define AXI_LITE_SET_FROM_W(axi_if, w_struct)      `__AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
+`define AXI_LITE_SET_FROM_B(axi_if, b_struct)      `__AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
+`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct)    `__AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
+`define AXI_LITE_SET_FROM_R(axi_if, r_struct)      `__AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
+`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct)  `__AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
+`define AXI_LITE_SET_FROM_RSP(axi_if, rsp_struct)  `__AXI_LITE_TO_RSP(, axi_if, _, rsp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -418,19 +418,19 @@
 // The request macro `AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)` assigns all request channels
 // (AW, W, AR) and the request-side handshake signals (AW, W, and AR valid and B and R ready) of the
 // `axi_if` interface from the signals in `req_struct`.
-// The response macro `AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct)` assigns both response
+// The response macro `AXI_LITE_ASSIGN_FROM_RSP(axi_if, rsp_struct)` assigns both response
 // channels (B and R) and the response-side handshake signals (B and R valid and AW, W, and AR
-// ready) of the `axi_if` interface from the signals in `resp_struct`.
+// ready) of the `axi_if` interface from the signals in `rsp_struct`.
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct)
-`define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
-`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
-`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
-`define AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
-`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
-`define AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
-`define AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_LITE_TO_RESP(assign, axi_if, _, resp_struct, .)
+`define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)   `__AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
+`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)     `__AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
+`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)     `__AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
+`define AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)   `__AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
+`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)     `__AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
+`define AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct) `__AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
+`define AXI_LITE_ASSIGN_FROM_RSP(axi_if, rsp_struct) `__AXI_LITE_TO_RSP(assign, axi_if, _, rsp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -443,7 +443,7 @@
 // The request macro `AXI_LITE_SET_TO_REQ(axi_if, req_struct)` sets all signals of `req_struct`
 // (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW, W, and AR
 // valid and B and R ready)) to the signals in the `axi_if` interface.
-// The response macro `AXI_LITE_SET_TO_RESP(axi_if, resp_struct)` sets all signals of `resp_struct`
+// The response macro `AXI_LITE_SET_TO_RSP(axi_if, rsp_struct)` sets all signals of `rsp_struct`
 // (i.e., response channel (B and R) payload and response-side handshake signals (B and R valid and
 // AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
@@ -451,13 +451,13 @@
 // always_comb begin
 //   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
-`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
-`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
-`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
-`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
-`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
-`define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(, resp_struct, ., axi_if, _)
+`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)   `__AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
+`define AXI_LITE_SET_TO_W(w_struct, axi_if)     `__AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
+`define AXI_LITE_SET_TO_B(b_struct, axi_if)     `__AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
+`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)   `__AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
+`define AXI_LITE_SET_TO_R(r_struct, axi_if)     `__AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
+`define AXI_LITE_SET_TO_REQ(req_struct, axi_if) `__AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
+`define AXI_LITE_SET_TO_RSP(rsp_struct, axi_if) `__AXI_LITE_TO_RSP(, rsp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -470,19 +470,19 @@
 // The request macro `AXI_LITE_ASSIGN_TO_REQ(axi_if, req_struct)` assigns all signals of
 // `req_struct` (i.e., request channel (AW, W, AR) payload and request-side handshake signals (AW,
 // W, and AR valid and B and R ready)) to the signals in the `axi_if` interface.
-// The response macro `AXI_LITE_ASSIGN_TO_RESP(axi_if, resp_struct)` assigns all signals of
-// `resp_struct` (i.e., response channel (B and R) payload and response-side handshake signals (B
+// The response macro `AXI_LITE_ASSIGN_TO_RSP(axi_if, rsp_struct)` assigns all signals of
+// `rsp_struct` (i.e., response channel (B and R) payload and response-side handshake signals (B
 // and R valid and AW, W, and AR ready)) to the signals in the `axi_if` interface.
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
-`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
-`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
-`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
-`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
-`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
-`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(assign, resp_struct, ., axi_if, _)
+`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)   `__AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
+`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)     `__AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
+`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)     `__AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
+`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)   `__AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
+`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)     `__AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
+`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if) `__AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
+`define AXI_LITE_ASSIGN_TO_RSP(rsp_struct, axi_if) `__AXI_LITE_TO_RSP(assign, rsp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -495,7 +495,7 @@
 // The request macro `AXI_LITE_SET_REQ_STRUCT(lhs, rhs)` sets all fields of the `lhs` request struct
 // to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR) payload
 // and request-side handshake signals (AW, W, and AR valid and B and R ready).
-// The response macro `AXI_LITE_SET_RESP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response
+// The response macro `AXI_LITE_SET_RSP_STRUCT(lhs, rhs)` sets all fields of the `lhs` response
 // struct to the fields of the `rhs` response struct.  This includes all response channel (B and R)
 // payload and response-side handshake signals (B and R valid and AW, W, and R ready).
 //
@@ -503,13 +503,13 @@
 // always_comb begin
 //   `AXI_LITE_SET_REQ_STRUCT(my_req_struct, another_req_struct)
 // end
-`define AXI_LITE_SET_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
-`define AXI_LITE_SET_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(, lhs, ., rhs, .)
-`define AXI_LITE_SET_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(, lhs, ., rhs, .)
-`define AXI_LITE_SET_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
-`define AXI_LITE_SET_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(, lhs, ., rhs, .)
-`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
-`define AXI_LITE_SET_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(, lhs, ., rhs, .)
+`define AXI_LITE_SET_AW_STRUCT(lhs, rhs)   `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_W_STRUCT(lhs, rhs)     `__AXI_LITE_TO_W(, lhs, ., rhs, .)
+`define AXI_LITE_SET_B_STRUCT(lhs, rhs)     `__AXI_LITE_TO_B(, lhs, ., rhs, .)
+`define AXI_LITE_SET_AR_STRUCT(lhs, rhs)   `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_R_STRUCT(lhs, rhs)     `__AXI_LITE_TO_R(, lhs, ., rhs, .)
+`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs) `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
+`define AXI_LITE_SET_RSP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RSP(, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -522,29 +522,29 @@
 // The request macro `AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)` assigns all fields of the `lhs` request
 // struct to the fields of the `rhs` request struct.  This includes all request channel (AW, W, AR)
 // payload and request-side handshake signals (AW, W, and AR valid and B and R ready).
-// The response macro `AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs)` assigns all fields of the `lhs`
+// The response macro `AXI_LITE_ASSIGN_RSP_STRUCT(lhs, rhs)` assigns all fields of the `lhs`
 // response struct to the fields of the `rhs` response struct.  This includes all response channel
 // (B and R) payload and response-side handshake signals (B and R valid and AW, W, and R ready).
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
-`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)   `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)     `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)     `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)   `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)     `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs) `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_RSP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RSP(assign, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Macros for assigning flattened AXI ports to req/resp AXI structs
+// Macros for assigning flattened AXI ports to req/rsp AXI structs
 // Flat AXI ports are required by the Vivado IP Integrator. Vivado naming convention is followed.
 //
 // Usage Example:
-// `AXI_ASSIGN_MASTER_TO_FLAT("my_bus", my_req_struct, my_rsp_struct)
-`define AXI_ASSIGN_MASTER_TO_FLAT(pat, req, rsp) \
+// `AXI_ASSIGN_MANAGER_TO_FLAT("my_bus", my_req_struct, my_rsp_struct)
+`define AXI_ASSIGN_MANAGER_TO_FLAT(pat, req, rsp) \
   assign m_axi_``pat``_awvalid  = req.aw_valid;  \
   assign m_axi_``pat``_awid     = req.aw.id;     \
   assign m_axi_``pat``_awaddr   = req.aw.addr;   \
@@ -597,7 +597,7 @@
   assign rsp.r.last   = m_axi_``pat``_rlast;     \
   assign rsp.r.user   = m_axi_``pat``_ruser;
 
-`define AXI_ASSIGN_SLAVE_TO_FLAT(pat, req, rsp)  \
+`define AXI_ASSIGN_SUBORDINATE_TO_FLAT(pat, req, rsp)  \
   assign req.aw_valid  = s_axi_``pat``_awvalid;  \
   assign req.aw.id     = s_axi_``pat``_awid;     \
   assign req.aw.addr   = s_axi_``pat``_awaddr;   \

@@ -60,8 +60,8 @@ module tb_axi_lite_to_axi;
     .AXI_DATA_WIDTH (TB_DW)
   ) i_dut (
     .in   ( axi_lite ),
-    .slv_aw_cache_i ('0),
-    .slv_ar_cache_i ('0),
+    .sbr_aw_cache_i ('0),
+    .sbr_ar_cache_i ('0),
     .out  ( axi      )
   );
 
@@ -84,7 +84,7 @@ module tb_axi_lite_to_axi;
 
   initial begin
     automatic axi_pkg::resp_t resp;
-    axi_lite_drv.reset_master();
+    axi_lite_drv.reset_manager();
     @(posedge clk);
     axi_lite_drv.send_aw('hdeadbeef, axi_pkg::prot_t'('0));
     axi_lite_drv.send_w('hdeadbeef, '1);
@@ -98,7 +98,7 @@ module tb_axi_lite_to_axi;
     automatic axi_test::axi_ax_beat #(.AW(TB_AW), .IW(TB_IW), .UW(TB_UW)) ax_beat;
     automatic axi_test::axi_w_beat #(.DW(TB_DW), .UW(TB_UW)) w_beat;
     automatic axi_test::axi_b_beat #(.IW(TB_IW), .UW(TB_UW)) b_beat = new;
-    axi_drv.reset_slave();
+    axi_drv.reset_subordinate();
     @(posedge clk);
     axi_drv.recv_aw(ax_beat);
     $info("AXI AW: addr %h", ax_beat.ax_addr);

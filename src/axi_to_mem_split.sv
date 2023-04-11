@@ -19,17 +19,17 @@ module axi_to_mem_split #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type         axi_req_t    = logic,
   /// AXI4+ATOP response type. See `include/axi/typedef.svh`.
-  parameter type         axi_resp_t   = logic,
+  parameter type         axi_rsp_t    = logic,
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
   parameter int unsigned AddrWidth    = 0,
   /// AXI4+ATOP data width.
-  parameter int unsigned AxiDataWidth = 0,
+  parameter int unsigned DataWidth    = 0,
   /// AXI4+ATOP ID width.
   parameter int unsigned IdWidth      = 0,
   /// Memory data width, must evenly divide `DataWidth`.
-  parameter int unsigned MemDataWidth = 0, // must divide `AxiDataWidth` without remainder
+  parameter int unsigned MemDataWidth = 0, // must divide `DataWidth` without remainder
   /// Depth of memory response buffer. This should be equal to the memory response latency.
   parameter int unsigned BufDepth     = 0,
   /// Hide write requests if the strb == '0
@@ -37,7 +37,7 @@ module axi_to_mem_split #(
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OutFifoDepth = 1,
   /// Dependent parameters, do not override. Number of memory ports.
-  parameter int unsigned NumMemPorts  = 2*AxiDataWidth/MemDataWidth,
+  parameter int unsigned NumMemPorts  = 2*DataWidth/MemDataWidth,
   /// Dependent parameter, do not override. Memory address type.
   parameter type         addr_t       = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -51,57 +51,57 @@ module axi_to_mem_split #(
   input logic                              rst_ni,
   /// The unit is busy handling an AXI4+ATOP request.
   output logic                             busy_o,
-  /// AXI4+ATOP slave port, request input.
+  /// AXI4+ATOP subordinate port, request input.
   input  axi_req_t                         axi_req_i,
-  /// AXI4+ATOP slave port, response output.
-  output axi_resp_t                        axi_resp_o,
-  /// Memory stream master, request is valid for this bank.
+  /// AXI4+ATOP subordinate port, response output.
+  output axi_rsp_t                         axi_rsp_o,
+  /// Memory stream manager, request is valid for this bank.
   output logic           [NumMemPorts-1:0] mem_req_o,
-  /// Memory stream master, request can be granted by this bank.
+  /// Memory stream manager, request can be granted by this bank.
   input  logic           [NumMemPorts-1:0] mem_gnt_i,
-  /// Memory stream master, byte address of the request.
+  /// Memory stream manager, byte address of the request.
   output addr_t          [NumMemPorts-1:0] mem_addr_o,   // byte address
-  /// Memory stream master, write data for this bank. Valid when `mem_req_o`.
+  /// Memory stream manager, write data for this bank. Valid when `mem_req_o`.
   output mem_data_t      [NumMemPorts-1:0] mem_wdata_o,  // write data
-  /// Memory stream master, byte-wise strobe (byte enable).
+  /// Memory stream manager, byte-wise strobe (byte enable).
   output mem_strb_t      [NumMemPorts-1:0] mem_strb_o,   // byte-wise strobe
-  /// Memory stream master, `axi_pkg::atop_t` signal associated with this request.
+  /// Memory stream manager, `axi_pkg::atop_t` signal associated with this request.
   output axi_pkg::atop_t [NumMemPorts-1:0] mem_atop_o,   // atomic operation
-  /// Memory stream master, write enable. Then asserted store of `mem_w_data` is requested.
+  /// Memory stream manager, write enable. Then asserted store of `mem_w_data` is requested.
   output logic           [NumMemPorts-1:0] mem_we_o,     // write enable
-  /// Memory stream master, response is valid. This module expects always a response valid for a
+  /// Memory stream manager, response is valid. This module expects always a response valid for a
   /// request regardless if the request was a write or a read.
   input  logic           [NumMemPorts-1:0] mem_rvalid_i, // response valid
-  /// Memory stream master, read response data.
+  /// Memory stream manager, read response data.
   input  mem_data_t      [NumMemPorts-1:0] mem_rdata_i   // read data
 );
 
   axi_req_t axi_read_req, axi_write_req;
-  axi_resp_t axi_read_resp, axi_write_resp;
+  axi_rsp_t axi_read_rsp, axi_write_rsp;
 
   logic read_busy, write_busy;
 
   axi_rw_split #(
-    .axi_req_t  ( axi_req_t  ),
-    .axi_resp_t ( axi_resp_t )
+    .axi_req_t ( axi_req_t ),
+    .axi_rsp_t ( axi_rsp_t )
   ) i_axi_rw_split (
     .clk_i,
     .rst_ni,
-    .slv_req_i        ( axi_req_i        ),
-    .slv_resp_o       ( axi_resp_o       ),
-    .mst_read_req_o   ( axi_read_req     ),
-    .mst_read_resp_i  ( axi_read_resp    ),
-    .mst_write_req_o  ( axi_write_req    ),
-    .mst_write_resp_i ( axi_write_resp   )
+    .sbr_port_req_i       ( axi_req_i       ),
+    .sbr_port_rsp_o       ( axi_rsp_o       ),
+    .mgr_read_req_o  ( axi_read_req    ),
+    .mgr_read_rsp_i  ( axi_read_rsp    ),
+    .mgr_write_req_o ( axi_write_req   ),
+    .mgr_write_rsp_i ( axi_write_rsp   )
   );
 
   assign busy_o = read_busy || write_busy;
 
   axi_to_mem #(
     .axi_req_t    ( axi_req_t     ),
-    .axi_resp_t   ( axi_resp_t    ),
+    .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
-    .DataWidth    ( AxiDataWidth  ),
+    .DataWidth    ( DataWidth     ),
     .IdWidth      ( IdWidth       ),
     .NumBanks     ( NumMemPorts/2 ),
     .BufDepth     ( BufDepth      ),
@@ -112,7 +112,7 @@ module axi_to_mem_split #(
     .rst_ni,
     .busy_o       ( read_busy                        ),
     .axi_req_i    ( axi_read_req                     ),
-    .axi_resp_o   ( axi_read_resp                    ),
+    .axi_rsp_o    ( axi_read_rsp                     ),
     .mem_req_o    ( mem_req_o    [NumMemPorts/2-1:0] ),
     .mem_gnt_i    ( mem_gnt_i    [NumMemPorts/2-1:0] ),
     .mem_addr_o   ( mem_addr_o   [NumMemPorts/2-1:0] ),
@@ -126,9 +126,9 @@ module axi_to_mem_split #(
 
   axi_to_mem #(
     .axi_req_t    ( axi_req_t     ),
-    .axi_resp_t   ( axi_resp_t    ),
+    .axi_rsp_t    ( axi_rsp_t     ),
     .AddrWidth    ( AddrWidth     ),
-    .DataWidth    ( AxiDataWidth  ),
+    .DataWidth    ( DataWidth     ),
     .IdWidth      ( IdWidth       ),
     .NumBanks     ( NumMemPorts/2 ),
     .BufDepth     ( BufDepth      ),
@@ -139,7 +139,7 @@ module axi_to_mem_split #(
     .rst_ni,
     .busy_o       ( write_busy                                 ),
     .axi_req_i    ( axi_write_req                              ),
-    .axi_resp_o   ( axi_write_resp                             ),
+    .axi_rsp_o    ( axi_write_rsp                              ),
     .mem_req_o    ( mem_req_o    [NumMemPorts-1:NumMemPorts/2] ),
     .mem_gnt_i    ( mem_gnt_i    [NumMemPorts-1:NumMemPorts/2] ),
     .mem_addr_o   ( mem_addr_o   [NumMemPorts-1:NumMemPorts/2] ),
@@ -187,8 +187,8 @@ module axi_to_mem_split_intf #(
   input  logic                               rst_ni,
   /// See `axi_to_mem_split`, port `busy_o`.
   output logic                               busy_o,
-  /// AXI4+ATOP slave interface port.
-  AXI_BUS.Slave                              axi_bus,
+  /// AXI4+ATOP subordinate interface port.
+  AXI_BUS.Subordinate                              axi_bus,
   /// See `axi_to_mem_split`, port `mem_req_o`.
   output logic           [NUM_MEM_PORTS-1:0] mem_req_o,
   /// See `axi_to_mem_split`, port `mem_gnt_i`.
@@ -216,17 +216,17 @@ module axi_to_mem_split_intf #(
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
   axi_req_t axi_req;
-  axi_resp_t axi_resp;
+  axi_rsp_t axi_rsp;
   `AXI_ASSIGN_TO_REQ(axi_req, axi_bus)
-  `AXI_ASSIGN_FROM_RESP(axi_bus, axi_resp)
+  `AXI_ASSIGN_FROM_RSP(axi_bus, axi_rsp)
 
   axi_to_mem_split #(
     .axi_req_t    ( axi_req_t      ),
-    .axi_resp_t   ( axi_resp_t     ),
-    .AxiDataWidth ( AXI_DATA_WIDTH ),
+    .axi_rsp_t    ( axi_rsp_t      ),
+    .DataWidth    ( AXI_DATA_WIDTH ),
     .AddrWidth    ( AXI_ADDR_WIDTH ),
     .IdWidth      ( AXI_ID_WIDTH   ),
-    .MemDataWidth ( MEM_DATA_WIDTH ), // must divide `AxiDataWidth` without remainder
+    .MemDataWidth ( MEM_DATA_WIDTH ), // must divide `DataWidth` without remainder
     .BufDepth     ( BUF_DEPTH      ),
     .HideStrb     ( HIDE_STRB      ),
     .OutFifoDepth ( OUT_FIFO_DEPTH )
@@ -235,7 +235,7 @@ module axi_to_mem_split_intf #(
     .rst_ni,
     .busy_o,
     .axi_req_i (axi_req),
-    .axi_resp_o (axi_resp),
+    .axi_rsp_o (axi_rsp),
     .mem_req_o,
     .mem_gnt_i,
     .mem_addr_o,

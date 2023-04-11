@@ -24,24 +24,24 @@ module tb_axi_lite_to_apb #(
   parameter bit TbPipelineResponse = 1'b0
 );
   // Dut parameters
-  localparam int unsigned NoApbSlaves = 8;    // How many APB Slaves  there are
-  localparam int unsigned NoAddrRules = 9;    // How many address rules for the APB slaves
-  // Random master no Transactions
-  localparam int unsigned NoWrites    = 10000;  // How many rand writes of the master
-  localparam int unsigned NoReads     = 20000;  // How many rand reads of the master
+  localparam int unsigned NumApbSlaves = 8;    // How many APB Slaves there are
+  localparam int unsigned NumAddrRules = 9;    // How many address rules for the APB slaves
+  // Random manager no Transactions
+  localparam int unsigned NumWrites    = 10000;  // How many rand writes of the manager
+  localparam int unsigned NumReads     = 20000;  // How many rand reads of the manager
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
   // Type widths
-  localparam int unsigned AxiAddrWidth = 32;
-  localparam int unsigned AxiDataWidth = 32;
-  localparam int unsigned AxiStrbWidth = AxiDataWidth/8;
+  localparam int unsigned AddrWidth = 32;
+  localparam int unsigned DataWidth = 32;
+  localparam int unsigned StrbWidth = DataWidth/8;
 
-  typedef logic [AxiAddrWidth-1:0]      addr_t;
-  typedef axi_pkg::xbar_rule_32_t       rule_t; // Has to be the same width as axi addr
-  typedef logic [AxiDataWidth-1:0]      data_t;
-  typedef logic [AxiStrbWidth-1:0]      strb_t;
+  typedef logic [AddrWidth-1:0]      addr_t;
+  typedef axi_pkg::xbar_rule_32_t    rule_t; // Has to be the same width as axi addr
+  typedef logic [DataWidth-1:0]      data_t;
+  typedef logic [StrbWidth-1:0]      strb_t;
 
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -50,10 +50,10 @@ module tb_axi_lite_to_apb #(
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
 
-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_t, r_chan_t)
 
-  typedef logic [NoApbSlaves-1:0] sel_t;
+  typedef logic [NumApbSlaves-1:0] sel_t;
 
   typedef struct packed {
     addr_t          paddr;
@@ -69,9 +69,9 @@ module tb_axi_lite_to_apb #(
     logic  pready;
     data_t prdata;
     logic  pslverr;
-  } apb_resp_t;
+  } apb_rsp_t;
 
-  localparam rule_t [NoAddrRules-1:0] AddrMap = '{
+  localparam rule_t [NumAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
     '{idx: 32'd6, start_addr: 32'h0000_9000, end_addr: 32'h0001_0000},
     '{idx: 32'd5, start_addr: 32'h0000_8000, end_addr: 32'h0000_9000},
@@ -83,10 +83,10 @@ module tb_axi_lite_to_apb #(
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::axi_lite_rand_master #(
+  typedef axi_test::axi_lite_rand_manager #(
     // AXI interface parameters
-    .AW       ( AxiAddrWidth  ),
-    .DW       ( AxiDataWidth  ),
+    .AW       ( AddrWidth      ),
+    .DW       ( DataWidth      ),
     // Stimuli application and test time
     .TA       ( ApplTime       ),
     .TT       ( TestTime       ),
@@ -102,7 +102,7 @@ module tb_axi_lite_to_apb #(
     .W_MAX_WAIT_CYCLES  (    5 ),
     .RESP_MIN_WAIT_CYCLES (  0 ),
     .RESP_MAX_WAIT_CYCLES ( 20 )
-  ) axi_lite_rand_master_t;
+  ) axi_lite_rand_manager_t;
 
   // -------------
   // DUT signals
@@ -112,51 +112,51 @@ module tb_axi_lite_to_apb #(
   logic rst_n;
   logic end_of_sim;
 
-  // master structs
-  axi_req_t  axi_req;
-  axi_resp_t axi_resp;
+  // manager structs
+  axi_lite_req_t axi_req;
+  axi_lite_rsp_t axi_rsp;
 
   // slave structs
-  apb_req_t  [NoApbSlaves-1:0] apb_req;
-  apb_resp_t [NoApbSlaves-1:0] apb_resps;
+  apb_req_t [NumApbSlaves-1:0] apb_req;
+  apb_rsp_t [NumApbSlaves-1:0] apb_rsps;
 
   // -------------------------------
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
-  ) master ();
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
+  ) manager ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
-  ) master_dv (clk);
-  `AXI_LITE_ASSIGN(master, master_dv)
-  `AXI_LITE_ASSIGN_TO_REQ(axi_req, master)
-  `AXI_LITE_ASSIGN_FROM_RESP(master, axi_resp)
+    .AXI_ADDR_WIDTH ( AddrWidth      ),
+    .AXI_DATA_WIDTH ( DataWidth      )
+  ) manager_dv (clk);
+  `AXI_LITE_ASSIGN(manager, manager_dv)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_req, manager)
+  `AXI_LITE_ASSIGN_FROM_RSP(manager, axi_rsp)
 
   // -------------------------------
-  // AXI Rand Masters
+  // AXI Rand Managers
   // -------------------------------
-  // Master controls simulation run time
-  initial begin : proc_axi_master
-    static axi_lite_rand_master_t axi_lite_rand_master = new ( master_dv , "axi_lite_mst");
+  // Manager controls simulation run time
+  initial begin : proc_axi_manager
+    static axi_lite_rand_manager_t axi_lite_rand_manager = new ( manager_dv , "axi_lite_mgr");
     end_of_sim <= 1'b0;
-    axi_lite_rand_master.reset();
+    axi_lite_rand_manager.reset();
     @(posedge rst_n);
-    axi_lite_rand_master.run(NoReads, NoWrites);
+    axi_lite_rand_manager.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
   end
 
 
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_slave
+  for (genvar i = 0; i < NumApbSlaves; i++) begin : gen_apb_slave
     initial begin : proc_apb_slave
-      apb_resps[i] <= '0;
+      apb_rsps[i] <= '0;
       forever begin
         @(posedge clk);
-        apb_resps[i].pready  <= #ApplTime $urandom();
-        apb_resps[i].prdata  <= #ApplTime $urandom();
-        apb_resps[i].pslverr <= #ApplTime $urandom();
+        apb_rsps[i].pready  <= #ApplTime $urandom();
+        apb_rsps[i].prdata  <= #ApplTime $urandom();
+        apb_rsps[i].pslverr <= #ApplTime $urandom();
       end
     end
   end
@@ -171,7 +171,7 @@ module tb_axi_lite_to_apb #(
   `ifndef VERILATOR
   // Assertions to determine correct APB protocol sequencing
   default disable iff (!rst_n);
-  for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_assertions
+  for (genvar i = 0; i < NumApbSlaves; i++) begin : gen_apb_assertions
     // when psel is not asserted, the bus is in the idle state
     sequence APB_IDLE;
       !apb_req[i].psel;
@@ -196,7 +196,7 @@ module tb_axi_lite_to_apb #(
         (APB_SETUP |-> APB_TRANSFER));
 
     apb_penable:    assert property ( @(posedge clk)
-        (apb_req[i].penable && apb_req[i].psel && apb_resps[i].pready |=> (!apb_req[i].penable)));
+        (apb_req[i].penable && apb_req[i].psel && apb_rsps[i].pready |=> (!apb_req[i].penable)));
 
     control_stable: assert property ( @(posedge clk)
         (APB_TRANSFER |-> $stable({apb_req[i].pwrite, apb_req[i].paddr})));
@@ -228,24 +228,24 @@ module tb_axi_lite_to_apb #(
   // DUT
   //-----------------------------------
   axi_lite_to_apb #(
-    .NoApbSlaves      ( NoApbSlaves         ),
-    .NoRules          ( NoAddrRules         ),
-    .AddrWidth        ( AxiAddrWidth        ),
-    .DataWidth        ( AxiDataWidth        ),
+    .NumApbSlaves     ( NumApbSlaves        ),
+    .NumRules         ( NumAddrRules        ),
+    .AddrWidth        ( AddrWidth           ),
+    .DataWidth        ( DataWidth           ),
     .PipelineRequest  ( TbPipelineRequest   ),
     .PipelineResponse ( TbPipelineResponse  ),
-    .axi_lite_req_t   ( axi_req_t           ),
-    .axi_lite_resp_t  ( axi_resp_t          ),
+    .axi_lite_req_t   ( axi_lite_req_t      ),
+    .axi_lite_rsp_t   ( axi_lite_rsp_t      ),
     .apb_req_t        ( apb_req_t           ),
-    .apb_resp_t       ( apb_resp_t          ),
+    .apb_rsp_t        ( apb_rsp_t           ),
     .rule_t           ( rule_t              )
   ) i_axi_lite_to_apb_dut (
-    .clk_i           ( clk          ),
-    .rst_ni          ( rst_n        ),
-    .axi_lite_req_i  ( axi_req      ),
-    .axi_lite_resp_o ( axi_resp     ),
-    .apb_req_o       ( apb_req      ),
-    .apb_resp_i      ( apb_resps    ),
-    .addr_map_i      ( AddrMap      )
+    .clk_i          ( clk         ),
+    .rst_ni         ( rst_n       ),
+    .axi_lite_req_i ( axi_req     ),
+    .axi_lite_rsp_o ( axi_rsp     ),
+    .apb_req_o      ( apb_req     ),
+    .apb_rsp_i      ( apb_rsps    ),
+    .addr_map_i     ( AddrMap     )
   );
 endmodule

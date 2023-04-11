@@ -17,10 +17,10 @@
 module tb_axi_fifo #(
     parameter int unsigned Depth = 16,
     parameter int unsigned FallThrough = 0,
-    parameter int unsigned NoWrites = 200,  // How many writes per master
-    parameter int unsigned NoReads = 200  // How many reads per master
+    parameter int unsigned NumWrites = 200,  // How many writes per manager
+    parameter int unsigned NumReads = 200  // How many reads per manager
 );
-  // Random Master Atomics
+  // Random Manager Atomics
   localparam int unsigned MaxAW = 30;
   localparam int unsigned MaxAR = 30;
   localparam bit EnAtop = 1'b1;
@@ -29,19 +29,19 @@ module tb_axi_fifo #(
   localparam time ApplTime = 2ns;
   localparam time TestTime = 8ns;
   // AXI configuration
-  localparam int unsigned AxiIdWidth = 4;
-  localparam int unsigned AxiAddrWidth = 32;  // Axi Address Width
-  localparam int unsigned AxiDataWidth = 64;  // Axi Data Width
-  localparam int unsigned AxiUserWidth = 5;
+  localparam int unsigned IdWidth = 4;
+  localparam int unsigned AddrWidth = 32;  // Address Width
+  localparam int unsigned DataWidth = 64;  // Data Width
+  localparam int unsigned UserWidth = 5;
   // Sim print config, how many transactions
   localparam int unsigned PrintTnx = 100;
 
-  typedef axi_test::axi_rand_master#(
+  typedef axi_test::axi_rand_manager#(
       // AXI interface parameters
-      .AW            (AxiAddrWidth),
-      .DW            (AxiDataWidth),
-      .IW            (AxiIdWidth),
-      .UW            (AxiUserWidth),
+      .AW            (AddrWidth),
+      .DW            (DataWidth),
+      .IW            (IdWidth),
+      .UW            (UserWidth),
       // Stimuli application and test time
       .TA            (ApplTime),
       .TT            (TestTime),
@@ -49,17 +49,17 @@ module tb_axi_fifo #(
       .MAX_READ_TXNS (MaxAR),
       .MAX_WRITE_TXNS(MaxAW),
       .AXI_ATOPS     (EnAtop)
-  ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave#(
+  ) axi_rand_manager_t;
+  typedef axi_test::axi_rand_subordinate#(
       // AXI interface parameters
-      .AW(AxiAddrWidth),
-      .DW(AxiDataWidth),
-      .IW(AxiIdWidth),
-      .UW(AxiUserWidth),
+      .AW(AddrWidth),
+      .DW(DataWidth),
+      .IW(IdWidth),
+      .UW(UserWidth),
       // Stimuli application and test time
       .TA(ApplTime),
       .TT(TestTime)
-  ) axi_rand_slave_t;
+  ) axi_rand_subordinate_t;
 
   // -------------
   // DUT signals
@@ -70,22 +70,22 @@ module tb_axi_fifo #(
 
   // interfaces
   AXI_BUS #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth),
+      .AXI_ID_WIDTH  (IdWidth),
+      .AXI_USER_WIDTH(UserWidth)
   )
-      master (), slave ();
+      manager (), subordinate ();
   AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth),
+      .AXI_ID_WIDTH  (IdWidth),
+      .AXI_USER_WIDTH(UserWidth)
   )
-      master_dv (clk), slave_dv (clk);
+      manager_dv (clk), subordinate_dv (clk);
 
-  `AXI_ASSIGN(master, master_dv)
-  `AXI_ASSIGN(slave_dv, slave)
+  `AXI_ASSIGN(manager, manager_dv)
+  `AXI_ASSIGN(subordinate_dv, subordinate)
 
   //-----------------------------------
   // Clock generator
@@ -104,37 +104,37 @@ module tb_axi_fifo #(
   axi_fifo_intf #(
       .DEPTH       (Depth),  // number of FiFo slots
       .FALL_THROUGH(FallThrough),  // FiFos in fall through mode
-      .ID_WIDTH    (AxiIdWidth),  // AXI ID width
-      .ADDR_WIDTH  (AxiAddrWidth),  // AXI address width
-      .DATA_WIDTH  (AxiDataWidth),  // AXI data width
-      .USER_WIDTH  (AxiUserWidth)  // AXI user width
+      .ID_WIDTH    (IdWidth),  // AXI ID width
+      .ADDR_WIDTH  (AddrWidth),  // AXI address width
+      .DATA_WIDTH  (DataWidth),  // AXI data width
+      .USER_WIDTH  (UserWidth)  // AXI user width
   ) i_dut (
       .clk_i (clk),  // clock
       .rst_ni(rst_n),  // asynchronous reset active low
       .test_i(1'b0),
-      .slv   (master),  // slave port
-      .mst   (slave)  // master port
+      .sbr   (manager),  // subordinate port
+      .mgr   (subordinate)  // manager port
   );
 
-  initial begin : proc_axi_master
-    automatic axi_rand_master_t axi_rand_master = new(master_dv);
+  initial begin : proc_axi_manager
+    automatic axi_rand_manager_t axi_rand_manager = new(manager_dv);
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
-    axi_rand_master.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(32'h0000_0000, 32'h1000_0000, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.add_memory_region(32'h2000_0000, 32'h3000_0000, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_manager.add_memory_region(32'h4000_0000, 32'h5000_0000, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
-    axi_rand_master.run(NoReads, NoWrites);
+    axi_rand_manager.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
   end
 
-  initial begin : proc_axi_slave
-    automatic axi_rand_slave_t axi_rand_slave = new(slave_dv);
-    axi_rand_slave.reset();
+  initial begin : proc_axi_subordinate
+    automatic axi_rand_subordinate_t axi_rand_subordinate = new(subordinate_dv);
+    axi_rand_subordinate.reset();
     @(posedge rst_n);
-    axi_rand_slave.run();
+    axi_rand_subordinate.run();
   end
 
   initial begin : proc_sim_progress
@@ -148,19 +148,19 @@ module tb_axi_fifo #(
     forever begin
       @(posedge clk);
       #TestTime;
-      if (master.aw_valid && master.aw_ready) begin
+      if (manager.aw_valid && manager.aw_ready) begin
         aw++;
       end
-      if (master.ar_valid && master.ar_ready) begin
+      if (manager.ar_valid && manager.ar_ready) begin
         ar++;
       end
 
       if ((aw % PrintTnx == 0) && !aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTnx == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 
@@ -180,19 +180,19 @@ module tb_axi_fifo #(
 
 
   default disable iff (!rst_n); aw_unstable :
-  assert property (@(posedge clk) (slave.aw_valid && !slave.aw_ready) |=> $stable(slave.aw_addr))
+  assert property (@(posedge clk) (subordinate.aw_valid && !subordinate.aw_ready) |=> $stable(subordinate.aw_addr))
   else $fatal(1, "AW is unstable.");
   w_unstable :
-  assert property (@(posedge clk) (slave.w_valid && !slave.w_ready) |=> $stable(slave.w_data))
+  assert property (@(posedge clk) (subordinate.w_valid && !subordinate.w_ready) |=> $stable(subordinate.w_data))
   else $fatal(1, "W is unstable.");
   b_unstable :
-  assert property (@(posedge clk) (master.b_valid && !master.b_ready) |=> $stable(master.b_resp))
+  assert property (@(posedge clk) (manager.b_valid && !manager.b_ready) |=> $stable(manager.b_resp))
   else $fatal(1, "B is unstable.");
   ar_unstable :
-  assert property (@(posedge clk) (slave.ar_valid && !slave.ar_ready) |=> $stable(slave.ar_addr))
+  assert property (@(posedge clk) (subordinate.ar_valid && !subordinate.ar_ready) |=> $stable(subordinate.ar_addr))
   else $fatal(1, "AR is unstable.");
   r_unstable :
-  assert property (@(posedge clk) (master.r_valid && !master.r_ready) |=> $stable(master.r_data))
+  assert property (@(posedge clk) (manager.r_valid && !manager.r_ready) |=> $stable(manager.r_data))
   else $fatal(1, "R is unstable.");
 
 

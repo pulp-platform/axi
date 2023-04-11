@@ -90,11 +90,11 @@ package axi_pkg;
   /// Exclusive access okay.  Indicates that either the read or write portion of an exclusive access
   /// has been successful.
   localparam RESP_EXOKAY = 2'b01;
-  /// Slave error.  Used when the access has reached the slave successfully, but the slave wishes to
-  /// return an error condition to the originating master.
+  /// Subordinate error.  Used when the access has reached the subordinate successfully, but the subordinate wishes to
+  /// return an error condition to the originating manager.
   localparam RESP_SLVERR = 2'b10;
   /// Decode error.  Generated, typically by an interconnect component, to indicate that there is no
-  /// slave at the transaction address.
+  /// subordinate at the transaction address.
   localparam RESP_DECERR = 2'b11;
 
   /// When this bit is asserted, the interconnect, or any component, can delay the transaction
@@ -281,8 +281,8 @@ package axi_pkg;
   ///   successful.
   /// - Both DECERR and SLVERR mean (part of) a transaction were unsuccessful, whereas OKAY means an
   ///   entire transaction was successful.  Thus both DECERR and SLVERR precede OKAY.
-  /// - DECERR means (part of) a transactions could not be routed to a slave component, whereas
-  ///   SLVERR means the transaction reached a slave component but lead to an error condition there.
+  /// - DECERR means (part of) a transactions could not be routed to a subordinate component, whereas
+  ///   SLVERR means the transaction reached a subordinate component but lead to an error condition there.
   ///   Thus DECERR precedes SLVERR because DECERR happens earlier in the handling of a transaction.
   function automatic resp_t resp_precedence(resp_t resp_a, resp_t resp_b);
     unique case (resp_a)
@@ -465,28 +465,28 @@ package axi_pkg;
   /// Latency configuration for `axi_xbar`.
   typedef enum logic [9:0] {
     NO_LATENCY    = 10'b000_00_000_00,
-    CUT_SLV_AX    = DemuxAw | DemuxAr,
-    CUT_MST_AX    = MuxAw | MuxAr,
+    CUT_SBR_AX    = DemuxAw | DemuxAr,
+    CUT_MGR_AX    = MuxAw | MuxAr,
     CUT_ALL_AX    = DemuxAw | DemuxAr | MuxAw | MuxAr,
-    CUT_SLV_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
-    CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
+    CUT_SBR_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
+    CUT_MGR_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
     CUT_ALL_PORTS = 10'b111_11_111_11
   } xbar_latency_e;
 
   /// Configuration for `axi_xbar`.
   typedef struct packed {
-    /// Number of slave ports of the crossbar.
-    /// This many master modules are connected to it.
-    int unsigned   NoSlvPorts;
-    /// Number of master ports of the crossbar.
-    /// This many slave modules are connected to it.
-    int unsigned   NoMstPorts;
-    /// Maximum number of open transactions each master connected to the crossbar can have in
+    /// Number of subordinate ports of the crossbar.
+    /// This many manager modules are connected to it.
+    int unsigned   NumSbrPorts;
+    /// Number of manager ports of the crossbar.
+    /// This many subordinate modules are connected to it.
+    int unsigned   NumMgrPorts;
+    /// Maximum number of open transactions each manager connected to the crossbar can have in
     /// flight at the same time.
-    int unsigned   MaxMstTrans;
-    /// Maximum number of open transactions each slave connected to the crossbar can have in
+    int unsigned   MaxMgrTrans;
+    /// Maximum number of open transactions each subordinate connected to the crossbar can have in
     /// flight at the same time.
-    int unsigned   MaxSlvTrans;
+    int unsigned   MaxSbrTrans;
     /// Determine if the internal FIFOs of the crossbar are instantiated in fallthrough mode.
     /// 0: No fallthrough
     /// 1: Fallthrough
@@ -498,22 +498,22 @@ package axi_pkg;
     /// This is the number of `axi_multicut` stages instantiated in the line cross of the channels.
     /// Having multiple stages can potentially add a large number of FFs!
     int unsigned   PipelineStages;
-    /// AXI ID width of the salve ports. The ID width of the master ports is determined
+    /// AXI ID width of the subordinate ports. The ID width of the manager ports is determined
     /// Automatically. See `axi_mux` for details.
-    int unsigned   AxiIdWidthSlvPorts;
-    /// The used ID portion to determine if a different salve is used for the same ID.
+    int unsigned   IdWidthSbrPorts;
+    /// The used ID portion to determine if a different subordinate is used for the same ID.
     /// See `axi_demux` for details.
-    int unsigned   AxiIdUsedSlvPorts;
+    int unsigned   IdUsedSbrPorts;
     /// Are IDs unique?
     bit            UniqueIds;
     /// AXI4+ATOP address field width.
-    int unsigned   AxiAddrWidth;
+    int unsigned   AddrWidth;
     /// AXI4+ATOP data field width.
-    int unsigned   AxiDataWidth;
+    int unsigned   DataWidth;
     /// The number of address rules defined for routing of the transactions.
-    /// Each master port can have multiple rules, should have however at least one.
+    /// Each manager port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
-    int unsigned   NoAddrRules;
+    int unsigned   NumAddrRules;
   } xbar_cfg_t;
 
   /// Commonly used rule types for `axi_xbar` (64-bit addresses).

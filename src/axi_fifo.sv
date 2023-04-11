@@ -29,38 +29,38 @@ module axi_fifo #(
     parameter type         r_chan_t    = logic,
     // AXI request & response structs
     parameter type         axi_req_t   = logic,
-    parameter type         axi_resp_t  = logic
+    parameter type         axi_rsp_t   = logic
 ) (
-    input  logic      clk_i,  // Clock
-    input  logic      rst_ni,  // Asynchronous reset active low
-    input  logic      test_i,
-    // slave port
-    input  axi_req_t  slv_req_i,
-    output axi_resp_t slv_resp_o,
-    // master port
-    output axi_req_t  mst_req_o,
-    input  axi_resp_t mst_resp_i
+    input  logic     clk_i,  // Clock
+    input  logic     rst_ni,  // Asynchronous reset active low
+    input  logic     test_i,
+    // subordinate port
+    input  axi_req_t sbr_port_req_i,
+    output axi_rsp_t sbr_port_rsp_o,
+    // manager port
+    output axi_req_t mgr_port_req_o,
+    input  axi_rsp_t mgr_port_rsp_i
 );
 
   if (Depth == '0) begin : gen_no_fifo
     // degenerate case, connect input to output
-    assign mst_req_o  = slv_req_i;
-    assign slv_resp_o = mst_resp_i;
+    assign mgr_port_req_o = sbr_port_req_i;
+    assign sbr_port_rsp_o = mgr_port_rsp_i;
   end else begin : gen_axi_fifo
     logic aw_fifo_empty, ar_fifo_empty, w_fifo_empty, r_fifo_empty, b_fifo_empty;
     logic aw_fifo_full, ar_fifo_full, w_fifo_full, r_fifo_full, b_fifo_full;
 
-    assign mst_req_o.aw_valid  = ~aw_fifo_empty;
-    assign mst_req_o.ar_valid  = ~ar_fifo_empty;
-    assign mst_req_o.w_valid   = ~w_fifo_empty;
-    assign slv_resp_o.r_valid  = ~r_fifo_empty;
-    assign slv_resp_o.b_valid  = ~b_fifo_empty;
+    assign mgr_port_req_o.aw_valid = ~aw_fifo_empty;
+    assign mgr_port_req_o.ar_valid = ~ar_fifo_empty;
+    assign mgr_port_req_o.w_valid  = ~w_fifo_empty;
+    assign sbr_port_rsp_o.r_valid  = ~r_fifo_empty;
+    assign sbr_port_rsp_o.b_valid  = ~b_fifo_empty;
 
-    assign slv_resp_o.aw_ready = ~aw_fifo_full;
-    assign slv_resp_o.ar_ready = ~ar_fifo_full;
-    assign slv_resp_o.w_ready  = ~w_fifo_full;
-    assign mst_req_o.r_ready   = ~r_fifo_full;
-    assign mst_req_o.b_ready   = ~b_fifo_full;
+    assign sbr_port_rsp_o.aw_ready = ~aw_fifo_full;
+    assign sbr_port_rsp_o.ar_ready = ~ar_fifo_full;
+    assign sbr_port_rsp_o.w_ready  = ~w_fifo_full;
+    assign mgr_port_req_o.r_ready  = ~r_fifo_full;
+    assign mgr_port_req_o.b_ready  = ~b_fifo_full;
 
     // A FiFo for each channel
     fifo_v3 #(
@@ -75,10 +75,10 @@ module axi_fifo #(
         .full_o    (aw_fifo_full),
         .empty_o   (aw_fifo_empty),
         .usage_o   (),
-        .data_i    (slv_req_i.aw),
-        .push_i    (slv_req_i.aw_valid && slv_resp_o.aw_ready),
-        .data_o    (mst_req_o.aw),
-        .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
+        .data_i    (sbr_port_req_i.aw),
+        .push_i    (sbr_port_req_i.aw_valid && sbr_port_rsp_o.aw_ready),
+        .data_o    (mgr_port_req_o.aw),
+        .pop_i     (mgr_port_req_o.aw_valid && mgr_port_rsp_i.aw_ready)
     );
     fifo_v3 #(
         .dtype(ar_chan_t),
@@ -92,10 +92,10 @@ module axi_fifo #(
         .full_o    (ar_fifo_full),
         .empty_o   (ar_fifo_empty),
         .usage_o   (),
-        .data_i    (slv_req_i.ar),
-        .push_i    (slv_req_i.ar_valid && slv_resp_o.ar_ready),
-        .data_o    (mst_req_o.ar),
-        .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
+        .data_i    (sbr_port_req_i.ar),
+        .push_i    (sbr_port_req_i.ar_valid && sbr_port_rsp_o.ar_ready),
+        .data_o    (mgr_port_req_o.ar),
+        .pop_i     (mgr_port_req_o.ar_valid && mgr_port_rsp_i.ar_ready)
     );
     fifo_v3 #(
         .dtype(w_chan_t),
@@ -109,10 +109,10 @@ module axi_fifo #(
         .full_o    (w_fifo_full),
         .empty_o   (w_fifo_empty),
         .usage_o   (),
-        .data_i    (slv_req_i.w),
-        .push_i    (slv_req_i.w_valid && slv_resp_o.w_ready),
-        .data_o    (mst_req_o.w),
-        .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
+        .data_i    (sbr_port_req_i.w),
+        .push_i    (sbr_port_req_i.w_valid && sbr_port_rsp_o.w_ready),
+        .data_o    (mgr_port_req_o.w),
+        .pop_i     (mgr_port_req_o.w_valid && mgr_port_rsp_i.w_ready)
     );
     fifo_v3 #(
         .dtype(r_chan_t),
@@ -126,10 +126,10 @@ module axi_fifo #(
         .full_o    (r_fifo_full),
         .empty_o   (r_fifo_empty),
         .usage_o   (),
-        .data_i    (mst_resp_i.r),
-        .push_i    (mst_resp_i.r_valid && mst_req_o.r_ready),
-        .data_o    (slv_resp_o.r),
-        .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
+        .data_i    (mgr_port_rsp_i.r),
+        .push_i    (mgr_port_rsp_i.r_valid && mgr_port_req_o.r_ready),
+        .data_o    (sbr_port_rsp_o.r),
+        .pop_i     (sbr_port_rsp_o.r_valid && sbr_port_req_i.r_ready)
     );
     fifo_v3 #(
         .dtype(b_chan_t),
@@ -143,10 +143,10 @@ module axi_fifo #(
         .full_o    (b_fifo_full),
         .empty_o   (b_fifo_empty),
         .usage_o   (),
-        .data_i    (mst_resp_i.b),
-        .push_i    (mst_resp_i.b_valid && mst_req_o.b_ready),
-        .data_o    (slv_resp_o.b),
-        .pop_i     (slv_resp_o.b_valid && slv_req_i.b_ready)
+        .data_i    (mgr_port_rsp_i.b),
+        .push_i    (mgr_port_rsp_i.b_valid && mgr_port_req_o.b_ready),
+        .data_o    (sbr_port_rsp_o.b),
+        .pop_i     (sbr_port_rsp_o.b_valid && sbr_port_req_i.b_ready)
     );
   end
 
@@ -175,8 +175,8 @@ module axi_fifo_intf #(
     input logic    clk_i,
     input logic    rst_ni,
     input logic    test_i,
-    AXI_BUS.Slave  slv,
-    AXI_BUS.Master mst
+    AXI_BUS.Subordinate  sbr,
+    AXI_BUS.Manager mgr
 );
 
   typedef logic [ID_WIDTH-1:0] id_t;
@@ -191,16 +191,16 @@ module axi_fifo_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
-  axi_req_t slv_req, mst_req;
-  axi_resp_t slv_resp, mst_resp;
+  axi_req_t sbr_req, mgr_req;
+  axi_rsp_t sbr_rsp, mgr_rsp;
 
-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+  `AXI_ASSIGN_TO_REQ(sbr_req, sbr)
+  `AXI_ASSIGN_FROM_RSP(sbr, sbr_rsp)
 
-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
+  `AXI_ASSIGN_FROM_REQ(mgr, mgr_req)
+  `AXI_ASSIGN_TO_RSP(mgr_rsp, mgr)
 
   axi_fifo #(
       .Depth      (DEPTH),
@@ -211,15 +211,15 @@ module axi_fifo_intf #(
       .ar_chan_t  (ar_chan_t),
       .r_chan_t   (r_chan_t),
       .axi_req_t  (axi_req_t),
-      .axi_resp_t (axi_resp_t)
+      .axi_rsp_t (axi_rsp_t)
   ) i_axi_fifo (
       .clk_i,
       .rst_ni,
       .test_i,
-      .slv_req_i (slv_req),
-      .slv_resp_o(slv_resp),
-      .mst_req_o (mst_req),
-      .mst_resp_i(mst_resp)
+      .sbr_port_req_i (sbr_req),
+      .sbr_port_rsp_o(sbr_rsp),
+      .mgr_port_req_o (mgr_req),
+      .mgr_port_rsp_i(mgr_rsp)
   );
 
   // Check the invariants.
@@ -234,21 +234,21 @@ module axi_fifo_intf #(
     else $fatal(1, "Wrong id   width parameter");
     assert (USER_WIDTH > 0)
     else $fatal(1, "Wrong user width parameter");
-    assert (slv.AXI_ADDR_WIDTH == ADDR_WIDTH)
+    assert (sbr.AXI_ADDR_WIDTH == ADDR_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (slv.AXI_DATA_WIDTH == DATA_WIDTH)
+    assert (sbr.AXI_DATA_WIDTH == DATA_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (slv.AXI_ID_WIDTH == ID_WIDTH)
+    assert (sbr.AXI_ID_WIDTH == ID_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (slv.AXI_USER_WIDTH == USER_WIDTH)
+    assert (sbr.AXI_USER_WIDTH == USER_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (mst.AXI_ADDR_WIDTH == ADDR_WIDTH)
+    assert (mgr.AXI_ADDR_WIDTH == ADDR_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (mst.AXI_DATA_WIDTH == DATA_WIDTH)
+    assert (mgr.AXI_DATA_WIDTH == DATA_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (mst.AXI_ID_WIDTH == ID_WIDTH)
+    assert (mgr.AXI_ID_WIDTH == ID_WIDTH)
     else $fatal(1, "Wrong interface definition");
-    assert (mst.AXI_USER_WIDTH == USER_WIDTH)
+    assert (mgr.AXI_USER_WIDTH == USER_WIDTH)
     else $fatal(1, "Wrong interface definition");
   end
 `endif

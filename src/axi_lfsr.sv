@@ -72,32 +72,32 @@ module axi_lfsr #(
     `AXI_LITE_TYPEDEF_R_CHAN_T(axi_lite_r_chan_t, data_t)
 
     `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, axi_lite_aw_chan_t, axi_lite_w_chan_t, axi_lite_ar_chan_t)
-    `AXI_LITE_TYPEDEF_RESP_T(axi_lite_rsp_t, axi_lite_b_chan_t, axi_lite_r_chan_t)
+    `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, axi_lite_b_chan_t, axi_lite_r_chan_t)
 
     // AXI Lite buses
     axi_lite_req_t axi_lite_req;
     axi_lite_rsp_t axi_lite_rsp;
 
     axi_to_axi_lite #(
-        .AxiAddrWidth    ( AddrWidth      ),
-        .AxiDataWidth    ( DataWidth      ),
-        .AxiIdWidth      ( IdWidth        ),
-        .AxiUserWidth    ( UserWidth      ),
-        .AxiMaxWriteTxns ( 'd2            ), // We only have 1 cycle latency; 2 is enough
-        .AxiMaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
+        .AddrWidth    ( AddrWidth      ),
+        .DataWidth    ( DataWidth      ),
+        .IdWidth      ( IdWidth        ),
+        .UserWidth    ( UserWidth      ),
+        .MaxWriteTxns ( 'd2            ), // We only have 1 cycle latency; 2 is enough
+        .MaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
         .FallThrough     ( 1'b0           ),
         .full_req_t      ( axi_req_t      ),
-        .full_resp_t     ( axi_rsp_t      ),
+        .full_rsp_t      ( axi_rsp_t      ),
         .lite_req_t      ( axi_lite_req_t ),
-        .lite_resp_t     ( axi_lite_rsp_t )
+        .lite_rsp_t      ( axi_lite_rsp_t )
     ) i_axi_to_axi_lite (
         .clk_i,
         .rst_ni,
-        .test_i     ( testmode_i   ),
-        .slv_req_i  ( req_i        ),
-        .slv_resp_o ( rsp_o        ),
-        .mst_req_o  ( axi_lite_req ),
-        .mst_resp_i ( axi_lite_rsp )
+        .test_i    ( testmode_i   ),
+        .sbr_port_req_i ( req_i        ),
+        .sbr_port_rsp_o ( rsp_o        ),
+        .mgr_port_req_o ( axi_lite_req ),
+        .mgr_port_rsp_i ( axi_lite_rsp )
     );
 
     axi_lite_lfsr #(

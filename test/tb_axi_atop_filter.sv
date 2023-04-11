@@ -104,19 +104,19 @@ module tb_axi_atop_filter #(
   ) dut (
     .clk_i  (clk),
     .rst_ni (rst_n),
-    .slv    (upstream),
-    .mst    (downstream)
+    .sbr    (upstream),
+    .mgr    (downstream)
   );
 
   typedef logic [TB_AXI_ID_WIDTH-1:0] axi_id_t;
 
-  // AXI Master
-  logic mst_done = 1'b0;
-  axi_test::axi_rand_master #(
+  // AXI Manager
+  logic mgr_done = 1'b0;
+  axi_test::axi_rand_manager #(
     .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
     .TA(TB_TA), .TT(TB_TT),
     .MAX_READ_TXNS        (TB_AXI_MAX_READ_TXNS),
-    .MAX_WRITE_TXNS       (TB_AXI_MAX_WRITE_TXNS+2), // master is not required to comply
+    .MAX_WRITE_TXNS       (TB_AXI_MAX_WRITE_TXNS+2), // manager is not required to comply
     .AX_MIN_WAIT_CYCLES   (TB_REQ_MIN_WAIT_CYCLES),
     .AX_MAX_WAIT_CYCLES   (TB_REQ_MAX_WAIT_CYCLES),
     .W_MIN_WAIT_CYCLES    (TB_REQ_MIN_WAIT_CYCLES),
@@ -124,22 +124,22 @@ module tb_axi_atop_filter #(
     .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES),
     .AXI_ATOPS            (1'b1)
-  ) axi_master = new(upstream_dv);
+  ) axi_manager = new(upstream_dv);
   initial begin
-    axi_master.reset();
+    axi_manager.reset();
     wait(rst_n);
-    axi_master.add_memory_region({TB_AXI_ADDR_WIDTH{1'b0}}, {TB_AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
-    axi_master.run(TB_N_TXNS, TB_N_TXNS);
-    mst_done = 1'b1;
+    axi_manager.add_memory_region({TB_AXI_ADDR_WIDTH{1'b0}}, {TB_AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    axi_manager.run(TB_N_TXNS, TB_N_TXNS);
+    mgr_done = 1'b1;
   end
 
   initial begin
-    wait (mst_done);
+    wait (mgr_done);
     $finish();
   end
 
-  // AXI Slave
-  axi_test::axi_rand_slave #(
+  // AXI Subordinate
+  axi_test::axi_rand_subordinate #(
     .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
     .TA(TB_TA), .TT(TB_TT),
     .AX_MIN_WAIT_CYCLES   (TB_RESP_MIN_WAIT_CYCLES),
@@ -148,11 +148,11 @@ module tb_axi_atop_filter #(
     .R_MAX_WAIT_CYCLES    (TB_RESP_MAX_WAIT_CYCLES),
     .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES)
-  ) axi_slave = new(downstream_dv);
+  ) axi_subordinate = new(downstream_dv);
   initial begin
-    axi_slave.reset();
+    axi_subordinate.reset();
     wait (rst_n);
-    axi_slave.run();
+    axi_subordinate.run();
   end
 
   typedef struct packed {

@@ -17,8 +17,8 @@
 /// Testbench for `axi_modify_address`
 module tb_axi_modify_address #(
   // DUT Parameters
-  parameter int unsigned AXI_SLV_PORT_ADDR_WIDTH = 32,
-  parameter int unsigned AXI_MST_PORT_ADDR_WIDTH = 48,
+  parameter int unsigned AXI_SBR_PORT_ADDR_WIDTH = 32,
+  parameter int unsigned AXI_MGR_PORT_ADDR_WIDTH = 48,
   parameter int unsigned AXI_DATA_WIDTH = 64,
   parameter int unsigned AXI_ID_WIDTH = 3,
   parameter int unsigned AXI_USER_WIDTH = 2,
@@ -49,7 +49,7 @@ module tb_axi_modify_address #(
 
   // AXI Interfaces
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AXI_SLV_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_SBR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
@@ -57,14 +57,14 @@ module tb_axi_modify_address #(
     .clk_i  (clk)
   );
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_SLV_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_SBR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
   ) upstream ();
   `AXI_ASSIGN(upstream, upstream_dv)
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_MGR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
@@ -72,7 +72,7 @@ module tb_axi_modify_address #(
     .clk_i  (clk)
   );
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_ADDR_WIDTH (AXI_MGR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH   (AXI_ID_WIDTH),
     .AXI_USER_WIDTH (AXI_USER_WIDTH)
@@ -80,10 +80,10 @@ module tb_axi_modify_address #(
   `AXI_ASSIGN(downstream_dv, downstream)
 
   // Types
-  typedef logic [AXI_MST_PORT_ADDR_WIDTH-1:0]   addr_t;
+  typedef logic [AXI_MGR_PORT_ADDR_WIDTH-1:0]   addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]            data_t;
   typedef logic [AXI_ID_WIDTH-1:0]              id_t;
-  typedef logic [AXI_MST_PORT_ADDR_WIDTH-13:0]  page_t;
+  typedef logic [AXI_MGR_PORT_ADDR_WIDTH-13:0]  page_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]          strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]            user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_t, addr_t, id_t, user_t)
@@ -93,24 +93,24 @@ module tb_axi_modify_address #(
   `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, user_t)
 
   // DUT
-  addr_t  mst_aw_addr,
-          mst_ar_addr;
+  addr_t  mgr_aw_addr,
+          mgr_ar_addr;
   axi_modify_address_intf #(
-    .AXI_SLV_PORT_ADDR_WIDTH  (AXI_SLV_PORT_ADDR_WIDTH),
-    .AXI_MST_PORT_ADDR_WIDTH  (AXI_MST_PORT_ADDR_WIDTH),
+    .AXI_SBR_PORT_ADDR_WIDTH  (AXI_SBR_PORT_ADDR_WIDTH),
+    .AXI_MGR_PORT_ADDR_WIDTH  (AXI_MGR_PORT_ADDR_WIDTH),
     .AXI_DATA_WIDTH           (AXI_DATA_WIDTH),
     .AXI_ID_WIDTH             (AXI_ID_WIDTH),
     .AXI_USER_WIDTH           (AXI_USER_WIDTH)
   ) i_dut (
-    .slv            (upstream),
-    .mst_aw_addr_i  (mst_aw_addr),
-    .mst_ar_addr_i  (mst_ar_addr),
-    .mst            (downstream)
+    .sbr            (upstream),
+    .mgr_aw_addr_i  (mgr_aw_addr),
+    .mgr_ar_addr_i  (mgr_ar_addr),
+    .mgr            (downstream)
   );
 
-  // Test harness master
-  typedef axi_test::axi_rand_master #(
-    .AW                   (AXI_SLV_PORT_ADDR_WIDTH),
+  // Test harness manager
+  typedef axi_test::axi_rand_manager #(
+    .AW                   (AXI_SBR_PORT_ADDR_WIDTH),
     .DW                   (AXI_DATA_WIDTH),
     .IW                   (AXI_ID_WIDTH),
     .UW                   (AXI_USER_WIDTH),
@@ -125,18 +125,18 @@ module tb_axi_modify_address #(
     .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES),
     .AXI_MAX_BURST_LEN    (16)
-  ) axi_master_t;
-  axi_master_t axi_master = new(upstream_dv);
+  ) axi_manager_t;
+  axi_manager_t axi_manager = new(upstream_dv);
   initial begin
     wait (rst_n);
-    axi_master.run(N_RD_TXNS, N_WR_TXNS);
+    axi_manager.run(N_RD_TXNS, N_WR_TXNS);
     #(10*TCLK);
     $finish();
   end
 
-  // Test harness slave
-  typedef axi_test::axi_rand_slave #(
-    .AW                   (AXI_MST_PORT_ADDR_WIDTH),
+  // Test harness subordinate
+  typedef axi_test::axi_rand_subordinate #(
+    .AW                   (AXI_MGR_PORT_ADDR_WIDTH),
     .DW                   (AXI_DATA_WIDTH),
     .IW                   (AXI_ID_WIDTH),
     .UW                   (AXI_USER_WIDTH),
@@ -148,36 +148,36 @@ module tb_axi_modify_address #(
     .R_MAX_WAIT_CYCLES    (RESP_MAX_WAIT_CYCLES),
     .RESP_MIN_WAIT_CYCLES (RESP_MIN_WAIT_CYCLES),
     .RESP_MAX_WAIT_CYCLES (RESP_MAX_WAIT_CYCLES)
-  ) axi_slave_t;
-  axi_slave_t axi_slave = new(downstream_dv);
+  ) axi_subordinate_t;
+  axi_subordinate_t axi_subordinate = new(downstream_dv);
   initial begin
     wait (rst_n);
-    axi_slave.run();
+    axi_subordinate.run();
   end
 
   // Assign offset within page from upstream.
-  assign mst_aw_addr[11:0] = upstream.aw_addr[11:0];
-  assign mst_ar_addr[11:0] = upstream.ar_addr[11:0];
+  assign mgr_aw_addr[11:0] = upstream.aw_addr[11:0];
+  assign mgr_ar_addr[11:0] = upstream.ar_addr[11:0];
 
   // Randomize page number.
-  page_t  mst_aw_page,
-          mst_ar_page;
-  assign mst_aw_addr[AXI_MST_PORT_ADDR_WIDTH-1:12] = mst_aw_page;
-  assign mst_ar_addr[AXI_MST_PORT_ADDR_WIDTH-1:12] = mst_ar_page;
+  page_t  mgr_aw_page,
+          mgr_ar_page;
+  assign mgr_aw_addr[AXI_MGR_PORT_ADDR_WIDTH-1:12] = mgr_aw_page;
+  assign mgr_ar_addr[AXI_MGR_PORT_ADDR_WIDTH-1:12] = mgr_ar_page;
   initial begin
     logic rand_success;
-    mst_aw_page = '0;
-    mst_ar_page = '0;
+    mgr_aw_page = '0;
+    mgr_ar_page = '0;
     wait (rst_n);
     forever begin
       @(posedge clk);
       #TA;
       if (!(upstream.aw_valid && !upstream.aw_ready)) begin
-        rand_success = std::randomize(mst_aw_page);
+        rand_success = std::randomize(mgr_aw_page);
         assert(rand_success);
       end
       if (!(upstream.ar_valid && !upstream.ar_ready)) begin
-        rand_success = std::randomize(mst_ar_page);
+        rand_success = std::randomize(mgr_ar_page);
         assert(rand_success);
       end
     end
@@ -193,9 +193,9 @@ module tb_axi_modify_address #(
   // Compute expected responses.
   always_comb begin
     `AXI_SET_TO_AW(aw_exp, upstream)
-    aw_exp.addr = mst_aw_addr;
+    aw_exp.addr = mgr_aw_addr;
     `AXI_SET_TO_AR(ar_exp, upstream)
-    ar_exp.addr = mst_ar_addr;
+    ar_exp.addr = mgr_ar_addr;
   end
   `AXI_ASSIGN_TO_W(w_exp, upstream)
   `AXI_ASSIGN_TO_B(b_exp, downstream)

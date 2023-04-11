@@ -19,7 +19,7 @@
 ///
 /// This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them
 /// accessible on two interfaces:
-/// - as memory-mapped AXI4-Lite slave (ports `axi_req_i` and `axi_resp_o`), and
+/// - as memory-mapped AXI4-Lite subordinate (ports `axi_req_i` and `axi_rsp_o`), and
 /// - as wires to directly attach other hardware logic (ports `reg_d_i`, `reg_load_i`, `reg_q_o`,
 ///   `wr_active_o`, `rd_active_o`).
 ///
@@ -34,7 +34,7 @@
 ///
 /// ## Read-Only Bytes
 ///
-/// Any set of bytes can be configured as read-only by setting the `AxiReadOnly` parameter
+/// Any set of bytes can be configured as read-only by setting the `ReadOnly` parameter
 /// accordingly.  A read-only byte cannot be written via the AXI interface, but it can be changed
 /// from the logic interface.
 ///
@@ -48,7 +48,7 @@
 ///
 /// To make a byte with constant value (e.g., implemented as LUT instead of FF after synthesis)
 /// readable from the AXI4-Lite port:
-/// - Make the byte read-only from the AXI4-Lite port by setting its `AxiReadOnly` bit to `1`.
+/// - Make the byte read-only from the AXI4-Lite port by setting its `ReadOnly` bit to `1`.
 /// - Disable loading the byte from logic by driving its `reg_load_i` bit to `0`.
 /// - Define the value of the byte by setting its `RegRstVal` entry.
 ///
@@ -63,9 +63,9 @@ module axi_lite_regs #(
   /// Address width of the AXI4-Lite port.
   ///
   /// The minimum value of this parameter is `$clog2(RegNumBytes)`.
-  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int unsigned AddrWidth = 32'd0,
   /// Data width of the AXI4-Lite port.
-  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned DataWidth = 32'd0,
   /// Only allow *privileged* accesses on the AXI4-Lite port.
   ///
   /// If this parameter is set to `1`, this module only allows reads and writes that have the
@@ -83,7 +83,7 @@ module axi_lite_regs #(
   /// This parameter is an array with one bit for each byte.  If that bit is `0`, the byte can be
   /// read and written on the AXI4-Lite port; if that bit is `1`, the byte can only be read on the
   /// AXI4-Lite port.
-  parameter logic [RegNumBytes-1:0] AxiReadOnly = {RegNumBytes{1'b0}},
+  parameter logic [RegNumBytes-1:0] ReadOnly = {RegNumBytes{1'b0}},
   /// Constant (=**do not overwrite!**); type of a byte is 8 bit.
   parameter type byte_t = logic [7:0],
   /// Reset value for the whole register array.
@@ -92,20 +92,20 @@ module axi_lite_regs #(
   /// assigned its value from this array.
   parameter byte_t [RegNumBytes-1:0] RegRstVal = {RegNumBytes{8'h00}},
   /// Request struct of the AXI4-Lite port.
-  parameter type req_lite_t = logic,
+  parameter type axi_lite_req_t = logic,
   /// Response struct of the AXI4-Lite port.
-  parameter type resp_lite_t = logic
+  parameter type axi_lite_rsp_t = logic
 ) (
   /// Rising-edge clock of all ports
   input  logic clk_i,
   /// Asynchronous reset, active low
   input  logic rst_ni,
-  /// AXI4-Lite slave request
-  input  req_lite_t axi_req_i,
-  /// AXI4-Lite slave response
-  output resp_lite_t axi_resp_o,
+  /// AXI4-Lite subordinate request
+  input  axi_lite_req_t axi_req_i,
+  /// AXI4-Lite subordinate response
+  output axi_lite_rsp_t axi_rsp_o,
   /// Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
-  /// signal is asserted regardless of the value of `AxiReadOnly` and can therefore be used by
+  /// signal is asserted regardless of the value of `ReadOnly` and can therefore be used by
   /// surrounding logic to react to write-on-read-only-byte errors.
   output logic [RegNumBytes-1:0] wr_active_o,
   /// Signals that a byte is being read from the AXI4-Lite port in the current clock cycle.
@@ -119,7 +119,7 @@ module axi_lite_regs #(
   /// If `reg_load_i` is `1` for a byte defined as non-read-only in a clock cycle, an AXI4-Lite
   /// write transaction is stalled when it tries to write the same byte.  That is, a write
   /// transaction is stalled if all of the following conditions are true for the byte at index `i`:
-  /// - `AxiReadOnly[i]` is `0`,
+  /// - `ReadOnly[i]` is `0`,
   /// - `reg_load_i[i]` is `1`,
   /// - the bit in `axi_req_i.w.strb` that affects the byte is `1`.
   ///
@@ -130,7 +130,7 @@ module axi_lite_regs #(
 );
 
   // Define the number of register chunks needed to map all `RegNumBytes` to the AXI channel.
-  // Eg: `AxiDataWidth == 32'd32`
+  // Eg: `DataWidth == 32'd32`
   // AXI strb:                       3 2 1 0
   //                                 | | | |
   //             *---------*---------* | | |
@@ -140,16 +140,16 @@ module axi_lite_regs #(
   //             | | | |   | | | |   | | | |
   // Reg byte:   B A 9 8   7 6 5 4   3 2 1 0
   //           | chunk_2 | chunk_1 | chunk_0 |
-  localparam int unsigned AxiStrbWidth  = AxiDataWidth / 32'd8;
-  localparam int unsigned NumChunks     = cf_math_pkg::ceil_div(RegNumBytes, AxiStrbWidth);
+  localparam int unsigned StrbWidth     = DataWidth / 32'd8;
+  localparam int unsigned NumChunks     = cf_math_pkg::ceil_div(RegNumBytes, StrbWidth);
   localparam int unsigned ChunkIdxWidth = (NumChunks > 32'd1) ? $clog2(NumChunks) : 32'd1;
   // Type of the index to identify a specific register chunk.
   typedef logic [ChunkIdxWidth-1:0] chunk_idx_t;
 
   // Find out how many bits of the address are applicable for this module.
-  // Look at the `AddrWidth` number of LSBs to calculate the multiplexer index of the AXI.
-  localparam int unsigned AddrWidth = (RegNumBytes > 32'd1) ? ($clog2(RegNumBytes)+1) : 32'd2;
-  typedef logic [AddrWidth-1:0] addr_t;
+  // Look at the `RegAddrWidth` number of LSBs to calculate the multiplexer index of the AXI.
+  localparam int unsigned RegAddrWidth = (RegNumBytes > 32'd1) ? ($clog2(RegNumBytes)+1) : 32'd2;
+  typedef logic [RegAddrWidth-1:0] addr_t;
 
   // Define the address map which maps each register chunk onto an AXI address.
   typedef struct packed {
@@ -161,13 +161,13 @@ module axi_lite_regs #(
   for (genvar i = 0; i < NumChunks; i++) begin : gen_addr_map
     assign addr_map[i] = axi_rule_t'{
       idx:        i,
-      start_addr: addr_t'( i   * AxiStrbWidth),
-      end_addr:   addr_t'((i+1)* AxiStrbWidth)
+      start_addr: addr_t'( i   * StrbWidth),
+      end_addr:   addr_t'((i+1)* StrbWidth)
     };
   end
 
   // Channel definitions for spill register
-  typedef logic [AxiDataWidth-1:0] axi_data_t;
+  typedef logic [DataWidth-1:0] axi_data_t;
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, axi_data_t)
 
@@ -187,21 +187,21 @@ module axi_lite_regs #(
   assign aw_prot_ok = (PrivProtOnly ? axi_req_i.aw.prot[0] : 1'b1) &
                       (SecuProtOnly ? axi_req_i.aw.prot[1] : 1'b1);
   // Have a flag which is true if any of the bytes inside a chunk are directly loaded.
-  logic [AxiStrbWidth-1:0] load;
-  logic [AxiStrbWidth-1:0] read_only;
+  logic [StrbWidth-1:0] load;
+  logic [StrbWidth-1:0] read_only;
   // Address of the lowest byte byte of a chunk accessed by an AXI write transaction.
   addr_t byte_w_addr;
-  assign byte_w_addr = addr_t'(aw_chunk_idx * AxiStrbWidth);
+  assign byte_w_addr = addr_t'(aw_chunk_idx * StrbWidth);
 
-  for (genvar i = 0; i < AxiStrbWidth; i++) begin : gen_load_assign
+  for (genvar i = 0; i < StrbWidth; i++) begin : gen_load_assign
     // Indexed byte address
     addr_t reg_w_idx;
     assign reg_w_idx = byte_w_addr + addr_t'(i);
     // Only assert load flag for non read only bytes.
     assign load[i]      = (reg_w_idx < RegNumBytes) ?
-        (reg_load_i[reg_w_idx] && !AxiReadOnly[reg_w_idx]) : 1'b0;
+        (reg_load_i[reg_w_idx] && !ReadOnly[reg_w_idx]) : 1'b0;
     // Flag to find out that all bytes of the chunk are read only.
-    assign read_only[i] = (reg_w_idx < RegNumBytes) ? AxiReadOnly[reg_w_idx] : 1'b1;
+    assign read_only[i] = (reg_w_idx < RegNumBytes) ? ReadOnly[reg_w_idx] : 1'b1;
   end
   // Only assert the loaded flag if there could be a load conflict between a strobe and load
   // signal.
@@ -216,8 +216,8 @@ module axi_lite_regs #(
     reg_d               = reg_q;
     reg_update          = '0;
     // Channel handshake
-    axi_resp_o.aw_ready = 1'b0;
-    axi_resp_o.w_ready  = 1'b0;
+    axi_rsp_o.aw_ready = 1'b0;
+    axi_rsp_o.w_ready  = 1'b0;
     // Response
     b_chan              = b_chan_lite_t'{resp: axi_pkg::RESP_SLVERR, default: '0};
     b_valid             = 1'b0;
@@ -244,30 +244,30 @@ module axi_lite_regs #(
         // Read-only bytes within a chunk have no influence on stalling.
         if (!chunk_loaded) begin
           // Go through all bytes on the W channel.
-          for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
+          for (int unsigned i = 0; i < StrbWidth; i++) begin
             reg_byte_idx = byte_w_addr + addr_t'(i);
             // Only execute if the byte is mapped onto the register array.
             if (reg_byte_idx < RegNumBytes) begin
               // Only update the reg from an AXI write if it is not `ReadOnly`.
               // Only connect the data and load to the reg, if the byte is written from AXI.
               // This allows for simultaneous direct load onto unwritten bytes.
-              if (!AxiReadOnly[reg_byte_idx] && axi_req_i.w.strb[i]) begin
+              if (!ReadOnly[reg_byte_idx] && axi_req_i.w.strb[i]) begin
                 reg_d[reg_byte_idx]      = axi_req_i.w.data[8*i+:8];
                 reg_update[reg_byte_idx] = 1'b1;
               end
               wr_active_o[reg_byte_idx] = axi_req_i.w.strb[i];
             end
           end
-          b_chan.resp         = chunk_ro ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
-          b_valid             = 1'b1;
-          axi_resp_o.aw_ready = 1'b1;
-          axi_resp_o.w_ready  = 1'b1;
+          b_chan.resp        = chunk_ro ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
+          b_valid            = 1'b1;
+          axi_rsp_o.aw_ready = 1'b1;
+          axi_rsp_o.w_ready  = 1'b1;
         end
       end else begin
         // Send default B error response on each not allowed write transaction.
-        b_valid             = 1'b1;
-        axi_resp_o.aw_ready = 1'b1;
-        axi_resp_o.w_ready  = 1'b1;
+        b_valid            = 1'b1;
+        axi_rsp_o.aw_ready = 1'b1;
+        axi_rsp_o.w_ready  = 1'b1;
       end
     end
   end
@@ -294,8 +294,8 @@ module axi_lite_regs #(
     // Read is valid on a chunk
     if (ar_dec_valid && ar_prot_ok) begin
       // Calculate the corresponding byte index from `ar_chunk_idx`.
-      for (int unsigned i = 0; i < AxiStrbWidth; i++) begin
-        reg_byte_idx = unsigned'(ar_chunk_idx) * AxiStrbWidth + i;
+      for (int unsigned i = 0; i < StrbWidth; i++) begin
+        reg_byte_idx = unsigned'(ar_chunk_idx) * StrbWidth + i;
         // Guard to not index outside the `reg_q_o` array.
         if (reg_byte_idx < RegNumBytes) begin
           r_chan.data[8*i+:8]       = reg_q_o[reg_byte_idx];
@@ -308,8 +308,8 @@ module axi_lite_regs #(
     end
   end
 
-  assign r_valid             = axi_req_i.ar_valid; // to spill register
-  assign axi_resp_o.ar_ready = r_ready;            // from spill register
+  assign r_valid            = axi_req_i.ar_valid; // to spill register
+  assign axi_rsp_o.ar_ready = r_ready;            // from spill register
 
   // Register array mapping, even read only register can be loaded over `reg_load_i`.
   for (genvar i = 0; i < RegNumBytes; i++) begin : gen_rw_regs
@@ -323,7 +323,7 @@ module axi_lite_regs #(
     .addr_t    ( addr_t     ),
     .rule_t    ( axi_rule_t )
   ) i_aw_decode (
-    .addr_i           ( addr_t'(axi_req_i.aw.addr) ), // Only look at the `AddrWidth` LSBs.
+    .addr_i           ( addr_t'(axi_req_i.aw.addr) ), // Only look at the `RegAddrWidth` LSBs.
     .addr_map_i       ( addr_map                   ),
     .idx_o            ( aw_chunk_idx               ),
     .dec_valid_o      ( aw_dec_valid               ),
@@ -338,7 +338,7 @@ module axi_lite_regs #(
     .addr_t    ( addr_t     ),
     .rule_t    ( axi_rule_t )
   ) i_ar_decode (
-    .addr_i           ( addr_t'(axi_req_i.ar.addr) ), // Only look at the `AddrWidth` LSBs.
+    .addr_i           ( addr_t'(axi_req_i.ar.addr) ), // Only look at the `RegAddrWidth` LSBs.
     .addr_map_i       ( addr_map                   ),
     .idx_o            ( ar_chunk_idx               ),
     .dec_valid_o      ( ar_dec_valid               ),
@@ -347,34 +347,34 @@ module axi_lite_regs #(
     .default_idx_i    ( '0                         )
   );
 
-  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
+  // Add a cycle delay on AXI response, cut all comb paths between subordinate port inputs and outputs.
   spill_register #(
     .T      ( b_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_b_spill_register (
     .clk_i,
     .rst_ni,
-    .valid_i ( b_valid            ),
-    .ready_o ( b_ready            ),
-    .data_i  ( b_chan             ),
-    .valid_o ( axi_resp_o.b_valid ),
-    .ready_i ( axi_req_i.b_ready  ),
-    .data_o  ( axi_resp_o.b       )
+    .valid_i ( b_valid           ),
+    .ready_o ( b_ready           ),
+    .data_i  ( b_chan            ),
+    .valid_o ( axi_rsp_o.b_valid ),
+    .ready_i ( axi_req_i.b_ready ),
+    .data_o  ( axi_rsp_o.b       )
   );
 
-  // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
+  // Add a cycle delay on AXI response, cut all comb paths between subordinate port inputs and outputs.
   spill_register #(
     .T      ( r_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_r_spill_register (
     .clk_i,
     .rst_ni,
-    .valid_i ( r_valid            ),
-    .ready_o ( r_ready            ),
-    .data_i  ( r_chan             ),
-    .valid_o ( axi_resp_o.r_valid ),
-    .ready_i ( axi_req_i.r_ready  ),
-    .data_o  ( axi_resp_o.r       )
+    .valid_i ( r_valid           ),
+    .ready_o ( r_ready           ),
+    .data_i  ( r_chan            ),
+    .valid_o ( axi_rsp_o.r_valid ),
+    .ready_i ( axi_req_i.r_ready ),
+    .data_o  ( axi_rsp_o.r       )
   );
 
   // Validate parameters.
@@ -383,22 +383,22 @@ module axi_lite_regs #(
     initial begin: p_assertions
       assert (RegNumBytes > 32'd0) else
           $fatal(1, "The number of bytes must be at least 1!");
-      assert (AxiAddrWidth >= AddrWidth) else
-          $fatal(1, "AxiAddrWidth is not wide enough, has to be at least %0d-bit wide!", AddrWidth);
-      assert ($bits(axi_req_i.aw.addr) == AxiAddrWidth) else
-          $fatal(1, "AddrWidth does not match req_i.aw.addr!");
-      assert ($bits(axi_req_i.ar.addr) == AxiAddrWidth) else
-          $fatal(1, "AddrWidth does not match req_i.ar.addr!");
-      assert (AxiDataWidth == $bits(axi_req_i.w.data)) else
-          $fatal(1, "AxiDataWidth has to be: AxiDataWidth == $bits(axi_req_i.w.data)!");
-      assert (AxiDataWidth == $bits(axi_resp_o.r.data)) else
-          $fatal(1, "AxiDataWidth has to be: AxiDataWidth == $bits(axi_resp_o.r.data)!");
-      assert (RegNumBytes == $bits(AxiReadOnly)) else
+      assert (AddrWidth >= RegAddrWidth) else
+          $fatal(1, "AddrWidth is not wide enough, has to be at least %0d-bit wide!", RegAddrWidth);
+      assert ($bits(axi_req_i.aw.addr) == AddrWidth) else
+          $fatal(1, "RegAddrWidth does not match req_i.aw.addr!");
+      assert ($bits(axi_req_i.ar.addr) == AddrWidth) else
+          $fatal(1, "RegAddrWidth does not match req_i.ar.addr!");
+      assert (DataWidth == $bits(axi_req_i.w.data)) else
+          $fatal(1, "DataWidth has to be: DataWidth == $bits(axi_req_i.w.data)!");
+      assert (DataWidth == $bits(axi_rsp_o.r.data)) else
+          $fatal(1, "DataWidth has to be: DataWidth == $bits(axi_rsp_o.r.data)!");
+      assert (RegNumBytes == $bits(ReadOnly)) else
           $fatal(1, "Each register needs a `ReadOnly` flag!");
     end
     default disable iff (~rst_ni);
     for (genvar i = 0; i < RegNumBytes; i++) begin
-      assert property (@(posedge clk_i) (!reg_load_i[i] && AxiReadOnly[i] |=> $stable(reg_q_o[i])))
+      assert property (@(posedge clk_i) (!reg_load_i[i] && ReadOnly[i] |=> $stable(reg_q_o[i])))
           else $fatal(1, "Read-only register at `byte_index: %0d` was changed by AXI!", i);
     end
   `endif
@@ -422,7 +422,7 @@ module axi_lite_regs_intf #(
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
-  AXI_LITE.Slave                    slv,
+  AXI_LITE.Subordinate                    sbr,
   output logic  [REG_NUM_BYTES-1:0] wr_active_o,
   output logic  [REG_NUM_BYTES-1:0] rd_active_o,
   input  byte_t [REG_NUM_BYTES-1:0] reg_d_i,
@@ -438,30 +438,30 @@ module axi_lite_regs_intf #(
   `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_lite_t)
   `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_lite_t, addr_t)
   `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_lite_t, data_t)
-  `AXI_LITE_TYPEDEF_REQ_T(req_lite_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
-  `AXI_LITE_TYPEDEF_RESP_T(resp_lite_t, b_chan_lite_t, r_chan_lite_t)
+  `AXI_LITE_TYPEDEF_REQ_T(axi_lite_req_t, aw_chan_lite_t, w_chan_lite_t, ar_chan_lite_t)
+  `AXI_LITE_TYPEDEF_RSP_T(axi_lite_rsp_t, b_chan_lite_t, r_chan_lite_t)
 
-  req_lite_t  axi_lite_req;
-  resp_lite_t axi_lite_resp;
+  axi_lite_req_t axi_lite_req;
+  axi_lite_rsp_t axi_lite_rsp;
 
-  `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, slv)
-  `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_lite_resp)
+  `AXI_LITE_ASSIGN_TO_REQ(axi_lite_req, sbr)
+  `AXI_LITE_ASSIGN_FROM_RSP(sbr, axi_lite_rsp)
 
   axi_lite_regs #(
-    .RegNumBytes  ( REG_NUM_BYTES  ),
-    .AxiAddrWidth ( AXI_ADDR_WIDTH ),
-    .AxiDataWidth ( AXI_DATA_WIDTH ),
-    .PrivProtOnly ( PRIV_PROT_ONLY ),
-    .SecuProtOnly ( SECU_PROT_ONLY ),
-    .AxiReadOnly  ( AXI_READ_ONLY  ),
-    .RegRstVal    ( REG_RST_VAL    ),
-    .req_lite_t   ( req_lite_t     ),
-    .resp_lite_t  ( resp_lite_t    )
+    .RegNumBytes    ( REG_NUM_BYTES  ),
+    .AddrWidth      ( AXI_ADDR_WIDTH ),
+    .DataWidth      ( AXI_DATA_WIDTH ),
+    .PrivProtOnly   ( PRIV_PROT_ONLY ),
+    .SecuProtOnly   ( SECU_PROT_ONLY ),
+    .ReadOnly       ( AXI_READ_ONLY  ),
+    .RegRstVal      ( REG_RST_VAL    ),
+    .axi_lite_req_t ( axi_lite_req_t ),
+    .axi_lite_rsp_t ( axi_lite_rsp_t )
   ) i_axi_lite_regs (
     .clk_i,
     .rst_ni,
-    .axi_req_i   ( axi_lite_req  ),
-    .axi_resp_o  ( axi_lite_resp ),
+    .axi_req_i  ( axi_lite_req ),
+    .axi_rsp_o  ( axi_lite_rsp ),
     .wr_active_o,
     .rd_active_o,
     .reg_d_i,
@@ -473,10 +473,10 @@ module axi_lite_regs_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin: p_assertions
-      assert (AXI_ADDR_WIDTH == $bits(slv.aw_addr))
-          else $fatal(1, "AXI_ADDR_WIDTH does not match slv interface!");
-      assert (AXI_DATA_WIDTH == $bits(slv.w_data))
-          else $fatal(1, "AXI_DATA_WIDTH does not match slv interface!");
+      assert (AXI_ADDR_WIDTH == $bits(sbr.aw_addr))
+          else $fatal(1, "AXI_ADDR_WIDTH does not match sbr interface!");
+      assert (AXI_DATA_WIDTH == $bits(sbr.w_data))
+          else $fatal(1, "AXI_DATA_WIDTH does not match sbr interface!");
     end
   `endif
   // pragma translate_on

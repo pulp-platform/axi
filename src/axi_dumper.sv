@@ -24,12 +24,12 @@ module axi_dumper #(
   parameter bit  LogB      = 1'b0,
   parameter bit  LogR      = 1'b0,
   parameter type axi_req_t  = logic,
-  parameter type axi_resp_t = logic
+  parameter type axi_rsp_t = logic
 ) (
   input logic clk_i,
   input logic rst_ni,
   input axi_req_t axi_req_i,
-  input axi_resp_t axi_resp_i
+  input axi_rsp_t axi_rsp_i
 );
 
 `ifdef TARGET_SIMULATION
@@ -98,48 +98,48 @@ module axi_dumper #(
       b_data = '{
         "type" : "\"B\"",
         "time" : $sformatf("%d", $time()),
-        "id"   : $sformatf("0x%0x", axi_resp_i.b.id),
-        "resp" : $sformatf("0x%0x", axi_resp_i.b.resp),
-        "user" : $sformatf("0x%0x", axi_resp_i.b.user)
+        "id"   : $sformatf("0x%0x", axi_rsp_i.b.id),
+        "resp" : $sformatf("0x%0x", axi_rsp_i.b.resp),
+        "user" : $sformatf("0x%0x", axi_rsp_i.b.user)
       };
       r_data = '{
         "type" : "\"R\"",
         "time" : $sformatf("%d", $time()),
-        "id"   : $sformatf("0x%0x", axi_resp_i.r.id),
-        "data" : $sformatf("0x%0x", axi_resp_i.r.data),
-        "resp" : $sformatf("0x%0x", axi_resp_i.r.resp),
-        "last" : $sformatf("0x%0x", axi_resp_i.r.last),
-        "user" : $sformatf("0x%0x", axi_resp_i.r.user)
+        "id"   : $sformatf("0x%0x", axi_rsp_i.r.id),
+        "data" : $sformatf("0x%0x", axi_rsp_i.r.data),
+        "resp" : $sformatf("0x%0x", axi_rsp_i.r.resp),
+        "last" : $sformatf("0x%0x", axi_rsp_i.r.last),
+        "user" : $sformatf("0x%0x", axi_rsp_i.r.user)
       };
-      if (LogAW && axi_req_i.aw_valid && axi_resp_i.aw_ready) begin
+      if (LogAW && axi_req_i.aw_valid && axi_rsp_i.aw_ready) begin
         aw_string = "{";
         foreach(aw_data[key]) aw_string = $sformatf("%s'%s': %s, ", aw_string, key, aw_data[key]);
         aw_string = $sformatf("%s}", aw_string);
         $fwrite(f, aw_string);
         $fwrite(f, "\n");
       end
-      if (LogAR && axi_req_i.ar_valid && axi_resp_i.ar_ready) begin
+      if (LogAR && axi_req_i.ar_valid && axi_rsp_i.ar_ready) begin
         ar_string = "{";
         foreach(ar_data[key]) ar_string = $sformatf("%s'%s': %s, ", ar_string, key, ar_data[key]);
         ar_string = $sformatf("%s}", ar_string);
         $fwrite(f, ar_string);
         $fwrite(f, "\n");
       end
-      if (LogW && axi_req_i.w_valid && axi_resp_i.w_ready) begin
+      if (LogW && axi_req_i.w_valid && axi_rsp_i.w_ready) begin
         w_string = "{";
         foreach(w_data[key]) w_string = $sformatf("%s'%s': %s, ", w_string, key, w_data[key]);
         w_string = $sformatf("%s}", w_string);
         $fwrite(f, w_string);
         $fwrite(f, "\n");
       end
-      if (LogB && axi_resp_i.b_valid && axi_req_i.b_ready) begin
+      if (LogB && axi_rsp_i.b_valid && axi_req_i.b_ready) begin
         b_string = "{";
         foreach(b_data[key]) b_string = $sformatf("%s'%s': %s, ", b_string, key, b_data[key]);
         b_string = $sformatf("%s}", b_string);
         $fwrite(f, b_string);
         $fwrite(f, "\n");
       end
-      if (LogR && axi_resp_i.r_valid && axi_req_i.r_ready) begin
+      if (LogR && axi_rsp_i.r_valid && axi_req_i.r_ready) begin
         r_string = "{";
         foreach(r_data[key]) r_string = $sformatf("%s'%s': %s, ", r_string, key, r_data[key]);
         r_string = $sformatf("%s}", r_string);
@@ -188,28 +188,28 @@ module axi_dumper_intf #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+  `AXI_TYPEDEF_RSP_T(axi_rsp_t, b_chan_t, r_chan_t)
 
   axi_req_t                     axi_req;
-  axi_resp_t                    axi_resp;
+  axi_rsp_t                     axi_rsp;
 
   `AXI_ASSIGN_TO_REQ(axi_req, axi_bus)
-  `AXI_ASSIGN_TO_RESP(axi_resp, axi_bus)
+  `AXI_ASSIGN_TO_RSP(axi_rsp, axi_bus)
 
   axi_dumper #(
-    .BusName    ( BusName    ),
-    .LogAW      ( LogAW      ),
-    .LogAR      ( LogAR      ),
-    .LogW       ( LogW       ),
-    .LogB       ( LogB       ),
-    .LogR       ( LogR       ),
-    .axi_req_t  ( axi_req_t  ),
-    .axi_resp_t ( axi_resp_t )
+    .BusName   ( BusName   ),
+    .LogAW     ( LogAW     ),
+    .LogAR     ( LogAR     ),
+    .LogW      ( LogW      ),
+    .LogB      ( LogB      ),
+    .LogR      ( LogR      ),
+    .axi_req_t ( axi_req_t ),
+    .axi_rsp_t ( axi_rsp_t )
   ) i_axi_dumper (
     .clk_i,
     .rst_ni,
-    .axi_req_i  ( axi_req  ),
-    .axi_resp_i ( axi_resp )
+    .axi_req_i ( axi_req ),
+    .axi_rsp_i ( axi_rsp )
   );
 
 endmodule

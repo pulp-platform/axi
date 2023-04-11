@@ -24,18 +24,18 @@ module tb_axi_addr_test #(
   bit          PrintDbg = 1'b0
 );
 
-  localparam int unsigned AxiIdWidth   = 32'd1;
-  localparam int unsigned AxiAddrWidth = 32'd16;
-  localparam int unsigned AxiDataWidth = 32'd1024;
-  localparam int unsigned AxiUserWidth = 32'd1;
+  localparam int unsigned IdWidth   = 32'd1;
+  localparam int unsigned AddrWidth = 32'd16;
+  localparam int unsigned DataWidth = 32'd1024;
+  localparam int unsigned UserWidth = 32'd1;
 
   // Sim print config, how many transactions
-  localparam int unsigned PrintTnx = 1000;
-  localparam int unsigned NoReads  = 0;
-  localparam int unsigned NoWrites = NumTests;
+  localparam int unsigned PrintTnx  = 1000;
+  localparam int unsigned NumReads  = 0;
+  localparam int unsigned NumWrites = NumTests;
 
 
-  typedef logic [AxiAddrWidth:0] addr_t;
+  typedef logic [AddrWidth:0] addr_t;
 
   /// The data transferred on a beat on the AW/AR channels.
   class ax_transfer;
@@ -45,20 +45,20 @@ module tb_axi_addr_test #(
     rand axi_pkg::burst_t burst = '0;
   endclass
 
-  // Random master no Transactions
-  localparam int unsigned NoPendingDut = 16;
+  // Random manager no Transactions
+  localparam int unsigned NumPendingDut = 16;
 
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
   localparam time TestTime =  8ns;
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime ),
@@ -66,17 +66,17 @@ module tb_axi_addr_test #(
     .AXI_BURST_FIXED ( 1'b1 ),
     .AXI_BURST_INCR  ( 1'b1 ),
     .AXI_BURST_WRAP  ( 1'b1 )
-  ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  ) axi_rand_manager_t;
+  typedef axi_test::axi_rand_subordinate #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( DataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
-  ) axi_rand_slave_t;
+  ) axi_rand_subordinate_t;
   // -------------
   // DUT signals
   // -------------
@@ -85,19 +85,19 @@ module tb_axi_addr_test #(
   logic end_of_sim;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) master_dv (clk);
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
+  ) manager_dv (clk);
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) slave_dv (clk);
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( DataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
+  ) subordinate_dv (clk);
 
-  `AXI_ASSIGN(slave_dv, master_dv)
+  `AXI_ASSIGN(subordinate_dv, manager_dv)
 
   //-----------------------------------
   // Clock generator
@@ -110,25 +110,25 @@ module tb_axi_addr_test #(
     .rst_no(rst_n)
   );
 
-  initial begin : proc_axi_master
-    automatic axi_rand_master_t axi_rand_master = new(master_dv);
+  initial begin : proc_axi_manager
+    automatic axi_rand_manager_t axi_rand_manager = new(manager_dv);
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WTHRU_NOALLOCATE);
-    axi_rand_master.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WBACK_RWALLOCATE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WTHRU_NOALLOCATE);
+    axi_rand_manager.add_memory_region(16'h0000, 16'hFFFF, axi_pkg::WBACK_RWALLOCATE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
-    axi_rand_master.run(0, NumTests);
+    axi_rand_manager.run(0, NumTests);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
     $stop();
   end
 
-  initial begin : proc_axi_slave
-    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
-    axi_rand_slave.reset();
+  initial begin : proc_axi_subordinate
+    automatic axi_rand_subordinate_t  axi_rand_subordinate  = new(subordinate_dv);
+    axi_rand_subordinate.reset();
     @(posedge rst_n);
-    axi_rand_slave.run();
+    axi_rand_subordinate.run();
   end
 
   initial begin : proc_sim_progress
@@ -142,19 +142,19 @@ module tb_axi_addr_test #(
     forever begin
       @(posedge clk);
       #TestTime;
-      if (master_dv.aw_valid && master_dv.aw_ready) begin
+      if (manager_dv.aw_valid && manager_dv.aw_ready) begin
         aw++;
       end
-      if (master_dv.ar_valid && master_dv.ar_ready) begin
+      if (manager_dv.ar_valid && manager_dv.ar_ready) begin
         ar++;
       end
 
       if ((aw % PrintTnx == 0) && ! aw_printed) begin
-        $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
+        $display("%t> Transmit AW %d of %d.", $time(), aw, NumWrites);
         aw_printed = 1'b1;
       end
       if ((ar % PrintTnx == 0) && !ar_printed) begin
-        $display("%t> Transmit AR %d of %d.", $time(), ar, NoReads);
+        $display("%t> Transmit AR %d of %d.", $time(), ar, NumReads);
         ar_printed = 1'b1;
       end
 
@@ -183,12 +183,12 @@ module tb_axi_addr_test #(
     forever begin
       @(posedge clk);
       #TestTime;
-      if (master_dv.aw_valid && master_dv.aw_ready) begin
+      if (manager_dv.aw_valid && manager_dv.aw_ready) begin
         ax_beat = new;
-        ax_beat.addr  = master_dv.aw_addr;
-        ax_beat.len   = master_dv.aw_len;
-        ax_beat.size  = master_dv.aw_size;
-        ax_beat.burst = master_dv.aw_burst;
+        ax_beat.addr  = manager_dv.aw_addr;
+        ax_beat.len   = manager_dv.aw_len;
+        ax_beat.size  = manager_dv.aw_size;
+        ax_beat.burst = manager_dv.aw_burst;
 
         ax_queue.push_back(ax_beat);
       end

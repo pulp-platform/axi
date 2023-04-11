@@ -19,7 +19,7 @@
 /// Testbench for axi_to_mem_banked. Monitors the performance for random accesses.
 module tb_axi_to_mem_banked #(
   /// Data Width of the AXI4+ATOP channels.
-  parameter int unsigned TbAxiDataWidth = 32'd256,
+  parameter int unsigned TbDataWidth = 32'd256,
   /// Number of words of an individual memory bank.
   /// Determines the address width of the request output.
   parameter int unsigned TbNumWords     = 32'd8192,
@@ -40,20 +40,20 @@ module tb_axi_to_mem_banked #(
   localparam time TestTime = 8ns;
 
   // localparam and typedefs for AXI4+ATOP
-  localparam int unsigned AxiIdWidth   = 32'd6;
-  localparam int unsigned AxiAddrWidth = 32'd64;
-  localparam int unsigned AxiStrbWidth = TbAxiDataWidth / 8;
-  localparam int unsigned AxiUserWidth = 32'd4;
+  localparam int unsigned IdWidth   = 32'd6;
+  localparam int unsigned AddrWidth = 32'd64;
+  localparam int unsigned StrbWidth = TbDataWidth / 8;
+  localparam int unsigned UserWidth = 32'd4;
 
-  typedef logic [AxiAddrWidth-1:0] axi_addr_t;
+  typedef logic [AddrWidth-1:0] axi_addr_t;
 
   // AXI test defines
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_manager #(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( TbAxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW ( AddrWidth ),
+    .DW ( TbDataWidth ),
+    .IW ( IdWidth   ),
+    .UW ( UserWidth ),
     // Stimuli application and test time
     .TA ( ApplTime     ),
     .TT ( TestTime     ),
@@ -75,7 +75,7 @@ module tb_axi_to_mem_banked #(
     .AXI_BURST_FIXED      ( 1'b0 ),
     .AXI_BURST_INCR       ( 1'b1 ),
     .AXI_BURST_WRAP       ( 1'b0 )
-  ) axi_rand_master_t;
+  ) axi_rand_manager_t;
 
   // memory defines
   localparam int unsigned MemAddrWidth = $clog2(TbNumWords);
@@ -83,7 +83,7 @@ module tb_axi_to_mem_banked #(
   localparam int unsigned MemBufDepth  = 1;
   // addresses
   localparam axi_addr_t StartAddr = axi_addr_t'(64'h0);
-  localparam axi_addr_t EndAddr   = axi_addr_t'(StartAddr + 32'd2 * TbNumWords * TbAxiDataWidth/32'd8);
+  localparam axi_addr_t EndAddr   = axi_addr_t'(StartAddr + 32'd2 * TbNumWords * TbDataWidth/32'd8);
 
   typedef logic [MemAddrWidth-1:0]     mem_addr_t;
   typedef logic [5:0]                  mem_atop_t;
@@ -110,31 +110,31 @@ module tb_axi_to_mem_banked #(
   assign one_dut_active = |dut_busy;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth     ),
-    .AXI_USER_WIDTH ( AxiUserWidth   )
+    .AXI_ADDR_WIDTH ( AddrWidth   ),
+    .AXI_DATA_WIDTH ( TbDataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth     ),
+    .AXI_USER_WIDTH ( UserWidth   )
   ) mem_axi_dv (clk);
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth     ),
-    .AXI_USER_WIDTH ( AxiUserWidth   )
+    .AXI_ADDR_WIDTH ( AddrWidth   ),
+    .AXI_DATA_WIDTH ( TbDataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth     ),
+    .AXI_USER_WIDTH ( UserWidth   )
   ) mem_axi ();
   `AXI_ASSIGN(mem_axi, mem_axi_dv)
 
   // stimuli generation
-  initial begin : proc_axi_master
-    static axi_rand_master_t axi_rand_master = new ( mem_axi_dv );
+  initial begin : proc_axi_manager
+    static axi_rand_manager_t axi_rand_manager = new ( mem_axi_dv );
     end_of_sim <= 1'b0;
-    axi_rand_master.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
-    axi_rand_master.reset();
+    axi_rand_manager.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
+    axi_rand_manager.reset();
     @(posedge rst_n);
     @(posedge clk);
     @(posedge clk);
 
-    axi_rand_master.run(TbNumReads, TbNumWrites);
+    axi_rand_manager.run(TbNumReads, TbNumWrites);
     end_of_sim <= 1'b1;
   end
 
@@ -187,10 +187,10 @@ module tb_axi_to_mem_banked #(
 
   // Design under test
   axi_to_mem_banked_intf #(
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( TbDataWidth ),
+    .AXI_USER_WIDTH ( UserWidth ),
     .MEM_NUM_BANKS  ( TbNumBanks     ),
     .MEM_ADDR_WIDTH ( MemAddrWidth ),
     .MEM_DATA_WIDTH ( TbMemDataWidth ),
@@ -200,7 +200,7 @@ module tb_axi_to_mem_banked #(
     .rst_ni            ( rst_n     ),
     .test_i            ( 1'b0      ),
     .axi_to_mem_busy_o ( dut_busy  ),
-    .slv               ( mem_axi   ),
+    .sbr               ( mem_axi   ),
     .mem_req_o         ( mem_req   ),
     .mem_gnt_i         ( mem_gnt   ),
     .mem_add_o         ( mem_addr  ), // byte address
@@ -253,7 +253,7 @@ module tb_axi_to_mem_banked #(
     $display("###############################################################################");
     $display("Sim Parameter:");
     $display("###############################################################################");
-    $display("TbAxiDataWidth: %0d", TbAxiDataWidth);
+    $display("TbDataWidth:    %0d", TbDataWidth);
     $display("TbMemDataWidth: %0d", TbMemDataWidth);
     $display("TbNumBanks:     %0d", TbNumBanks);
     $display("TbMemLatency:   %0d", TbMemLatency);
@@ -392,19 +392,19 @@ module tb_axi_to_mem_banked #(
   end
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH ( AddrWidth ),
+    .AXI_DATA_WIDTH ( TbDataWidth ),
+    .AXI_ID_WIDTH   ( IdWidth   ),
+    .AXI_USER_WIDTH ( UserWidth )
   ) monitor_dv (clk);
 
   `AXI_ASSIGN_MONITOR(monitor_dv, mem_axi)
 
   typedef axi_test::axi_scoreboard #(
-    .IW ( AxiIdWidth   ),
-    .AW ( AxiAddrWidth ),
-    .DW ( TbAxiDataWidth ),
-    .UW ( AxiUserWidth ),
+    .IW ( IdWidth   ),
+    .AW ( AddrWidth ),
+    .DW ( TbDataWidth ),
+    .UW ( UserWidth ),
     .TT ( TestTime     )
   ) axi_scoreboard_t;
   axi_scoreboard_t axi_scoreboard = new(monitor_dv);

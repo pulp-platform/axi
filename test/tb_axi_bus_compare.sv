@@ -62,10 +62,10 @@ module tb_axi_bus_compare #(
   `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
 
   axi_req_t   axi_req, axi_req_a_in, axi_req_b_in, axi_req_a_out, axi_req_b_out, axi_req_b_dly;
-  axi_resp_t  axi_rsp, axi_rsp_a_in, axi_rsp_b_in, axi_rsp_a_out, axi_rsp_b_out, axi_rsp_b_dly;
+  axi_rsp_t  axi_rsp, axi_rsp_a_in, axi_rsp_b_in, axi_rsp_a_out, axi_rsp_b_out, axi_rsp_b_dly;
 
   `AXI_ASSIGN_TO_REQ(axi_req, axi)
-  `AXI_ASSIGN_FROM_RESP(axi, axi_rsp)
+  `AXI_ASSIGN_FROM_RSP(axi, axi_rsp)
 
   logic aw_valid_a, aw_ready_a;
   logic w_valid_a,  w_ready_a;
@@ -126,7 +126,7 @@ module tb_axi_bus_compare #(
     ar_ready_b = axi_rsp_b_in.ar_ready;
     w_ready_b  = axi_rsp_b_in.w_ready;
     // response
-    `AXI_SET_RESP_STRUCT(axi_rsp, axi_rsp_a_in)
+    `AXI_SET_RSP_STRUCT(axi_rsp, axi_rsp_a_in)
     // overwrite readies
     axi_rsp.aw_ready = aw_ready;
     axi_rsp.w_ready  = w_ready;
@@ -137,7 +137,7 @@ module tb_axi_bus_compare #(
   end
 
   axi_bus_compare #(
-    .AxiIdWidth     ( TbIdWidth       ),
+    .IdWidth        ( TbIdWidth       ),
     .FifoDepth      ( 32'd16          ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
     .axi_w_chan_t   ( axi_w_chan_t    ),
@@ -145,7 +145,7 @@ module tb_axi_bus_compare #(
     .axi_ar_chan_t  ( axi_ar_chan_t   ),
     .axi_r_chan_t   ( axi_r_chan_t    ),
     .axi_req_t      ( axi_req_t       ),
-    .axi_rsp_t      ( axi_resp_t      )
+    .axi_rsp_t      ( axi_rsp_t       )
   ) i_axi_bus_compare (
     .clk_i         ( clk           ),
     .rst_ni        ( rst_n         ),
@@ -173,7 +173,7 @@ module tb_axi_bus_compare #(
     .IdWidth  (TbIdWidth),
     .UserWidth(TbUserWidth),
     .axi_req_t(axi_req_t),
-    .axi_rsp_t(axi_resp_t),
+    .axi_rsp_t(axi_rsp_t),
     .ApplDelay(TbApplDelay),
     .AcqDelay (TbAcqDelay)
   ) i_axi_sim_mem_a (
@@ -198,21 +198,21 @@ module tb_axi_bus_compare #(
   );
 
   axi_multicut #(
-    .NoCuts    (8),
+    .NumCuts   (8),
     .aw_chan_t (axi_aw_chan_t),
     .w_chan_t  (axi_w_chan_t),
     .b_chan_t  (axi_b_chan_t),
     .ar_chan_t (axi_ar_chan_t),
     .r_chan_t  (axi_r_chan_t),
     .axi_req_t (axi_req_t),
-    .axi_resp_t(axi_resp_t)
+    .axi_rsp_t (axi_rsp_t)
   ) i_axi_multicut (
-    .clk_i      ( clk           ),
-    .rst_ni     ( rst_n         ),
-    .slv_req_i  ( axi_req_b_out ),
-    .slv_resp_o ( axi_rsp_b_out ),
-    .mst_req_o  ( axi_req_b_dly ),
-    .mst_resp_i ( axi_rsp_b_dly )
+    .clk_i     ( clk           ),
+    .rst_ni    ( rst_n         ),
+    .sbr_port_req_i ( axi_req_b_out ),
+    .sbr_port_rsp_o ( axi_rsp_b_out ),
+    .mgr_port_req_o ( axi_req_b_dly ),
+    .mgr_port_rsp_i ( axi_rsp_b_dly )
   );
 
   axi_sim_mem #(
@@ -221,7 +221,7 @@ module tb_axi_bus_compare #(
     .IdWidth  (TbIdWidth),
     .UserWidth(TbUserWidth),
     .axi_req_t(axi_req_t),
-    .axi_rsp_t(axi_resp_t),
+    .axi_rsp_t(axi_rsp_t),
     .ApplDelay(TbApplDelay),
     .AcqDelay (TbAcqDelay)
   ) i_axi_sim_mem_b (
@@ -254,7 +254,7 @@ module tb_axi_bus_compare #(
     automatic drv_t::w_beat_t w_beat = new;
     automatic drv_t::b_beat_t b_beat;
     automatic drv_t::r_beat_t r_beat;
-    drv.reset_master();
+    drv.reset_manager();
     wait (rst_n);
     // AW
 `ifdef XSIM

@@ -42,7 +42,7 @@ package axi_test;
       this.axi = axi;
     endfunction
 
-    function void reset_master();
+    function void reset_manager();
       axi.aw_addr  <= '0;
       axi.aw_prot  <= '0;
       axi.aw_valid <= '0;
@@ -56,7 +56,7 @@ package axi_test;
       axi.r_ready  <= '0;
     endfunction
 
-    function void reset_slave();
+    function void reset_subordinate();
       axi.aw_ready <= '0;
       axi.w_ready  <= '0;
       axi.b_resp   <= '0;
@@ -310,7 +310,7 @@ package axi_test;
       this.axi = axi;
     endfunction
 
-    function void reset_master();
+    function void reset_manager();
       axi.aw_id     <= '0;
       axi.aw_addr   <= '0;
       axi.aw_len    <= '0;
@@ -345,7 +345,7 @@ package axi_test;
       axi.r_ready   <= '0;
     endfunction
 
-    function void reset_slave();
+    function void reset_subordinate();
       axi.aw_ready  <= '0;
       axi.w_ready   <= '0;
       axi.b_id      <= '0;
@@ -678,7 +678,7 @@ package axi_test;
 
   endclass
 
-  class axi_rand_master #(
+  class axi_rand_manager #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -794,7 +794,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      drv.reset_master();
+      drv.reset_manager();
       r_flight_cnt = '{default: 0};
       w_flight_cnt = '{default: 0};
       tot_r_flight_cnt = 0;
@@ -1060,7 +1060,7 @@ package axi_test;
         )) return 1'b0;
       end
       if (UNIQUE_IDS) begin
-        // This master may only emit transactions with an ID that is unique among all in-flight
+        // This manager may only emit transactions with an ID that is unique among all in-flight
         // transactions in the same direction.
         if (is_read && r_flight_cnt[beat.ax_id] != 0) return 1'b0;
         if (!is_read && w_flight_cnt[beat.ax_id] != 0) return 1'b0;
@@ -1258,7 +1258,7 @@ package axi_test;
 
   endclass
 
-  class axi_rand_slave #(
+  class axi_rand_subordinate #(
     // AXI interface parameters
     parameter int   AW = 32,
     parameter int   DW = 32,
@@ -1318,7 +1318,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      this.drv.reset_slave();
+      this.drv.reset_subordinate();
       this.memory_q.delete();
     endfunction
 
@@ -1490,8 +1490,8 @@ package axi_test;
 
   endclass
 
-  // AXI4-Lite random master and slave
-  class axi_lite_rand_master #(
+  // AXI4-Lite random manager and subordinate
+  class axi_lite_rand_manager #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
@@ -1540,7 +1540,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      drv.reset_master();
+      drv.reset_manager();
     endfunction
 
     task automatic rand_wait(input int unsigned min, max);
@@ -1660,7 +1660,7 @@ package axi_test;
     endtask : read
   endclass
 
-  class axi_lite_rand_slave #(
+  class axi_lite_rand_subordinate #(
     // AXI interface parameters
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
@@ -1703,7 +1703,7 @@ package axi_test;
     endfunction
 
     function void reset();
-      this.drv.reset_slave();
+      this.drv.reset_subordinate();
     endfunction
 
     task automatic rand_wait(input int unsigned min, max);
@@ -1874,10 +1874,10 @@ package axi_test;
   ///
   /// Example usage:
   ///   typedef axi_test::axi_scoreboard #(
-  ///   .IW ( AxiIdWidth   ),
-  ///   .AW ( AxiAddrWidth ),
-  ///   .DW ( AxiDataWidth ),
-  ///   .UW ( AxiUserWidth ),
+  ///   .IW ( IdWidth   ),
+  ///   .AW ( AddrWidth ),
+  ///   .DW ( DataWidth ),
+  ///   .UW ( UserWidth ),
   ///   .TT ( TestTime     )
   /// ) axi_scoreboard_t;
   /// axi_scoreboard_t axi_scoreboard = new(monitor_dv);
@@ -2349,14 +2349,14 @@ module axi_chan_logger #(
 );
   // id width from channel
   localparam int unsigned IdWidth = $bits(aw_chan_i.id);
-  localparam int unsigned NoIds   = 2**IdWidth;
+  localparam int unsigned NumIds  = 2**IdWidth;
 
   // queues for writes and reads
   aw_chan_t aw_queue[$];
   w_chan_t  w_queue[$];
   b_chan_t  b_queue[$];
-  aw_chan_t ar_queues[NoIds-1:0][$];
-  r_chan_t  r_queues[NoIds-1:0][$];
+  aw_chan_t ar_queues[NumIds-1:0][$];
+  r_chan_t  r_queues[NumIds-1:0][$];
 
   // channel sampling into queues
   always @(posedge clk_i) #TestTime begin : proc_channel_sample
@@ -2456,11 +2456,11 @@ module axi_chan_logger #(
     automatic b_chan_t     b_beat;
     automatic aw_chan_t    ar_beat;
     automatic r_chan_t     r_beat;
-    automatic int unsigned no_r_beat[NoIds];
+    automatic int unsigned no_r_beat[NumIds];
     automatic int          fd;
 
     // init r counter
-    for (int unsigned i = 0; i < NoIds; i++) begin
+    for (int unsigned i = 0; i < NumIds; i++) begin
       no_r_beat[i] = 0;
     end
 
@@ -2477,7 +2477,7 @@ module axi_chan_logger #(
       $fclose(fd);
     end else
       $display("File was NOT opened successfully : %0d", fd);
-    for (int unsigned i = 0; i < NoIds; i++) begin
+    for (int unsigned i = 0; i < NumIds; i++) begin
       log_name = $sformatf("./axi_log/%s/read_%0h.log", LoggerName, i);
       fd = $fopen(log_name, "w");
       if (fd) begin
@@ -2533,7 +2533,7 @@ module axi_chan_logger #(
       end
 
       // update the read log files
-      for (int unsigned i = 0; i < NoIds; i++) begin
+      for (int unsigned i = 0; i < NumIds; i++) begin
         while (ar_queues[i].size() != 0 && r_queues[i].size() != 0) begin
           ar_beat = ar_queues[i][0];
           r_beat  = r_queues[i].pop_front();

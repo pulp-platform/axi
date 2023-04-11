@@ -1550,7 +1550,7 @@
          x="30.001904"
          y="15.882262"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1345">slv_reqs_i[2]</tspan></text>
+         id="tspan1345">sbr_ports_req_i[2]</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;line-height:1.10000002;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
@@ -1561,7 +1561,7 @@
          x="66.001785"
          y="15.84565"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1381">slv_resps_o[2]</tspan></text>
+         id="tspan1381">sbr_ports_rsp_o[2]</tspan></text>
     <path
        style="fill:#0000ff;fill-opacity:1;stroke:#0000ff;stroke-width:1.00157475;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:normal;filter:url(#filter8341)"
        d="M 0.44791785,0.50078738 8.006973,15.618898 15.566028,0.50078738 Z"
@@ -2358,7 +2358,7 @@
          x="47.614746"
          y="10.576507"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1345-6">slv_reqs_i[1]</tspan></text>
+         id="tspan1345-6">sbr_ports_req_i[1]</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;line-height:1.10000002;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.26458332;filter:url(#filter8341)"
@@ -2370,7 +2370,7 @@
          x="175.17339"
          y="10.446777"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1381-8">slv_resps_o[1]</tspan></text>
+         id="tspan1381-8">sbr_ports_rsp_o[1]</tspan></text>
     <path
        style="display:inline;fill:none;fill-rule:evenodd;stroke:#0000ff;stroke-width:5.31496048;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter8341)"
        d="m 47.607999,42.88347 0,56.692913 7.086621,7.086607"
@@ -2420,7 +2420,7 @@
          x="47.614746"
          y="10.576507"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1345-9">slv_reqs_i[0]</tspan></text>
+         id="tspan1345-9">sbr_ports_req_i[0]</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;line-height:1.10000002;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.26458332;filter:url(#filter8341)"
@@ -2432,7 +2432,7 @@
          x="175.17339"
          y="10.446777"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.75px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1381-5">slv_resps_o[0]</tspan></text>
+         id="tspan1381-5">sbr_ports_rsp_o[0]</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#0000ff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 68,49.000005 318,0"
@@ -2956,7 +2956,7 @@
          x="30.112265"
          y="286.17563"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1345-5">mst_req_o</tspan></text>
+         id="tspan1345-5">mgr_port_req_o</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;line-height:1.10000002;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;display:inline;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.26458332;filter:url(#filter8341-4)"
@@ -2967,7 +2967,7 @@
          x="66.112137"
          y="286.13901"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:3.88055563px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke-width:0.26458332"
-         id="tspan1381-7">mst_req_i</tspan></text>
+         id="tspan1381-7">mgr_req_i</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#0000ff;stroke-width:0.28222221px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 29.999999,271 4,-4"
