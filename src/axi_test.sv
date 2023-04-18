@@ -769,7 +769,7 @@ package axi_test;
     } traffic_shape[$];
     int unsigned max_cprob;
 
-    real mcast_prob;
+    int unsigned mcast_prob;
 
     function new(
       virtual AXI_BUS_DV #(
@@ -809,8 +809,10 @@ package axi_test;
       atop_resp_r = '0;
     endfunction
 
-    // Sets the probability to generate a transaction with a non-zero multicast mask
-    function void set_multicast_probability(real prob);
+    // Sets the probability to generate a transaction with a non-zero multicast mask.
+    // `prob` should be a percentage, as Questa 2022.3 doesn't support real types
+    // in SystemVerilog `dist` constraints.
+    function void set_multicast_probability(int unsigned prob);
       mcast_prob = prob;
     endfunction
 
@@ -947,7 +949,7 @@ package axi_test;
       // Randomize multicast mask.
       if (ENABLE_MULTICAST && !is_read) begin
         rand_success = std::randomize(mcast, mcast_mask) with {
-          mcast dist {0 := (1 - mcast_prob), 1 := mcast_prob};
+          mcast dist {0 := (100 - mcast_prob), 1 := mcast_prob};
           !mcast -> mcast_mask == 0;
           mcast -> mcast_mask != 0;
         }; assert(rand_success);
