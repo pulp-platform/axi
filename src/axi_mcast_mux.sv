@@ -320,7 +320,7 @@ module axi_mcast_mux #(
 
     // Arbitrate "winners" of unicast and multicast arbitrations
     // giving priority to multicast
-    assign mcast_aw_ready = aw_ready && mcast_aw_valid;
+    assign mcast_aw_ready = aw_ready && mcast_aw_valid && !mcast_aw_commit;
     assign ucast_aw_ready = aw_ready && !mcast_aw_valid && !mcast_aw_commit;
     assign mst_aw_chan = mcast_aw_commit ? mcast_aw_chan : ucast_aw_chan;
     assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
