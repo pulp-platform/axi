@@ -4,12 +4,15 @@
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">req_t</a></h1>
-<pre>typedef struct packed {
-    addr_t          addr;
-    oup_data_t      wdata;
-    oup_strb_t      strb;
-    axi_pkg::atop_t atop;
-    logic           we;
+<pre>typedef struct packed {                                         
+    aw_chan_t aw;                                                 
+    logic     aw_valid;                                           
+    w_chan_t  w;                                                  
+    logic     w_valid;                                            
+    logic     b_ready;                                            
+    ar_chan_t ar;                                                 
+    logic     ar_valid;                                           
+    logic     r_ready;                                            
   } req_t;</pre>
 </section>
 </body>
