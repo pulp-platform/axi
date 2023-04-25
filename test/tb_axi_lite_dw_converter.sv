@@ -366,7 +366,7 @@ module tb_axi_lite_dw_converter #(
     initial begin : proc_b_check
       automatic b_chan_lite_t b_act, b_exp;
       forever begin
-        wait((fifo_slv_r.size() > 0) && (fifo_mst_r.size() > 0));
+        wait((fifo_slv_b.size() > 0) && (fifo_mst_b.size() > 0));
         b_act = fifo_slv_b.pop_front();
         b_exp = fifo_mst_b.pop_front();
         assert (b_act == b_exp) else  $error("Slave port> B.resp is not expected: EXP: %h ACT:%h",
