@@ -28,10 +28,9 @@ package tb_axi_mcast_xbar_pkg;
     parameter int unsigned NoMasters,
     parameter int unsigned NoSlaves,
     parameter int unsigned NoAddrRules,
-    parameter type         ar_rule_t,
-    parameter type         aw_rule_t,
-    parameter ar_rule_t [NoAddrRules-1:0] ArAddrMap,
-    parameter aw_rule_t [NoAddrRules-1:0] AwAddrMap,
+    parameter int unsigned NoMulticastRules,
+    parameter type         rule_t,
+    parameter rule_t [NoAddrRules-1:0] AddrMap,
       // Stimuli application and test time
     parameter time  TimeTest
   );
@@ -157,52 +156,88 @@ package tb_axi_mcast_xbar_pkg;
     // populates the expected b response in its own id_queue and in case the atomic bit [5]
     // is set it also injects an expected response in the R channel.
     task automatic monitor_mst_aw(input int unsigned i);
-      axi_addr_t   aw_addr;
-      axi_addr_t   aw_mcast;
-      axi_addr_t   aw_addr_masked;
-      axi_addr_t   addrmap_masked;
-      idx_slv_t    to_slave_idx[$];
-      int unsigned num_slaves_matched;
-      axi_addr_t   addr_to_slave[$];
-      axi_addr_t   mask_to_slave[$];
-      bit          decerr;
-      exp_ax_t     exp_aw;
-      slv_axi_id_t exp_aw_id;
-      string       slaves_str;
+      axi_addr_t         aw_addr;
+      axi_addr_t         aw_mcast;
+      axi_addr_t         rule_addr;
+      axi_addr_t         rule_mask;
+      axi_addr_t         aw_addr_masked;
+      axi_addr_t         addrmap_masked;
+      idx_slv_t          to_slave_idx[$];
+      axi_addr_t         addr_to_slave[$];
+      axi_addr_t         mask_to_slave[$];
+      bit [NoSlaves-1:0] matched_slaves;
+      int unsigned       num_slaves_matched;
+      bit                decerr;
+      exp_ax_t           exp_aw;
+      slv_axi_id_t       exp_aw_id;
+      string             slaves_str;
 
       master_exp_t exp_b;
+
+      // TODO colluca: add check that multicast requests only arrive on multicast ports
+      //               (lower NoMulticastPorts) and that multicast requests only originate
+      //               from multicast rules (lower NoMulticastRules)
 
       if (masters_axi[i].aw_valid && masters_axi[i].aw_ready) begin
 
         // Check to which slaves the transaction is directed or if it should go to a decerror.
         // Store the indices of the selected slaves (to_slave_idx) and the filtered address
-        // sets {addr, mask} to be forwarded to each slave (addr_to_slave, mask_to_slave).
+        // sets {addr, mask} to be forwarded to each slave (addr_queue, mask_queue).
+
+        // Get address information from request
         aw_addr = masters_axi[i].aw_addr;
         aw_mcast = masters_axi[i].aw_user[AxiAddrWidth-1:0];
-        for (int k = 0; k < AxiAddrWidth; k++) aw_addr_masked[k] = aw_mcast[k] ? 1'bx : aw_addr[k];
+        for (int k = 0; k < AxiAddrWidth; k++)
+          aw_addr_masked[k] = aw_mcast[k] ? 1'bx : aw_addr[k];
         $display("Trying to match: %b", aw_addr_masked);
-        for (int unsigned j = 0; j < NoSlaves; j++) begin
-          // request goes to the slave if all bits match, which are neither masked in the 
-          // request nor in the addrmap rule
-          for (int k = 0; k < AxiAddrWidth; k++) addrmap_masked[k] = AwAddrMap[j].mask[k] ? 1'bx : AwAddrMap[j].addr[k];
-          $display("With slave %0d   : %b", j, addrmap_masked);
-          if (&(~(aw_addr ^ AwAddrMap[j].addr) | AwAddrMap[j].mask | aw_mcast)) begin
-            to_slave_idx.push_back(idx_slv_t'(j));
-            mask_to_slave.push_back(aw_mcast & AwAddrMap[j].mask);
-            addr_to_slave.push_back((~aw_mcast & aw_addr) | (aw_mcast & AwAddrMap[j].addr));
-            $display("Pushing mask   : %b", aw_mcast & AwAddrMap[j].mask);
-            $display("Pushing address: %b", (~aw_mcast & aw_addr) | (aw_mcast & AwAddrMap[j].addr));
+
+        // Compare request against each multicast rule. We look at the rules starting from the
+        // last ones. In case of multiple rules matching for the same slave, we want only
+        // the last rule to have effect
+        for (int j = (NoMulticastRules - 1); j >= 0; j--) begin
+
+          // Convert address rule to mask (NAPOT) form
+          rule_mask = AddrMap[j].end_addr - AddrMap[j].start_addr - 1;
+          rule_addr = AddrMap[j].start_addr;
+          for (int k = 0; k < AxiAddrWidth; k++)
+            addrmap_masked[k] = rule_mask[k] ? 1'bx : rule_addr[k];
+          $display("With slave %3d : %b", AddrMap[j].idx, addrmap_masked);
+
+          // Request goes to the slave if all bits match, out of those which are neither masked
+          // in the request nor in the addrmap rule
+          if (&(~(aw_addr ^ rule_addr) | rule_mask | aw_mcast)) begin
+            int unsigned slave_idx = AddrMap[j].idx;
+
+            // Only push the request if we haven't already matched it with a previous rule
+            // for the same slave
+            if (!matched_slaves[slave_idx]) begin
+              matched_slaves[slave_idx] = 1'b1;
+              to_slave_idx.push_back(slave_idx);
+              mask_to_slave.push_back(aw_mcast & rule_mask);
+              addr_to_slave.push_back((~aw_mcast & aw_addr) | (aw_mcast & rule_addr));
+              $display("  Push mask    : %32b", aw_mcast & rule_mask);
+              $display("  Push address : %32b", (~aw_mcast & aw_addr) | (aw_mcast & rule_addr));
+            end
           end
         end
+
+        // Compare request against each interval-form rule. We look at the rules starting from
+        // the last ones. We ignore the case of multiple rules matching for the same slave
+        // (as is the case in tb_mcast_xbar_pkg.sv)
+        $display("Trying to match: %x", aw_addr);
+        for (int j = (NoAddrRules - 1); j >= NoMulticastRules; j--) begin
+          $display("With slave %3d : [%x, %x)", AddrMap[j].idx, AddrMap[j].start_addr, AddrMap[j].end_addr);
+          if ((aw_addr >= AddrMap[j].start_addr) &&
+              (aw_addr < AddrMap[j].end_addr)) begin
+            to_slave_idx.push_back(AddrMap[j].idx);
+            addr_to_slave.push_back(aw_addr);
+            mask_to_slave.push_back('0);
+            $display("  Push address : %x", aw_addr);
+          end
+        end
+
         num_slaves_matched = to_slave_idx.size();
         decerr = num_slaves_matched == 0;
-        if (num_slaves_matched > 1 || decerr) begin
-          $display("MULTICAST occur: %b, %b", aw_addr, aw_mcast);
-          $display("Matched %0d slaves", num_slaves_matched);
-          for (int j = 0; j < NoSlaves; j++) begin
-            $display("  Slave %0d AddrMap: %b, %b", j, AwAddrMap[j].addr, AwAddrMap[j].mask);
-          end
-        end
 
         // send the exp aw beats down into the queues of the selected slaves 
         // when no decerror
@@ -371,8 +406,8 @@ package tb_axi_mcast_xbar_pkg;
         exp_slv_axi_id = {idx_mst_t'(i), mst_axi_id};
         exp_slv_idx    = '0;
         for (int unsigned j = 0; j < NoAddrRules; j++) begin
-          if ((mst_axi_addr >= ArAddrMap[j].start_addr) && (mst_axi_addr < ArAddrMap[j].end_addr)) begin
-            exp_slv_idx = ArAddrMap[j].idx;
+          if ((mst_axi_addr >= AddrMap[j].start_addr) && (mst_axi_addr < AddrMap[j].end_addr)) begin
+            exp_slv_idx = AddrMap[j].idx;
             exp_decerr  = 1'b0;
           end
         end

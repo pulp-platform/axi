@@ -237,7 +237,7 @@ exec_test() {
                                     for UNIQUE_IDS in 0 1; do
                                         call_vsim tb_axi_mcast_xbar -t 1ns -voptargs="+acc" \
                                             -gTbNumMasters=$NUM_MST       \
-                                            -gTbNumSlaves=$NUM_SLV        \
+                                            -gTbNumMcastSlaves=$NUM_SLV   \
                                             -gTbAxiIdWidthMasters=$MST_ID \
                                             -gTbAxiIdUsed=$MST_ID_USE     \
                                             -gTbAxiDataWidth=$DATA_WIDTH  \
