@@ -967,7 +967,9 @@ module synth_axi_xbar #(
     UniqueIds:          UniqueIds,
     AxiAddrWidth:       AxiAddrWidth,
     AxiDataWidth:       AxiDataWidth,
-    NoAddrRules:        NoSlvMst
+    NoAddrRules:        NoSlvMst,
+    NoMulticastRules:   0,
+    NoMulticastPorts:   0
   };
 
   typedef axi_pkg::xbar_mask_rule_32_t aw_rule_t; // Has to be the same width as axi addr

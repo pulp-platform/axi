@@ -75,7 +75,9 @@ module tb_axi_xbar #(
     UniqueIds:          TbUniqueIds,
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
-    NoAddrRules:        TbNumSlaves
+    NoAddrRules:        TbNumSlaves,
+    NoMulticastRules:   0,
+    NoMulticastPorts:   0
   };
   typedef logic [TbAxiIdWidthMasters-1:0] id_mst_t;
   typedef logic [TbAxiIdWidthSlaves-1:0]  id_slv_t;
