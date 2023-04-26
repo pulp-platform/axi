@@ -148,7 +148,7 @@ module tb_axi_lite_dw_converter #(
   end
 
   // FIFOs for sampling the channels
-  // Salve Port
+  // Slave Port
   aw_chan_lite_t    fifo_slv_aw[$];
   w_chan_lite_slv_t fifo_slv_w[$];
   b_chan_lite_t     fifo_slv_b[$];
@@ -339,29 +339,34 @@ module tb_axi_lite_dw_converter #(
     localparam int unsigned SelWidth       = $clog2(DataMultFactor);
     typedef logic [SelWidth-1:0] sel_t;
 
-    aw_chan_lite_t    fifo_exp_aw[$];
-    w_chan_lite_mst_t fifo_exp_w[$];
-    ar_chan_lite_t    fifo_exp_ar[$];
+    sel_t             fifo_exp_r_offs[$];
 
-
-    initial begin : proc_aw_check
-      automatic aw_chan_lite_t    aw_chan;
-      automatic w_chan_lite_slv_t w_chan;
-      automatic w_chan_lite_mst_t exp_w;
+    initial begin : proc_aw_w_check
+      automatic aw_chan_lite_t    mst_aw_chan, slv_aw_chan;
+      automatic w_chan_lite_slv_t slv_w_chan;
+      automatic w_chan_lite_mst_t mst_w_chan;
       automatic addr_t            exp_addr;
       automatic sel_t             w_sel;
+      automatic logic [TbAxiDataWidthMst/8-1:0] slv_w_strb_concat;
 
       forever begin
-        wait((fifo_slv_aw.size() > 0) && (fifo_slv_w.size() > 0));
-        aw_chan = fifo_slv_aw.pop_front();
-        w_chan  = fifo_slv_w.pop_front();
-        fifo_exp_aw.push_back(aw_chan);
-        // Calculate the expected W channel.
+        wait((fifo_slv_aw.size() > 0) && (fifo_mst_aw.size() > 0) && (fifo_slv_w.size() > 0) && (fifo_mst_w.size() > 0));
+        slv_aw_chan = fifo_slv_aw.pop_front();
+        slv_w_chan  = fifo_slv_w.pop_front();
+        mst_aw_chan = fifo_mst_aw.pop_front();
+        mst_w_chan  = fifo_mst_w.pop_front();
+        w_sel       = slv_aw_chan.addr[AddrShift+SelWidth-1:AddrShift];
 
+        assert (slv_aw_chan == mst_aw_chan) else $error("Master port> AW is not expected: EXP: %h ACT: %h",
+            slv_aw_chan, mst_aw_chan);
+        assert (slv_w_chan.data == mst_w_chan.data[TbAxiDataWidthSlv-1:0]) else $error("Master port> W.data is not expected: EXP: %h ACT: %h",
+            slv_w_chan.data, mst_w_chan.data);
+
+        slv_w_strb_concat = slv_w_chan.strb << (w_sel*TbAxiDataWidthSlv/8);
+        assert (slv_w_strb_concat == mst_w_chan.strb) else $error("Master port> W.strb is not expected: EXP: %h ACT: %h",
+            slv_w_chan.strb, mst_w_chan.strb);
       end
     end
-
-
 
     initial begin : proc_b_check
       automatic b_chan_lite_t b_act, b_exp;
@@ -371,6 +376,40 @@ module tb_axi_lite_dw_converter #(
         b_exp = fifo_mst_b.pop_front();
         assert (b_act == b_exp) else  $error("Slave port> B.resp is not expected: EXP: %h ACT:%h",
             b_exp.resp, b_act.resp);
+      end
+    end
+
+    initial begin : proc_ar_check
+      automatic ar_chan_lite_t mst_ar_chan, slv_ar_chan;
+      automatic sel_t r_sel;
+
+      forever begin
+        wait((fifo_slv_ar.size() > 0) && (fifo_mst_ar.size() > 0));
+        slv_ar_chan = fifo_slv_ar.pop_front();
+        mst_ar_chan = fifo_mst_ar.pop_front();
+        r_sel = slv_ar_chan.addr[AddrShift+SelWidth-1:AddrShift];
+        fifo_exp_r_offs.push_back(r_sel);
+
+        assert (slv_ar_chan == mst_ar_chan) else $error("Master port> AR is not expected: EXP: %h ACT: %h",
+          slv_ar_chan, mst_ar_chan);
+      end
+    end
+
+    initial begin : proc_r_check
+      automatic r_chan_lite_slv_t slv_r_chan;
+      automatic r_chan_lite_mst_t mst_r_chan;
+      automatic sel_t             r_sel;
+
+      forever begin
+        wait((fifo_slv_r.size() > 0) && (fifo_mst_r.size() > 0) && (fifo_exp_r_offs.size() > 0));
+        slv_r_chan = fifo_slv_r.pop_front();
+        mst_r_chan = fifo_mst_r.pop_front();
+        r_sel      = fifo_exp_r_offs.pop_front();
+
+        assert (slv_r_chan.resp == mst_r_chan.resp) else $error("Slave port> R.resp is not expected: EXP: %h, ACT: %h",
+          mst_r_chan.resp, slv_r_chan.resp);
+        assert (slv_r_chan.data == data_slv_t'(mst_r_chan.data >> (r_sel*TbAxiDataWidthSlv))) else $error("Slave port> R.data is not expected: EXP: %h, ACT: %h",
+          mst_r_chan.data, slv_r_chan.data);
       end
     end
 
