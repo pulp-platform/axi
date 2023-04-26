@@ -58,17 +58,24 @@ module axi_mcast_demux #(
   parameter bit          SpillB         = 1'b0,
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
-  parameter type         aw_rule_t      = logic,
+  parameter type         rule_t         = logic,
+  parameter int unsigned NoAddrRules    = 32'd0,
+  parameter int unsigned NoMulticastRules = 32'd0,
+  parameter int unsigned NoMulticastPorts = 32'd0,
   // Dependent parameters, DO NOT OVERRIDE!
+  parameter int unsigned DecodeIdxWidth = ((NoMstPorts - 1) > 32'd1) ? $clog2(NoMstPorts - 1) : 32'd1,
   parameter int unsigned IdxSelectWidth = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type         decode_idx_t   = logic [DecodeIdxWidth-1:0],
   parameter type         idx_select_t   = logic [IdxSelectWidth-1:0],
   parameter type         mask_select_t  = logic [NoMstPorts-1:0]
 ) (
   input  logic                       clk_i,
   input  logic                       rst_ni,
   input  logic                       test_i,
+  input  rule_t    [NoAddrRules-1:0] addr_map_i,
+  input  logic                       en_default_mst_port_i,
+  input  rule_t                      default_mst_port_i,
   // Slave Port
-  input  aw_rule_t [NoMstPorts-2:0]  slv_aw_addr_map_i,
   input  axi_req_t                   slv_req_i,
   input  idx_select_t                slv_ar_select_i,
   output axi_resp_t                  slv_resp_o,
@@ -82,6 +89,11 @@ module axi_mcast_demux #(
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
+  typedef struct packed {
+    int unsigned idx;
+    aw_addr_t addr;
+    aw_addr_t mask;
+  } mask_rule_t;
 
   // pass through if only one master port
   if (NoMstPorts == 32'h1) begin : gen_no_demux
@@ -169,12 +181,17 @@ module axi_mcast_demux #(
     logic                      slv_aw_ready;
 
     // AW address decoder
-    logic                      dec_aw_valid,  dec_aw_error;
-    aw_addr_t [NoMstPorts-2:0] dec_aw_addr,   dec_aw_mask;
-    logic     [NoMstPorts-2:0] dec_aw_select;
-    aw_addr_t [NoMstPorts-1:0] slv_aw_addr,   slv_aw_mask;
-    mask_select_t              slv_aw_select_mask;
-    idx_select_t               slv_aw_select;
+    mask_rule_t [NoMulticastRules-1:0] multicast_rules;
+    mask_rule_t                        default_rule;
+    decode_idx_t                       dec_aw_idx;
+    logic                              dec_aw_idx_valid, dec_aw_idx_error;
+    logic       [NoMulticastPorts-1:0] dec_aw_select_partial;
+    aw_addr_t   [NoMulticastPorts-1:0] dec_aw_addr, dec_aw_mask;
+    logic                              dec_aw_select_error;
+    logic       [NoMstPorts-2:0]       dec_aw_select;
+    aw_addr_t   [NoMstPorts-1:0]       slv_aw_addr, slv_aw_mask;
+    mask_select_t                      slv_aw_select_mask;
+    idx_select_t                       slv_aw_select;
 
     // AW channel to slave ports
     logic [NoMstPorts-1:0]    mst_aw_valids, mst_aw_readies;
@@ -275,23 +292,68 @@ module axi_mcast_demux #(
       .data_o  ( slv_aw_chan        )
     );
 
+    if (NoMulticastRules != NoAddrRules) begin : g_aw_idx_decode
+      // Compare request against {start_addr, end_addr} rules
+      addr_decode #(
+        .NoIndices(NoMstPorts - 1),
+        .NoRules  (NoAddrRules - NoMulticastRules),
+        .addr_t   (aw_addr_t),
+        .rule_t   (rule_t)
+      ) i_axi_aw_idx_decode (
+        .addr_i          (slv_aw_chan.addr),
+        .addr_map_i      (addr_map_i[NoAddrRules-1:NoMulticastRules]),
+        .idx_o           (dec_aw_idx),
+        .dec_valid_o     (dec_aw_idx_valid),
+        .dec_error_o     (dec_aw_idx_error),
+        .en_default_idx_i(1'b0),
+        .default_idx_i   ('0)
+      );
+    end else begin : g_no_aw_idx_decode
+      assign dec_aw_idx_valid = 1'b0;
+      assign dec_aw_idx_error = 1'b1;
+      assign dec_aw_idx = '0;
+    end
+
+    // Convert multicast rules to mask (NAPOT) form
+    // - mask =  {'0, {log2(end_addr - start_addr){1'b1}}}
+    // - addr = start_addr / (end_addr - start_addr)
+    // More info in `multiaddr_decode` module
+    // TODO colluca: add checks on conversion feasibility
+    for (genvar i = 0; i < NoMulticastRules; i++) begin : g_multicast_rules
+      assign multicast_rules[i].idx = addr_map_i[i].idx;
+      assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
+      assign multicast_rules[i].addr = addr_map_i[i].start_addr;
+    end
+    assign default_rule.idx = default_mst_port_i.idx;
+    assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
+    assign default_rule.addr = default_mst_port_i.start_addr;
+
+    // Compare request against {addr, mask} rules
     multiaddr_decode #(
-      .NoRules(NoMstPorts-1),
+      .NoIndices(NoMulticastPorts),
+      .NoRules(NoMulticastRules),
       .addr_t (aw_addr_t),
-      .rule_t (aw_rule_t)
-    ) i_axi_aw_decode (
+      .rule_t (mask_rule_t)
+    ) i_axi_aw_mask_decode (
+      .addr_map_i (multicast_rules),
       .addr_i     (slv_aw_chan.addr),
       .mask_i     (slv_aw_chan.user.mcast),
-      .addr_map_i (slv_aw_addr_map_i),
-      .select_o   (dec_aw_select),
+      .select_o   (dec_aw_select_partial),
       .addr_o     (dec_aw_addr),
       .mask_o     (dec_aw_mask),
-      .dec_valid_o(dec_aw_valid),
-      .dec_error_o(dec_aw_error)
+      .dec_valid_o(),
+      .dec_error_o(dec_aw_select_error),
+      .en_default_idx_i(en_default_mst_port_i),
+      .default_idx_i   (default_rule)
     );
-    assign slv_aw_select_mask = (dec_aw_error) ?
-        {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
-    assign slv_aw_addr = {'0, dec_aw_addr};
+
+    // Combine output from the two address decoders
+    // Note: assumes the slaves targeted by multicast lie at the lower indices
+    assign dec_aw_select = (dec_aw_idx_valid << dec_aw_idx) | dec_aw_select_partial;
+
+    assign slv_aw_select_mask = (dec_aw_idx_error && dec_aw_select_error) ?
+      {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
+    assign slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_addr};
     assign slv_aw_mask = {'0, dec_aw_mask};
 
     // Control of the AW handshake
@@ -1040,7 +1102,7 @@ module axi_mcast_demux_intf #(
   parameter bit          SPILL_B          = 1'b0,
   parameter bit          SPILL_AR         = 1'b1,
   parameter bit          SPILL_R          = 1'b0,
-  parameter type         aw_rule_t        = logic,
+  parameter type         rule_t           = logic,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter int unsigned SELECT_WIDTH   = (NO_MST_PORTS > 32'd1) ? $clog2(NO_MST_PORTS) : 32'd1,
   parameter type         idx_select_t   = logic [SELECT_WIDTH-1:0],
@@ -1049,8 +1111,10 @@ module axi_mcast_demux_intf #(
   input  logic    clk_i,                 // Clock
   input  logic    rst_ni,                // Asynchronous reset active low
   input  logic    test_i,                // Testmode enable
-  input  aw_rule_t [NO_MST_PORTS-2:0] slv_aw_addr_map_i,
+  input  rule_t [NO_MST_PORTS-2:0] addr_map_i,
   input  idx_select_t  slv_ar_select_i,  // has to be stable, when ar_valid
+  input  logic    en_default_mst_port_i,
+  input  rule_t   default_mst_port_i,
   AXI_BUS.Slave   slv,                   // slave port
   AXI_BUS.Master  mst [NO_MST_PORTS-1:0], // master ports
   output logic    [NO_MST_PORTS-1:0] mst_is_mcast_o,
@@ -1102,14 +1166,16 @@ module axi_mcast_demux_intf #(
     .SpillB         ( SPILL_B       ),
     .SpillAr        ( SPILL_AR      ),
     .SpillR         ( SPILL_R       ),
-    .aw_rule_t      ( aw_rule_t     )
+    .rule_t         ( rule_t        )
   ) i_axi_demux (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
     .test_i,  // Testmode enable
+    .addr_map_i      ( addr_map_i      ),
+    .en_default_mst_port_i ( en_default_mst_port_i ),
+    .default_mst_port_i ( default_mst_port_i ),
     // slave port
     .slv_req_i       ( slv_req         ),
-    .slv_aw_addr_map_i ( slv_aw_addr_map_i ),
     .slv_ar_select_i ( slv_ar_select_i ),
     .slv_resp_o      ( slv_resp        ),
     // master port

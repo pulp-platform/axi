@@ -967,11 +967,12 @@ module synth_axi_xbar #(
     UniqueIds:          UniqueIds,
     AxiAddrWidth:       AxiAddrWidth,
     AxiDataWidth:       AxiDataWidth,
-    NoAddrRules:        NoSlvMst
+    NoAddrRules:        NoSlvMst,
+    NoMulticastRules:   EnableMulticast ? NoSlvMst : 0,
+    NoMulticastPorts:   EnableMulticast ? NoSlvMst : 0
   };
 
-  typedef axi_pkg::xbar_mask_rule_32_t aw_rule_t; // Has to be the same width as axi addr
-  typedef axi_pkg::xbar_rule_32_t      ar_rule_t; // Has to be the same width as axi addr
+  typedef axi_pkg::xbar_rule_32_t rule_t; // Has to be the same width as axi addr
 
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, aw_user_t)
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, aw_user_t)
@@ -990,26 +991,15 @@ module synth_axi_xbar #(
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
   // Each slave has its own address range:
-  localparam ar_rule_t [xbar_cfg.NoAddrRules-1:0] ar_addr_map = ar_addr_map_gen();
-  localparam aw_rule_t [xbar_cfg.NoAddrRules-1:0] aw_addr_map = aw_addr_map_gen();
+  localparam rule_t [xbar_cfg.NoAddrRules-1:0] addr_map = addr_map_gen();
 
-  function ar_rule_t [xbar_cfg.NoAddrRules-1:0] ar_addr_map_gen ();
+  function rule_t [xbar_cfg.NoAddrRules-1:0] addr_map_gen ();
     for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
-      ar_addr_map_gen[i] = ar_rule_t'{
+      addr_map_gen[i] = rule_t'{
         idx:        unsigned'(i),
         start_addr:  i    * 32'h0000_2000,
         end_addr:   (i+1) * 32'h0000_2000,
         default:    '0
-      };
-    end
-  endfunction
-
-  function aw_rule_t [xbar_cfg.NoAddrRules-1:0] aw_addr_map_gen ();
-    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
-      aw_addr_map_gen[i] = aw_rule_t'{
-        addr:    i * 32'h0000_2000,
-        mask:    32'h0000_1FFF,
-        default: '0
       };
     end
   endfunction
@@ -1138,8 +1128,7 @@ module synth_axi_xbar #(
       .slv_resp_t   (slv_resp_t),
       .mst_req_t    (mst_req_t),
       .mst_resp_t   (mst_resp_t),
-      .ar_rule_t    (ar_rule_t),
-      .aw_rule_t    (aw_rule_t)
+      .rule_t       (rule_t)
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
@@ -1148,8 +1137,9 @@ module synth_axi_xbar #(
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
       .mst_ports_resp_i     (mst_resps),
-      .ar_addr_map_i        (ar_addr_map),
-      .aw_addr_map_i        (aw_addr_map)
+      .addr_map_i           (addr_map),
+      .en_default_mst_port_i('0),
+      .default_mst_port_i   ('0)
     );
   end else begin : g_no_multicast
     axi_xbar #(
@@ -1167,7 +1157,7 @@ module synth_axi_xbar #(
       .slv_resp_t   (slv_resp_t),
       .mst_req_t    (mst_req_t),
       .mst_resp_t   (mst_resp_t),
-      .rule_t       (ar_rule_t)
+      .rule_t       (rule_t)
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
@@ -1176,7 +1166,7 @@ module synth_axi_xbar #(
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
       .mst_ports_resp_i     (mst_resps),
-      .addr_map_i           (ar_addr_map),
+      .addr_map_i           (addr_map),
       .en_default_mst_port_i('0),
       .default_mst_port_i   ('0)
     );
