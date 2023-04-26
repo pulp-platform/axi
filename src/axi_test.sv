@@ -1561,7 +1561,7 @@ package axi_test;
         ar_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
         ar_prot = prot_t'($urandom());
         this.ar_queue.push_back(ar_addr);
-        $display("%0t %s> Send AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
+        // $display("%0t %s> Send AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
         drv.send_ar(ar_addr, ar_prot);
       end
     endtask : send_ars
@@ -1575,7 +1575,7 @@ package axi_test;
         ar_addr = this.ar_queue.pop_front();
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
         drv.recv_r(r_data, r_resp);
-        $display("%0t %s> Recv  R with DATA: %h RESP: %0h", $time(), this.name, r_data, r_resp);
+        // $display("%0t %s> Recv  R with DATA: %h RESP: %0h", $time(), this.name, r_data, r_resp);
       end
     endtask : recv_rs
 
@@ -1587,7 +1587,7 @@ package axi_test;
         aw_addr = addr_t'($urandom_range(MIN_ADDR, MAX_ADDR));
         aw_prot = prot_t'($urandom());
         this.aw_queue.push_back(aw_addr);
-        $display("%0t %s> Send AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
+        // $display("%0t %s> Send AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
         this.drv.send_aw(aw_addr, aw_prot);
         this.b_queue.push_back(1'b1);
       end
@@ -1604,7 +1604,7 @@ package axi_test;
         aw_addr = aw_queue.pop_front();
         rand_success = std::randomize(w_data); assert(rand_success);
         rand_success = std::randomize(w_strb); assert(rand_success);
-        $display("%0t %s> Send  W with DATA: %h STRB: %h", $time(), this.name, w_data, w_strb);
+        // $display("%0t %s> Send  W with DATA: %h STRB: %h", $time(), this.name, w_data, w_strb);
         this.drv.send_w(w_data, w_strb);
         w_queue.push_back(1'b1);
       end
@@ -1619,7 +1619,7 @@ package axi_test;
         go_b = this.w_queue.pop_front();
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
         this.drv.recv_b(b_resp);
-        $display("%0t %s> Recv  B with RESP: %h", $time(), this.name, b_resp);
+        // $display("%0t %s> Recv  B with RESP: %h", $time(), this.name, b_resp);
       end
     endtask : recv_bs
 
@@ -1637,26 +1637,26 @@ package axi_test;
     // write data to a specific address
     task automatic write(input addr_t w_addr, input prot_t w_prot = prot_t'(0), input data_t w_data,
                          input strb_t w_strb, output axi_pkg::resp_t b_resp);
-      $display("%0t %s> Write to ADDR: %h, PROT: %b DATA: %h, STRB: %h",
-          $time(), this.name, w_addr, w_prot, w_data, w_strb);
+      // $display("%0t %s> Write to ADDR: %h, PROT: %b DATA: %h, STRB: %h",
+      //     $time(), this.name, w_addr, w_prot, w_data, w_strb);
       fork
         this.drv.send_aw(w_addr, w_prot);
         this.drv.send_w(w_data, w_strb);
       join
       this.drv.recv_b(b_resp);
-      $display("%0t %s> Received write response from ADDR: %h RESP: %h",
-          $time(), this.name, w_addr, b_resp);
+      // $display("%0t %s> Received write response from ADDR: %h RESP: %h",
+      //     $time(), this.name, w_addr, b_resp);
     endtask : write
 
     // read data from a specific location
     task automatic read(input addr_t r_addr, input prot_t r_prot = prot_t'(0),
                         output data_t r_data, output axi_pkg::resp_t r_resp);
-      $display("%0t %s> Read from ADDR: %h PROT: %b",
-          $time(), this.name, r_addr, r_prot);
+      // $display("%0t %s> Read from ADDR: %h PROT: %b",
+      //     $time(), this.name, r_addr, r_prot);
       this.drv.send_ar(r_addr, r_prot);
       this.drv.recv_r(r_data, r_resp);
-      $display("%0t %s> Recieved read response from ADDR: %h DATA: %h RESP: %h",
-          $time(), this.name, r_addr, r_data, r_resp);
+      // $display("%0t %s> Recieved read response from ADDR: %h DATA: %h RESP: %h",
+      //     $time(), this.name, r_addr, r_data, r_resp);
     endtask : read
   endclass
 
@@ -1722,7 +1722,7 @@ package axi_test;
         automatic prot_t ar_prot;
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
         this.drv.recv_ar(ar_addr, ar_prot);
-        $display("%0t %s> Recv AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
+        // $display("%0t %s> Recv AR with ADDR: %h PROT: %b", $time(), this.name, ar_addr, ar_prot);
         this.ar_queue.push_back(ar_addr);
       end
     endtask : recv_ars
@@ -1738,7 +1738,7 @@ package axi_test;
         rand_success = std::randomize(r_data); assert(rand_success);
         rand_success = std::randomize(r_resp); assert(rand_success);
         rand_wait(R_MIN_WAIT_CYCLES, R_MAX_WAIT_CYCLES);
-        $display("%0t %s> Send  R with DATA: %h RESP: %h", $time(), this.name, r_data, r_resp);
+        // $display("%0t %s> Send  R with DATA: %h RESP: %h", $time(), this.name, r_data, r_resp);
         this.drv.send_r(r_data, r_resp);
       end
     endtask : send_rs
@@ -1749,7 +1749,7 @@ package axi_test;
         automatic prot_t aw_prot;
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
         this.drv.recv_aw(aw_addr, aw_prot);
-        $display("%0t %s> Recv AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
+        // $display("%0t %s> Recv AW with ADDR: %h PROT: %b", $time(), this.name, aw_addr, aw_prot);
         this.aw_queue.push_back(aw_addr);
       end
     endtask : recv_aws
@@ -1760,7 +1760,7 @@ package axi_test;
         automatic strb_t w_strb;
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
         this.drv.recv_w(w_data, w_strb);
-        $display("%0t %s> Recv  W with DATA: %h SRTB: %h", $time(), this.name, w_data, w_strb);
+        // $display("%0t %s> Recv  W with DATA: %h SRTB: %h", $time(), this.name, w_data, w_strb);
         this.b_queue.push_back(1'b1);
       end
     endtask : recv_ws
@@ -1776,7 +1776,7 @@ package axi_test;
         go_b  = this.b_queue.pop_front();
         rand_wait(RESP_MIN_WAIT_CYCLES, RESP_MAX_WAIT_CYCLES);
         rand_success = std::randomize(b_resp); assert(rand_success);
-        $display("%0t %s> Send  B with RESP: %h", $time(), this.name, b_resp);
+        // $display("%0t %s> Send  B with RESP: %h", $time(), this.name, b_resp);
         this.drv.send_b(b_resp);
       end
     endtask : send_bs
