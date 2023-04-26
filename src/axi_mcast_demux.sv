@@ -182,15 +182,15 @@ module axi_mcast_demux #(
 
     // AW address decoder
     mask_rule_t [NoMulticastRules-1:0] multicast_rules;
-    logic                      dec_aw_idx_valid, dec_aw_idx_error;
-    logic                      dec_aw_select_valid, dec_aw_select_error;
-    decode_idx_t               dec_aw_idx;
-    aw_addr_t [NoMstPorts-2:0] dec_aw_addr, dec_aw_mask;
-    logic     [NoMstPorts-2:0] dec_aw_select;
-    logic     [NoMulticastPorts-1:0] dec_aw_select_partial;
-    aw_addr_t [NoMstPorts-1:0] slv_aw_addr, slv_aw_mask;
-    mask_select_t              slv_aw_select_mask;
-    idx_select_t               slv_aw_select;
+    decode_idx_t                       dec_aw_idx;
+    logic                              dec_aw_idx_valid, dec_aw_idx_error;
+    logic       [NoMulticastPorts-1:0] dec_aw_select_partial;
+    aw_addr_t   [NoMulticastPorts-1:0] dec_aw_addr, dec_aw_mask;
+    logic                              dec_aw_select_error;
+    logic       [NoMstPorts-2:0]       dec_aw_select;
+    aw_addr_t   [NoMstPorts-1:0]       slv_aw_addr, slv_aw_mask;
+    mask_select_t                      slv_aw_select_mask;
+    idx_select_t                       slv_aw_select;
 
     // AW channel to slave ports
     logic [NoMstPorts-1:0]    mst_aw_valids, mst_aw_readies;
@@ -346,7 +346,7 @@ module axi_mcast_demux #(
 
     assign slv_aw_select_mask = (dec_aw_idx_error && dec_aw_select_error) ?
         {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
-    assign slv_aw_addr = {'0, dec_aw_addr};
+    assign slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_addr};
     assign slv_aw_mask = {'0, dec_aw_mask};
 
     // Control of the AW handshake

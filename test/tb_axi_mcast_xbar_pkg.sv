@@ -28,6 +28,7 @@ package tb_axi_mcast_xbar_pkg;
     parameter int unsigned NoMasters,
     parameter int unsigned NoSlaves,
     parameter int unsigned NoAddrRules,
+    parameter int unsigned NoMulticastRules,
     parameter type         rule_t,
     parameter rule_t [NoAddrRules-1:0] AddrMap,
       // Stimuli application and test time
@@ -190,10 +191,10 @@ package tb_axi_mcast_xbar_pkg;
           aw_addr_masked[k] = aw_mcast[k] ? 1'bx : aw_addr[k];
         $display("Trying to match: %b", aw_addr_masked);
 
-        // Compare request against each address rule. We look at the rules starting from the
+        // Compare request against each multicast rule. We look at the rules starting from the
         // last ones. In case of multiple rules matching for the same slave, we want only
         // the last rule to have effect
-        for (int j = (NoAddrRules - 1); j >= 0; j--) begin
+        for (int j = (NoMulticastRules - 1); j >= 0; j--) begin
 
           // Convert address rule to mask (NAPOT) form
           rule_mask = AddrMap[j].end_addr - AddrMap[j].start_addr - 1;
@@ -217,6 +218,21 @@ package tb_axi_mcast_xbar_pkg;
               $display("  Push mask    : %32b", aw_mcast & rule_mask);
               $display("  Push address : %32b", (~aw_mcast & aw_addr) | (aw_mcast & rule_addr));
             end
+          end
+        end
+
+        // Compare request against each interval-form rule. We look at the rules starting from
+        // the last ones. We ignore the case of multiple rules matching for the same slave
+        // (as is the case in tb_mcast_xbar_pkg.sv)
+        $display("Trying to match: %x", aw_addr);
+        for (int j = (NoAddrRules - 1); j >= NoMulticastRules; j--) begin
+          $display("With slave %3d : [%x, %x)", AddrMap[j].idx, AddrMap[j].start_addr, AddrMap[j].end_addr);
+          if ((aw_addr >= AddrMap[j].start_addr) &&
+              (aw_addr < AddrMap[j].end_addr)) begin
+            to_slave_idx.push_back(AddrMap[j].idx);
+            addr_to_slave.push_back(aw_addr);
+            mask_to_slave.push_back('0);
+            $display("  Push address : %x", aw_addr);
           end
         end
 
