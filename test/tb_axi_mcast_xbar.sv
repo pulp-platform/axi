@@ -27,8 +27,9 @@
 module tb_axi_mcast_xbar #(
   /// Number of AXI masters connected to the xbar. (Number of slave ports)
   parameter int unsigned TbNumMasters        = 32'd6,
-  /// Number of AXI slaves connected to the xbar. (Number of master ports)
-  parameter int unsigned TbNumSlaves         = 32'd8,
+  /// Number of AXI slaves connected to the xbar which can be targeted by multicast
+  /// transactions. (Number of multicast-enabled master ports)
+  parameter int unsigned TbNumMcastSlaves    = 32'd8,
   /// Number of write transactions per master.
   parameter int unsigned TbNumWrites         = 32'd200,
   /// Number of read transactions per master.
@@ -62,6 +63,7 @@ module tb_axi_mcast_xbar #(
   localparam int unsigned TbAxiStrbWidth     =  TbAxiDataWidth / 8;
   localparam int unsigned TbAxiUserWidth     =  TbAxiAddrWidth;
   // In the bench can change this variables which are set here freely,
+  localparam TbNumSlaves = TbNumMcastSlaves + 1;
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
     NoSlvPorts:         TbNumMasters,
     NoMstPorts:         TbNumSlaves,
@@ -75,20 +77,18 @@ module tb_axi_mcast_xbar #(
     UniqueIds:          TbUniqueIds,
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
-    NoAddrRules:        TbNumSlaves
+    NoAddrRules:        TbNumMcastSlaves * 2 + 1,
+    NoMulticastRules:   TbNumMcastSlaves * 2,
+    NoMulticastPorts:   TbNumMcastSlaves
   };
   typedef logic [TbAxiIdWidthMasters-1:0] id_mst_t;
   typedef logic [TbAxiIdWidthSlaves-1:0]  id_slv_t;
   typedef logic [TbAxiAddrWidth-1:0]      addr_t;
   typedef struct packed {
-    addr_t addr;
-    addr_t mask;
-  } aw_rule_t;
-  typedef struct packed {
     int unsigned idx;
     addr_t start_addr;
     addr_t end_addr;
-  } ar_rule_t;
+  } rule_t;
   typedef logic [TbAxiDataWidth-1:0]      data_t;
   typedef logic [TbAxiStrbWidth-1:0]      strb_t;
   typedef logic [TbAxiUserWidth-1:0]      user_t;
@@ -110,26 +110,21 @@ module tb_axi_mcast_xbar #(
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
 
   // Each slave has its own address range:
-  localparam ar_rule_t [xbar_cfg.NoAddrRules-1:0] ArAddrMap = ar_addr_map_gen();
-  localparam aw_rule_t [xbar_cfg.NoAddrRules-1:0] AwAddrMap = aw_addr_map_gen();
+  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = {rule_t'{
+                                                            idx:        TbNumMcastSlaves,
+                                                            start_addr: 32'h7000_0000,
+                                                            end_addr:   32'h7008_0000
+                                                          },
+                                                          addr_map_gen(32'h1000_0000, 32'h10_0000),
+                                                          addr_map_gen(32'h0b00_0000, 32'h1_0000)};
 
-  function ar_rule_t [xbar_cfg.NoAddrRules-1:0] ar_addr_map_gen ();
-    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
-      ar_addr_map_gen[i] = ar_rule_t'{
+  function rule_t [xbar_cfg.NoMulticastPorts-1:0] addr_map_gen (addr_t base, addr_t offset);
+    for (int unsigned i = 0; i < xbar_cfg.NoMulticastPorts; i++) begin
+      addr_map_gen[i] = rule_t'{
         idx:        unsigned'(i),
-        start_addr:  i    * 32'h0000_2000,
-        end_addr:   (i+1) * 32'h0000_2000,
+        start_addr: base + offset * i,
+        end_addr:   base + offset * (i + 1),
         default:    '0
-      };
-    end
-  endfunction
-
-  function aw_rule_t [xbar_cfg.NoAddrRules-1:0] aw_addr_map_gen ();
-    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
-      aw_addr_map_gen[i] = aw_rule_t'{
-        addr:    i * 32'h0000_2000,
-        mask:    32'h0000_1FFF,
-        default: '0
       };
     end
   endfunction
@@ -237,10 +232,16 @@ module tb_axi_mcast_xbar #(
     initial begin
       axi_rand_master[i] = new( master_dv[i] );
       end_of_sim[i] <= 1'b0;
-      axi_rand_master[i].add_memory_region(ArAddrMap[0].start_addr,
-                                      ArAddrMap[xbar_cfg.NoAddrRules-1].end_addr,
+      axi_rand_master[i].add_memory_region(AddrMap[0].start_addr,
+                                      AddrMap[xbar_cfg.NoMulticastPorts-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-      axi_rand_master[i].set_multicast_probability(0.5);
+      axi_rand_master[i].add_memory_region(AddrMap[xbar_cfg.NoMulticastPorts].start_addr,
+                                      AddrMap[xbar_cfg.NoMulticastRules-1].end_addr,
+                                      axi_pkg::DEVICE_NONBUFFERABLE);
+      axi_rand_master[i].add_memory_region(AddrMap[xbar_cfg.NoMulticastRules].start_addr,
+                                      AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
+                                      axi_pkg::DEVICE_NONBUFFERABLE);
+      axi_rand_master[i].set_multicast_probability(50);
       axi_rand_master[i].reset();
       @(posedge rst_n);
       axi_rand_master[i].run(TbNumReads, TbNumWrites);
@@ -268,10 +269,9 @@ module tb_axi_mcast_xbar #(
       .NoMasters         ( TbNumMasters         ),
       .NoSlaves          ( TbNumSlaves          ),
       .NoAddrRules       ( xbar_cfg.NoAddrRules ),
-      .ar_rule_t         ( ar_rule_t            ),
-      .aw_rule_t         ( aw_rule_t            ),
-      .ArAddrMap         ( ArAddrMap            ),
-      .AwAddrMap         ( AwAddrMap            ),
+      .NoMulticastRules  ( xbar_cfg.NoMulticastRules ),
+      .rule_t            ( rule_t               ),
+      .AddrMap           ( AddrMap              ),
       .TimeTest          ( TestTime             )
     ) monitor = new( master_monitor_dv, slave_monitor_dv );
     fork
@@ -305,16 +305,16 @@ module tb_axi_mcast_xbar #(
   axi_mcast_xbar_intf #(
     .AXI_USER_WIDTH ( TbAxiUserWidth ),
     .Cfg            ( xbar_cfg       ),
-    .ar_rule_t      ( ar_rule_t      ),
-    .aw_rule_t      ( aw_rule_t      )
+    .rule_t         ( rule_t         )
   ) i_xbar_dut (
     .clk_i                  ( clk     ),
     .rst_ni                 ( rst_n   ),
     .test_i                 ( 1'b0    ),
     .slv_ports              ( master  ),
     .mst_ports              ( slave   ),
-    .ar_addr_map_i          ( ArAddrMap ),
-    .aw_addr_map_i          ( AwAddrMap )
+    .addr_map_i             ( AddrMap ),
+    .en_default_mst_port_i  ( '0      ),
+    .default_mst_port_i     ( '0      )
   );
 
   // logger for master modules
