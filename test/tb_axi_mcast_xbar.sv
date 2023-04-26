@@ -75,8 +75,8 @@ module tb_axi_mcast_xbar #(
     UniqueIds:          TbUniqueIds,
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
-    NoAddrRules:        TbNumSlaves,
-    NoMulticastRules:   TbNumSlaves,
+    NoAddrRules:        TbNumSlaves * 2,
+    NoMulticastRules:   TbNumSlaves * 2,
     NoMulticastPorts:   TbNumSlaves
   };
   typedef logic [TbAxiIdWidthMasters-1:0] id_mst_t;
@@ -108,14 +108,15 @@ module tb_axi_mcast_xbar #(
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
 
   // Each slave has its own address range:
-  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = addr_map_gen();
+  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = {addr_map_gen(32'h1000_0000, 32'h10_0000),
+                                                          addr_map_gen(32'h0b00_0000, 32'h1_0000)};
 
-  function rule_t [xbar_cfg.NoAddrRules-1:0] addr_map_gen ();
-    for (int unsigned i = 0; i < xbar_cfg.NoAddrRules; i++) begin
+  function rule_t [xbar_cfg.NoMstPorts-1:0] addr_map_gen (addr_t base, addr_t offset);
+    for (int unsigned i = 0; i < xbar_cfg.NoMstPorts; i++) begin
       addr_map_gen[i] = rule_t'{
         idx:        unsigned'(i),
-        start_addr:  i    * 32'h0000_2000,
-        end_addr:   (i+1) * 32'h0000_2000,
+        start_addr: base + offset * i,
+        end_addr:   base + offset * (i + 1),
         default:    '0
       };
     end
@@ -225,9 +226,12 @@ module tb_axi_mcast_xbar #(
       axi_rand_master[i] = new( master_dv[i] );
       end_of_sim[i] <= 1'b0;
       axi_rand_master[i].add_memory_region(AddrMap[0].start_addr,
+                                      AddrMap[xbar_cfg.NoMstPorts-1].end_addr,
+                                      axi_pkg::DEVICE_NONBUFFERABLE);
+      axi_rand_master[i].add_memory_region(AddrMap[xbar_cfg.NoMstPorts].start_addr,
                                       AddrMap[xbar_cfg.NoAddrRules-1].end_addr,
                                       axi_pkg::DEVICE_NONBUFFERABLE);
-      axi_rand_master[i].set_multicast_probability(0.5);
+      axi_rand_master[i].set_multicast_probability(50);
       axi_rand_master[i].reset();
       @(posedge rst_n);
       axi_rand_master[i].run(TbNumReads, TbNumWrites);
