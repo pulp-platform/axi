@@ -46,13 +46,13 @@ are counted separately (except for ATOPs, which count as both read and write).</
 ><p>Response struct type of the AXI4+ATOP master port</p>
 </div><h3 id="parameter.MstIdBaseOffset" class="impl"><code class="in-band">MstIdBaseOffset<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>A custom offset (modulo <code>AxiMstPortMaxUniqIds</code>, ignored for input IDs remapped through
-<code>ExplicitIdMap</code>) for the assigned output IDs.</p>
-</div><h3 id="parameter.ExplicitIdMapNumEntries" class="impl"><code class="in-band">ExplicitIdMapNumEntries<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+<code>IdMap</code>) for the assigned output IDs.</p>
+</div><h3 id="parameter.IdMapNumEntries" class="impl"><code class="in-band">IdMapNumEntries<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Explicit input-output ID map. If an input ID <code>id</code> does not appear in this mapping (default),
-it is simply mapped to the output ID <code>id % AxiMstPortMaxUniqIds</code>. If <code>id</code> appears in more than
-one entry, it is matched to the <em>last</em> matching entry's output ID.
+it is simply mapped to the output ID <code>id % AxiMstPortMaxUniqIds</code>. If <code>id</code> appears in more
+than one entry, it is matched to the <em>last</em> matching entry's output ID.
 Number of Entries in the explicit ID map (default: None)</p>
-</div><h3 id="parameter.ExplicitIdMap" class="impl"><code class="in-band">ExplicitIdMap<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+</div><h3 id="parameter.IdMap" class="impl"><code class="in-band">IdMap<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Explicit ID map; index [0] in each entry is the input ID to match, index [1] the output ID.</p>
 </div><h3 id="parameter.SelectWidth" class="impl"><code class="in-band">SelectWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ><p>Number of bits of the slave port ID that determine the mapping to the master port ID</p>
