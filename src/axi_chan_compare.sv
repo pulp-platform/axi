@@ -15,6 +15,8 @@
 
 /// Non-synthesizable module comparing two AXI channels of the same type
 module axi_chan_compare #(
+    /// Ignore ID field if it was remapped
+    parameter bit  IgnoreId  = 1'b0,
     parameter type aw_chan_t = logic,
     parameter type w_chan_t  = logic,
     parameter type b_chan_t  = logic,
@@ -155,32 +157,43 @@ module axi_chan_compare #(
     always_ff @(posedge clk_b_i) begin : proc_dequeue_and_check_b
         // aw
         if (axi_b_req.aw_valid & axi_b_res.aw_ready) begin
-            automatic aw_chan_t aw;
+            automatic aw_chan_t aw_exp, aw_recv;
             if (aw_queue.size() == 0) $error("AW queue is empty!");
-            aw = aw_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_b_req.aw !== aw) begin
+            aw_exp = aw_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            aw_recv = axi_b_req.aw;
+            if (IgnoreId) begin
+                aw_exp.id = 'X;
+                aw_recv.id = 'X;
+            end
+            if (aw_exp.aw !== aw_recv) begin
                 $error("AW mismatch!");
-                print_aw(aw, axi_b_req.aw);
+                print_aw(aw_exp, aw_recv);
             end
         end
         // w
         if (axi_b_req.w_valid & axi_b_res.w_ready) begin
-            automatic w_chan_t w;
+            automatic w_chan_t w_exp, w_recv;
             if (w_queue.size() == 0) $error("W queue is empty!");
-            w = w_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_b_req.w !== w) begin
+            w_exp = w_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            w_recv = axi_b_req.w;
+            if (w_exp !== w_recv) begin
                 $error("W mismatch!");
-                print_w(w, axi_b_req.w);
+                print_w(w_exp, w_recv);
             end
         end
         // ar
         if (axi_b_req.ar_valid & axi_b_res.ar_ready) begin
-            automatic ar_chan_t ar;
+            automatic ar_chan_t ar_exp, ar_recv;
             if (ar_queue.size() == 0) $error("AR queue is empty!");
-            ar = ar_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_b_req.ar !== ar) begin
+            ar_exp = ar_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            ar_recv = axi_b_req.ar;
+            if (IgnoreId) begin
+                ar_exp.id = 'X;
+                ar_recv.id = 'X;
+            end
+            if (ar_exp !== ar_recv) begin
                 $error("AR mismatch!");
-                print_ar(ar, axi_b_req.ar);
+                print_ar(ar_exp, ar_recv);
             end
         end
     end
@@ -189,22 +202,32 @@ module axi_chan_compare #(
     always_ff @(posedge clk_a_i) begin : proc_dequeue_and_check_a
         // b
         if (axi_a_res.b_valid & axi_a_req.b_ready) begin
-            automatic b_chan_t b;
+            automatic b_chan_t b_exp, b_recv;
             if (b_queue.size() == 0) $error("B queue is empty!");
-            b = b_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_a_res.b !== b) begin
+            b_exp = b_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            b_recv = axi_a_res.b;
+            if (IgnoreId) begin
+                b_exp.id = 'X;
+                b_recv.id = 'X;
+            end
+            if (b_exp !== b_recv) begin
                 $error("B mismatch!");
-                print_b(b, axi_a_res.b);
+                print_b(b_exp, b_recv);
             end
         end
         // r
         if (axi_a_res.r_valid & axi_a_req.r_ready) begin
-            automatic r_chan_t r;
+            automatic r_chan_t r_exp, r_recv;
             if (r_queue.size() == 0) $error("R queue is empty!");
-            r = r_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
-            if (axi_a_res.r !== r) begin
+            r_exp = r_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            r_recv = axi_a_res.r;
+            if (IgnoreId) begin
+                r_exp.id = 'X;
+                r_recv.id = 'X;
+            end
+            if (r_exp !== r_recv) begin
                 $error("R mismatch!");
-                print_r(r, axi_a_res.r);
+                print_r(r_exp, r_recv);
             end
         end
     end
