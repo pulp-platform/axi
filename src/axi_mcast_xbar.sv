@@ -234,7 +234,12 @@ import cf_math_pkg::idx_width;
         );
 
       end else begin : gen_no_connection
+
+        assign mst_is_mcast[j][i] = 1'b0;
+        assign mst_aw_commit[j][i] = 1'b0;
+
         assign mst_reqs[j][i] = '0;
+
         axi_err_slv #(
           .AxiIdWidth ( Cfg.AxiIdWidthSlvPorts  ),
           .axi_req_t  ( slv_req_t               ),
