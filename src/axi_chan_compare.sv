@@ -165,7 +165,7 @@ module axi_chan_compare #(
                 aw_exp.id = 'X;
                 aw_recv.id = 'X;
             end
-            if (aw_exp.aw !== aw_recv) begin
+            if (aw_exp !== aw_recv) begin
                 $error("AW mismatch!");
                 print_aw(aw_exp, aw_recv);
             end
