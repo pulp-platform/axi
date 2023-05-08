@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `axi_lite_from_mem` and `axi_from_mem` acting like SRAMs making AXI4 requests downstream.
 - Add `axi_rw_join` and `axi_rw_split` to split/join AXI buses.
 - Add `#_width` functions returning the width of the AXI channels.
+- Add `axi_lite_dw_converter`: Convert the data width of AXI4-Lite transactions. Emmits the
+  appropriate amount of downstream transactions to perform the whole requested access.
+
 
 ### Changed
 - `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
@@ -25,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Move `mem_to_banks` to `common_cells`.
 - Update `common_cells` from version `v1.26.0` to `v1.27.0`.
 - `axi_pkg`: Define `localparams` to define AXI type widths.
+- `axi_test:axi_rand_lite_slave`: R response field is now random.
 
 ### Fixed
 

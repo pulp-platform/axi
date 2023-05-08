@@ -225,6 +225,13 @@ exec_test() {
                 done
             done
             ;;
+        axi_lite_dw_converter)
+            for DWSLV in 32 64 128; do
+                for DWMST in 16 32 64; do
+                    call_vsim tb_axi_lite_dw_converter -gTbAxiDataWidthSlv=$DWSLV -gTbAxiDataWidthMst=$DWMST
+                done
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
