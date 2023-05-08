@@ -1,4 +1,4 @@
-name: Retrieve CI result from GitLab
+name: Internal CI
 on:
   push:
     branches-ignore:
