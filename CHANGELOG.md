@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add `axi_channel_compare.sv`: Non-synthesizable module comparing two AXI channels of the same type
+- Add `axi_chan_compare.sv`: Non-synthesizable module comparing two AXI channels of the same type
 - Add `axi_bus_compare` and `axi_slave_compare`; two synthesizable verification IPs meant to be used
   to compare two AXI buses on an FPGA.
 - Add `axi_lite_from_mem` and `axi_from_mem` acting like SRAMs making AXI4 requests downstream.
