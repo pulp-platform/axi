@@ -43,25 +43,25 @@ package axi_pkg;
   parameter int unsigned NsaidWidth  = 32'd4;
 
   /// AXI Transaction Burst Width.
-  typedef logic [BurstWidth-1:0]  burst_t;
+  typedef logic [1:0]  burst_t;
   /// AXI Transaction Response Type.
-  typedef logic [RespWidth-1:0]   resp_t;
+  typedef logic [1:0]   resp_t;
   /// AXI Transaction Cacheability Type.
-  typedef logic [CacheWidth-1:0]  cache_t;
+  typedef logic [3:0]  cache_t;
   /// AXI Transaction Protection Type.
-  typedef logic [ProtWidth-1:0]   prot_t;
+  typedef logic [2:0]   prot_t;
   /// AXI Transaction Quality of Service Type.
-  typedef logic [QosWidth-1:0]    qos_t;
+  typedef logic [3:0]    qos_t;
   /// AXI Transaction Region Type.
-  typedef logic [RegionWidth-1:0] region_t;
+  typedef logic [3:0] region_t;
   /// AXI Transaction Length Type.
-  typedef logic [LenWidth-1:0]    len_t;
+  typedef logic [7:0]    len_t;
   /// AXI Transaction Size Type.
-  typedef logic [SizeWidth-1:0]   size_t;
+  typedef logic [2:0]   size_t;
   /// AXI5 Atomic Operation Type.
-  typedef logic [AtopWidth-1:0]   atop_t; // atomic operations
+  typedef logic [5:0]   atop_t; // atomic operations
   /// AXI5 Non-Secure Address Identifier.
-  typedef logic [NsaidWidth-1:0]  nsaid_t;
+  typedef logic [3:0]  nsaid_t;
 
   /// In a fixed burst:
   /// - The address is the same for every transfer in the burst.
