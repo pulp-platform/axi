@@ -1,5 +1,5 @@
 # AXI SystemVerilog Modules for High-Performance On-Chip Communication
-[![CI status](https://akurth.net/usrv/ig/shields/pipeline/akurth/axi/master.svg)](https://iis-git.ee.ethz.ch/akurth/axi/commits/master)
+[![CI status](https://github.com/pulp-platform/axi/actions/workflows/gitlab-ci.yml/badge.svg?branch=master)](https://github.com/pulp-platform/axi/actions/workflows/gitlab-ci.yml?query=branch%3Amaster)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pulp-platform/axi?color=blue&label=current&sort=semver)](CHANGELOG.md)
 [![SHL-0.51 license](https://img.shields.io/badge/license-SHL--0.51-green)](LICENSE)
 
