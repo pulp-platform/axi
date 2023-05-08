@@ -8,74 +8,19 @@ on:
     branches-ignore:
       - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
       - v**       # such branch names conflict with tags
+  workflow_dispatch:
 
 jobs:
   gitlab-ci:
-    if: github.repository == 'pulp-platform/axi'  # do not run this job on forks (because Gitlab CI
-    runs-on: ubuntu-latest                        # will not trigger on forks)
-    timeout-minutes: 190
+    runs-on: ubuntu-latest
+    timeout-minutes: 310
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Check Gitlab CI
+        uses: pulp-platform/pulp-actions/gitlab-ci@v2
+        # Skip on forks or pull requests from forks due to missing secrets.
+        if: github.repository == 'pulp-platform/axi' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
-          persist-credentials: false
-          # Checkout pull request HEAD commit instead of merge commit, because CI runs against HEAD
-          # commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Wait for synchronization (every 5 minutes)
-        run: |
-          while [ $(($(date -d "+1 minute" +%-M) % 5)) -ne 0 ]; do
-            # "+1 minute" because if the current minute is divisible by 5, we likely already missed
-            # the synchronization.
-            sleep 10
-          done
-          sleep 90 # the minute above plus 30 seconds to leave some time for the synchronization
-        shell: bash
-
-      - name: Obtain CI result
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-            BRANCH_NAME="$GITHUB_HEAD_REF"
-          elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
-            if echo $GITHUB_REF | grep -qE '^refs/heads'; then
-              BRANCH_NAME="$(echo $GITHUB_REF | cut -d '/' -f3-)"
-            else
-              echo "Error: Could not derive branch name from ref '$GITHUB_REF'!"
-              exit 1
-            fi
-          else
-            echo "Error: Unsupported event: '$GITHUB_EVENT_NAME'!"
-            exit 1
-          fi
-          while true; do
-            resp="$(curl --fail --silent --show-error \
-                  https://akurth.net/usrv/ig/shields/pipeline/akurth/axi/$BRANCH_NAME)"
-            if [ $? -ne 0 ]; then
-              echo "Error: Failed to obtain CI status!"
-              exit 1
-            fi
-            status="$(echo $resp | jq -r .message)"
-            if [ "$status" == "passing" ]; then
-              sha="$(echo $resp | jq -r .sha)"
-              if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-                github_sha="$(cat "$GITHUB_EVENT_PATH" | jq -r .pull_request.head.sha)"
-              else
-                github_sha="$GITHUB_SHA"
-              fi
-              if [ "$sha" == "$github_sha" ]; then
-                echo "CI passed."
-                exit 0
-              else
-                echo "Error: CI passed, but on a different SHA: '$sha'!"
-                exit 1
-              fi
-            elif [ "$status" == "running" ]; then
-              echo "CI is running, waiting .."
-            else
-              echo "Error: Unknown or failing status: '$status'!"
-              exit 1
-            fi
-            sleep 10
-          done
-        shell: bash
+          domain: iis-git.ee.ethz.ch
+          repo: github-mirror/axi
+          token: ${{ secrets.GITLAB_TOKEN }}
+          poll-count: 1800
