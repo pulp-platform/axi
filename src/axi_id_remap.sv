@@ -581,13 +581,23 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_remap_intf #(
-  parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
+  parameter int unsigned AXI_SLV_PORT_ID_WIDTH     = 32'd0,
   parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
-  parameter int unsigned AXI_MAX_TXNS_PER_ID = 32'd0,
-  parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0
+  parameter int unsigned AXI_MAX_TXNS_PER_ID       = 32'd0,
+  parameter int unsigned AXI_MST_PORT_ID_WIDTH     = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH            = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH            = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH            = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH         = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH          = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH          = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH         = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH          = AXI_USER_WIDTH
 ) (
   input logic     clk_i,
   input logic     rst_ni,
@@ -599,21 +609,25 @@ module axi_id_remap_intf #(
   typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0]     axi_aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]      axi_w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]      axi_b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0]     axi_ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]      axi_r_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_r_user_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_r_user_t)
   `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
 

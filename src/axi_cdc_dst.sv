@@ -151,12 +151,22 @@ endmodule
 
 
 module axi_cdc_dst_intf #(
-  parameter int unsigned AXI_ID_WIDTH = 0,
-  parameter int unsigned AXI_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_DATA_WIDTH = 0,
-  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH     = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LOG_DEPTH = 1
+  parameter int unsigned LOG_DEPTH          = 32'd1
 ) (
   // asynchronous slave port
   AXI_BUS_ASYNC_GRAY.Slave  src,
@@ -170,14 +180,18 @@ module axi_cdc_dst_intf #(
   typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+  typedef logic [AXI_AW_USER_WIDTH-1:0] aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]  w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]  b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0] ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]  r_user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, r_user_t)
+  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
   req_t  dst_req;
   resp_t dst_resp;

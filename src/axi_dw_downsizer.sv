@@ -20,11 +20,11 @@
 // bursts, but only if they consist of a single beat; it will answer with SLVERR
 // on multi-beat FIXED bursts.
 module axi_dw_downsizer #(
-    parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
-    parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
-    parameter int unsigned AxiMstPortDataWidth = 8    , // Data width of the mst port
-    parameter int unsigned AxiAddrWidth        = 1    , // Address width
-    parameter int unsigned AxiIdWidth          = 1    , // ID width
+    parameter int unsigned AxiMaxReads         = 32'd1, // Number of outstanding reads
+    parameter int unsigned AxiSlvPortDataWidth = 32'd8, // Data width of the slv port
+    parameter int unsigned AxiMstPortDataWidth = 32'd8, // Data width of the mst port
+    parameter int unsigned AxiAddrWidth        = 32'd1, // Address width
+    parameter int unsigned AxiIdWidth          = 32'd1, // ID width
     parameter type aw_chan_t                   = logic, // AW Channel Type
     parameter type mst_w_chan_t                = logic, //  W Channel Type for mst port
     parameter type slv_w_chan_t                = logic, //  W Channel Type for slv port

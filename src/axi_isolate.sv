@@ -39,24 +39,34 @@
 /// module is de-isolated again.
 module axi_isolate #(
   /// Maximum number of pending requests per channel
-  parameter int unsigned NumPending = 32'd16,
+  parameter int unsigned NumPending     = 32'd16,
   /// Gracefully terminate all incoming transactions in case of isolation by returning proper error
   /// responses.
-  parameter bit TerminateTransaction = 1'b0,
+  parameter bit          TerminateTransaction = 1'b0,
   /// Support atomic operations (ATOPs)
-  parameter bit AtopSupport = 1'b1,
+  parameter bit          AtopSupport    = 1'b1,
   /// Address width of all AXI4+ATOP ports
-  parameter int signed AxiAddrWidth = 32'd0,
+  parameter int unsigned AxiAddrWidth   = 32'd0,
   /// Data width of all AXI4+ATOP ports
-  parameter int signed AxiDataWidth = 32'd0,
+  parameter int unsigned AxiDataWidth   = 32'd0,
   /// ID width of all AXI4+ATOP ports
-  parameter int signed AxiIdWidth = 32'd0,
+  parameter int unsigned AxiIdWidth     = 32'd0,
   /// User signal width of all AXI4+ATOP ports
-  parameter int signed AxiUserWidth = 32'd0,
+  parameter int unsigned AxiUserWidth   = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AxiAwUserWidth = AxiUserWidth,
+  /// AXI W user signal width
+  parameter int unsigned AxiWUserWidth  = AxiUserWidth,
+  /// AXI B user signal width
+  parameter int unsigned AxiBUserWidth  = AxiUserWidth,
+  /// AXI AR user signal width
+  parameter int unsigned AxiArUserWidth = AxiUserWidth,
+  /// AXI R user signal width
+  parameter int unsigned AxiRUserWidth  = AxiUserWidth,
   /// Request struct type of all AXI4+ATOP ports
-  parameter type         axi_req_t  = logic,
+  parameter type         axi_req_t      = logic,
   /// Response struct type of all AXI4+ATOP ports
-  parameter type         axi_resp_t = logic
+  parameter type         axi_resp_t     = logic
 ) (
   /// Rising-edge clock of all ports
   input  logic      clk_i,
@@ -80,13 +90,17 @@ module axi_isolate #(
   typedef logic [AxiAddrWidth-1:0]   addr_t;
   typedef logic [AxiDataWidth-1:0]   data_t;
   typedef logic [AxiDataWidth/8-1:0] strb_t;
-  typedef logic [AxiUserWidth-1:0]   user_t;
+  typedef logic [AxiAwUserWidth-1:0] aw_user_t;
+  typedef logic [AxiWUserWidth-1:0]  w_user_t;
+  typedef logic [AxiBUserWidth-1:0]  b_user_t;
+  typedef logic [AxiArUserWidth-1:0] ar_user_t;
+  typedef logic [AxiRUserWidth-1:0]  r_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, r_user_t)
 
   axi_req_t [1:0]   demux_req;
   axi_resp_t [1:0]  demux_rsp;
@@ -412,13 +426,23 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_isolate_intf #(
-  parameter int unsigned NUM_PENDING    = 32'd16,
-  parameter bit TERMINATE_TRANSACTION   = 1'b0,
-  parameter bit ATOP_SUPPORT            = 1'b1,
-  parameter int unsigned AXI_ID_WIDTH   = 32'd0,
-  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0
+  parameter int unsigned NUM_PENDING        = 32'd16,
+  parameter bit TERMINATE_TRANSACTION       = 1'b0,
+  parameter bit ATOP_SUPPORT                = 1'b1,
+  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH     = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
@@ -427,18 +451,22 @@ module axi_isolate_intf #(
   input  logic   isolate_i,
   output logic   isolated_o
 );
-  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  typedef logic [AXI_ID_WIDTH-1:0]      id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0]    addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]    data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]  strb_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0] aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]  w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]  b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0] ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]  r_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, b_user_t)
 
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, r_user_t)
 
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
@@ -459,7 +487,11 @@ module axi_isolate_intf #(
     .AxiAddrWidth         ( AXI_ADDR_WIDTH        ),
     .AxiDataWidth         ( AXI_DATA_WIDTH        ),
     .AxiIdWidth           ( AXI_ID_WIDTH          ),
-    .AxiUserWidth         ( AXI_USER_WIDTH        ),
+    .AxiAwUserWidth       ( AXI_AW_USER_WIDTH     ),
+    .AxiWUserWidth        ( AXI_W_USER_WIDTH      ),
+    .AxiBUserWidth        ( AXI_B_USER_WIDTH      ),
+    .AxiArUserWidth       ( AXI_AR_USER_WIDTH     ),
+    .AxiRUserWidth        ( AXI_R_USER_WIDTH      ),
     .axi_req_t            ( axi_req_t             ),
     .axi_resp_t           ( axi_resp_t            )
   ) i_axi_isolate (
@@ -476,10 +508,14 @@ module axi_isolate_intf #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin
-    assume (AXI_ID_WIDTH   > 0) else $fatal(1, "AXI_ID_WIDTH   has to be > 0.");
-    assume (AXI_ADDR_WIDTH > 0) else $fatal(1, "AXI_ADDR_WIDTH has to be > 0.");
-    assume (AXI_DATA_WIDTH > 0) else $fatal(1, "AXI_DATA_WIDTH has to be > 0.");
-    assume (AXI_USER_WIDTH > 0) else $fatal(1, "AXI_USER_WIDTH has to be > 0.");
+    assume (AXI_ID_WIDTH      > 0) else $fatal(1, "AXI_ID_WIDTH   has to be > 0.");
+    assume (AXI_ADDR_WIDTH    > 0) else $fatal(1, "AXI_ADDR_WIDTH has to be > 0.");
+    assume (AXI_DATA_WIDTH    > 0) else $fatal(1, "AXI_DATA_WIDTH has to be > 0.");
+    assume (AXI_AW_USER_WIDTH > 0) else $fatal(1, "AXI_AW_USER_WIDTH has to be > 0.");
+    assume (AXI_W_USER_WIDTH  > 0) else $fatal(1, "AXI_W_USER_WIDTH has to be > 0.");
+    assume (AXI_B_USER_WIDTH  > 0) else $fatal(1, "AXI_B_USER_WIDTH has to be > 0.");
+    assume (AXI_AR_USER_WIDTH > 0) else $fatal(1, "AXI_AR_USER_WIDTH has to be > 0.");
+    assume (AXI_R_USER_WIDTH  > 0) else $fatal(1, "AXI_R_USER_WIDTH has to be > 0.");
   end
   `endif
   // pragma translate_on

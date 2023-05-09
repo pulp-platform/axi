@@ -37,17 +37,27 @@ module axi_id_serialize #(
   /// are counted separately (except for ATOPs, which count as both read and write).
   ///
   /// The maximum value of this parameter is `2**AxiMstPortIdWidth`.
-  parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned AxiMstPortMaxUniqIds   = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the master port.
   parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
   /// Address width of both AXI4+ATOP ports
-  parameter int unsigned AxiAddrWidth = 32'd0,
+  parameter int unsigned AxiAddrWidth   = 32'd0,
   /// Data width of both AXI4+ATOP ports
-  parameter int unsigned AxiDataWidth = 32'd0,
+  parameter int unsigned AxiDataWidth   = 32'd0,
   /// User width of both AXI4+ATOP ports
-  parameter int unsigned AxiUserWidth = 32'd0,
+  parameter int unsigned AxiUserWidth   = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AxiAwUserWidth = AxiUserWidth,
+  /// AXI W user signal width
+  parameter int unsigned AxiWUserWidth  = AxiUserWidth,
+  /// AXI B user signal width
+  parameter int unsigned AxiBUserWidth  = AxiUserWidth,
+  /// AXI AR user signal width
+  parameter int unsigned AxiArUserWidth = AxiUserWidth,
+  /// AXI R user signal width
+  parameter int unsigned AxiRUserWidth  = AxiUserWidth,
   /// Enable support for AXI4+ATOP atomics
-  parameter bit          AtopSupport  = 1'b1,
+  parameter bit          AtopSupport    = 1'b1,
   /// Request struct type of the AXI4+ATOP slave port
   parameter type slv_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
@@ -104,54 +114,58 @@ module axi_id_serialize #(
   /// Strobe in any AXI channel
   typedef logic [AxiDataWidth/8-1:0]    strb_t;
   /// User signal in any AXI channel
-  typedef logic [AxiUserWidth-1:0]      user_t;
+  typedef logic [AxiAwUserWidth-1:0]    aw_user_t;
+  typedef logic [AxiWUserWidth-1:0]     w_user_t;
+  typedef logic [AxiBUserWidth-1:0]     b_user_t;
+  typedef logic [AxiArUserWidth-1:0]    ar_user_t;
+  typedef logic [AxiRUserWidth-1:0]     r_user_t;
 
   /// W channel at any interface
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, w_user_t)
 
   /// AW channel at slave port
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, aw_user_t)
   /// B channel at slave port
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, b_user_t)
   /// AR channel at slave port
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, ar_user_t)
   /// R channel at slave port
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, r_user_t)
 
   /// AW channel after serializer
-  `AXI_TYPEDEF_AW_CHAN_T(ser_aw_t, addr_t, ser_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(ser_aw_t, addr_t, ser_id_t, aw_user_t)
   /// B channel after serializer
-  `AXI_TYPEDEF_B_CHAN_T(ser_b_t, ser_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(ser_b_t, ser_id_t, b_user_t)
   /// AR channel after serializer
-  `AXI_TYPEDEF_AR_CHAN_T(ser_ar_t, addr_t, ser_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ser_ar_t, addr_t, ser_id_t, ar_user_t)
   /// R channel after serializer
-  `AXI_TYPEDEF_R_CHAN_T(ser_r_t, data_t, ser_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(ser_r_t, data_t, ser_id_t, r_user_t)
   /// AXI Requests from serializer
   `AXI_TYPEDEF_REQ_T(ser_req_t, ser_aw_t, w_t, ser_ar_t)
   /// AXI responses to serializer
   `AXI_TYPEDEF_RESP_T(ser_resp_t, ser_b_t, ser_r_t)
 
   /// AW channel after the multiplexer
-  `AXI_TYPEDEF_AW_CHAN_T(mux_aw_t, addr_t, mux_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mux_aw_t, addr_t, mux_id_t, aw_user_t)
   /// B channel after the multiplexer
-  `AXI_TYPEDEF_B_CHAN_T(mux_b_t, mux_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mux_b_t, mux_id_t, b_user_t)
   /// AR channel after the multiplexer
-  `AXI_TYPEDEF_AR_CHAN_T(mux_ar_t, addr_t, mux_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mux_ar_t, addr_t, mux_id_t, ar_user_t)
   /// R channel after the multiplexer
-  `AXI_TYPEDEF_R_CHAN_T(mux_r_t, data_t, mux_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mux_r_t, data_t, mux_id_t, r_user_t)
   /// AXI requests from the multiplexer
   `AXI_TYPEDEF_REQ_T(mux_req_t, mux_aw_t, w_t, mux_ar_t)
   /// AXI responses to the multiplexer
   `AXI_TYPEDEF_RESP_T(mux_resp_t, mux_b_t, mux_r_t)
 
   /// AW channel at master port
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, aw_user_t)
   /// B channel at master port
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, b_user_t)
   /// AR channel at master port
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, ar_user_t)
   /// R channel at master port
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, r_user_t)
 
   /// Type for slave ID map
   typedef mst_id_t [2**AxiSlvPortIdWidth-1:0] slv_id_map_t;
@@ -374,7 +388,17 @@ module axi_id_serialize_intf #(
   parameter int unsigned AXI_MST_PORT_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
@@ -387,20 +411,24 @@ module axi_id_serialize_intf #(
   typedef logic [AXI_ADDR_WIDTH-1:0]        addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]        data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]      strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]        user_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0]     aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]      w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]      b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0]     ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]      r_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, r_user_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_t, w_t, slv_ar_t)
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_t, slv_r_t)
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, aw_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, r_user_t)
   `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_t, w_t, mst_ar_t)
   `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_t, mst_r_t)
 

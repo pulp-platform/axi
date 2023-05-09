@@ -16,9 +16,9 @@
 // Constraints enforced through assertions: ID width of slave and master port
 
 module axi_id_prepend #(
-  parameter int unsigned NoBus             = 1,     // Can take multiple axi busses
-  parameter int unsigned AxiIdWidthSlvPort = 4,     // AXI ID Width of the Slave Ports
-  parameter int unsigned AxiIdWidthMstPort = 6,     // AXI ID Width of the Master Ports
+  parameter int unsigned NoBus             = 32'd1, // Can take multiple axi busses
+  parameter int unsigned AxiIdWidthSlvPort = 32'd4, // AXI ID Width of the Slave Ports
+  parameter int unsigned AxiIdWidthMstPort = 32'd6, // AXI ID Width of the Master Ports
   parameter type         slv_aw_chan_t     = logic, // AW Channel Type for slv port
   parameter type         slv_w_chan_t      = logic, //  W Channel Type for slv port
   parameter type         slv_b_chan_t      = logic, //  B Channel Type for slv port

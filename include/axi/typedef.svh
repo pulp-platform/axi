@@ -13,6 +13,7 @@
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 // Macros to define AXI and AXI-Lite Channel and Request/Response Structs
 
@@ -23,62 +24,62 @@
 // AXI4+ATOP Channel and Request/Response Structs
 //
 // Usage Example:
-// `AXI_TYPEDEF_AW_CHAN_T(axi_aw_t, axi_addr_t, axi_id_t, axi_user_t)
-// `AXI_TYPEDEF_W_CHAN_T(axi_w_t, axi_data_t, axi_strb_t, axi_user_t)
-// `AXI_TYPEDEF_B_CHAN_T(axi_b_t, axi_id_t, axi_user_t)
-// `AXI_TYPEDEF_AR_CHAN_T(axi_ar_t, axi_addr_t, axi_id_t, axi_user_t)
-// `AXI_TYPEDEF_R_CHAN_T(axi_r_t, axi_data_t, axi_id_t, axi_user_t)
+// `AXI_TYPEDEF_AW_CHAN_T(axi_aw_t, axi_addr_t, axi_id_t, axi_aw_user_t)
+// `AXI_TYPEDEF_W_CHAN_T(axi_w_t, axi_data_t, axi_strb_t, axi_w_user_t)
+// `AXI_TYPEDEF_B_CHAN_T(axi_b_t, axi_id_t, axi_b_user_t)
+// `AXI_TYPEDEF_AR_CHAN_T(axi_ar_t, axi_addr_t, axi_id_t, axi_ar_user_t)
+// `AXI_TYPEDEF_R_CHAN_T(axi_r_t, axi_data_t, axi_id_t, axi_r_user_t)
 // `AXI_TYPEDEF_REQ_T(axi_req_t, axi_aw_t, axi_w_t, axi_ar_t)
 // `AXI_TYPEDEF_RESP_T(axi_resp_t, axi_b_t, axi_r_t)
-`define AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)  \
-  typedef struct packed {                                       \
-    id_t              id;                                       \
-    addr_t            addr;                                     \
-    axi_pkg::len_t    len;                                      \
-    axi_pkg::size_t   size;                                     \
-    axi_pkg::burst_t  burst;                                    \
-    logic             lock;                                     \
-    axi_pkg::cache_t  cache;                                    \
-    axi_pkg::prot_t   prot;                                     \
-    axi_pkg::qos_t    qos;                                      \
-    axi_pkg::region_t region;                                   \
-    axi_pkg::atop_t   atop;                                     \
-    user_t            user;                                     \
+`define AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, aw_user_t)  \
+  typedef struct packed {                                          \
+    id_t              id;                                          \
+    addr_t            addr;                                        \
+    axi_pkg::len_t    len;                                         \
+    axi_pkg::size_t   size;                                        \
+    axi_pkg::burst_t  burst;                                       \
+    logic             lock;                                        \
+    axi_pkg::cache_t  cache;                                       \
+    axi_pkg::prot_t   prot;                                        \
+    axi_pkg::qos_t    qos;                                         \
+    axi_pkg::region_t region;                                      \
+    axi_pkg::atop_t   atop;                                        \
+    aw_user_t         user;                                        \
   } aw_chan_t;
-`define AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)  \
-  typedef struct packed {                                       \
-    data_t data;                                                \
-    strb_t strb;                                                \
-    logic  last;                                                \
-    user_t user;                                                \
+`define AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)  \
+  typedef struct packed {                                         \
+    data_t   data;                                                \
+    strb_t   strb;                                                \
+    logic    last;                                                \
+    w_user_t user;                                                \
   } w_chan_t;
-`define AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)  \
-  typedef struct packed {                             \
-    id_t            id;                               \
-    axi_pkg::resp_t resp;                             \
-    user_t          user;                             \
+`define AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, b_user_t)  \
+  typedef struct packed {                               \
+    id_t            id;                                 \
+    axi_pkg::resp_t resp;                               \
+    b_user_t        user;                               \
   } b_chan_t;
-`define AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)  \
-  typedef struct packed {                                       \
-    id_t              id;                                       \
-    addr_t            addr;                                     \
-    axi_pkg::len_t    len;                                      \
-    axi_pkg::size_t   size;                                     \
-    axi_pkg::burst_t  burst;                                    \
-    logic             lock;                                     \
-    axi_pkg::cache_t  cache;                                    \
-    axi_pkg::prot_t   prot;                                     \
-    axi_pkg::qos_t    qos;                                      \
-    axi_pkg::region_t region;                                   \
-    user_t            user;                                     \
+`define AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, ar_user_t)  \
+  typedef struct packed {                                          \
+    id_t              id;                                          \
+    addr_t            addr;                                        \
+    axi_pkg::len_t    len;                                         \
+    axi_pkg::size_t   size;                                        \
+    axi_pkg::burst_t  burst;                                       \
+    logic             lock;                                        \
+    axi_pkg::cache_t  cache;                                       \
+    axi_pkg::prot_t   prot;                                        \
+    axi_pkg::qos_t    qos;                                         \
+    axi_pkg::region_t region;                                      \
+    ar_user_t         user;                                        \
   } ar_chan_t;
-`define AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)  \
-  typedef struct packed {                                     \
-    id_t            id;                                       \
-    data_t          data;                                     \
-    axi_pkg::resp_t resp;                                     \
-    logic           last;                                     \
-    user_t          user;                                     \
+`define AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, r_user_t)  \
+  typedef struct packed {                                       \
+    id_t            id;                                         \
+    data_t          data;                                       \
+    axi_pkg::resp_t resp;                                       \
+    logic           last;                                       \
+    r_user_t        user;                                       \
   } r_chan_t;
 `define AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)  \
   typedef struct packed {                                         \
@@ -105,24 +106,41 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// All AXI4+ATOP Channels and Request/Response Structs in One Macro - Custom Type Name and
+// Per-channel Custom User Signal Version
+//
+// This can be used whenever the user is not interested in "precise" control of the naming of the
+// individual channels.
+//
+// Usage Example:
+// `AXI_TYPEDEF_ALL_CT_PU(axi, axi_req_t, axi_rsp_t, addr_t, id_t, data_t, strb_t, aw_user_t, w_user_t, b_user_t, ar_user_t, r_user_t)
+//
+// This defines `axi_req_t` and `axi_rsp_t` request/response structs as well as `axi_aw_chan_t`,
+// `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
+`define AXI_TYPEDEF_ALL_CT_PU(__name, __req, __rsp, __addr_t, __id_t, __data_t, __strb_t, __aw_user_t, __w_user_t, __b_user_t, __ar_user_t, __r_user_t) \
+  `AXI_TYPEDEF_AW_CHAN_T(__name``_aw_chan_t, __addr_t, __id_t, __aw_user_t)                                                                             \
+  `AXI_TYPEDEF_W_CHAN_T(__name``_w_chan_t, __data_t, __strb_t, __w_user_t)                                                                              \
+  `AXI_TYPEDEF_B_CHAN_T(__name``_b_chan_t, __id_t, __b_user_t)                                                                                          \
+  `AXI_TYPEDEF_AR_CHAN_T(__name``_ar_chan_t, __addr_t, __id_t, __ar_user_t)                                                                             \
+  `AXI_TYPEDEF_R_CHAN_T(__name``_r_chan_t, __data_t, __id_t, __r_user_t)                                                                                \
+  `AXI_TYPEDEF_REQ_T(__req, __name``_aw_chan_t, __name``_w_chan_t, __name``_ar_chan_t)                                                                  \
+  `AXI_TYPEDEF_RESP_T(__rsp, __name``_b_chan_t, __name``_r_chan_t)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // All AXI4+ATOP Channels and Request/Response Structs in One Macro - Custom Type Name Version
 //
 // This can be used whenever the user is not interested in "precise" control of the naming of the
 // individual channels.
 //
 // Usage Example:
-// `AXI_TYPEDEF_ALL_CT(axi, axi_req_t, axi_rsp_t, addr_t, id_t, data_t, strb_t, user_t)
+// `AXI_TYPEDEF_ALL_CT_PU(axi, axi_req_t, axi_rsp_t, addr_t, id_t, data_t, strb_t, user_t)
 //
 // This defines `axi_req_t` and `axi_rsp_t` request/response structs as well as `axi_aw_chan_t`,
 // `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
-`define AXI_TYPEDEF_ALL_CT(__name, __req, __rsp, __addr_t, __id_t, __data_t, __strb_t, __user_t) \
-  `AXI_TYPEDEF_AW_CHAN_T(__name``_aw_chan_t, __addr_t, __id_t, __user_t)                         \
-  `AXI_TYPEDEF_W_CHAN_T(__name``_w_chan_t, __data_t, __strb_t, __user_t)                         \
-  `AXI_TYPEDEF_B_CHAN_T(__name``_b_chan_t, __id_t, __user_t)                                     \
-  `AXI_TYPEDEF_AR_CHAN_T(__name``_ar_chan_t, __addr_t, __id_t, __user_t)                         \
-  `AXI_TYPEDEF_R_CHAN_T(__name``_r_chan_t, __data_t, __id_t, __user_t)                           \
-  `AXI_TYPEDEF_REQ_T(__req, __name``_aw_chan_t, __name``_w_chan_t, __name``_ar_chan_t)           \
-  `AXI_TYPEDEF_RESP_T(__rsp, __name``_b_chan_t, __name``_r_chan_t)
+`define AXI_TYPEDEF_ALL_CT(__name, __req, __rsp, __addr_t, __id_t, __data_t, __strb_t, __user_t)                                      \
+  `AXI_TYPEDEF_ALL_CT_PU(__name, __req, __rsp, __addr_t, __id_t, __data_t, __strb_t, __user_t, __user_t, __user_t, __user_t, __user_t)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -137,8 +155,8 @@
 //
 // This defines `axi_req_t` and `axi_resp_t` request/response structs as well as `axi_aw_chan_t`,
 // `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
-`define AXI_TYPEDEF_ALL(__name, __addr_t, __id_t, __data_t, __strb_t, __user_t)                                \
-  `AXI_TYPEDEF_ALL_CT(__name, __name``_req_t, __name``_resp_t, __addr_t, __id_t, __data_t, __strb_t, __user_t)
+`define AXI_TYPEDEF_ALL(__name, __addr_t, __id_t, __data_t, __strb_t, __user_t)                                                                       \
+  `AXI_TYPEDEF_ALL_CT(__name, __name``_req_t, __name``_resp_t, __addr_t, __id_t, __data_t, __strb_t, __user_t, __user_t, __user_t, __user_t, __user_t)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

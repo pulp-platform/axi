@@ -116,12 +116,22 @@ endmodule : axi_dw_converter
 `include "axi/typedef.svh"
 
 module axi_dw_converter_intf #(
-    parameter int unsigned AXI_ID_WIDTH            = 1,
-    parameter int unsigned AXI_ADDR_WIDTH          = 1,
-    parameter int unsigned AXI_SLV_PORT_DATA_WIDTH = 8,
-    parameter int unsigned AXI_MST_PORT_DATA_WIDTH = 8,
-    parameter int unsigned AXI_USER_WIDTH          = 0,
-    parameter int unsigned AXI_MAX_READS           = 8
+    parameter int unsigned AXI_ID_WIDTH            = 32'd1,
+    parameter int unsigned AXI_ADDR_WIDTH          = 32'd1,
+    parameter int unsigned AXI_SLV_PORT_DATA_WIDTH = 32'd8,
+    parameter int unsigned AXI_MST_PORT_DATA_WIDTH = 32'd8,
+    parameter int unsigned AXI_USER_WIDTH          = 32'd0,
+    /// AXI AW user signal width
+    parameter int unsigned AXI_AW_USER_WIDTH       = AXI_USER_WIDTH,
+    /// AXI W user signal width
+    parameter int unsigned AXI_W_USER_WIDTH        = AXI_USER_WIDTH,
+    /// AXI B user signal width
+    parameter int unsigned AXI_B_USER_WIDTH        = AXI_USER_WIDTH,
+    /// AXI AR user signal width
+    parameter int unsigned AXI_AR_USER_WIDTH       = AXI_USER_WIDTH,
+    /// AXI R user signal width
+    parameter int unsigned AXI_R_USER_WIDTH        = AXI_USER_WIDTH,
+    parameter int unsigned AXI_MAX_READS           = 32'd8
   ) (
     input          logic clk_i,
     input          logic rst_ni,
