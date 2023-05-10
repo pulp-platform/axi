@@ -304,12 +304,13 @@ module axi_mcast_demux #(
         .idx_o           (dec_aw_idx),
         .dec_valid_o     (dec_aw_idx_valid),
         .dec_error_o     (dec_aw_idx_error),
-        .en_default_idx_i(en_default_mst_port_i),
-        .default_idx_i   (default_mst_port_i)
+        .en_default_idx_i(1'b0),
+        .default_idx_i   ('0)
       );
-    end else begin
-      assign dec_aw_idx_valid = '0;
-      assign dec_aw_idx = '0;
+    end else begin : g_no_aw_idx_decode
+      assign dec_aw_idx_valid = en_default_mst_port_i & dec_aw_select_error;
+      assign dec_aw_idx_error = !en_default_mst_port_i;
+      assign dec_aw_idx = default_mst_port_i;
     end
 
     // Convert multicast rules to mask (NAPOT) form
@@ -345,7 +346,7 @@ module axi_mcast_demux #(
     assign dec_aw_select = (dec_aw_idx_valid << dec_aw_idx) | dec_aw_select_partial;
 
     assign slv_aw_select_mask = (dec_aw_idx_error && dec_aw_select_error) ?
-        {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
+      {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
     assign slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_addr};
     assign slv_aw_mask = {'0, dec_aw_mask};
 
