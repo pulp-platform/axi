@@ -49,6 +49,10 @@ module axi_rt_unit #(
   output axi_req_t  mst_req_o,
   input  axi_resp_t mst_resp_i,
 
+  // RT bypass
+  input  logic rt_enable_i,
+  output logic rt_bypassed_o,
+
   // fragmentation
   input  axi_pkg::len_t len_limit_i,
 
@@ -78,10 +82,6 @@ module axi_rt_unit #(
   output logic isolated_o
 );
 
-  // Pipeline
-  //  -----------> byp ------------
-  //  |                           |
-  // slv -> nat -> cut -> fwd -> mrg -> mst
 
   /// the maximum amount of bytes one AXI transfer can have
   localparam int unsigned NumBytesWidth  =  axi_pkg::LenWidth + axi_pkg::SizeWidth + 32'd1;
@@ -97,7 +97,7 @@ module axi_rt_unit #(
 
   // internal buses
   axi_req_t  iso_req,  cut_req,  fwd_req;
-  axi_resp_t iso_resp, cut_resp, fwd_resp;
+  axi_resp_t iso_resp, cut_resp, fwd_resp, mux_resp;
 
   // number of bytes transferred via one ax
   ax_bytes_t aw_bytes;
@@ -118,6 +118,69 @@ module axi_rt_unit #(
   // global isolate
   logic global_isolate;
 
+  // state enum of the bypass FSM
+  typedef enum logic [1:0] {
+    IDLE,
+    ISOLATE,
+    SWITCH,
+    DEISOLATE,
+  } rt_state_e;
+
+  // FSM state
+  rt_state_e rt_state_d, rt_state_q;
+
+  // FSM signals
+  logic byp_isolate;
+
+  // RT state
+  logic rt_bypassed_d, rt_bypassed_q;
+
+
+  // --------------------------------------------------
+  // Bypass FSM
+  // --------------------------------------------------
+  // The bypass FSM will start in a bypassed state. The enable signal will activate it.
+
+  always_comb begin : proc_fsm
+    // default
+    rt_state_d    = rt_state_q;
+    rt_bypassed_d = rt_bypassed_q;
+    byp_isolate   = 1'b0;
+
+    case (rt_state_q)
+      IDLE : begin
+        if (rt_enable_i & rt_bypassed_q) begin
+          rt_state_d = ISOLATE;
+        end
+        if (!rt_enable_i & !rt_bypassed_q) begin
+          rt_state_d = ISOLATE;
+        end
+      end
+
+      ISOLATE : begin
+        byp_isolate = 1'b1;
+        if (isolated_o) begin
+          rt_state_d = SWITCH;
+        end
+      end
+
+      SWITCH : begin
+        byp_isolate = 1'b1;
+        rt_bypassed_d = !rt_bypassed_q;
+        rt_state_d = DEISOLATE;
+      end
+
+      DEISOLATE : begin
+        if(!isolated_o) begin
+          rt_state_d = IDLE;
+        end
+      end
+    endcase
+  end
+
+  // connect output
+  assign rt_bypassed_o = rt_bypassed_q;
+
 
   // --------------------------------------------------
   // Isolation
@@ -137,10 +200,10 @@ module axi_rt_unit #(
     .rst_ni,
     .slv_req_i,
     .slv_resp_o,
-    .mst_req_o  ( iso_req        ),
-    .mst_resp_i ( iso_resp       ),
-    .isolate_i  ( global_isolate ),
-    .isolated_o ( isolated_o     )
+    .mst_req_o  ( iso_req                      ),
+    .mst_resp_i ( iso_resp                     ),
+    .isolate_i  ( global_isolate | byp_isolate ),
+    .isolated_o ( isolated_o                   )
   );
 
   // global isolate
@@ -165,7 +228,7 @@ module axi_rt_unit #(
     .rst_ni,
     .len_limit_i,
     .slv_req_i    ( iso_req  ),
-    .slv_resp_o   ( iso_resp ),
+    .slv_resp_o   ( mux_resp ),
     .mst_req_o    ( cut_req  ),
     .mst_resp_i   ( cut_resp )
   );
@@ -292,8 +355,9 @@ module axi_rt_unit #(
   // --------------------------------------------------
   // Output
   // --------------------------------------------------
-  assign mst_req_o  = fwd_req;
-  assign fwd_resp   = mst_resp_i;
+  assign mst_req_o  = rt_bypassed_q ? iso_req    : fwd_req;
+  assign fwd_resp   = rt_bypassed_q ? '0         : mst_resp_i;
+  assign iso_resp   = rt_bypassed_q ? mst_resp_i : mux_resp;
 
 endmodule
 
