@@ -222,17 +222,27 @@ endmodule
 /// Serialize all AXI transactions to a single ID (zero), interface version.
 module axi_serializer_intf #(
   /// AXI4+ATOP ID width.
-  parameter int unsigned AXI_ID_WIDTH   = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
   /// AXI4+ATOP address width.
-  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
   /// AXI4+ATOP data width.
-  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
   /// AXI4+ATOP user width.
-  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH     = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
   /// Maximum number of in flight read transactions.
-  parameter int unsigned MAX_READ_TXNS  = 32'd0,
+  parameter int unsigned MAX_READ_TXNS      = 32'd0,
   /// Maximum number of in flight write transactions.
-  parameter int unsigned MAX_WRITE_TXNS = 32'd0
+  parameter int unsigned MAX_WRITE_TXNS     = 32'd0
 ) (
   /// Clock
   input  logic    clk_i,
@@ -244,16 +254,20 @@ module axi_serializer_intf #(
   AXI_BUS.Master  mst
 );
 
-  typedef logic [AXI_ID_WIDTH    -1:0] id_t;
-  typedef logic [AXI_ADDR_WIDTH  -1:0] addr_t;
-  typedef logic [AXI_DATA_WIDTH  -1:0] data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH  -1:0] user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  typedef logic [AXI_ID_WIDTH    -1:0]  id_t;
+  typedef logic [AXI_ADDR_WIDTH  -1:0]  addr_t;
+  typedef logic [AXI_DATA_WIDTH  -1:0]  data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]  strb_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0] aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]  w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]  b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0] ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]  r_user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, r_user_t)
   `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
   axi_req_t  slv_req,  mst_req;
@@ -281,13 +295,17 @@ module axi_serializer_intf #(
 // pragma translate_off
 `ifndef VERILATOR
   initial begin: p_assertions
-    assert (AXI_ADDR_WIDTH  >= 1) else $fatal(1, "AXI address width must be at least 1!");
-    assert (AXI_DATA_WIDTH  >= 1) else $fatal(1, "AXI data width must be at least 1!");
-    assert (AXI_ID_WIDTH    >= 1) else $fatal(1, "AXI ID width must be at least 1!");
-    assert (AXI_USER_WIDTH  >= 1) else $fatal(1, "AXI user width must be at least 1!");
-    assert (MAX_READ_TXNS   >= 1)
+    assert (AXI_ADDR_WIDTH    >= 1) else $fatal(1, "AXI address width must be at least 1!");
+    assert (AXI_DATA_WIDTH    >= 1) else $fatal(1, "AXI data width must be at least 1!");
+    assert (AXI_ID_WIDTH      >= 1) else $fatal(1, "AXI ID width must be at least 1!");
+    assert (AXI_AW_USER_WIDTH >= 1) else $fatal(1, "AXI user width must be at least 1!");
+    assert (AXI_W_USER_WIDTH  >= 1) else $fatal(1, "AXI user width must be at least 1!");
+    assert (AXI_B_USER_WIDTH  >= 1) else $fatal(1, "AXI user width must be at least 1!");
+    assert (AXI_AR_USER_WIDTH >= 1) else $fatal(1, "AXI user width must be at least 1!");
+    assert (AXI_R_USER_WIDTH  >= 1) else $fatal(1, "AXI user width must be at least 1!");
+    assert (MAX_READ_TXNS     >= 1)
       else $fatal(1, "Maximum number of read transactions must be >= 1!");
-    assert (MAX_WRITE_TXNS  >= 1)
+    assert (MAX_WRITE_TXNS    >= 1)
       else $fatal(1, "Maximum number of write transactions must be >= 1!");
   end
 `endif

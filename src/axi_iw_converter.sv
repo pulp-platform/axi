@@ -85,6 +85,16 @@ module axi_iw_converter #(
   parameter int unsigned AxiDataWidth = 32'd0,
   /// User signal width of both AXI4+ATOP ports
   parameter int unsigned AxiUserWidth = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AxiAwUserWidth = AxiUserWidth,
+  /// AXI W user signal width
+  parameter int unsigned AxiWUserWidth  = AxiUserWidth,
+  /// AXI B user signal width
+  parameter int unsigned AxiBUserWidth  = AxiUserWidth,
+  /// AXI AR user signal width
+  parameter int unsigned AxiArUserWidth = AxiUserWidth,
+  /// AXI R user signal width
+  parameter int unsigned AxiRUserWidth  = AxiUserWidth,
   /// Request struct type of the AXI4+ATOP slave port
   parameter type slv_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
@@ -113,16 +123,20 @@ module axi_iw_converter #(
   typedef logic [AxiSlvPortIdWidth-1:0] slv_id_t;
   typedef logic [AxiMstPortIdWidth-1:0] mst_id_t;
   typedef logic [AxiDataWidth/8-1:0]    strb_t;
-  typedef logic [AxiUserWidth-1:0]      user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
+  typedef logic [AxiAwUserWidth-1:0]    aw_user_t;
+  typedef logic [AxiWUserWidth-1:0]     w_user_t;
+  typedef logic [AxiBUserWidth-1:0]     b_user_t;
+  typedef logic [AxiArUserWidth-1:0]    ar_user_t;
+  typedef logic [AxiRUserWidth-1:0]     r_user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, b_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, ar_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, r_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, r_user_t)
 
   if (AxiMstPortIdWidth < AxiSlvPortIdWidth) begin : gen_downsize
     if (AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth) begin : gen_remap
@@ -152,7 +166,11 @@ module axi_iw_converter #(
         .AxiMstPortMaxTxnsPerId ( AxiMstPortMaxTxnsPerId  ),
         .AxiAddrWidth           ( AxiAddrWidth            ),
         .AxiDataWidth           ( AxiDataWidth            ),
-        .AxiUserWidth           ( AxiUserWidth            ),
+        .AxiAwUserWidth         ( AxiAwUserWidth          ),
+        .AxiWUserWidth          ( AxiWUserWidth           ),
+        .AxiBUserWidth          ( AxiBUserWidth           ),
+        .AxiArUserWidth         ( AxiArUserWidth          ),
+        .AxiRUserWidth          ( AxiRUserWidth           ),
         .slv_req_t              ( slv_req_t               ),
         .slv_resp_t             ( slv_resp_t              ),
         .mst_req_t              ( mst_req_t               ),
@@ -222,12 +240,20 @@ module axi_iw_converter #(
   // pragma translate_off
   `ifndef VERILATOR
   initial begin : p_assert
-    assert(AxiAddrWidth > 32'd0)
+    assert(AxiAwUserWidth > 32'd0)
       else $fatal(1, "Parameter AxiAddrWidth has to be larger than 0!");
     assert(AxiDataWidth > 32'd0)
       else $fatal(1, "Parameter AxiDataWidth has to be larger than 0!");
-    assert(AxiUserWidth > 32'd0)
-      else $fatal(1, "Parameter AxiUserWidth has to be larger than 0!");
+    assert(AxiAwUserWidth > 32'd0)
+      else $fatal(1, "Parameter AxiAwUserWidth has to be larger than 0!");
+    assert(AxiWUserWidth > 32'd0)
+      else $fatal(1, "Parameter AxiWUserWidth has to be larger than 0!");
+    assert(AxiBUserWidth > 32'd0)
+      else $fatal(1, "Parameter AxiBUserWidth has to be larger than 0!");
+    assert(AxiArUserWidth > 32'd0)
+      else $fatal(1, "Parameter AxiArUserWidth has to be larger than 0!");
+    assert(AxiRUserWidth > 32'd0)
+      else $fatal(1, "Parameter AxiRUserWidth has to be larger than 0!");
     assert(AxiSlvPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
     assert(AxiMstPortIdWidth > 32'd0)
@@ -270,7 +296,17 @@ module axi_iw_converter_intf #(
   parameter int unsigned AXI_MST_PORT_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
@@ -282,21 +318,25 @@ module axi_iw_converter_intf #(
   typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0]     axi_aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]      axi_w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]      axi_b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0]     axi_ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]      axi_r_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_r_user_t)
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_r_user_t)
   `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
 
@@ -320,7 +360,11 @@ module axi_iw_converter_intf #(
     .AxiMstPortMaxTxnsPerId ( AXI_MST_PORT_MAX_TXNS_PER_ID  ),
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
     .AxiDataWidth           ( AXI_DATA_WIDTH                ),
-    .AxiUserWidth           ( AXI_USER_WIDTH                ),
+    .AxiAwUserWidth         ( AXI_AW_USER_WIDTH             ),
+    .AxiWUserWidth          ( AXI_W_USER_WIDTH              ),
+    .AxiBUserWidth          ( AXI_B_USER_WIDTH              ),
+    .AxiArUserWidth         ( AXI_AR_USER_WIDTH             ),
+    .AxiRUserWidth          ( AXI_R_USER_WIDTH              ),
     .slv_req_t              ( slv_req_t                     ),
     .slv_resp_t             ( slv_resp_t                    ),
     .mst_req_t              ( mst_req_t                     ),
@@ -336,14 +380,22 @@ module axi_iw_converter_intf #(
   // pragma translate_off
   `ifndef VERILATOR
     initial begin
-      assert (slv.AXI_ID_WIDTH   == AXI_SLV_PORT_ID_WIDTH);
-      assert (slv.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
-      assert (slv.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
-      assert (slv.AXI_USER_WIDTH == AXI_USER_WIDTH);
-      assert (mst.AXI_ID_WIDTH   == AXI_MST_PORT_ID_WIDTH);
-      assert (mst.AXI_ADDR_WIDTH == AXI_ADDR_WIDTH);
-      assert (mst.AXI_DATA_WIDTH == AXI_DATA_WIDTH);
-      assert (mst.AXI_USER_WIDTH == AXI_USER_WIDTH);
+      assert (slv.AXI_ID_WIDTH      == AXI_SLV_PORT_ID_WIDTH);
+      assert (slv.AXI_ADDR_WIDTH    == AXI_ADDR_WIDTH);
+      assert (slv.AXI_DATA_WIDTH    == AXI_DATA_WIDTH);
+      assert (slv.AXI_AW_USER_WIDTH == AXI_AW_USER_WIDTH);
+      assert (slv.AXI_W_USER_WIDTH  == AXI_W_USER_WIDTH);
+      assert (slv.AXI_B_USER_WIDTH  == AXI_B_USER_WIDTH);
+      assert (slv.AXI_AR_USER_WIDTH == AXI_AR_USER_WIDTH);
+      assert (slv.AXI_R_USER_WIDTH  == AXI_R_USER_WIDTH);
+      assert (mst.AXI_ID_WIDTH      == AXI_MST_PORT_ID_WIDTH);
+      assert (mst.AXI_ADDR_WIDTH    == AXI_ADDR_WIDTH);
+      assert (mst.AXI_DATA_WIDTH    == AXI_DATA_WIDTH);
+      assert (mst.AXI_AW_USER_WIDTH == AXI_AW_USER_WIDTH);
+      assert (mst.AXI_W_USER_WIDTH  == AXI_W_USER_WIDTH);
+      assert (mst.AXI_B_USER_WIDTH  == AXI_B_USER_WIDTH);
+      assert (mst.AXI_AR_USER_WIDTH == AXI_AR_USER_WIDTH);
+      assert (mst.AXI_R_USER_WIDTH  == AXI_R_USER_WIDTH);
     end
   `endif
   // pragma translate_on

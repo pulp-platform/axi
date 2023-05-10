@@ -280,31 +280,44 @@ package axi_test;
 
   /// A driver for AXI4 interface.
   class axi_driver #(
-    parameter int  AW = 32  ,
-    parameter int  DW = 32  ,
-    parameter int  IW = 8   ,
-    parameter int  UW = 1   ,
-    parameter time TA = 0ns , // stimuli application time
-    parameter time TT = 0ns   // stimuli test time
+    parameter int  AW   = 32  ,
+    parameter int  DW   = 32  ,
+    parameter int  IW   = 8   ,
+    parameter int  UW   = 1   ,
+    parameter int  UWAW = UW  ,
+    parameter int  UWW  = UW  ,
+    parameter int  UWB  = UW  ,
+    parameter int  UWAR = UW  ,
+    parameter int  UWR  = UW  ,
+    parameter time TA   = 0ns , // stimuli application time
+    parameter time TT   = 0ns   // stimuli test time
   );
     virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
       .AXI_DATA_WIDTH(DW),
       .AXI_ID_WIDTH(IW),
-      .AXI_USER_WIDTH(UW)
+      .AXI_AW_USER_WIDTH(UWAW),
+      .AXI_W_USER_WIDTH (UWW),
+      .AXI_B_USER_WIDTH (UWB),
+      .AXI_AR_USER_WIDTH(UWAR),
+      .AXI_R_USER_WIDTH (UWR)
     ) axi;
 
-    typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat_t;
-    typedef axi_w_beat  #(.DW(DW), .UW(UW))          w_beat_t;
-    typedef axi_b_beat  #(.IW(IW), .UW(UW))          b_beat_t;
-    typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UW)) r_beat_t;
+    typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UWAW)) ax_beat_t;
+    typedef axi_w_beat  #(.DW(DW), .UW(UWW))           w_beat_t;
+    typedef axi_b_beat  #(.IW(IW), .UW(UWB))           b_beat_t;
+    typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UWR))  r_beat_t;
 
     function new(
       virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
-        .AXI_USER_WIDTH(UW)
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       this.axi = axi;
@@ -680,13 +693,18 @@ package axi_test;
 
   class axi_rand_master #(
     // AXI interface parameters
-    parameter int   AW = 32,
-    parameter int   DW = 32,
-    parameter int   IW = 8,
-    parameter int   UW = 1,
+    parameter int   AW   = 32,
+    parameter int   DW   = 32,
+    parameter int   IW   = 8,
+    parameter int   UW   = 1,
+    parameter int   UWAW = UW,
+    parameter int   UWW  = UW,
+    parameter int   UWB  = UW,
+    parameter int   UWAR = UW,
+    parameter int   UWR  = UW,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps,
+    parameter time  TA   = 0ps,
+    parameter time  TT   = 0ps,
     // Maximum number of read and write transactions in flight
     parameter int   MAX_READ_TXNS = 1,
     parameter int   MAX_WRITE_TXNS = 1,
@@ -714,7 +732,7 @@ package axi_test;
     parameter int   N_AXI_IDS = 2**IW
   );
     typedef axi_test::axi_driver #(
-      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+      .AW(AW), .DW(DW), .IW(IW), .UWAW(UWAW), .UWW(UWW), .UWB(UWB), .UWAR(UWAR), .UWR(UWR), .TA(TA), .TT(TT)
     ) axi_driver_t;
     typedef logic [AW-1:0]      addr_t;
     typedef axi_pkg::burst_t    burst_t;
@@ -723,7 +741,6 @@ package axi_test;
     typedef logic [IW-1:0]      id_t;
     typedef axi_pkg::len_t      len_t;
     typedef axi_pkg::size_t     size_t;
-    typedef logic [UW-1:0]      user_t;
     typedef axi_pkg::mem_type_t mem_type_t;
 
     typedef axi_driver_t::ax_beat_t ax_beat_t;
@@ -770,7 +787,11 @@ package axi_test;
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
-        .AXI_USER_WIDTH(UW)
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       if (AXI_MAX_BURST_LEN <= 0 || AXI_MAX_BURST_LEN > 256) begin
@@ -1260,13 +1281,18 @@ package axi_test;
 
   class axi_rand_slave #(
     // AXI interface parameters
-    parameter int   AW = 32,
-    parameter int   DW = 32,
-    parameter int   IW = 8,
-    parameter int   UW = 1,
+    parameter int   AW   = 32,
+    parameter int   DW   = 32,
+    parameter int   IW   = 8,
+    parameter int   UW   = 1,
+    parameter int   UWAW = UW,
+    parameter int   UWW  = UW,
+    parameter int   UWB  = UW,
+    parameter int   UWAR = UW,
+    parameter int   UWR  = UW,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps,
+    parameter time  TA   = 0ps,
+    parameter time  TT   = 0ps,
     parameter bit   RAND_RESP = 0,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
@@ -1281,7 +1307,7 @@ package axi_test;
     parameter bit   MAPPED = 1'b0
   );
     typedef axi_test::axi_driver #(
-      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+      .AW(AW), .DW(DW), .IW(IW), .UWAW(UWAW), .UWW(UWW), .UWB(UWB), .UWAR(UWAR), .UWR(UWR), .TA(TA), .TT(TT)
     ) axi_driver_t;
     typedef rand_id_queue_pkg::rand_id_queue #(
       .data_t   (axi_driver_t::ax_beat_t),
@@ -1308,7 +1334,11 @@ package axi_test;
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
-        .AXI_USER_WIDTH(UW)
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       this.drv = new(axi);
@@ -1795,19 +1825,24 @@ package axi_test;
   /// AXI Monitor.
   class axi_monitor #(
     /// AXI4+ATOP ID width
-    parameter int unsigned IW = 0,
+    parameter int unsigned IW   = 0,
     /// AXI4+ATOP address width
-    parameter int unsigned AW = 0,
+    parameter int unsigned AW   = 0,
     /// AXI4+ATOP data width
-    parameter int unsigned DW = 0,
+    parameter int unsigned DW   = 0,
     /// AXI4+ATOP user width
-    parameter int unsigned UW = 0,
+    parameter int unsigned UW   = 0,
+    parameter int unsigned UWAW = UW,
+    parameter int unsigned UWW  = UW,
+    parameter int unsigned UWB  = UW,
+    parameter int unsigned UWAR = UW,
+    parameter int unsigned UWR  = UW,
     /// Stimuli test time
     parameter time TT = 0ns
   );
 
     typedef axi_test::axi_driver #(
-      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TT), .TT(TT)
+      .AW(AW), .DW(DW), .IW(IW), .UWAW(UWAW), .UWW(UWW), .UWB(UWB), .UWAR(UWAR), .UWR(UWR), .TA(TA), .TT(TT)
     ) axi_driver_t;
 
     typedef axi_driver_t::ax_beat_t ax_beat_t;
@@ -1824,7 +1859,11 @@ package axi_test;
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
-        .AXI_USER_WIDTH(UW)
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       this.drv = new(axi);
@@ -1890,13 +1929,18 @@ package axi_test;
   /// end
   class axi_scoreboard #(
     /// AXI4+ATOP ID width
-    parameter int unsigned IW = 0,
+    parameter int unsigned IW   = 0,
     /// AXI4+ATOP address width
-    parameter int unsigned AW = 0,
+    parameter int unsigned AW   = 0,
     /// AXI4+ATOP data width
-    parameter int unsigned DW = 0,
+    parameter int unsigned DW   = 0,
     /// AXI4+ATOP user width
-    parameter int unsigned UW = 0,
+    parameter int unsigned UW   = 0,
+    parameter int unsigned UWAW = UW,
+    parameter int unsigned UWW  = UW,
+    parameter int unsigned UWB  = UW,
+    parameter int unsigned UWAR = UW,
+    parameter int unsigned UWR  = UW,
     /// Stimuli test time
     parameter time TT = 0ns
   );
@@ -1914,10 +1958,10 @@ package axi_test;
     typedef logic [7:0]      byte_t;
     typedef logic [IW-1:0]   axi_id_t;
     typedef logic [AW-1:0]   axi_addr_t;
-    typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UW)) ax_beat_t;
-    typedef axi_w_beat  #(.DW(DW), .UW(UW))          w_beat_t;
-    typedef axi_b_beat  #(.IW(IW), .UW(UW))          b_beat_t;
-    typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UW)) r_beat_t;
+    typedef axi_ax_beat #(.AW(AW), .IW(IW), .UW(UWAW)) ax_beat_t;
+    typedef axi_w_beat  #(.DW(DW), .UW(UWW))           w_beat_t;
+    typedef axi_b_beat  #(.IW(IW), .UW(UWB))           b_beat_t;
+    typedef axi_r_beat  #(.DW(DW), .IW(IW), .UW(UWR))  r_beat_t;
 
     // Monitor interface
     virtual AXI_BUS_DV #(
@@ -1943,10 +1987,14 @@ package axi_test;
     /// New constructor
     function new(
       virtual AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AW ),
-        .AXI_DATA_WIDTH ( DW ),
-        .AXI_ID_WIDTH   ( IW ),
-        .AXI_USER_WIDTH ( UW )
+        .AXI_ADDR_WIDTH(AW),
+        .AXI_DATA_WIDTH(DW),
+        .AXI_ID_WIDTH(IW),
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       this.axi      = axi;
@@ -2310,18 +2358,26 @@ package axi_test;
 
 
   class axi_file_master #(
-    // AXI interface parameters
-    parameter int   AW = 32,
-    parameter int   DW = 32,
-    parameter int   IW = 8,
-    parameter int   UW = 1,
+    /// AXI4+ATOP ID width
+    parameter int unsigned IW   = 0,
+    /// AXI4+ATOP address width
+    parameter int unsigned AW   = 0,
+    /// AXI4+ATOP data width
+    parameter int unsigned DW   = 0,
+    /// AXI4+ATOP user width
+    parameter int unsigned UW   = 0,
+    parameter int unsigned UWAW = UW,
+    parameter int unsigned UWW  = UW,
+    parameter int unsigned UWB  = UW,
+    parameter int unsigned UWAR = UW,
+    parameter int unsigned UWR  = UW,
     // Stimuli application and test time
     parameter time  TA = 0ps,
     parameter time  TT = 0ps
   );
 
     typedef axi_test::axi_driver #(
-      .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
+      .AW(AW), .DW(DW), .IW(IW), .UWAW(UWAW), .UWW(UWW), .UWB(UWB), .UWAR(UWAR), .UWR(UWR), .TA(TA), .TT(TT)
     ) axi_driver_t;
 
     typedef axi_driver_t::ax_beat_t ax_beat_t;
@@ -2351,7 +2407,11 @@ package axi_test;
         .AXI_ADDR_WIDTH(AW),
         .AXI_DATA_WIDTH(DW),
         .AXI_ID_WIDTH(IW),
-        .AXI_USER_WIDTH(UW)
+        .AXI_AW_USER_WIDTH(UWAW),
+        .AXI_W_USER_WIDTH (UWW),
+        .AXI_B_USER_WIDTH (UWB),
+        .AXI_AR_USER_WIDTH(UWAR),
+        .AXI_R_USER_WIDTH (UWR)
       ) axi
     );
       this.drv = new(axi);

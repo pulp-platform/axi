@@ -17,17 +17,27 @@
 /// set the internal state.
 module axi_lfsr #(
     /// AXI4 Data Width
-    parameter int unsigned DataWidth = 32'd0,
+    parameter int unsigned DataWidth   = 32'd0,
     /// AXI4 Addr Width
-    parameter int unsigned AddrWidth = 32'd0,
+    parameter int unsigned AddrWidth   = 32'd0,
     /// AXI4 Id Width
-    parameter int unsigned IdWidth   = 32'd0,
+    parameter int unsigned IdWidth     = 32'd0,
     /// AXI4 User Width
-    parameter int unsigned UserWidth = 32'd0,
+    parameter int unsigned UserWidth   = 32'd0,
+    /// AXI AW user signal width
+    parameter int unsigned AwUserWidth = UserWidth,
+    /// AXI W user signal width
+    parameter int unsigned WUserWidth  = UserWidth,
+    /// AXI B user signal width
+    parameter int unsigned BUserWidth  = UserWidth,
+    /// AXI AR user signal width
+    parameter int unsigned ArUserWidth = UserWidth,
+    /// AXI R user signal width
+    parameter int unsigned RUserWidth  = UserWidth,
     /// AXI4 request struct definition
-    parameter type axi_req_t         = logic,
+    parameter type axi_req_t           = logic,
     /// AXI4 response struct definition
-    parameter type axi_rsp_t         = logic
+    parameter type axi_rsp_t           = logic
 )(
     /// Rising-edge clock
     input  logic     clk_i,
@@ -82,7 +92,11 @@ module axi_lfsr #(
         .AxiAddrWidth    ( AddrWidth      ),
         .AxiDataWidth    ( DataWidth      ),
         .AxiIdWidth      ( IdWidth        ),
-        .AxiUserWidth    ( UserWidth      ),
+        .AxiAwUserWidth  ( AwUserWidth    ),
+        .AxiWUserWidth   ( WUserWidth     ),
+        .AxiBUserWidth   ( BUserWidth     ),
+        .AxiArUserWidth  ( ArUserWidth    ),
+        .AxiRUserWidth   ( RUserWidth     ),
         .AxiMaxWriteTxns ( 'd2            ), // We only have 1 cycle latency; 2 is enough
         .AxiMaxReadTxns  ( 'd2            ), // We only have 1 cycle latency; 2 is enough
         .FallThrough     ( 1'b0           ),

@@ -33,6 +33,16 @@ module axi_sim_mem #(
   parameter int unsigned IdWidth = 32'd0,
   /// AXI User Width.
   parameter int unsigned UserWidth = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AwUserWidth = UserWidth,
+  /// AXI W user signal width
+  parameter int unsigned WUserWidth  = UserWidth,
+  /// AXI B user signal width
+  parameter int unsigned BUserWidth  = UserWidth,
+  /// AXI AR user signal width
+  parameter int unsigned ArUserWidth = UserWidth,
+  /// AXI R user signal width
+  parameter int unsigned RUserWidth  = UserWidth,
   /// AXI4 request struct definition
   parameter type axi_req_t = logic,
   /// AXI4 response struct definition
@@ -57,48 +67,52 @@ module axi_sim_mem #(
   /// Memory monitor write valid.  All `mon_w_*` outputs are only valid if this signal is high.
   /// A write to the memory is visible on the `mon_w_*` outputs in the clock cycle after it has
   /// happened.
-  output logic                 mon_w_valid_o,
+  output logic                  mon_w_valid_o,
   /// Memory monitor write address
-  output logic [AddrWidth-1:0] mon_w_addr_o,
+  output logic [AddrWidth-1:0]  mon_w_addr_o,
   /// Memory monitor write data
-  output logic [DataWidth-1:0] mon_w_data_o,
+  output logic [DataWidth-1:0]  mon_w_data_o,
   /// Memory monitor write ID
-  output logic [IdWidth-1:0]   mon_w_id_o,
+  output logic [IdWidth-1:0]    mon_w_id_o,
   /// Memory monitor write user
-  output logic [UserWidth-1:0] mon_w_user_o,
+  output logic [WUserWidth-1:0] mon_w_user_o,
   /// Memory monitor write beat count
-  output axi_pkg::len_t        mon_w_beat_count_o,
+  output axi_pkg::len_t         mon_w_beat_count_o,
   /// Memory monitor write last
-  output logic                 mon_w_last_o,
+  output logic                  mon_w_last_o,
   /// Memory monitor read valid.  All `mon_r_*` outputs are only valid if this signal is high.
   /// A read from the memory is visible on the `mon_w_*` outputs in the clock cycle after it has
   /// happened.
-  output logic                 mon_r_valid_o,
+  output logic                  mon_r_valid_o,
   /// Memory monitor read address
-  output logic [AddrWidth-1:0] mon_r_addr_o,
+  output logic [AddrWidth-1:0]  mon_r_addr_o,
   /// Memory monitor read data
-  output logic [DataWidth-1:0] mon_r_data_o,
+  output logic [DataWidth-1:0]  mon_r_data_o,
   /// Memory monitor read ID
-  output logic [IdWidth-1:0]   mon_r_id_o,
+  output logic [IdWidth-1:0]    mon_r_id_o,
   /// Memory monitor read user
-  output logic [UserWidth-1:0] mon_r_user_o,
+  output logic [RUserWidth-1:0] mon_r_user_o,
   /// Memory monitor read beat count
-  output axi_pkg::len_t        mon_r_beat_count_o,
+  output axi_pkg::len_t         mon_r_beat_count_o,
   /// Memory monitor read last
-  output logic                 mon_r_last_o
+  output logic                  mon_r_last_o
 );
 
   localparam int unsigned StrbWidth = DataWidth / 8;
-  typedef logic [AddrWidth-1:0] addr_t;
-  typedef logic [DataWidth-1:0] data_t;
-  typedef logic [IdWidth-1:0]   id_t;
-  typedef logic [StrbWidth-1:0] strb_t;
-  typedef logic [UserWidth-1:0] user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, user_t)
+  typedef logic [AddrWidth-1:0]   addr_t;
+  typedef logic [DataWidth-1:0]   data_t;
+  typedef logic [IdWidth-1:0]     id_t;
+  typedef logic [StrbWidth-1:0]   strb_t;
+  typedef logic [AwUserWidth-1:0] aw_user_t;
+  typedef logic [WUserWidth-1:0]  w_user_t;
+  typedef logic [BUserWidth-1:0]  b_user_t;
+  typedef logic [ArUserWidth-1:0] ar_user_t;
+  typedef logic [RUserWidth-1:0]  r_user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_t, addr_t, id_t, aw_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, w_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_t, id_t, b_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_t, addr_t, id_t, ar_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_t, data_t, id_t, r_user_t)
 
   typedef struct packed {
     logic                 valid;
@@ -337,14 +351,24 @@ endmodule
 ///
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_sim_mem_intf #(
-  parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0,
-  parameter bit WARN_UNINITIALIZED = 1'b0,
-  parameter bit ClearErrOnAccess = 1'b0,
-  parameter time APPL_DELAY = 0ps,
-  parameter time ACQ_DELAY = 0ps
+  parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
+  parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH     = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
+  parameter bit WARN_UNINITIALIZED          = 1'b0,
+  parameter bit CLEAR_ERR_ON_ACCESS         = 1'b0,
+  parameter time APPL_DELAY                 = 0ps,
+  parameter time ACQ_DELAY                  = 0ps
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
@@ -382,11 +406,15 @@ module axi_sim_mem_intf #(
     .AddrWidth          (AXI_ADDR_WIDTH),
     .DataWidth          (AXI_DATA_WIDTH),
     .IdWidth            (AXI_ID_WIDTH),
-    .UserWidth          (AXI_USER_WIDTH),
+    .AwUserWidth        (AXI_AW_USER_WIDTH),
+    .WUserWidth         (AXI_W_USER_WIDTH),
+    .BUserWidth         (AXI_B_USER_WIDTH),
+    .ArUserWidth        (AXI_AR_USER_WIDTH),
+    .RUserWidth         (AXI_R_USER_WIDTH),
     .axi_req_t          (axi_req_t),
     .axi_rsp_t          (axi_resp_t),
     .WarnUninitialized  (WARN_UNINITIALIZED),
-    .ClearErrOnAccess   (ClearErrOnAccess),
+    .ClearErrOnAccess   (CLEAR_ERR_ON_ACCESS),
     .ApplDelay          (APPL_DELAY),
     .AcqDelay           (ACQ_DELAY)
   ) i_sim_mem (

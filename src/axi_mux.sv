@@ -498,23 +498,33 @@ endmodule
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 module axi_mux_intf #(
-  parameter int unsigned SLV_AXI_ID_WIDTH = 32'd0, // Synopsys DC requires default value for params
-  parameter int unsigned MST_AXI_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
-  parameter int unsigned AXI_DATA_WIDTH   = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH   = 32'd0,
-  parameter int unsigned NO_SLV_PORTS     = 32'd0, // Number of slave ports
+  parameter int unsigned SLV_AXI_ID_WIDTH   = 32'd0, // Synopsys DC requires default value for params
+  parameter int unsigned MST_AXI_ID_WIDTH   = 32'd0,
+  parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
+  parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
+  parameter int unsigned AXI_USER_WIDTH     = 32'd0,
+  /// AXI AW user signal width
+  parameter int unsigned AXI_AW_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI W user signal width
+  parameter int unsigned AXI_W_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI B user signal width
+  parameter int unsigned AXI_B_USER_WIDTH   = AXI_USER_WIDTH,
+  /// AXI AR user signal width
+  parameter int unsigned AXI_AR_USER_WIDTH  = AXI_USER_WIDTH,
+  /// AXI R user signal width
+  parameter int unsigned AXI_R_USER_WIDTH   = AXI_USER_WIDTH
+  parameter int unsigned NO_SLV_PORTS       = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write
-  parameter int unsigned MAX_W_TRANS      = 32'd8,
+  parameter int unsigned MAX_W_TRANS        = 32'd8,
   // if enabled, this multiplexer is purely combinatorial
-  parameter bit          FALL_THROUGH     = 1'b0,
+  parameter bit          FALL_THROUGH       = 1'b0,
   // add spill register on write master ports, adds a cycle latency on write channels
-  parameter bit          SPILL_AW         = 1'b1,
-  parameter bit          SPILL_W          = 1'b0,
-  parameter bit          SPILL_B          = 1'b0,
+  parameter bit          SPILL_AW           = 1'b1,
+  parameter bit          SPILL_W            = 1'b0,
+  parameter bit          SPILL_B            = 1'b0,
   // add spill register on read master ports, adds a cycle latency on read channels
-  parameter bit          SPILL_AR         = 1'b1,
-  parameter bit          SPILL_R          = 1'b0
+  parameter bit          SPILL_AR           = 1'b1,
+  parameter bit          SPILL_R            = 1'b0
 ) (
   input  logic   clk_i,                  // Clock
   input  logic   rst_ni,                 // Asynchronous reset active low
@@ -523,26 +533,30 @@ module axi_mux_intf #(
   AXI_BUS.Master mst                     // master port
 );
 
-  typedef logic [SLV_AXI_ID_WIDTH-1:0] slv_id_t;
-  typedef logic [MST_AXI_ID_WIDTH-1:0] mst_id_t;
-  typedef logic [AXI_ADDR_WIDTH -1:0]  addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  typedef logic [SLV_AXI_ID_WIDTH-1:0]  slv_id_t;
+  typedef logic [MST_AXI_ID_WIDTH-1:0]  mst_id_t;
+  typedef logic [AXI_ADDR_WIDTH -1:0]   addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0]    data_t;
+  typedef logic [AXI_DATA_WIDTH/8-1:0]  strb_t;
+  typedef logic [AXI_AW_USER_WIDTH-1:0] aw_user_t;
+  typedef logic [AXI_W_USER_WIDTH-1:0]  w_user_t;
+  typedef logic [AXI_B_USER_WIDTH-1:0]  b_user_t;
+  typedef logic [AXI_AR_USER_WIDTH-1:0] ar_user_t;
+  typedef logic [AXI_R_USER_WIDTH-1:0]  r_user_t;
   // channels typedef
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, slv_id_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, mst_id_t, aw_user_t)
 
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, w_user_t)
 
-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, b_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, b_user_t)
 
-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, slv_id_t, ar_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, mst_id_t, ar_user_t)
 
-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, slv_id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, mst_id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, slv_id_t, r_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, mst_id_t, r_user_t)
 
   `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
