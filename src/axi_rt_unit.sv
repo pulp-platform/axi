@@ -12,6 +12,8 @@
 // Authors:
 // - Thomas Benz <tbenz@ethz.ch>
 
+`include "common_cells/registers.svh"
+
 /// Real-time unit: fragments and throttles transactions
 module axi_rt_unit #(
   parameter int unsigned AddrWidth      = 32'd0,
@@ -123,7 +125,7 @@ module axi_rt_unit #(
     IDLE,
     ISOLATE,
     SWITCH,
-    DEISOLATE,
+    DEISOLATE
   } rt_state_e;
 
   // FSM state
@@ -180,6 +182,10 @@ module axi_rt_unit #(
 
   // connect output
   assign rt_bypassed_o = rt_bypassed_q;
+
+  // state
+  `FFARN(rt_state_q,    rt_state_d,    IDLE, clk_i, rst_ni)
+  `FFARN(rt_bypassed_q, rt_bypassed_d, 1'b1, clk_i, rst_ni)
 
 
   // --------------------------------------------------
@@ -315,9 +321,9 @@ module axi_rt_unit #(
     assign w_region_selected = (aw_region == r);
 
     ax_rt_unit_counter #(
-      .PeriodWidth ( 32'd32     ),
-      .BudgetWidth ( 32'd32     ),
-      .ax_bytes_t  ( ax_bytes_t )
+      .PeriodWidth ( PeriodWidth ),
+      .BudgetWidth ( BudgetWidth ),
+      .ax_bytes_t  ( ax_bytes_t  )
     ) i_ax_rt_unit_counter_read (
       .clk_i,
       .rst_ni,
@@ -333,9 +339,9 @@ module axi_rt_unit #(
     );
 
     ax_rt_unit_counter #(
-      .PeriodWidth ( 32'd32     ),
-      .BudgetWidth ( 32'd32     ),
-      .ax_bytes_t  ( ax_bytes_t )
+      .PeriodWidth ( PeriodWidth ),
+      .BudgetWidth ( BudgetWidth ),
+      .ax_bytes_t  ( ax_bytes_t  )
     ) i_ax_rt_unit_counter_write (
       .clk_i,
       .rst_ni,
@@ -390,6 +396,8 @@ module ax_rt_unit_counter #(
   logic period_over;
   logic period_load;
 
+  period_t static_delat_one = 'd1;
+
   delta_counter #(
     .WIDTH           ( PeriodWidth ),
     .STICKY_OVERFLOW ( 1'b0        )
@@ -400,7 +408,7 @@ module ax_rt_unit_counter #(
     .en_i      ( enable_i            ),
     .load_i    ( period_load         ),
     .down_i    ( 1'b1                ),
-    .delta_i   (  'd1                ),
+    .delta_i   ( static_delat_one    ),
     .d_i       ( period_i            ),
     .q_o       ( period_left_o       ),
     .overflow_o( /* NOT CONNECTED */ )

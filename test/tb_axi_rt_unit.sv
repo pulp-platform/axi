@@ -239,6 +239,8 @@ module tb_axi_rt_unit #(
     .slv_resp_o       ( master_rsp     ),
     .mst_req_o        ( slave_req      ),
     .mst_resp_i       ( slave_rsp      ),
+    .rt_enable_i      ( 1'b1           ),
+    .rt_bypassed_o    ( ),
     .len_limit_i      ( 'd0            ),
     .num_w_pending_o  ( ),
     .num_aw_pending_o ( ),
