@@ -41,6 +41,8 @@
 ></div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="port.rt_enable_i" class="impl"><code class="in-band">rt_enable_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
+></div><h3 id="port.rt_bypassed_o" class="impl"><code class="in-band">rt_bypassed_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.len_limit_i" class="impl"><code class="in-band">len_limit_i<span class="type-annotation">: input  axi_pkg::len_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.num_w_pending_o" class="impl"><code class="in-band">num_w_pending_o<span class="type-annotation">: output idx_w_t</span></code></h3><div class="docblock"
 ></div><h3 id="port.num_aw_pending_o" class="impl"><code class="in-band">num_aw_pending_o<span class="type-annotation">: output idx_aw_t</span></code></h3><div class="docblock"
@@ -63,7 +65,7 @@
 <table>
 <tr><td><a class="type" href="type.ax_bytes_t.html">ax_bytes_t</a></td><td><p>maximum amount of bytes in a transfer type</p>
 </td></tr><tr><td><a class="type" href="type.region_idx_t.html">region_idx_t</a></td><td><p>maximum amount of bytes in a transfer type</p>
-</td></tr></table>
+</td></tr><tr><td><a class="type" href="type.rt_state_e.html">rt_state_e</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
 <h3 id="signal.iso_req" class="impl"><code class="in-band">iso_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.cut_req" class="impl"><code class="in-band">cut_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
@@ -71,10 +73,13 @@
 ></div><h3 id="signal.iso_resp" class="impl"><code class="in-band">iso_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.cut_resp" class="impl"><code class="in-band">cut_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.fwd_resp" class="impl"><code class="in-band">fwd_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.mux_resp" class="impl"><code class="in-band">mux_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.aw_bytes" class="impl"><code class="in-band">aw_bytes<span class="type-annotation">: ax_bytes_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.ar_bytes" class="impl"><code class="in-band">ar_bytes<span class="type-annotation">: ax_bytes_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.aw_region" class="impl"><code class="in-band">aw_region<span class="type-annotation">: region_idx_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.ar_region" class="impl"><code class="in-band">ar_region<span class="type-annotation">: region_idx_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.rt_state_d" class="impl"><code class="in-band">rt_state_d<span class="type-annotation">: rt_state_e</span></code></h3><div class="docblock"
+></div><h3 id="signal.rt_state_q" class="impl"><code class="in-band">rt_state_q<span class="type-annotation">: rt_state_e</span></code></h3><div class="docblock"
 ></div></section>
 </body>
 </html>
