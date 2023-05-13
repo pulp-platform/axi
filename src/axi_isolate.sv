@@ -386,10 +386,12 @@ module axi_isolate_inner #(
 
 // pragma translate_off
 `ifndef VERILATOR
+`ifndef XILINX_SIMULATOR
   initial begin
     assume (NumPending > 0) else $fatal(1, "At least one pending transaction required.");
   end
   default disable iff (!rst_ni);
+`endif
   aw_overflow: assert property (@(posedge clk_i)
       (pending_aw_q == '1) |=> (pending_aw_q != '0)) else
       $fatal(1, "pending_aw_q overflowed");
