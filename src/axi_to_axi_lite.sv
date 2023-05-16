@@ -68,12 +68,13 @@ module axi_to_axi_lite #(
     .axi_req_t    ( full_req_t      ),
     .axi_resp_t   ( full_resp_t     )
   ) i_axi_burst_splitter (
-    .clk_i      ( clk_i         ),
-    .rst_ni     ( rst_ni        ),
-    .slv_req_i  ( filtered_req  ),
-    .slv_resp_o ( filtered_resp ),
-    .mst_req_o  ( splitted_req  ),
-    .mst_resp_i ( splitted_resp )
+    .clk_i       ( clk_i         ),
+    .rst_ni      ( rst_ni        ),
+    .len_limit_i ( 8'h01         ),
+    .slv_req_i   ( filtered_req  ),
+    .slv_resp_o  ( filtered_resp ),
+    .mst_req_o   ( splitted_req  ),
+    .mst_resp_i  ( splitted_resp )
   );
 
   // ID reflect module handles the conversion from the full AXI to AXI lite on the wireing
