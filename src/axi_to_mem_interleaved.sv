@@ -47,6 +47,8 @@ module axi_to_mem_interleaved #(
   input  logic                           clk_i,
   /// Asynchronous reset, active low.
   input  logic                           rst_ni,
+  /// Testmode enable
+  input  logic                           test_i,
   /// The unit is busy handling an AXI4+ATOP request.
   output logic                           busy_o,
   /// AXI4+ATOP slave port, request input.
@@ -94,27 +96,26 @@ module axi_to_mem_interleaved #(
   mem_data_t      [NumBanks-1:0]  r_mem_rdata,  w_mem_rdata;
 
   // split AXI bus in read and write
-  always_comb begin : proc_axi_rw_split
-    axi_resp_o.r          = r_axi_resp.r;
-    axi_resp_o.r_valid    = r_axi_resp.r_valid;
-    axi_resp_o.ar_ready   = r_axi_resp.ar_ready;
-    axi_resp_o.b          = w_axi_resp.b;
-    axi_resp_o.b_valid    = w_axi_resp.b_valid;
-    axi_resp_o.w_ready    = w_axi_resp.w_ready;
-    axi_resp_o.aw_ready   = w_axi_resp.aw_ready;
-
-    w_axi_req             = '0;
-    w_axi_req.aw          = axi_req_i.aw;
-    w_axi_req.aw_valid    = axi_req_i.aw_valid;
-    w_axi_req.w           = axi_req_i.w;
-    w_axi_req.w_valid     = axi_req_i.w_valid;
-    w_axi_req.b_ready     = axi_req_i.b_ready;
-
-    r_axi_req             = '0;
-    r_axi_req.ar          = axi_req_i.ar;
-    r_axi_req.ar_valid    = axi_req_i.ar_valid;
-    r_axi_req.r_ready     = axi_req_i.r_ready;
-  end
+  axi_demux_simple #(
+    .AxiIdWidth  ( IdWidth    ),
+    .AtopSupport ( 1'b1       ),
+    .axi_req_t   ( axi_req_t  ),
+    .axi_resp_t  ( axi_resp_t ),
+    .NoMstPorts  ( 2          ),
+    .MaxTrans    ( BufDepth   ),
+    .AxiLookBits ( 1          ), // select is fixed, do not need it
+    .UniqueIds   ( 1'b1       )  // Can be set as ports are statically selected -> reduces HW
+  ) i_split_read_write (
+    .clk_i,
+    .rst_ni,
+    .test_i,
+    .slv_req_i       ( axi_req_i                ),
+    .slv_ar_select_i ( 1'b0                     ),
+    .slv_aw_select_i ( 1'b1                     ),
+    .slv_resp_o      ( axi_resp_o               ),
+    .mst_reqs_o      ( {w_axi_req,  r_axi_req}  ),
+    .mst_resps_i     ( {w_axi_resp, r_axi_resp} )
+  );
 
   axi_to_mem #(
     .axi_req_t   ( axi_req_t    ),
