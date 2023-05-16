@@ -108,7 +108,26 @@ module axi_write_buffer #(
     .oup_ready_i ( mst_resp_i.aw_ready              )
   );
 
-  assign mgmt_valid_aw = ingress_w_last;
+
+  // --------------------------------------------------
+  // handle W channel last queue
+  // --------------------------------------------------
+  stream_fifo #(
+    .DEPTH ( NumOutstanding ),
+    .T     ( logic          )
+  ) i_stream_fifo (
+    .clk_i,
+    .rst_ni,
+    .flush_i    ( 1'b0               ),
+    .testmode_i ( 1'b0               ),
+    .usage_o    ( /* Not Used */     ),
+    .data_i     ( 1'b0               ),
+    .valid_i    ( ingress_w_last     ),
+    .ready_o    ( /* Not Used */     ), // TODO: connect
+    .data_o     ( /* Not Used */     ),
+    .valid_o    ( mgmt_valid_aw      ),
+    .ready_i    ( mgmt_ready_aw      )
+  );
 
 
   // --------------------------------------------------
@@ -144,12 +163,12 @@ module axi_write_buffer #(
 
     // if one enters the queue: increment counter
     if (ingress_w_last) begin
-      num_lasts_d = num_lasts_q + 1;
+      num_lasts_d = num_lasts_d + 1;
     end
 
     // if one leaves: decrease counter
-    if (egress_w_last) begin
-      num_lasts_d = num_lasts_q - 1;
+    if (egress_w_last & mgmt_ready_aw) begin
+      num_lasts_d = num_lasts_d - 1;
     end
   end
 
