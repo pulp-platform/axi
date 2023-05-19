@@ -70,7 +70,7 @@ module axi_to_axi_lite #(
   ) i_axi_burst_splitter (
     .clk_i       ( clk_i         ),
     .rst_ni      ( rst_ni        ),
-    .len_limit_i ( 8'h01         ),
+    .len_limit_i ( 8'h00         ),
     .slv_req_i   ( filtered_req  ),
     .slv_resp_o  ( filtered_resp ),
     .mst_req_o   ( splitted_req  ),

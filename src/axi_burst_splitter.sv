@@ -509,8 +509,8 @@ module axi_burst_splitter_ax_chan #(
                 // modify the address
                 ax_d.addr += (1 << ax_d.size) * max_beats;
               end
-            end
             state_d = Busy;
+            end
           end
         end
       end
@@ -518,16 +518,21 @@ module axi_burst_splitter_ax_chan #(
         // Sent next burst from split.
         ax_o       = ax_q;
         ax_valid_o = 1'b1;
+        // emit the proper length
+        if (num_beats_q <= max_beats) begin
+          // this is the remainder
+          ax_o.len = axi_pkg::len_t'(num_beats_q - 9'h001);
+        end else begin
+          ax_o.len = len_limit_i;
+        end
+        // next state
         if (ax_ready_i) begin
           if (num_beats_q <= max_beats) begin
-            // this is the remainder
-            ax_o.len = axi_pkg::len_t'(num_beats_q - 9'h001);
             // If this was the last burst, go back to idle.
             state_d = Idle;
           end else begin
             // Otherwise, continue with the next burst.
             num_beats_d = num_beats_q - max_beats;
-            ax_o.len = len_limit_i;
             if (ax_q.burst == axi_pkg::BURST_INCR) begin
               ax_d.addr += (1 << ax_q.size) * max_beats;
             end
