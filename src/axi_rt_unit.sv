@@ -98,7 +98,7 @@ module axi_rt_unit #(
   typedef logic[NumRegionWidth-1:0] region_idx_t;
 
   // internal buses
-  axi_req_t  iso_req,  cut_req,  fwd_req;
+  axi_req_t  iso_req,  cut_req,  fwd_req,  mux_req;
   axi_resp_t iso_resp, cut_resp, fwd_resp, mux_resp;
 
   // number of bytes transferred via one ax
@@ -233,7 +233,7 @@ module axi_rt_unit #(
     .clk_i,
     .rst_ni,
     .len_limit_i,
-    .slv_req_i    ( iso_req  ),
+    .slv_req_i    ( mux_req  ),
     .slv_resp_o   ( mux_resp ),
     .mst_req_o    ( cut_req  ),
     .mst_resp_i   ( cut_resp )
@@ -364,6 +364,7 @@ module axi_rt_unit #(
   assign mst_req_o  = rt_bypassed_q ? iso_req    : fwd_req;
   assign fwd_resp   = rt_bypassed_q ? '0         : mst_resp_i;
   assign iso_resp   = rt_bypassed_q ? mst_resp_i : mux_resp;
+  assign mux_req    = rt_bypassed_q ? '0         : iso_req;
 
 endmodule
 
