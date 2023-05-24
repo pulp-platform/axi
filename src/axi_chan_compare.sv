@@ -17,6 +17,11 @@
 module axi_chan_compare #(
     /// Ignore ID field if it was remapped
     parameter bit  IgnoreId  = 1'b0,
+    /// Allow reordered responses of different IDs,
+    /// not compatible with `IgnoreId`
+    parameter bit  AllowReordering = 1'b0,
+    /// AXI ID Width
+    parameter int unsigned IdWidth = 1,
     parameter type aw_chan_t = logic,
     parameter type w_chan_t  = logic,
     parameter type b_chan_t  = logic,
@@ -123,34 +128,40 @@ module axi_chan_compare #(
         // verilog_lint: waive-stop line-length
     endfunction
 
+    localparam NumIds = (AllowReordering)? 2**IdWidth : 1;
+
     // queues
-    aw_chan_t aw_queue [$];
-    w_chan_t  w_queue  [$];
-    b_chan_t  b_queue  [$];
-    ar_chan_t ar_queue [$];
-    r_chan_t  r_queue  [$];
+    aw_chan_t aw_queue [NumIds-1:0][$];
+    w_chan_t  w_queue              [$];
+    b_chan_t  b_queue  [NumIds-1:0][$];
+    ar_chan_t ar_queue [NumIds-1:0][$];
+    r_chan_t  r_queue  [NumIds-1:0][$];
 
     // requests generated at axi A: enqueue elements
     always_ff @(posedge clk_a_i) begin : proc_enqueue_a
         // aw
         if (axi_a_req.aw_valid & axi_a_res.aw_ready)
-            aw_queue.push_back(axi_a_req.aw);
+            if (AllowReordering) aw_queue[axi_a_req.aw.id].push_back(axi_a_req.aw);
+            else aw_queue[0].push_back(axi_a_req.aw);
         // w
         if (axi_a_req.w_valid & axi_a_res.w_ready)
             w_queue.push_back(axi_a_req.w);
         // ar
         if (axi_a_req.ar_valid & axi_a_res.ar_ready)
-            ar_queue.push_back(axi_a_req.ar);
+            if (AllowReordering) ar_queue[axi_a_req.ar.id].push_back(axi_a_req.ar);
+            else ar_queue[0].push_back(axi_a_req.ar);
     end
 
     // responses generated at axi B: enqueue elements
     always_ff @(posedge clk_b_i) begin : proc_enqueue_b
         // b
         if (axi_b_res.b_valid & axi_b_req.b_ready)
-            b_queue.push_back(axi_b_res.b);
+            if (AllowReordering) b_queue[axi_b_res.b.id].push_back(axi_b_res.b);
+            else b_queue[0].push_back(axi_b_res.b);
         // r
         if (axi_b_res.r_valid & axi_b_req.r_ready)
-            r_queue.push_back(axi_b_res.r);
+            if (AllowReordering) r_queue[axi_b_res.r.id].push_back(axi_b_res.r);
+            else r_queue[0].push_back(axi_b_res.r);
     end
 
     // requests arriving at axi B from A: dequeue elements and check
@@ -158,8 +169,13 @@ module axi_chan_compare #(
         // aw
         if (axi_b_req.aw_valid & axi_b_res.aw_ready) begin
             automatic aw_chan_t aw_exp, aw_recv;
-            if (aw_queue.size() == 0) $error("AW queue is empty!");
-            aw_exp = aw_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            if (AllowReordering) begin
+                if (aw_queue[axi_b_req.aw.id].size() == 0) $error("AW queue is empty!");
+                aw_exp = aw_queue[axi_b_req.aw.id].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end else begin
+                if (aw_queue[0].size() == 0) $error("AW queue is empty!");
+                aw_exp = aw_queue[0].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end
             aw_recv = axi_b_req.aw;
             if (IgnoreId) begin
                 aw_exp.id = 'X;
@@ -184,8 +200,13 @@ module axi_chan_compare #(
         // ar
         if (axi_b_req.ar_valid & axi_b_res.ar_ready) begin
             automatic ar_chan_t ar_exp, ar_recv;
-            if (ar_queue.size() == 0) $error("AR queue is empty!");
-            ar_exp = ar_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            if (AllowReordering) begin
+                if (ar_queue[axi_b_req.ar.id].size() == 0) $error("AR queue is empty!");
+                ar_exp = ar_queue[axi_b_req.ar.id].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end else begin
+                if (ar_queue[0].size() == 0) $error("AR queue is empty!");
+                ar_exp = ar_queue[0].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end
             ar_recv = axi_b_req.ar;
             if (IgnoreId) begin
                 ar_exp.id = 'X;
@@ -203,8 +224,13 @@ module axi_chan_compare #(
         // b
         if (axi_a_res.b_valid & axi_a_req.b_ready) begin
             automatic b_chan_t b_exp, b_recv;
-            if (b_queue.size() == 0) $error("B queue is empty!");
-            b_exp = b_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            if (AllowReordering) begin
+                if (b_queue[axi_a_res.b.id].size() == 0) $error("B queue is empty!");
+                b_exp = b_queue[axi_a_res.b.id].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end else begin
+                if (b_queue[0].size() == 0) $error("B queue is empty!");
+                b_exp = b_queue[0].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end
             b_recv = axi_a_res.b;
             if (IgnoreId) begin
                 b_exp.id = 'X;
@@ -218,8 +244,13 @@ module axi_chan_compare #(
         // r
         if (axi_a_res.r_valid & axi_a_req.r_ready) begin
             automatic r_chan_t r_exp, r_recv;
-            if (r_queue.size() == 0) $error("R queue is empty!");
-            r_exp = r_queue.pop_front(); // verilog_lint: waive always-ff-non-blocking
+            if (AllowReordering) begin
+                if (r_queue[axi_a_res.r.id].size() == 0) $error("R queue is empty!");
+                r_exp = r_queue[axi_a_res.r.id].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end else begin
+                if (r_queue[0].size() == 0) $error("R queue is empty!");
+                r_exp = r_queue[0].pop_front(); // verilog_lint: waive always-ff-non-blocking
+            end
             r_recv = axi_a_res.r;
             if (IgnoreId) begin
                 r_exp.id = 'X;
