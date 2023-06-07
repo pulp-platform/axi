@@ -397,7 +397,6 @@ module axi_to_detailed_mem #(
     mem_user_t       user;
     axi_pkg::cache_t cache;
     axi_pkg::prot_t  prot;
-
   } tmp_atop_t;
 
   tmp_atop_t mem_req_atop;
@@ -423,13 +422,13 @@ module axi_to_detailed_mem #(
 
   // Split single memory request to desired number of banks.
   mem_to_banks #(
-    .AddrWidth ( AddrWidth    ),
-    .DataWidth ( DataWidth    ),
-    .NumBanks  ( NumBanks     ),
-    .HideStrb  ( HideStrb     ),
-    .MaxTrans  ( BufDepth     ),
-    .FifoDepth ( OutFifoDepth ),
-    .atop_t    ( tmp_atop_t   )
+    .AddrWidth ( AddrWidth         ),
+    .DataWidth ( DataWidth         ),
+    .NumBanks  ( NumBanks          ),
+    .HideStrb  ( HideStrb          ),
+    .MaxTrans  ( BufDepth          ),
+    .FifoDepth ( OutFifoDepth      ),
+    .AtopWidth ( $bits(tmp_atop_t) )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
