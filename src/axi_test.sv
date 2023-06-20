@@ -2046,6 +2046,7 @@ package axi_test;
       byte_t     act_data;
       byte_t     exp_data[$];
       byte_t     tst_data[$];
+      int        first_byte_to_check;
       forever begin
         wait (this.ar_sample[id].size() > 0);
         ar_beat = this.ar_sample[id].pop_front();
@@ -2060,6 +2061,10 @@ package axi_test;
               ar_beat.ax_burst, i);
           beat_address = axi_pkg::aligned_addr(beat_address, ar_beat.ax_size);
           bus_address  = axi_pkg::aligned_addr(beat_address, BUS_SIZE);
+          if(i!=0)
+            first_byte_to_check = 0;
+          else
+            first_byte_to_check = ar_beat.ax_addr - beat_address;
           if (!this.memory_q.exists(bus_address)) begin
             for (int unsigned j = 0; j < axi_pkg::num_bytes(BUS_SIZE); j++) begin
               this.memory_q[bus_address+j].push_back(8'bxxxxxxxx);
@@ -2068,7 +2073,7 @@ package axi_test;
           // Assert that the correct data is read.
           if (this.check_en[ReadCheck] &&
               (r_beat.r_resp inside {axi_pkg::RESP_OKAY, axi_pkg::RESP_EXOKAY})) begin
-            for (int unsigned j = 0; j < axi_pkg::num_bytes(ar_beat.ax_size); j++) begin
+            for (int unsigned j = first_byte_to_check; j < axi_pkg::num_bytes(ar_beat.ax_size); j++) begin
               idx_data  = 8*BUS_SIZE'(beat_address+j);
               act_data  = r_beat.r_data[idx_data+:8];
               exp_data  = this.memory_q[beat_address+j];
