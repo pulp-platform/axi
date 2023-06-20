@@ -62,6 +62,7 @@ module axi_mcast_demux #(
   parameter int unsigned NoAddrRules    = 32'd0,
   parameter int unsigned NoMulticastRules = 32'd0,
   parameter int unsigned NoMulticastPorts = 32'd0,
+  parameter int unsigned MaxMcastTrans    = 32'd7,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter int unsigned DecodeIdxWidth = ((NoMstPorts - 1) > 32'd1) ? $clog2(NoMstPorts - 1) : 32'd1,
   parameter int unsigned IdxSelectWidth = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
@@ -88,6 +89,9 @@ module axi_mcast_demux #(
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
+
+  localparam int unsigned McastCounterWidth = (MaxMcastTrans > 32'd1) ? $clog2(MaxMcastTrans+1) : 32'd1;
+  typedef logic [McastCounterWidth-1:0] mcast_cnt_t;
 
   typedef struct packed {
     int unsigned idx;
@@ -199,7 +203,6 @@ module axi_mcast_demux #(
     idx_select_t              lookup_aw_select;
     logic                     aw_select_occupied, aw_id_cnt_full;
     logic                     aw_any_outstanding_unicast_trx;
-    logic                     aw_any_outstanding_trx;
     // Upon an ATOP load, inject IDs from the AW into the AR channel
     logic                     atop_inject;
     // Multicast logic
@@ -207,7 +210,7 @@ module axi_mcast_demux #(
     logic                     outstanding_multicast;
     logic                     multicast_stall;
     mask_select_t             multicast_select_q, multicast_select_d;
-    logic                     multicast_select_load;
+    mcast_cnt_t               outstanding_mcast_cnt_q, outstanding_mcast_cnt_d;
     logic [$clog2(NoMstPorts)+1-1:0] aw_select_popcount;
     logic                     accept_aw;
     logic                     mcast_aw_hs_in_progress;
@@ -452,31 +455,37 @@ module axi_mcast_demux #(
     // of a multicast. This means stall an AW request if:
     // - there is an outstanding multicast transaction or
     // - if the request is a multicast, until there are no more outstanding transactions
-    assign aw_is_multicast        = aw_select_popcount > 1;
-    assign outstanding_multicast  = |multicast_select_q;
-    assign aw_any_outstanding_trx = aw_any_outstanding_unicast_trx || outstanding_multicast;
-    assign multicast_stall        = outstanding_multicast || (aw_is_multicast && aw_any_outstanding_trx);
+    // We can slightly loosen this constraint, in the case of successive multicast
+    // requests going to the same slaves. In this case, we don't need to buffer any
+    // additional select signals.
+    assign aw_is_multicast = aw_select_popcount > 1;
+    assign outstanding_multicast = outstanding_mcast_cnt_q != '0;
+    assign multicast_stall = (outstanding_multicast && (slv_aw_select_mask != multicast_select_q)) ||
+                             (aw_is_multicast && aw_any_outstanding_unicast_trx) ||
+                             (outstanding_mcast_cnt_q == MaxMcastTrans);
     // We can send this signal to all slaves since we will only have one outstanding aw
     assign mst_is_mcast_o = {NoMstPorts{aw_is_multicast}};
 
     // Keep track of which B responses need to be returned to complete the multicast
-    `FFLARN(multicast_select_q, multicast_select_d, multicast_select_load, '0, clk_i, rst_ni)
+    `FFARN(multicast_select_q, multicast_select_d, '0, clk_i, rst_ni)
+    `FFARN(outstanding_mcast_cnt_q, outstanding_mcast_cnt_d, '0, clk_i, rst_ni)
 
-    // Logic to update multicast_select_q. Loads the register upon the AW handshake
-    // of a multicast transaction. Successively clears it upon the "joined" B handshake
+    // Logic to update number of outstanding multicast transactions and current multicast
+    // transactions' select mask. Counter is incremented upon the AW handshake of a multicast
+    // transaction and decremented upon the "joined" B handshake.
     always_comb begin
       multicast_select_d = multicast_select_q;
-      multicast_select_load = 1'b0;
+      outstanding_mcast_cnt_d = outstanding_mcast_cnt_q;
 
-      unique if (aw_is_multicast && aw_valid && aw_ready) begin
-        multicast_select_d    = slv_aw_select_mask;
-        multicast_select_load = 1'b1;
-      end else if (outstanding_multicast && slv_b_valid && slv_b_ready) begin
-        multicast_select_d    = '0;
-        multicast_select_load = 1'b1;
-      end else begin
-        multicast_select_d = multicast_select_q;
-        multicast_select_load = 1'b0;
+      // Written as separate if statements as they may both be valid at the same time
+      // For the same reason the right hand side uses outstanding_mcast_cnt_d
+      // instead of outstanding_mcast_cnt_q
+      if (aw_is_multicast && aw_valid && aw_ready) begin
+        outstanding_mcast_cnt_d = outstanding_mcast_cnt_d + (|slv_aw_select_mask);
+        multicast_select_d      = slv_aw_select_mask;
+      end
+      if (outstanding_multicast && slv_b_valid && slv_b_ready) begin
+        outstanding_mcast_cnt_d = outstanding_mcast_cnt_d - 1;
       end
     end
 
