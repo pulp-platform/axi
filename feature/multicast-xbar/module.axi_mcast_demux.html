@@ -41,12 +41,14 @@ a round-robin arbitration tree.</p>
 ></div><h3 id="parameter.NoAddrRules" class="impl"><code class="in-band">NoAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.NoMulticastRules" class="impl"><code class="in-band">NoMulticastRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.NoMulticastPorts" class="impl"><code class="in-band">NoMulticastPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.MaxMcastTrans" class="impl"><code class="in-band">MaxMcastTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.DecodeIdxWidth" class="impl"><code class="in-band">DecodeIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.IdxSelectWidth" class="impl"><code class="in-band">IdxSelectWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.decode_idx_t" class="impl"><code class="in-band">decode_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.idx_select_t" class="impl"><code class="in-band">idx_select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.mask_select_t" class="impl"><code class="in-band">mask_select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
 ></div><h3 id="parameter.IdCounterWidth" class="impl"><code class="in-band">IdCounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
+></div><h3 id="parameter.McastCounterWidth" class="impl"><code class="in-band">McastCounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
 ></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
 ></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
@@ -63,7 +65,7 @@ a round-robin arbitration tree.</p>
 ></div><h3 id="port.mst_aw_commit_o" class="impl"><code class="in-band">mst_aw_commit_o<span class="type-annotation">: output logic      [NoMstPorts-1:0]</span></code></h3><div class="docblock"
 ></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
-<tr><td><a class="type" href="type.id_cnt_t.html">id_cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.mask_rule_t.html">mask_rule_t</a></td><td></td></tr><tr><td><a class="type" href="type.mcast_aw_hs_state_e.html">mcast_aw_hs_state_e</a></td><td></td></tr></table>
+<tr><td><a class="type" href="type.id_cnt_t.html">id_cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.mcast_cnt_t.html">mcast_cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.mask_rule_t.html">mask_rule_t</a></td><td></td></tr><tr><td><a class="type" href="type.mcast_aw_hs_state_e.html">mcast_aw_hs_state_e</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
 <h3 id="signal.slv_aw_chan" class="impl"><code class="in-band">slv_aw_chan<span class="type-annotation">: aw_chan_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.dec_aw_idx" class="impl"><code class="in-band">dec_aw_idx<span class="type-annotation">: decode_idx_t</span></code></h3><div class="docblock"
@@ -72,6 +74,8 @@ a round-robin arbitration tree.</p>
 ></div><h3 id="signal.lookup_aw_select" class="impl"><code class="in-band">lookup_aw_select<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.multicast_select_q" class="impl"><code class="in-band">multicast_select_q<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.multicast_select_d" class="impl"><code class="in-band">multicast_select_d<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.outstanding_mcast_cnt_q" class="impl"><code class="in-band">outstanding_mcast_cnt_q<span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock"
+></div><h3 id="signal.outstanding_mcast_cnt_d" class="impl"><code class="in-band">outstanding_mcast_cnt_d<span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.w_select" class="impl"><code class="in-band">w_select<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.w_select_q" class="impl"><code class="in-band">w_select_q<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
 ></div><h3 id="signal.w_open" class="impl"><code class="in-band">w_open<span class="type-annotation">: id_cnt_t</span></code></h3><div class="docblock"
