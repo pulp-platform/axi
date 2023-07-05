@@ -53,38 +53,42 @@ which should be accessible.</p>
 ><p>AXI4+ATOP slave port, request input.</p>
 </div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
 ><p>AXI4+ATOP slave port, response output.</p>
-</div><h3 id="port.mem_req_o" class="impl"><code class="in-band">mem_req_o<span class="type-annotation">: output logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_req_o" class="impl"><code class="in-band">mem_req_o<span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, request is valid for this bank.</p>
-</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band">mem_gnt_i<span class="type-annotation">: input  logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band">mem_gnt_i<span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, request can be granted by this bank.</p>
-</div><h3 id="port.mem_addr_o" class="impl"><code class="in-band">mem_addr_o<span class="type-annotation">: output addr_t           [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_addr_o" class="impl"><code class="in-band">mem_addr_o<span class="type-annotation">: output addr_t            [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, byte address of the request.</p>
-</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band">mem_wdata_o<span class="type-annotation">: output mem_data_t       [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band">mem_wdata_o<span class="type-annotation">: output mem_data_t        [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, write data for this bank. Valid when <code>mem_req_o</code>.</p>
-</div><h3 id="port.mem_strb_o" class="impl"><code class="in-band">mem_strb_o<span class="type-annotation">: output mem_strb_t       [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_strb_o" class="impl"><code class="in-band">mem_strb_o<span class="type-annotation">: output mem_strb_t        [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, byte-wise strobe (byte enable).</p>
-</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band">mem_atop_o<span class="type-annotation">: output axi_pkg::atop_t  [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band">mem_atop_o<span class="type-annotation">: output axi_pkg::atop_t   [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, <code>axi_pkg::atop_t</code> signal associated with this request.</p>
-</div><h3 id="port.mem_lock_o" class="impl"><code class="in-band">mem_lock_o<span class="type-annotation">: output logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_lock_o" class="impl"><code class="in-band">mem_lock_o<span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, lock signal.</p>
-</div><h3 id="port.mem_we_o" class="impl"><code class="in-band">mem_we_o<span class="type-annotation">: output logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_we_o" class="impl"><code class="in-band">mem_we_o<span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, write enable. Then asserted store of <code>mem_w_data</code> is requested.</p>
-</div><h3 id="port.mem_id_o" class="impl"><code class="in-band">mem_id_o<span class="type-annotation">: output mem_id_t         [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_id_o" class="impl"><code class="in-band">mem_id_o<span class="type-annotation">: output mem_id_t          [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, ID. Response ID is managed internally, ensure in-order responses.</p>
-</div><h3 id="port.mem_user_o" class="impl"><code class="in-band">mem_user_o<span class="type-annotation">: output mem_user_t       [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_user_o" class="impl"><code class="in-band">mem_user_o<span class="type-annotation">: output mem_user_t        [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, user signal. Ax channel user bits used.</p>
-</div><h3 id="port.mem_cache_o" class="impl"><code class="in-band">mem_cache_o<span class="type-annotation">: output axi_pkg::cache_t [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_cache_o" class="impl"><code class="in-band">mem_cache_o<span class="type-annotation">: output axi_pkg::cache_t  [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, cache signal.</p>
-</div><h3 id="port.mem_prot_o" class="impl"><code class="in-band">mem_prot_o<span class="type-annotation">: output axi_pkg::prot_t  [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_prot_o" class="impl"><code class="in-band">mem_prot_o<span class="type-annotation">: output axi_pkg::prot_t   [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, protection signal.</p>
-</div><h3 id="port.mem_rvalid_i" class="impl"><code class="in-band">mem_rvalid_i<span class="type-annotation">: input  logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_qos_o" class="impl"><code class="in-band">mem_qos_o<span class="type-annotation">: output axi_pkg::qos_t    [NumBanks-1:0]</span></code></h3><div class="docblock"
+><p>Memory stream master, QOS signal.</p>
+</div><h3 id="port.mem_region_o" class="impl"><code class="in-band">mem_region_o<span class="type-annotation">: output axi_pkg::region_t [NumBanks-1:0]</span></code></h3><div class="docblock"
+><p>Memory stream master, region signal.</p>
+</div><h3 id="port.mem_rvalid_i" class="impl"><code class="in-band">mem_rvalid_i<span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, response is valid. This module expects always a response valid for a
 request regardless if the request was a write or a read.</p>
-</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band">mem_rdata_i<span class="type-annotation">: input  mem_data_t       [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band">mem_rdata_i<span class="type-annotation">: input  mem_data_t        [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, read response data.</p>
-</div><h3 id="port.mem_err_i" class="impl"><code class="in-band">mem_err_i<span class="type-annotation">: input  logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_err_i" class="impl"><code class="in-band">mem_err_i<span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, error response.</p>
-</div><h3 id="port.mem_exokay_i" class="impl"><code class="in-band">mem_exokay_i<span class="type-annotation">: input  logic            [NumBanks-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_exokay_i" class="impl"><code class="in-band">mem_exokay_i<span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock"
 ><p>Memory stream master, read response exclusive access OK.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>

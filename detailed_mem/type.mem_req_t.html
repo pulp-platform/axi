@@ -5,16 +5,18 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mem_req_t</a></h1>
 <pre>typedef struct packed {
-    addr_t           addr;
-    axi_pkg::atop_t  atop;
-    logic            lock;
-    axi_strb_t       strb;
-    axi_data_t       wdata;
-    logic            we;
-    mem_id_t         id;
-    mem_user_t       user;
-    axi_pkg::cache_t cache;
-    axi_pkg::prot_t  prot;
+    addr_t            addr;
+    axi_pkg::atop_t   atop;
+    logic             lock;
+    axi_strb_t        strb;
+    axi_data_t        wdata;
+    logic             we;
+    mem_id_t          id;
+    mem_user_t        user;
+    axi_pkg::cache_t  cache;
+    axi_pkg::prot_t   prot;
+    axi_pkg::qos_t    qos;
+    axi_pkg::region_t region;
   } mem_req_t;</pre>
 </section>
 </body>

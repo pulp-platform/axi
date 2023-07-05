@@ -39,33 +39,41 @@
 ><p>See <code>axi_to_mem</code>, port <code>busy_o</code>.</p>
 </div><h3 id="port.slv" class="impl"><code class="in-band">slv<span class="type-annotation">: AXI_BUS.Slave</span></code></h3><div class="docblock"
 ><p>AXI4+ATOP slave interface port.</p>
-</div><h3 id="port.mem_req_o" class="impl"><code class="in-band">mem_req_o<span class="type-annotation">: output logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_req_o" class="impl"><code class="in-band">mem_req_o<span class="type-annotation">: output logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_req_o</code>.</p>
-</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band">mem_gnt_i<span class="type-annotation">: input  logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band">mem_gnt_i<span class="type-annotation">: input  logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_gnt_i</code>.</p>
-</div><h3 id="port.mem_addr_o" class="impl"><code class="in-band">mem_addr_o<span class="type-annotation">: output addr_t          [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_addr_o" class="impl"><code class="in-band">mem_addr_o<span class="type-annotation">: output addr_t            [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_addr_o</code>.</p>
-</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band">mem_wdata_o<span class="type-annotation">: output mem_data_t      [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band">mem_wdata_o<span class="type-annotation">: output mem_data_t        [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_wdata_o</code>.</p>
-</div><h3 id="port.mem_strb_o" class="impl"><code class="in-band">mem_strb_o<span class="type-annotation">: output mem_strb_t      [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_strb_o" class="impl"><code class="in-band">mem_strb_o<span class="type-annotation">: output mem_strb_t        [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_strb_o</code>.</p>
-</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band">mem_atop_o<span class="type-annotation">: output axi_pkg::atop_t [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band">mem_atop_o<span class="type-annotation">: output axi_pkg::atop_t   [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_atop_o</code>.</p>
-</div><h3 id="port.mem_lock_o" class="impl"><code class="in-band">mem_lock_o<span class="type-annotation">: output logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_lock_o" class="impl"><code class="in-band">mem_lock_o<span class="type-annotation">: output logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_lock_o</code>.</p>
-</div><h3 id="port.mem_we_o" class="impl"><code class="in-band">mem_we_o<span class="type-annotation">: output logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_we_o" class="impl"><code class="in-band">mem_we_o<span class="type-annotation">: output logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_we_o</code>.</p>
-</div><h3 id="port.mem_id_o" class="impl"><code class="in-band">mem_id_o<span class="type-annotation">: output logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_id_o" class="impl"><code class="in-band">mem_id_o<span class="type-annotation">: output logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_id_o</code>.</p>
-</div><h3 id="port.mem_user_o" class="impl"><code class="in-band">mem_user_o<span class="type-annotation">: output logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_user_o" class="impl"><code class="in-band">mem_user_o<span class="type-annotation">: output logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_user_o</code>.</p>
-</div><h3 id="port.mem_rvalid_i" class="impl"><code class="in-band">mem_rvalid_i<span class="type-annotation">: input  logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_cache_o" class="impl"><code class="in-band">mem_cache_o<span class="type-annotation">: output axi_pkg::cache_t  [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_to_mem</code>, port <code>mem_cache_o</code>.</p>
+</div><h3 id="port.mem_prot_o" class="impl"><code class="in-band">mem_prot_o<span class="type-annotation">: output axi_pkg::prot_t   [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_to_mem</code>, port <code>mem_prot_o</code>.</p>
+</div><h3 id="port.mem_qos_o" class="impl"><code class="in-band">mem_qos_o<span class="type-annotation">: output axi_pkg::qos_t    [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_to_mem</code>, port <code>mem_qos_o</code>.</p>
+</div><h3 id="port.mem_region_o" class="impl"><code class="in-band">mem_region_o<span class="type-annotation">: output axi_pkg::region_t [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+><p>See <code>axi_to_mem</code>, port <code>mem_region_o</code>.</p>
+</div><h3 id="port.mem_rvalid_i" class="impl"><code class="in-band">mem_rvalid_i<span class="type-annotation">: input  logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_rvalid_i</code>.</p>
-</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band">mem_rdata_i<span class="type-annotation">: input  mem_data_t      [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band">mem_rdata_i<span class="type-annotation">: input  mem_data_t        [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_rdata_i</code>.</p>
-</div><h3 id="port.mem_err_i" class="impl"><code class="in-band">mem_err_i<span class="type-annotation">: input  logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_err_i" class="impl"><code class="in-band">mem_err_i<span class="type-annotation">: input  logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_err_i</code>.</p>
-</div><h3 id="port.mem_exokay_i" class="impl"><code class="in-band">mem_exokay_i<span class="type-annotation">: input  logic           [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
+</div><h3 id="port.mem_exokay_i" class="impl"><code class="in-band">mem_exokay_i<span class="type-annotation">: input  logic             [NUM_BANKS-1:0]</span></code></h3><div class="docblock"
 ><p>See <code>axi_to_mem</code>, port <code>mem_exokay_i</code>.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
