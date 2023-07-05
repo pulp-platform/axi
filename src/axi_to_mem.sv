@@ -103,6 +103,8 @@ module axi_to_mem #(
     .mem_user_o   (),
     .mem_cache_o  (),
     .mem_prot_o   (),
+    .mem_qos_o    (),
+    .mem_region_o (),
     .mem_rvalid_i ( mem_rvalid_i ),
     .mem_rdata_i  ( mem_rdata_i   ),
     .mem_err_i    ('0),

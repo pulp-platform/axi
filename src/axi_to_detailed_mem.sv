@@ -50,48 +50,52 @@ module axi_to_detailed_mem #(
   localparam type mem_user_t = logic [UserWidth-1:0]
 ) (
   /// Clock input.
-  input  logic                            clk_i,
+  input  logic                             clk_i,
   /// Asynchronous reset, active low.
-  input  logic                            rst_ni,
+  input  logic                             rst_ni,
   /// The unit is busy handling an AXI4+ATOP request.
-  output logic                            busy_o,
+  output logic                             busy_o,
   /// AXI4+ATOP slave port, request input.
-  input  axi_req_t                        axi_req_i,
+  input  axi_req_t                         axi_req_i,
   /// AXI4+ATOP slave port, response output.
-  output axi_resp_t                       axi_resp_o,
+  output axi_resp_t                        axi_resp_o,
   /// Memory stream master, request is valid for this bank.
-  output logic            [NumBanks-1:0]  mem_req_o,
+  output logic             [NumBanks-1:0]  mem_req_o,
   /// Memory stream master, request can be granted by this bank.
-  input  logic            [NumBanks-1:0]  mem_gnt_i,
+  input  logic             [NumBanks-1:0]  mem_gnt_i,
   /// Memory stream master, byte address of the request.
-  output addr_t           [NumBanks-1:0]  mem_addr_o,
+  output addr_t            [NumBanks-1:0]  mem_addr_o,
   /// Memory stream master, write data for this bank. Valid when `mem_req_o`.
-  output mem_data_t       [NumBanks-1:0]  mem_wdata_o,
+  output mem_data_t        [NumBanks-1:0]  mem_wdata_o,
   /// Memory stream master, byte-wise strobe (byte enable).
-  output mem_strb_t       [NumBanks-1:0]  mem_strb_o,
+  output mem_strb_t        [NumBanks-1:0]  mem_strb_o,
   /// Memory stream master, `axi_pkg::atop_t` signal associated with this request.
-  output axi_pkg::atop_t  [NumBanks-1:0]  mem_atop_o,
+  output axi_pkg::atop_t   [NumBanks-1:0]  mem_atop_o,
   /// Memory stream master, lock signal.
-  output logic            [NumBanks-1:0]  mem_lock_o,
+  output logic             [NumBanks-1:0]  mem_lock_o,
   /// Memory stream master, write enable. Then asserted store of `mem_w_data` is requested.
-  output logic            [NumBanks-1:0]  mem_we_o,
+  output logic             [NumBanks-1:0]  mem_we_o,
   /// Memory stream master, ID. Response ID is managed internally, ensure in-order responses.
-  output mem_id_t         [NumBanks-1:0]  mem_id_o,
+  output mem_id_t          [NumBanks-1:0]  mem_id_o,
   /// Memory stream master, user signal. Ax channel user bits used.
-  output mem_user_t       [NumBanks-1:0]  mem_user_o,
+  output mem_user_t        [NumBanks-1:0]  mem_user_o,
   /// Memory stream master, cache signal.
-  output axi_pkg::cache_t [NumBanks-1:0]  mem_cache_o,
+  output axi_pkg::cache_t  [NumBanks-1:0]  mem_cache_o,
   /// Memory stream master, protection signal.
-  output axi_pkg::prot_t  [NumBanks-1:0]  mem_prot_o,
+  output axi_pkg::prot_t   [NumBanks-1:0]  mem_prot_o,
+  /// Memory stream master, QOS signal.
+  output axi_pkg::qos_t    [NumBanks-1:0]  mem_qos_o,
+  /// Memory stream master, region signal.
+  output axi_pkg::region_t [NumBanks-1:0]  mem_region_o,
   /// Memory stream master, response is valid. This module expects always a response valid for a
   /// request regardless if the request was a write or a read.
-  input  logic            [NumBanks-1:0]  mem_rvalid_i,
+  input  logic             [NumBanks-1:0]  mem_rvalid_i,
   /// Memory stream master, read response data.
-  input  mem_data_t       [NumBanks-1:0]  mem_rdata_i,
+  input  mem_data_t        [NumBanks-1:0]  mem_rdata_i,
   /// Memory stream master, error response.
-  input  logic            [NumBanks-1:0]  mem_err_i,
+  input  logic             [NumBanks-1:0]  mem_err_i,
   /// Memory stream master, read response exclusive access OK.
-  input  logic            [NumBanks-1:0]  mem_exokay_i
+  input  logic             [NumBanks-1:0]  mem_exokay_i
 );
 
   typedef logic [DataWidth-1:0]   axi_data_t;
@@ -99,30 +103,34 @@ module axi_to_detailed_mem #(
   typedef logic [IdWidth-1:0]     axi_id_t;
 
   typedef struct packed {
-    addr_t           addr;
-    axi_pkg::atop_t  atop;
-    logic            lock;
-    axi_strb_t       strb;
-    axi_data_t       wdata;
-    logic            we;
-    mem_id_t         id;
-    mem_user_t       user;
-    axi_pkg::cache_t cache;
-    axi_pkg::prot_t  prot;
+    addr_t            addr;
+    axi_pkg::atop_t   atop;
+    logic             lock;
+    axi_strb_t        strb;
+    axi_data_t        wdata;
+    logic             we;
+    mem_id_t          id;
+    mem_user_t        user;
+    axi_pkg::cache_t  cache;
+    axi_pkg::prot_t   prot;
+    axi_pkg::qos_t    qos;
+    axi_pkg::region_t region;
   } mem_req_t;
 
   typedef struct packed {
-    addr_t           addr;
-    axi_pkg::atop_t  atop;
-    logic            lock;
-    axi_id_t         id;
-    logic            last;
-    axi_pkg::qos_t   qos;
-    axi_pkg::size_t  size;
-    logic            write;
-    mem_user_t       user;
-    axi_pkg::cache_t cache;
-    axi_pkg::prot_t  prot;
+    addr_t            addr;
+    axi_pkg::atop_t   atop;
+    logic             lock;
+    axi_id_t          id;
+    logic             last;
+    axi_pkg::qos_t    qos;
+    axi_pkg::size_t   size;
+    logic             write;
+    mem_user_t        user;
+    axi_pkg::cache_t  cache;
+    axi_pkg::prot_t   prot;
+    axi_pkg::qos_t    qos;
+    axi_pkg::region_t region;
   } meta_t;
 
   axi_data_t      mem_rdata,
@@ -177,17 +185,19 @@ module axi_to_detailed_mem #(
     // Handle new AR if there is one.
     end else if (axi_req_i.ar_valid) begin
       rd_meta_d = '{
-        addr:  addr_t'(axi_pkg::aligned_addr(axi_req_i.ar.addr, axi_req_i.ar.size)),
-        atop:  '0,
-        lock:  axi_req_i.ar.lock,
-        id:    axi_req_i.ar.id,
-        last:  (axi_req_i.ar.len == '0),
-        qos:   axi_req_i.ar.qos,
-        size:  axi_req_i.ar.size,
-        write: 1'b0,
-        user:  axi_req_i.ar.user,
-        cache: axi_req_i.ar.cache,
-        prot:  axi_req_i.ar.prot
+        addr:   addr_t'(axi_pkg::aligned_addr(axi_req_i.ar.addr, axi_req_i.ar.size)),
+        atop:   '0,
+        lock:   axi_req_i.ar.lock,
+        id:     axi_req_i.ar.id,
+        last:   (axi_req_i.ar.len == '0),
+        qos:    axi_req_i.ar.qos,
+        size:   axi_req_i.ar.size,
+        write:  1'b0,
+        user:   axi_req_i.ar.user,
+        cache:  axi_req_i.ar.cache,
+        prot:   axi_req_i.ar.prot,
+        qos:    axi_req_i.ar.qos,
+        region: axi_req_i.ar.region
       };
       rd_meta      = rd_meta_d;
       rd_meta.addr = addr_t'(axi_req_i.ar.addr);
@@ -234,7 +244,9 @@ module axi_to_detailed_mem #(
         write:  1'b1,
         user:   axi_req_i.aw.user,
         cache:  axi_req_i.aw.cache,
-        prot:   axi_req_i.aw.prot
+        prot:   axi_req_i.aw.prot,
+        qos:    axi_req_i.aw.qos,
+        region: axi_req_i.aw.region
       };
       wr_meta = wr_meta_d;
       wr_meta.addr = addr_t'(axi_req_i.aw.addr);
@@ -357,16 +369,18 @@ module axi_to_detailed_mem #(
 
   // Assemble the actual memory request from meta information and write data.
   assign m2s_req = mem_req_t'{
-    addr:  meta.addr,
-    atop:  meta.atop,
-    lock:  meta.lock,
-    strb:  axi_req_i.w.strb,
-    wdata: axi_req_i.w.data,
-    we:    meta.write,
-    id:    meta.id,
-    user:  meta.user,
-    cache: meta.cache,
-    prot:  meta.prot
+    addr:   meta.addr,
+    atop:   meta.atop,
+    lock:   meta.lock,
+    strb:   axi_req_i.w.strb,
+    wdata:  axi_req_i.w.data,
+    we:     meta.write,
+    id:     meta.id,
+    user:   meta.user,
+    cache:  meta.cache,
+    prot:   meta.prot,
+    qos:    meta.qos,
+    region: meta.region
   };
 
   // Interface memory as stream.
@@ -391,33 +405,39 @@ module axi_to_detailed_mem #(
   );
 
   typedef struct packed {
-    axi_pkg::atop_t  atop;
-    logic            lock;
-    mem_id_t         id;
-    mem_user_t       user;
-    axi_pkg::cache_t cache;
-    axi_pkg::prot_t  prot;
+    axi_pkg::atop_t   atop;
+    logic             lock;
+    mem_id_t          id;
+    mem_user_t        user;
+    axi_pkg::cache_t  cache;
+    axi_pkg::prot_t   prot;
+    axi_pkg::qos_t    qos;
+    axi_pkg::region_t region;
   } tmp_atop_t;
 
   tmp_atop_t mem_req_atop;
   tmp_atop_t [NumBanks-1:0] banked_req_atop;
 
   assign mem_req_atop = '{
-    atop:  mem_req.atop,
-    lock:  mem_req.lock,
-    id:    mem_req.id,
-    user:  mem_req.user,
-    cache: mem_req.cache,
-    prot:  mem_req.prot
+    atop:   mem_req.atop,
+    lock:   mem_req.lock,
+    id:     mem_req.id,
+    user:   mem_req.user,
+    cache:  mem_req.cache,
+    prot:   mem_req.prot,
+    qos:    mem_req.qos,
+    region: mem_req.region
   };
 
   for (genvar i = 0; i < NumBanks; i++) begin
-    assign mem_atop_o [i] = banked_req_atop[i].atop;
-    assign mem_lock_o [i] = banked_req_atop[i].lock;
-    assign mem_id_o   [i] = banked_req_atop[i].id;
-    assign mem_user_o [i] = banked_req_atop[i].user;
-    assign mem_cache_o[i] = banked_req_atop[i].cache;
-    assign mem_prot_o [i] = banked_req_atop[i].prot;
+    assign mem_atop_o  [i] = banked_req_atop[i].atop;
+    assign mem_lock_o  [i] = banked_req_atop[i].lock;
+    assign mem_id_o    [i] = banked_req_atop[i].id;
+    assign mem_user_o  [i] = banked_req_atop[i].user;
+    assign mem_cache_o [i] = banked_req_atop[i].cache;
+    assign mem_prot_o  [i] = banked_req_atop[i].prot;
+    assign mem_qos_o   [i] = banked_req_atop[i].qos;
+    assign mem_region_o[i] = banked_req_atop[i].region;
   end
 
   // Split single memory request to desired number of banks.
@@ -562,41 +582,49 @@ module axi_to_detailed_mem_intf #(
   localparam type mem_strb_t = logic [DATA_WIDTH/NUM_BANKS/8-1:0]
 ) (
   /// Clock input.
-  input  logic                            clk_i,
+  input  logic                              clk_i,
   /// Asynchronous reset, active low.
-  input  logic                            rst_ni,
+  input  logic                              rst_ni,
   /// See `axi_to_mem`, port `busy_o`.
-  output logic                            busy_o,
+  output logic                              busy_o,
   /// AXI4+ATOP slave interface port.
-  AXI_BUS.Slave                           slv,
+  AXI_BUS.Slave                             slv,
   /// See `axi_to_mem`, port `mem_req_o`.
-  output logic           [NUM_BANKS-1:0]  mem_req_o,
+  output logic             [NUM_BANKS-1:0]  mem_req_o,
   /// See `axi_to_mem`, port `mem_gnt_i`.
-  input  logic           [NUM_BANKS-1:0]  mem_gnt_i,
+  input  logic             [NUM_BANKS-1:0]  mem_gnt_i,
   /// See `axi_to_mem`, port `mem_addr_o`.
-  output addr_t          [NUM_BANKS-1:0]  mem_addr_o,
+  output addr_t            [NUM_BANKS-1:0]  mem_addr_o,
   /// See `axi_to_mem`, port `mem_wdata_o`.
-  output mem_data_t      [NUM_BANKS-1:0]  mem_wdata_o,
+  output mem_data_t        [NUM_BANKS-1:0]  mem_wdata_o,
   /// See `axi_to_mem`, port `mem_strb_o`.
-  output mem_strb_t      [NUM_BANKS-1:0]  mem_strb_o,
+  output mem_strb_t        [NUM_BANKS-1:0]  mem_strb_o,
   /// See `axi_to_mem`, port `mem_atop_o`.
-  output axi_pkg::atop_t [NUM_BANKS-1:0]  mem_atop_o,
+  output axi_pkg::atop_t   [NUM_BANKS-1:0]  mem_atop_o,
   /// See `axi_to_mem`, port `mem_lock_o`.
-  output logic           [NUM_BANKS-1:0]  mem_lock_o,
+  output logic             [NUM_BANKS-1:0]  mem_lock_o,
   /// See `axi_to_mem`, port `mem_we_o`.
-  output logic           [NUM_BANKS-1:0]  mem_we_o,
+  output logic             [NUM_BANKS-1:0]  mem_we_o,
   /// See `axi_to_mem`, port `mem_id_o`.
-  output logic           [NUM_BANKS-1:0]  mem_id_o,
+  output logic             [NUM_BANKS-1:0]  mem_id_o,
   /// See `axi_to_mem`, port `mem_user_o`.
-  output logic           [NUM_BANKS-1:0]  mem_user_o,
+  output logic             [NUM_BANKS-1:0]  mem_user_o,
+  /// See `axi_to_mem`, port `mem_cache_o`.
+  output axi_pkg::cache_t  [NUM_BANKS-1:0]  mem_cache_o,
+  /// See `axi_to_mem`, port `mem_prot_o`.
+  output axi_pkg::prot_t   [NUM_BANKS-1:0]  mem_prot_o,
+  /// See `axi_to_mem`, port `mem_qos_o`.
+  output axi_pkg::qos_t    [NUM_BANKS-1:0]  mem_qos_o,
+  /// See `axi_to_mem`, port `mem_region_o`.
+  output axi_pkg::region_t [NUM_BANKS-1:0]  mem_region_o,
   /// See `axi_to_mem`, port `mem_rvalid_i`.
-  input  logic           [NUM_BANKS-1:0]  mem_rvalid_i,
+  input  logic             [NUM_BANKS-1:0]  mem_rvalid_i,
   /// See `axi_to_mem`, port `mem_rdata_i`.
-  input  mem_data_t      [NUM_BANKS-1:0]  mem_rdata_i,
+  input  mem_data_t        [NUM_BANKS-1:0]  mem_rdata_i,
   /// See `axi_to_mem`, port `mem_err_i`.
-  input  logic           [NUM_BANKS-1:0]  mem_err_i,
+  input  logic             [NUM_BANKS-1:0]  mem_err_i,
   /// See `axi_to_mem`, port `mem_exokay_i`.
-  input  logic           [NUM_BANKS-1:0]  mem_exokay_i
+  input  logic             [NUM_BANKS-1:0]  mem_exokay_i
 );
   typedef logic [ID_WIDTH-1:0]     id_t;
   typedef logic [DATA_WIDTH-1:0]   data_t;
@@ -640,6 +668,10 @@ module axi_to_detailed_mem_intf #(
     .mem_we_o,
     .mem_id_o,
     .mem_user_o,
+    .mem_cache_o,
+    .mem_prot_o,
+    .mem_qos_o,
+    .mem_region_o,
     .mem_rvalid_i,
     .mem_rdata_i,
     .mem_err_i,
