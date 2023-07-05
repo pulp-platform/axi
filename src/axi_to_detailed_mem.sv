@@ -129,7 +129,6 @@ module axi_to_detailed_mem #(
     mem_user_t        user;
     axi_pkg::cache_t  cache;
     axi_pkg::prot_t   prot;
-    axi_pkg::qos_t    qos;
     axi_pkg::region_t region;
   } meta_t;
 
@@ -196,7 +195,6 @@ module axi_to_detailed_mem #(
         user:   axi_req_i.ar.user,
         cache:  axi_req_i.ar.cache,
         prot:   axi_req_i.ar.prot,
-        qos:    axi_req_i.ar.qos,
         region: axi_req_i.ar.region
       };
       rd_meta      = rd_meta_d;
@@ -245,7 +243,6 @@ module axi_to_detailed_mem #(
         user:   axi_req_i.aw.user,
         cache:  axi_req_i.aw.cache,
         prot:   axi_req_i.aw.prot,
-        qos:    axi_req_i.aw.qos,
         region: axi_req_i.aw.region
       };
       wr_meta = wr_meta_d;
