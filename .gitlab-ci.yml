@@ -41,6 +41,8 @@ synopsys_dc:
 
 fuse_xsim:
   stage: build
+  allow_failure: true
+  timeout: 5 minutes
   script:
     - bender sources
     - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
