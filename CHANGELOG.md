@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `axi_lite_from_mem` and `axi_from_mem` acting like SRAMs making AXI4 requests downstream.
   - `axi_lite_dw_converter`: Convert the data width of AXI4-Lite transactions. Emits the
      appropriate amount of downstream transactions to perform the whole requested access.
-  - `axi_rw_join` and `axi_rw_split` to split/join AXI buses.
-- `CT`-macros allowing to instantiate AXI structs with custom channel names.
+  - `axi_rw_join` and `axi_rw_split` to split/join the read and write channels of an AXI bus.
+- `CT`-macros allowing to instantiate AXI structs with custom channel type names.
+- `axi_pkg': Add documentation to `xbar_cfg_t`.
 - Testbench IPs:
   - `axi_chan_compare.sv`: Non-synthesizable module comparing two AXI channels of the same type
   - Add `axi_file_master` to `axi_test`, allowing file-based AXI verification approaches.
@@ -25,27 +26,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Synthesizable IPs:
   - `axi_demux`: Replace FIFO between AW and W channel by a register plus a counter.  This prevents
     AWs from being issued to one master port while Ws from another burst are ongoing to another
-    master port.  This is required to prevents deadlocks due to circular waits downstream.
+    master port.  This is required to prevents deadlocks due to circular waits downstream. Removes
+    `FallThrough` parameter from `axi_demux`.
   - Split the `axi_demux` logic and timing decoupling. A new module called `axi_demux_simple` contains
     the core logic.
   - `axi_dw_downsizer` uses `axi_pkg::RESP_EXOKAY` as a default value.
   - Simplify the `casez` in `axi_id_remap`.
-  - Add explicit mapping to the `axi_id_serialize` module.
+  - Add optional explicit mapping to the `axi_id_serialize` module.
   - Expand `axi_to_mem` to `axi_to_detailed_mem` exposing all of AXI's side-signals; namely `id`, `user`,
     `cache`, `prot`, `qos`, `region`, `atop`. Add possibility to inject `err` and `exokay`.
   - `axi_xbar`: Add parameter `PipelineStages` to `axi_pkg::xbar_cfg_t`. This adds `axi_multicuts`
     in the crossed connections in the `xbar` between the *demuxes* and *muxes*. Improve inline
     documentation.
   - Move `mem_to_banks` to `common_cells`.
-- `axi_pkg`:
-  - Add documentation to `xbar_cfg_t`.
-  - Improve for better compatibility with *Vivado*.
+- `axi_pkg`: Improve for better compatibility with *Vivado*.
 - `axi_test:
-  - `axi_rand_lite_slave`: `R` response field is now randomized.
-  - Silence random master and slave.
+  - `axi_lite_rand_slave`: `R` response field is now randomized.
+  - Remove excessive prints from random master and slave.
   - Properly size-align the address.
 - `axi_pkg`: Define `localparams` to define AXI type widths.
-- Update `tb_axi_xbar`.
 - Update `common_cells` from version `v1.26.0` to `v1.27.0`.
 - Tooling:
   - Use `pulp-platform/pulp-actions/gitlab-ci@v2` in the GitHub CI to communicate with the internal CI.
@@ -58,6 +57,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - `axi_to_mem_banked`: Reduce hardware by properly setting `UniqueIds`.
 - `axi_to_mem_interleaved` and `axi_to_mem_split` properly instantiates a demultiplexer now.
+  Adds `test_i` port for DFT.
+
+### Breaking Changes
+There are breaking changes between `v0.38.0` and `v0.39.0`:
+- `axi_demux`: `FallThrough` parameter was removed.
+- `axi_xbar`: `axi_pkg::xbar_cfg_t` added `PipelineStages` parameter.
+- `axi_to_mem_interleaved` and `axi_to_mem_split`: Added `test_i` input port.
 
 ## 0.38.0 - 2022-09-28
 
