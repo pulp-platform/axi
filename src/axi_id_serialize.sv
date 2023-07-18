@@ -11,6 +11,7 @@
 //
 // Authors:
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Paul Scheffler <paulsc@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"

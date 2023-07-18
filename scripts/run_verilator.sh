@@ -14,6 +14,7 @@
 # - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 # - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 # - Andreas Kurth <akurth@iis.ee.ethz.ch>
+# - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 set -e
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

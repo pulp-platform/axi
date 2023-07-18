@@ -8,7 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-// Author: Wolfgang Roenninger <wroennin@ethz.ch>
+// Authors:
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 
 `include "axi/typedef.svh"

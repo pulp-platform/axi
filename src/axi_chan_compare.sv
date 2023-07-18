@@ -9,9 +9,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-//  - Thomas Benz <tbenz@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 //  - Paul Scheffler <paulsc@iis.ee.ethz.ch>
-//  - Tim Fischer <fischeti@iis.ee.ethz.ch>
+// - Tim Fischer <fischeti@iis.ee.ethz.ch>
 
 /// Non-synthesizable module comparing two AXI channels of the same type
 module axi_chan_compare #(

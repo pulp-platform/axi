@@ -19,6 +19,7 @@ declare -A hide=( \
 # Map each author name to an email address.
 declare -A emails=( \
     ["Andreas Kurth"]="akurth@iis.ee.ethz.ch" \
+    ["Cyril Koenig"]="cykoenig@iis.ee.ethz.ch" \
     ["Fabian Schuiki"]="fschuiki@iis.ee.ethz.ch" \
     ["Florian Zaruba"]="zarubaf@iis.ee.ethz.ch" \
     ["Matheus Cavalcante"]="matheusd@iis.ee.ethz.ch" \
@@ -30,6 +31,8 @@ declare -A emails=( \
     ["Luca Valente"]="luca.valente@unibo.it" \
     ["Noah Huetter"]="huettern@ethz.ch" \
     ["Nils Wistoff"]="nwistoff@iis.ee.ethz.ch" \
+    ["Nicole Narr"]="narrn@ethz.ch" \
+    ["Paul Scheffler"]="paulsc@iis.ee.ethz.ch" \
     ["Tim Fischer"]="fischeti@iis.ee.ethz.ch" \
 )
 

@@ -13,6 +13,7 @@
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
 

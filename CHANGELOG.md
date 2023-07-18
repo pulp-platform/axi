@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - No longer check *ModelSim* versions `10.7e` and `2021.3`, add `2022.3`.
   - More thorough verification runs for the `xbar`.
   - Start transitioning from shell script to Makefile to run simulations.
+- Use `scripts/update_authors` to update authors, slight manual fixes performed.
 
 ### Fixed
 - `axi_to_mem_banked`: Reduce hardware by properly setting `UniqueIds`.

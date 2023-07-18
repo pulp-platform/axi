@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 // Authors:
-// - Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 
 /// # AXI4-Lite data width downsize module.
 ///

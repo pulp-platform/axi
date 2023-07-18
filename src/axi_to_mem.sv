@@ -10,6 +10,7 @@
 
 // Authors:
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "common_cells/registers.svh"
 /// AXI4+ATOP slave module which translates AXI bursts into a memory stream.
