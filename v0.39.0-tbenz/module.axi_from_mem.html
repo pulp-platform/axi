@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-19 15:18:21.068974496 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -7,68 +9,68 @@
 <div class="docblock">
 <p>Protocol adapter which translates memory requests to the AXI4 protocol.</p>
 <p>This module acts like an SRAM and makes AXI4 requests downstream.</p>
-<p>Supports multiple outstanding requests and will have responses for reads <strong>and</strong> writes.
-Response latency is not fixed and for sure <strong>not 1</strong> and depends on the AXI4 memory system.
-The <code>mem_rsp_valid_o</code> can have multiple cycles of latency from the corresponding <code>mem_gnt_o</code>.</p>
+<p>Supports multiple outstanding requests and will have responses for reads <strong>and</strong> writes.</p>
+<p>Response latency is not fixed and for sure <strong>not 1</strong> and depends on the AXI4 memory system.</p>
+<p>The <code>mem_rsp_valid_o</code> can have multiple cycles of latency from the corresponding <code>mem_gnt_o</code>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.MemAddrWidth" class="impl"><code class="in-band">MemAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Memory request address width.</p>
-</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4-Lite address width.</p>
-</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Data width in bit of the memory request data <strong>and</strong> the Axi4-Lite data channels.</p>
-</div><h3 id="parameter.MaxRequests" class="impl"><code class="in-band">MaxRequests<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>How many requests can be in flight at the same time. (Depth of the response mux FIFO).</p>
-</div><h3 id="parameter.AxiProt" class="impl"><code class="in-band">AxiProt<span class="type-annotation">: axi_pkg::prot_t</span></code></h3><div class="docblock"
-><p>Protection signal the module should emit on the AXI4 transactions.</p>
-</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4 request struct definition.</p>
-</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4 response struct definition.</p>
+<h3 id="parameter.MemAddrWidth" class="impl"><code class="in-band"><a href="#parameter.MemAddrWidth">MemAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Memory request address width.</p>
+</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band"><a href="#parameter.AxiAddrWidth">AxiAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4-Lite address width.</p>
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Data width in bit of the memory request data <strong>and</strong> the Axi4-Lite data channels.</p>
+</div><h3 id="parameter.MaxRequests" class="impl"><code class="in-band"><a href="#parameter.MaxRequests">MaxRequests</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>How many requests can be in flight at the same time. (Depth of the response mux FIFO).</p>
+</div><h3 id="parameter.AxiProt" class="impl"><code class="in-band"><a href="#parameter.AxiProt">AxiProt</a><span class="type-annotation">: axi_pkg::prot_t</span></code></h3><div class="docblock">
+<p>Protection signal the module should emit on the AXI4 transactions.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 request struct definition.</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band"><a href="#parameter.axi_rsp_t">axi_rsp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 response struct definition.</p>
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Clock input, positive edge triggered.</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low.</p>
-</div><h3 id="port.mem_req_i" class="impl"><code class="in-band">mem_req_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Memory slave port, request is active.</p>
-</div><h3 id="port.mem_addr_i" class="impl"><code class="in-band">mem_addr_i<span class="type-annotation">: input  logic [MemAddrWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory slave port, request address.</p>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock input, positive edge triggered.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low.</p>
+</div><h3 id="port.mem_req_i" class="impl"><code class="in-band"><a href="#port.mem_req_i">mem_req_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Memory slave port, request is active.</p>
+</div><h3 id="port.mem_addr_i" class="impl"><code class="in-band"><a href="#port.mem_addr_i">mem_addr_i</a><span class="type-annotation">: input  logic [MemAddrWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory slave port, request address.</p>
 <p>Byte address, will be extended or truncated to match <code>AxiAddrWidth</code>.</p>
-</div><h3 id="port.mem_we_i" class="impl"><code class="in-band">mem_we_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Memory slave port, request is a write.</p>
-<p><code>0</code>: Read request.
-<code>1</code>: Write request.</p>
-</div><h3 id="port.mem_wdata_i" class="impl"><code class="in-band">mem_wdata_i<span class="type-annotation">: input  logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory salve port, write data for request.</p>
-</div><h3 id="port.mem_be_i" class="impl"><code class="in-band">mem_be_i<span class="type-annotation">: input  logic [DataWidth/8-1:0]</span></code></h3><div class="docblock"
-><p>Memory slave port, write byte enable for request.</p>
+</div><h3 id="port.mem_we_i" class="impl"><code class="in-band"><a href="#port.mem_we_i">mem_we_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Memory slave port, request is a write.</p>
+<p><code>0</code>: Read request.</p>
+<p><code>1</code>: Write request.</p>
+</div><h3 id="port.mem_wdata_i" class="impl"><code class="in-band"><a href="#port.mem_wdata_i">mem_wdata_i</a><span class="type-annotation">: input  logic [DataWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory salve port, write data for request.</p>
+</div><h3 id="port.mem_be_i" class="impl"><code class="in-band"><a href="#port.mem_be_i">mem_be_i</a><span class="type-annotation">: input  logic [DataWidth/8-1:0]</span></code></h3><div class="docblock">
+<p>Memory slave port, write byte enable for request.</p>
 <p>Active high.</p>
-</div><h3 id="port.mem_gnt_o" class="impl"><code class="in-band">mem_gnt_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory request is granted.</p>
-</div><h3 id="port.mem_rsp_valid_o" class="impl"><code class="in-band">mem_rsp_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory slave port, response is valid. For each request, regardless if read or write,
-this will be active once for one cycle.</p>
-</div><h3 id="port.mem_rsp_rdata_o" class="impl"><code class="in-band">mem_rsp_rdata_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory slave port, response read data. This is forwarded directly from the AXI4-Lite
-<code>R</code> channel. Only valid for responses generated by a read request.</p>
-</div><h3 id="port.mem_rsp_error_o" class="impl"><code class="in-band">mem_rsp_error_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory request encountered an error. This is forwarded from the AXI4-Lite error response.</p>
-</div><h3 id="port.slv_aw_cache_i" class="impl"><code class="in-band">slv_aw_cache_i<span class="type-annotation">: input  axi_pkg::cache_t</span></code></h3><div class="docblock"
-><p>AXI4 master port, slave aw cache signal</p>
-</div><h3 id="port.slv_ar_cache_i" class="impl"><code class="in-band">slv_ar_cache_i<span class="type-annotation">: input  axi_pkg::cache_t</span></code></h3><div class="docblock"
-><p>AXI4 master port, slave ar cache signal</p>
-</div><h3 id="port.axi_req_o" class="impl"><code class="in-band">axi_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
-><p>AXI4 master port, request output.</p>
-</div><h3 id="port.axi_rsp_i" class="impl"><code class="in-band">axi_rsp_i<span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock"
-><p>AXI4 master port, response input.</p>
+</div><h3 id="port.mem_gnt_o" class="impl"><code class="in-band"><a href="#port.mem_gnt_o">mem_gnt_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory request is granted.</p>
+</div><h3 id="port.mem_rsp_valid_o" class="impl"><code class="in-band"><a href="#port.mem_rsp_valid_o">mem_rsp_valid_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory slave port, response is valid. For each request, regardless if read or write,</p>
+<p>this will be active once for one cycle.</p>
+</div><h3 id="port.mem_rsp_rdata_o" class="impl"><code class="in-band"><a href="#port.mem_rsp_rdata_o">mem_rsp_rdata_o</a><span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory slave port, response read data. This is forwarded directly from the AXI4-Lite</p>
+<p><code>R</code> channel. Only valid for responses generated by a read request.</p>
+</div><h3 id="port.mem_rsp_error_o" class="impl"><code class="in-band"><a href="#port.mem_rsp_error_o">mem_rsp_error_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory request encountered an error. This is forwarded from the AXI4-Lite error response.</p>
+</div><h3 id="port.slv_aw_cache_i" class="impl"><code class="in-band"><a href="#port.slv_aw_cache_i">slv_aw_cache_i</a><span class="type-annotation">: input  axi_pkg::cache_t</span></code></h3><div class="docblock">
+<p>AXI4 master port, slave aw cache signal</p>
+</div><h3 id="port.slv_ar_cache_i" class="impl"><code class="in-band"><a href="#port.slv_ar_cache_i">slv_ar_cache_i</a><span class="type-annotation">: input  axi_pkg::cache_t</span></code></h3><div class="docblock">
+<p>AXI4 master port, slave ar cache signal</p>
+</div><h3 id="port.axi_req_o" class="impl"><code class="in-band"><a href="#port.axi_req_o">axi_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4 master port, request output.</p>
+</div><h3 id="port.axi_rsp_i" class="impl"><code class="in-band"><a href="#port.axi_rsp_i">axi_rsp_i</a><span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock">
+<p>AXI4 master port, response input.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.axi_lite_aw_chan_t.html">axi_lite_aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_w_chan_t.html">axi_lite_w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_b_chan_t.html">axi_lite_b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_ar_chan_t.html">axi_lite_ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_r_chan_t.html">axi_lite_r_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_req_t.html">axi_lite_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_lite_resp_t.html">axi_lite_resp_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.axi_lite_req" class="impl"><code class="in-band">axi_lite_req<span class="type-annotation">: axi_lite_req_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.axi_lite_rsp" class="impl"><code class="in-band">axi_lite_rsp<span class="type-annotation">: axi_lite_resp_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.axi_lite_req" class="impl"><code class="in-band"><a href="#signal.axi_lite_req">axi_lite_req</a><span class="type-annotation">: axi_lite_req_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.axi_lite_rsp" class="impl"><code class="in-band"><a href="#signal.axi_lite_rsp">axi_lite_rsp</a><span class="type-annotation">: axi_lite_resp_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>
