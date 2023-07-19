@@ -81,9 +81,9 @@ jobs:
           github.event_name == 'push'
           || github.event.pull_request.head.repo.full_name == github.repository
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs # The folder the action should deploy.
-          TARGET_FOLDER: ${{ env.DOC_TARGET }}
-          CLEAN: true # remove files from `TARGET_FOLDER` that are not in `FOLDER`
+          token: ${{ secrets.GH_PAGES }}
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs # The folder the action should deploy.
+          target-folder: ${{ env.DOC_TARGET }}
+          clean: true # remove files from `TARGET_FOLDER` that are not in `FOLDER`
                       # (`rsync --delete`)
