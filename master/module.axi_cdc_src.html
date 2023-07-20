@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-20 08:14:46.973529797 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,40 +8,40 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_cdc_src</a></h1>
 <div class="docblock">
 <p>Source-clock-domain half of the AXI CDC crossing.</p>
-<p>For each of the five AXI channels, this module instantiates the source or destination half of
-a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through
-the FIFO; see the header of <code>cdc_fifo_gray</code> for instructions.</p>
+<p>For each of the five AXI channels, this module instantiates the source or destination half of</p>
+<p>a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through</p>
+<p>the FIFO; see the header of <code>cdc_fifo_gray</code> for instructions.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.LogDepth" class="impl"><code class="in-band">LogDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.</p>
-</div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band">aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.b_chan_t" class="impl"><code class="in-band">b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.ar_chan_t" class="impl"><code class="in-band">ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band">r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.src_clk_i" class="impl"><code class="in-band">src_clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.src_rst_ni" class="impl"><code class="in-band">src_rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.src_req_i" class="impl"><code class="in-band">src_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="port.src_resp_o" class="impl"><code class="in-band">src_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_aw_data_o" class="impl"><code class="in-band">async_data_master_aw_data_o<span class="type-annotation">: output aw_chan_t  [2**LogDepth-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_aw_wptr_o" class="impl"><code class="in-band">async_data_master_aw_wptr_o<span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_aw_rptr_i" class="impl"><code class="in-band">async_data_master_aw_rptr_i<span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_w_data_o" class="impl"><code class="in-band">async_data_master_w_data_o<span class="type-annotation">: output w_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_w_wptr_o" class="impl"><code class="in-band">async_data_master_w_wptr_o<span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_w_rptr_i" class="impl"><code class="in-band">async_data_master_w_rptr_i<span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_b_data_i" class="impl"><code class="in-band">async_data_master_b_data_i<span class="type-annotation">: input  b_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_b_wptr_i" class="impl"><code class="in-band">async_data_master_b_wptr_i<span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_b_rptr_o" class="impl"><code class="in-band">async_data_master_b_rptr_o<span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_ar_data_o" class="impl"><code class="in-band">async_data_master_ar_data_o<span class="type-annotation">: output ar_chan_t  [2**LogDepth-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_ar_wptr_o" class="impl"><code class="in-band">async_data_master_ar_wptr_o<span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_ar_rptr_i" class="impl"><code class="in-band">async_data_master_ar_rptr_i<span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_r_data_i" class="impl"><code class="in-band">async_data_master_r_data_i<span class="type-annotation">: input  r_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_r_wptr_i" class="impl"><code class="in-band">async_data_master_r_wptr_i<span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.async_data_master_r_rptr_o" class="impl"><code class="in-band">async_data_master_r_rptr_o<span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="parameter.LogDepth" class="impl"><code class="in-band"><a href="#parameter.LogDepth">LogDepth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.</p>
+</div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.aw_chan_t">aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band"><a href="#parameter.w_chan_t">w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.b_chan_t" class="impl"><code class="in-band"><a href="#parameter.b_chan_t">b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.ar_chan_t">ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band"><a href="#parameter.r_chan_t">r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.src_clk_i" class="impl"><code class="in-band"><a href="#port.src_clk_i">src_clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.src_rst_ni" class="impl"><code class="in-band"><a href="#port.src_rst_ni">src_rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.src_req_i" class="impl"><code class="in-band"><a href="#port.src_req_i">src_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.src_resp_o" class="impl"><code class="in-band"><a href="#port.src_resp_o">src_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_aw_data_o" class="impl"><code class="in-band"><a href="#port.async_data_master_aw_data_o">async_data_master_aw_data_o</a><span class="type-annotation">: output aw_chan_t  [2**LogDepth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_aw_wptr_o" class="impl"><code class="in-band"><a href="#port.async_data_master_aw_wptr_o">async_data_master_aw_wptr_o</a><span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_aw_rptr_i" class="impl"><code class="in-band"><a href="#port.async_data_master_aw_rptr_i">async_data_master_aw_rptr_i</a><span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_w_data_o" class="impl"><code class="in-band"><a href="#port.async_data_master_w_data_o">async_data_master_w_data_o</a><span class="type-annotation">: output w_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_w_wptr_o" class="impl"><code class="in-band"><a href="#port.async_data_master_w_wptr_o">async_data_master_w_wptr_o</a><span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_w_rptr_i" class="impl"><code class="in-band"><a href="#port.async_data_master_w_rptr_i">async_data_master_w_rptr_i</a><span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_b_data_i" class="impl"><code class="in-band"><a href="#port.async_data_master_b_data_i">async_data_master_b_data_i</a><span class="type-annotation">: input  b_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_b_wptr_i" class="impl"><code class="in-band"><a href="#port.async_data_master_b_wptr_i">async_data_master_b_wptr_i</a><span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_b_rptr_o" class="impl"><code class="in-band"><a href="#port.async_data_master_b_rptr_o">async_data_master_b_rptr_o</a><span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_ar_data_o" class="impl"><code class="in-band"><a href="#port.async_data_master_ar_data_o">async_data_master_ar_data_o</a><span class="type-annotation">: output ar_chan_t  [2**LogDepth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_ar_wptr_o" class="impl"><code class="in-band"><a href="#port.async_data_master_ar_wptr_o">async_data_master_ar_wptr_o</a><span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_ar_rptr_i" class="impl"><code class="in-band"><a href="#port.async_data_master_ar_rptr_i">async_data_master_ar_rptr_i</a><span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_r_data_i" class="impl"><code class="in-band"><a href="#port.async_data_master_r_data_i">async_data_master_r_data_i</a><span class="type-annotation">: input  r_chan_t   [2**LogDepth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_r_wptr_i" class="impl"><code class="in-band"><a href="#port.async_data_master_r_wptr_i">async_data_master_r_wptr_i</a><span class="type-annotation">: input  logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.async_data_master_r_rptr_o" class="impl"><code class="in-band"><a href="#port.async_data_master_r_rptr_o">async_data_master_r_rptr_o</a><span class="type-annotation">: output logic           [LogDepth:0]</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>
