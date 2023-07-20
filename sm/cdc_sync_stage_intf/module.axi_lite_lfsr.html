@@ -1,0 +1,47 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-20 10:21:45.115103338 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_lite_lfsr</a></h1>
+<div class="docblock">
+<p>AXI4 Lite LFSR Subordinate device. Responds with a pseudo random answer. Serial interface to</p>
+<p>set the internal state.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4 Lite Data Width</p>
+</div><h3 id="parameter.axi_lite_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_req_t">axi_lite_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 Lite request struct definition</p>
+</div><h3 id="parameter.axi_lite_rsp_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_rsp_t">axi_lite_rsp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 Lite response struct definition</p>
+</div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band"><a href="#parameter.StrbWidth">StrbWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4 Strobe Width</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Active-low reset</p>
+</div><h3 id="port.testmode_i" class="impl"><code class="in-band"><a href="#port.testmode_i">testmode_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Testmode</p>
+</div><h3 id="port.req_i" class="impl"><code class="in-band"><a href="#port.req_i">req_i</a><span class="type-annotation">: input  axi_lite_req_t</span></code></h3><div class="docblock">
+<p>AXI4 Lite request struct</p>
+</div><h3 id="port.rsp_o" class="impl"><code class="in-band"><a href="#port.rsp_o">rsp_o</a><span class="type-annotation">: output axi_lite_rsp_t</span></code></h3><div class="docblock">
+<p>AXI4 Lite response struct</p>
+</div><h3 id="port.w_ser_data_i" class="impl"><code class="in-band"><a href="#port.w_ser_data_i">w_ser_data_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Serial shift data in (write)</p>
+</div><h3 id="port.w_ser_data_o" class="impl"><code class="in-band"><a href="#port.w_ser_data_o">w_ser_data_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Serial shift data out (write)</p>
+</div><h3 id="port.w_ser_en_i" class="impl"><code class="in-band"><a href="#port.w_ser_en_i">w_ser_en_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Serial shift enable (write)</p>
+</div><h3 id="port.r_ser_data_i" class="impl"><code class="in-band"><a href="#port.r_ser_data_i">r_ser_data_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Serial shift data in (read)</p>
+</div><h3 id="port.r_ser_data_o" class="impl"><code class="in-band"><a href="#port.r_ser_data_o">r_ser_data_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Serial shift data out (read)</p>
+</div><h3 id="port.r_ser_en_i" class="impl"><code class="in-band"><a href="#port.r_ser_en_i">r_ser_en_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Serial shift enable (read)</p>
+</div></section>
+</body>
+</html>

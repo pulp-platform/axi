@@ -1,0 +1,60 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-20 10:21:45.083426915 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_id_prepend</a></h1>
+<div class="docblock">
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.NoBus" class="impl"><code class="in-band"><a href="#parameter.NoBus">NoBus</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AxiIdWidthSlvPort" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidthSlvPort">AxiIdWidthSlvPort</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AxiIdWidthMstPort" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidthMstPort">AxiIdWidthMstPort</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_aw_chan_t">slv_aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_w_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_w_chan_t">slv_w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_b_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_b_chan_t">slv_b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_ar_chan_t">slv_ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_r_chan_t">slv_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_aw_chan_t">mst_aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_w_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_w_chan_t">mst_w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_b_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_b_chan_t">mst_b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_ar_chan_t">mst_ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_r_chan_t">mst_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.PreIdWidth" class="impl"><code class="in-band"><a href="#parameter.PreIdWidth">PreIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.pre_id_i" class="impl"><code class="in-band"><a href="#port.pre_id_i">pre_id_i</a><span class="type-annotation">: input  logic [PreIdWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_aw_chans_i" class="impl"><code class="in-band"><a href="#port.slv_aw_chans_i">slv_aw_chans_i</a><span class="type-annotation">: input  slv_aw_chan_t [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_aw_valids_i" class="impl"><code class="in-band"><a href="#port.slv_aw_valids_i">slv_aw_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_aw_readies_o" class="impl"><code class="in-band"><a href="#port.slv_aw_readies_o">slv_aw_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_w_chans_i" class="impl"><code class="in-band"><a href="#port.slv_w_chans_i">slv_w_chans_i</a><span class="type-annotation">: input  slv_w_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_w_valids_i" class="impl"><code class="in-band"><a href="#port.slv_w_valids_i">slv_w_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_w_readies_o" class="impl"><code class="in-band"><a href="#port.slv_w_readies_o">slv_w_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_b_chans_o" class="impl"><code class="in-band"><a href="#port.slv_b_chans_o">slv_b_chans_o</a><span class="type-annotation">: output slv_b_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_b_valids_o" class="impl"><code class="in-band"><a href="#port.slv_b_valids_o">slv_b_valids_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_b_readies_i" class="impl"><code class="in-band"><a href="#port.slv_b_readies_i">slv_b_readies_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_ar_chans_i" class="impl"><code class="in-band"><a href="#port.slv_ar_chans_i">slv_ar_chans_i</a><span class="type-annotation">: input  slv_ar_chan_t [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_ar_valids_i" class="impl"><code class="in-band"><a href="#port.slv_ar_valids_i">slv_ar_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_ar_readies_o" class="impl"><code class="in-band"><a href="#port.slv_ar_readies_o">slv_ar_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_r_chans_o" class="impl"><code class="in-band"><a href="#port.slv_r_chans_o">slv_r_chans_o</a><span class="type-annotation">: output slv_r_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_r_valids_o" class="impl"><code class="in-band"><a href="#port.slv_r_valids_o">slv_r_valids_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_r_readies_i" class="impl"><code class="in-band"><a href="#port.slv_r_readies_i">slv_r_readies_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_aw_chans_o" class="impl"><code class="in-band"><a href="#port.mst_aw_chans_o">mst_aw_chans_o</a><span class="type-annotation">: output mst_aw_chan_t [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_aw_valids_o" class="impl"><code class="in-band"><a href="#port.mst_aw_valids_o">mst_aw_valids_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_aw_readies_i" class="impl"><code class="in-band"><a href="#port.mst_aw_readies_i">mst_aw_readies_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_w_chans_o" class="impl"><code class="in-band"><a href="#port.mst_w_chans_o">mst_w_chans_o</a><span class="type-annotation">: output mst_w_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_w_valids_o" class="impl"><code class="in-band"><a href="#port.mst_w_valids_o">mst_w_valids_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_w_readies_i" class="impl"><code class="in-band"><a href="#port.mst_w_readies_i">mst_w_readies_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_b_chans_i" class="impl"><code class="in-band"><a href="#port.mst_b_chans_i">mst_b_chans_i</a><span class="type-annotation">: input  mst_b_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_b_valids_i" class="impl"><code class="in-band"><a href="#port.mst_b_valids_i">mst_b_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_b_readies_o" class="impl"><code class="in-band"><a href="#port.mst_b_readies_o">mst_b_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_ar_chans_o" class="impl"><code class="in-band"><a href="#port.mst_ar_chans_o">mst_ar_chans_o</a><span class="type-annotation">: output mst_ar_chan_t [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_ar_valids_o" class="impl"><code class="in-band"><a href="#port.mst_ar_valids_o">mst_ar_valids_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_ar_readies_i" class="impl"><code class="in-band"><a href="#port.mst_ar_readies_i">mst_ar_readies_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_r_chans_i" class="impl"><code class="in-band"><a href="#port.mst_r_chans_i">mst_r_chans_i</a><span class="type-annotation">: input  mst_r_chan_t  [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_r_valids_i" class="impl"><code class="in-band"><a href="#port.mst_r_valids_i">mst_r_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_r_readies_o" class="impl"><code class="in-band"><a href="#port.mst_r_readies_o">mst_r_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>

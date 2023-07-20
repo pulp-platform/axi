@@ -1,0 +1,75 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-20 10:21:45.041584953 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_atop_filter</a></h1>
+<div class="docblock">
+<p>Filter atomic operations (ATOPs) in a protocol-compliant manner.</p>
+<p>This module filters atomic operations (ATOPs), i.e., write transactions that have a non-zero</p>
+<p><code>aw_atop</code> value, from its <code>slv</code> to its <code>mst</code> port. This module guarantees that:</p>
+<ol>
+<li>
+<p><code>aw_atop</code> is always zero on the <code>mst</code> port;</p>
+</li>
+<li>
+<p>write transactions with non-zero <code>aw_atop</code> on the <code>slv</code> port are handled in conformance with</p>
+<p>the AXI standard by replying to such write transactions with the proper B and R responses.</p>
+<p>The response code on atomic operations that reach this module is always SLVERR</p>
+<p>(implementation-specific, not defined in the AXI standard).</p>
+</li>
+</ol>
+<h2>Intended usage</h2>
+<p>This module is intended to be placed between masters that may issue ATOPs and slaves that do not</p>
+<p>support ATOPs. That way, this module ensures that the AXI protocol remains in a defined state on</p>
+<p>systems with mixed ATOP capabilities.</p>
+<h2>Specification reminder</h2>
+<p>The AXI standard specifies that there may be no ordering requirements between different atomic</p>
+<p>bursts (i.e., a burst started by an AW with ATOP other than 0) and none between atomic bursts</p>
+<p>and non-atomic bursts [E2.1.4]. That is, **an atomic burst may never have the same ID as any</p>
+<p>other write or read burst that is in-flight at the same time**.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidth">AxiIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI ID width</p>
+</div><h3 id="parameter.AxiMaxWriteTxns" class="impl"><code class="in-band"><a href="#parameter.AxiMaxWriteTxns">AxiMaxWriteTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of in-flight AXI write transactions</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI request type</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI response type</p>
+</div><h3 id="parameter.COUNTER_WIDTH" class="impl"><code class="in-band"><a href="#parameter.COUNTER_WIDTH">COUNTER_WIDTH</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock of both ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>Slave port request</p>
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>Slave port response</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+<p>Master port request</p>
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+<p>Master port response</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.cnt_t.html">cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_state_e.html">w_state_e</a></td><td></td></tr><tr><td><a class="type" href="type.r_state_e.html">r_state_e</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.len_t.html">len_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_resp_cmd_t.html">r_resp_cmd_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.w_cnt_d" class="impl"><code class="in-band"><a href="#signal.w_cnt_d">w_cnt_d</a><span class="type-annotation">: cnt_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_cnt_q" class="impl"><code class="in-band"><a href="#signal.w_cnt_q">w_cnt_q</a><span class="type-annotation">: cnt_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_state_d" class="impl"><code class="in-band"><a href="#signal.w_state_d">w_state_d</a><span class="type-annotation">: w_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_state_q" class="impl"><code class="in-band"><a href="#signal.w_state_q">w_state_q</a><span class="type-annotation">: w_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_state_d" class="impl"><code class="in-band"><a href="#signal.r_state_d">r_state_d</a><span class="type-annotation">: r_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_state_q" class="impl"><code class="in-band"><a href="#signal.r_state_q">r_state_q</a><span class="type-annotation">: r_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.id_d" class="impl"><code class="in-band"><a href="#signal.id_d">id_d</a><span class="type-annotation">: id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.id_q" class="impl"><code class="in-band"><a href="#signal.id_q">id_q</a><span class="type-annotation">: id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_beats_d" class="impl"><code class="in-band"><a href="#signal.r_beats_d">r_beats_d</a><span class="type-annotation">: len_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_beats_q" class="impl"><code class="in-band"><a href="#signal.r_beats_q">r_beats_q</a><span class="type-annotation">: len_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_resp_cmd_push" class="impl"><code class="in-band"><a href="#signal.r_resp_cmd_push">r_resp_cmd_push</a><span class="type-annotation">: r_resp_cmd_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_resp_cmd_pop" class="impl"><code class="in-band"><a href="#signal.r_resp_cmd_pop">r_resp_cmd_pop</a><span class="type-annotation">: r_resp_cmd_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>
