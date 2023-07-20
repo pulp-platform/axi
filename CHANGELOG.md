@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.0 - 2023-07-20
+
 ### Added
 - Synthesizable IPs:
   - `axi_bus_compare` and `axi_slave_compare`; two synthesizable verification IPs meant to be used
