@@ -26,6 +26,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_cdc`](src/axi_cdc.sv)                             | AXI clock domain crossing based on a Gray FIFO implementation.                                       |                                  |
 | [`axi_cut`](src/axi_cut.sv)                             | Breaks all combinatorial paths between its input and output.                                         |                                  |
 | [`axi_delayer`](src/axi_delayer.sv)                     | Synthesizable module which can (randomly) delays AXI channels.                                       |                                  |
+| [`axi_demux_simple`](src/axi_demux_simple.sv)           | Demux without spill registers.                                                                       | [Doc](doc/axi_demux.md)          |
 | [`axi_demux`](src/axi_demux.sv)                         | Demultiplexes an AXI bus from one slave port to multiple master ports.                               | [Doc](doc/axi_demux.md)          |
 | [`axi_dw_converter`](src/axi_dw_converter.sv)           | A data width converter between AXI interfaces of any data width.                                     |                                  |
 | [`axi_dw_downsizer`](src/axi_dw_downsizer.sv)           | A data width converter between a wide AXI master and a narrower AXI slave.                           |                                  |
@@ -59,6 +60,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_rw_join`](src/axi_rw_join.sv)                     | Joins a read and a write slave into one single read / write master.                                  |                                  |
 | [`axi_rw_split`](src/axi_rw_split.sv)                   | Splits a single read / write slave into one read and one write master.                               |                                  |
 | [`axi_serializer`](src/axi_serializer.sv)               | Serializes transactions with different IDs to the same ID.                                           |                                  |
+| [`axi_slave_compare`](src/axi_slave_compare.sv)         | Compares two slave devices.                                                                          |                                  |
 | [`axi_throttle`](src/axi_throttle.sv)                   | Limits the maximum number of outstanding transfers sent to the downstream logic.                     |                                  |
 | [`axi_test`](src/axi_test.sv)                           | A set of testbench utilities for AXI interfaces.                                                     |                                  |
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)             | AXI4 to AXI4-Lite protocol converter.                                                                |                                  |
@@ -85,6 +87,7 @@ In addition to the modules above, which are available in synthesis and simulatio
 | [`axi_chan_logger`](src/axi_test.sv)                 | Logs the transactions of an AXI4(+ATOPs) port to files.                                                |
 | [`axi_driver`](src/axi_test.sv)                      | Low-level driver for AXI4(+ATOPs) that can send and receive individual beats on any channel.           |
 | [`axi_dumper`](src/axi_dumper.sv)                    | Dumps log to file to be interpreted by `axi_dumper_interpret` script for debugging purposes.           |
+| [`axi_file_master`](src/axi_test.sv)                 | AXI4 master for file-based testbenches                                                                 |
 | [`axi_lite_driver`](src/axi_test.sv)                 | Low-level driver for AXI4-Lite that can send and receive individual beats on any channel.              |
 | [`axi_lite_rand_master`](src/axi_test.sv)            | AXI4-Lite master component that issues random transactions within user-defined constraints.            |
 | [`axi_lite_rand_slave`](src/axi_test.sv)             | AXI4-Lite slave component that responds to transactions with constrainable random delays and data.     |

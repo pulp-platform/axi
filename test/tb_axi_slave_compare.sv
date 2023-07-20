@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: SHL-0.51
 //
 // Authors:
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"

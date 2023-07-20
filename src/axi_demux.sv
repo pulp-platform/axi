@@ -9,7 +9,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
+// - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
 `include "common_cells/assertions.svh"
