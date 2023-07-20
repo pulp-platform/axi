@@ -10,6 +10,7 @@
 //
 // Authors:
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
+// - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
 /// AXI4+ATOP to memory-protocol interconnect. Completely separates the read and write channel to
