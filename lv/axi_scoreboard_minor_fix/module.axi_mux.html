@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:42:58.757709380 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -7,50 +9,50 @@
 <div class="docblock">
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.SlvAxiIDWidth" class="impl"><code class="in-band">SlvAxiIDWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_aw_chan_t" class="impl"><code class="in-band">slv_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_aw_chan_t" class="impl"><code class="in-band">mst_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_b_chan_t" class="impl"><code class="in-band">slv_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_b_chan_t" class="impl"><code class="in-band">mst_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_ar_chan_t" class="impl"><code class="in-band">slv_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_ar_chan_t" class="impl"><code class="in-band">mst_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_r_chan_t" class="impl"><code class="in-band">slv_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_r_chan_t" class="impl"><code class="in-band">mst_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band">slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band">slv_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band">mst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band">mst_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NoSlvPorts" class="impl"><code class="in-band">NoSlvPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MaxWTrans" class="impl"><code class="in-band">MaxWTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.FallThrough" class="impl"><code class="in-band">FallThrough<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillAw" class="impl"><code class="in-band">SpillAw<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillW" class="impl"><code class="in-band">SpillW<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillB" class="impl"><code class="in-band">SpillB<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillAr" class="impl"><code class="in-band">SpillAr<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillR" class="impl"><code class="in-band">SpillR<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MstIdxBits" class="impl"><code class="in-band">MstIdxBits<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MstAxiIDWidth" class="impl"><code class="in-band">MstAxiIDWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_reqs_i" class="impl"><code class="in-band">slv_reqs_i<span class="type-annotation">: input  slv_req_t  [NoSlvPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_resps_o" class="impl"><code class="in-band">slv_resps_o<span class="type-annotation">: output slv_resp_t [NoSlvPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  mst_resp_t</span></code></h3><div class="docblock"
-></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<h3 id="parameter.SlvAxiIDWidth" class="impl"><code class="in-band"><a href="#parameter.SlvAxiIDWidth">SlvAxiIDWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_aw_chan_t">slv_aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_aw_chan_t">mst_aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band"><a href="#parameter.w_chan_t">w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_b_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_b_chan_t">slv_b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_b_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_b_chan_t">mst_b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_ar_chan_t">slv_ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_ar_chan_t">mst_ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.slv_r_chan_t">slv_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_r_chan_t">mst_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band"><a href="#parameter.slv_req_t">slv_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band"><a href="#parameter.slv_resp_t">slv_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band"><a href="#parameter.mst_req_t">mst_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band"><a href="#parameter.mst_resp_t">mst_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NoSlvPorts" class="impl"><code class="in-band"><a href="#parameter.NoSlvPorts">NoSlvPorts</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxWTrans" class="impl"><code class="in-band"><a href="#parameter.MaxWTrans">MaxWTrans</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.FallThrough" class="impl"><code class="in-band"><a href="#parameter.FallThrough">FallThrough</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillAw" class="impl"><code class="in-band"><a href="#parameter.SpillAw">SpillAw</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillW" class="impl"><code class="in-band"><a href="#parameter.SpillW">SpillW</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillB" class="impl"><code class="in-band"><a href="#parameter.SpillB">SpillB</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillAr" class="impl"><code class="in-band"><a href="#parameter.SpillAr">SpillAr</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillR" class="impl"><code class="in-band"><a href="#parameter.SpillR">SpillR</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MstIdxBits" class="impl"><code class="in-band"><a href="#parameter.MstIdxBits">MstIdxBits</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MstAxiIDWidth" class="impl"><code class="in-band"><a href="#parameter.MstAxiIDWidth">MstAxiIDWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.test_i" class="impl"><code class="in-band"><a href="#port.test_i">test_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_reqs_i" class="impl"><code class="in-band"><a href="#port.slv_reqs_i">slv_reqs_i</a><span class="type-annotation">: input  slv_req_t  [NoSlvPorts-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_resps_o" class="impl"><code class="in-band"><a href="#port.slv_resps_o">slv_resps_o</a><span class="type-annotation">: output slv_resp_t [NoSlvPorts-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  mst_resp_t</span></code></h3><div class="docblock">
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.switch_id_t.html">switch_id_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.mst_aw_chan" class="impl"><code class="in-band">mst_aw_chan<span class="type-annotation">: mst_aw_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_fifo_data" class="impl"><code class="in-band">w_fifo_data<span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mst_w_chan" class="impl"><code class="in-band">mst_w_chan<span class="type-annotation">: w_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.switch_b_id" class="impl"><code class="in-band">switch_b_id<span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mst_b_chan" class="impl"><code class="in-band">mst_b_chan<span class="type-annotation">: mst_b_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mst_ar_chan" class="impl"><code class="in-band">mst_ar_chan<span class="type-annotation">: mst_ar_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.switch_r_id" class="impl"><code class="in-band">switch_r_id<span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mst_r_chan" class="impl"><code class="in-band">mst_r_chan<span class="type-annotation">: mst_r_chan_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.mst_aw_chan" class="impl"><code class="in-band"><a href="#signal.mst_aw_chan">mst_aw_chan</a><span class="type-annotation">: mst_aw_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_fifo_data" class="impl"><code class="in-band"><a href="#signal.w_fifo_data">w_fifo_data</a><span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mst_w_chan" class="impl"><code class="in-band"><a href="#signal.mst_w_chan">mst_w_chan</a><span class="type-annotation">: w_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.switch_b_id" class="impl"><code class="in-band"><a href="#signal.switch_b_id">switch_b_id</a><span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mst_b_chan" class="impl"><code class="in-band"><a href="#signal.mst_b_chan">mst_b_chan</a><span class="type-annotation">: mst_b_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mst_ar_chan" class="impl"><code class="in-band"><a href="#signal.mst_ar_chan">mst_ar_chan</a><span class="type-annotation">: mst_ar_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.switch_r_id" class="impl"><code class="in-band"><a href="#signal.switch_r_id">switch_r_id</a><span class="type-annotation">: switch_id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mst_r_chan" class="impl"><code class="in-band"><a href="#signal.mst_r_chan">mst_r_chan</a><span class="type-annotation">: mst_r_chan_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

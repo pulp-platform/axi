@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:42:58.727772458 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -5,114 +7,78 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_lite_dw_converter</a></h1>
 <div class="docblock">
-<h1>AXI4-Lite data width downsize module.</h1>
-<h2>Down Conversion</h2>
-<p>The module will be in this mode if <code>AxiSlvPortDataWidth &gt; AxiMstPortDataWidth</code>.
-The module does multiple transactions on the master port for each transaction of the salve port.</p>
-<p>The address on the master port will be aligned to the bus width, regardless what the input
-address was. The number of transactions generated on the master port is equal to the
-<code>DownsizeFactor = AxiSlvPortDataWidth / AxiMstPortDataWidth</code>.</p>
-<p>Eg: <code>AxiAddrWidth == 32'd16</code>, <code>AxiSlvPortDataWidth == 32'64</code>, `AxiMstPortDataWidth == 32'd32'
-This is for write transactions. Reads are accessing the whole width of the slave port.</p>
-<table><thead><tr><th>EG NUM</th><th>SLV ADDR</th><th>SLV W DATA</th><th>SLV W STRB</th><th>MST ADDR</th><th>MST W DATA</th><th>MST W STRB</th></tr></thead><tbody>
-<tr><td>1</td><td>0x0000</td><td>0xBEEFBEEFAAAABBBB</td><td>0xAB</td><td>0x0000</td><td>0xAAAABBBB</td><td>0xB</td></tr>
-<tr><td>1</td><td></td><td></td><td></td><td>0x0004</td><td>0xBEEFBEEF</td><td>0xA</td></tr>
-<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-<tr><td>2</td><td>0x0000</td><td>0xBEEFBEEFAAAABBBB</td><td>0xF0</td><td>0x0000</td><td>0xAAAABBBB</td><td>0x0</td></tr>
-<tr><td>2</td><td></td><td></td><td></td><td>0x0004</td><td>0xBEEFBEEF</td><td>0xF</td></tr>
-<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-<tr><td>3</td><td>0x0004</td><td>0xBEEFBEEFAAAABBBB</td><td>0xF0</td><td>0x0000</td><td>0xAAAABBBB</td><td>0x0</td></tr>
-<tr><td>3</td><td></td><td></td><td></td><td>0x0004</td><td>0xBEEFBEEF</td><td>0xF</td></tr>
-<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-<tr><td>4</td><td>0x0004</td><td>0xBEEFBEEFAAAABBBB</td><td>0x0F</td><td>0x0000</td><td>0xAAAABBBB</td><td>0xF</td></tr>
-<tr><td>4</td><td></td><td></td><td></td><td>0x0004</td><td>0xBEEFBEEF</td><td>0x0</td></tr>
-<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-<tr><td>5</td><td>0x0005</td><td>0xBEEFBE0000000000</td><td>0xE0</td><td>0x0000</td><td>0x00000000</td><td>0x0</td></tr>
-<tr><td>5</td><td></td><td></td><td></td><td>0x0004</td><td>0xBEEFBE00</td><td>0xE</td></tr>
-</tbody></table>
-<p>Response field is aggregated (OR'ed) between the multiple requests made on the master port.
-If one of the requests on the master port errors, the error response of the request
-on the slave port will also signal an error.</p>
-<h2>Up conversion</h2>
-<p>The module will be in this mode if <code>AxiSlvPortDataWidth &lt; AxiMstPortDataWidth</code>.
-This mode will generate the same amount of transactions on the master port as on the slave port.
-Data is replicated to match the bus width. Write strobes are silenced for the byte lanes not
-written.</p>
-<h2>Pass Through</h2>
-<p>The module will be in this mode if <code>AxiSlvPortDataWidth == AxiMstPortDataWidth</code>.
-Here the module passes through the slave port to the master port.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4-Lite address width of the ports.</p>
-</div><h3 id="parameter.AxiSlvPortDataWidth" class="impl"><code class="in-band">AxiSlvPortDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4-Lite data width of the slave port.</p>
-</div><h3 id="parameter.AxiMstPortDataWidth" class="impl"><code class="in-band">AxiMstPortDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4-Lite data width of the master port.</p>
-</div><h3 id="parameter.axi_lite_aw_t" class="impl"><code class="in-band">axi_lite_aw_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite AW channel struct type. This is for both ports the same.</p>
-</div><h3 id="parameter.axi_lite_slv_w_t" class="impl"><code class="in-band">axi_lite_slv_w_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite W channel struct type of the slave port.</p>
-</div><h3 id="parameter.axi_lite_mst_w_t" class="impl"><code class="in-band">axi_lite_mst_w_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite W channel struct type of the master port.</p>
-</div><h3 id="parameter.axi_lite_b_t" class="impl"><code class="in-band">axi_lite_b_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite B channel struct type. This is for both ports.</p>
-</div><h3 id="parameter.axi_lite_ar_t" class="impl"><code class="in-band">axi_lite_ar_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite AR channel struct type. This is for both ports.</p>
-</div><h3 id="parameter.axi_lite_slv_r_t" class="impl"><code class="in-band">axi_lite_slv_r_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite R channel struct type of the slave port.</p>
-</div><h3 id="parameter.axi_lite_mst_r_t" class="impl"><code class="in-band">axi_lite_mst_r_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite R channel struct type of the master port.</p>
-</div><h3 id="parameter.axi_lite_slv_req_t" class="impl"><code class="in-band">axi_lite_slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite request struct of the slave port.</p>
-</div><h3 id="parameter.axi_lite_slv_res_t" class="impl"><code class="in-band">axi_lite_slv_res_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite response struct of the slave port.</p>
-</div><h3 id="parameter.axi_lite_mst_req_t" class="impl"><code class="in-band">axi_lite_mst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite request struct of the master port.</p>
-</div><h3 id="parameter.axi_lite_mst_res_t" class="impl"><code class="in-band">axi_lite_mst_res_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4-Lite response struct of the master port.</p>
-</div><h3 id="parameter.AxiSlvPortStrbWidth" class="impl"><code class="in-band">AxiSlvPortStrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.AxiMstPortStrbWidth" class="impl"><code class="in-band">AxiMstPortStrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.DownsizeFactor" class="impl"><code class="in-band">DownsizeFactor<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SelWidth" class="impl"><code class="in-band">SelWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SelOffset" class="impl"><code class="in-band">SelOffset<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.UpsizeFactor" class="impl"><code class="in-band">UpsizeFactor<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SelOffset" class="impl"><code class="in-band">SelOffset<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SelWidth" class="impl"><code class="in-band">SelWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Clock, positive edge triggered.</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchrounous reset, active low.</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_lite_slv_req_t</span></code></h3><div class="docblock"
-><p>Salve port, AXI4-Lite request.</p>
-</div><h3 id="port.slv_res_o" class="impl"><code class="in-band">slv_res_o<span class="type-annotation">: output axi_lite_slv_res_t</span></code></h3><div class="docblock"
-><p>Salve port, AXI4-Lite response.</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_lite_mst_req_t</span></code></h3><div class="docblock"
-><p>Master port, AXI4-Lite request.</p>
-</div><h3 id="port.mst_res_i" class="impl"><code class="in-band">mst_res_i<span class="type-annotation">: input  axi_lite_mst_res_t</span></code></h3><div class="docblock"
-><p>Master port, AXI4-Lite response.</p>
+<h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band"><a href="#parameter.AxiAddrWidth">AxiAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4-Lite address width of the ports.</p>
+</div><h3 id="parameter.AxiSlvPortDataWidth" class="impl"><code class="in-band"><a href="#parameter.AxiSlvPortDataWidth">AxiSlvPortDataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4-Lite data width of the slave port.</p>
+</div><h3 id="parameter.AxiMstPortDataWidth" class="impl"><code class="in-band"><a href="#parameter.AxiMstPortDataWidth">AxiMstPortDataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4-Lite data width of the master port.</p>
+</div><h3 id="parameter.axi_lite_aw_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_aw_t">axi_lite_aw_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite AW channel struct type. This is for both ports the same.</p>
+</div><h3 id="parameter.axi_lite_slv_w_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_slv_w_t">axi_lite_slv_w_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite W channel struct type of the slave port.</p>
+</div><h3 id="parameter.axi_lite_mst_w_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_mst_w_t">axi_lite_mst_w_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite W channel struct type of the master port.</p>
+</div><h3 id="parameter.axi_lite_b_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_b_t">axi_lite_b_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite B channel struct type. This is for both ports.</p>
+</div><h3 id="parameter.axi_lite_ar_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_ar_t">axi_lite_ar_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite AR channel struct type. This is for both ports.</p>
+</div><h3 id="parameter.axi_lite_slv_r_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_slv_r_t">axi_lite_slv_r_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite R channel struct type of the slave port.</p>
+</div><h3 id="parameter.axi_lite_mst_r_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_mst_r_t">axi_lite_mst_r_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite R channel struct type of the master port.</p>
+</div><h3 id="parameter.axi_lite_slv_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_slv_req_t">axi_lite_slv_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite request struct of the slave port.</p>
+</div><h3 id="parameter.axi_lite_slv_res_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_slv_res_t">axi_lite_slv_res_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite response struct of the slave port.</p>
+</div><h3 id="parameter.axi_lite_mst_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_mst_req_t">axi_lite_mst_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite request struct of the master port.</p>
+</div><h3 id="parameter.axi_lite_mst_res_t" class="impl"><code class="in-band"><a href="#parameter.axi_lite_mst_res_t">axi_lite_mst_res_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4-Lite response struct of the master port.</p>
+</div><h3 id="parameter.AxiSlvPortStrbWidth" class="impl"><code class="in-band"><a href="#parameter.AxiSlvPortStrbWidth">AxiSlvPortStrbWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AxiMstPortStrbWidth" class="impl"><code class="in-band"><a href="#parameter.AxiMstPortStrbWidth">AxiMstPortStrbWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DownsizeFactor" class="impl"><code class="in-band"><a href="#parameter.DownsizeFactor">DownsizeFactor</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SelWidth" class="impl"><code class="in-band"><a href="#parameter.SelWidth">SelWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SelOffset" class="impl"><code class="in-band"><a href="#parameter.SelOffset">SelOffset</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.UpsizeFactor" class="impl"><code class="in-band"><a href="#parameter.UpsizeFactor">UpsizeFactor</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SelOffset" class="impl"><code class="in-band"><a href="#parameter.SelOffset">SelOffset</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SelWidth" class="impl"><code class="in-band"><a href="#parameter.SelWidth">SelWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock, positive edge triggered.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchrounous reset, active low.</p>
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_lite_slv_req_t</span></code></h3><div class="docblock">
+<p>Salve port, AXI4-Lite request.</p>
+</div><h3 id="port.slv_res_o" class="impl"><code class="in-band"><a href="#port.slv_res_o">slv_res_o</a><span class="type-annotation">: output axi_lite_slv_res_t</span></code></h3><div class="docblock">
+<p>Salve port, AXI4-Lite response.</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_lite_mst_req_t</span></code></h3><div class="docblock">
+<p>Master port, AXI4-Lite request.</p>
+</div><h3 id="port.mst_res_i" class="impl"><code class="in-band"><a href="#port.mst_res_i">mst_res_i</a><span class="type-annotation">: input  axi_lite_mst_res_t</span></code></h3><div class="docblock">
+<p>Master port, AXI4-Lite response.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.sel_t.html">sel_t</a></td><td></td></tr><tr><td><a class="type" href="type.sel_t.html">sel_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.aw_chan_spill" class="impl"><code class="in-band">aw_chan_spill<span class="type-annotation">: axi_lite_aw_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.aw_sel_q" class="impl"><code class="in-band">aw_sel_q<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.aw_sel_d" class="impl"><code class="in-band">aw_sel_d<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_chan_spill" class="impl"><code class="in-band">w_chan_spill<span class="type-annotation">: axi_lite_slv_w_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_sel_q" class="impl"><code class="in-band">w_sel_q<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_sel_d" class="impl"><code class="in-band">w_sel_d<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.b_sel_q" class="impl"><code class="in-band">b_sel_q<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.b_sel_d" class="impl"><code class="in-band">b_sel_d<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_chan_spill" class="impl"><code class="in-band">ar_chan_spill<span class="type-annotation">: axi_lite_ar_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_sel_q" class="impl"><code class="in-band">ar_sel_q<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_sel_d" class="impl"><code class="in-band">ar_sel_d<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_sel_q" class="impl"><code class="in-band">r_sel_q<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_sel_d" class="impl"><code class="in-band">r_sel_d<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.aw_sel" class="impl"><code class="in-band">aw_sel<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_sel" class="impl"><code class="in-band">w_sel<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_sel" class="impl"><code class="in-band">ar_sel<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_sel" class="impl"><code class="in-band">r_sel<span class="type-annotation">: sel_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.aw_chan_spill" class="impl"><code class="in-band"><a href="#signal.aw_chan_spill">aw_chan_spill</a><span class="type-annotation">: axi_lite_aw_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.aw_sel_q" class="impl"><code class="in-band"><a href="#signal.aw_sel_q">aw_sel_q</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.aw_sel_d" class="impl"><code class="in-band"><a href="#signal.aw_sel_d">aw_sel_d</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_chan_spill" class="impl"><code class="in-band"><a href="#signal.w_chan_spill">w_chan_spill</a><span class="type-annotation">: axi_lite_slv_w_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_sel_q" class="impl"><code class="in-band"><a href="#signal.w_sel_q">w_sel_q</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_sel_d" class="impl"><code class="in-band"><a href="#signal.w_sel_d">w_sel_d</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.b_sel_q" class="impl"><code class="in-band"><a href="#signal.b_sel_q">b_sel_q</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.b_sel_d" class="impl"><code class="in-band"><a href="#signal.b_sel_d">b_sel_d</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_chan_spill" class="impl"><code class="in-band"><a href="#signal.ar_chan_spill">ar_chan_spill</a><span class="type-annotation">: axi_lite_ar_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_sel_q" class="impl"><code class="in-band"><a href="#signal.ar_sel_q">ar_sel_q</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_sel_d" class="impl"><code class="in-band"><a href="#signal.ar_sel_d">ar_sel_d</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_sel_q" class="impl"><code class="in-band"><a href="#signal.r_sel_q">r_sel_q</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_sel_d" class="impl"><code class="in-band"><a href="#signal.r_sel_d">r_sel_d</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.aw_sel" class="impl"><code class="in-band"><a href="#signal.aw_sel">aw_sel</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_sel" class="impl"><code class="in-band"><a href="#signal.w_sel">w_sel</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_sel" class="impl"><code class="in-band"><a href="#signal.ar_sel">ar_sel</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_sel" class="impl"><code class="in-band"><a href="#signal.r_sel">r_sel</a><span class="type-annotation">: sel_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>
