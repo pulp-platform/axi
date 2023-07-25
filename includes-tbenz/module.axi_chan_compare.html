@@ -1,4 +1,4 @@
-<!-- Compiled by morty-0.9.0 / 2023-07-25 13:08:39.432879596 +00:00 -->
+<!-- Compiled by morty-0.9.0 / 2023-07-25 13:33:03.677972026 +00:00 -->
 
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
@@ -12,6 +12,11 @@
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.IgnoreId" class="impl"><code class="in-band"><a href="#parameter.IgnoreId">IgnoreId</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
 <p>Ignore ID field if it was remapped</p>
+</div><h3 id="parameter.AllowReordering" class="impl"><code class="in-band"><a href="#parameter.AllowReordering">AllowReordering</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Allow reordered responses of different IDs,</p>
+<p>not compatible with <code>IgnoreId</code></p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band"><a href="#parameter.IdWidth">IdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI ID Width</p>
 </div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.aw_chan_t">aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band"><a href="#parameter.w_chan_t">w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.b_chan_t" class="impl"><code class="in-band"><a href="#parameter.b_chan_t">b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
@@ -19,6 +24,7 @@
 </div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band"><a href="#parameter.r_chan_t">r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.req_t" class="impl"><code class="in-band"><a href="#parameter.req_t">req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.resp_t" class="impl"><code class="in-band"><a href="#parameter.resp_t">resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NumIds" class="impl"><code class="in-band"><a href="#parameter.NumIds">NumIds</a><span class="type-annotation">: </span></code></h3><div class="docblock">
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_a_i" class="impl"><code class="in-band"><a href="#port.clk_a_i">clk_a_i</a><span class="type-annotation">: input logic</span></code></h3><div class="docblock">
 </div><h3 id="port.clk_b_i" class="impl"><code class="in-band"><a href="#port.clk_b_i">clk_b_i</a><span class="type-annotation">: input logic</span></code></h3><div class="docblock">
