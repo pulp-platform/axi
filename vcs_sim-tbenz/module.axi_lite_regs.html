@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:46:01.802536565 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,120 +8,136 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_lite_regs</a></h1>
 <div class="docblock">
 <p>AXI4-Lite registers with optional read-only and protection features.</p>
-<p>This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them
-accessible on two interfaces:</p>
+<p>This module contains a parametrizable number of bytes in flip-flops (FFs) and makes them</p>
+<p>accessible on two interfaces:</p>
 <ul>
-<li>as memory-mapped AXI4-Lite slave (ports <code>axi_req_i</code> and <code>axi_resp_o</code>), and</li>
-<li>as wires to directly attach other hardware logic (ports <code>reg_d_i</code>, <code>reg_load_i</code>, <code>reg_q_o</code>,
-<code>wr_active_o</code>, <code>rd_active_o</code>).</li>
+<li>
+<p>as memory-mapped AXI4-Lite slave (ports <code>axi_req_i</code> and <code>axi_resp_o</code>), and</p>
+</li>
+<li>
+<p>as wires to directly attach other hardware logic (ports <code>reg_d_i</code>, <code>reg_load_i</code>, <code>reg_q_o</code>,</p>
+<p><code>wr_active_o</code>, <code>rd_active_o</code>).</p>
+</li>
 </ul>
 <h2>Address Map</h2>
-<p>The address range covered by this module is defined by <code>RegNumBytes</code>.  The base address of this
-module <em>must</em> be aligned to <code>RegNumBytes</code>.  The first byte is accessible at offset <code>0</code>, the last
-byte is accessible at offset <code>RegNumBytes-1</code>.  The slice <code>[$clog2(RegNumBytes)-1:0]</code> of a given
-address is used to decode the accessed byte within this module.  Address bits outside that slice
-are ignored.  Accesses to addresses within the slice but with an offset above the last byte are
-responded with <code>SLVERR</code>.</p>
+<p>The address range covered by this module is defined by <code>RegNumBytes</code>.  The base address of this</p>
+<p>module <em>must</em> be aligned to <code>RegNumBytes</code>.  The first byte is accessible at offset <code>0</code>, the last</p>
+<p>byte is accessible at offset <code>RegNumBytes-1</code>.  The slice <code>[$clog2(RegNumBytes)-1:0]</code> of a given</p>
+<p>address is used to decode the accessed byte within this module.  Address bits outside that slice</p>
+<p>are ignored.  Accesses to addresses within the slice but with an offset above the last byte are</p>
+<p>responded with <code>SLVERR</code>.</p>
 <h2>Read-Only Bytes</h2>
-<p>Any set of bytes can be configured as read-only by setting the <code>AxiReadOnly</code> parameter
-accordingly.  A read-only byte cannot be written via the AXI interface, but it can be changed
-from the logic interface.</p>
-<p>When one or multiple bytes in a write transaction are read-only, they are not modified.  A write
-transaction is responded with <code>OKAY</code> if it wrote at least one byte.  Write transactions / that
-have <code>wstrb</code> set <em>only</em> for read-only bytes are responded with <code>SLVERR</code>.</p>
+<p>Any set of bytes can be configured as read-only by setting the <code>AxiReadOnly</code> parameter</p>
+<p>accordingly.  A read-only byte cannot be written via the AXI interface, but it can be changed</p>
+<p>from the logic interface.</p>
+<p>When one or multiple bytes in a write transaction are read-only, they are not modified.  A write</p>
+<p>transaction is responded with <code>OKAY</code> if it wrote at least one byte.  Write transactions / that</p>
+<p>have <code>wstrb</code> set <em>only</em> for read-only bytes are responded with <code>SLVERR</code>.</p>
 <p>This read-only mechanism can be used to expose constants (lookup-table data) as follows.</p>
 <h3>Exposing Constants</h3>
-<p>To make a byte with constant value (e.g., implemented as LUT instead of FF after synthesis)
-readable from the AXI4-Lite port:</p>
+<p>To make a byte with constant value (e.g., implemented as LUT instead of FF after synthesis)</p>
+<p>readable from the AXI4-Lite port:</p>
 <ul>
-<li>Make the byte read-only from the AXI4-Lite port by setting its <code>AxiReadOnly</code> bit to <code>1</code>.</li>
-<li>Disable loading the byte from logic by driving its <code>reg_load_i</code> bit to <code>0</code>.</li>
-<li>Define the value of the byte by setting its <code>RegRstVal</code> entry.</li>
+<li>
+<p>Make the byte read-only from the AXI4-Lite port by setting its <code>AxiReadOnly</code> bit to <code>1</code>.</p>
+</li>
+<li>
+<p>Disable loading the byte from logic by driving its <code>reg_load_i</code> bit to <code>0</code>.</p>
+</li>
+<li>
+<p>Define the value of the byte by setting its <code>RegRstVal</code> entry.</p>
+</li>
 </ul>
 <h2>Protection</h2>
-<p>This module can be configured to only allow <em>privileged</em> and/or <em>secure</em> accesses (see A4.7
-of the AXI4 specification) by setting the <code>PrivProtOnly</code> and/or <code>SecuProtOnly</code> parameter,
-respectively.</p>
+<p>This module can be configured to only allow <em>privileged</em> and/or <em>secure</em> accesses (see A4.7</p>
+<p>of the AXI4 specification) by setting the <code>PrivProtOnly</code> and/or <code>SecuProtOnly</code> parameter,</p>
+<p>respectively.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.RegNumBytes" class="impl"><code class="in-band">RegNumBytes<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>The size of the register field in bytes.</p>
-</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Address width of the AXI4-Lite port.</p>
+<h3 id="parameter.RegNumBytes" class="impl"><code class="in-band"><a href="#parameter.RegNumBytes">RegNumBytes</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>The size of the register field in bytes.</p>
+</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band"><a href="#parameter.AxiAddrWidth">AxiAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Address width of the AXI4-Lite port.</p>
 <p>The minimum value of this parameter is <code>$clog2(RegNumBytes)</code>.</p>
-</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band">AxiDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Data width of the AXI4-Lite port.</p>
-</div><h3 id="parameter.PrivProtOnly" class="impl"><code class="in-band">PrivProtOnly<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Only allow <em>privileged</em> accesses on the AXI4-Lite port.</p>
-<p>If this parameter is set to <code>1</code>, this module only allows reads and writes that have the
-<code>AxProt[0]</code> bit set.  If a transaction does not have the <code>AxProt[0]</code> bit set, this module
-replies with <code>SLVERR</code> and does not read or write register data.</p>
-</div><h3 id="parameter.SecuProtOnly" class="impl"><code class="in-band">SecuProtOnly<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Only allow <em>secure</em> accesses on the AXI4-Lite port.</p>
-<p>If this parameter is set to <code>1</code>, this module only allows reads and writes that have the
-<code>AxProt[1]</code> bit set.  If a transaction does not have the <code>AxProt[1]</code> bit set, this module
-replies with <code>SLVERR</code> and does not read or write register data.</p>
-</div><h3 id="parameter.AxiReadOnly" class="impl"><code class="in-band">AxiReadOnly<span class="type-annotation">: logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Define individual bytes as <em>read-only from the AXI4-Lite port</em>.</p>
-<p>This parameter is an array with one bit for each byte.  If that bit is <code>0</code>, the byte can be
-read and written on the AXI4-Lite port; if that bit is <code>1</code>, the byte can only be read on the
-AXI4-Lite port.</p>
-</div><h3 id="parameter.byte_t" class="impl"><code class="in-band">byte_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Constant (=<strong>do not overwrite!</strong>); type of a byte is 8 bit.</p>
-</div><h3 id="parameter.RegRstVal" class="impl"><code class="in-band">RegRstVal<span class="type-annotation">: byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Reset value for the whole register array.</p>
-<p>This parameter is an array with one byte value for each byte.  At reset, each byte is
-assigned its value from this array.</p>
-</div><h3 id="parameter.req_lite_t" class="impl"><code class="in-band">req_lite_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct of the AXI4-Lite port.</p>
-</div><h3 id="parameter.resp_lite_t" class="impl"><code class="in-band">resp_lite_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct of the AXI4-Lite port.</p>
-</div><h3 id="parameter.AxiStrbWidth" class="impl"><code class="in-band">AxiStrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NumChunks" class="impl"><code class="in-band">NumChunks<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.ChunkIdxWidth" class="impl"><code class="in-band">ChunkIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Rising-edge clock of all ports</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low</p>
-</div><h3 id="port.axi_req_i" class="impl"><code class="in-band">axi_req_i<span class="type-annotation">: input  req_lite_t</span></code></h3><div class="docblock"
-><p>AXI4-Lite slave request</p>
-</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output resp_lite_t</span></code></h3><div class="docblock"
-><p>AXI4-Lite slave response</p>
-</div><h3 id="port.wr_active_o" class="impl"><code class="in-band">wr_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This
-signal is asserted regardless of the value of <code>AxiReadOnly</code> and can therefore be used by
-surrounding logic to react to write-on-read-only-byte errors.</p>
-</div><h3 id="port.rd_active_o" class="impl"><code class="in-band">rd_active_o<span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Signals that a byte is being read from the AXI4-Lite port in the current clock cycle.</p>
-</div><h3 id="port.reg_d_i" class="impl"><code class="in-band">reg_d_i<span class="type-annotation">: input  byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Input value of each byte.  If <code>reg_load_i</code> is <code>1</code> for a byte in the current clock cycle, the
-byte register in this module is set to the value of the byte in <code>reg_d_i</code> at the next clock
-edge.</p>
-</div><h3 id="port.reg_load_i" class="impl"><code class="in-band">reg_load_i<span class="type-annotation">: input  logic  [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>Load enable of each byte.</p>
-<p>If <code>reg_load_i</code> is <code>1</code> for a byte defined as non-read-only in a clock cycle, an AXI4-Lite
-write transaction is stalled when it tries to write the same byte.  That is, a write
-transaction is stalled if all of the following conditions are true for the byte at index <code>i</code>:</p>
+</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band"><a href="#parameter.AxiDataWidth">AxiDataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Data width of the AXI4-Lite port.</p>
+</div><h3 id="parameter.PrivProtOnly" class="impl"><code class="in-band"><a href="#parameter.PrivProtOnly">PrivProtOnly</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Only allow <em>privileged</em> accesses on the AXI4-Lite port.</p>
+<p>If this parameter is set to <code>1</code>, this module only allows reads and writes that have the</p>
+<p><code>AxProt[0]</code> bit set.  If a transaction does not have the <code>AxProt[0]</code> bit set, this module</p>
+<p>replies with <code>SLVERR</code> and does not read or write register data.</p>
+</div><h3 id="parameter.SecuProtOnly" class="impl"><code class="in-band"><a href="#parameter.SecuProtOnly">SecuProtOnly</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Only allow <em>secure</em> accesses on the AXI4-Lite port.</p>
+<p>If this parameter is set to <code>1</code>, this module only allows reads and writes that have the</p>
+<p><code>AxProt[1]</code> bit set.  If a transaction does not have the <code>AxProt[1]</code> bit set, this module</p>
+<p>replies with <code>SLVERR</code> and does not read or write register data.</p>
+</div><h3 id="parameter.AxiReadOnly" class="impl"><code class="in-band"><a href="#parameter.AxiReadOnly">AxiReadOnly</a><span class="type-annotation">: logic [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Define individual bytes as <em>read-only from the AXI4-Lite port</em>.</p>
+<p>This parameter is an array with one bit for each byte.  If that bit is <code>0</code>, the byte can be</p>
+<p>read and written on the AXI4-Lite port; if that bit is <code>1</code>, the byte can only be read on the</p>
+<p>AXI4-Lite port.</p>
+</div><h3 id="parameter.byte_t" class="impl"><code class="in-band"><a href="#parameter.byte_t">byte_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Constant (=<strong>do not overwrite!</strong>); type of a byte is 8 bit.</p>
+</div><h3 id="parameter.RegRstVal" class="impl"><code class="in-band"><a href="#parameter.RegRstVal">RegRstVal</a><span class="type-annotation">: byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Reset value for the whole register array.</p>
+<p>This parameter is an array with one byte value for each byte.  At reset, each byte is</p>
+<p>assigned its value from this array.</p>
+</div><h3 id="parameter.req_lite_t" class="impl"><code class="in-band"><a href="#parameter.req_lite_t">req_lite_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request struct of the AXI4-Lite port.</p>
+</div><h3 id="parameter.resp_lite_t" class="impl"><code class="in-band"><a href="#parameter.resp_lite_t">resp_lite_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Response struct of the AXI4-Lite port.</p>
+</div><h3 id="parameter.AxiStrbWidth" class="impl"><code class="in-band"><a href="#parameter.AxiStrbWidth">AxiStrbWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NumChunks" class="impl"><code class="in-band"><a href="#parameter.NumChunks">NumChunks</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.ChunkIdxWidth" class="impl"><code class="in-band"><a href="#parameter.ChunkIdxWidth">ChunkIdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band"><a href="#parameter.AddrWidth">AddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock of all ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.axi_req_i" class="impl"><code class="in-band"><a href="#port.axi_req_i">axi_req_i</a><span class="type-annotation">: input  req_lite_t</span></code></h3><div class="docblock">
+<p>AXI4-Lite slave request</p>
+</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band"><a href="#port.axi_resp_o">axi_resp_o</a><span class="type-annotation">: output resp_lite_t</span></code></h3><div class="docblock">
+<p>AXI4-Lite slave response</p>
+</div><h3 id="port.wr_active_o" class="impl"><code class="in-band"><a href="#port.wr_active_o">wr_active_o</a><span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Signals that a byte is being written from the AXI4-Lite port in the current clock cycle.  This</p>
+<p>signal is asserted regardless of the value of <code>AxiReadOnly</code> and can therefore be used by</p>
+<p>surrounding logic to react to write-on-read-only-byte errors.</p>
+</div><h3 id="port.rd_active_o" class="impl"><code class="in-band"><a href="#port.rd_active_o">rd_active_o</a><span class="type-annotation">: output logic [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Signals that a byte is being read from the AXI4-Lite port in the current clock cycle.</p>
+</div><h3 id="port.reg_d_i" class="impl"><code class="in-band"><a href="#port.reg_d_i">reg_d_i</a><span class="type-annotation">: input  byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Input value of each byte.  If <code>reg_load_i</code> is <code>1</code> for a byte in the current clock cycle, the</p>
+<p>byte register in this module is set to the value of the byte in <code>reg_d_i</code> at the next clock</p>
+<p>edge.</p>
+</div><h3 id="port.reg_load_i" class="impl"><code class="in-band"><a href="#port.reg_load_i">reg_load_i</a><span class="type-annotation">: input  logic  [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>Load enable of each byte.</p>
+<p>If <code>reg_load_i</code> is <code>1</code> for a byte defined as non-read-only in a clock cycle, an AXI4-Lite</p>
+<p>write transaction is stalled when it tries to write the same byte.  That is, a write</p>
+<p>transaction is stalled if all of the following conditions are true for the byte at index <code>i</code>:</p>
 <ul>
-<li><code>AxiReadOnly[i]</code> is <code>0</code>,</li>
-<li><code>reg_load_i[i]</code> is <code>1</code>,</li>
-<li>the bit in <code>axi_req_i.w.strb</code> that affects the byte is <code>1</code>.</li>
+<li>
+<p><code>AxiReadOnly[i]</code> is <code>0</code>,</p>
+</li>
+<li>
+<p><code>reg_load_i[i]</code> is <code>1</code>,</p>
+</li>
+<li>
+<p>the bit in <code>axi_req_i.w.strb</code> that affects the byte is <code>1</code>.</p>
+</li>
 </ul>
 <p>If unused, set this input to <code>'0</code>.</p>
-</div><h3 id="port.reg_q_o" class="impl"><code class="in-band">reg_q_o<span class="type-annotation">: output byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock"
-><p>The registered value of each byte.</p>
+</div><h3 id="port.reg_q_o" class="impl"><code class="in-band"><a href="#port.reg_q_o">reg_q_o</a><span class="type-annotation">: output byte_t [RegNumBytes-1:0]</span></code></h3><div class="docblock">
+<p>The registered value of each byte.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.chunk_idx_t.html">chunk_idx_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_rule_t.html">axi_rule_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_data_t.html">axi_data_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_chan_lite_t.html">b_chan_lite_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_chan_lite_t.html">r_chan_lite_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.aw_chunk_idx" class="impl"><code class="in-band">aw_chunk_idx<span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.b_chan" class="impl"><code class="in-band">b_chan<span class="type-annotation">: b_chan_lite_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.byte_w_addr" class="impl"><code class="in-band">byte_w_addr<span class="type-annotation">: addr_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.reg_w_idx" class="impl"><code class="in-band">reg_w_idx<span class="type-annotation">: addr_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_chunk_idx" class="impl"><code class="in-band">ar_chunk_idx<span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_chan" class="impl"><code class="in-band">r_chan<span class="type-annotation">: r_chan_lite_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.aw_chunk_idx" class="impl"><code class="in-band"><a href="#signal.aw_chunk_idx">aw_chunk_idx</a><span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.b_chan" class="impl"><code class="in-band"><a href="#signal.b_chan">b_chan</a><span class="type-annotation">: b_chan_lite_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.byte_w_addr" class="impl"><code class="in-band"><a href="#signal.byte_w_addr">byte_w_addr</a><span class="type-annotation">: addr_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.reg_w_idx" class="impl"><code class="in-band"><a href="#signal.reg_w_idx">reg_w_idx</a><span class="type-annotation">: addr_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_chunk_idx" class="impl"><code class="in-band"><a href="#signal.ar_chunk_idx">ar_chunk_idx</a><span class="type-annotation">: chunk_idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_chan" class="impl"><code class="in-band"><a href="#signal.r_chan">r_chan</a><span class="type-annotation">: r_chan_lite_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

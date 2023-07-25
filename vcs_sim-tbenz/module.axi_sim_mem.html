@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:46:01.826528709 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,87 +8,94 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_sim_mem</a></h1>
 <div class="docblock">
 <p>Infinite (Simulation-Only) Memory with AXI Slave Port</p>
-<p>The memory array is named <code>mem</code>, and it is <em>not</em> initialized or reset.  This makes it possible to
-load the memory of this module in simulation with an external <code>$readmem*</code> command, e.g.,</p>
-<pre><code class="language-sv">axi_sim_mem #( ... ) i_sim_mem ( ... );
+<p>The memory array is named <code>mem</code>, and it is <em>not</em> initialized or reset.  This makes it possible to</p>
+<p>load the memory of this module in simulation with an external <code>$readmem*</code> command, e.g.,</p>
+<pre><code class="language-sv">
+axi_sim_mem #( ... ) i_sim_mem ( ... );
+
 initial begin
+
   $readmemh(&quot;file_with_memory_addrs_and_data.mem&quot;, i_sim_mem.mem);
+
   $readmemh(&quot;file_with_memory_addrs_and_read_errors.mem&quot;, i_sim_mem.rerr);
+
   $readmemh(&quot;file_with_memory_addrs_and_write_errors.mem&quot;, i_sim_mem.werr);
+
 end
+
 </code></pre>
 <p><code>mem</code> is addressed (or indexed) byte-wise with <code>AddrWidth</code>-wide addresses.</p>
 <p>This module does not support atomic operations (ATOPs).</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Address Width</p>
-</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Data Width</p>
-</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI ID Width</p>
-</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI User Width.</p>
-</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4 request struct definition</p>
-</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band">axi_rsp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4 response struct definition</p>
-</div><h3 id="parameter.WarnUninitialized" class="impl"><code class="in-band">WarnUninitialized<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Warn on accesses to uninitialized bytes</p>
-</div><h3 id="parameter.ClearErrOnAccess" class="impl"><code class="in-band">ClearErrOnAccess<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Clear error on access</p>
-</div><h3 id="parameter.ApplDelay" class="impl"><code class="in-band">ApplDelay<span class="type-annotation">: time</span></code></h3><div class="docblock"
-><p>Application delay (measured after rising clock edge)</p>
-</div><h3 id="parameter.AcqDelay" class="impl"><code class="in-band">AcqDelay<span class="type-annotation">: time</span></code></h3><div class="docblock"
-><p>Acquisition delay (measured after rising clock edge)</p>
-</div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band">StrbWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Rising-edge clock</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Active-low reset</p>
-</div><h3 id="port.axi_req_i" class="impl"><code class="in-band">axi_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-><p>AXI4 request struct</p>
-</div><h3 id="port.axi_rsp_o" class="impl"><code class="in-band">axi_rsp_o<span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock"
-><p>AXI4 response struct</p>
-</div><h3 id="port.mon_w_valid_o" class="impl"><code class="in-band">mon_w_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor write valid.  All <code>mon_w_*</code> outputs are only valid if this signal is high.
-A write to the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has
-happened.</p>
-</div><h3 id="port.mon_w_addr_o" class="impl"><code class="in-band">mon_w_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor write address</p>
-</div><h3 id="port.mon_w_data_o" class="impl"><code class="in-band">mon_w_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor write data</p>
-</div><h3 id="port.mon_w_id_o" class="impl"><code class="in-band">mon_w_id_o<span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor write ID</p>
-</div><h3 id="port.mon_w_user_o" class="impl"><code class="in-band">mon_w_user_o<span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor write user</p>
-</div><h3 id="port.mon_w_beat_count_o" class="impl"><code class="in-band">mon_w_beat_count_o<span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock"
-><p>Memory monitor write beat count</p>
-</div><h3 id="port.mon_w_last_o" class="impl"><code class="in-band">mon_w_last_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor write last</p>
-</div><h3 id="port.mon_r_valid_o" class="impl"><code class="in-band">mon_r_valid_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor read valid.  All <code>mon_r_*</code> outputs are only valid if this signal is high.
-A read from the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has
-happened.</p>
-</div><h3 id="port.mon_r_addr_o" class="impl"><code class="in-band">mon_r_addr_o<span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor read address</p>
-</div><h3 id="port.mon_r_data_o" class="impl"><code class="in-band">mon_r_data_o<span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor read data</p>
-</div><h3 id="port.mon_r_id_o" class="impl"><code class="in-band">mon_r_id_o<span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor read ID</p>
-</div><h3 id="port.mon_r_user_o" class="impl"><code class="in-band">mon_r_user_o<span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock"
-><p>Memory monitor read user</p>
-</div><h3 id="port.mon_r_beat_count_o" class="impl"><code class="in-band">mon_r_beat_count_o<span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock"
-><p>Memory monitor read beat count</p>
-</div><h3 id="port.mon_r_last_o" class="impl"><code class="in-band">mon_r_last_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Memory monitor read last</p>
+<h3 id="parameter.AddrWidth" class="impl"><code class="in-band"><a href="#parameter.AddrWidth">AddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Address Width</p>
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Data Width</p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band"><a href="#parameter.IdWidth">IdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI ID Width</p>
+</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band"><a href="#parameter.UserWidth">UserWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI User Width.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 request struct definition</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band"><a href="#parameter.axi_rsp_t">axi_rsp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4 response struct definition</p>
+</div><h3 id="parameter.WarnUninitialized" class="impl"><code class="in-band"><a href="#parameter.WarnUninitialized">WarnUninitialized</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Warn on accesses to uninitialized bytes</p>
+</div><h3 id="parameter.ClearErrOnAccess" class="impl"><code class="in-band"><a href="#parameter.ClearErrOnAccess">ClearErrOnAccess</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Clear error on access</p>
+</div><h3 id="parameter.ApplDelay" class="impl"><code class="in-band"><a href="#parameter.ApplDelay">ApplDelay</a><span class="type-annotation">: time</span></code></h3><div class="docblock">
+<p>Application delay (measured after rising clock edge)</p>
+</div><h3 id="parameter.AcqDelay" class="impl"><code class="in-band"><a href="#parameter.AcqDelay">AcqDelay</a><span class="type-annotation">: time</span></code></h3><div class="docblock">
+<p>Acquisition delay (measured after rising clock edge)</p>
+</div><h3 id="parameter.StrbWidth" class="impl"><code class="in-band"><a href="#parameter.StrbWidth">StrbWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Active-low reset</p>
+</div><h3 id="port.axi_req_i" class="impl"><code class="in-band"><a href="#port.axi_req_i">axi_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4 request struct</p>
+</div><h3 id="port.axi_rsp_o" class="impl"><code class="in-band"><a href="#port.axi_rsp_o">axi_rsp_o</a><span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock">
+<p>AXI4 response struct</p>
+</div><h3 id="port.mon_w_valid_o" class="impl"><code class="in-band"><a href="#port.mon_w_valid_o">mon_w_valid_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory monitor write valid.  All <code>mon_w_*</code> outputs are only valid if this signal is high.</p>
+<p>A write to the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has</p>
+<p>happened.</p>
+</div><h3 id="port.mon_w_addr_o" class="impl"><code class="in-band"><a href="#port.mon_w_addr_o">mon_w_addr_o</a><span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor write address</p>
+</div><h3 id="port.mon_w_data_o" class="impl"><code class="in-band"><a href="#port.mon_w_data_o">mon_w_data_o</a><span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor write data</p>
+</div><h3 id="port.mon_w_id_o" class="impl"><code class="in-band"><a href="#port.mon_w_id_o">mon_w_id_o</a><span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor write ID</p>
+</div><h3 id="port.mon_w_user_o" class="impl"><code class="in-band"><a href="#port.mon_w_user_o">mon_w_user_o</a><span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor write user</p>
+</div><h3 id="port.mon_w_beat_count_o" class="impl"><code class="in-band"><a href="#port.mon_w_beat_count_o">mon_w_beat_count_o</a><span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock">
+<p>Memory monitor write beat count</p>
+</div><h3 id="port.mon_w_last_o" class="impl"><code class="in-band"><a href="#port.mon_w_last_o">mon_w_last_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory monitor write last</p>
+</div><h3 id="port.mon_r_valid_o" class="impl"><code class="in-band"><a href="#port.mon_r_valid_o">mon_r_valid_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory monitor read valid.  All <code>mon_r_*</code> outputs are only valid if this signal is high.</p>
+<p>A read from the memory is visible on the <code>mon_w_*</code> outputs in the clock cycle after it has</p>
+<p>happened.</p>
+</div><h3 id="port.mon_r_addr_o" class="impl"><code class="in-band"><a href="#port.mon_r_addr_o">mon_r_addr_o</a><span class="type-annotation">: output logic [AddrWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor read address</p>
+</div><h3 id="port.mon_r_data_o" class="impl"><code class="in-band"><a href="#port.mon_r_data_o">mon_r_data_o</a><span class="type-annotation">: output logic [DataWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor read data</p>
+</div><h3 id="port.mon_r_id_o" class="impl"><code class="in-band"><a href="#port.mon_r_id_o">mon_r_id_o</a><span class="type-annotation">: output logic [IdWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor read ID</p>
+</div><h3 id="port.mon_r_user_o" class="impl"><code class="in-band"><a href="#port.mon_r_user_o">mon_r_user_o</a><span class="type-annotation">: output logic [UserWidth-1:0]</span></code></h3><div class="docblock">
+<p>Memory monitor read user</p>
+</div><h3 id="port.mon_r_beat_count_o" class="impl"><code class="in-band"><a href="#port.mon_r_beat_count_o">mon_r_beat_count_o</a><span class="type-annotation">: output axi_pkg::len_t</span></code></h3><div class="docblock">
+<p>Memory monitor read beat count</p>
+</div><h3 id="port.mon_r_last_o" class="impl"><code class="in-band"><a href="#port.mon_r_last_o">mon_r_last_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Memory monitor read last</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_t.html">aw_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_t.html">w_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_t.html">b_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_t.html">ar_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_t.html">r_t</a></td><td></td></tr><tr><td><a class="type" href="type.monitor_t.html">monitor_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.mon_w" class="impl"><code class="in-band">mon_w<span class="type-annotation">: monitor_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mon_r" class="impl"><code class="in-band">mon_r<span class="type-annotation">: monitor_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.mon_w" class="impl"><code class="in-band"><a href="#signal.mon_w">mon_w</a><span class="type-annotation">: monitor_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mon_r" class="impl"><code class="in-band"><a href="#signal.mon_r">mon_r</a><span class="type-annotation">: monitor_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>
