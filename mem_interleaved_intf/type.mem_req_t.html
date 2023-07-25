@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 08:57:40.751979849 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -5,11 +7,18 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mem_req_t</a></h1>
 <pre>typedef struct packed {
-    addr_t          addr;
-    axi_pkg::atop_t atop;
-    axi_strb_t      strb;
-    axi_data_t      wdata;
-    logic           we;
+    addr_t            addr;
+    axi_pkg::atop_t   atop;
+    logic             lock;
+    axi_strb_t        strb;
+    axi_data_t        wdata;
+    logic             we;
+    mem_id_t          id;
+    mem_user_t        user;
+    axi_pkg::cache_t  cache;
+    axi_pkg::prot_t   prot;
+    axi_pkg::qos_t    qos;
+    axi_pkg::region_t region;
   } mem_req_t;</pre>
 </section>
 </body>
