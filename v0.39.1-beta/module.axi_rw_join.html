@@ -1,0 +1,28 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:30:11.046903492 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_rw_join</a></h1>
+<div class="docblock">
+<p>Joins a read and a write slave into one single read / write master</p>
+<p>Connects the ar and r channel of the read slave to the read / write master</p>
+<p>and the aw, w and b channel of the write slave to the read / write master</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_read_req_i" class="impl"><code class="in-band"><a href="#port.slv_read_req_i">slv_read_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_read_resp_o" class="impl"><code class="in-band"><a href="#port.slv_read_resp_o">slv_read_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_write_req_i" class="impl"><code class="in-band"><a href="#port.slv_write_req_i">slv_write_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_write_resp_o" class="impl"><code class="in-band"><a href="#port.slv_write_resp_o">slv_write_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>

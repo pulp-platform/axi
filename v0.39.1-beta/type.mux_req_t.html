@@ -1,0 +1,22 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:30:10.989107628 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">mux_req_t</a></h1>
+<pre>typedef struct packed {                                         
+    mux_aw_t aw;                                                 
+    logic     aw_valid;                                           
+    w_t  w;                                                  
+    logic     w_valid;                                            
+    logic     b_ready;                                            
+    mux_ar_t ar;                                                 
+    logic     ar_valid;                                           
+    logic     r_ready;                                            
+  } mux_req_t;</pre>
+<p>AXI requests from the multiplexer</p>
+</section>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:30:11.072522286 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">xbar_payload_t</a></h1>
+<pre>typedef struct packed {
+    /// Address for the memory access
+    mem_addr_t addr;
+    /// Write enable, active high
+    logic      we;
+    /// Write data
+    mem_data_t wdata;
+    /// Strobe signal, byte enable
+    mem_strb_t wstrb;
+    /// Atomic operation, from AXI
+    mem_atop_t atop;
+  } xbar_payload_t;</pre>
+<p>Payload definition which is sent over the xbar between the macros and the read/write unit.</p>
+</section>
+</body>
+</html>
