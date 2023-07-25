@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:56:50.473894942 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -8,169 +10,220 @@
 <p>Contains all necessary type definitions, constants, and generally useful functions.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.BurstWidth" class="impl"><code class="in-band">BurstWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Burst Width.</p>
-</div><h3 id="parameter.RespWidth" class="impl"><code class="in-band">RespWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Response Width.</p>
-</div><h3 id="parameter.CacheWidth" class="impl"><code class="in-band">CacheWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Cacheability Width.</p>
-</div><h3 id="parameter.ProtWidth" class="impl"><code class="in-band">ProtWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Protection Width.</p>
-</div><h3 id="parameter.QosWidth" class="impl"><code class="in-band">QosWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Quality of Service Width.</p>
-</div><h3 id="parameter.RegionWidth" class="impl"><code class="in-band">RegionWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Region Width.</p>
-</div><h3 id="parameter.LenWidth" class="impl"><code class="in-band">LenWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Length Width.</p>
-</div><h3 id="parameter.SizeWidth" class="impl"><code class="in-band">SizeWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Transaction Size Width.</p>
-</div><h3 id="parameter.LockWidth" class="impl"><code class="in-band">LockWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI Lock Width.</p>
-</div><h3 id="parameter.AtopWidth" class="impl"><code class="in-band">AtopWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI5 Atomic Operation Width.</p>
-</div><h3 id="parameter.NsaidWidth" class="impl"><code class="in-band">NsaidWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI5 Non-Secure Address Identifier.</p>
-</div><h3 id="parameter.BURST_FIXED" class="impl"><code class="in-band">BURST_FIXED<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>In a fixed burst:</p>
+<h3 id="parameter.BurstWidth" class="impl"><code class="in-band"><a href="#parameter.BurstWidth">BurstWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Burst Width.</p>
+</div><h3 id="parameter.RespWidth" class="impl"><code class="in-band"><a href="#parameter.RespWidth">RespWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Response Width.</p>
+</div><h3 id="parameter.CacheWidth" class="impl"><code class="in-band"><a href="#parameter.CacheWidth">CacheWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Cacheability Width.</p>
+</div><h3 id="parameter.ProtWidth" class="impl"><code class="in-band"><a href="#parameter.ProtWidth">ProtWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Protection Width.</p>
+</div><h3 id="parameter.QosWidth" class="impl"><code class="in-band"><a href="#parameter.QosWidth">QosWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Quality of Service Width.</p>
+</div><h3 id="parameter.RegionWidth" class="impl"><code class="in-band"><a href="#parameter.RegionWidth">RegionWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Region Width.</p>
+</div><h3 id="parameter.LenWidth" class="impl"><code class="in-band"><a href="#parameter.LenWidth">LenWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Length Width.</p>
+</div><h3 id="parameter.SizeWidth" class="impl"><code class="in-band"><a href="#parameter.SizeWidth">SizeWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Transaction Size Width.</p>
+</div><h3 id="parameter.LockWidth" class="impl"><code class="in-band"><a href="#parameter.LockWidth">LockWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI Lock Width.</p>
+</div><h3 id="parameter.AtopWidth" class="impl"><code class="in-band"><a href="#parameter.AtopWidth">AtopWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI5 Atomic Operation Width.</p>
+</div><h3 id="parameter.NsaidWidth" class="impl"><code class="in-band"><a href="#parameter.NsaidWidth">NsaidWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI5 Non-Secure Address Identifier.</p>
+</div><h3 id="parameter.BURST_FIXED" class="impl"><code class="in-band"><a href="#parameter.BURST_FIXED">BURST_FIXED</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>In a fixed burst:</p>
 <ul>
-<li>The address is the same for every transfer in the burst.</li>
-<li>The byte lanes that are valid are constant for all beats in the burst.  However, within
-those byte lanes, the actual bytes that have <code>wstrb</code> asserted can differ for each beat in
-the burst.
-This burst type is used for repeated accesses to the same location such as when loading or
-emptying a FIFO.</li>
+<li>
+<p>The address is the same for every transfer in the burst.</p>
+</li>
+<li>
+<p>The byte lanes that are valid are constant for all beats in the burst.  However, within</p>
+<p>those byte lanes, the actual bytes that have <code>wstrb</code> asserted can differ for each beat in</p>
+<p>the burst.</p>
+</li>
 </ul>
-</div><h3 id="parameter.BURST_INCR" class="impl"><code class="in-band">BURST_INCR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>In an incrementing burst, the address for each transfer in the burst is an increment of the
-address for the previous transfer.  The increment value depends on the size of the transfer.
-For example, the address for each transfer in a burst with a size of 4 bytes is the previous
-address plus four.
-This burst type is used for accesses to normal sequential memory.</p>
-</div><h3 id="parameter.BURST_WRAP" class="impl"><code class="in-band">BURST_WRAP<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>A wrapping burst is similar to an incrementing burst, except that the address wraps around to
-a lower address if an upper address limit is reached.
-The following restrictions apply to wrapping bursts:</p>
+<p>This burst type is used for repeated accesses to the same location such as when loading or</p>
+<p>emptying a FIFO.</p>
+</div><h3 id="parameter.BURST_INCR" class="impl"><code class="in-band"><a href="#parameter.BURST_INCR">BURST_INCR</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>In an incrementing burst, the address for each transfer in the burst is an increment of the</p>
+<p>address for the previous transfer.  The increment value depends on the size of the transfer.</p>
+<p>For example, the address for each transfer in a burst with a size of 4 bytes is the previous</p>
+<p>address plus four.</p>
+<p>This burst type is used for accesses to normal sequential memory.</p>
+</div><h3 id="parameter.BURST_WRAP" class="impl"><code class="in-band"><a href="#parameter.BURST_WRAP">BURST_WRAP</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>A wrapping burst is similar to an incrementing burst, except that the address wraps around to</p>
+<p>a lower address if an upper address limit is reached.</p>
+<p>The following restrictions apply to wrapping bursts:</p>
 <ul>
-<li>The start address must be aligned to the size of each transfer.</li>
-<li>The length of the burst must be 2, 4, 8, or 16 transfers.</li>
+<li>
+<p>The start address must be aligned to the size of each transfer.</p>
+</li>
+<li>
+<p>The length of the burst must be 2, 4, 8, or 16 transfers.</p>
+</li>
 </ul>
-</div><h3 id="parameter.RESP_OKAY" class="impl"><code class="in-band">RESP_OKAY<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Normal access success.  Indicates that a normal access has been successful. Can also indicate
-that an exclusive access has failed.</p>
-</div><h3 id="parameter.RESP_EXOKAY" class="impl"><code class="in-band">RESP_EXOKAY<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Exclusive access okay.  Indicates that either the read or write portion of an exclusive access
-has been successful.</p>
-</div><h3 id="parameter.RESP_SLVERR" class="impl"><code class="in-band">RESP_SLVERR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Slave error.  Used when the access has reached the slave successfully, but the slave wishes to
-return an error condition to the originating master.</p>
-</div><h3 id="parameter.RESP_DECERR" class="impl"><code class="in-band">RESP_DECERR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Decode error.  Generated, typically by an interconnect component, to indicate that there is no
-slave at the transaction address.</p>
-</div><h3 id="parameter.CACHE_BUFFERABLE" class="impl"><code class="in-band">CACHE_BUFFERABLE<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>When this bit is asserted, the interconnect, or any component, can delay the transaction
-reaching its final destination for any number of cycles.</p>
-</div><h3 id="parameter.CACHE_MODIFIABLE" class="impl"><code class="in-band">CACHE_MODIFIABLE<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>When HIGH, Modifiable indicates that the characteristics of the transaction can be modified.
-When Modifiable is LOW, the transaction is Non-modifiable.</p>
-</div><h3 id="parameter.CACHE_RD_ALLOC" class="impl"><code class="in-band">CACHE_RD_ALLOC<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>When this bit is asserted, read allocation of the transaction is recommended but is not
-mandatory.</p>
-</div><h3 id="parameter.CACHE_WR_ALLOC" class="impl"><code class="in-band">CACHE_WR_ALLOC<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>When this bit is asserted, write allocation of the transaction is recommended but is not
-mandatory.</p>
-</div><h3 id="parameter.ATOP_ATOMICSWAP" class="impl"><code class="in-band">ATOP_ATOMICSWAP<span class="type-annotation">: </span></code></h3><div class="docblock"
-><ul>
-<li>Sends a single data value with an address.</li>
-<li>The target swaps the value at the addressed location with the data value that is supplied in
-the transaction.</li>
-<li>The original data value at the addressed location is returned.</li>
-<li>Outbound data size is 1, 2, 4, or 8 bytes.</li>
-<li>Inbound data size is the same as the outbound data size.</li>
-</ul>
-</div><h3 id="parameter.ATOP_ATOMICCMP" class="impl"><code class="in-band">ATOP_ATOMICCMP<span class="type-annotation">: </span></code></h3><div class="docblock"
-><ul>
-<li>Sends two data values, the compare value and the swap value, to the addressed location.
-The compare and swap values are of equal size.</li>
-<li>The data value at the addressed location is checked against the compare value:
+</div><h3 id="parameter.RESP_OKAY" class="impl"><code class="in-band"><a href="#parameter.RESP_OKAY">RESP_OKAY</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Normal access success.  Indicates that a normal access has been successful. Can also indicate</p>
+<p>that an exclusive access has failed.</p>
+</div><h3 id="parameter.RESP_EXOKAY" class="impl"><code class="in-band"><a href="#parameter.RESP_EXOKAY">RESP_EXOKAY</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Exclusive access okay.  Indicates that either the read or write portion of an exclusive access</p>
+<p>has been successful.</p>
+</div><h3 id="parameter.RESP_SLVERR" class="impl"><code class="in-band"><a href="#parameter.RESP_SLVERR">RESP_SLVERR</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Slave error.  Used when the access has reached the slave successfully, but the slave wishes to</p>
+<p>return an error condition to the originating master.</p>
+</div><h3 id="parameter.RESP_DECERR" class="impl"><code class="in-band"><a href="#parameter.RESP_DECERR">RESP_DECERR</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Decode error.  Generated, typically by an interconnect component, to indicate that there is no</p>
+<p>slave at the transaction address.</p>
+</div><h3 id="parameter.CACHE_BUFFERABLE" class="impl"><code class="in-band"><a href="#parameter.CACHE_BUFFERABLE">CACHE_BUFFERABLE</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>When this bit is asserted, the interconnect, or any component, can delay the transaction</p>
+<p>reaching its final destination for any number of cycles.</p>
+</div><h3 id="parameter.CACHE_MODIFIABLE" class="impl"><code class="in-band"><a href="#parameter.CACHE_MODIFIABLE">CACHE_MODIFIABLE</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>When HIGH, Modifiable indicates that the characteristics of the transaction can be modified.</p>
+<p>When Modifiable is LOW, the transaction is Non-modifiable.</p>
+</div><h3 id="parameter.CACHE_RD_ALLOC" class="impl"><code class="in-band"><a href="#parameter.CACHE_RD_ALLOC">CACHE_RD_ALLOC</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>When this bit is asserted, read allocation of the transaction is recommended but is not</p>
+<p>mandatory.</p>
+</div><h3 id="parameter.CACHE_WR_ALLOC" class="impl"><code class="in-band"><a href="#parameter.CACHE_WR_ALLOC">CACHE_WR_ALLOC</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>When this bit is asserted, write allocation of the transaction is recommended but is not</p>
+<p>mandatory.</p>
+</div><h3 id="parameter.ATOP_ATOMICSWAP" class="impl"><code class="in-band"><a href="#parameter.ATOP_ATOMICSWAP">ATOP_ATOMICSWAP</a><span class="type-annotation">: </span></code></h3><div class="docblock">
 <ul>
-<li>If the values match, the swap value is written to the addressed location.</li>
-<li>If the values do not match, the swap value is not written to the addressed location.</li>
+<li>
+<p>Sends a single data value with an address.</p>
+</li>
+<li>
+<p>The target swaps the value at the addressed location with the data value that is supplied in</p>
+<p>the transaction.</p>
+</li>
+<li>
+<p>The original data value at the addressed location is returned.</p>
+</li>
+<li>
+<p>Outbound data size is 1, 2, 4, or 8 bytes.</p>
+</li>
+<li>
+<p>Inbound data size is the same as the outbound data size.</p>
+</li>
+</ul>
+</div><h3 id="parameter.ATOP_ATOMICCMP" class="impl"><code class="in-band"><a href="#parameter.ATOP_ATOMICCMP">ATOP_ATOMICCMP</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<ul>
+<li>
+<p>Sends two data values, the compare value and the swap value, to the addressed location.</p>
+<p>The compare and swap values are of equal size.</p>
+</li>
+<li>
+<p>The data value at the addressed location is checked against the compare value:</p>
+<ul>
+<li>
+<p>If the values match, the swap value is written to the addressed location.</p>
+</li>
+<li>
+<p>If the values do not match, the swap value is not written to the addressed location.</p>
+</li>
 </ul>
 </li>
-<li>The original data value at the addressed location is returned.</li>
-<li>Outbound data size is 2, 4, 8, 16, or 32 bytes.</li>
-<li>Inbound data size is half of the outbound data size because the outbound data contains both
-compare and swap values, whereas the inbound data has only the original data value.</li>
+<li>
+<p>The original data value at the addressed location is returned.</p>
+</li>
+<li>
+<p>Outbound data size is 2, 4, 8, 16, or 32 bytes.</p>
+</li>
+<li>
+<p>Inbound data size is half of the outbound data size because the outbound data contains both</p>
+<p>compare and swap values, whereas the inbound data has only the original data value.</p>
+</li>
 </ul>
-</div><h3 id="parameter.ATOP_NONE" class="impl"><code class="in-band">ATOP_NONE<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Perform no atomic operation.</p>
-</div><h3 id="parameter.ATOP_ATOMICSTORE" class="impl"><code class="in-band">ATOP_ATOMICSTORE<span class="type-annotation">: </span></code></h3><div class="docblock"
-><ul>
-<li>Sends a single data value with an address and the atomic operation to be performed.</li>
-<li>The target performs the operation using the sent data and value at the addressed location as
-operands.</li>
-<li>The result is stored in the address location.</li>
-<li>A single response is given without data.</li>
-<li>Outbound data size is 1, 2, 4, or 8 bytes.</li>
-</ul>
-</div><h3 id="parameter.ATOP_ATOMICLOAD" class="impl"><code class="in-band">ATOP_ATOMICLOAD<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Sends a single data value with an address and the atomic operation to be performed.</p>
+</div><h3 id="parameter.ATOP_NONE" class="impl"><code class="in-band"><a href="#parameter.ATOP_NONE">ATOP_NONE</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Perform no atomic operation.</p>
+</div><h3 id="parameter.ATOP_ATOMICSTORE" class="impl"><code class="in-band"><a href="#parameter.ATOP_ATOMICSTORE">ATOP_ATOMICSTORE</a><span class="type-annotation">: </span></code></h3><div class="docblock">
 <ul>
-<li>The original data value at the addressed location is returned.</li>
-<li>The target performs the operation using the sent data and value at the addressed location as
-operands.</li>
-<li>The result is stored in the address location.</li>
-<li>Outbound data size is 1, 2, 4, or 8 bytes.</li>
-<li>Inbound data size is the same as the outbound data size.</li>
+<li>
+<p>Sends a single data value with an address and the atomic operation to be performed.</p>
+</li>
+<li>
+<p>The target performs the operation using the sent data and value at the addressed location as</p>
+<p>operands.</p>
+</li>
+<li>
+<p>The result is stored in the address location.</p>
+</li>
+<li>
+<p>A single response is given without data.</p>
+</li>
+<li>
+<p>Outbound data size is 1, 2, 4, or 8 bytes.</p>
+</li>
 </ul>
-</div><h3 id="parameter.ATOP_LITTLE_END" class="impl"><code class="in-band">ATOP_LITTLE_END<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>For AtomicStore and AtomicLoad transactions <code>AWATOP[3]</code> indicates the endianness that is
-required for the atomic operation.  The value of <code>AWATOP[3]</code> applies to arithmetic operations
-only and is ignored for bitwise logical operations.
-When deasserted, this bit indicates that the operation is little-endian.</p>
-</div><h3 id="parameter.ATOP_BIG_END" class="impl"><code class="in-band">ATOP_BIG_END<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>When asserted, this bit indicates that the operation is big-endian.</p>
-</div><h3 id="parameter.ATOP_ADD" class="impl"><code class="in-band">ATOP_ADD<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>The value in memory is added to the sent data and the result stored in memory.</p>
-</div><h3 id="parameter.ATOP_CLR" class="impl"><code class="in-band">ATOP_CLR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Every set bit in the sent data clears the corresponding bit of the data in memory.</p>
-</div><h3 id="parameter.ATOP_EOR" class="impl"><code class="in-band">ATOP_EOR<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Bitwise exclusive OR of the sent data and value in memory.</p>
-</div><h3 id="parameter.ATOP_SET" class="impl"><code class="in-band">ATOP_SET<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>Every set bit in the sent data sets the corresponding bit of the data in memory.</p>
-</div><h3 id="parameter.ATOP_SMAX" class="impl"><code class="in-band">ATOP_SMAX<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>The value stored in memory is the maximum of the existing value and sent data. This operation
-assumes signed data.</p>
-</div><h3 id="parameter.ATOP_SMIN" class="impl"><code class="in-band">ATOP_SMIN<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>The value stored in memory is the minimum of the existing value and sent data. This operation
-assumes signed data.</p>
-</div><h3 id="parameter.ATOP_UMAX" class="impl"><code class="in-band">ATOP_UMAX<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>The value stored in memory is the maximum of the existing value and sent data. This operation
-assumes unsigned data.</p>
-</div><h3 id="parameter.ATOP_UMIN" class="impl"><code class="in-band">ATOP_UMIN<span class="type-annotation">: </span></code></h3><div class="docblock"
-><p>The value stored in memory is the minimum of the existing value and sent data. This operation
-assumes unsigned data.</p>
-</div><h3 id="parameter.ATOP_R_RESP" class="impl"><code class="in-band">ATOP_R_RESP<span class="type-annotation">: </span></code></h3><div class="docblock"
-></div><h3 id="parameter.DemuxAw" class="impl"><code class="in-band">DemuxAw<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Demux AW channel.</p>
-</div><h3 id="parameter.DemuxW" class="impl"><code class="in-band">DemuxW<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Demux W channel.</p>
-</div><h3 id="parameter.DemuxB" class="impl"><code class="in-band">DemuxB<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Demux B channel.</p>
-</div><h3 id="parameter.DemuxAr" class="impl"><code class="in-band">DemuxAr<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Demux AR channel.</p>
-</div><h3 id="parameter.DemuxR" class="impl"><code class="in-band">DemuxR<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Demux R channel.</p>
-</div><h3 id="parameter.MuxAw" class="impl"><code class="in-band">MuxAw<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Mux AW channel.</p>
-</div><h3 id="parameter.MuxW" class="impl"><code class="in-band">MuxW<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Mux W channel.</p>
-</div><h3 id="parameter.MuxB" class="impl"><code class="in-band">MuxB<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Mux B channel.</p>
-</div><h3 id="parameter.MuxAr" class="impl"><code class="in-band">MuxAr<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Mux AR channel.</p>
-</div><h3 id="parameter.MuxR" class="impl"><code class="in-band">MuxR<span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock"
-><p>Slice on Mux R channel.</p>
+</div><h3 id="parameter.ATOP_ATOMICLOAD" class="impl"><code class="in-band"><a href="#parameter.ATOP_ATOMICLOAD">ATOP_ATOMICLOAD</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Sends a single data value with an address and the atomic operation to be performed.</p>
+<ul>
+<li>
+<p>The original data value at the addressed location is returned.</p>
+</li>
+<li>
+<p>The target performs the operation using the sent data and value at the addressed location as</p>
+<p>operands.</p>
+</li>
+<li>
+<p>The result is stored in the address location.</p>
+</li>
+<li>
+<p>Outbound data size is 1, 2, 4, or 8 bytes.</p>
+</li>
+<li>
+<p>Inbound data size is the same as the outbound data size.</p>
+</li>
+</ul>
+</div><h3 id="parameter.ATOP_LITTLE_END" class="impl"><code class="in-band"><a href="#parameter.ATOP_LITTLE_END">ATOP_LITTLE_END</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>For AtomicStore and AtomicLoad transactions <code>AWATOP[3]</code> indicates the endianness that is</p>
+<p>required for the atomic operation.  The value of <code>AWATOP[3]</code> applies to arithmetic operations</p>
+<p>only and is ignored for bitwise logical operations.</p>
+<p>When deasserted, this bit indicates that the operation is little-endian.</p>
+</div><h3 id="parameter.ATOP_BIG_END" class="impl"><code class="in-band"><a href="#parameter.ATOP_BIG_END">ATOP_BIG_END</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>When asserted, this bit indicates that the operation is big-endian.</p>
+</div><h3 id="parameter.ATOP_ADD" class="impl"><code class="in-band"><a href="#parameter.ATOP_ADD">ATOP_ADD</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>The value in memory is added to the sent data and the result stored in memory.</p>
+</div><h3 id="parameter.ATOP_CLR" class="impl"><code class="in-band"><a href="#parameter.ATOP_CLR">ATOP_CLR</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Every set bit in the sent data clears the corresponding bit of the data in memory.</p>
+</div><h3 id="parameter.ATOP_EOR" class="impl"><code class="in-band"><a href="#parameter.ATOP_EOR">ATOP_EOR</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Bitwise exclusive OR of the sent data and value in memory.</p>
+</div><h3 id="parameter.ATOP_SET" class="impl"><code class="in-band"><a href="#parameter.ATOP_SET">ATOP_SET</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>Every set bit in the sent data sets the corresponding bit of the data in memory.</p>
+</div><h3 id="parameter.ATOP_SMAX" class="impl"><code class="in-band"><a href="#parameter.ATOP_SMAX">ATOP_SMAX</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>The value stored in memory is the maximum of the existing value and sent data. This operation</p>
+<p>assumes signed data.</p>
+</div><h3 id="parameter.ATOP_SMIN" class="impl"><code class="in-band"><a href="#parameter.ATOP_SMIN">ATOP_SMIN</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>The value stored in memory is the minimum of the existing value and sent data. This operation</p>
+<p>assumes signed data.</p>
+</div><h3 id="parameter.ATOP_UMAX" class="impl"><code class="in-band"><a href="#parameter.ATOP_UMAX">ATOP_UMAX</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>The value stored in memory is the maximum of the existing value and sent data. This operation</p>
+<p>assumes unsigned data.</p>
+</div><h3 id="parameter.ATOP_UMIN" class="impl"><code class="in-band"><a href="#parameter.ATOP_UMIN">ATOP_UMIN</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+<p>The value stored in memory is the minimum of the existing value and sent data. This operation</p>
+<p>assumes unsigned data.</p>
+</div><h3 id="parameter.ATOP_R_RESP" class="impl"><code class="in-band"><a href="#parameter.ATOP_R_RESP">ATOP_R_RESP</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+</div><h3 id="parameter.DemuxAw" class="impl"><code class="in-band"><a href="#parameter.DemuxAw">DemuxAw</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Demux AW channel.</p>
+</div><h3 id="parameter.DemuxW" class="impl"><code class="in-band"><a href="#parameter.DemuxW">DemuxW</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Demux W channel.</p>
+</div><h3 id="parameter.DemuxB" class="impl"><code class="in-band"><a href="#parameter.DemuxB">DemuxB</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Demux B channel.</p>
+</div><h3 id="parameter.DemuxAr" class="impl"><code class="in-band"><a href="#parameter.DemuxAr">DemuxAr</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Demux AR channel.</p>
+</div><h3 id="parameter.DemuxR" class="impl"><code class="in-band"><a href="#parameter.DemuxR">DemuxR</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Demux R channel.</p>
+</div><h3 id="parameter.MuxAw" class="impl"><code class="in-band"><a href="#parameter.MuxAw">MuxAw</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Mux AW channel.</p>
+</div><h3 id="parameter.MuxW" class="impl"><code class="in-band"><a href="#parameter.MuxW">MuxW</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Mux W channel.</p>
+</div><h3 id="parameter.MuxB" class="impl"><code class="in-band"><a href="#parameter.MuxB">MuxB</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Mux B channel.</p>
+</div><h3 id="parameter.MuxAr" class="impl"><code class="in-band"><a href="#parameter.MuxAr">MuxAr</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Mux AR channel.</p>
+</div><h3 id="parameter.MuxR" class="impl"><code class="in-band"><a href="#parameter.MuxR">MuxR</a><span class="type-annotation">: logic [9:0]</span></code></h3><div class="docblock">
+<p>Slice on Mux R channel.</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.burst_t.html">burst_t</a></td><td><p>AXI Transaction Burst Width.</p>

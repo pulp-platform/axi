@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:56:50.602606344 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,43 +8,43 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_serializer</a></h1>
 <div class="docblock">
 <p>Serialize all AXI transactions to a single ID (zero).</p>
-<p>This module contains one queue with slave port IDs for the read direction and one for the write
-direction.  These queues are used to reconstruct the ID of responses at the slave port.  The
-depth of each queue is defined by <code>MaxReadTxns</code> and <code>MaxWriteTxns</code>, respectively.</p>
+<p>This module contains one queue with slave port IDs for the read direction and one for the write</p>
+<p>direction.  These queues are used to reconstruct the ID of responses at the slave port.  The</p>
+<p>depth of each queue is defined by <code>MaxReadTxns</code> and <code>MaxWriteTxns</code>, respectively.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.MaxReadTxns" class="impl"><code class="in-band">MaxReadTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of in flight read transactions.</p>
-</div><h3 id="parameter.MaxWriteTxns" class="impl"><code class="in-band">MaxWriteTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of in flight write transactions.</p>
-</div><h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band">AxiIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP ID width.</p>
-</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP request struct definition.</p>
-</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP response struct definition.</p>
+<h3 id="parameter.MaxReadTxns" class="impl"><code class="in-band"><a href="#parameter.MaxReadTxns">MaxReadTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of in flight read transactions.</p>
+</div><h3 id="parameter.MaxWriteTxns" class="impl"><code class="in-band"><a href="#parameter.MaxWriteTxns">MaxWriteTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of in flight write transactions.</p>
+</div><h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidth">AxiIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP ID width.</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request struct definition.</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response struct definition.</p>
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Clock</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
-><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
-><p>Master port response</p>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>Slave port request</p>
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>Slave port response</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+<p>Master port request</p>
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+<p>Master port response</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.state_e.html">state_e</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.b_id" class="impl"><code class="in-band">b_id<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_id" class="impl"><code class="in-band">r_id<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_id" class="impl"><code class="in-band">ar_id<span class="type-annotation">: id_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.state_q" class="impl"><code class="in-band">state_q<span class="type-annotation">: state_e</span></code></h3><div class="docblock"
-></div><h3 id="signal.state_d" class="impl"><code class="in-band">state_d<span class="type-annotation">: state_e</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.b_id" class="impl"><code class="in-band"><a href="#signal.b_id">b_id</a><span class="type-annotation">: id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_id" class="impl"><code class="in-band"><a href="#signal.r_id">r_id</a><span class="type-annotation">: id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_id" class="impl"><code class="in-band"><a href="#signal.ar_id">ar_id</a><span class="type-annotation">: id_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.state_q" class="impl"><code class="in-band"><a href="#signal.state_q">state_q</a><span class="type-annotation">: state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.state_d" class="impl"><code class="in-band"><a href="#signal.state_d">state_d</a><span class="type-annotation">: state_e</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

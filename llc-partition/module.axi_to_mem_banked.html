@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:56:50.625385346 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -5,107 +7,111 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_to_mem_banked</a></h1>
 <div class="docblock">
-<p>AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.
-Has higher throughput than <code>axi_to_mem</code>, however needs more hardware.</p>
-<p>The used address space starts at 0x0 and ends at the capacity of all memory banks combined.
-The higher address bits are ignored for accesses.</p>
+<p>AXI4+ATOP to banked SRAM memory slave. Allows for parallel read and write transactions.</p>
+<p>Has higher throughput than <code>axi_to_mem</code>, however needs more hardware.</p>
+<p>The used address space starts at 0x0 and ends at the capacity of all memory banks combined.</p>
+<p>The higher address bits are ignored for accesses.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band">AxiIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP ID width</p>
-</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP address width</p>
-</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band">AxiDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>AXI4+ATOP data width</p>
-</div><h3 id="parameter.axi_aw_chan_t" class="impl"><code class="in-band">axi_aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP AW channel struct</p>
-</div><h3 id="parameter.axi_w_chan_t" class="impl"><code class="in-band">axi_w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP  W channel struct</p>
-</div><h3 id="parameter.axi_b_chan_t" class="impl"><code class="in-band">axi_b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP  B channel struct</p>
-</div><h3 id="parameter.axi_ar_chan_t" class="impl"><code class="in-band">axi_ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP AR channel struct</p>
-</div><h3 id="parameter.axi_r_chan_t" class="impl"><code class="in-band">axi_r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP  R channel struct</p>
-</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP request struct</p>
-</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>AXI4+ATOP response struct</p>
-</div><h3 id="parameter.MemNumBanks" class="impl"><code class="in-band">MemNumBanks<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Number of memory banks / macros
-Has to satisfy:</p>
+<h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidth">AxiIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP ID width</p>
+</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band"><a href="#parameter.AxiAddrWidth">AxiAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP address width</p>
+</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band"><a href="#parameter.AxiDataWidth">AxiDataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP data width</p>
+</div><h3 id="parameter.axi_aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.axi_aw_chan_t">axi_aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP AW channel struct</p>
+</div><h3 id="parameter.axi_w_chan_t" class="impl"><code class="in-band"><a href="#parameter.axi_w_chan_t">axi_w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP  W channel struct</p>
+</div><h3 id="parameter.axi_b_chan_t" class="impl"><code class="in-band"><a href="#parameter.axi_b_chan_t">axi_b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP  B channel struct</p>
+</div><h3 id="parameter.axi_ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.axi_ar_chan_t">axi_ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP AR channel struct</p>
+</div><h3 id="parameter.axi_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.axi_r_chan_t">axi_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP  R channel struct</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request struct</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response struct</p>
+</div><h3 id="parameter.MemNumBanks" class="impl"><code class="in-band"><a href="#parameter.MemNumBanks">MemNumBanks</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Number of memory banks / macros</p>
+<p>Has to satisfy:</p>
 <ul>
-<li>MemNumBanks &gt;= 2 * AxiDataWidth / MemDataWidth</li>
-<li>MemNumBanks is a power of 2.</li>
+<li>
+<p>MemNumBanks &gt;= 2 * AxiDataWidth / MemDataWidth</p>
+</li>
+<li>
+<p>MemNumBanks is a power of 2.</p>
+</li>
 </ul>
-</div><h3 id="parameter.MemAddrWidth" class="impl"><code class="in-band">MemAddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Address width of an individual memory bank. This is treated as a word address.</p>
-</div><h3 id="parameter.MemDataWidth" class="impl"><code class="in-band">MemDataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Data width of the memory macros.
-Has to satisfy:</p>
+</div><h3 id="parameter.MemAddrWidth" class="impl"><code class="in-band"><a href="#parameter.MemAddrWidth">MemAddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Address width of an individual memory bank. This is treated as a word address.</p>
+</div><h3 id="parameter.MemDataWidth" class="impl"><code class="in-band"><a href="#parameter.MemDataWidth">MemDataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Data width of the memory macros.</p>
+<p>Has to satisfy:</p>
 <ul>
 <li>AxiDataWidth % MemDataWidth = 0</li>
 </ul>
-</div><h3 id="parameter.MemLatency" class="impl"><code class="in-band">MemLatency<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Read latency of the connected memory in cycles</p>
-</div><h3 id="parameter.HideStrb" class="impl"><code class="in-band">HideStrb<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Hide write requests if the strb == '0</p>
-</div><h3 id="parameter.OutFifoDepth" class="impl"><code class="in-band">OutFifoDepth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.</p>
-</div><h3 id="parameter.mem_addr_t" class="impl"><code class="in-band">mem_addr_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Address type of the memory request.</p>
-</div><h3 id="parameter.mem_atop_t" class="impl"><code class="in-band">mem_atop_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Atomic operation type for the memory request.</p>
-</div><h3 id="parameter.mem_data_t" class="impl"><code class="in-band">mem_data_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Data type for the memory request.</p>
-</div><h3 id="parameter.mem_strb_t" class="impl"><code class="in-band">mem_strb_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Byte strobe/enable signal for the memory request.</p>
-</div><h3 id="parameter.BanksPerAxiChannel" class="impl"><code class="in-band">BanksPerAxiChannel<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>This specifies the number of banks needed to have the full data bandwidth of one
-AXI data channel.</p>
-</div><h3 id="parameter.BankSelOffset" class="impl"><code class="in-band">BankSelOffset<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Offset of the byte address from AXI to determine, where the selection signal for the
-memory bank should start.</p>
-</div><h3 id="parameter.BankSelWidth" class="impl"><code class="in-band">BankSelWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Selection signal width of the xbar. This is the reason for power of two banks, otherwise
-There are holes in the address mapping.</p>
+</div><h3 id="parameter.MemLatency" class="impl"><code class="in-band"><a href="#parameter.MemLatency">MemLatency</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Read latency of the connected memory in cycles</p>
+</div><h3 id="parameter.HideStrb" class="impl"><code class="in-band"><a href="#parameter.HideStrb">HideStrb</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Hide write requests if the strb == ’0</p>
+</div><h3 id="parameter.OutFifoDepth" class="impl"><code class="in-band"><a href="#parameter.OutFifoDepth">OutFifoDepth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.</p>
+</div><h3 id="parameter.mem_addr_t" class="impl"><code class="in-band"><a href="#parameter.mem_addr_t">mem_addr_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Address type of the memory request.</p>
+</div><h3 id="parameter.mem_atop_t" class="impl"><code class="in-band"><a href="#parameter.mem_atop_t">mem_atop_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Atomic operation type for the memory request.</p>
+</div><h3 id="parameter.mem_data_t" class="impl"><code class="in-band"><a href="#parameter.mem_data_t">mem_data_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Data type for the memory request.</p>
+</div><h3 id="parameter.mem_strb_t" class="impl"><code class="in-band"><a href="#parameter.mem_strb_t">mem_strb_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>DEPENDENT PARAMETER, DO NOT OVERWRITE! Byte strobe/enable signal for the memory request.</p>
+</div><h3 id="parameter.BanksPerAxiChannel" class="impl"><code class="in-band"><a href="#parameter.BanksPerAxiChannel">BanksPerAxiChannel</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>This specifies the number of banks needed to have the full data bandwidth of one</p>
+<p>AXI data channel.</p>
+</div><h3 id="parameter.BankSelOffset" class="impl"><code class="in-band"><a href="#parameter.BankSelOffset">BankSelOffset</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Offset of the byte address from AXI to determine, where the selection signal for the</p>
+<p>memory bank should start.</p>
+</div><h3 id="parameter.BankSelWidth" class="impl"><code class="in-band"><a href="#parameter.BankSelWidth">BankSelWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Selection signal width of the xbar. This is the reason for power of two banks, otherwise</p>
+<p>There are holes in the address mapping.</p>
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Clock</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low</p>
-</div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Testmode enable</p>
-</div><h3 id="port.axi_req_i" class="impl"><code class="in-band">axi_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-><p>AXI4+ATOP slave port, request struct</p>
-</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band">axi_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-><p>AXI4+ATOP slave port, response struct</p>
-</div><h3 id="port.mem_req_o" class="impl"><code class="in-band">mem_req_o<span class="type-annotation">: output logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Memory bank request</p>
-</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band">mem_gnt_i<span class="type-annotation">: input  logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Memory request grant</p>
-</div><h3 id="port.mem_add_o" class="impl"><code class="in-band">mem_add_o<span class="type-annotation">: output mem_addr_t [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Request address</p>
-</div><h3 id="port.mem_we_o" class="impl"><code class="in-band">mem_we_o<span class="type-annotation">: output logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Write request enable, active high</p>
-</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band">mem_wdata_o<span class="type-annotation">: output mem_data_t [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Write data</p>
-</div><h3 id="port.mem_be_o" class="impl"><code class="in-band">mem_be_o<span class="type-annotation">: output mem_strb_t [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Write data byte enable, active high</p>
-</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band">mem_atop_o<span class="type-annotation">: output mem_atop_t [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Atomic operation</p>
-</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band">mem_rdata_i<span class="type-annotation">: input  mem_data_t [MemNumBanks-1:0]</span></code></h3><div class="docblock"
-><p>Read data response</p>
-</div><h3 id="port.axi_to_mem_busy_o" class="impl"><code class="in-band">axi_to_mem_busy_o<span class="type-annotation">: output logic      [1:0]</span></code></h3><div class="docblock"
-><p>Status output, busy flag of <code>axi_to_mem</code></p>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.test_i" class="impl"><code class="in-band"><a href="#port.test_i">test_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Testmode enable</p>
+</div><h3 id="port.axi_req_i" class="impl"><code class="in-band"><a href="#port.axi_req_i">axi_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP slave port, request struct</p>
+</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band"><a href="#port.axi_resp_o">axi_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP slave port, response struct</p>
+</div><h3 id="port.mem_req_o" class="impl"><code class="in-band"><a href="#port.mem_req_o">mem_req_o</a><span class="type-annotation">: output logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory bank request</p>
+</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band"><a href="#port.mem_gnt_i">mem_gnt_i</a><span class="type-annotation">: input  logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory request grant</p>
+</div><h3 id="port.mem_add_o" class="impl"><code class="in-band"><a href="#port.mem_add_o">mem_add_o</a><span class="type-annotation">: output mem_addr_t [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Request address</p>
+</div><h3 id="port.mem_we_o" class="impl"><code class="in-band"><a href="#port.mem_we_o">mem_we_o</a><span class="type-annotation">: output logic      [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Write request enable, active high</p>
+</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band"><a href="#port.mem_wdata_o">mem_wdata_o</a><span class="type-annotation">: output mem_data_t [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Write data</p>
+</div><h3 id="port.mem_be_o" class="impl"><code class="in-band"><a href="#port.mem_be_o">mem_be_o</a><span class="type-annotation">: output mem_strb_t [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Write data byte enable, active high</p>
+</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band"><a href="#port.mem_atop_o">mem_atop_o</a><span class="type-annotation">: output mem_atop_t [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Atomic operation</p>
+</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band"><a href="#port.mem_rdata_i">mem_rdata_i</a><span class="type-annotation">: input  mem_data_t [MemNumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Read data response</p>
+</div><h3 id="port.axi_to_mem_busy_o" class="impl"><code class="in-band"><a href="#port.axi_to_mem_busy_o">axi_to_mem_busy_o</a><span class="type-annotation">: output logic      [1:0]</span></code></h3><div class="docblock">
+<p>Status output, busy flag of <code>axi_to_mem</code></p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.xbar_sel_t.html">xbar_sel_t</a></td><td></td></tr><tr><td><a class="type" href="type.access_type_e.html">access_type_e</a></td><td></td></tr><tr><td><a class="type" href="type.axi_addr_t.html">axi_addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.xbar_payload_t.html">xbar_payload_t</a></td><td><p>Payload definition which is sent over the xbar between the macros and the read/write unit.</p>
 </td></tr><tr><td><a class="type" href="type.read_sel_t.html">read_sel_t</a></td><td><p>Read data definition for the shift register, which samples the read response data</p>
 </td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.r_shift_inp" class="impl"><code class="in-band">r_shift_inp<span class="type-annotation">: read_sel_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.r_shift_oup" class="impl"><code class="in-band">r_shift_oup<span class="type-annotation">: read_sel_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.r_shift_inp" class="impl"><code class="in-band"><a href="#signal.r_shift_inp">r_shift_inp</a><span class="type-annotation">: read_sel_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.r_shift_oup" class="impl"><code class="in-band"><a href="#signal.r_shift_oup">r_shift_oup</a><span class="type-annotation">: read_sel_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>
