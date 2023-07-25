@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:57:30.323882649 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,83 +8,83 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_id_remap</a></h1>
 <div class="docblock">
 <p>Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.</p>
-<p>This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely
-used ID space.  This scenario occurs, for example, when an AXI master has wide ID ports but
-effectively only uses a (not necessarily contiguous) subset of IDs.</p>
-<p>This module retains the independence of IDs.  That is, if two transactions have different IDs at
-the slave port of this module, they are guaranteed to have different IDs at the master port of
-this module.  This implies a lower bound on the <a href="#parameter.AxiMstPortIdWidth">width of IDs on the master
-port</a>.  If you require narrower master port IDs and can forgo ID
-independence, use <a href="module.axi_id_serialize"><code>axi_id_serialize</code></a> instead.</p>
+<p>This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely</p>
+<p>used ID space.  This scenario occurs, for example, when an AXI master has wide ID ports but</p>
+<p>effectively only uses a (not necessarily contiguous) subset of IDs.</p>
+<p>This module retains the independence of IDs.  That is, if two transactions have different IDs at</p>
+<p>the slave port of this module, they are guaranteed to have different IDs at the master port of</p>
+<p>this module.  This implies a lower bound on the [width of IDs on the master</p>
+<p>port](#parameter.AxiMstPortIdWidth).  If you require narrower master port IDs and can forgo ID</p>
+<p>independence, use <a href="module.axi_id_serialize"><code>axi_id_serialize</code></a> instead.</p>
 <p>Internally, a <a href="module.axi_id_remap_table">table is used for remapping IDs</a>.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AxiSlvPortIdWidth" class="impl"><code class="in-band">AxiSlvPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>ID width of the AXI4+ATOP slave port.</p>
-</div><h3 id="parameter.AxiSlvPortMaxUniqIds" class="impl"><code class="in-band">AxiSlvPortMaxUniqIds<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
-counted separately (except for ATOPs, which count as both read and write).</p>
-<p>It is legal for upstream to have transactions with more unique IDs than the maximum given by
-this parameter in flight, but a transaction exceeding the maximum will be stalled until all
-transactions of another ID complete.</p>
+<h3 id="parameter.AxiSlvPortIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiSlvPortIdWidth">AxiSlvPortIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>ID width of the AXI4+ATOP slave port.</p>
+</div><h3 id="parameter.AxiSlvPortMaxUniqIds" class="impl"><code class="in-band"><a href="#parameter.AxiSlvPortMaxUniqIds">AxiSlvPortMaxUniqIds</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are</p>
+<p>counted separately (except for ATOPs, which count as both read and write).</p>
+<p>It is legal for upstream to have transactions with more unique IDs than the maximum given by</p>
+<p>this parameter in flight, but a transaction exceeding the maximum will be stalled until all</p>
+<p>transactions of another ID complete.</p>
 <p>The maximum value of this parameter is <code>2**AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.AxiMaxTxnsPerId" class="impl"><code class="in-band">AxiMaxTxnsPerId<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of in-flight transactions with the same ID.</p>
-<p>It is legal for upstream to have more transactions than the maximum given by this parameter in
-flight for any ID, but a transaction exceeding the maximum will be stalled until another
-transaction with the same ID completes.</p>
-</div><h3 id="parameter.AxiMstPortIdWidth" class="impl"><code class="in-band">AxiMstPortIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>ID width of the AXI4+ATOP master port.</p>
-<p>The minimum value of this parameter is the ceiled binary logarithm of <code>AxiSlvPortMaxUniqIds</code>,
-because IDs at the master port must be wide enough to represent IDs up to
-<code>AxiSlvPortMaxUniqIds-1</code>.</p>
+</div><h3 id="parameter.AxiMaxTxnsPerId" class="impl"><code class="in-band"><a href="#parameter.AxiMaxTxnsPerId">AxiMaxTxnsPerId</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of in-flight transactions with the same ID.</p>
+<p>It is legal for upstream to have more transactions than the maximum given by this parameter in</p>
+<p>flight for any ID, but a transaction exceeding the maximum will be stalled until another</p>
+<p>transaction with the same ID completes.</p>
+</div><h3 id="parameter.AxiMstPortIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiMstPortIdWidth">AxiMstPortIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>ID width of the AXI4+ATOP master port.</p>
+<p>The minimum value of this parameter is the ceiled binary logarithm of <code>AxiSlvPortMaxUniqIds</code>,</p>
+<p>because IDs at the master port must be wide enough to represent IDs up to</p>
+<p><code>AxiSlvPortMaxUniqIds-1</code>.</p>
 <p>If master IDs are wider than the minimum, they are extended by prepending zeros.</p>
-</div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band">slv_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct type of the AXI4+ATOP slave port.</p>
+</div><h3 id="parameter.slv_req_t" class="impl"><code class="in-band"><a href="#parameter.slv_req_t">slv_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request struct type of the AXI4+ATOP slave port.</p>
 <p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band">slv_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct type of the AXI4+ATOP slave port.</p>
+</div><h3 id="parameter.slv_resp_t" class="impl"><code class="in-band"><a href="#parameter.slv_resp_t">slv_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Response struct type of the AXI4+ATOP slave port.</p>
 <p>The width of all IDs in this struct must match <code>AxiSlvPortIdWidth</code>.</p>
-</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band">mst_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct type of the AXI4+ATOP master port</p>
+</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band"><a href="#parameter.mst_req_t">mst_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request struct type of the AXI4+ATOP master port</p>
 <p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
-</div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band">mst_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct type of the AXI4+ATOP master port</p>
+</div><h3 id="parameter.mst_resp_t" class="impl"><code class="in-band"><a href="#parameter.mst_resp_t">mst_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Response struct type of the AXI4+ATOP master port</p>
 <p>The width of all IDs in this struct must match <code>AxiMstPortIdWidth</code>.</p>
-</div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band">IdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.ZeroWidth" class="impl"><code class="in-band">ZeroWidth<span class="type-annotation">: </span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Rising-edge clock of all ports</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  slv_req_t</span></code></h3><div class="docblock"
-><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output slv_resp_t</span></code></h3><div class="docblock"
-><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock"
-><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  mst_resp_t</span></code></h3><div class="docblock"
-><p>Master port response</p>
+</div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band"><a href="#parameter.IdxWidth">IdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.ZeroWidth" class="impl"><code class="in-band"><a href="#parameter.ZeroWidth">ZeroWidth</a><span class="type-annotation">: </span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock of all ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  slv_req_t</span></code></h3><div class="docblock">
+<p>Slave port request</p>
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output slv_resp_t</span></code></h3><div class="docblock">
+<p>Slave port response</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock">
+<p>Master port request</p>
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  mst_resp_t</span></code></h3><div class="docblock">
+<p>Master port response</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.field_t.html">field_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_inp_t.html">id_inp_t</a></td><td></td></tr><tr><td><a class="type" href="type.idx_t.html">idx_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.wr_free" class="impl"><code class="in-band">wr_free<span class="type-annotation">: field_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.rd_free" class="impl"><code class="in-band">rd_free<span class="type-annotation">: field_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.both_free" class="impl"><code class="in-band">both_free<span class="type-annotation">: field_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.rd_push_inp_id" class="impl"><code class="in-band">rd_push_inp_id<span class="type-annotation">: id_inp_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.wr_free_oup_id" class="impl"><code class="in-band">wr_free_oup_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.rd_free_oup_id" class="impl"><code class="in-band">rd_free_oup_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.both_free_oup_id" class="impl"><code class="in-band">both_free_oup_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.wr_push_oup_id" class="impl"><code class="in-band">wr_push_oup_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.rd_push_oup_id" class="impl"><code class="in-band">rd_push_oup_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.wr_exists_id" class="impl"><code class="in-band">wr_exists_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.rd_exists_id" class="impl"><code class="in-band">rd_exists_id<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_id_d" class="impl"><code class="in-band">ar_id_d<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.ar_id_q" class="impl"><code class="in-band">ar_id_q<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.aw_id_d" class="impl"><code class="in-band">aw_id_d<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.aw_id_q" class="impl"><code class="in-band">aw_id_q<span class="type-annotation">: idx_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.wr_free" class="impl"><code class="in-band"><a href="#signal.wr_free">wr_free</a><span class="type-annotation">: field_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_free" class="impl"><code class="in-band"><a href="#signal.rd_free">rd_free</a><span class="type-annotation">: field_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.both_free" class="impl"><code class="in-band"><a href="#signal.both_free">both_free</a><span class="type-annotation">: field_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_push_inp_id" class="impl"><code class="in-band"><a href="#signal.rd_push_inp_id">rd_push_inp_id</a><span class="type-annotation">: id_inp_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_free_oup_id" class="impl"><code class="in-band"><a href="#signal.wr_free_oup_id">wr_free_oup_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_free_oup_id" class="impl"><code class="in-band"><a href="#signal.rd_free_oup_id">rd_free_oup_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.both_free_oup_id" class="impl"><code class="in-band"><a href="#signal.both_free_oup_id">both_free_oup_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_push_oup_id" class="impl"><code class="in-band"><a href="#signal.wr_push_oup_id">wr_push_oup_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_push_oup_id" class="impl"><code class="in-band"><a href="#signal.rd_push_oup_id">rd_push_oup_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_exists_id" class="impl"><code class="in-band"><a href="#signal.wr_exists_id">wr_exists_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_exists_id" class="impl"><code class="in-band"><a href="#signal.rd_exists_id">rd_exists_id</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_id_d" class="impl"><code class="in-band"><a href="#signal.ar_id_d">ar_id_d</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.ar_id_q" class="impl"><code class="in-band"><a href="#signal.ar_id_q">ar_id_q</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.aw_id_d" class="impl"><code class="in-band"><a href="#signal.aw_id_d">aw_id_d</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.aw_id_q" class="impl"><code class="in-band"><a href="#signal.aw_id_q">aw_id_q</a><span class="type-annotation">: idx_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

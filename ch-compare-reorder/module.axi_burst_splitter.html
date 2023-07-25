@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:57:30.271857161 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -8,38 +10,42 @@
 <p>Split AXI4 bursts into single-beat transactions.</p>
 <h2>Limitations</h2>
 <ul>
-<li>This module does not support wrapping (<a href="package.axi_pkg"><code>axi_pkg::BURST_WRAP</code></a>) bursts and
-responds to such bursts with slave error(s).</li>
-<li>This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave
-error.  Place an <a href="module.axi_atop_filter"><code>axi_atop_filter</code></a> before this module if upstream
-modules can generate ATOPs.</li>
+<li>
+<p>This module does not support wrapping (<a href="package.axi_pkg"><code>axi_pkg::BURST_WRAP</code></a>) bursts and</p>
+<p>responds to such bursts with slave error(s).</p>
+</li>
+<li>
+<p>This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave</p>
+<p>error.  Place an <a href="module.axi_atop_filter"><code>axi_atop_filter</code></a> before this module if upstream</p>
+<p>modules can generate ATOPs.</p>
+</li>
 </ul>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.MaxReadTxns" class="impl"><code class="in-band">MaxReadTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MaxWriteTxns" class="impl"><code class="in-band">MaxWriteTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band">AddrWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.DataWidth" class="impl"><code class="in-band">DataWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.IdWidth" class="impl"><code class="in-band">IdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.UserWidth" class="impl"><code class="in-band">UserWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MaxTxns" class="impl"><code class="in-band">MaxTxns<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
-></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<h3 id="parameter.MaxReadTxns" class="impl"><code class="in-band"><a href="#parameter.MaxReadTxns">MaxReadTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxWriteTxns" class="impl"><code class="in-band"><a href="#parameter.MaxWriteTxns">MaxWriteTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band"><a href="#parameter.AddrWidth">AddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band"><a href="#parameter.IdWidth">IdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band"><a href="#parameter.UserWidth">UserWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxTxns" class="impl"><code class="in-band"><a href="#parameter.MaxTxns">MaxTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_chan_t.html">aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_chan_t.html">w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_chan_t.html">b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_chan_t.html">ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_chan_t.html">r_chan_t</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.act_req" class="impl"><code class="in-band">act_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.unsupported_req" class="impl"><code class="in-band">unsupported_req<span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.act_resp" class="impl"><code class="in-band">act_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.unsupported_resp" class="impl"><code class="in-band">unsupported_resp<span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.act_req" class="impl"><code class="in-band"><a href="#signal.act_req">act_req</a><span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.unsupported_req" class="impl"><code class="in-band"><a href="#signal.unsupported_req">unsupported_req</a><span class="type-annotation">: axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.act_resp" class="impl"><code class="in-band"><a href="#signal.act_resp">act_resp</a><span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.unsupported_resp" class="impl"><code class="in-band"><a href="#signal.unsupported_resp">unsupported_resp</a><span class="type-annotation">: axi_resp_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

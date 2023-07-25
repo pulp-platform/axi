@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 06:57:30.337874061 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -5,60 +7,60 @@
 <body>
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_isolate</a></h1>
 <div class="docblock">
-<p>This module can isolate the AXI4+ATOPs bus on the master port from the slave port.  When the
-isolation is not active, the two ports are directly connected.</p>
-<p>This module counts how many open transactions are currently in flight on the read and write
-channels.  It is further capable of tracking the amount of open atomic transactions with read
-responses.</p>
-<p>The isolation interface has two signals: <code>isolate_i</code> and <code>isolated_o</code>.  When <code>isolate_i</code> is
-asserted, all open transactions are gracefully terminated.  When no transactions are in flight
-anymore, the <code>isolated_o</code> output is asserted.  As long as <code>isolated_o</code> is asserted, all output
-signals in <code>mst_req_o</code> are silenced to <code>'0</code>.  When isolated, new transactions initiated on the
-slave port are stalled until the isolation is terminated by deasserting <code>isolate_i</code>.</p>
+<p>This module can isolate the AXI4+ATOPs bus on the master port from the slave port.  When the</p>
+<p>isolation is not active, the two ports are directly connected.</p>
+<p>This module counts how many open transactions are currently in flight on the read and write</p>
+<p>channels.  It is further capable of tracking the amount of open atomic transactions with read</p>
+<p>responses.</p>
+<p>The isolation interface has two signals: <code>isolate_i</code> and <code>isolated_o</code>.  When <code>isolate_i</code> is</p>
+<p>asserted, all open transactions are gracefully terminated.  When no transactions are in flight</p>
+<p>anymore, the <code>isolated_o</code> output is asserted.  As long as <code>isolated_o</code> is asserted, all output</p>
+<p>signals in <code>mst_req_o</code> are silenced to <code>'0</code>.  When isolated, new transactions initiated on the</p>
+<p>slave port are stalled until the isolation is terminated by deasserting <code>isolate_i</code>.</p>
 <h2>Response</h2>
-<p>If the <code>TerminateTransaction</code> parameter is set to <code>1'b1</code>, the module will return response errors
-in case there is an incoming transaction while the module isolates.  The data returned on the
-bus is <code>1501A7ED</code> (hexspeak for isolated).</p>
-<p>If <code>TerminateTransaction</code> is set to <code>1'b0</code>, the transaction will block indefinitely until the
-module is de-isolated again.</p>
+<p>If the <code>TerminateTransaction</code> parameter is set to <code>1'b1</code>, the module will return response errors</p>
+<p>in case there is an incoming transaction while the module isolates.  The data returned on the</p>
+<p>bus is <code>1501A7ED</code> (hexspeak for isolated).</p>
+<p>If <code>TerminateTransaction</code> is set to <code>1'b0</code>, the transaction will block indefinitely until the</p>
+<p>module is de-isolated again.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.NumPending" class="impl"><code class="in-band">NumPending<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-><p>Maximum number of pending requests per channel</p>
-</div><h3 id="parameter.TerminateTransaction" class="impl"><code class="in-band">TerminateTransaction<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Gracefully terminate all incoming transactions in case of isolation by returning proper error
-responses.</p>
-</div><h3 id="parameter.AtopSupport" class="impl"><code class="in-band">AtopSupport<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-><p>Support atomic operations (ATOPs)</p>
-</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band">AxiAddrWidth<span class="type-annotation">: int signed</span></code></h3><div class="docblock"
-><p>Address width of all AXI4+ATOP ports</p>
-</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band">AxiDataWidth<span class="type-annotation">: int signed</span></code></h3><div class="docblock"
-><p>Data width of all AXI4+ATOP ports</p>
-</div><h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band">AxiIdWidth<span class="type-annotation">: int signed</span></code></h3><div class="docblock"
-><p>ID width of all AXI4+ATOP ports</p>
-</div><h3 id="parameter.AxiUserWidth" class="impl"><code class="in-band">AxiUserWidth<span class="type-annotation">: int signed</span></code></h3><div class="docblock"
-><p>User signal width of all AXI4+ATOP ports</p>
-</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Request struct type of all AXI4+ATOP ports</p>
-</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-><p>Response struct type of all AXI4+ATOP ports</p>
+<h3 id="parameter.NumPending" class="impl"><code class="in-band"><a href="#parameter.NumPending">NumPending</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of pending requests per channel</p>
+</div><h3 id="parameter.TerminateTransaction" class="impl"><code class="in-band"><a href="#parameter.TerminateTransaction">TerminateTransaction</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Gracefully terminate all incoming transactions in case of isolation by returning proper error</p>
+<p>responses.</p>
+</div><h3 id="parameter.AtopSupport" class="impl"><code class="in-band"><a href="#parameter.AtopSupport">AtopSupport</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Support atomic operations (ATOPs)</p>
+</div><h3 id="parameter.AxiAddrWidth" class="impl"><code class="in-band"><a href="#parameter.AxiAddrWidth">AxiAddrWidth</a><span class="type-annotation">: int signed</span></code></h3><div class="docblock">
+<p>Address width of all AXI4+ATOP ports</p>
+</div><h3 id="parameter.AxiDataWidth" class="impl"><code class="in-band"><a href="#parameter.AxiDataWidth">AxiDataWidth</a><span class="type-annotation">: int signed</span></code></h3><div class="docblock">
+<p>Data width of all AXI4+ATOP ports</p>
+</div><h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidth">AxiIdWidth</a><span class="type-annotation">: int signed</span></code></h3><div class="docblock">
+<p>ID width of all AXI4+ATOP ports</p>
+</div><h3 id="parameter.AxiUserWidth" class="impl"><code class="in-band"><a href="#parameter.AxiUserWidth">AxiUserWidth</a><span class="type-annotation">: int signed</span></code></h3><div class="docblock">
+<p>User signal width of all AXI4+ATOP ports</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request struct type of all AXI4+ATOP ports</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Response struct type of all AXI4+ATOP ports</p>
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Rising-edge clock of all ports</p>
-</div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Asynchronous reset, active low</p>
-</div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-><p>Slave port request</p>
-</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-><p>Slave port response</p>
-</div><h3 id="port.mst_req_o" class="impl"><code class="in-band">mst_req_o<span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock"
-><p>Master port request</p>
-</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band">mst_resp_i<span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock"
-><p>Master port response</p>
-</div><h3 id="port.isolate_i" class="impl"><code class="in-band">isolate_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-><p>Isolate master port from slave port</p>
-</div><h3 id="port.isolated_o" class="impl"><code class="in-band">isolated_o<span class="type-annotation">: output logic</span></code></h3><div class="docblock"
-><p>Master port is isolated from slave port</p>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock of all ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>Slave port request</p>
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>Slave port response</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+<p>Master port request</p>
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+<p>Master port response</p>
+</div><h3 id="port.isolate_i" class="impl"><code class="in-band"><a href="#port.isolate_i">isolate_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Isolate master port from slave port</p>
+</div><h3 id="port.isolated_o" class="impl"><code class="in-band"><a href="#port.isolated_o">isolated_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Master port is isolated from slave port</p>
 </div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.id_t.html">id_t</a></td><td></td></tr><tr><td><a class="type" href="type.addr_t.html">addr_t</a></td><td></td></tr><tr><td><a class="type" href="type.data_t.html">data_t</a></td><td></td></tr><tr><td><a class="type" href="type.strb_t.html">strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.user_t.html">user_t</a></td><td></td></tr><tr><td><a class="type" href="type.aw_chan_t.html">aw_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.w_chan_t.html">w_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.b_chan_t.html">b_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.ar_chan_t.html">ar_chan_t</a></td><td></td></tr><tr><td><a class="type" href="type.r_chan_t.html">r_chan_t</a></td><td></td></tr></table>
