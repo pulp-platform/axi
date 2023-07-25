@@ -1,0 +1,36 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 13:07:58.755734280 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_modify_address</a></h1>
+<div class="docblock">
+<p>Modify addresses on an AXI4 bus</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.slv_req_t" class="impl"><code class="in-band"><a href="#parameter.slv_req_t">slv_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request type of the slave port</p>
+</div><h3 id="parameter.mst_addr_t" class="impl"><code class="in-band"><a href="#parameter.mst_addr_t">mst_addr_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Address type of the master port</p>
+</div><h3 id="parameter.mst_req_t" class="impl"><code class="in-band"><a href="#parameter.mst_req_t">mst_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Request type of the master port</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Response type of slave and master port</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  slv_req_t</span></code></h3><div class="docblock">
+<p>Slave port request</p>
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>Slave port response</p>
+</div><h3 id="port.mst_aw_addr_i" class="impl"><code class="in-band"><a href="#port.mst_aw_addr_i">mst_aw_addr_i</a><span class="type-annotation">: input  mst_addr_t</span></code></h3><div class="docblock">
+<p>AW address on master port; must remain stable while an AW handshake is pending.</p>
+</div><h3 id="port.mst_ar_addr_i" class="impl"><code class="in-band"><a href="#port.mst_ar_addr_i">mst_ar_addr_i</a><span class="type-annotation">: input  mst_addr_t</span></code></h3><div class="docblock">
+<p>AR address on master port; must remain stable while an AR handshake is pending.</p>
+</div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output mst_req_t</span></code></h3><div class="docblock">
+<p>Master port request</p>
+</div><h3 id="port.mst_resp_i" class="impl"><code class="in-band"><a href="#port.mst_resp_i">mst_resp_i</a><span class="type-annotation">: input  axi_resp_t</span></code></h3><div class="docblock">
+<p>Master port response</p>
+</div></section>
+</body>
+</html>

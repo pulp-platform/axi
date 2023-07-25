@@ -1,0 +1,20 @@
+<!-- Compiled by morty-0.9.0 / 2023-07-25 13:07:58.749432752 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Typedef <a class="type">apb_req_t</a></h1>
+<pre>typedef struct packed {
+    addr_t          paddr;   // same as AXI4-Lite
+    axi_pkg::prot_t pprot;   // same as AXI4-Lite, specification is the same
+    logic           psel;    // onehot, one psel line per connected APB4 slave
+    logic           penable; // enable signal shows second APB4 cycle
+    logic           pwrite;  // write enable
+    data_t          pwdata;  // write data, comes from W channel
+    strb_t          pstrb;   // write strb, comes from W channel
+  } apb_req_t;</pre>
+</section>
+</body>
+</html>
