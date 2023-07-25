@@ -22,7 +22,14 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
-  parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
+  /// FIFOs in Fall through mode in ID reflect
+  parameter bit          FallThrough     = 1'b1,
+  /// Whether to include the lost size field on Ax user bits
+  parameter bit          UserArSize      = 1'b0,
+  parameter bit          UserAwSize      = 1'b0,
+  /// Least significant bit (LSB) of size in Ax user fields
+  parameter int unsigned UserArSizeLsb   = 32'd0,
+  parameter int unsigned UserAwSizeLsb   = 32'd0,
   parameter type         full_req_t      = logic,
   parameter type         full_resp_t     = logic,
   parameter type         lite_req_t      = logic,
@@ -41,6 +48,9 @@ module axi_to_axi_lite #(
   // full bus declarations
   full_req_t  filtered_req,  splitted_req;
   full_resp_t filtered_resp, splitted_resp;
+
+  // lite bus declarations
+  lite_req_t reflected_req;
 
   // atomics adapter so that atomics can be resolved
   axi_atop_filter #(
@@ -92,9 +102,18 @@ module axi_to_axi_lite #(
     .test_i     ( test_i        ),
     .slv_req_i  ( splitted_req  ),
     .slv_resp_o ( splitted_resp ),
-    .mst_req_o  ( mst_req_o     ),
+    .mst_req_o  ( reflected_req ),
     .mst_resp_i ( mst_resp_i    )
   );
+
+  // Inject AR and AW size from full bus on user bits if requested
+  always_comb begin
+    mst_req_o = reflected_req;
+    if (UserArSize)
+      mst_req_o.ar.user[UserArSizeLsb+:axi_pkg::SizeWidth] = splitted_req.ar.size;
+    of (UserAwSize)
+      mst_req_o.aw.user[UserAwSizeLsb+:axi_pkg::SizeWidth] = splitted_req.ar.size;
+  end
 
   // Assertions, check params
   // pragma translate_off

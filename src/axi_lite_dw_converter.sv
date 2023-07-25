@@ -66,6 +66,18 @@ module axi_lite_dw_converter #(
   parameter int unsigned AxiSlvPortDataWidth = 32'd0,
   /// AXI4-Lite data width of the master port.
   parameter int unsigned AxiMstPortDataWidth = 32'd0,
+  /// Whether to read a transaction size from the AR user bits
+  parameter bit          UserArSize      = 1'b0,
+  /// Whether to read a transaction size from the AW user bits
+  parameter bit          UserAwSize      = 1'b0,
+  /// Least significant bit (LSB) of size in AR user fields
+  parameter int unsigned UserArSizeLsb   = 32'd0,
+  /// Least significant bit (LSB) of size in AW user fields
+  parameter int unsigned UserAwSizeLsb   = 32'd0,
+  /// Assuming AW size in user field, maximum number of inflight reads.
+  parameter int unsigned UserArMaxTxns   = 32'd0,
+  /// Assuming AW size in user field, maximum number of inflight writes.
+  parameter int unsigned UserAwMaxTxns   = 32'd0,
   /// AXI4-Lite AW channel struct type. This is for both ports the same.
   parameter type         axi_lite_aw_t       = logic,
   /// AXI4-Lite W channel struct type of the slave port.
@@ -132,6 +144,7 @@ module axi_lite_dw_converter #(
     // Input spill register of the AW channel.
     axi_lite_aw_t aw_chan_spill;
     logic         aw_chan_spill_valid, aw_chan_spill_ready;
+    logic         w_progress, aw_progress, b_progress;
 
     spill_register #(
       .T      ( axi_lite_aw_t ),
@@ -147,19 +160,35 @@ module axi_lite_dw_converter #(
       .data_o  ( aw_chan_spill       )
     );
 
-    sel_t aw_sel_q,    aw_sel_d;
+    sel_t aw_sel_q, aw_sel_d, aw_sel_out;
     logic aw_sel_load;
     // AW channel output assignment
     always_comb begin : proc_aw_chan_oup
       mst_req_o.aw      = aw_chan_spill;
-      mst_req_o.aw.addr = out_address(aw_chan_spill.addr, aw_sel_q);
+      mst_req_o.aw.addr = out_address(aw_chan_spill.addr, aw_sel_out);
     end
-    // Slave port aw is valid, if there is something in the spill register.
-    assign mst_req_o.aw_valid  = aw_chan_spill_valid;
-    assign aw_chan_spill_ready = mst_res_i.aw_ready & (&aw_sel_q);
+
+    assign aw_progress = aw_chan_spill_valid & mst_res_i.aw_ready;
+
+    if (UserAwSize) begin : gen_user_aw
+      // Couple AW, W, and B FIFO and make requests selectively
+      sel_t aw_sel_end, aw_sel_base;
+      assign aw_sel_end = UserAwSize ?
+          (sel_t'(1) << aw_chan_spill.user[UserAwSizeLsb:+axi_pkg::SizeWidth]) >> SelOffset : '0;
+      assign aw_sel_base = aw_chan_spill.aw.addr[SelOffset+:SelWidth] & sel_t'(aw_sel_end -1);
+      assign aw_sel_out  = aw_sel_q + aw_sel_base;
+      assign mst_req_o.aw_valid  = w_progress & b_progress & aw_chan_spill_valid;
+      assign aw_chan_spill_ready = w_progress & b_progress & mst_res_i.aw_ready &
+          ((&aw_sel_q) | (aw_sel_d == aw_sel_end));
+    end else begin : gen_no_user_aw
+      // AW, W, and B are uncoupled
+      assign aw_sel_out  = aw_sel_q;
+      assign mst_req_o.aw_valid  = aw_chan_spill_valid;
+      assign aw_chan_spill_ready = mst_res_i.aw_ready & (&aw_sel_q);
+    end
 
     assign aw_sel_load = mst_req_o.aw_valid & mst_res_i.aw_ready;
-    assign aw_sel_d    = sel_t'(aw_sel_q + 1'b1);
+    assign aw_sel_d    = sel_t'(aw_sel_load ? '0 : aw_sel_q + 1'b1);
     `FFLARN(aw_sel_q, aw_sel_d, aw_sel_load, '0, clk_i, rst_ni)
 
     // Input spill register of the W channel.
@@ -180,41 +209,82 @@ module axi_lite_dw_converter #(
     );
 
     // Data multiplexer on the W channel
-    sel_t w_sel_q,    w_sel_d;
-    logic w_sel_load;
+    sel_t w_sel;
     // W channel output assignment
     assign mst_req_o.w = axi_lite_mst_w_t'{
-      data:    w_chan_spill.data[w_sel_q*AxiMstPortDataWidth+:AxiMstPortDataWidth],
-      strb:    w_chan_spill.strb[w_sel_q*AxiMstPortStrbWidth+:AxiMstPortStrbWidth],
+      data:    w_chan_spill.data[w_sel*AxiMstPortDataWidth+:AxiMstPortDataWidth],
+      strb:    w_chan_spill.strb[w_sel*AxiMstPortStrbWidth+:AxiMstPortStrbWidth],
       default: '0
     };
-    assign mst_req_o.w_valid  = w_chan_spill_valid;
-    assign w_chan_spill_ready = mst_res_i.w_ready & (&w_sel_q);
 
-    assign w_sel_load = mst_req_o.w_valid & mst_res_i.w_ready;
-    assign w_sel_d    = sel_t'(w_sel_q + 1'b1);
-    `FFLARN(w_sel_q, w_sel_d, w_sel_load, '0, clk_i, rst_ni)
+    assign w_progress = w_chan_spill_valid & mst_res_i.w_ready;
+
+    if (UserAwSize) begin : gen_user_aw_w
+      // We must couple the AW, W, and B FIFO; adopt AW channel counts here
+      assign mst_req_o.w_valid  = aw_progress & b_progress & w_chan_spill_valid;
+      assign w_chan_spill_ready = aw_progress & b_progress & mst_res_i.w_ready;
+      assign w_sel              = aw_sel_out;
+    end else begin : gen_no_user_aw_w
+      // The W channel can operate uncoupled
+      sel_t w_sel_q, w_sel_d;
+      logic w_sel_load;
+      assign w_sel_load = mst_req_o.w_valid & mst_res_i.w_ready;
+      assign w_sel_d    = sel_t'(w_sel_q + 1'b1);
+      `FFLARN(w_sel_q, w_sel_d, w_sel_load, '0, clk_i, rst_ni)
+      assign mst_req_o.w_valid  = w_chan_spill_valid;
+      assign w_chan_spill_ready = mst_res_i.w_ready & (&w_sel_q);
+      assign w_sel              = w_sel_q;
+    end
 
     // B response aggregation
     // Slave port B output is the aggregated error of the last few B responses.
     sel_t           b_sel_q,     b_sel_d;
     axi_pkg::resp_t b_resp_q,    b_resp_d;
     logic           b_resp_load;
+    logic           b_end;
 
     assign slv_res_o.b = axi_lite_b_t'{
       resp:    b_resp_q | mst_res_i.b.resp,
       default: '0
     };
+
+    if (UserAwSize) begin : gen_user_aw_b
+      // When an upstream AW/W pair completes, store the expected downstream B count
+      sel_t b_out;
+      stream_fifo #(
+        .FALL_THROUGH ( 1'b0          ),
+        .DEPTH        ( UserAwMaxTxns ),
+        .T            ( sel_t         ),
+      ) i_b_count_fifo (
+        .clk_i,
+        .rst_ni,
+        .flush_i    ( 1'b0        ),
+        .testmode_i ( 1'b0        ),
+        .usage_o    (             ),
+        .data_i     ( aw_sel_out  ),
+        .valid_i    ( mst_req_o.aw_valid & mst_resp_i.aw_ready ),
+        .ready_o    ( b_progress  ),
+        .data_o     ( b_out       ),
+        .valid_o    (             ),  // TODO: Assert true when B comes in (`b_resp_load`)
+        .ready_i    ( b_end       )
+      );
+      assign b_end      = (&b_sel_q) | (b_sel_d == b_out);
+    end else begin : gen_no_user_aw_b
+      // Simply count payloads as for AW and W
+      assign b_end      =  (&b_sel_q);
+      assign b_progress = 1'b1;
+    end
+
     // Output is valid, if it is the last b response for the wide W, we have something
     // in the B FIFO and the B response is valid from the master port.
-    assign slv_res_o.b_valid = mst_res_i.b_valid & (&b_sel_q);
+    assign slv_res_o.b_valid = mst_res_i.b_valid & b_end;
 
     // Assign the b_channel ready output. The master port is ready if something is in the
     // B FIFO. Except, if it is the last one which should do a response on the slave port.
-    assign mst_req_o.b_ready = (&b_sel_q) ? slv_req_i.b_ready : 1'b1;
+    assign mst_req_o.b_ready = b_end ? slv_req_i.b_ready : 1'b1;
     // B channel error response retention FF
-    assign b_sel_d     = sel_t'(b_sel_q + 1'b1);
-    assign b_resp_d    = (&b_sel_q) ? axi_pkg::RESP_OKAY : (b_resp_q | mst_res_i.b.resp);
+    assign b_sel_d     = sel_t'(b_end ? '0 : b_sel_q + 1'b1);
+    assign b_resp_d    = b_end ? axi_pkg::RESP_OKAY : (b_resp_q | mst_res_i.b.resp);
     assign b_resp_load = mst_res_i.b_valid & mst_req_o.b_ready;
     `FFLARN(b_sel_q, b_sel_d, b_resp_load, '0, clk_i, rst_ni)
     `FFLARN(b_resp_q, b_resp_d, b_resp_load, axi_pkg::RESP_OKAY, clk_i, rst_ni)
@@ -223,6 +293,7 @@ module axi_lite_dw_converter #(
     // Input spill register of the AW channel.
     axi_lite_ar_t ar_chan_spill;
     logic         ar_chan_spill_valid, ar_chan_spill_ready;
+    logic         ar_progress, r_progress,
 
     spill_register #(
       .T      ( axi_lite_ar_t ),
@@ -238,19 +309,35 @@ module axi_lite_dw_converter #(
       .data_o  ( ar_chan_spill       )
     );
 
-    sel_t ar_sel_q,    ar_sel_d;
+    sel_t ar_sel_q, ar_sel_d, ar_sel_out;
     logic ar_sel_load;
     // AR channel output assignment
     always_comb begin : proc_ar_chan_oup
       mst_req_o.ar      = ar_chan_spill;
-      mst_req_o.ar.addr = out_address(ar_chan_spill.addr, ar_sel_q);
+      mst_req_o.ar.addr = out_address(ar_chan_spill.addr, ar_sel_out);
     end
-    // Slave port aw is valid, if there is something in the spill register.
-    assign mst_req_o.ar_valid  = ar_chan_spill_valid;
-    assign ar_chan_spill_ready = mst_res_i.ar_ready & (&ar_sel_q);
+
+    assign ar_progress = ar_chan_spill_valid & mst_res_i.ar_ready;
+
+    if (UserAwSize) begin : gen_user_ar
+      // Couple AR and R FIFO
+      sel_t ar_sel_end, ar_sel_base;
+      assign ar_sel_end = UserAwSize ?
+          (sel_t'(1) << ar_chan_spill.user[UserArSizeLsb:+axi_pkg::SizeWidth]) >> SelOffset : '0;
+      assign ar_sel_base = ar_chan_spill.ar.addr[SelOffset+:SelWidth] & sel_t'(ar_sel_end -1);
+      assign ar_sel_out  = ar_sel_q + ar_sel_base;
+      assign mst_req_o.aw_valid  = r_progress & ar_chan_spill_valid;
+      assign aw_chan_spill_ready = r_progress & mst_res_i.ar_ready &
+          ((&ar_sel_q) | (ar_sel_d == ar_sel_end));
+    end else begin : gen_no_user_ar
+      // AR and R are uncoupled
+      assign ar_sel_out  = ar_sel_q;
+      assign mst_req_o.ar_valid  = ar_chan_spill_valid;
+      assign ar_chan_spill_ready = mst_res_i.ar_ready & (&ar_sel_q);
+    end
 
     assign ar_sel_load = mst_req_o.ar_valid & mst_res_i.ar_ready;
-    assign ar_sel_d    = sel_t'(ar_sel_q + 1'b1);
+    assign ar_sel_d    = sel_t'(ar_sel_load ? '0 : ar_sel_q + 1'b1);
     `FFLARN(ar_sel_q, ar_sel_d, ar_sel_load, '0, clk_i, rst_ni)
 
     // Responses have to be aggregated, one FF less, as the last data is feed directly through.
@@ -258,12 +345,41 @@ module axi_lite_dw_converter #(
     logic                                 r_sel_load;
     axi_lite_mst_r_t [DownsizeFactor-2:0] r_chan_mst_q;
     logic            [DownsizeFactor-2:0] r_chan_mst_load;
+    logic r_end;
+
+    if (UserArSize) begin : gen_user_ar_r
+      // When an upstream AR completes, store the expected downstream R count
+      sel_t r_out;
+      stream_fifo #(
+        .FALL_THROUGH ( 1'b0          ),
+        .DEPTH        ( UserArMaxTxns ),
+        .T            ( sel_t         ),
+      ) i_r_count_fifo (
+        .clk_i,
+        .rst_ni,
+        .flush_i    ( 1'b0        ),
+        .testmode_i ( 1'b0        ),
+        .usage_o    (             ),
+        .data_i     ( ar_sel_out  ),
+        .valid_i    ( mst_req_o.ar_valid & mst_resp_i.ar_ready ),
+        .ready_o    ( r_progress  ),
+        .data_o     ( r_out       ),
+        .valid_o    (             ),  // TODO: Assert true when R comes in (`r_sel_load`)
+        .ready_i    ( r_end       )
+      );
+      assign r_end      = (&r_sel_q) | (r_sel_d == r_out);
+    end else begin : gen_no_user_ar_r
+      // Simply count payloads as for AW and W
+      assign r_end      =  (&r_sel_q);
+      assign r_progress = 1'b1;
+    end
+
     for (genvar i = 0; unsigned'(i) < (DownsizeFactor-1); i++) begin : gen_r_chan_ff
       assign r_chan_mst_load[i] = (sel_t'(i) == r_sel_q) & mst_res_i.r_valid & mst_req_o.r_ready;
       `FFLARN(r_chan_mst_q[i], mst_res_i.r, r_chan_mst_load[i], axi_lite_mst_r_t'{default: '0}, clk_i, rst_ni)
     end
     assign r_sel_load = mst_res_i.r_valid & mst_req_o.r_ready;
-    assign r_sel_d    = sel_t'(r_sel_q + 1'b1);
+    assign r_sel_d    = sel_t'(r_sel_load ? '0 : r_sel_q + 1'b1);
     `FFLARN(r_sel_q, r_sel_d, r_sel_load, '0, clk_i, rst_ni)
 
     always_comb begin : proc_r_chan_oup
@@ -273,7 +389,7 @@ module axi_lite_dw_converter #(
       };
       // Response is the OR of all responses
       for (int unsigned i = 0; i < (DownsizeFactor-1); i++) begin
-        slv_res_o.r.resp = slv_res_o.r.resp | r_chan_mst_q[i].resp;
+        slv_res_o.r.resp = slv_res_o.r.resp | (r_sel_q >= sel_t'(i) ? r_chan_mst_q[i].resp : '0);
         slv_res_o.r.data[i*AxiMstPortDataWidth+:AxiMstPortDataWidth] = r_chan_mst_q[i].data;
       end
       // The highest bits of the data can be directly the master port.
@@ -281,8 +397,8 @@ module axi_lite_dw_converter #(
           mst_res_i.r.data;
     end
 
-    assign slv_res_o.r_valid = (&r_sel_q) ? mst_res_i.r_valid : 1'b0;
-    assign mst_req_o.r_ready = (&r_sel_q) ? slv_req_i.r_ready : 1'b1;
+    assign slv_res_o.r_valid = r_end ? mst_res_i.r_valid : 1'b0;
+    assign mst_req_o.r_ready = r_end ? slv_req_i.r_ready : 1'b1;
 
   end else if (AxiMstPortDataWidth > AxiSlvPortDataWidth) begin : gen_upsizer
     // The upsize factor determines the amount of replication.
