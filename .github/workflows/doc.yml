@@ -60,8 +60,9 @@ jobs:
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@v4
         if: >
-          github.event_name == 'push'
-          || github.event.pull_request.head.repo.full_name == github.repository
+          (github.event_name == 'push'
+          || github.event.pull_request.head.repo.full_name == github.repository) &&
+          github.ref == 'refs/heads/master'
         with:
           token: ${{ secrets.GH_PAGES }}
           branch: gh-pages # The branch the action should deploy to.
