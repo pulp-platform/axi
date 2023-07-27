@@ -4,10 +4,6 @@ on:
     branches-ignore:
       - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
       - v**       # such branch names conflict with tags
-  pull_request:
-    branches-ignore:
-      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
-      - v**       # such branch names conflict with tags
   workflow_dispatch:
 
 jobs:
