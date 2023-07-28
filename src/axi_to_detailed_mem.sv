@@ -448,11 +448,11 @@ module axi_to_detailed_mem #(
     assign mem_region_o[i] = banked_req_atop[i].region;
   end
 
-  logic [NumBanks*2-1:0] tmp_ersp;
+  logic [NumBanks-1:0][1:0] tmp_ersp;
   logic [NumBanks-1:0][1:0] bank_ersp;
   for (genvar i = 0; i < NumBanks; i++) begin
-    assign mem_rdata.err[i]    = tmp_ersp[i*2];
-    assign mem_rdata.exokay[i] = tmp_ersp[i*2+1];
+    assign mem_rdata.err[i]    = tmp_ersp[i][0];
+    assign mem_rdata.exokay[i] = tmp_ersp[i][1];
     assign bank_ersp[i][0] = mem_err_i[i];
     assign bank_ersp[i][1] = mem_exokay_i[i];
   end
@@ -518,21 +518,34 @@ module axi_to_detailed_mem #(
     .ready_i      ({axi_req_i.b_ready,  axi_req_i.r_ready })
   );
 
-  // Accumulate errors if memory responds
   localparam NumBytesPerBank = DataWidth/NumBanks/8;
-  logic collect_b_err_d, collect_b_err_q;
-  logic collect_b_exokay_d, collect_b_exokay_q;
+
   logic [NumBanks-1:0] meta_buf_bank_strb, meta_buf_size_enable;
   logic resp_b_err, resp_b_exokay, resp_r_err, resp_r_exokay;
+
+  // Collect `err` and `exokay` from all banks
+  // To ensure correct propagation, `err` is grouped with `OR` and `exokay` is grouped with `AND`.
   for (genvar i = 0; i < NumBanks; i++) begin
-    assign meta_buf_bank_strb[i] = meta_buf.strb[i*NumBytesPerBank +: NumBytesPerBank];
+    // Set active write banks based on strobe
+    assign meta_buf_bank_strb[i] = |meta_buf.strb[i*NumBytesPerBank +: NumBytesPerBank];
+    // Set active read banks based on size and address offset
     assign meta_buf_size_enable[i] = i*NumBytesPerBank + NumBytesPerBank > (meta_buf.addr % DataWidth/8) &&
                                      i*NumBytesPerBank < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size);
   end
-  assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb); // Ensure only active strobes are used
-  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb); // Ensure only active strobes are used
-  assign resp_r_err    = |(m2s_resp.err    &  meta_buf_size_enable); // Ensure restriction to size
-  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable); // Ensure restriction to size
+  assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_r_err    = |(m2s_resp.err    &  meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+
+  logic collect_b_err_d, collect_b_err_q;
+  logic collect_b_exokay_d, collect_b_exokay_q;
+  logic next_collect_b_err, next_collect_b_exokay;
+
+  // Accumulate write errors for single B response
+  // To ensure correct propagation, `err` is grouped with `OR` and `exokay` is grouped with `AND`.
+  assign next_collect_b_err = collect_b_err_q | resp_b_err;
+  assign next_collect_b_exokay = collect_b_exokay_q & resp_b_exokay;
+
   always_comb begin
     // By default we keep the previous value
     collect_b_err_d = collect_b_err_q;
@@ -543,8 +556,8 @@ module axi_to_detailed_mem #(
         collect_b_err_d = 1'b0;
         collect_b_exokay_d = 1'b1;
       end else if (meta_buf.write) begin
-        collect_b_err_d = collect_b_err_q | resp_b_err;
-        collect_b_exokay_d = collect_b_exokay_q & resp_b_exokay;
+        collect_b_err_d = next_collect_b_err;
+        collect_b_exokay_d = next_collect_b_exokay;
       end
     end
   end
@@ -552,7 +565,7 @@ module axi_to_detailed_mem #(
   // Compose B responses.
   assign axi_resp_o.b = '{
     id:   meta_buf.id,
-    resp: collect_b_err_q | resp_b_err ? axi_pkg::RESP_SLVERR : collect_b_exokay_q & resp_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
+    resp: next_collect_b_err ? axi_pkg::RESP_SLVERR : next_collect_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
     user: '0
   };
 
