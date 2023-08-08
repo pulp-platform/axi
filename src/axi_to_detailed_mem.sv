@@ -459,14 +459,14 @@ module axi_to_detailed_mem #(
 
   // Split single memory request to desired number of banks.
   mem_to_banks_detailed #(
-    .AddrWidth ( AddrWidth         ),
-    .DataWidth ( DataWidth         ),
-    .ErspWidth ( 2                 ),
-    .NumBanks  ( NumBanks          ),
-    .HideStrb  ( HideStrb          ),
-    .MaxTrans  ( BufDepth          ),
-    .FifoDepth ( OutFifoDepth      ),
-    .AtopWidth ( $bits(tmp_atop_t) )
+    .AddrWidth  ( AddrWidth         ),
+    .DataWidth  ( DataWidth         ),
+    .RUserWidth ( 2                 ),
+    .NumBanks   ( NumBanks          ),
+    .HideStrb   ( HideStrb          ),
+    .MaxTrans   ( BufDepth          ),
+    .FifoDepth  ( OutFifoDepth      ),
+    .WUserWidth ( $bits(tmp_atop_t) )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
@@ -475,21 +475,21 @@ module axi_to_detailed_mem #(
     .addr_i        ( mem_req.addr  ),
     .wdata_i       ( mem_req.wdata ),
     .strb_i        ( mem_req.strb  ),
-    .atop_i        ( mem_req_atop  ),
+    .wuser_i       ( mem_req_atop  ),
     .we_i          ( mem_req.we    ),
     .rvalid_o      ( mem_rvalid    ),
     .rdata_o       ( mem_rdata.data ),
-    .ersp_o        ( tmp_ersp      ),
+    .ruser_o       ( tmp_ersp      ),
     .bank_req_o    ( mem_req_o     ),
     .bank_gnt_i    ( mem_gnt_i     ),
     .bank_addr_o   ( mem_addr_o    ),
     .bank_wdata_o  ( mem_wdata_o   ),
     .bank_strb_o   ( mem_strb_o    ),
-    .bank_atop_o   ( banked_req_atop ),
+    .bank_wuser_o  ( banked_req_atop ),
     .bank_we_o     ( mem_we_o      ),
     .bank_rvalid_i ( mem_rvalid_i  ),
     .bank_rdata_i  ( mem_rdata_i   ),
-    .bank_ersp_i   ( bank_ersp     )
+    .bank_ruser_i  ( bank_ersp     )
   );
 
   // Join memory read data and meta data stream.
@@ -528,9 +528,9 @@ module axi_to_detailed_mem #(
   for (genvar i = 0; i < NumBanks; i++) begin
     // Set active write banks based on strobe
     assign meta_buf_bank_strb[i] = |meta_buf.strb[i*NumBytesPerBank +: NumBytesPerBank];
-    // Set active read banks based on size and address offset
-    assign meta_buf_size_enable[i] = i*NumBytesPerBank + NumBytesPerBank > (meta_buf.addr % DataWidth/8) &&
-                                     i*NumBytesPerBank < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size);
+    // Set active read banks based on size and address offset: (bank.end > addr) && (bank.start < addr+size)
+    assign meta_buf_size_enable[i] = ((i*NumBytesPerBank + NumBytesPerBank) > (meta_buf.addr % DataWidth/8)) &&
+                                     ((i*NumBytesPerBank) < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size));
   end
   assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
   assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
