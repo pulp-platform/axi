@@ -713,7 +713,9 @@ package axi_test;
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW,
-    parameter int   MAXTHREAD = 0    // the number of partitions supported for cache
+    parameter int   AX_USER_RANGE = 1,  // The upper limit of randomized ax user signal
+    parameter bit   AX_USER_RAND = 0    // set to 1 to enable randomize aw/ar user signal
+                                        // 0 <= user < AX_USER_RANGE
   );
     typedef axi_test::axi_driver #(
       .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
@@ -838,13 +840,16 @@ package axi_test;
     // burst of R/W requests down to the cache. Therefore, within one test,
     // its PatID will be fixed and we can call multiple tests to test the 
     // partition functionalities. 
-    function user_t rand_user(input int unsigned MaxThread);
+    function user_t rand_user(input int unsigned user_range, input logic user_rand);
       static logic rand_success;
       automatic user_t user;
-      rand_success = std::randomize(user) with {
-        user >= 0; user <= MaxThread-1;
-      }; assert(rand_success);
-      // user = 10;
+      if (user_rand) begin
+        rand_success = std::randomize(user) with {
+          user >= 0; user < user_range;
+        }; assert(rand_success);
+      end else begin
+        user = '0;
+      end
       return user;
     endfunction
 
@@ -1295,14 +1300,14 @@ package axi_test;
                        aw_done = 1'b0;
       fork
         // Cache-Partition: randomize the patid
-        automatic user_t user = rand_user(MAXTHREAD);
+        automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
         begin
-          send_ars(n_reads, user);
+          send_ars(n_reads, ax_user);
           ar_done = 1'b1;
         end
         recv_rs(ar_done, aw_done);
         begin
-          create_aws(n_writes, user);
+          create_aws(n_writes, ax_user);
           aw_done = 1'b1;
         end
         send_aws(aw_done);
