@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.1 - 2023-09-05
+
+### Added
+- `axi_cdc`: Add `SyncStages` parameter.
+- `axi_to_mem_interleaved`: Add interface variant.
+- `axi_burst_splitter`: Expose `id_queue`'s `FULL_BW` parameter.
+- `axi_chan_compare`: Add parameter to allow reordered transactions.
+- Add `AXI_HIGHLIGHT` macro to highlight AXI signals.
+- Add flat port instantiation macros.
+
 ### Fixed
+- `axi_test`: Avoid false negatives for misaligned reads in `axi_scoreboard`.
 - `axi_to_detailed_mem`: Ensure proper propagation or `err` and `exokay` signals.
 
 ## 0.39.0 - 2023-07-20
