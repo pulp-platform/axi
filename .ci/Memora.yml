@@ -294,6 +294,7 @@ artifacts:
       - src/axi_intf.sv
       - src/axi_test.sv
       - src/axi_demux.sv
+      - src/axi_to_detailed_mem.sv
       - src/axi_to_mem.sv
       - src/axi_to_mem_banked.sv
       - test/tb_axi_to_mem_banked.sv

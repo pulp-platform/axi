@@ -122,6 +122,7 @@ module axi_to_detailed_mem #(
     addr_t            addr;
     axi_pkg::atop_t   atop;
     logic             lock;
+    axi_strb_t        strb;
     axi_id_t          id;
     logic             last;
     axi_pkg::qos_t    qos;
@@ -133,7 +134,13 @@ module axi_to_detailed_mem #(
     axi_pkg::region_t region;
   } meta_t;
 
-  axi_data_t      mem_rdata,
+  typedef struct packed {
+    axi_data_t           data;
+    logic [NumBanks-1:0] err;
+    logic [NumBanks-1:0] exokay;
+  } mem_rsp_t;
+
+  mem_rsp_t       mem_rdata,
                   m2s_resp;
   axi_pkg::len_t  r_cnt_d,        r_cnt_q,
                   w_cnt_d,        w_cnt_q;
@@ -188,6 +195,7 @@ module axi_to_detailed_mem #(
         addr:   addr_t'(axi_pkg::aligned_addr(axi_req_i.ar.addr, axi_req_i.ar.size)),
         atop:   '0,
         lock:   axi_req_i.ar.lock,
+        strb:   '0,
         id:     axi_req_i.ar.id,
         last:   (axi_req_i.ar.len == '0),
         qos:    axi_req_i.ar.qos,
@@ -224,6 +232,7 @@ module axi_to_detailed_mem #(
       wr_meta.addr   = wr_meta_q.addr + axi_pkg::num_bytes(wr_meta_q.size);
       if (axi_req_i.w_valid) begin
         wr_valid = 1'b1;
+        wr_meta.strb = axi_req_i.w.strb;
         if (wr_ready) begin
           axi_resp_o.w_ready = 1'b1;
           w_cnt_d--;
@@ -236,6 +245,7 @@ module axi_to_detailed_mem #(
         addr:   addr_t'(axi_pkg::aligned_addr(axi_req_i.aw.addr, axi_req_i.aw.size)),
         atop:   axi_req_i.aw.atop,
         lock:   axi_req_i.aw.lock,
+        strb:   axi_req_i.w.strb,
         id:     axi_req_i.aw.id,
         last:   (axi_req_i.aw.len == '0),
         qos:    axi_req_i.aw.qos,
@@ -384,7 +394,7 @@ module axi_to_detailed_mem #(
   // Interface memory as stream.
   stream_to_mem #(
     .mem_req_t  ( mem_req_t  ),
-    .mem_resp_t ( axi_data_t ),
+    .mem_resp_t ( mem_rsp_t  ),
     .BufDepth   ( BufDepth   )
   ) i_stream_to_mem (
     .clk_i,
@@ -438,15 +448,25 @@ module axi_to_detailed_mem #(
     assign mem_region_o[i] = banked_req_atop[i].region;
   end
 
+  logic [NumBanks-1:0][1:0] tmp_ersp;
+  logic [NumBanks-1:0][1:0] bank_ersp;
+  for (genvar i = 0; i < NumBanks; i++) begin
+    assign mem_rdata.err[i]    = tmp_ersp[i][0];
+    assign mem_rdata.exokay[i] = tmp_ersp[i][1];
+    assign bank_ersp[i][0] = mem_err_i[i];
+    assign bank_ersp[i][1] = mem_exokay_i[i];
+  end
+
   // Split single memory request to desired number of banks.
-  mem_to_banks #(
-    .AddrWidth ( AddrWidth         ),
-    .DataWidth ( DataWidth         ),
-    .NumBanks  ( NumBanks          ),
-    .HideStrb  ( HideStrb          ),
-    .MaxTrans  ( BufDepth          ),
-    .FifoDepth ( OutFifoDepth      ),
-    .AtopWidth ( $bits(tmp_atop_t) )
+  mem_to_banks_detailed #(
+    .AddrWidth  ( AddrWidth         ),
+    .DataWidth  ( DataWidth         ),
+    .RUserWidth ( 2                 ),
+    .NumBanks   ( NumBanks          ),
+    .HideStrb   ( HideStrb          ),
+    .MaxTrans   ( BufDepth          ),
+    .FifoDepth  ( OutFifoDepth      ),
+    .WUserWidth ( $bits(tmp_atop_t) )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
@@ -455,19 +475,21 @@ module axi_to_detailed_mem #(
     .addr_i        ( mem_req.addr  ),
     .wdata_i       ( mem_req.wdata ),
     .strb_i        ( mem_req.strb  ),
-    .atop_i        ( mem_req_atop  ),
+    .wuser_i       ( mem_req_atop  ),
     .we_i          ( mem_req.we    ),
     .rvalid_o      ( mem_rvalid    ),
-    .rdata_o       ( mem_rdata     ),
+    .rdata_o       ( mem_rdata.data ),
+    .ruser_o       ( tmp_ersp      ),
     .bank_req_o    ( mem_req_o     ),
     .bank_gnt_i    ( mem_gnt_i     ),
     .bank_addr_o   ( mem_addr_o    ),
     .bank_wdata_o  ( mem_wdata_o   ),
     .bank_strb_o   ( mem_strb_o    ),
-    .bank_atop_o   ( banked_req_atop ),
+    .bank_wuser_o  ( banked_req_atop ),
     .bank_we_o     ( mem_we_o      ),
     .bank_rvalid_i ( mem_rvalid_i  ),
-    .bank_rdata_i  ( mem_rdata_i   )
+    .bank_rdata_i  ( mem_rdata_i   ),
+    .bank_ruser_i  ( bank_ersp     )
   );
 
   // Join memory read data and meta data stream.
@@ -496,19 +518,63 @@ module axi_to_detailed_mem #(
     .ready_i      ({axi_req_i.b_ready,  axi_req_i.r_ready })
   );
 
+  localparam NumBytesPerBank = DataWidth/NumBanks/8;
+
+  logic [NumBanks-1:0] meta_buf_bank_strb, meta_buf_size_enable;
+  logic resp_b_err, resp_b_exokay, resp_r_err, resp_r_exokay;
+
+  // Collect `err` and `exokay` from all banks
+  // To ensure correct propagation, `err` is grouped with `OR` and `exokay` is grouped with `AND`.
+  for (genvar i = 0; i < NumBanks; i++) begin
+    // Set active write banks based on strobe
+    assign meta_buf_bank_strb[i] = |meta_buf.strb[i*NumBytesPerBank +: NumBytesPerBank];
+    // Set active read banks based on size and address offset: (bank.end > addr) && (bank.start < addr+size)
+    assign meta_buf_size_enable[i] = ((i*NumBytesPerBank + NumBytesPerBank) > (meta_buf.addr % DataWidth/8)) &&
+                                     ((i*NumBytesPerBank) < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size));
+  end
+  assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_r_err    = |(m2s_resp.err    &  meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+
+  logic collect_b_err_d, collect_b_err_q;
+  logic collect_b_exokay_d, collect_b_exokay_q;
+  logic next_collect_b_err, next_collect_b_exokay;
+
+  // Accumulate write errors for single B response
+  // To ensure correct propagation, `err` is grouped with `OR` and `exokay` is grouped with `AND`.
+  assign next_collect_b_err = collect_b_err_q | resp_b_err;
+  assign next_collect_b_exokay = collect_b_exokay_q & resp_b_exokay;
+
+  always_comb begin
+    // By default we keep the previous value
+    collect_b_err_d = collect_b_err_q;
+    collect_b_exokay_d = collect_b_exokay_q;
+    // If the buffer is properly popped
+    if (sel_buf_valid && sel_buf_ready) begin
+      if (meta_buf.write && meta_buf.last) begin
+        collect_b_err_d = 1'b0;
+        collect_b_exokay_d = 1'b1;
+      end else if (meta_buf.write) begin
+        collect_b_err_d = next_collect_b_err;
+        collect_b_exokay_d = next_collect_b_exokay;
+      end
+    end
+  end
+
   // Compose B responses.
   assign axi_resp_o.b = '{
     id:   meta_buf.id,
-    resp: mem_err_i ? axi_pkg::RESP_SLVERR : mem_exokay_i ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
+    resp: next_collect_b_err ? axi_pkg::RESP_SLVERR : next_collect_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
     user: '0
   };
 
   // Compose R responses.
   assign axi_resp_o.r = '{
-    data: m2s_resp,
+    data: m2s_resp.data,
     id:   meta_buf.id,
     last: meta_buf.last,
-    resp: mem_err_i ? axi_pkg::RESP_SLVERR : mem_exokay_i ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
+    resp: resp_r_err ? axi_pkg::RESP_SLVERR : resp_r_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
     user: '0
   };
 
@@ -519,6 +585,8 @@ module axi_to_detailed_mem #(
   `FFARN(wr_meta_q, wr_meta_d, meta_t'{default: '0}, clk_i, rst_ni)
   `FFARN(r_cnt_q, r_cnt_d, '0, clk_i, rst_ni)
   `FFARN(w_cnt_q, w_cnt_d, '0, clk_i, rst_ni)
+  `FFARN(collect_b_err_q, collect_b_err_d, '0, clk_i, rst_ni)
+  `FFARN(collect_b_exokay_q, collect_b_exokay_d, 1'b1, clk_i, rst_ni)
 
   // Assertions
   // pragma translate_off
