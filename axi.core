@@ -1,6 +1,6 @@
 CAPI=2:
 
-name : pulp-platform.org::axi:0.39.0
+name : pulp-platform.org::axi:0.39.1
 
 filesets:
   rtl:
@@ -74,7 +74,7 @@ filesets:
       - src/axi_xp.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_cells:1.27.0"
+      - ">=pulp-platform.org::common_cells:1.31.1"
   benchs:
     files:
       - test/tb_axi_dw_pkg.sv
