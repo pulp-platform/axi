@@ -1,3 +1,5 @@
+<!-- Compiled by morty-0.9.0 / 2023-09-05 09:10:26.823582110 +00:00 -->
+
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
@@ -6,90 +8,90 @@
 <section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_mcast_demux</a></h1>
 <div class="docblock">
 <p>Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.</p>
-<p>The AW and AR slave channels each have a <code>select</code> input to determine to which master port the
-current request is sent.  The <code>select</code> can, for example, be driven by an address decoding module
-to map address ranges to different AXI slaves.</p>
+<p>The AW and AR slave channels each have a <code>select</code> input to determine to which master port the</p>
+<p>current request is sent.  The <code>select</code> can, for example, be driven by an address decoding module</p>
+<p>to map address ranges to different AXI slaves.</p>
 <h2>Design overview</h2>
 <p><img src="module.axi_demux.png" alt="Block diagram" title="Block diagram" /></p>
-<p>Beats on the W channel are routed by demultiplexer according to the selection for the
-corresponding AW beat.  This relies on the AXI property that W bursts must be sent in the same
-order as AW beats and beats from different W bursts may not be interleaved.</p>
-<p>Beats on the B and R channel are multiplexed from the master ports to the slave port with
-a round-robin arbitration tree.</p>
+<p>Beats on the W channel are routed by demultiplexer according to the selection for the</p>
+<p>corresponding AW beat.  This relies on the AXI property that W bursts must be sent in the same</p>
+<p>order as AW beats and beats from different W bursts may not be interleaved.</p>
+<p>Beats on the B and R channel are multiplexed from the master ports to the slave port with</p>
+<p>a round-robin arbitration tree.</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
-<h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band">AxiIdWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.AtopSupport" class="impl"><code class="in-band">AtopSupport<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.aw_addr_t" class="impl"><code class="in-band">aw_addr_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band">aw_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band">w_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.b_chan_t" class="impl"><code class="in-band">b_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.ar_chan_t" class="impl"><code class="in-band">ar_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band">r_chan_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band">axi_req_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band">axi_resp_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NoMstPorts" class="impl"><code class="in-band">NoMstPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MaxTrans" class="impl"><code class="in-band">MaxTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.AxiLookBits" class="impl"><code class="in-band">AxiLookBits<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.UniqueIds" class="impl"><code class="in-band">UniqueIds<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillAw" class="impl"><code class="in-band">SpillAw<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillW" class="impl"><code class="in-band">SpillW<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillB" class="impl"><code class="in-band">SpillB<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillAr" class="impl"><code class="in-band">SpillAr<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.SpillR" class="impl"><code class="in-band">SpillR<span class="type-annotation">: bit</span></code></h3><div class="docblock"
-></div><h3 id="parameter.rule_t" class="impl"><code class="in-band">rule_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NoAddrRules" class="impl"><code class="in-band">NoAddrRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NoMulticastRules" class="impl"><code class="in-band">NoMulticastRules<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.NoMulticastPorts" class="impl"><code class="in-band">NoMulticastPorts<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.MaxMcastTrans" class="impl"><code class="in-band">MaxMcastTrans<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.DecodeIdxWidth" class="impl"><code class="in-band">DecodeIdxWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.IdxSelectWidth" class="impl"><code class="in-band">IdxSelectWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.decode_idx_t" class="impl"><code class="in-band">decode_idx_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.idx_select_t" class="impl"><code class="in-band">idx_select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.mask_select_t" class="impl"><code class="in-band">mask_select_t<span class="type-annotation">: type</span></code></h3><div class="docblock"
-></div><h3 id="parameter.IdCounterWidth" class="impl"><code class="in-band">IdCounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h3 id="parameter.McastCounterWidth" class="impl"><code class="in-band">McastCounterWidth<span class="type-annotation">: int unsigned</span></code></h3><div class="docblock"
-></div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.clk_i" class="impl"><code class="in-band">clk_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.rst_ni" class="impl"><code class="in-band">rst_ni<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.test_i" class="impl"><code class="in-band">test_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.addr_map_i" class="impl"><code class="in-band">addr_map_i<span class="type-annotation">: input  rule_t    [NoAddrRules-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band">en_default_mst_port_i<span class="type-annotation">: input  logic</span></code></h3><div class="docblock"
-></div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band">default_mst_port_i<span class="type-annotation">: input  decode_idx_t</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_req_i" class="impl"><code class="in-band">slv_req_i<span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_ar_select_i" class="impl"><code class="in-band">slv_ar_select_i<span class="type-annotation">: input  idx_select_t</span></code></h3><div class="docblock"
-></div><h3 id="port.slv_resp_o" class="impl"><code class="in-band">slv_resp_o<span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_reqs_o" class="impl"><code class="in-band">mst_reqs_o<span class="type-annotation">: output axi_req_t  [NoMstPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_resps_i" class="impl"><code class="in-band">mst_resps_i<span class="type-annotation">: input  axi_resp_t [NoMstPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_is_mcast_o" class="impl"><code class="in-band">mst_is_mcast_o<span class="type-annotation">: output logic      [NoMstPorts-1:0]</span></code></h3><div class="docblock"
-></div><h3 id="port.mst_aw_commit_o" class="impl"><code class="in-band">mst_aw_commit_o<span class="type-annotation">: output logic      [NoMstPorts-1:0]</span></code></h3><div class="docblock"
-></div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<h3 id="parameter.AxiIdWidth" class="impl"><code class="in-band"><a href="#parameter.AxiIdWidth">AxiIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AtopSupport" class="impl"><code class="in-band"><a href="#parameter.AtopSupport">AtopSupport</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.aw_addr_t" class="impl"><code class="in-band"><a href="#parameter.aw_addr_t">aw_addr_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.aw_chan_t">aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.w_chan_t" class="impl"><code class="in-band"><a href="#parameter.w_chan_t">w_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.b_chan_t" class="impl"><code class="in-band"><a href="#parameter.b_chan_t">b_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.ar_chan_t" class="impl"><code class="in-band"><a href="#parameter.ar_chan_t">ar_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band"><a href="#parameter.r_chan_t">r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NoMstPorts" class="impl"><code class="in-band"><a href="#parameter.NoMstPorts">NoMstPorts</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxTrans" class="impl"><code class="in-band"><a href="#parameter.MaxTrans">MaxTrans</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.AxiLookBits" class="impl"><code class="in-band"><a href="#parameter.AxiLookBits">AxiLookBits</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.UniqueIds" class="impl"><code class="in-band"><a href="#parameter.UniqueIds">UniqueIds</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillAw" class="impl"><code class="in-band"><a href="#parameter.SpillAw">SpillAw</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillW" class="impl"><code class="in-band"><a href="#parameter.SpillW">SpillW</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillB" class="impl"><code class="in-band"><a href="#parameter.SpillB">SpillB</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillAr" class="impl"><code class="in-band"><a href="#parameter.SpillAr">SpillAr</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.SpillR" class="impl"><code class="in-band"><a href="#parameter.SpillR">SpillR</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+</div><h3 id="parameter.rule_t" class="impl"><code class="in-band"><a href="#parameter.rule_t">rule_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NoAddrRules" class="impl"><code class="in-band"><a href="#parameter.NoAddrRules">NoAddrRules</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NoMulticastRules" class="impl"><code class="in-band"><a href="#parameter.NoMulticastRules">NoMulticastRules</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.NoMulticastPorts" class="impl"><code class="in-band"><a href="#parameter.NoMulticastPorts">NoMulticastPorts</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxMcastTrans" class="impl"><code class="in-band"><a href="#parameter.MaxMcastTrans">MaxMcastTrans</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DecodeIdxWidth" class="impl"><code class="in-band"><a href="#parameter.DecodeIdxWidth">DecodeIdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.IdxSelectWidth" class="impl"><code class="in-band"><a href="#parameter.IdxSelectWidth">IdxSelectWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.decode_idx_t" class="impl"><code class="in-band"><a href="#parameter.decode_idx_t">decode_idx_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.idx_select_t" class="impl"><code class="in-band"><a href="#parameter.idx_select_t">idx_select_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.mask_select_t" class="impl"><code class="in-band"><a href="#parameter.mask_select_t">mask_select_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.IdCounterWidth" class="impl"><code class="in-band"><a href="#parameter.IdCounterWidth">IdCounterWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.McastCounterWidth" class="impl"><code class="in-band"><a href="#parameter.McastCounterWidth">McastCounterWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.test_i" class="impl"><code class="in-band"><a href="#port.test_i">test_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.addr_map_i" class="impl"><code class="in-band"><a href="#port.addr_map_i">addr_map_i</a><span class="type-annotation">: input  rule_t    [NoAddrRules-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band"><a href="#port.en_default_mst_port_i">en_default_mst_port_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band"><a href="#port.default_mst_port_i">default_mst_port_i</a><span class="type-annotation">: input  decode_idx_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_ar_select_i" class="impl"><code class="in-band"><a href="#port.slv_ar_select_i">slv_ar_select_i</a><span class="type-annotation">: input  idx_select_t</span></code></h3><div class="docblock">
+</div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_reqs_o" class="impl"><code class="in-band"><a href="#port.mst_reqs_o">mst_reqs_o</a><span class="type-annotation">: output axi_req_t  [NoMstPorts-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_resps_i" class="impl"><code class="in-band"><a href="#port.mst_resps_i">mst_resps_i</a><span class="type-annotation">: input  axi_resp_t [NoMstPorts-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_is_mcast_o" class="impl"><code class="in-band"><a href="#port.mst_is_mcast_o">mst_is_mcast_o</a><span class="type-annotation">: output logic      [NoMstPorts-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.mst_aw_commit_o" class="impl"><code class="in-band"><a href="#port.mst_aw_commit_o">mst_aw_commit_o</a><span class="type-annotation">: output logic      [NoMstPorts-1:0]</span></code></h3><div class="docblock">
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
 <table>
 <tr><td><a class="type" href="type.id_cnt_t.html">id_cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.mcast_cnt_t.html">mcast_cnt_t</a></td><td></td></tr><tr><td><a class="type" href="type.mask_rule_t.html">mask_rule_t</a></td><td></td></tr><tr><td><a class="type" href="type.mcast_aw_hs_state_e.html">mcast_aw_hs_state_e</a></td><td></td></tr></table>
 <h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
-<h3 id="signal.slv_aw_chan" class="impl"><code class="in-band">slv_aw_chan<span class="type-annotation">: aw_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.dec_aw_idx" class="impl"><code class="in-band">dec_aw_idx<span class="type-annotation">: decode_idx_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_aw_select_mask" class="impl"><code class="in-band">slv_aw_select_mask<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_aw_select" class="impl"><code class="in-band">slv_aw_select<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.lookup_aw_select" class="impl"><code class="in-band">lookup_aw_select<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.multicast_select_q" class="impl"><code class="in-band">multicast_select_q<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.multicast_select_d" class="impl"><code class="in-band">multicast_select_d<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.outstanding_mcast_cnt_q" class="impl"><code class="in-band">outstanding_mcast_cnt_q<span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.outstanding_mcast_cnt_d" class="impl"><code class="in-band">outstanding_mcast_cnt_d<span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_select" class="impl"><code class="in-band">w_select<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_select_q" class="impl"><code class="in-band">w_select_q<span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.w_open" class="impl"><code class="in-band">w_open<span class="type-annotation">: id_cnt_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_w_chan" class="impl"><code class="in-band">slv_w_chan<span class="type-annotation">: w_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mst_b_valids_tzc" class="impl"><code class="in-band">mst_b_valids_tzc<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_b_chan" class="impl"><code class="in-band">slv_b_chan<span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_b_chan_arb" class="impl"><code class="in-band">slv_b_chan_arb<span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_b_chan_join" class="impl"><code class="in-band">slv_b_chan_join<span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.lookup_ar_select" class="impl"><code class="in-band">lookup_ar_select<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_r_chan" class="impl"><code class="in-band">slv_r_chan<span class="type-annotation">: r_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.mcast_aw_hs_state_q" class="impl"><code class="in-band">mcast_aw_hs_state_q<span class="type-annotation">: mcast_aw_hs_state_e</span></code></h3><div class="docblock"
-></div><h3 id="signal.mcast_aw_hs_state_d" class="impl"><code class="in-band">mcast_aw_hs_state_d<span class="type-annotation">: mcast_aw_hs_state_e</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_ar_chan" class="impl"><code class="in-band">slv_ar_chan<span class="type-annotation">: ar_chan_t</span></code></h3><div class="docblock"
-></div><h3 id="signal.slv_ar_select" class="impl"><code class="in-band">slv_ar_select<span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock"
-></div></section>
+<h3 id="signal.slv_aw_chan" class="impl"><code class="in-band"><a href="#signal.slv_aw_chan">slv_aw_chan</a><span class="type-annotation">: aw_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.dec_aw_idx" class="impl"><code class="in-band"><a href="#signal.dec_aw_idx">dec_aw_idx</a><span class="type-annotation">: decode_idx_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_aw_select_mask" class="impl"><code class="in-band"><a href="#signal.slv_aw_select_mask">slv_aw_select_mask</a><span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_aw_select" class="impl"><code class="in-band"><a href="#signal.slv_aw_select">slv_aw_select</a><span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.lookup_aw_select" class="impl"><code class="in-band"><a href="#signal.lookup_aw_select">lookup_aw_select</a><span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.multicast_select_q" class="impl"><code class="in-band"><a href="#signal.multicast_select_q">multicast_select_q</a><span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.multicast_select_d" class="impl"><code class="in-band"><a href="#signal.multicast_select_d">multicast_select_d</a><span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.outstanding_mcast_cnt_q" class="impl"><code class="in-band"><a href="#signal.outstanding_mcast_cnt_q">outstanding_mcast_cnt_q</a><span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.outstanding_mcast_cnt_d" class="impl"><code class="in-band"><a href="#signal.outstanding_mcast_cnt_d">outstanding_mcast_cnt_d</a><span class="type-annotation">: mcast_cnt_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_select" class="impl"><code class="in-band"><a href="#signal.w_select">w_select</a><span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_select_q" class="impl"><code class="in-band"><a href="#signal.w_select_q">w_select_q</a><span class="type-annotation">: mask_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.w_open" class="impl"><code class="in-band"><a href="#signal.w_open">w_open</a><span class="type-annotation">: id_cnt_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_w_chan" class="impl"><code class="in-band"><a href="#signal.slv_w_chan">slv_w_chan</a><span class="type-annotation">: w_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mst_b_valids_tzc" class="impl"><code class="in-band"><a href="#signal.mst_b_valids_tzc">mst_b_valids_tzc</a><span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_b_chan" class="impl"><code class="in-band"><a href="#signal.slv_b_chan">slv_b_chan</a><span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_b_chan_arb" class="impl"><code class="in-band"><a href="#signal.slv_b_chan_arb">slv_b_chan_arb</a><span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_b_chan_join" class="impl"><code class="in-band"><a href="#signal.slv_b_chan_join">slv_b_chan_join</a><span class="type-annotation">: b_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.lookup_ar_select" class="impl"><code class="in-band"><a href="#signal.lookup_ar_select">lookup_ar_select</a><span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_r_chan" class="impl"><code class="in-band"><a href="#signal.slv_r_chan">slv_r_chan</a><span class="type-annotation">: r_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mcast_aw_hs_state_q" class="impl"><code class="in-band"><a href="#signal.mcast_aw_hs_state_q">mcast_aw_hs_state_q</a><span class="type-annotation">: mcast_aw_hs_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.mcast_aw_hs_state_d" class="impl"><code class="in-band"><a href="#signal.mcast_aw_hs_state_d">mcast_aw_hs_state_d</a><span class="type-annotation">: mcast_aw_hs_state_e</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_ar_chan" class="impl"><code class="in-band"><a href="#signal.slv_ar_chan">slv_ar_chan</a><span class="type-annotation">: ar_chan_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.slv_ar_select" class="impl"><code class="in-band"><a href="#signal.slv_ar_select">slv_ar_select</a><span class="type-annotation">: idx_select_t</span></code></h3><div class="docblock">
+</div></section>
 </body>
 </html>

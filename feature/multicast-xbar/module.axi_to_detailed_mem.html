@@ -1,0 +1,114 @@
+<!-- Compiled by morty-0.9.0 / 2023-09-05 09:10:26.858264264 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_to_detailed_mem</a></h1>
+<div class="docblock">
+<p>AXI4+ATOP slave module which translates AXI bursts into a memory stream.</p>
+<p>If both read and write channels of the AXI4+ATOP are active, both will have an</p>
+<p>utilization of 50%.</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request type. See <code>include/axi/typedef.svh</code>.</p>
+</div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response type. See <code>include/axi/typedef.svh</code>.</p>
+</div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band"><a href="#parameter.AddrWidth">AddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Address width, has to be less or equal than the width off the AXI address field.</p>
+<p>Determines the width of <code>mem_addr_o</code>. Has to be wide enough to emit the memory region</p>
+<p>which should be accessible.</p>
+</div><h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP data width.</p>
+</div><h3 id="parameter.IdWidth" class="impl"><code class="in-band"><a href="#parameter.IdWidth">IdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP ID width.</p>
+</div><h3 id="parameter.UserWidth" class="impl"><code class="in-band"><a href="#parameter.UserWidth">UserWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>AXI4+ATOP user width.</p>
+</div><h3 id="parameter.NumBanks" class="impl"><code class="in-band"><a href="#parameter.NumBanks">NumBanks</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Number of banks at output, must evenly divide <code>DataWidth</code>.</p>
+</div><h3 id="parameter.BufDepth" class="impl"><code class="in-band"><a href="#parameter.BufDepth">BufDepth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Depth of memory response buffer. This should be equal to the memory response latency.</p>
+</div><h3 id="parameter.HideStrb" class="impl"><code class="in-band"><a href="#parameter.HideStrb">HideStrb</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
+<p>Hide write requests if the strb == ’0</p>
+</div><h3 id="parameter.OutFifoDepth" class="impl"><code class="in-band"><a href="#parameter.OutFifoDepth">OutFifoDepth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.</p>
+</div><h3 id="parameter.addr_t" class="impl"><code class="in-band"><a href="#parameter.addr_t">addr_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Dependent parameter, do not override. Memory address type.</p>
+</div><h3 id="parameter.mem_data_t" class="impl"><code class="in-band"><a href="#parameter.mem_data_t">mem_data_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Dependent parameter, do not override. Memory data type.</p>
+</div><h3 id="parameter.mem_strb_t" class="impl"><code class="in-band"><a href="#parameter.mem_strb_t">mem_strb_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Dependent parameter, do not override. Memory write strobe type.</p>
+</div><h3 id="parameter.mem_id_t" class="impl"><code class="in-band"><a href="#parameter.mem_id_t">mem_id_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Dependent parameter, do not override. Memory id type.</p>
+</div><h3 id="parameter.mem_user_t" class="impl"><code class="in-band"><a href="#parameter.mem_user_t">mem_user_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Dependent parameter, do not override. Memory user type.</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock input.</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low.</p>
+</div><h3 id="port.busy_o" class="impl"><code class="in-band"><a href="#port.busy_o">busy_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>The unit is busy handling an AXI4+ATOP request.</p>
+</div><h3 id="port.axi_req_i" class="impl"><code class="in-band"><a href="#port.axi_req_i">axi_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP slave port, request input.</p>
+</div><h3 id="port.axi_resp_o" class="impl"><code class="in-band"><a href="#port.axi_resp_o">axi_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP slave port, response output.</p>
+</div><h3 id="port.mem_req_o" class="impl"><code class="in-band"><a href="#port.mem_req_o">mem_req_o</a><span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, request is valid for this bank.</p>
+</div><h3 id="port.mem_gnt_i" class="impl"><code class="in-band"><a href="#port.mem_gnt_i">mem_gnt_i</a><span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, request can be granted by this bank.</p>
+</div><h3 id="port.mem_addr_o" class="impl"><code class="in-band"><a href="#port.mem_addr_o">mem_addr_o</a><span class="type-annotation">: output addr_t            [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, byte address of the request.</p>
+</div><h3 id="port.mem_wdata_o" class="impl"><code class="in-band"><a href="#port.mem_wdata_o">mem_wdata_o</a><span class="type-annotation">: output mem_data_t        [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, write data for this bank. Valid when <code>mem_req_o</code>.</p>
+</div><h3 id="port.mem_strb_o" class="impl"><code class="in-band"><a href="#port.mem_strb_o">mem_strb_o</a><span class="type-annotation">: output mem_strb_t        [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, byte-wise strobe (byte enable).</p>
+</div><h3 id="port.mem_atop_o" class="impl"><code class="in-band"><a href="#port.mem_atop_o">mem_atop_o</a><span class="type-annotation">: output axi_pkg::atop_t   [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, <code>axi_pkg::atop_t</code> signal associated with this request.</p>
+</div><h3 id="port.mem_lock_o" class="impl"><code class="in-band"><a href="#port.mem_lock_o">mem_lock_o</a><span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, lock signal.</p>
+</div><h3 id="port.mem_we_o" class="impl"><code class="in-band"><a href="#port.mem_we_o">mem_we_o</a><span class="type-annotation">: output logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, write enable. Then asserted store of <code>mem_w_data</code> is requested.</p>
+</div><h3 id="port.mem_id_o" class="impl"><code class="in-band"><a href="#port.mem_id_o">mem_id_o</a><span class="type-annotation">: output mem_id_t          [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, ID. Response ID is managed internally, ensure in-order responses.</p>
+</div><h3 id="port.mem_user_o" class="impl"><code class="in-band"><a href="#port.mem_user_o">mem_user_o</a><span class="type-annotation">: output mem_user_t        [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, user signal. Ax channel user bits used.</p>
+</div><h3 id="port.mem_cache_o" class="impl"><code class="in-band"><a href="#port.mem_cache_o">mem_cache_o</a><span class="type-annotation">: output axi_pkg::cache_t  [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, cache signal.</p>
+</div><h3 id="port.mem_prot_o" class="impl"><code class="in-band"><a href="#port.mem_prot_o">mem_prot_o</a><span class="type-annotation">: output axi_pkg::prot_t   [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, protection signal.</p>
+</div><h3 id="port.mem_qos_o" class="impl"><code class="in-band"><a href="#port.mem_qos_o">mem_qos_o</a><span class="type-annotation">: output axi_pkg::qos_t    [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, QOS signal.</p>
+</div><h3 id="port.mem_region_o" class="impl"><code class="in-band"><a href="#port.mem_region_o">mem_region_o</a><span class="type-annotation">: output axi_pkg::region_t [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, region signal.</p>
+</div><h3 id="port.mem_rvalid_i" class="impl"><code class="in-band"><a href="#port.mem_rvalid_i">mem_rvalid_i</a><span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, response is valid. This module expects always a response valid for a</p>
+<p>request regardless if the request was a write or a read.</p>
+</div><h3 id="port.mem_rdata_i" class="impl"><code class="in-band"><a href="#port.mem_rdata_i">mem_rdata_i</a><span class="type-annotation">: input  mem_data_t        [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, read response data.</p>
+</div><h3 id="port.mem_err_i" class="impl"><code class="in-band"><a href="#port.mem_err_i">mem_err_i</a><span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, error response.</p>
+</div><h3 id="port.mem_exokay_i" class="impl"><code class="in-band"><a href="#port.mem_exokay_i">mem_exokay_i</a><span class="type-annotation">: input  logic             [NumBanks-1:0]</span></code></h3><div class="docblock">
+<p>Memory stream master, read response exclusive access OK.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.axi_data_t.html">axi_data_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_strb_t.html">axi_strb_t</a></td><td></td></tr><tr><td><a class="type" href="type.axi_id_t.html">axi_id_t</a></td><td></td></tr><tr><td><a class="type" href="type.mem_req_t.html">mem_req_t</a></td><td></td></tr><tr><td><a class="type" href="type.meta_t.html">meta_t</a></td><td></td></tr><tr><td><a class="type" href="type.tmp_atop_t.html">tmp_atop_t</a></td><td></td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.mem_rdata" class="impl"><code class="in-band"><a href="#signal.mem_rdata">mem_rdata</a><span class="type-annotation">: axi_data_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.m2s_resp" class="impl"><code class="in-band"><a href="#signal.m2s_resp">m2s_resp</a><span class="type-annotation">: axi_data_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.m2s_req" class="impl"><code class="in-band"><a href="#signal.m2s_req">m2s_req</a><span class="type-annotation">: mem_req_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mem_req" class="impl"><code class="in-band"><a href="#signal.mem_req">mem_req</a><span class="type-annotation">: mem_req_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_meta" class="impl"><code class="in-band"><a href="#signal.rd_meta">rd_meta</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_meta_d" class="impl"><code class="in-band"><a href="#signal.rd_meta_d">rd_meta_d</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.rd_meta_q" class="impl"><code class="in-band"><a href="#signal.rd_meta_q">rd_meta_q</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_meta" class="impl"><code class="in-band"><a href="#signal.wr_meta">wr_meta</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_meta_d" class="impl"><code class="in-band"><a href="#signal.wr_meta_d">wr_meta_d</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.wr_meta_q" class="impl"><code class="in-band"><a href="#signal.wr_meta_q">wr_meta_q</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.meta" class="impl"><code class="in-band"><a href="#signal.meta">meta</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.meta_buf" class="impl"><code class="in-band"><a href="#signal.meta_buf">meta_buf</a><span class="type-annotation">: meta_t</span></code></h3><div class="docblock">
+</div><h3 id="signal.mem_req_atop" class="impl"><code class="in-band"><a href="#signal.mem_req_atop">mem_req_atop</a><span class="type-annotation">: tmp_atop_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>
