@@ -733,7 +733,7 @@ module axi_dw_downsizer #(
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
             // Valid output
-            mst_req.w_valid = 1'b1               ;
+            mst_req.w_valid = !forward_b_beat_full;
             mst_req.w.last  = w_req_q.aw.len == 0;
             mst_req.w.user  = slv_req_i.w.user   ;
 
@@ -774,7 +774,7 @@ module axi_dw_downsizer #(
           // Trigger another burst request, if needed
           if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
             // Finished current burst, but whole transaction hasn't finished
-            if (w_req_q.aw.len == '0 && w_req_q.burst_len != '0 && !forward_b_beat_full) begin
+            if (w_req_q.aw.len == '0 && w_req_q.burst_len != '0) begin
               w_req_d.aw_valid = 1'b1;
               w_req_d.aw.len   = (w_req_d.burst_len <= 255) ? w_req_d.burst_len : 255;
 
@@ -783,7 +783,7 @@ module axi_dw_downsizer #(
               forward_b_beat_push = 1'b1;
             end
 
-          if (w_req_q.burst_len == 0 && !forward_b_beat_full) begin
+          if (w_req_q.burst_len == 0) begin
             w_state_d = W_IDLE;
 
             forward_b_beat_push = 1'b1;
