@@ -82,17 +82,10 @@ import cf_math_pkg::idx_width;
   input  rule_t [Cfg.NoAddrRules-1:0]                                   addr_map_i,
   /// Enable default master port.
   input  logic      [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
   /// When not used, tie to `'0`.
-  input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
-  /// Enables a default master port for each slave port. When this is enabled unmapped
-  /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.
-  input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
+  input  rule_t     [Cfg.NoSlvPorts-1:0]                                default_mst_port_i
 );
 
   // Address type for individual address signals
@@ -101,9 +94,13 @@ import cf_math_pkg::idx_width;
 `ifdef VCS
   localparam int unsigned MstPortsIdxWidthOne =
       (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts + 1));
+  localparam int unsigned MstPortsIdxWidth =
+      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts));
   typedef logic [MstPortsIdxWidthOne-1:0]           mst_port_idx_t;
+  typedef logic [MstPortsIdxWidth-1:0]              mst_port_idx_m1_t;
 `else
   typedef logic [idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
+  typedef logic [idx_width(Cfg.NoMstPorts)-1:0]     mst_port_idx_m1_t;
 `endif
 
   // signals from the axi_demuxes, one index more for decode error
@@ -122,11 +119,7 @@ import cf_math_pkg::idx_width;
   slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
-`ifdef VCS
-    logic [MstPortsIdxWidth-1:0]          dec_ar_select;
-`else
-    logic [idx_width(Cfg.NoMstPorts)-1:0] dec_ar_select;
-`endif
+    mst_port_idx_m1_t           dec_ar_select;
     logic                       dec_ar_valid,  dec_ar_error;
     mst_port_idx_t              slv_ar_select;
 
@@ -142,7 +135,7 @@ import cf_math_pkg::idx_width;
       .dec_valid_o      ( dec_ar_valid               ),
       .dec_error_o      ( dec_ar_error               ),
       .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .default_idx_i    ( mst_port_idx_m1_t'(default_mst_port_i[i].idx)  )
     );
     assign slv_ar_select = (dec_ar_error) ?
         mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_ar_select);

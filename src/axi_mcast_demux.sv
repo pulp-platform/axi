@@ -75,7 +75,7 @@ module axi_mcast_demux #(
   input  logic                       test_i,
   input  rule_t    [NoAddrRules-1:0] addr_map_i,
   input  logic                       en_default_mst_port_i,
-  input  decode_idx_t                default_mst_port_i,
+  input  rule_t                      default_mst_port_i,
   // Slave Port
   input  axi_req_t                   slv_req_i,
   input  idx_select_t                slv_ar_select_i,
@@ -186,6 +186,7 @@ module axi_mcast_demux #(
 
     // AW address decoder
     mask_rule_t [NoMulticastRules-1:0] multicast_rules;
+    mask_rule_t                        default_rule;
     decode_idx_t                       dec_aw_idx;
     logic                              dec_aw_idx_valid, dec_aw_idx_error;
     logic       [NoMulticastPorts-1:0] dec_aw_select_partial;
@@ -311,9 +312,9 @@ module axi_mcast_demux #(
         .default_idx_i   ('0)
       );
     end else begin : g_no_aw_idx_decode
-      assign dec_aw_idx_valid = en_default_mst_port_i & dec_aw_select_error;
-      assign dec_aw_idx_error = !en_default_mst_port_i;
-      assign dec_aw_idx = default_mst_port_i;
+      assign dec_aw_idx_valid = 1'b0;
+      assign dec_aw_idx_error = 1'b1;
+      assign dec_aw_idx = '0;
     end
 
     // Convert multicast rules to mask (NAPOT) form
@@ -326,6 +327,9 @@ module axi_mcast_demux #(
       assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
       assign multicast_rules[i].addr = addr_map_i[i].start_addr;
     end
+    assign default_rule.idx = default_mst_port_i.idx;
+    assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
+    assign default_rule.addr = default_mst_port_i.start_addr;
 
     // Compare request against {addr, mask} rules
     multiaddr_decode #(
@@ -341,7 +345,9 @@ module axi_mcast_demux #(
       .addr_o     (dec_aw_addr),
       .mask_o     (dec_aw_mask),
       .dec_valid_o(),
-      .dec_error_o(dec_aw_select_error)
+      .dec_error_o(dec_aw_select_error),
+      .en_default_idx_i(en_default_mst_port_i),
+      .default_idx_i   (default_rule)
     );
 
     // Combine output from the two address decoders
@@ -1115,8 +1121,12 @@ module axi_mcast_demux_intf #(
   input  logic    test_i,                // Testmode enable
   input  rule_t [NO_MST_PORTS-2:0] addr_map_i,
   input  idx_select_t  slv_ar_select_i,  // has to be stable, when ar_valid
+  input  logic    en_default_mst_port_i,
+  input  rule_t   default_mst_port_i,
   AXI_BUS.Slave   slv,                   // slave port
-  AXI_BUS.Master  mst [NO_MST_PORTS-1:0] // master ports
+  AXI_BUS.Master  mst [NO_MST_PORTS-1:0], // master ports
+  output logic    [NO_MST_PORTS-1:0] mst_is_mcast_o,
+  output logic    [NO_MST_PORTS-1:0] mst_aw_commit_o
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]       id_t;
@@ -1170,12 +1180,16 @@ module axi_mcast_demux_intf #(
     .rst_ni,  // Asynchronous reset active low
     .test_i,  // Testmode enable
     .addr_map_i      ( addr_map_i      ),
+    .en_default_mst_port_i ( en_default_mst_port_i ),
+    .default_mst_port_i ( default_mst_port_i ),
     // slave port
     .slv_req_i       ( slv_req         ),
     .slv_ar_select_i ( slv_ar_select_i ),
     .slv_resp_o      ( slv_resp        ),
     // master port
     .mst_reqs_o      ( mst_req         ),
-    .mst_resps_i     ( mst_resp        )
+    .mst_resps_i     ( mst_resp        ),
+    .mst_is_mcast_o  ( mst_is_mcast_o  ),
+    .mst_aw_commit_o ( mst_aw_commit_o )
   );
 endmodule
