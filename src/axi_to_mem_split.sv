@@ -196,6 +196,8 @@ module axi_to_mem_split_intf #(
   input  logic                               clk_i,
   /// Asynchronous reset, active low.
   input  logic                               rst_ni,
+  /// Testmode enable
+  input  logic                               test_i,
   /// See `axi_to_mem_split`, port `busy_o`.
   output logic                               busy_o,
   /// AXI4+ATOP slave interface port.
@@ -244,6 +246,7 @@ module axi_to_mem_split_intf #(
   ) i_axi_to_mem_split (
     .clk_i,
     .rst_ni,
+    .test_i,
     .busy_o,
     .axi_req_i (axi_req),
     .axi_resp_o (axi_resp),
