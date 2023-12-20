@@ -512,6 +512,7 @@ module axi_mcast_demux #(
         // In the next cycle we are again idle
         MCastAwHandshakeInProgress:
           mcast_aw_hs_state_d = MCastAwHandshakeIdle;
+        default: ;
       endcase
     end
 
