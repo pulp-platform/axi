@@ -762,6 +762,7 @@ package axi_test;
 
     struct packed {
       int unsigned len  ;
+      int unsigned size ;
       int unsigned cprob;
     } traffic_shape[$];
     int unsigned max_cprob;
@@ -812,11 +813,11 @@ package axi_test;
        mem_map.delete();
     endfunction
 
-    function void add_traffic_shaping(input int unsigned len, input int unsigned freq);
+    function void add_traffic_shaping(input int unsigned len, input int unsigned size, input int unsigned freq);
       if (traffic_shape.size() == 0)
-        traffic_shape.push_back({len, freq});
+        traffic_shape.push_back({len, size, freq});
       else
-        traffic_shape.push_back({len, traffic_shape[$].cprob + freq});
+        traffic_shape.push_back({len, size, traffic_shape[$].cprob + freq});
 
       max_cprob = traffic_shape[$].cprob;
     endfunction : add_traffic_shaping
@@ -867,6 +868,7 @@ package axi_test;
         for (int i = 0; i < traffic_shape.size(); i++)
           if (traffic_shape[i].cprob > cprob) begin
             len = traffic_shape[i].len;
+            size = traffic_shape[i].size;
             if (ax_beat.ax_burst == BURST_WRAP) begin
               assert (len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
             end
@@ -875,12 +877,17 @@ package axi_test;
 
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
-          rand_success = std::randomize(size) with {
-            2**size <= AXI_STRB_WIDTH;
-            2**size <= len;
-          }; assert(rand_success);
-          ax_beat.ax_size = size;
-          ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+          if(size==-1) begin
+             rand_success = std::randomize(size) with {
+               2**size <= AXI_STRB_WIDTH;
+               2**size <= len;
+             }; assert(rand_success);
+             ax_beat.ax_size = size;
+             ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+          end else begin
+             ax_beat.ax_size = size;
+             ax_beat.ax_len = len;
+          end
 
           rand_success = std::randomize(addr) with {
             addr >= mem_region.addr_begin;
