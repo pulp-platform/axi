@@ -808,6 +808,10 @@ package axi_test;
       mem_map.push_back({addr_begin, addr_end, mem_type});
     endfunction
 
+    function void clear_memory_regions();
+       mem_map.delete();
+    endfunction
+
     function void add_traffic_shaping(input int unsigned len, input int unsigned freq);
       if (traffic_shape.size() == 0)
         traffic_shape.push_back({len, freq});
