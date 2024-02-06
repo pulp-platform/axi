@@ -162,8 +162,8 @@ module axi_sim_mem #(
             mon_w.user = aw_queue[0].user;
             mon_w.beat_count = w_cnt;
             for (shortint unsigned
-                i_byte = axi_pkg::beat_lower_byte(addr, size, len, burst, StrbWidth, w_cnt);
-                i_byte <= axi_pkg::beat_upper_byte(addr, size, len, burst, StrbWidth, w_cnt);
+                i_byte = axi_pkg::beat_lower_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
+                i_byte <= axi_pkg::beat_upper_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
                 i_byte++) begin
               if (axi_req_i.w.strb[i_byte]) begin
                 automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
@@ -232,8 +232,8 @@ module axi_sim_mem #(
           r_beat.id = ar_queue[0].id;
           r_beat.resp = axi_pkg::RESP_OKAY;
           for (shortint unsigned
-              i_byte = axi_pkg::beat_lower_byte(addr, size, len, burst, StrbWidth, r_cnt);
-              i_byte <= axi_pkg::beat_upper_byte(addr, size, len, burst, StrbWidth, r_cnt);
+              i_byte = axi_pkg::beat_lower_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
+              i_byte <= axi_pkg::beat_upper_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
               i_byte++) begin
             automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
             if (!mem.exists(byte_addr)) begin
