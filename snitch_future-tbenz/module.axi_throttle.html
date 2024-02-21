@@ -1,0 +1,51 @@
+<!-- Compiled by morty-0.9.0 / 2024-02-21 10:08:20.263341304 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_throttle</a></h1>
+<div class="docblock">
+<p>Throttles an AXI4+ATOP bus. The maximum number of outstanding transfers have to</p>
+<p>be set as a compile-time parameter, whereas the number of outstanding transfers can be set</p>
+<p>during runtime. This module assumes either in-order processing of the requests or</p>
+<p>indistinguishability of the request/responses (all ARs and AWs have the same ID respectively).</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.MaxNumAwPending" class="impl"><code class="in-band"><a href="#parameter.MaxNumAwPending">MaxNumAwPending</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>The maximum amount of allowable outstanding write requests</p>
+</div><h3 id="parameter.MaxNumArPending" class="impl"><code class="in-band"><a href="#parameter.MaxNumArPending">MaxNumArPending</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>The maximum amount of allowable outstanding read requests</p>
+</div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request type</p>
+</div><h3 id="parameter.axi_rsp_t" class="impl"><code class="in-band"><a href="#parameter.axi_rsp_t">axi_rsp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response type</p>
+</div><h3 id="parameter.WCntWidth" class="impl"><code class="in-band"><a href="#parameter.WCntWidth">WCntWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>The width of the write credit counter (<em>DO NOT OVERWRITE</em>)</p>
+</div><h3 id="parameter.RCntWidth" class="impl"><code class="in-band"><a href="#parameter.RCntWidth">RCntWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>The width of the read credit counter (<em>DO NOT OVERWRITE</em>)</p>
+</div><h3 id="parameter.w_credit_t" class="impl"><code class="in-band"><a href="#parameter.w_credit_t">w_credit_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>The type of the write credit counter (<em>DO NOT OVERWRITE</em>)</p>
+</div><h3 id="parameter.r_credit_t" class="impl"><code class="in-band"><a href="#parameter.r_credit_t">r_credit_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>The type of the read credit counter (<em>DO NOT OVERWRITE</em>)</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.req_i" class="impl"><code class="in-band"><a href="#port.req_i">req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request in</p>
+</div><h3 id="port.rsp_o" class="impl"><code class="in-band"><a href="#port.rsp_o">rsp_o</a><span class="type-annotation">: output axi_rsp_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response out</p>
+</div><h3 id="port.req_o" class="impl"><code class="in-band"><a href="#port.req_o">req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP request out</p>
+</div><h3 id="port.rsp_i" class="impl"><code class="in-band"><a href="#port.rsp_i">rsp_i</a><span class="type-annotation">: input  axi_rsp_t</span></code></h3><div class="docblock">
+<p>AXI4+ATOP response in</p>
+</div><h3 id="port.w_credit_i" class="impl"><code class="in-band"><a href="#port.w_credit_i">w_credit_i</a><span class="type-annotation">: input  w_credit_t</span></code></h3><div class="docblock">
+<p>Amount of write credit (number of outstanding write transfers)</p>
+</div><h3 id="port.r_credit_i" class="impl"><code class="in-band"><a href="#port.r_credit_i">r_credit_i</a><span class="type-annotation">: input  r_credit_t</span></code></h3><div class="docblock">
+<p>Amount of read credit (number of outstanding read transfers)</p>
+</div></section>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!-- Compiled by morty-0.9.0 / 2024-02-21 10:08:20.166164065 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_id_remap_table</a></h1>
+<div class="docblock">
+<p>Internal module of <a href="module.axi_id_remap"><code>axi_id_remap</code></a>: Table to remap input to output IDs.</p>
+<p>This module contains a table indexed by the output ID (type <code>idx_t</code>). Each table entry has two</p>
+<p>fields: the input ID and a counter that records how many transactions with the input and output</p>
+<p>ID of the entry are in-flight.</p>
+<p>The mapping from input and output IDs is injective.  Therefore, when the table contains an entry</p>
+<p>for an input ID with non-zero counter value, subsequent input IDs must use the same entry and</p>
+<p>thus the same output ID.</p>
+<h2>Relation of types and table layout</h2>
+<p><img src="axi_id_remap_table.svg" alt="diagram of table" /></p>
+<h2>Complexity</h2>
+<p>This module has:</p>
+<ul>
+<li>
+<p><code>MaxUniqInpIds * InpIdWidth * clog2(MaxTxnsPerId)</code> flip flops;</p>
+</li>
+<li>
+<p><code>MaxUniqInpIds</code> comparators of width <code>InpIdWidth</code>;</p>
+</li>
+<li>
+<p>2 leading-zero counters of width <code>MaxUniqInpIds</code>.</p>
+</li>
+</ul>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.InpIdWidth" class="impl"><code class="in-band"><a href="#parameter.InpIdWidth">InpIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Width of input IDs, therefore width of <code>id_inp_t</code>.</p>
+</div><h3 id="parameter.MaxUniqInpIds" class="impl"><code class="in-band"><a href="#parameter.MaxUniqInpIds">MaxUniqInpIds</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of different input IDs that can be in-flight. This defines the number of remap</p>
+<p>table entries.</p>
+<p>The maximum value of this parameter is <code>2**InpIdWidth</code>.</p>
+</div><h3 id="parameter.MaxTxnsPerId" class="impl"><code class="in-band"><a href="#parameter.MaxTxnsPerId">MaxTxnsPerId</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of in-flight transactions with the same ID.</p>
+</div><h3 id="parameter.id_inp_t" class="impl"><code class="in-band"><a href="#parameter.id_inp_t">id_inp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Derived (<strong>=do not override</strong>) type of input IDs.</p>
+</div><h3 id="parameter.IdxWidth" class="impl"><code class="in-band"><a href="#parameter.IdxWidth">IdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Derived (<strong>=do not override</strong>) width of table index (ceiled binary logarithm of</p>
+<p><code>MaxUniqInpIds</code>).</p>
+</div><h3 id="parameter.idx_t" class="impl"><code class="in-band"><a href="#parameter.idx_t">idx_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Derived (<strong>=do not override</strong>) type of table index (width = <code>IdxWidth</code>).</p>
+</div><h3 id="parameter.field_t" class="impl"><code class="in-band"><a href="#parameter.field_t">field_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+<p>Derived (<strong>=do not override</strong>) type with one bit per table entry (thus also output ID).</p>
+</div><h3 id="parameter.CntWidth" class="impl"><code class="in-band"><a href="#parameter.CntWidth">CntWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Counter width, derived to hold numbers up to <code>MaxTxnsPerId</code>.</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock of all ports</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Asynchronous reset, active low</p>
+</div><h3 id="port.free_o" class="impl"><code class="in-band"><a href="#port.free_o">free_o</a><span class="type-annotation">: output field_t</span></code></h3><div class="docblock">
+<p>One bit per table entry / output ID that indicates whether the entry is free.</p>
+</div><h3 id="port.free_oup_id_o" class="impl"><code class="in-band"><a href="#port.free_oup_id_o">free_oup_id_o</a><span class="type-annotation">: output idx_t</span></code></h3><div class="docblock">
+<p>Lowest free output ID.  Only valid if the table is not full (i.e., <code>!full_o</code>).</p>
+</div><h3 id="port.full_o" class="impl"><code class="in-band"><a href="#port.full_o">full_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Indicates whether the table is full.</p>
+</div><h3 id="port.push_i" class="impl"><code class="in-band"><a href="#port.push_i">push_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Push an input/output ID pair to the table.</p>
+</div><h3 id="port.push_inp_id_i" class="impl"><code class="in-band"><a href="#port.push_inp_id_i">push_inp_id_i</a><span class="type-annotation">: input  id_inp_t</span></code></h3><div class="docblock">
+<p>Input ID to be pushed. If the table already contains this ID, its counter must be smaller than</p>
+<p><code>MaxTxnsPerId</code>.</p>
+</div><h3 id="port.push_oup_id_i" class="impl"><code class="in-band"><a href="#port.push_oup_id_i">push_oup_id_i</a><span class="type-annotation">: input  idx_t</span></code></h3><div class="docblock">
+<p>Output ID to be pushed.  If the table already contains the input ID to be pushed, the output</p>
+<p>ID <strong>must</strong> match the output ID of the existing entry with the same input ID.</p>
+</div><h3 id="port.exists_inp_id_i" class="impl"><code class="in-band"><a href="#port.exists_inp_id_i">exists_inp_id_i</a><span class="type-annotation">: input  id_inp_t</span></code></h3><div class="docblock">
+<p>Input ID to look up in the table.</p>
+</div><h3 id="port.exists_o" class="impl"><code class="in-band"><a href="#port.exists_o">exists_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Indicates whether the given input ID exists in the table.</p>
+</div><h3 id="port.exists_oup_id_o" class="impl"><code class="in-band"><a href="#port.exists_oup_id_o">exists_oup_id_o</a><span class="type-annotation">: output idx_t</span></code></h3><div class="docblock">
+<p>The output ID of the given input ID.  Only valid if the input ID exists (i.e., <code>exists_o</code>).</p>
+</div><h3 id="port.exists_full_o" class="impl"><code class="in-band"><a href="#port.exists_full_o">exists_full_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+<p>Indicates whether the maximum number of transactions for the given input ID is reached.  Only</p>
+<p>valid if the input ID exists (i.e., <code>exists_o</code>).</p>
+</div><h3 id="port.pop_i" class="impl"><code class="in-band"><a href="#port.pop_i">pop_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Pop an output ID from the table.  This reduces the counter for the table index given in</p>
+<p><code>pop_oup_id_i</code> by one.</p>
+</div><h3 id="port.pop_oup_id_i" class="impl"><code class="in-band"><a href="#port.pop_oup_id_i">pop_oup_id_i</a><span class="type-annotation">: input  idx_t</span></code></h3><div class="docblock">
+<p>Output ID to be popped.  The counter for this ID must be larger than <code>0</code>.</p>
+</div><h3 id="port.pop_inp_id_o" class="impl"><code class="in-band"><a href="#port.pop_inp_id_o">pop_inp_id_o</a><span class="type-annotation">: output id_inp_t</span></code></h3><div class="docblock">
+<p>Input ID corresponding to the popped output ID.</p>
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.cnt_t.html">cnt_t</a></td><td><p>Counter that tracks the number of in-flight transactions with an ID.</p>
+</td></tr><tr><td><a class="type" href="type.entry_t.html">entry_t</a></td><td><p>Type of a table entry.</p>
+</td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.match" class="impl"><code class="in-band"><a href="#signal.match">match</a><span class="type-annotation">: field_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>

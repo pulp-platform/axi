@@ -1,0 +1,39 @@
+<!-- Compiled by morty-0.9.0 / 2024-02-21 10:08:20.213851519 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_opt_lfsr</a></h1>
+<div class="docblock">
+<p>XOR LFSR with tabs based on the <a href="https://datacipy.cz/lfsr_table.pdf">lfsr_table</a>. LFSR has</p>
+<p>a serial interface to set the initial state</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.Width" class="impl"><code class="in-band"><a href="#parameter.Width">Width</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.LfsrIdxWidth" class="impl"><code class="in-band"><a href="#parameter.LfsrIdxWidth">LfsrIdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Number of bits required to hold the LFSR tab configuration</p>
+</div><h3 id="parameter.MaxNumTabs" class="impl"><code class="in-band"><a href="#parameter.MaxNumTabs">MaxNumTabs</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+<p>Maximum number of tabs</p>
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Rising-edge clock</p>
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+<p>Active-low reset</p>
+</div><h3 id="port.en_i" class="impl"><code class="in-band"><a href="#port.en_i">en_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.ser_data_i" class="impl"><code class="in-band"><a href="#port.ser_data_i">ser_data_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.ser_data_o" class="impl"><code class="in-band"><a href="#port.ser_data_o">ser_data_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+</div><h3 id="port.ser_en_i" class="impl"><code class="in-band"><a href="#port.ser_en_i">ser_en_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.inp_en_i" class="impl"><code class="in-band"><a href="#port.inp_en_i">inp_en_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.data_i" class="impl"><code class="in-band"><a href="#port.data_i">data_i</a><span class="type-annotation">: input  logic [Width-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.data_o" class="impl"><code class="in-band"><a href="#port.data_o">data_o</a><span class="type-annotation">: output logic [Width-1:0]</span></code></h3><div class="docblock">
+</div><h2 id="types" class="section-header"><a href="#types">Types<a></h2>
+<table>
+<tr><td><a class="type" href="type.xnor_entry_t.html">xnor_entry_t</a></td><td><p>Type specifying the tap positions</p>
+</td></tr></table>
+<h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.XnorFeedback" class="impl"><code class="in-band"><a href="#signal.XnorFeedback">XnorFeedback</a><span class="type-annotation">: xnor_entry_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>
