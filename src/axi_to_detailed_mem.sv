@@ -24,15 +24,15 @@ module axi_to_detailed_mem #(
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
-  parameter int unsigned AddrWidth  = 0,
+  parameter int unsigned AddrWidth  = 1,
   /// AXI4+ATOP data width.
-  parameter int unsigned DataWidth  = 0,
+  parameter int unsigned DataWidth  = 1,
   /// AXI4+ATOP ID width.
-  parameter int unsigned IdWidth    = 0,
+  parameter int unsigned IdWidth    = 1,
   /// AXI4+ATOP user width.
-  parameter int unsigned UserWidth  = 0,
+  parameter int unsigned UserWidth  = 1,
   /// Number of banks at output, must evenly divide `DataWidth`.
-  parameter int unsigned NumBanks   = 0,
+  parameter int unsigned NumBanks   = 1,
   /// Depth of memory response buffer. This should be equal to the memory response latency.
   parameter int unsigned BufDepth   = 1,
   /// Hide write requests if the strb == '0
