@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.2 - 2024-03-13
+
+### Added
+- `axi_interleaved_xbar`: An experimental crossbar extension interleaving memory transfers over #334
+  subordinate devices. ***Use at your own risk***.
+- `axi_zero_mem`: Implementing *\dev\zero* function for AXI. #334
+
+### Fixed
+- `axi_to_detailed_mem`: VCS crashed on default parameters 0, changed them to 1 #334
+- `axi_to_mem`: Add missing testmode pins #327
+- `axi_sim_mem`: Fix byte calculation in R and W forks #331
+
+`v0.39.2` is fully **backward-compatible** to `v0.39.1`.
+
 ## 0.39.1 - 2023-09-05
 
 ### Added
