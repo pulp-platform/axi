@@ -813,7 +813,8 @@ package axi_test;
        mem_map.delete();
     endfunction
 
-    function void add_traffic_shaping(input int unsigned len, input int unsigned size, input int unsigned freq);
+    function void add_traffic_shaping(input int unsigned len, input int unsigned freq);
+      int unsigned size = -1;
       if (traffic_shape.size() == 0)
         traffic_shape.push_back({len, size, freq});
       else
@@ -821,6 +822,15 @@ package axi_test;
 
       max_cprob = traffic_shape[$].cprob;
     endfunction : add_traffic_shaping
+
+    function void add_traffic_shaping_with_size(input int unsigned len, input int unsigned size, input int unsigned freq);
+      if (traffic_shape.size() == 0)
+        traffic_shape.push_back({len, size, freq});
+      else
+        traffic_shape.push_back({len, size, traffic_shape[$].cprob + freq});
+
+      max_cprob = traffic_shape[$].cprob;
+    endfunction : add_traffic_shaping_with_size
 
     function ax_beat_t new_rand_burst(input logic is_read);
       automatic logic rand_success;
