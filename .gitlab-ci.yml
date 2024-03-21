@@ -179,3 +179,10 @@ axi_xbar:
   <<: *run_vsim
   variables:
     TEST_MODULE: axi_xbar
+  timeout: 6h 00m
+
+axi_mcast_xbar:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_mcast_xbar
+  timeout: 6h 00m
