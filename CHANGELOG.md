@@ -6,8 +6,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+
+## 0.39.3 - 2024-05-08
 ### Added
 - `axi_sim_mem`: Allow response data for uninitialized region to have configurable defined value.
+- `axi_test`: add `clear_memory_regions` to `axi_rand_master`.
+- `axi_test`: Add `add_traffic_shaping_with_size` to `axi_rand_master` to allow for traffic shaping
+  with a custom size.
+
+### Changed
+- `axi_pkg`: Adjust `LatencyMode` parameter of `xbar_cfg_t` to bit vector from `xbar_pipeline_e`
+  enum to allow custom configurations.
+
+`v0.39.3` is fully **backward-compatible** to `v0.39.2`.
 
 ## 0.39.2 - 2024-03-13
 
