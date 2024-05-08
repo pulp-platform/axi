@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Added
+- `axi_sim_mem`: Allow response data for uninitialized region to have configurable defined value.
 
 ## 0.39.2 - 2024-03-13
 

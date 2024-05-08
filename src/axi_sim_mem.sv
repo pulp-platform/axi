@@ -39,6 +39,8 @@ module axi_sim_mem #(
   parameter type axi_rsp_t = logic,
   /// Warn on accesses to uninitialized bytes
   parameter bit WarnUninitialized = 1'b0,
+  /// Default value for uninitialized memory (undefined, zeros, ones, random)
+  parameter UninitializedData = "undefined",
   /// Clear error on access
   parameter bit ClearErrOnAccess = 1'b0,
   /// Application delay (measured after rising clock edge)
@@ -241,7 +243,16 @@ module axi_sim_mem #(
                 $warning("Access to non-initialized byte at address 0x%016x by ID 0x%x.", byte_addr,
                     r_beat.id);
               end
-              r_data[i_byte*8+:8] = 'x;
+              case (UninitializedData)
+                "random":
+                  r_data[i_byte*8+:8] = $urandom;
+                "ones":
+                  r_data[i_byte*8+:8] = '1;
+                "zeros":
+                  r_data[i_byte*8+:8] = '0;
+                default: 
+                  r_data[i_byte*8+:8] = 'x;
+              endcase
             end else begin
               r_data[i_byte*8+:8] = mem[byte_addr];
             end
@@ -342,6 +353,7 @@ module axi_sim_mem_intf #(
   parameter int unsigned AXI_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_USER_WIDTH = 32'd0,
   parameter bit WARN_UNINITIALIZED = 1'b0,
+  parameter UNINITIALIZED_DATA = "undefined",
   parameter bit ClearErrOnAccess = 1'b0,
   parameter time APPL_DELAY = 0ps,
   parameter time ACQ_DELAY = 0ps
@@ -386,6 +398,7 @@ module axi_sim_mem_intf #(
     .axi_req_t          (axi_req_t),
     .axi_rsp_t          (axi_resp_t),
     .WarnUninitialized  (WARN_UNINITIALIZED),
+    .UninitializedData  (UNINITIALIZED_DATA),
     .ClearErrOnAccess   (ClearErrOnAccess),
     .ApplDelay          (APPL_DELAY),
     .AcqDelay           (ACQ_DELAY)
