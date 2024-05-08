@@ -712,7 +712,10 @@ package axi_test;
                                               // same direction
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
-    parameter int   N_AXI_IDS = 2**IW
+    parameter int   N_AXI_IDS = 2**IW,
+    parameter int   AX_USER_RANGE = 1,  // The upper limit of randomized ax user signal
+    parameter bit   AX_USER_RAND = 0    // set to 1 to enable randomize aw/ar user signal
+                                        // 0 <= user < AX_USER_RANGE
   );
     typedef axi_test::axi_driver #(
       .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
@@ -817,7 +820,26 @@ package axi_test;
       max_cprob = traffic_shape[$].cprob;
     endfunction : add_traffic_shaping
 
-    function ax_beat_t new_rand_burst(input logic is_read);
+    /// Cache-Partition
+    // This function is used to generate a random PatID every time send a 
+    // burst of R/W requests down to the cache. Therefore, within one test,
+    // its PatID will be fixed and we can call multiple tests to test the 
+    // partition functionalities. 
+    function user_t rand_user(input int unsigned user_range, input logic user_rand);
+      static logic rand_success;
+      automatic user_t user;
+      if (user_rand) begin
+        rand_success = std::randomize(user) with {
+          user >= 0; user < user_range;
+        }; assert(rand_success);
+      end else begin
+        user = '0;
+      end
+      return user;
+    endfunction
+
+    // Cache-Partition: add user signal as an input 
+    function ax_beat_t new_rand_burst(input logic is_read, input user_t user);
       automatic logic rand_success;
       automatic ax_beat_t ax_beat = new;
       automatic addr_t addr;
@@ -935,6 +957,7 @@ package axi_test;
       // currently done in the functions `create_aws()` and `send_ars()`.
       ax_beat.ax_id = id;
       ax_beat.ax_qos = qos;
+      ax_beat.ax_user = user;
       return ax_beat;
     endfunction
 
@@ -1113,11 +1136,12 @@ package axi_test;
       cnt_sem.put();
     endtask
 
-    task send_ars(input int n_reads);
+    // Cache-Partition: add user signal as an input 
+    task send_ars(input int n_reads, input user_t user);
       automatic logic rand_success;
       repeat (n_reads) begin
         automatic id_t id;
-        automatic ax_beat_t ar_beat = new_rand_burst(1'b1);
+        automatic ax_beat_t ar_beat = new_rand_burst(1'b1, user);
         while (tot_r_flight_cnt >= MAX_READ_TXNS) begin
           rand_wait(1, 1);
         end
@@ -1153,7 +1177,8 @@ package axi_test;
       end
     endtask
 
-    task create_aws(input int n_writes);
+    // Cache-Partition: add user signal as an input 
+    task create_aws(input int n_writes, input user_t user);
       automatic logic rand_success;
       repeat (n_writes) begin
         automatic bit excl = 1'b0;
@@ -1162,7 +1187,7 @@ package axi_test;
         if (excl) begin
           aw_beat = excl_queue.pop_front();
         end else begin
-          aw_beat = new_rand_burst(1'b0);
+          aw_beat = new_rand_burst(1'b0, user);
           if (AXI_ATOPS) rand_atop_burst(aw_beat);
         end
         while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin
@@ -1237,18 +1262,21 @@ package axi_test;
       end
     endtask
 
+    // Cache-Partition: add user signal as an input 
     // Issue n_reads random read and n_writes random write transactions to an address range.
     task run(input int n_reads, input int n_writes);
       automatic logic  ar_done = 1'b0,
                        aw_done = 1'b0;
       fork
+        // Cache-Partition: randomize the patid
+        automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
         begin
-          send_ars(n_reads);
+          send_ars(n_reads, ax_user);
           ar_done = 1'b1;
         end
         recv_rs(ar_done, aw_done);
         begin
-          create_aws(n_writes);
+          create_aws(n_writes, ax_user);
           aw_done = 1'b1;
         end
         send_aws(aw_done);
