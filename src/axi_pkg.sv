@@ -445,27 +445,27 @@ package axi_pkg;
 
   // `xbar_latency_e` and `xbar_cfg_t` are documented in `doc/axi_xbar.md`.
   /// Slice on Demux AW channel.
-  localparam logic [9:0] DemuxAw = (1 << 9);
+  localparam bit [9:0] DemuxAw = (1 << 9);
   /// Slice on Demux W channel.
-  localparam logic [9:0] DemuxW  = (1 << 8);
+  localparam bit [9:0] DemuxW  = (1 << 8);
   /// Slice on Demux B channel.
-  localparam logic [9:0] DemuxB  = (1 << 7);
+  localparam bit [9:0] DemuxB  = (1 << 7);
   /// Slice on Demux AR channel.
-  localparam logic [9:0] DemuxAr = (1 << 6);
+  localparam bit [9:0] DemuxAr = (1 << 6);
   /// Slice on Demux R channel.
-  localparam logic [9:0] DemuxR  = (1 << 5);
+  localparam bit [9:0] DemuxR  = (1 << 5);
   /// Slice on Mux AW channel.
-  localparam logic [9:0] MuxAw   = (1 << 4);
+  localparam bit [9:0] MuxAw   = (1 << 4);
   /// Slice on Mux W channel.
-  localparam logic [9:0] MuxW    = (1 << 3);
+  localparam bit [9:0] MuxW    = (1 << 3);
   /// Slice on Mux B channel.
-  localparam logic [9:0] MuxB    = (1 << 2);
+  localparam bit [9:0] MuxB    = (1 << 2);
   /// Slice on Mux AR channel.
-  localparam logic [9:0] MuxAr   = (1 << 1);
+  localparam bit [9:0] MuxAr   = (1 << 1);
   /// Slice on Mux R channel.
-  localparam logic [9:0] MuxR    = (1 << 0);
+  localparam bit [9:0] MuxR    = (1 << 0);
   /// Latency configuration for `axi_xbar`.
-  typedef enum logic [9:0] {
+  typedef enum bit [9:0] {
     NO_LATENCY    = 10'b000_00_000_00,
     CUT_SLV_AX    = DemuxAw | DemuxAr,
     CUT_MST_AX    = MuxAw | MuxAr,
@@ -496,7 +496,7 @@ package axi_pkg;
     /// The Latency mode of the xbar. This determines if the channels on the ports have
     /// a spill register instantiated.
     /// Example configurations are provided with the enum `xbar_latency_e`.
-    xbar_latency_e LatencyMode;
+    bit [9:0]      LatencyMode;
     /// This is the number of `axi_multicut` stages instantiated in the line cross of the channels.
     /// Having multiple stages can potentially add a large number of FFs!
     int unsigned   PipelineStages;
