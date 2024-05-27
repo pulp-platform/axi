@@ -39,6 +39,10 @@ module axi_id_serialize #(
   parameter int unsigned AxiMstPortMaxUniqIds = 32'd0,
   /// Maximum number of in-flight transactions with the same ID at the master port.
   parameter int unsigned AxiMstPortMaxTxnsPerId = 32'd0,
+  /// Address width of both AXI4+ATOP ports
+  parameter int unsigned AxiAddrWidth = 32'd0,
+  /// User width of both AXI4+ATOP ports
+  parameter int unsigned AxiUserWidth = 32'd0,
   /// Request struct type of the AXI4+ATOP slave port
   parameter type slv_req_t = logic,
   /// Response struct type of the AXI4+ATOP slave port
@@ -57,11 +61,11 @@ module axi_id_serialize #(
   parameter int unsigned IdMapNumEntries = 32'd0,
   /// Explicit ID map; index [0] in each entry is the input ID to match, index [1] the output ID.
   parameter int unsigned IdMap [IdMapNumEntries-1:0][0:1] = '{default: {32'b0, 32'b0}},
+  /// Spill AR and AW
+  parameter bit          SpillAx = 1'b1,
   // unused parameters, no longer needed, left for backwards-compatibility
   parameter int unsigned AxiSlvPortMaxTxns = 32'd0, // unused
-  parameter int unsigned AxiAddrWidth = 32'd0,
   parameter int unsigned AxiDataWidth = 32'd0,
-  parameter int unsigned AxiUserWidth = 32'd0,
   parameter bit          AtopSupport  = 1'b1
 ) (
   /// Rising-edge clock of both ports
@@ -85,7 +89,16 @@ module axi_id_serialize #(
 
   /// ID at the master port
   typedef logic [AxiMstPortIdWidth-1:0] mst_id_t;
- 
+   /// Address in any AXI channel
+  typedef logic [AxiAddrWidth-1:0]      addr_t;
+  /// User signal in any AXI channel
+  typedef logic [AxiUserWidth-1:0]      user_t;
+
+  /// AW channel at master port
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
+  /// AR channel at master port
+  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
+
   /// Type for slave ID map
   typedef mst_id_t [2**AxiSlvPortIdWidth-1:0] slv_id_map_t;
 
@@ -219,16 +232,19 @@ module axi_id_serialize #(
     assign from_serializer_reqs_ar_valid[i] = from_serializer_reqs[i].ar_valid;
   end
 
+  mst_req_t mst_req;
+  logic mst_aw_ready, mst_ar_ready;
+
   always_comb begin
-    mst_req_o.aw_valid = |from_serializer_reqs_aw_valid;
-    mst_req_o.aw = from_serializer_reqs[mst_aw_select].aw;
-    mst_req_o.w_valid = slv_req_i.w_valid;
-    mst_req_o.w = slv_req_i.w;
-    mst_req_o.ar_valid = |from_serializer_reqs_ar_valid;
-    mst_req_o.ar = from_serializer_reqs[mst_ar_select].ar;
+    mst_req.aw_valid = |from_serializer_reqs_aw_valid;
+    mst_req.aw = from_serializer_reqs[mst_aw_select].aw;
+    mst_req.w_valid = slv_req_i.w_valid;
+    mst_req.w = slv_req_i.w;
+    mst_req.ar_valid = |from_serializer_reqs_ar_valid;
+    mst_req.ar = from_serializer_reqs[mst_ar_select].ar;
     for (int unsigned i = 0; i < AxiMstPortMaxUniqIds; i++) begin
-      from_serializer_resps[i].aw_ready = mst_resp_i.aw_ready;
-      from_serializer_resps[i].ar_ready = mst_resp_i.ar_ready;
+      from_serializer_resps[i].aw_ready = mst_aw_ready;
+      from_serializer_resps[i].ar_ready = mst_ar_ready;
     end
 
     for (int unsigned i = 0; i < AxiMstPortMaxUniqIds; i++) begin
@@ -240,10 +256,43 @@ module axi_id_serialize #(
       from_serializer_resps[i].r = mst_resp_i.r;
     end
     from_serializer_resps[mst_resp_i.b.id].b_valid = mst_resp_i.b_valid;
-    mst_req_o.b_ready = from_serializer_reqs[mst_resp_i.b.id].b_ready;
+    mst_req.b_ready = from_serializer_reqs[mst_resp_i.b.id].b_ready;
     from_serializer_resps[mst_resp_i.r.id].r_valid = mst_resp_i.r_valid;
-    mst_req_o.r_ready = from_serializer_reqs[mst_resp_i.r.id].r_ready;
+    mst_req.r_ready = from_serializer_reqs[mst_resp_i.r.id].r_ready;
   end
+
+  spill_register #(
+    .T     ( mst_aw_t ),
+    .Bypass( ~SpillAx )
+  ) i_aw_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .valid_i( mst_req.aw_valid ),
+    .ready_o( mst_aw_ready ),
+    .data_i ( mst_req.aw),
+    .valid_o( mst_req_o.aw_valid ),
+    .ready_i( mst_resp_i.aw_ready ),
+    .data_o ( mst_req_o.aw )
+  );
+
+  spill_register #(
+    .T     ( mst_ar_t ),
+    .Bypass( ~SpillAx )
+  ) i_ar_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .valid_i( mst_req.ar_valid ),
+    .ready_o( mst_ar_ready ),
+    .data_i ( mst_req.ar ),
+    .valid_o( mst_req_o.ar_valid ),
+    .ready_i( mst_resp_i.ar_ready ),
+    .data_o ( mst_req_o.ar )
+  );
+
+  `AXI_ASSIGN_W_STRUCT(mst_req_o.w, mst_req.w)
+  assign mst_req_o.w_valid = mst_req.w_valid;
+  assign mst_req_o.b_ready = mst_req.b_ready;
+  assign mst_req_o.r_ready = mst_req.r_ready;
 
   // pragma translate_off
   `ifndef VERILATOR
