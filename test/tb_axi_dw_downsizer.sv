@@ -74,10 +74,11 @@ module tb_axi_dw_downsizer #(
     .UW             (TbAxiUserWidth       ),
     .TA             (TbApplTime           ),
     .TT             (TbTestTime           ),
-    .MAX_READ_TXNS  (8                  ),
-    .MAX_WRITE_TXNS (8                  ),
-    .AXI_BURST_FIXED(1'b0               ),
-    .AXI_ATOPS      (1'b1               )
+    .MAX_READ_TXNS  (8                    ),
+    .MAX_WRITE_TXNS (128                  ),
+    .AXI_BURST_FIXED(1'b0                 ),
+    .AXI_ATOPS      (1'b1                 ),
+    .AX_MAX_WAIT_CYCLES(5)
   ) master_drv = new (master_dv);
 
   // Slave port
@@ -104,7 +105,9 @@ module tb_axi_dw_downsizer #(
     .IW(TbAxiIdWidth         ),
     .UW(TbAxiUserWidth       ),
     .TA(TbApplTime           ),
-    .TT(TbTestTime           )
+    .TT(TbTestTime           ),
+    .RESP_MIN_WAIT_CYCLES(100),
+    .RESP_MAX_WAIT_CYCLES(1000)
   ) slave_drv = new (slave_dv);
 
   `AXI_ASSIGN(slave_dv, slave)
@@ -145,7 +148,8 @@ module tb_axi_dw_downsizer #(
     fork
       // Act as a sink
       slave_drv.run()         ;
-      master_drv.run(200, 200);
+      master_drv.run(1,  4096);
+      // master_drv.run(200, 200);
     join_any
 
     // Done
