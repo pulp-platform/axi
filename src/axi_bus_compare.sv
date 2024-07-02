@@ -13,6 +13,10 @@
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
 `include "axi/assign.svh"
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Synthesizable test module comparing two AXI channels of the same type
 /// This module is meant to be used in FPGA-based verification.
 module axi_bus_compare #(
@@ -583,3 +587,4 @@ module axi_bus_compare #(
                         (|ar_mismatch_o) | (|r_mismatch_o);
 
 endmodule
+

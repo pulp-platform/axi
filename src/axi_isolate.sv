@@ -37,6 +37,11 @@
 ///
 /// If `TerminateTransaction` is set to `1'b0`, the transaction will block indefinitely until the
 /// module is de-isolated again.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off GENUNNAMED */
+
 module axi_isolate #(
   /// Maximum number of pending requests per channel
   parameter int unsigned NumPending           = 32'd16,

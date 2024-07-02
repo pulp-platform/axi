@@ -19,6 +19,9 @@
 // upon receiving a burst of such type.  The downsizer does support FIXED
 // bursts, but only if they consist of a single beat; it will answer with SLVERR
 // on multi-beat FIXED bursts.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_dw_downsizer #(
   parameter int unsigned AxiMaxReads         = 1,      // Number of outstanding reads
   parameter int unsigned AxiSlvPortDataWidth = 8,      // Data width of the slv port
@@ -936,3 +939,4 @@ module axi_dw_downsizer #(
   end
 
 endmodule : axi_dw_downsizer
+

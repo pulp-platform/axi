@@ -16,7 +16,6 @@
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
-
 /// A set of testbench utilities for AXI interfaces.
 package axi_test;
 

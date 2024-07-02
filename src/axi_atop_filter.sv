@@ -34,6 +34,12 @@
 /// bursts (i.e., a burst started by an AW with ATOP other than 0) and none between atomic bursts
 /// and non-atomic bursts [E2.1.4]. That is, **an atomic burst may never have the same ID as any
 /// other write or read burst that is in-flight at the same time**.
+`include "axi_pkg.sv"
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off UNUSEDPARAM */
+
 module axi_atop_filter #(
   /// AXI ID width
   parameter int unsigned AxiIdWidth = 0,

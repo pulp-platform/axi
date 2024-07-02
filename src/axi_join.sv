@@ -15,6 +15,9 @@
 
 `include "axi/assign.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// A connector that joins two AXI interfaces.
 module axi_join_intf (
   AXI_BUS.Slave  in,
@@ -35,3 +38,4 @@ module axi_join_intf (
   // pragma translate_on
 
 endmodule
+

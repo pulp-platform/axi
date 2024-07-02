@@ -18,6 +18,9 @@
 
 `include "common_cells/registers.svh"
 
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off PINCONNECTEMPTY */
+
 module axi_lite_mailbox #(
   parameter int unsigned MailboxDepth = 32'd0,
   parameter bit unsigned IrqEdgeTrig  = 1'b0,

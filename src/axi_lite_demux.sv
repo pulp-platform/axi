@@ -24,6 +24,9 @@
 //                 The selection signal at the AW and AR channel has to follow the same
 //                 stability rules as the corresponding AXI4-Lite channel.
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_lite_demux #(
   parameter type aw_chan_t = logic,  // AXI4-Lite AW channel
   parameter type w_chan_t = logic,  // AXI4-Lite  W channel
@@ -570,3 +573,4 @@ module axi_lite_demux_intf #(
 `endif
   // pragma translate_on
 endmodule
+

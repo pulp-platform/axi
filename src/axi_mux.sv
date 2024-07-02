@@ -25,6 +25,9 @@
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_mux #(
   // AXI parameter and channel types
   parameter int unsigned SlvAxiIDWidth = 32'd0,  // AXI ID width, slave ports

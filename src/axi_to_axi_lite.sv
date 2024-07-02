@@ -15,6 +15,10 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 /// An AXI4+ATOP to AXI4-Lite converter with atomic transaction and burst support.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_to_axi_lite #(
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,

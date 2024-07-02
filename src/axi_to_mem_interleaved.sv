@@ -15,6 +15,11 @@
 
 /// AXI4+ATOP to SRAM memory slave. Allows for parallel read and write transactions.
 /// Allows reads to bypass writes, in contrast to `axi_to_mem`, however needs more hardware.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off GENUNNAMED */
+
 module axi_to_mem_interleaved #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type         axi_req_t    = logic,

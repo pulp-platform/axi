@@ -12,6 +12,9 @@
 // Authors:
 // - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Simulation-Only dumper for AXI transactions
 ///
 /// This module writes all handshaked AXI beats to a log file. To use in simulation,
@@ -213,3 +216,4 @@ module axi_dumper_intf #(
   );
 
 endmodule
+

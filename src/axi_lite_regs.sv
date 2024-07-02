@@ -57,6 +57,9 @@
 /// This module can be configured to only allow *privileged* and/or *secure* accesses (see A4.7
 /// of the AXI4 specification) by setting the `PrivProtOnly` and/or `SecuProtOnly` parameter,
 /// respectively.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_lite_regs #(
   /// The size of the register field in bytes.
   parameter int unsigned RegNumBytes = 32'd0,
@@ -481,3 +484,4 @@ module axi_lite_regs_intf #(
 `endif
   // pragma translate_on
 endmodule
+

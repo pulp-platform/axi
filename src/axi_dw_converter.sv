@@ -15,6 +15,8 @@
 // upon receiving a burst of such type. In addition to that, the downsizer also
 // does not support FIXED bursts with incoming axlen != 0.
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_dw_converter #(
   parameter int unsigned AxiMaxReads         = 1,      // Number of outstanding reads
   parameter int unsigned AxiSlvPortDataWidth = 8,      // Data width of the slv port
@@ -188,3 +190,4 @@ module axi_dw_converter_intf #(
   );
 
 endmodule : axi_dw_converter_intf
+

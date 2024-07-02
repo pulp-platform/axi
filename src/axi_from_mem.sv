@@ -14,6 +14,9 @@
 
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Protocol adapter which translates memory requests to the AXI4 protocol.
 ///
 /// This module acts like an SRAM and makes AXI4 requests downstream.

@@ -47,6 +47,9 @@
 
 `include "common_cells/registers.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_lite_to_apb #(
   parameter int unsigned NoApbSlaves      = 32'd1,   // Number of connected APB slaves
   parameter int unsigned NoRules          = 32'd1,   // Number of APB address rules

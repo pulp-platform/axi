@@ -14,6 +14,9 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// An AXI4-Lite to AXI4 adapter.
 module axi_lite_to_axi #(
   parameter int unsigned AxiDataWidth = 32'd0,
@@ -147,3 +150,4 @@ module axi_lite_to_axi_intf #(
   assign out.r_ready   = in.r_ready;
 
 endmodule
+

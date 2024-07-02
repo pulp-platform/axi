@@ -13,6 +13,9 @@
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Synthesizable module that (randomly) delays AXI channels.
 module axi_delayer #(
   // AXI channel types
@@ -200,3 +203,4 @@ module axi_delayer_intf #(
 `endif
   // pragma translate_on
 endmodule
+

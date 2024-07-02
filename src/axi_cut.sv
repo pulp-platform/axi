@@ -14,6 +14,9 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// An AXI4 cut.
 ///
 /// Breaks all combinatorial paths between its input and output.
@@ -281,3 +284,4 @@ module axi_lite_cut_intf #(
 `endif
   // pragma translate_on
 endmodule
+

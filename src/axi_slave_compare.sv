@@ -17,6 +17,10 @@
 /// The reference response is always passed to the master, whereas the test response
 /// is discarded after handshaking.
 /// This module is meant to be used in FPGA-based verification.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_slave_compare #(
   /// ID width of the AXI4+ATOP interface
   parameter int unsigned AxiIdWidth    = 32'd0,

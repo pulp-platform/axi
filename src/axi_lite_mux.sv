@@ -20,6 +20,9 @@
 // register macros
 `include "common_cells/registers.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_lite_mux #(
   // AXI4-Lite parameter and channel types
   parameter type         aw_chan_t   = logic,  // AW LITE Channel Type

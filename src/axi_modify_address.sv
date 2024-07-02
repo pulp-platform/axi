@@ -14,6 +14,9 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Modify addresses on an AXI4 bus
 module axi_modify_address #(
   /// Request type of the slave port

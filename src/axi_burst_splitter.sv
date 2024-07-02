@@ -13,8 +13,9 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
-`include "axi/typedef.svh"
 `include "common_cells/registers.svh"
+`include "axi/typedef.svh"
+`include "axi_pkg.sv"
 
 /// Split AXI4 bursts into single-beat transactions.
 ///
@@ -25,6 +26,10 @@
 /// - This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave
 ///   error.  Place an [`axi_atop_filter`](module.axi_atop_filter) before this module if upstream
 ///   modules can generate ATOPs.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_burst_splitter #(
   // Maximum number of AXI read bursts outstanding at the same time
   parameter int unsigned MaxReadTxns  = 32'd0,
@@ -600,3 +605,4 @@ module axi_burst_splitter_counters #(
 `endif
 
 endmodule
+

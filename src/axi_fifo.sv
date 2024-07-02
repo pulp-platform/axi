@@ -18,6 +18,8 @@
 //
 // Can be used to buffer transactions
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_fifo #(
   parameter int unsigned Depth       = 32'd1,  // Number of FiFo slots.
   parameter bit          FallThrough = 1'b0,   // fifos are in fall-through mode

@@ -14,7 +14,8 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 
-
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 
 /// An AXI4 interface.
 interface AXI_BUS #(
@@ -638,3 +639,4 @@ interface AXI_LITE_ASYNC_GRAY #(
   );
 
 endinterface
+

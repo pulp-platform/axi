@@ -9,6 +9,10 @@
 /// be set as a compile-time parameter, whereas the number of outstanding transfers can be set
 /// during runtime. This module assumes either in-order processing of the requests or
 /// indistinguishability of the request/responses (all ARs and AWs have the same ID respectively).
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_throttle #(
   /// The maximum amount of allowable outstanding write requests
   parameter int unsigned MaxNumAwPending = 1,

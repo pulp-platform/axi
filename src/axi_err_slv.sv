@@ -16,6 +16,9 @@
 // AXI Error Slave: This module always responds with an AXI error for transactions that are sent to
 // it.  This module optionally supports ATOPs if the `ATOPs` parameter is set.
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off GENUNNAMED */
 module axi_err_slv #(
   parameter int unsigned AxiIdWidth = 0,  // AXI ID Width
   parameter type axi_req_t = logic,  // AXI 4 request struct, with atop field
@@ -259,3 +262,4 @@ module axi_err_slv #(
   // pragma translate_on
 
 endmodule
+

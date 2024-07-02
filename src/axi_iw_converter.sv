@@ -41,6 +41,9 @@
 /// master port IDs.  Therefore, some IDs that are different at the slave port need to be assigned
 /// to the same master port ID and thus become ordered with respect to each other.  An instance of
 /// [`axi_id_serialize`](module.axi_id_serialize) handles this case.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_iw_converter #(
   /// ID width of the AXI4+ATOP slave port
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
@@ -348,3 +351,4 @@ module axi_iw_converter_intf #(
 `endif
   // pragma translate_on
 endmodule
+

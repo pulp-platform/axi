@@ -18,6 +18,15 @@
 // - Cyril Koenig <cykoenig@iis.ee.ethz.ch>
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
+`ifndef AXI_PKG_SV_
+`define AXI_PKG_SV_
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off WIDTHEXPAND */
+/* verilator lint_off WIDTHTRUNC */
+/* verilator lint_off UNUSEDPARAM */
+
 //! AXI Package
 /// Contains all necessary type definitions, constants, and generally useful functions.
 package axi_pkg;
@@ -545,3 +554,5 @@ package axi_pkg;
   } xbar_rule_32_t;
 
 endpackage
+
+`endif

@@ -16,6 +16,9 @@
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Destination-clock-domain half of the AXI CDC crossing.
 ///
 /// For each of the five AXI channels, this module instantiates the source or destination half of

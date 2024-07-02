@@ -13,6 +13,10 @@
 //  - Paul Scheffler <paulsc@iis.ee.ethz.ch>
 // - Tim Fischer <fischeti@iis.ee.ethz.ch>
 
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Non-synthesizable module comparing two AXI channels of the same type
 module axi_chan_compare #(
   /// Ignore ID field if it was remapped

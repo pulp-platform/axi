@@ -29,6 +29,10 @@
 /// independence, use [`axi_id_serialize`](module.axi_id_serialize) instead.
 ///
 /// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_id_remap #(
   /// ID width of the AXI4+ATOP slave port.
   parameter int unsigned AxiSlvPortIdWidth = 32'd0,

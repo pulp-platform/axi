@@ -16,6 +16,9 @@
 
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// AXI Crosspoint (XP) with homomorphous slave and master ports.
 module axi_xp #(
   // Atomic operations settings

@@ -9,6 +9,9 @@
 
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Infinite (Simulation-Only) Memory with AXI Slave Port
 ///
 /// The memory array is named `mem`, and it is *not* initialized or reset.  This makes it possible to

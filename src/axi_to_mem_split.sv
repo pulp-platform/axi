@@ -16,6 +16,10 @@
 /// AXI4+ATOP to memory-protocol interconnect. Completely separates the read and write channel to
 /// individual mem ports. This can only be used when addresses for the same bank are accessible
 /// from different memory ports.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_to_mem_split #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter type axi_req_t = logic,

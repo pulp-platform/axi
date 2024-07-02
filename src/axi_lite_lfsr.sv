@@ -13,6 +13,9 @@
 
 `include "common_cells/registers.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// AXI4 Lite LFSR Subordinate device. Responds with a pseudo random answer. Serial interface to
 /// set the internal state.
 module axi_lite_lfsr #(

@@ -15,6 +15,9 @@
 
 `include "axi/assign.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// A connector that joins two AXI-Lite interfaces.
 module axi_lite_join_intf (
   AXI_LITE.Slave  in,

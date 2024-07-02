@@ -18,6 +18,8 @@
 // NOTE: The upsizer does not support WRAP bursts, and will answer with SLVERR
 // upon receiving a burst of such type.
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_dw_upsizer #(
   parameter int unsigned AxiMaxReads         = 1,      // Number of outstanding reads
   parameter int unsigned AxiSlvPortDataWidth = 8,      // Data width of the slv port
@@ -775,3 +777,4 @@ module axi_dw_upsizer #(
   end
 
 endmodule : axi_dw_upsizer
+

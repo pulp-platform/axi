@@ -16,6 +16,9 @@
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Reduce AXI IDs by serializing transactions when necessary.
 ///
 /// This module is designed to remap a wide ID space to an arbitrarily narrow ID space.  If
@@ -451,3 +454,4 @@ module axi_id_serialize_intf #(
 `endif
   // pragma translate_on
 endmodule
+

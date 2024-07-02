@@ -13,6 +13,9 @@
 
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// AXI4 LFSR Subordinate device. Responds with a pseudo random answer. Serial interface to
 /// set the internal state.
 module axi_lfsr #(

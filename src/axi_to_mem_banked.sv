@@ -17,6 +17,10 @@
 ///
 /// The used address space starts at 0x0 and ends at the capacity of all memory banks combined.
 /// The higher address bits are ignored for accesses.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_to_mem_banked #(
   /// AXI4+ATOP ID width
   parameter int unsigned AxiIdWidth    = 32'd0,

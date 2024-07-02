@@ -21,6 +21,10 @@
 /// - `write`: grants the request, write data goes into nothingness (can be used as data sink)
 /// If both read and write channels of the AXI4+ATOP are active, both will have an
 /// utilization of 50%.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_zero_mem #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter  type         axi_req_t  = logic,

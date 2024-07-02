@@ -15,6 +15,11 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Stefan Mach <smach@iis.ee.ethz.ch>
 
+`include "axi_pkg.sv"
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 // Multiple AXI4 cuts.
 //
 // These can be used to relax timing pressure on very long AXI busses.

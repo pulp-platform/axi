@@ -15,6 +15,9 @@
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Interleaved version of the crossbar. This module is experimental; use at your own risk.
 module axi_interleaved_xbar
   import cf_math_pkg::idx_width;

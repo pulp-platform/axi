@@ -19,6 +19,9 @@
 
 `include "axi/typedef.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_lite_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0,
   parameter type aw_chan_t = logic,

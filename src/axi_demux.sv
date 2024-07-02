@@ -23,6 +23,9 @@
 `define TARGET_VSIM
 `endif
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.
 ///
 /// The AW and AR slave channels each have a `select` input to determine to which master port the
@@ -300,3 +303,4 @@ module axi_demux_intf #(
     .mst_resps_i    (mst_resp)
   );
 endmodule
+

@@ -16,6 +16,11 @@
 /// AXI4+ATOP slave module which translates AXI bursts into a memory stream.
 /// If both read and write channels of the AXI4+ATOP are active, both will have an
 /// utilization of 50%.
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off GENUNNAMED */
+
 module axi_to_detailed_mem #(
   /// AXI4+ATOP request type. See `include/axi/typedef.svh`.
   parameter  type         axi_req_t    = logic,

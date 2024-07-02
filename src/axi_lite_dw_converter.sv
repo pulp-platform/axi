@@ -59,6 +59,9 @@
 /// The module will be in this mode if `AxiSlvPortDataWidth == AxiMstPortDataWidth`.
 /// Here the module passes through the slave port to the master port.
 `include "common_cells/registers.svh"
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
 module axi_lite_dw_converter #(
   /// AXI4-Lite address width of the ports.
   parameter int unsigned AxiAddrWidth        = 32'd0,
@@ -574,3 +577,4 @@ module axi_lite_dw_converter_intf #(
     .mst_res_i(mst_res)
   );
 endmodule
+

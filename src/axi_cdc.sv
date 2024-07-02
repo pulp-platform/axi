@@ -16,6 +16,9 @@
 
 `include "axi/assign.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// A clock domain crossing on an AXI interface.
 ///
 /// For each of the five AXI channels, this module instantiates a CDC FIFO, whose push and pop

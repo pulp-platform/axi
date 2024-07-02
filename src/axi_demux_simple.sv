@@ -17,12 +17,17 @@
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 `include "axi/assign.svh"
+`include "cf_math_pkg.sv"
 
 `ifdef QUESTA
 // Derive `TARGET_VSIM`, which is used for tool-specific workarounds in this file, from `QUESTA`,
 // which is automatically set in Questa.
 `define TARGET_VSIM
 `endif
+
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+/* verilator lint_off GENUNNAMED */
 
 /// Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.
 ///
@@ -510,7 +515,6 @@ module axi_demux_simple #(
     // pragma translate_on
   end
 endmodule
-
 
 module axi_demux_id_counters #(
   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters

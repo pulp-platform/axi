@@ -15,6 +15,9 @@
 // AXI ID Prepend: This module prepends/strips the MSB from the AXI IDs.
 // Constraints enforced through assertions: ID width of slave and master port
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 module axi_id_prepend #(
   parameter int unsigned NoBus = 1,  // Can take multiple axi busses
   parameter int unsigned AxiIdWidthSlvPort = 4,  // AXI ID Width of the Slave Ports

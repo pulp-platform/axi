@@ -15,6 +15,9 @@
 `include "axi/assign.svh"
 `include "common_cells/assertions.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Splits a single read / write slave into one read and one write master
 ///
 /// Connects the ar and r channel of the read / write slave to the read master

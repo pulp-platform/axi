@@ -14,6 +14,9 @@
 
 `include "common_cells/registers.svh"
 
+/* verilator lint_off PINCONNECTEMPTY */
+/* verilator lint_off DECLFILENAME */
+
 /// Serialize all AXI transactions to a single ID (zero).
 ///
 /// This module contains one queue with slave port IDs for the read direction and one for the write
