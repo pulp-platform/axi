@@ -24,14 +24,14 @@ module tb_axi_addr_test #(
   bit          PrintDbg = 1'b0
 );
 
-  localparam int unsigned AxiIdWidth   = 32'd1;
+  localparam int unsigned AxiIdWidth = 32'd1;
   localparam int unsigned AxiAddrWidth = 32'd16;
   localparam int unsigned AxiDataWidth = 32'd1024;
   localparam int unsigned AxiUserWidth = 32'd1;
 
   // Sim print config, how many transactions
   localparam int unsigned PrintTnx = 1000;
-  localparam int unsigned NoReads  = 0;
+  localparam int unsigned NoReads = 0;
   localparam int unsigned NoWrites = NumTests;
 
 
@@ -50,10 +50,10 @@ module tb_axi_addr_test #(
 
   // timing parameters
   localparam time CyclTime = 10ns;
-  localparam time ApplTime =  2ns;
-  localparam time TestTime =  8ns;
+  localparam time ApplTime = 2ns;
+  localparam time TestTime = 8ns;
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_master#(
     // AXI interface parameters
     .AW ( AxiAddrWidth ),
     .DW ( AxiDataWidth ),
@@ -67,15 +67,15 @@ module tb_axi_addr_test #(
     .AXI_BURST_INCR  ( 1'b1 ),
     .AXI_BURST_WRAP  ( 1'b1 )
   ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  typedef axi_test::axi_rand_slave#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW(AxiAddrWidth),
+    .DW(AxiDataWidth),
+    .IW(AxiIdWidth),
+    .UW(AxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime ),
-    .TT ( TestTime )
+    .TA(ApplTime),
+    .TT(TestTime)
   ) axi_rand_slave_t;
   // -------------
   // DUT signals
@@ -85,17 +85,21 @@ module tb_axi_addr_test #(
   logic end_of_sim;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) master_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) master_dv (
+    clk
+  );
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) slave_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) slave_dv (
+    clk
+  );
 
   `AXI_ASSIGN(slave_dv, master_dv)
 
@@ -103,8 +107,8 @@ module tb_axi_addr_test #(
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-    .ClkPeriod   ( CyclTime ),
-    .RstClkCycles( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
     .clk_o (clk),
     .rst_no(rst_n)
@@ -125,15 +129,15 @@ module tb_axi_addr_test #(
   end
 
   initial begin : proc_axi_slave
-    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
+    automatic axi_rand_slave_t axi_rand_slave = new(slave_dv);
     axi_rand_slave.reset();
     @(posedge rst_n);
     axi_rand_slave.run();
   end
 
   initial begin : proc_sim_progress
-    automatic int unsigned aw         = 0;
-    automatic int unsigned ar         = 0;
+    automatic int unsigned aw = 0;
+    automatic int unsigned ar = 0;
     automatic bit          aw_printed = 1'b0;
     automatic bit          ar_printed = 1'b0;
 
@@ -149,7 +153,7 @@ module tb_axi_addr_test #(
         ar++;
       end
 
-      if ((aw % PrintTnx == 0) && ! aw_printed) begin
+      if ((aw % PrintTnx == 0) && !aw_printed) begin
         $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
         aw_printed = 1'b1;
       end
@@ -173,7 +177,7 @@ module tb_axi_addr_test #(
   end
 
   // Test Address queue
-  ax_transfer ax_queue[$];
+  ax_transfer ax_queue [$];
   addr_t      gold_addr[$];
 
   initial begin : generate_tests
@@ -185,9 +189,9 @@ module tb_axi_addr_test #(
       #TestTime;
       if (master_dv.aw_valid && master_dv.aw_ready) begin
         ax_beat = new;
-        ax_beat.addr  = master_dv.aw_addr;
-        ax_beat.len   = master_dv.aw_len;
-        ax_beat.size  = master_dv.aw_size;
+        ax_beat.addr = master_dv.aw_addr;
+        ax_beat.len = master_dv.aw_len;
+        ax_beat.size = master_dv.aw_size;
         ax_beat.burst = master_dv.aw_burst;
 
         ax_queue.push_back(ax_beat);
@@ -197,7 +201,7 @@ module tb_axi_addr_test #(
 
   initial begin : proc_test
     automatic ax_transfer ax_beat;
-    automatic addr_t      test_addr, exp_addr;
+    automatic addr_t test_addr, exp_addr;
     for (int unsigned i = 0; i < NumTests; i++) begin
       wait (ax_queue.size());
       // get current transfer
@@ -206,7 +210,7 @@ module tb_axi_addr_test #(
         print_ax(ax_beat);
       end
       // golden model derived from pseudocode from A-52
-      data_transfer(ax_beat.addr, (2**ax_beat.size), (ax_beat.len+1), ax_beat.burst);
+      data_transfer(ax_beat.addr, (2 ** ax_beat.size), (ax_beat.len + 1), ax_beat.burst);
       // test the calculated addresses
       for (int unsigned i = 0; i <= ax_beat.len; i++) begin
         test_addr = axi_pkg::beat_addr(ax_beat.addr, ax_beat.size, ax_beat.len, ax_beat.burst, i);
@@ -214,19 +218,19 @@ module tb_axi_addr_test #(
         if (PrintDbg) begin
           print_addr(test_addr, i);
         end
-        assert (test_addr == exp_addr) else
-          begin
-            print_ax(ax_beat);
-            print_addr(test_addr, i);
-            $error("Expected ADDR: %0h was ADDR: %0h", exp_addr, test_addr);
-          end
+        assert (test_addr == exp_addr)
+        else begin
+          print_ax(ax_beat);
+          print_addr(test_addr, i);
+          $error("Expected ADDR: %0h was ADDR: %0h", exp_addr, test_addr);
+        end
       end
     end
   end
 
   // golden model derived from pseudocode from A-52
   function automatic void data_transfer(addr_t start_addr, int unsigned num_bytes,
-      int unsigned burst_length, axi_pkg::burst_t mode);
+                                        int unsigned burst_length, axi_pkg::burst_t mode);
     // define boundaries wider than the address, to finf wrapp of addr space
     localparam int unsigned large_addr = $bits(addr_t);
     typedef logic [large_addr:0] laddr_t;
@@ -265,14 +269,14 @@ module tb_axi_addr_test #(
     end
   endfunction : data_transfer
 
-  function automatic void print_ax (ax_transfer ax);
+  function automatic void print_ax(ax_transfer ax);
     $display("####################################################################",);
     $display("AX transfer with:");
     case (ax.burst)
       axi_pkg::BURST_FIXED: $display("TYPE: BURST_FIXED");
-      axi_pkg::BURST_INCR:  $display("TYPE: BURST_INCR");
-      axi_pkg::BURST_WRAP:  $display("TYPE: BURST_WRAP");
-      default : $error("TYPE: NOT_DEFINED");
+      axi_pkg::BURST_INCR: $display("TYPE: BURST_INCR");
+      axi_pkg::BURST_WRAP: $display("TYPE: BURST_WRAP");
+      default: $error("TYPE: NOT_DEFINED");
     endcase
     $display("ADDR: %0h", ax.addr);
     $display("SIZE: %0h", ax.size);

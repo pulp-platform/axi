@@ -21,49 +21,49 @@
 //! AXI Package
 /// Contains all necessary type definitions, constants, and generally useful functions.
 package axi_pkg;
-    /// AXI Transaction Burst Width.
-  parameter int unsigned BurstWidth  = 32'd2;
+  /// AXI Transaction Burst Width.
+  parameter int unsigned BurstWidth = 32'd2;
   /// AXI Transaction Response Width.
-  parameter int unsigned RespWidth   = 32'd2;
+  parameter int unsigned RespWidth = 32'd2;
   /// AXI Transaction Cacheability Width.
-  parameter int unsigned CacheWidth  = 32'd4;
+  parameter int unsigned CacheWidth = 32'd4;
   /// AXI Transaction Protection Width.
-  parameter int unsigned ProtWidth   = 32'd3;
+  parameter int unsigned ProtWidth = 32'd3;
   /// AXI Transaction Quality of Service Width.
-  parameter int unsigned QosWidth    = 32'd4;
+  parameter int unsigned QosWidth = 32'd4;
   /// AXI Transaction Region Width.
   parameter int unsigned RegionWidth = 32'd4;
   /// AXI Transaction Length Width.
-  parameter int unsigned LenWidth    = 32'd8;
+  parameter int unsigned LenWidth = 32'd8;
   /// AXI Transaction Size Width.
-  parameter int unsigned SizeWidth   = 32'd3;
+  parameter int unsigned SizeWidth = 32'd3;
   /// AXI Lock Width.
-  parameter int unsigned LockWidth   = 32'd1;
+  parameter int unsigned LockWidth = 32'd1;
   /// AXI5 Atomic Operation Width.
-  parameter int unsigned AtopWidth   = 32'd6;
+  parameter int unsigned AtopWidth = 32'd6;
   /// AXI5 Non-Secure Address Identifier.
-  parameter int unsigned NsaidWidth  = 32'd4;
+  parameter int unsigned NsaidWidth = 32'd4;
 
   /// AXI Transaction Burst Width.
-  typedef logic [1:0]  burst_t;
+  typedef logic [1:0] burst_t;
   /// AXI Transaction Response Type.
-  typedef logic [1:0]   resp_t;
+  typedef logic [1:0] resp_t;
   /// AXI Transaction Cacheability Type.
-  typedef logic [3:0]  cache_t;
+  typedef logic [3:0] cache_t;
   /// AXI Transaction Protection Type.
-  typedef logic [2:0]   prot_t;
+  typedef logic [2:0] prot_t;
   /// AXI Transaction Quality of Service Type.
-  typedef logic [3:0]    qos_t;
+  typedef logic [3:0] qos_t;
   /// AXI Transaction Region Type.
   typedef logic [3:0] region_t;
   /// AXI Transaction Length Type.
-  typedef logic [7:0]    len_t;
+  typedef logic [7:0] len_t;
   /// AXI Transaction Size Type.
-  typedef logic [2:0]   size_t;
+  typedef logic [2:0] size_t;
   /// AXI5 Atomic Operation Type.
-  typedef logic [5:0]   atop_t; // atomic operations
+  typedef logic [5:0] atop_t;  // atomic operations
   /// AXI5 Non-Secure Address Identifier.
-  typedef logic [3:0]  nsaid_t;
+  typedef logic [3:0] nsaid_t;
 
   /// In a fixed burst:
   /// - The address is the same for every transfer in the burst.
@@ -78,17 +78,17 @@ package axi_pkg;
   /// For example, the address for each transfer in a burst with a size of 4 bytes is the previous
   /// address plus four.
   /// This burst type is used for accesses to normal sequential memory.
-  localparam BURST_INCR  = 2'b01;
+  localparam BURST_INCR = 2'b01;
   /// A wrapping burst is similar to an incrementing burst, except that the address wraps around to
   /// a lower address if an upper address limit is reached.
   /// The following restrictions apply to wrapping bursts:
   /// - The start address must be aligned to the size of each transfer.
   /// - The length of the burst must be 2, 4, 8, or 16 transfers.
-  localparam BURST_WRAP  = 2'b10;
+  localparam BURST_WRAP = 2'b10;
 
   /// Normal access success.  Indicates that a normal access has been successful. Can also indicate
   /// that an exclusive access has failed.
-  localparam RESP_OKAY   = 2'b00;
+  localparam RESP_OKAY = 2'b00;
   /// Exclusive access okay.  Indicates that either the read or write portion of an exclusive access
   /// has been successful.
   localparam RESP_EXOKAY = 2'b01;
@@ -107,10 +107,10 @@ package axi_pkg;
   localparam CACHE_MODIFIABLE = 4'b0010;
   /// When this bit is asserted, read allocation of the transaction is recommended but is not
   /// mandatory.
-  localparam CACHE_RD_ALLOC   = 4'b0100;
+  localparam CACHE_RD_ALLOC = 4'b0100;
   /// When this bit is asserted, write allocation of the transaction is recommended but is not
   /// mandatory.
-  localparam CACHE_WR_ALLOC   = 4'b1000;
+  localparam CACHE_WR_ALLOC = 4'b1000;
 
   /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
   function automatic shortint unsigned num_bytes(size_t size);
@@ -131,15 +131,15 @@ package axi_pkg;
   /// This is the lowest address accessed within a wrapping burst.
   /// This address is aligned to the size and length of the burst.
   /// The length of a `BURST_WRAP` has to be 2, 4, 8, or 16 transfers.
-  function automatic largest_addr_t wrap_boundary (largest_addr_t addr, size_t size, len_t len);
+  function automatic largest_addr_t wrap_boundary(largest_addr_t addr, size_t size, len_t len);
     largest_addr_t wrap_addr;
 
     // pragma translate_off
-    `ifndef VERILATOR
-      assume (len == len_t'(4'b1) || len == len_t'(4'b11) || len == len_t'(4'b111) ||
-          len == len_t'(4'b1111)) else
-        $error("AXI BURST_WRAP with not allowed len of: %0h", len);
-    `endif
+`ifndef VERILATOR
+    assume (len == len_t'(4'b1) || len == len_t'(4'b11) || len == len_t'(4'b111) ||
+          len == len_t'(4'b1111))
+    else $error("AXI BURST_WRAP with not allowed len of: %0h", len);
+`endif
     // pragma translate_on
 
     // In A3-51 the wrap boundary is defined as:
@@ -153,18 +153,22 @@ package axi_pkg;
     // equivalent with multiplication and division by a power of two, which conveniently are the
     // only allowed values for `len` of a `BURST_WRAP`.
     unique case (len)
-      4'b1    : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
-      4'b11   : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
-      4'b111  : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
-      4'b1111 : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
-      default : wrap_addr = '0;
+      4'b1:
+      wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
+      4'b11:
+      wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
+      4'b111:
+      wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
+      4'b1111:
+      wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
+      default: wrap_addr = '0;
     endcase
     return wrap_addr;
   endfunction
 
   /// Address of beat (see A3-51).
-  function automatic largest_addr_t
-  beat_addr(largest_addr_t addr, size_t size, len_t len, burst_t burst, shortint unsigned i_beat);
+  function automatic largest_addr_t beat_addr(largest_addr_t addr, size_t size, len_t len,
+                                              burst_t burst, shortint unsigned i_beat);
     largest_addr_t ret_addr = addr;
     largest_addr_t wrp_bond = '0;
     if (burst == BURST_WRAP) begin
@@ -196,19 +200,20 @@ package axi_pkg;
   endfunction
 
   /// Index of lowest byte in beat (see A3-51).
-  function automatic shortint unsigned
-  beat_lower_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
-      shortint unsigned strobe_width, shortint unsigned i_beat);
+  function automatic shortint unsigned beat_lower_byte(
+    largest_addr_t addr, size_t size, len_t len, burst_t burst, shortint unsigned strobe_width,
+    shortint unsigned i_beat);
     largest_addr_t _addr = beat_addr(addr, size, len, burst, i_beat);
     return shortint'(_addr - (_addr / strobe_width) * strobe_width);
   endfunction
 
   /// Index of highest byte in beat (see A3-51).
-  function automatic shortint unsigned
-  beat_upper_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
-      shortint unsigned strobe_width, shortint unsigned i_beat);
+  function automatic shortint unsigned beat_upper_byte(
+    largest_addr_t addr, size_t size, len_t len, burst_t burst, shortint unsigned strobe_width,
+    shortint unsigned i_beat);
     if (i_beat == 0) begin
-      return aligned_addr(addr, size) + (num_bytes(size) - 1) - (addr / strobe_width) * strobe_width;
+      return aligned_addr(addr, size) + (num_bytes(size) - 1) -
+        (addr / strobe_width) * strobe_width;
     end else begin
       return beat_lower_byte(addr, size, len, burst, strobe_width, i_beat) + num_bytes(size) - 1;
     end
@@ -243,37 +248,37 @@ package axi_pkg;
   /// Create an `AR_CACHE` field from a `mem_type_t` type.
   function automatic logic [3:0] get_arcache(mem_type_t mtype);
     unique case (mtype)
-      DEVICE_NONBUFFERABLE              : return 4'b0000;
-      DEVICE_BUFFERABLE                 : return 4'b0001;
-      NORMAL_NONCACHEABLE_NONBUFFERABLE : return 4'b0010;
-      NORMAL_NONCACHEABLE_BUFFERABLE    : return 4'b0011;
-      WTHRU_NOALLOCATE                  : return 4'b1010;
-      WTHRU_RALLOCATE                   : return 4'b1110;
-      WTHRU_WALLOCATE                   : return 4'b1010;
-      WTHRU_RWALLOCATE                  : return 4'b1110;
-      WBACK_NOALLOCATE                  : return 4'b1011;
-      WBACK_RALLOCATE                   : return 4'b1111;
-      WBACK_WALLOCATE                   : return 4'b1011;
-      WBACK_RWALLOCATE                  : return 4'b1111;
-    endcase // mtype
+      DEVICE_NONBUFFERABLE:              return 4'b0000;
+      DEVICE_BUFFERABLE:                 return 4'b0001;
+      NORMAL_NONCACHEABLE_NONBUFFERABLE: return 4'b0010;
+      NORMAL_NONCACHEABLE_BUFFERABLE:    return 4'b0011;
+      WTHRU_NOALLOCATE:                  return 4'b1010;
+      WTHRU_RALLOCATE:                   return 4'b1110;
+      WTHRU_WALLOCATE:                   return 4'b1010;
+      WTHRU_RWALLOCATE:                  return 4'b1110;
+      WBACK_NOALLOCATE:                  return 4'b1011;
+      WBACK_RALLOCATE:                   return 4'b1111;
+      WBACK_WALLOCATE:                   return 4'b1011;
+      WBACK_RWALLOCATE:                  return 4'b1111;
+    endcase  // mtype
   endfunction
 
   /// Create an `AW_CACHE` field from a `mem_type_t` type.
   function automatic logic [3:0] get_awcache(mem_type_t mtype);
     unique case (mtype)
-      DEVICE_NONBUFFERABLE              : return 4'b0000;
-      DEVICE_BUFFERABLE                 : return 4'b0001;
-      NORMAL_NONCACHEABLE_NONBUFFERABLE : return 4'b0010;
-      NORMAL_NONCACHEABLE_BUFFERABLE    : return 4'b0011;
-      WTHRU_NOALLOCATE                  : return 4'b0110;
-      WTHRU_RALLOCATE                   : return 4'b0110;
-      WTHRU_WALLOCATE                   : return 4'b1110;
-      WTHRU_RWALLOCATE                  : return 4'b1110;
-      WBACK_NOALLOCATE                  : return 4'b0111;
-      WBACK_RALLOCATE                   : return 4'b0111;
-      WBACK_WALLOCATE                   : return 4'b1111;
-      WBACK_RWALLOCATE                  : return 4'b1111;
-    endcase // mtype
+      DEVICE_NONBUFFERABLE:              return 4'b0000;
+      DEVICE_BUFFERABLE:                 return 4'b0001;
+      NORMAL_NONCACHEABLE_NONBUFFERABLE: return 4'b0010;
+      NORMAL_NONCACHEABLE_BUFFERABLE:    return 4'b0011;
+      WTHRU_NOALLOCATE:                  return 4'b0110;
+      WTHRU_RALLOCATE:                   return 4'b0110;
+      WTHRU_WALLOCATE:                   return 4'b1110;
+      WTHRU_RWALLOCATE:                  return 4'b1110;
+      WBACK_NOALLOCATE:                  return 4'b0111;
+      WBACK_RALLOCATE:                   return 4'b0111;
+      WBACK_WALLOCATE:                   return 4'b1111;
+      WBACK_RWALLOCATE:                  return 4'b1111;
+    endcase  // mtype
   endfunction
 
   /// RESP precedence: DECERR > SLVERR > OKAY > EXOKAY.  This is not defined in the AXI standard but
@@ -317,28 +322,28 @@ package axi_pkg;
 
   /// AW Width: Returns the width of the AW channel payload
   function automatic int unsigned aw_width(int unsigned addr_width, int unsigned id_width,
-                                           int unsigned user_width );
+                                           int unsigned user_width);
     // Sum the individual bit widths of the signals
     return (id_width + addr_width + LenWidth + SizeWidth + BurstWidth + LockWidth + CacheWidth +
             ProtWidth + QosWidth + RegionWidth + AtopWidth + user_width );
   endfunction
 
   /// W Width: Returns the width of the W channel payload
-  function automatic int unsigned w_width(int unsigned data_width, int unsigned user_width );
+  function automatic int unsigned w_width(int unsigned data_width, int unsigned user_width);
     // Sum the individual bit widths of the signals
     return (data_width + data_width / 32'd8 + 32'd1 + user_width);
     //                   ^- StrobeWidth       ^- LastWidth
   endfunction
 
   /// B Width: Returns the width of the B channel payload
-  function automatic int unsigned b_width(int unsigned id_width, int unsigned user_width );
+  function automatic int unsigned b_width(int unsigned id_width, int unsigned user_width);
     // Sum the individual bit widths of the signals
     return (id_width + RespWidth + user_width);
   endfunction
 
   /// AR Width: Returns the width of the AR channel payload
   function automatic int unsigned ar_width(int unsigned addr_width, int unsigned id_width,
-                                           int unsigned user_width );
+                                           int unsigned user_width);
     // Sum the individual bit widths of the signals
     return (id_width + addr_width + LenWidth + SizeWidth + BurstWidth + LockWidth + CacheWidth +
             ProtWidth + QosWidth + RegionWidth + user_width );
@@ -346,31 +351,38 @@ package axi_pkg;
 
   /// R Width: Returns the width of the R channel payload
   function automatic int unsigned r_width(int unsigned data_width, int unsigned id_width,
-                                          int unsigned user_width );
+                                          int unsigned user_width);
     // Sum the individual bit widths of the signals
     return (id_width + data_width + RespWidth + 32'd1 + user_width);
     //                                          ^- LastWidth
   endfunction
 
   /// Request Width: Returns the width of the request channel
-  function automatic int unsigned req_width(int unsigned addr_width,    int unsigned data_width,
-                                            int unsigned id_width,      int unsigned aw_user_width,
-                                            int unsigned ar_user_width, int unsigned w_user_width   );
+  function automatic int unsigned req_width(int unsigned addr_width, int unsigned data_width,
+                                            int unsigned id_width, int unsigned aw_user_width,
+                                            int unsigned ar_user_width, int unsigned w_user_width);
     // Sum the individual bit widths of the signals and their handshakes
     //                                                      v- valids
-    return (aw_width(addr_width, id_width, aw_user_width) + 32'd1 +
-            w_width(data_width, w_user_width)             + 32'd1 +
-            ar_width(addr_width, id_width, ar_user_width) + 32'd1 + 32'd1 + 32'd1 );
+    return (aw_width(
+      addr_width, id_width, aw_user_width
+    ) + 32'd1 + w_width(
+      data_width, w_user_width
+    ) + 32'd1 + ar_width(
+      addr_width, id_width, ar_user_width
+    ) + 32'd1 + 32'd1 + 32'd1);
     //                                                              ^- R,   ^- B ready
   endfunction
 
   /// Response Width: Returns the width of the response channel
-  function automatic int unsigned rsp_width(int unsigned data_width,   int unsigned id_width,
-                                            int unsigned r_user_width, int unsigned b_user_width );
+  function automatic int unsigned rsp_width(int unsigned data_width, int unsigned id_width,
+                                            int unsigned r_user_width, int unsigned b_user_width);
     // Sum the individual bit widths of the signals and their handshakes
     //                                                    v- valids
-    return (r_width(data_width, id_width, r_user_width) + 32'd1 +
-            b_width(id_width, b_user_width)             + 32'd1 + 32'd1 + 32'd1 + 32'd1);
+    return (r_width(
+      data_width, id_width, r_user_width
+    ) + 32'd1 + b_width(
+      id_width, b_user_width
+    ) + 32'd1 + 32'd1 + 32'd1 + 32'd1);
     //                                                            ^- AW,  ^- AR,  ^- W ready
   endfunction
 
@@ -381,7 +393,7 @@ package axi_pkg;
   /// - The original data value at the addressed location is returned.
   /// - Outbound data size is 1, 2, 4, or 8 bytes.
   /// - Inbound data size is the same as the outbound data size.
-  localparam ATOP_ATOMICSWAP  = 6'b110000;
+  localparam ATOP_ATOMICSWAP = 6'b110000;
   /// - Sends two data values, the compare value and the swap value, to the addressed location.
   ///   The compare and swap values are of equal size.
   /// - The data value at the addressed location is checked against the compare value:
@@ -391,10 +403,10 @@ package axi_pkg;
   /// - Outbound data size is 2, 4, 8, 16, or 32 bytes.
   /// - Inbound data size is half of the outbound data size because the outbound data contains both
   ///   compare and swap values, whereas the inbound data has only the original data value.
-  localparam ATOP_ATOMICCMP   = 6'b110001;
+  localparam ATOP_ATOMICCMP = 6'b110001;
   // ATOP[5:4]
   /// Perform no atomic operation.
-  localparam ATOP_NONE        = 2'b00;
+  localparam ATOP_NONE = 2'b00;
   /// - Sends a single data value with an address and the atomic operation to be performed.
   /// - The target performs the operation using the sent data and value at the addressed location as
   ///   operands.
@@ -409,36 +421,36 @@ package axi_pkg;
   /// - The result is stored in the address location.
   /// - Outbound data size is 1, 2, 4, or 8 bytes.
   /// - Inbound data size is the same as the outbound data size.
-  localparam ATOP_ATOMICLOAD  = 2'b10;
+  localparam ATOP_ATOMICLOAD = 2'b10;
   // ATOP[3]
   /// For AtomicStore and AtomicLoad transactions `AWATOP[3]` indicates the endianness that is
   /// required for the atomic operation.  The value of `AWATOP[3]` applies to arithmetic operations
   /// only and is ignored for bitwise logical operations.
   /// When deasserted, this bit indicates that the operation is little-endian.
-  localparam ATOP_LITTLE_END  = 1'b0;
+  localparam ATOP_LITTLE_END = 1'b0;
   /// When asserted, this bit indicates that the operation is big-endian.
-  localparam ATOP_BIG_END     = 1'b1;
+  localparam ATOP_BIG_END = 1'b1;
   // ATOP[2:0]
   /// The value in memory is added to the sent data and the result stored in memory.
-  localparam ATOP_ADD   = 3'b000;
+  localparam ATOP_ADD = 3'b000;
   /// Every set bit in the sent data clears the corresponding bit of the data in memory.
-  localparam ATOP_CLR   = 3'b001;
+  localparam ATOP_CLR = 3'b001;
   /// Bitwise exclusive OR of the sent data and value in memory.
-  localparam ATOP_EOR   = 3'b010;
+  localparam ATOP_EOR = 3'b010;
   /// Every set bit in the sent data sets the corresponding bit of the data in memory.
-  localparam ATOP_SET   = 3'b011;
+  localparam ATOP_SET = 3'b011;
   /// The value stored in memory is the maximum of the existing value and sent data. This operation
   /// assumes signed data.
-  localparam ATOP_SMAX  = 3'b100;
+  localparam ATOP_SMAX = 3'b100;
   /// The value stored in memory is the minimum of the existing value and sent data. This operation
   /// assumes signed data.
-  localparam ATOP_SMIN  = 3'b101;
+  localparam ATOP_SMIN = 3'b101;
   /// The value stored in memory is the maximum of the existing value and sent data. This operation
   /// assumes unsigned data.
-  localparam ATOP_UMAX  = 3'b110;
+  localparam ATOP_UMAX = 3'b110;
   /// The value stored in memory is the minimum of the existing value and sent data. This operation
   /// assumes unsigned data.
-  localparam ATOP_UMIN  = 3'b111;
+  localparam ATOP_UMIN = 3'b111;
   // ATOP[5] == 1'b1 indicated that an atomic transaction has a read response
   // Ussage eg: if (req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
   localparam ATOP_R_RESP = 32'd5;
@@ -447,23 +459,23 @@ package axi_pkg;
   /// Slice on Demux AW channel.
   localparam bit [9:0] DemuxAw = (1 << 9);
   /// Slice on Demux W channel.
-  localparam bit [9:0] DemuxW  = (1 << 8);
+  localparam bit [9:0] DemuxW = (1 << 8);
   /// Slice on Demux B channel.
-  localparam bit [9:0] DemuxB  = (1 << 7);
+  localparam bit [9:0] DemuxB = (1 << 7);
   /// Slice on Demux AR channel.
   localparam bit [9:0] DemuxAr = (1 << 6);
   /// Slice on Demux R channel.
-  localparam bit [9:0] DemuxR  = (1 << 5);
+  localparam bit [9:0] DemuxR = (1 << 5);
   /// Slice on Mux AW channel.
-  localparam bit [9:0] MuxAw   = (1 << 4);
+  localparam bit [9:0] MuxAw = (1 << 4);
   /// Slice on Mux W channel.
-  localparam bit [9:0] MuxW    = (1 << 3);
+  localparam bit [9:0] MuxW = (1 << 3);
   /// Slice on Mux B channel.
-  localparam bit [9:0] MuxB    = (1 << 2);
+  localparam bit [9:0] MuxB = (1 << 2);
   /// Slice on Mux AR channel.
-  localparam bit [9:0] MuxAr   = (1 << 1);
+  localparam bit [9:0] MuxAr = (1 << 1);
   /// Slice on Mux R channel.
-  localparam bit [9:0] MuxR    = (1 << 0);
+  localparam bit [9:0] MuxR = (1 << 0);
   /// Latency configuration for `axi_xbar`.
   typedef enum bit [9:0] {
     NO_LATENCY    = 10'b000_00_000_00,
@@ -479,43 +491,43 @@ package axi_pkg;
   typedef struct packed {
     /// Number of slave ports of the crossbar.
     /// This many master modules are connected to it.
-    int unsigned   NoSlvPorts;
+    int unsigned NoSlvPorts;
     /// Number of master ports of the crossbar.
     /// This many slave modules are connected to it.
-    int unsigned   NoMstPorts;
+    int unsigned NoMstPorts;
     /// Maximum number of open transactions each master connected to the crossbar can have in
     /// flight at the same time.
-    int unsigned   MaxMstTrans;
+    int unsigned MaxMstTrans;
     /// Maximum number of open transactions each slave connected to the crossbar can have in
     /// flight at the same time.
-    int unsigned   MaxSlvTrans;
+    int unsigned MaxSlvTrans;
     /// Determine if the internal FIFOs of the crossbar are instantiated in fallthrough mode.
     /// 0: No fallthrough
     /// 1: Fallthrough
-    bit            FallThrough;
+    bit          FallThrough;
     /// The Latency mode of the xbar. This determines if the channels on the ports have
     /// a spill register instantiated.
     /// Example configurations are provided with the enum `xbar_latency_e`.
-    bit [9:0]      LatencyMode;
+    bit [9:0]    LatencyMode;
     /// This is the number of `axi_multicut` stages instantiated in the line cross of the channels.
     /// Having multiple stages can potentially add a large number of FFs!
-    int unsigned   PipelineStages;
+    int unsigned PipelineStages;
     /// AXI ID width of the salve ports. The ID width of the master ports is determined
     /// Automatically. See `axi_mux` for details.
-    int unsigned   AxiIdWidthSlvPorts;
+    int unsigned AxiIdWidthSlvPorts;
     /// The used ID portion to determine if a different salve is used for the same ID.
     /// See `axi_demux` for details.
-    int unsigned   AxiIdUsedSlvPorts;
+    int unsigned AxiIdUsedSlvPorts;
     /// Are IDs unique?
-    bit            UniqueIds;
+    bit          UniqueIds;
     /// AXI4+ATOP address field width.
-    int unsigned   AxiAddrWidth;
+    int unsigned AxiAddrWidth;
     /// AXI4+ATOP data field width.
-    int unsigned   AxiDataWidth;
+    int unsigned AxiDataWidth;
     /// The number of address rules defined for routing of the transactions.
     /// Each master port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
-    int unsigned   NoAddrRules;
+    int unsigned NoAddrRules;
   } xbar_cfg_t;
 
   /// Commonly used rule types for `axi_xbar` (64-bit addresses).

@@ -23,36 +23,36 @@
 
 module tb_axi_lite_xbar;
   // Dut parameters
-  localparam int unsigned NoMasters   = 32'd6;    // How many Axi Masters there are
-  localparam int unsigned NoSlaves    = 32'd8;    // How many Axi Slaves  there are
+  localparam int unsigned NoMasters = 32'd6;  // How many Axi Masters there are
+  localparam int unsigned NoSlaves = 32'd8;  // How many Axi Slaves  there are
   // Random master no Transactions
-  localparam int unsigned NoWrites   = 32'd10000;  // How many writes per master
-  localparam int unsigned NoReads    = 32'd10000;  // How many reads per master
+  localparam int unsigned NoWrites = 32'd10000;  // How many writes per master
+  localparam int unsigned NoReads = 32'd10000;  // How many reads per master
   // timing parameters
   localparam time CyclTime = 10ns;
-  localparam time ApplTime =  2ns;
-  localparam time TestTime =  8ns;
+  localparam time ApplTime = 2ns;
+  localparam time TestTime = 8ns;
   // axi configuration
-  localparam int unsigned AxiAddrWidth      =  32'd32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth      =  32'd64;    // Axi Data Width
-  localparam int unsigned AxiStrbWidth      =  AxiDataWidth / 32'd8;
+  localparam int unsigned AxiAddrWidth = 32'd32;  // Axi Address Width
+  localparam int unsigned AxiDataWidth = 32'd64;  // Axi Data Width
+  localparam int unsigned AxiStrbWidth = AxiDataWidth / 32'd8;
   // in the bench can change this variables which are set here freely
   localparam axi_pkg::xbar_cfg_t xbar_cfg = '{
-    NoSlvPorts:         NoMasters,
-    NoMstPorts:         NoSlaves,
-    MaxMstTrans:        32'd10,
-    MaxSlvTrans:        32'd6,
-    FallThrough:        1'b0,
-    LatencyMode:        axi_pkg::CUT_ALL_AX,
-    AxiAddrWidth:       AxiAddrWidth,
-    AxiDataWidth:       AxiDataWidth,
-    NoAddrRules:        32'd8,
-    default:            '0
+    NoSlvPorts: NoMasters,
+    NoMstPorts: NoSlaves,
+    MaxMstTrans: 32'd10,
+    MaxSlvTrans: 32'd6,
+    FallThrough: 1'b0,
+    LatencyMode: axi_pkg::CUT_ALL_AX,
+    AxiAddrWidth: AxiAddrWidth,
+    AxiDataWidth: AxiDataWidth,
+    NoAddrRules: 32'd8,
+    default: '0
   };
-  typedef logic [AxiAddrWidth-1:0]      addr_t;
-  typedef axi_pkg::xbar_rule_32_t       rule_t; // Has to be the same width as axi addr
-  typedef logic [AxiDataWidth-1:0]      data_t;
-  typedef logic [AxiStrbWidth-1:0]      strb_t;
+  typedef logic [AxiAddrWidth-1:0] addr_t;
+  typedef axi_pkg::xbar_rule_32_t rule_t;  // Has to be the same width as axi addr
+  typedef logic [AxiDataWidth-1:0] data_t;
+  typedef logic [AxiStrbWidth-1:0] strb_t;
 
   localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = '{
     '{idx: 32'd7, start_addr: 32'h0001_0000, end_addr: 32'h0001_1000},
@@ -65,25 +65,25 @@ module tb_axi_lite_xbar;
     '{idx: 32'd0, start_addr: 32'h0000_0000, end_addr: 32'h0000_3000}
   };
 
-  typedef axi_test::axi_lite_rand_master #(
+  typedef axi_test::axi_lite_rand_master#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth       ),
-    .DW ( AxiDataWidth       ),
+    .AW            (AxiAddrWidth),
+    .DW            (AxiDataWidth),
     // Stimuli application and test time
-    .TA ( ApplTime           ),
-    .TT ( TestTime           ),
-    .MIN_ADDR ( 32'h0000_0000 ),
-    .MAX_ADDR ( 32'h0001_3000 ),
-    .MAX_READ_TXNS  ( 10 ),
-    .MAX_WRITE_TXNS ( 10 )
+    .TA            (ApplTime),
+    .TT            (TestTime),
+    .MIN_ADDR      (32'h0000_0000),
+    .MAX_ADDR      (32'h0001_3000),
+    .MAX_READ_TXNS (10),
+    .MAX_WRITE_TXNS(10)
   ) rand_lite_master_t;
-  typedef axi_test::axi_lite_rand_slave #(
+  typedef axi_test::axi_lite_rand_slave#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth       ),
-    .DW ( AxiDataWidth       ),
+    .AW(AxiAddrWidth),
+    .DW(AxiDataWidth),
     // Stimuli application and test time
-    .TA ( ApplTime           ),
-    .TT ( TestTime           )
+    .TA(ApplTime),
+    .TT(TestTime)
   ) rand_lite_slave_t;
 
   // -------------
@@ -98,25 +98,29 @@ module tb_axi_lite_xbar;
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
-  ) master [NoMasters-1:0] ();
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth)
+  ) master[NoMasters-1:0] ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( AxiDataWidth      )
-  ) master_dv [NoMasters-1:0] (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth)
+  ) master_dv[NoMasters-1:0] (
+    clk
+  );
   for (genvar i = 0; i < NoMasters; i++) begin : gen_conn_dv_masters
     `AXI_LITE_ASSIGN(master[i], master_dv[i])
   end
 
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
-    .AXI_DATA_WIDTH ( AxiDataWidth     )
-  ) slave [NoSlaves-1:0] ();
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth)
+  ) slave[NoSlaves-1:0] ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth     ),
-    .AXI_DATA_WIDTH ( AxiDataWidth     )
-  ) slave_dv [NoSlaves-1:0](clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth)
+  ) slave_dv[NoSlaves-1:0] (
+    clk
+  );
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_conn_dv_slaves
     `AXI_LITE_ASSIGN(slave_dv[i], slave[i])
   end
@@ -126,9 +130,9 @@ module tb_axi_lite_xbar;
   // Masters control simulation run time
   for (genvar i = 0; i < NoMasters; i++) begin : gen_rand_master
     initial begin : proc_generate_traffic
-      automatic rand_lite_master_t lite_axi_master = new ( master_dv[i], $sformatf("MST_%0d", i));
-      automatic data_t          data = '0;
-      automatic axi_pkg::resp_t resp = '0;
+      automatic rand_lite_master_t lite_axi_master = new(master_dv[i], $sformatf("MST_%0d", i));
+      automatic data_t             data = '0;
+      automatic axi_pkg::resp_t    resp = '0;
       end_of_sim[i] <= 1'b0;
       lite_axi_master.reset();
       @(posedge rst_n);
@@ -141,7 +145,7 @@ module tb_axi_lite_xbar;
 
   for (genvar i = 0; i < NoSlaves; i++) begin : gen_rand_slave
     initial begin : proc_recieve_traffic
-      automatic rand_lite_slave_t lite_axi_slave = new( slave_dv[i] , $sformatf("SLV_%0d", i));
+      automatic rand_lite_slave_t lite_axi_slave = new(slave_dv[i], $sformatf("SLV_%0d", i));
       lite_axi_slave.reset();
       @(posedge rst_n);
       lite_axi_slave.run();
@@ -159,8 +163,8 @@ module tb_axi_lite_xbar;
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-    .ClkPeriod    ( CyclTime ),
-    .RstClkCycles ( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
     .clk_o (clk),
     .rst_no(rst_n)
@@ -170,16 +174,16 @@ module tb_axi_lite_xbar;
   // DUT
   //-----------------------------------
   axi_lite_xbar_intf #(
-    .Cfg       ( xbar_cfg ),
-    .rule_t    ( rule_t   )
+    .Cfg   (xbar_cfg),
+    .rule_t(rule_t)
   ) i_xbar_dut (
-    .clk_i                  ( clk     ),
-    .rst_ni                 ( rst_n   ),
-    .test_i                 ( 1'b0    ),
-    .slv_ports              ( master  ),
-    .mst_ports              ( slave   ),
-    .addr_map_i             ( AddrMap ),
-    .en_default_mst_port_i  ( '0      ),
-    .default_mst_port_i     ( '0      )
+    .clk_i                (clk),
+    .rst_ni               (rst_n),
+    .test_i               (1'b0),
+    .slv_ports            (master),
+    .mst_ports            (slave),
+    .addr_map_i           (AddrMap),
+    .en_default_mst_port_i('0),
+    .default_mst_port_i   ('0)
   );
 endmodule

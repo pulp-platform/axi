@@ -15,10 +15,10 @@
 `include "axi/assign.svh"
 
 module tb_axi_fifo #(
-    parameter int unsigned Depth = 16,
-    parameter int unsigned FallThrough = 0,
-    parameter int unsigned NoWrites = 200,  // How many writes per master
-    parameter int unsigned NoReads = 200  // How many reads per master
+  parameter int unsigned Depth = 16,
+  parameter int unsigned FallThrough = 0,
+  parameter int unsigned NoWrites = 200,  // How many writes per master
+  parameter int unsigned NoReads = 200  // How many reads per master
 );
   // Random Master Atomics
   localparam int unsigned MaxAW = 30;
@@ -37,28 +37,28 @@ module tb_axi_fifo #(
   localparam int unsigned PrintTnx = 100;
 
   typedef axi_test::axi_rand_master#(
-      // AXI interface parameters
-      .AW            (AxiAddrWidth),
-      .DW            (AxiDataWidth),
-      .IW            (AxiIdWidth),
-      .UW            (AxiUserWidth),
-      // Stimuli application and test time
-      .TA            (ApplTime),
-      .TT            (TestTime),
-      // Maximum number of read and write transactions in flight
-      .MAX_READ_TXNS (MaxAR),
-      .MAX_WRITE_TXNS(MaxAW),
-      .AXI_ATOPS     (EnAtop)
+    // AXI interface parameters
+    .AW            (AxiAddrWidth),
+    .DW            (AxiDataWidth),
+    .IW            (AxiIdWidth),
+    .UW            (AxiUserWidth),
+    // Stimuli application and test time
+    .TA            (ApplTime),
+    .TT            (TestTime),
+    // Maximum number of read and write transactions in flight
+    .MAX_READ_TXNS (MaxAR),
+    .MAX_WRITE_TXNS(MaxAW),
+    .AXI_ATOPS     (EnAtop)
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave#(
-      // AXI interface parameters
-      .AW(AxiAddrWidth),
-      .DW(AxiDataWidth),
-      .IW(AxiIdWidth),
-      .UW(AxiUserWidth),
-      // Stimuli application and test time
-      .TA(ApplTime),
-      .TT(TestTime)
+    // AXI interface parameters
+    .AW(AxiAddrWidth),
+    .DW(AxiDataWidth),
+    .IW(AxiIdWidth),
+    .UW(AxiUserWidth),
+    // Stimuli application and test time
+    .TA(ApplTime),
+    .TT(TestTime)
   ) axi_rand_slave_t;
 
   // -------------
@@ -70,19 +70,19 @@ module tb_axi_fifo #(
 
   // interfaces
   AXI_BUS #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
   )
-      master (), slave ();
+    master (), slave ();
   AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH(AxiAddrWidth),
-      .AXI_DATA_WIDTH(AxiDataWidth),
-      .AXI_ID_WIDTH  (AxiIdWidth),
-      .AXI_USER_WIDTH(AxiUserWidth)
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
   )
-      master_dv (clk), slave_dv (clk);
+    master_dv (clk), slave_dv (clk);
 
   `AXI_ASSIGN(master, master_dv)
   `AXI_ASSIGN(slave_dv, slave)
@@ -91,29 +91,29 @@ module tb_axi_fifo #(
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-      .ClkPeriod   (CyclTime),
-      .RstClkCycles(5)
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
-      .clk_o (clk),
-      .rst_no(rst_n)
+    .clk_o (clk),
+    .rst_no(rst_n)
   );
 
   //-----------------------------------
   // DUT
   //-----------------------------------
   axi_fifo_intf #(
-      .DEPTH       (Depth),  // number of FiFo slots
-      .FALL_THROUGH(FallThrough),  // FiFos in fall through mode
-      .ID_WIDTH    (AxiIdWidth),  // AXI ID width
-      .ADDR_WIDTH  (AxiAddrWidth),  // AXI address width
-      .DATA_WIDTH  (AxiDataWidth),  // AXI data width
-      .USER_WIDTH  (AxiUserWidth)  // AXI user width
+    .DEPTH       (Depth),         // number of FiFo slots
+    .FALL_THROUGH(FallThrough),   // FiFos in fall through mode
+    .ID_WIDTH    (AxiIdWidth),    // AXI ID width
+    .ADDR_WIDTH  (AxiAddrWidth),  // AXI address width
+    .DATA_WIDTH  (AxiDataWidth),  // AXI data width
+    .USER_WIDTH  (AxiUserWidth)   // AXI user width
   ) i_dut (
-      .clk_i (clk),  // clock
-      .rst_ni(rst_n),  // asynchronous reset active low
-      .test_i(1'b0),
-      .slv   (master),  // slave port
-      .mst   (slave)  // master port
+    .clk_i (clk),  // clock
+    .rst_ni(rst_n),  // asynchronous reset active low
+    .test_i(1'b0),
+    .slv   (master),  // slave port
+    .mst   (slave)  // master port
   );
 
   initial begin : proc_axi_master

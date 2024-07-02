@@ -138,7 +138,8 @@
 //
 // This defines `axi_req_t` and `axi_resp_t` request/response structs as well as `axi_aw_chan_t`,
 // `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
-`define AXI_TYPEDEF_ALL(__name, __addr_t, __id_t, __data_t, __strb_t, __user_t)                                \
+`define AXI_TYPEDEF_ALL(__name, __addr_t, __id_t, __data_t, __strb_t,
+                        __user_t)                                \
   `AXI_TYPEDEF_ALL_CT(__name, __name``_req_t, __name``_resp_t, __addr_t, __id_t, __data_t, __strb_t, __user_t)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -237,7 +238,7 @@
 // This defines `axi_lite_req_t` and `axi_lite_resp_t` request/response structs as well as
 // `axi_lite_aw_chan_t`, `axi_lite_w_chan_t`, `axi_lite_b_chan_t`, `axi_lite_ar_chan_t`, and
 // `axi_lite_r_chan_t` channel structs.
-`define AXI_LITE_TYPEDEF_ALL(__name, __addr_t, __data_t, __strb_t)                                \
+`define AXI_LITE_TYPEDEF_ALL(__name, __addr_t, __data_t, __strb_t) \
   `AXI_LITE_TYPEDEF_ALL_CT(__name, __name``_req_t, __name``_resp_t, __addr_t, __data_t, __strb_t)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

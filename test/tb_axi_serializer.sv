@@ -16,50 +16,50 @@
 `include "axi/assign.svh"
 
 module tb_axi_serializer #(
-    parameter int unsigned NoWrites = 5000,  // How many writes per master
-    parameter int unsigned NoReads  = 3000   // How many reads per master
-  );
+  parameter int unsigned NoWrites = 5000,  // How many writes per master
+  parameter int unsigned NoReads  = 3000   // How many reads per master
+);
   // Random master no Transactions
   localparam int unsigned NoPendingDut = 4;
   // Random Master Atomics
-  localparam int unsigned MaxAW      = 32'd30;
-  localparam int unsigned MaxAR      = 32'd30;
-  localparam bit          EnAtop     = 1'b1;
+  localparam int unsigned MaxAW = 32'd30;
+  localparam int unsigned MaxAR = 32'd30;
+  localparam bit EnAtop = 1'b1;
   // timing parameters
   localparam time CyclTime = 10ns;
-  localparam time ApplTime =  2ns;
-  localparam time TestTime =  8ns;
+  localparam time ApplTime = 2ns;
+  localparam time TestTime = 8ns;
   // AXI configuration
-  localparam int unsigned AxiIdWidth   =  4;
-  localparam int unsigned AxiAddrWidth =  32;    // Axi Address Width
-  localparam int unsigned AxiDataWidth =  64;    // Axi Data Width
-  localparam int unsigned AxiUserWidth =  5;
+  localparam int unsigned AxiIdWidth = 4;
+  localparam int unsigned AxiAddrWidth = 32;  // Axi Address Width
+  localparam int unsigned AxiDataWidth = 64;  // Axi Data Width
+  localparam int unsigned AxiUserWidth = 5;
   // Sim print config, how many transactions
   localparam int unsigned PrintTxn = 500;
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_master#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW            (AxiAddrWidth),
+    .DW            (AxiDataWidth),
+    .IW            (AxiIdWidth),
+    .UW            (AxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime ),
-    .TT ( TestTime ),
+    .TA            (ApplTime),
+    .TT            (TestTime),
     // Maximum number of read and write transactions in flight
-    .MAX_READ_TXNS  ( MaxAR  ),
-    .MAX_WRITE_TXNS ( MaxAW  ),
-    .AXI_ATOPS      ( EnAtop )
+    .MAX_READ_TXNS (MaxAR),
+    .MAX_WRITE_TXNS(MaxAW),
+    .AXI_ATOPS     (EnAtop)
   ) axi_rand_master_t;
-  typedef axi_test::axi_rand_slave #(
+  typedef axi_test::axi_rand_slave#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( AxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW(AxiAddrWidth),
+    .DW(AxiDataWidth),
+    .IW(AxiIdWidth),
+    .UW(AxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime ),
-    .TT ( TestTime )
+    .TA(ApplTime),
+    .TT(TestTime)
   ) axi_rand_slave_t;
 
   // -------------
@@ -71,29 +71,33 @@ module tb_axi_serializer #(
 
   // interfaces
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
   ) master ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) master_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) master_dv (
+    clk
+  );
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
   ) slave ();
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( AxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) slave_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(AxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) slave_dv (
+    clk
+  );
 
   `AXI_ASSIGN(master, master_dv)
   `AXI_ASSIGN(slave_dv, slave)
@@ -102,8 +106,8 @@ module tb_axi_serializer #(
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-    .ClkPeriod    ( CyclTime ),
-    .RstClkCycles ( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
     .clk_o (clk),
     .rst_no(rst_n)
@@ -113,17 +117,17 @@ module tb_axi_serializer #(
   // DUT
   //-----------------------------------
   axi_serializer_intf #(
-    .MAX_READ_TXNS  ( NoPendingDut ),
-    .MAX_WRITE_TXNS ( NoPendingDut ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ), // AXI ID width
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ), // AXI address width
-    .AXI_DATA_WIDTH ( AxiDataWidth ), // AXI data width
-    .AXI_USER_WIDTH ( AxiUserWidth )  // AXI user width
+    .MAX_READ_TXNS (NoPendingDut),
+    .MAX_WRITE_TXNS(NoPendingDut),
+    .AXI_ID_WIDTH  (AxiIdWidth),    // AXI ID width
+    .AXI_ADDR_WIDTH(AxiAddrWidth),  // AXI address width
+    .AXI_DATA_WIDTH(AxiDataWidth),  // AXI data width
+    .AXI_USER_WIDTH(AxiUserWidth)   // AXI user width
   ) i_dut (
-    .clk_i      ( clk      ), // clock
-    .rst_ni     ( rst_n    ), // asynchronous reset active low
-    .slv        ( master   ), // slave port
-    .mst        ( slave    )  // master port
+    .clk_i (clk),     // clock
+    .rst_ni(rst_n),   // asynchronous reset active low
+    .slv   (master),  // slave port
+    .mst   (slave)    // master port
   );
 
   initial begin : proc_axi_master
@@ -141,43 +145,43 @@ module tb_axi_serializer #(
   end
 
   initial begin : proc_axi_slave
-    automatic axi_rand_slave_t  axi_rand_slave  = new(slave_dv);
+    automatic axi_rand_slave_t axi_rand_slave = new(slave_dv);
     axi_rand_slave.reset();
     @(posedge rst_n);
     axi_rand_slave.run();
   end
 
   // Checker
-  typedef logic [AxiIdWidth-1:0]     axi_id_t;
-  typedef logic [AxiAddrWidth-1:0]   axi_addr_t;
-  typedef logic [AxiDataWidth-1:0]   axi_data_t;
+  typedef logic [AxiIdWidth-1:0] axi_id_t;
+  typedef logic [AxiAddrWidth-1:0] axi_addr_t;
+  typedef logic [AxiDataWidth-1:0] axi_data_t;
   typedef logic [AxiDataWidth/8-1:0] axi_strb_t;
-  typedef logic [AxiUserWidth-1:0]   axi_user_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, axi_addr_t,  axi_id_t,  axi_user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t,  axi_data_t,  axi_strb_t,  axi_user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t,  axi_id_t,  axi_user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t,  axi_addr_t,  axi_id_t,  axi_user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t,  axi_data_t,  axi_id_t,  axi_user_t)
+  typedef logic [AxiUserWidth-1:0] axi_user_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, axi_addr_t, axi_id_t, axi_user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, axi_id_t, axi_user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, axi_addr_t, axi_id_t, axi_user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, axi_data_t, axi_id_t, axi_user_t)
   axi_id_t  aw_queue[$];
   axi_id_t  ar_queue[$];
-  aw_chan_t aw_chan[$];
-  w_chan_t   w_chan[$];
-  b_chan_t   b_chan[$];
-  ar_chan_t ar_chan[$];
-  r_chan_t   r_chan[$];
+  aw_chan_t aw_chan [$];
+  w_chan_t  w_chan  [$];
+  b_chan_t  b_chan  [$];
+  ar_chan_t ar_chan [$];
+  r_chan_t  r_chan  [$];
 
   initial begin : proc_checker
-    automatic axi_id_t  id_exp; // expected ID
-    automatic aw_chan_t aw_exp; // expected AW
-    automatic aw_chan_t aw_act; // actual AW
-    automatic w_chan_t   w_exp; // expected W
-    automatic w_chan_t   w_act; // actual W
-    automatic b_chan_t   b_exp; // expected B
-    automatic b_chan_t   b_act; // actual B
-    automatic ar_chan_t ar_exp; // expected AR
-    automatic ar_chan_t ar_act; // actual AR
-    automatic r_chan_t   r_exp; // expected R
-    automatic r_chan_t   r_act; // actual R
+    automatic axi_id_t  id_exp;  // expected ID
+    automatic aw_chan_t aw_exp;  // expected AW
+    automatic aw_chan_t aw_act;  // actual AW
+    automatic w_chan_t  w_exp;  // expected W
+    automatic w_chan_t  w_act;  // actual W
+    automatic b_chan_t  b_exp;  // expected B
+    automatic b_chan_t  b_act;  // actual B
+    automatic ar_chan_t ar_exp;  // expected AR
+    automatic ar_chan_t ar_act;  // actual AR
+    automatic r_chan_t  r_exp;  // expected R
+    automatic r_chan_t  r_act;  // actual R
     forever begin
       @(posedge clk);
       #TestTime;
@@ -223,34 +227,39 @@ module tb_axi_serializer #(
       if (slave.aw_valid && slave.aw_ready) begin
         aw_exp = aw_chan.pop_front();
         `AXI_SET_TO_AW(aw_act, slave)
-        assert(aw_act == aw_exp) else $error("AW Measured: %h Expected: %h", aw_act, aw_exp);
+        assert (aw_act == aw_exp)
+        else $error("AW Measured: %h Expected: %h", aw_act, aw_exp);
       end
       if (slave.w_valid && slave.w_ready) begin
         w_exp = w_chan.pop_front();
         `AXI_SET_TO_W(w_act, slave)
-        assert(w_act == w_exp) else $error("W Measured: %h Expected: %h", w_act, w_exp);
+        assert (w_act == w_exp)
+        else $error("W Measured: %h Expected: %h", w_act, w_exp);
       end
       if (master.b_valid && master.b_ready) begin
         b_exp = b_chan.pop_front();
         `AXI_SET_TO_B(b_act, master)
-        assert(b_act == b_exp) else $error("B Measured: %h Expected: %h", b_act, b_exp);
+        assert (b_act == b_exp)
+        else $error("B Measured: %h Expected: %h", b_act, b_exp);
       end
       if (slave.ar_valid && slave.ar_ready) begin
         ar_exp = ar_chan.pop_front();
         `AXI_SET_TO_AR(ar_act, slave)
-        assert(ar_act == ar_exp) else $error("AR Measured: %h Expected: %h", ar_act, ar_exp);
+        assert (ar_act == ar_exp)
+        else $error("AR Measured: %h Expected: %h", ar_act, ar_exp);
       end
       if (master.r_valid && master.r_ready) begin
         r_exp = r_chan.pop_front();
         `AXI_SET_TO_R(r_act, master)
-        assert(r_act == r_exp) else $error("R Measured: %h Expected: %h", r_act, r_exp);
+        assert (r_act == r_exp)
+        else $error("R Measured: %h Expected: %h", r_act, r_exp);
       end
     end
   end
 
   initial begin : proc_sim_progress
-    automatic int unsigned aw         = 0;
-    automatic int unsigned ar         = 0;
+    automatic int unsigned aw = 0;
+    automatic int unsigned ar = 0;
     automatic bit          aw_printed = 1'b0;
     automatic bit          ar_printed = 1'b0;
 
@@ -266,7 +275,7 @@ module tb_axi_serializer #(
         ar++;
       end
 
-      if ((aw % PrintTxn == 0) && ! aw_printed) begin
+      if ((aw % PrintTxn == 0) && !aw_printed) begin
         $display("%t> Transmit AW %d of %d.", $time(), aw, NoWrites);
         aw_printed = 1'b1;
       end

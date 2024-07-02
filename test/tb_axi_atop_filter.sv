@@ -25,12 +25,12 @@ module tb_axi_atop_filter #(
   parameter int unsigned TB_AXI_MAX_WRITE_TXNS = 12,
   // TB Parameters
   parameter time TB_TCLK = 10ns,
-  parameter time TB_TA = TB_TCLK * 1/4,
-  parameter time TB_TT = TB_TCLK * 3/4,
+  parameter time TB_TA = TB_TCLK * 1 / 4,
+  parameter time TB_TT = TB_TCLK * 3 / 4,
   parameter int unsigned TB_REQ_MIN_WAIT_CYCLES = 0,
   parameter int unsigned TB_REQ_MAX_WAIT_CYCLES = 10,
   parameter int unsigned TB_RESP_MIN_WAIT_CYCLES = 0,
-  parameter int unsigned TB_RESP_MAX_WAIT_CYCLES = TB_REQ_MAX_WAIT_CYCLES/2,
+  parameter int unsigned TB_RESP_MAX_WAIT_CYCLES = TB_REQ_MAX_WAIT_CYCLES / 2,
   parameter int unsigned TB_N_TXNS = 1000
 );
 
@@ -45,67 +45,66 @@ module tb_axi_atop_filter #(
   import rand_id_queue_pkg::rand_id_queue;
   import rand_verif_pkg::rand_wait;
 
-  localparam int unsigned AXI_STRB_WIDTH  = TB_AXI_DATA_WIDTH / 8;
-  localparam int unsigned NUM_AXI_IDS     = 2**TB_AXI_ID_WIDTH;
+  localparam int unsigned AXI_STRB_WIDTH = TB_AXI_DATA_WIDTH / 8;
+  localparam int unsigned NUM_AXI_IDS = 2 ** TB_AXI_ID_WIDTH;
 
-  logic clk,
-        rst_n;
+  logic clk, rst_n;
 
   clk_rst_gen #(
-    .ClkPeriod    (TB_TCLK),
-    .RstClkCycles (5)
+    .ClkPeriod   (TB_TCLK),
+    .RstClkCycles(5)
   ) i_clk_rst_gen (
-    .clk_o  (clk),
-    .rst_no (rst_n)
+    .clk_o (clk),
+    .rst_no(rst_n)
   );
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH(TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH(TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH  (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH(TB_AXI_USER_WIDTH)
   ) upstream_dv (
-    .clk_i  (clk)
+    .clk_i(clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH(TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH(TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH  (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH(TB_AXI_USER_WIDTH)
   ) upstream ();
 
   `AXI_ASSIGN(upstream, upstream_dv)
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH(TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH(TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH  (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH(TB_AXI_USER_WIDTH)
   ) downstream_dv (
-    .clk_i  (clk)
+    .clk_i(clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (TB_AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH (TB_AXI_DATA_WIDTH),
-    .AXI_ID_WIDTH   (TB_AXI_ID_WIDTH),
-    .AXI_USER_WIDTH (TB_AXI_USER_WIDTH)
+    .AXI_ADDR_WIDTH(TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH(TB_AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH  (TB_AXI_ID_WIDTH),
+    .AXI_USER_WIDTH(TB_AXI_USER_WIDTH)
   ) downstream ();
 
   `AXI_ASSIGN(downstream_dv, downstream)
 
   axi_atop_filter_intf #(
-    .AXI_ID_WIDTH       (TB_AXI_ID_WIDTH),
-    .AXI_MAX_WRITE_TXNS (TB_AXI_MAX_WRITE_TXNS),
-    .AXI_ADDR_WIDTH     (TB_AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH     (TB_AXI_DATA_WIDTH),
-    .AXI_USER_WIDTH     (TB_AXI_USER_WIDTH)
+    .AXI_ID_WIDTH      (TB_AXI_ID_WIDTH),
+    .AXI_MAX_WRITE_TXNS(TB_AXI_MAX_WRITE_TXNS),
+    .AXI_ADDR_WIDTH    (TB_AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH    (TB_AXI_DATA_WIDTH),
+    .AXI_USER_WIDTH    (TB_AXI_USER_WIDTH)
   ) dut (
-    .clk_i  (clk),
-    .rst_ni (rst_n),
-    .slv    (upstream),
-    .mst    (downstream)
+    .clk_i (clk),
+    .rst_ni(rst_n),
+    .slv   (upstream),
+    .mst   (downstream)
   );
 
   typedef logic [TB_AXI_ID_WIDTH-1:0] axi_id_t;
@@ -113,22 +112,29 @@ module tb_axi_atop_filter #(
   // AXI Master
   logic mst_done = 1'b0;
   axi_test::axi_rand_master #(
-    .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
-    .TA(TB_TA), .TT(TB_TT),
-    .MAX_READ_TXNS        (TB_AXI_MAX_READ_TXNS),
-    .MAX_WRITE_TXNS       (TB_AXI_MAX_WRITE_TXNS+2), // master is not required to comply
-    .AX_MIN_WAIT_CYCLES   (TB_REQ_MIN_WAIT_CYCLES),
-    .AX_MAX_WAIT_CYCLES   (TB_REQ_MAX_WAIT_CYCLES),
-    .W_MIN_WAIT_CYCLES    (TB_REQ_MIN_WAIT_CYCLES),
-    .W_MAX_WAIT_CYCLES    (TB_REQ_MAX_WAIT_CYCLES),
-    .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
-    .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES),
-    .AXI_ATOPS            (1'b1)
-  ) axi_master = new(upstream_dv);
+    .AW                  (TB_AXI_ADDR_WIDTH),
+    .DW                  (TB_AXI_DATA_WIDTH),
+    .IW                  (TB_AXI_ID_WIDTH),
+    .UW                  (TB_AXI_USER_WIDTH),
+    .TA                  (TB_TA),
+    .TT                  (TB_TT),
+    .MAX_READ_TXNS       (TB_AXI_MAX_READ_TXNS),
+    .MAX_WRITE_TXNS      (TB_AXI_MAX_WRITE_TXNS + 2),  // master is not required to comply
+    .AX_MIN_WAIT_CYCLES  (TB_REQ_MIN_WAIT_CYCLES),
+    .AX_MAX_WAIT_CYCLES  (TB_REQ_MAX_WAIT_CYCLES),
+    .W_MIN_WAIT_CYCLES   (TB_REQ_MIN_WAIT_CYCLES),
+    .W_MAX_WAIT_CYCLES   (TB_REQ_MAX_WAIT_CYCLES),
+    .RESP_MIN_WAIT_CYCLES(TB_RESP_MIN_WAIT_CYCLES),
+    .RESP_MAX_WAIT_CYCLES(TB_RESP_MAX_WAIT_CYCLES),
+    .AXI_ATOPS           (1'b1)
+  ) axi_master = new(
+    upstream_dv
+  );
   initial begin
     axi_master.reset();
-    wait(rst_n);
-    axi_master.add_memory_region({TB_AXI_ADDR_WIDTH{1'b0}}, {TB_AXI_ADDR_WIDTH{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    wait (rst_n);
+    axi_master.add_memory_region({TB_AXI_ADDR_WIDTH{1'b0}}, {TB_AXI_ADDR_WIDTH{1'b1}},
+                                 axi_pkg::WTHRU_NOALLOCATE);
     axi_master.run(TB_N_TXNS, TB_N_TXNS);
     mst_done = 1'b1;
   end
@@ -140,15 +146,21 @@ module tb_axi_atop_filter #(
 
   // AXI Slave
   axi_test::axi_rand_slave #(
-    .AW(TB_AXI_ADDR_WIDTH), .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH),
-    .TA(TB_TA), .TT(TB_TT),
-    .AX_MIN_WAIT_CYCLES   (TB_RESP_MIN_WAIT_CYCLES),
-    .AX_MAX_WAIT_CYCLES   (TB_RESP_MAX_WAIT_CYCLES),
-    .R_MIN_WAIT_CYCLES    (TB_RESP_MIN_WAIT_CYCLES),
-    .R_MAX_WAIT_CYCLES    (TB_RESP_MAX_WAIT_CYCLES),
-    .RESP_MIN_WAIT_CYCLES (TB_RESP_MIN_WAIT_CYCLES),
-    .RESP_MAX_WAIT_CYCLES (TB_RESP_MAX_WAIT_CYCLES)
-  ) axi_slave = new(downstream_dv);
+    .AW                  (TB_AXI_ADDR_WIDTH),
+    .DW                  (TB_AXI_DATA_WIDTH),
+    .IW                  (TB_AXI_ID_WIDTH),
+    .UW                  (TB_AXI_USER_WIDTH),
+    .TA                  (TB_TA),
+    .TT                  (TB_TT),
+    .AX_MIN_WAIT_CYCLES  (TB_RESP_MIN_WAIT_CYCLES),
+    .AX_MAX_WAIT_CYCLES  (TB_RESP_MAX_WAIT_CYCLES),
+    .R_MIN_WAIT_CYCLES   (TB_RESP_MIN_WAIT_CYCLES),
+    .R_MAX_WAIT_CYCLES   (TB_RESP_MAX_WAIT_CYCLES),
+    .RESP_MIN_WAIT_CYCLES(TB_RESP_MIN_WAIT_CYCLES),
+    .RESP_MAX_WAIT_CYCLES(TB_RESP_MAX_WAIT_CYCLES)
+  ) axi_slave = new(
+    downstream_dv
+  );
   initial begin
     axi_slave.reset();
     wait (rst_n);
@@ -156,27 +168,33 @@ module tb_axi_atop_filter #(
   end
 
   typedef struct packed {
-    axi_id_t  id;
-    logic     thru;
+    axi_id_t id;
+    logic    thru;
   } w_cmd_t;
 
-  typedef axi_test::axi_ax_beat #(
-    .AW(TB_AXI_ADDR_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
+  typedef axi_test::axi_ax_beat#(
+    .AW(TB_AXI_ADDR_WIDTH),
+    .IW(TB_AXI_ID_WIDTH),
+    .UW(TB_AXI_USER_WIDTH)
   ) ax_beat_t;
-  typedef axi_test::axi_b_beat #(
-    .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
+  typedef axi_test::axi_b_beat#(
+    .IW(TB_AXI_ID_WIDTH),
+    .UW(TB_AXI_USER_WIDTH)
   ) b_beat_t;
-  typedef axi_test::axi_r_beat #(
-    .DW(TB_AXI_DATA_WIDTH), .IW(TB_AXI_ID_WIDTH), .UW(TB_AXI_USER_WIDTH)
+  typedef axi_test::axi_r_beat#(
+    .DW(TB_AXI_DATA_WIDTH),
+    .IW(TB_AXI_ID_WIDTH),
+    .UW(TB_AXI_USER_WIDTH)
   ) r_beat_t;
-  typedef axi_test::axi_w_beat #(
-    .DW(TB_AXI_DATA_WIDTH), .UW(TB_AXI_USER_WIDTH)
+  typedef axi_test::axi_w_beat#(
+    .DW(TB_AXI_DATA_WIDTH),
+    .UW(TB_AXI_USER_WIDTH)
   ) w_beat_t;
 
   // Put W beats into transfer queue or drop them and inject B responses based on W command.
   function automatic void process_w_beat(w_beat_t w_beat, ref w_cmd_t w_cmd_queue[$],
-      ref w_beat_t w_xfer_queue[$], ref b_beat_t b_inject_queue[$]
-  );
+                                         ref w_beat_t w_xfer_queue[$],
+                                         ref b_beat_t b_inject_queue[$]);
     w_cmd_t w_cmd = w_cmd_queue[0];
     if (w_cmd.thru) begin
       w_xfer_queue.push_back(w_beat);
@@ -184,7 +202,7 @@ module tb_axi_atop_filter #(
     if (w_beat.w_last) begin
       if (!w_cmd.thru) begin
         automatic b_beat_t b_beat = new;
-        b_beat.b_id = w_cmd.id;
+        b_beat.b_id   = w_cmd.id;
         b_beat.b_resp = RESP_SLVERR;
         b_inject_queue.push_back(b_beat);
       end
@@ -194,16 +212,11 @@ module tb_axi_atop_filter #(
 
   // Monitor and check responses of filter.
   initial begin
-    static ax_beat_t  ar_xfer_queue[$],
-                      aw_xfer_queue[$];
-    static b_beat_t   b_inject_queue[$],
-                      b_xfer_queue[$];
-    static r_beat_t   r_inject_queue[$],
-                      r_xfer_queue[$];
-    static w_cmd_t    w_cmd_queue[$];
-    static w_beat_t   w_act_queue[$],
-                      w_undecided_queue[$],
-                      w_xfer_queue[$];
+    static ax_beat_t ar_xfer_queue[$], aw_xfer_queue[$];
+    static b_beat_t b_inject_queue[$], b_xfer_queue[$];
+    static r_beat_t r_inject_queue[$], r_xfer_queue[$];
+    static w_cmd_t w_cmd_queue[$];
+    static w_beat_t w_act_queue[$], w_undecided_queue[$], w_xfer_queue[$];
     forever begin
       @(posedge clk);
       #(TB_TT);
@@ -230,7 +243,7 @@ module tb_axi_atop_filter #(
       // Push upstream AWs that must go through into transfer queues, and push to W command queue.
       if (upstream.aw_valid && upstream.aw_ready) begin
         automatic ax_beat_t aw_beat = new;
-        automatic w_cmd_t w_cmd;
+        automatic w_cmd_t   w_cmd;
         aw_beat.ax_id     = upstream.aw_id;
         aw_beat.ax_addr   = upstream.aw_addr;
         aw_beat.ax_len    = upstream.aw_len;
@@ -243,15 +256,15 @@ module tb_axi_atop_filter #(
         aw_beat.ax_region = upstream.aw_region;
         aw_beat.ax_atop   = upstream.aw_atop;
         aw_beat.ax_user   = upstream.aw_user;
-        w_cmd.id = aw_beat.ax_id;
-        w_cmd.thru = (aw_beat.ax_atop == '0);
+        w_cmd.id          = aw_beat.ax_id;
+        w_cmd.thru        = (aw_beat.ax_atop == '0);
         w_cmd_queue.push_back(w_cmd);
         if (w_cmd.thru) begin
           aw_xfer_queue.push_back(aw_beat);
         end else if (aw_beat.ax_atop[5:4] != ATOP_ATOMICSTORE) begin
           for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
             automatic r_beat_t r_beat = new;
-            r_beat.r_id = aw_beat.ax_id;
+            r_beat.r_id   = aw_beat.ax_id;
             r_beat.r_resp = RESP_SLVERR;
             r_beat.r_data = '0;
             r_beat.r_user = '0;
@@ -299,34 +312,36 @@ module tb_axi_atop_filter #(
       // Ensure downstream ARs match beats from transfer queue.
       if (downstream.ar_valid && downstream.ar_ready) begin
         automatic ax_beat_t exp_beat;
-        assert (ar_xfer_queue.size() > 0) else $fatal(1, "downstream.AR: Unknown beat!");
+        assert (ar_xfer_queue.size() > 0)
+        else $fatal(1, "downstream.AR: Unknown beat!");
         exp_beat = ar_xfer_queue.pop_front();
-        assert (downstream.ar_id      == exp_beat.ax_id);
-        assert (downstream.ar_addr    == exp_beat.ax_addr);
-        assert (downstream.ar_len     == exp_beat.ax_len);
-        assert (downstream.ar_size    == exp_beat.ax_size);
-        assert (downstream.ar_burst   == exp_beat.ax_burst);
-        assert (downstream.ar_cache   == exp_beat.ax_cache);
-        assert (downstream.ar_prot    == exp_beat.ax_prot);
-        assert (downstream.ar_qos     == exp_beat.ax_qos);
-        assert (downstream.ar_region  == exp_beat.ax_region);
-        assert (downstream.ar_user    == exp_beat.ax_user);
+        assert (downstream.ar_id == exp_beat.ax_id);
+        assert (downstream.ar_addr == exp_beat.ax_addr);
+        assert (downstream.ar_len == exp_beat.ax_len);
+        assert (downstream.ar_size == exp_beat.ax_size);
+        assert (downstream.ar_burst == exp_beat.ax_burst);
+        assert (downstream.ar_cache == exp_beat.ax_cache);
+        assert (downstream.ar_prot == exp_beat.ax_prot);
+        assert (downstream.ar_qos == exp_beat.ax_qos);
+        assert (downstream.ar_region == exp_beat.ax_region);
+        assert (downstream.ar_user == exp_beat.ax_user);
       end
       // Ensure downstream AWs match beats from transfer queue.
       if (downstream.aw_valid && downstream.aw_ready) begin
         automatic ax_beat_t exp_beat;
-        assert (aw_xfer_queue.size() > 0) else $fatal(1, "downstream.AW: Unknown beat!");
+        assert (aw_xfer_queue.size() > 0)
+        else $fatal(1, "downstream.AW: Unknown beat!");
         exp_beat = aw_xfer_queue.pop_front();
-        assert (downstream.aw_id      == exp_beat.ax_id);
-        assert (downstream.aw_addr    == exp_beat.ax_addr);
-        assert (downstream.aw_len     == exp_beat.ax_len);
-        assert (downstream.aw_size    == exp_beat.ax_size);
-        assert (downstream.aw_burst   == exp_beat.ax_burst);
-        assert (downstream.aw_cache   == exp_beat.ax_cache);
-        assert (downstream.aw_prot    == exp_beat.ax_prot);
-        assert (downstream.aw_qos     == exp_beat.ax_qos);
-        assert (downstream.aw_region  == exp_beat.ax_region);
-        assert (downstream.aw_user    == exp_beat.ax_user);
+        assert (downstream.aw_id == exp_beat.ax_id);
+        assert (downstream.aw_addr == exp_beat.ax_addr);
+        assert (downstream.aw_len == exp_beat.ax_len);
+        assert (downstream.aw_size == exp_beat.ax_size);
+        assert (downstream.aw_burst == exp_beat.ax_burst);
+        assert (downstream.aw_cache == exp_beat.ax_cache);
+        assert (downstream.aw_prot == exp_beat.ax_prot);
+        assert (downstream.aw_qos == exp_beat.ax_qos);
+        assert (downstream.aw_region == exp_beat.ax_region);
+        assert (downstream.aw_user == exp_beat.ax_user);
       end
       // Ensure downstream Ws match beats from transfer queue.
       while (w_act_queue.size() > 0 && w_xfer_queue.size() > 0) begin
@@ -363,7 +378,7 @@ module tb_axi_atop_filter #(
         end else begin
           $fatal(1, "upstream.R: Unknown beat!");
         end
-        assert (upstream.r_id   == exp_beat.r_id);
+        assert (upstream.r_id == exp_beat.r_id);
         assert (upstream.r_data == exp_beat.r_data);
         assert (upstream.r_resp == exp_beat.r_resp);
         assert (upstream.r_last == exp_beat.r_last);
@@ -379,7 +394,7 @@ module tb_axi_atop_filter #(
         end else begin
           $fatal(1, "upstream.B: Unknown beat!");
         end
-        assert (upstream.b_id   == exp_beat.b_id);
+        assert (upstream.b_id == exp_beat.b_id);
         assert (upstream.b_resp == exp_beat.b_resp);
         assert (upstream.b_user == exp_beat.b_user);
       end

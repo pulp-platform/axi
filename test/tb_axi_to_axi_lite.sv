@@ -24,12 +24,12 @@ module tb_axi_to_axi_lite;
   parameter UW = 8;
 
   localparam tCK = 1ns;
-  localparam TA = tCK * 1/4;
-  localparam TT = tCK * 3/4;
+  localparam TA = tCK * 1 / 4;
+  localparam TT = tCK * 3 / 4;
 
-  localparam     MAX_READ_TXNS  = 32'd20;
-  localparam     MAX_WRITE_TXNS = 32'd20;
-  localparam bit AXI_ATOPS      = 1'b1;
+  localparam MAX_READ_TXNS = 32'd20;
+  localparam MAX_WRITE_TXNS = 32'd20;
+  localparam bit AXI_ATOPS = 1'b1;
 
   logic clk = 0;
   logic rst = 1;
@@ -38,65 +38,74 @@ module tb_axi_to_axi_lite;
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) axi_lite_dv(clk);
+  ) axi_lite_dv (
+    clk
+  );
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW)
-  ) axi_lite();
+  ) axi_lite ();
 
   `AXI_LITE_ASSIGN(axi_lite_dv, axi_lite)
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IW),
+    .AXI_ID_WIDTH  (IW),
     .AXI_USER_WIDTH(UW)
-  ) axi_dv(clk);
+  ) axi_dv (
+    clk
+  );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(AW),
     .AXI_DATA_WIDTH(DW),
-    .AXI_ID_WIDTH(IW),
+    .AXI_ID_WIDTH  (IW),
     .AXI_USER_WIDTH(UW)
-  ) axi();
+  ) axi ();
 
   `AXI_ASSIGN(axi, axi_dv)
 
   axi_to_axi_lite_intf #(
-    .AXI_ID_WIDTH       ( IW      ),
-    .AXI_ADDR_WIDTH     ( AW      ),
-    .AXI_DATA_WIDTH     ( DW      ),
-    .AXI_USER_WIDTH     ( UW      ),
-    .AXI_MAX_WRITE_TXNS ( 32'd10  ),
-    .AXI_MAX_READ_TXNS  ( 32'd10  ),
-    .FALL_THROUGH       ( 1'b1    )
+    .AXI_ID_WIDTH      (IW),
+    .AXI_ADDR_WIDTH    (AW),
+    .AXI_DATA_WIDTH    (DW),
+    .AXI_USER_WIDTH    (UW),
+    .AXI_MAX_WRITE_TXNS(32'd10),
+    .AXI_MAX_READ_TXNS (32'd10),
+    .FALL_THROUGH      (1'b1)
   ) i_dut (
-    .clk_i      ( clk      ),
-    .rst_ni     ( rst      ),
-    .testmode_i ( 1'b0     ),
-    .slv        ( axi      ),
-    .mst        ( axi_lite )
+    .clk_i     (clk),
+    .rst_ni    (rst),
+    .testmode_i(1'b0),
+    .slv       (axi),
+    .mst       (axi_lite)
   );
 
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_master#(
     // AXI interface parameters
-    .AW ( AW ),
-    .DW ( DW ),
-    .IW ( IW ),
-    .UW ( UW ),
+    .AW            (AW),
+    .DW            (DW),
+    .IW            (IW),
+    .UW            (UW),
     // Stimuli application and test time
-    .TA ( TA ),
-    .TT ( TT ),
+    .TA            (TA),
+    .TT            (TT),
     // Maximum number of read and write transactions in flight
-    .MAX_READ_TXNS  ( MAX_READ_TXNS  ),
-    .MAX_WRITE_TXNS ( MAX_WRITE_TXNS ),
-    .AXI_ATOPS      ( AXI_ATOPS      )
+    .MAX_READ_TXNS (MAX_READ_TXNS),
+    .MAX_WRITE_TXNS(MAX_WRITE_TXNS),
+    .AXI_ATOPS     (AXI_ATOPS)
   ) axi_rand_master_t;
-  typedef axi_test::axi_lite_rand_slave #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) axi_lite_rand_slv_t;
+  typedef axi_test::axi_lite_rand_slave#(
+    .AW(AW),
+    .DW(DW),
+    .TA(TA),
+    .TT(TT)
+  ) axi_lite_rand_slv_t;
 
   axi_lite_rand_slv_t axi_lite_drv = new(axi_lite_dv, "axi_lite_rand_slave");
-  axi_rand_master_t   axi_drv      = new(axi_dv);
+  axi_rand_master_t   axi_drv = new(axi_dv);
 
   initial begin
     #tCK;
@@ -106,22 +115,18 @@ module tb_axi_to_axi_lite;
     #tCK;
     while (!done) begin
       clk <= 1;
-      #(tCK/2);
+      #(tCK / 2);
       clk <= 0;
-      #(tCK/2);
+      #(tCK / 2);
     end
   end
 
   initial begin
-    axi_drv.add_memory_region(32'h0000_0000,
-                                      32'h1000_0000,
-                                      axi_pkg::NORMAL_NONCACHEABLE_NONBUFFERABLE);
-    axi_drv.add_memory_region(32'h1000_0000,
-                                      32'h2000_0000,
-                                      axi_pkg::NORMAL_NONCACHEABLE_BUFFERABLE);
-    axi_drv.add_memory_region(32'h3000_0000,
-                                      32'h4000_0000,
-                                      axi_pkg::WBACK_RWALLOCATE);
+    axi_drv.add_memory_region(32'h0000_0000, 32'h1000_0000,
+                              axi_pkg::NORMAL_NONCACHEABLE_NONBUFFERABLE);
+    axi_drv.add_memory_region(32'h1000_0000, 32'h2000_0000,
+                              axi_pkg::NORMAL_NONCACHEABLE_BUFFERABLE);
+    axi_drv.add_memory_region(32'h3000_0000, 32'h4000_0000, axi_pkg::WBACK_RWALLOCATE);
     axi_drv.reset();
     @(posedge rst);
     axi_drv.run(1000, 2000);
@@ -142,10 +147,10 @@ module tb_axi_to_axi_lite;
 
   initial begin : proc_count_lite_beats
     automatic longint aw_cnt = 0;
-    automatic longint w_cnt  = 0;
-    automatic longint b_cnt  = 0;
+    automatic longint w_cnt = 0;
+    automatic longint b_cnt = 0;
     automatic longint ar_cnt = 0;
-    automatic longint r_cnt  = 0;
+    automatic longint r_cnt = 0;
     @(posedge rst);
     while (!done) begin
       @(posedge clk);
@@ -168,11 +173,11 @@ module tb_axi_to_axi_lite;
     end
     assert (aw_cnt == w_cnt && w_cnt == b_cnt);
     assert (ar_cnt == r_cnt);
-    $display("AXI4-Lite AW count: %0d", aw_cnt );
-    $display("AXI4-Lite  W count: %0d", w_cnt  );
-    $display("AXI4-Lite  B count: %0d", b_cnt  );
-    $display("AXI4-Lite AR count: %0d", ar_cnt );
-    $display("AXI4-Lite  R count: %0d", r_cnt  );
+    $display("AXI4-Lite AW count: %0d", aw_cnt);
+    $display("AXI4-Lite  W count: %0d", w_cnt);
+    $display("AXI4-Lite  B count: %0d", b_cnt);
+    $display("AXI4-Lite AR count: %0d", ar_cnt);
+    $display("AXI4-Lite  R count: %0d", r_cnt);
   end
 
 endmodule

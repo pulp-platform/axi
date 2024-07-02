@@ -168,13 +168,13 @@
 // always_comb begin
 //   `AXI_SET_FROM_REQ(my_if, my_req_struct)
 // end
-`define AXI_SET_FROM_AW(axi_if, aw_struct)      `__AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
-`define AXI_SET_FROM_W(axi_if, w_struct)        `__AXI_TO_W(, axi_if.w, _, w_struct, .)
-`define AXI_SET_FROM_B(axi_if, b_struct)        `__AXI_TO_B(, axi_if.b, _, b_struct, .)
-`define AXI_SET_FROM_AR(axi_if, ar_struct)      `__AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
-`define AXI_SET_FROM_R(axi_if, r_struct)        `__AXI_TO_R(, axi_if.r, _, r_struct, .)
-`define AXI_SET_FROM_REQ(axi_if, req_struct)    `__AXI_TO_REQ(, axi_if, _, req_struct, .)
-`define AXI_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_TO_RESP(, axi_if, _, resp_struct, .)
+`define AXI_SET_FROM_AW(axi_if, aw_struct) `__AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
+`define AXI_SET_FROM_W(axi_if, w_struct) `__AXI_TO_W(, axi_if.w, _, w_struct, .)
+`define AXI_SET_FROM_B(axi_if, b_struct) `__AXI_TO_B(, axi_if.b, _, b_struct, .)
+`define AXI_SET_FROM_AR(axi_if, ar_struct) `__AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
+`define AXI_SET_FROM_R(axi_if, r_struct) `__AXI_TO_R(, axi_if.r, _, r_struct, .)
+`define AXI_SET_FROM_REQ(axi_if, req_struct) `__AXI_TO_REQ(, axi_if, _, req_struct, .)
+`define AXI_SET_FROM_RESP(axi_if, resp_struct) `__AXI_TO_RESP(, axi_if, _, resp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -192,12 +192,12 @@
 //
 // Usage Example:
 // `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct)
-`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
-`define AXI_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_TO_W(assign, axi_if.w, _, w_struct, .)
-`define AXI_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_TO_B(assign, axi_if.b, _, b_struct, .)
-`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
-`define AXI_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_TO_R(assign, axi_if.r, _, r_struct, .)
-`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_TO_REQ(assign, axi_if, _, req_struct, .)
+`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct) `__AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
+`define AXI_ASSIGN_FROM_W(axi_if, w_struct) `__AXI_TO_W(assign, axi_if.w, _, w_struct, .)
+`define AXI_ASSIGN_FROM_B(axi_if, b_struct) `__AXI_TO_B(assign, axi_if.b, _, b_struct, .)
+`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct) `__AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
+`define AXI_ASSIGN_FROM_R(axi_if, r_struct) `__AXI_TO_R(assign, axi_if.r, _, r_struct, .)
+`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct) `__AXI_TO_REQ(assign, axi_if, _, req_struct, .)
 `define AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_TO_RESP(assign, axi_if, _, resp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -219,12 +219,12 @@
 // always_comb begin
 //   `AXI_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_SET_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
-`define AXI_SET_TO_W(w_struct, axi_if)       `__AXI_TO_W(, w_struct, ., axi_if.w, _)
-`define AXI_SET_TO_B(b_struct, axi_if)       `__AXI_TO_B(, b_struct, ., axi_if.b, _)
-`define AXI_SET_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
-`define AXI_SET_TO_R(r_struct, axi_if)       `__AXI_TO_R(, r_struct, ., axi_if.r, _)
-`define AXI_SET_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(, req_struct, ., axi_if, _)
+`define AXI_SET_TO_AW(aw_struct, axi_if) `__AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
+`define AXI_SET_TO_W(w_struct, axi_if) `__AXI_TO_W(, w_struct, ., axi_if.w, _)
+`define AXI_SET_TO_B(b_struct, axi_if) `__AXI_TO_B(, b_struct, ., axi_if.b, _)
+`define AXI_SET_TO_AR(ar_struct, axi_if) `__AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
+`define AXI_SET_TO_R(r_struct, axi_if) `__AXI_TO_R(, r_struct, ., axi_if.r, _)
+`define AXI_SET_TO_REQ(req_struct, axi_if) `__AXI_TO_REQ(, req_struct, ., axi_if, _)
 `define AXI_SET_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(, resp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -244,12 +244,12 @@
 //
 // Usage Example:
 // `AXI_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
-`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_TO_W(assign, w_struct, ., axi_if.w, _)
-`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_TO_B(assign, b_struct, ., axi_if.b, _)
-`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
-`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_TO_R(assign, r_struct, ., axi_if.r, _)
-`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(assign, req_struct, ., axi_if, _)
+`define AXI_ASSIGN_TO_AW(aw_struct, axi_if) `__AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
+`define AXI_ASSIGN_TO_W(w_struct, axi_if) `__AXI_TO_W(assign, w_struct, ., axi_if.w, _)
+`define AXI_ASSIGN_TO_B(b_struct, axi_if) `__AXI_TO_B(assign, b_struct, ., axi_if.b, _)
+`define AXI_ASSIGN_TO_AR(ar_struct, axi_if) `__AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
+`define AXI_ASSIGN_TO_R(r_struct, axi_if) `__AXI_TO_R(assign, r_struct, ., axi_if.r, _)
+`define AXI_ASSIGN_TO_REQ(req_struct, axi_if) `__AXI_TO_REQ(assign, req_struct, ., axi_if, _)
 `define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(assign, resp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -271,12 +271,12 @@
 // always_comb begin
 //   `AXI_SET_REQ_STRUCT(my_req_struct, another_req_struct)
 // end
-`define AXI_SET_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(, lhs, ., rhs, .)
-`define AXI_SET_W_STRUCT(lhs, rhs)       `__AXI_TO_W(, lhs, ., rhs, .)
-`define AXI_SET_B_STRUCT(lhs, rhs)       `__AXI_TO_B(, lhs, ., rhs, .)
-`define AXI_SET_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(, lhs, ., rhs, .)
-`define AXI_SET_R_STRUCT(lhs, rhs)       `__AXI_TO_R(, lhs, ., rhs, .)
-`define AXI_SET_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(, lhs, ., rhs, .)
+`define AXI_SET_AW_STRUCT(lhs, rhs) `__AXI_TO_AW(, lhs, ., rhs, .)
+`define AXI_SET_W_STRUCT(lhs, rhs) `__AXI_TO_W(, lhs, ., rhs, .)
+`define AXI_SET_B_STRUCT(lhs, rhs) `__AXI_TO_B(, lhs, ., rhs, .)
+`define AXI_SET_AR_STRUCT(lhs, rhs) `__AXI_TO_AR(, lhs, ., rhs, .)
+`define AXI_SET_R_STRUCT(lhs, rhs) `__AXI_TO_R(, lhs, ., rhs, .)
+`define AXI_SET_REQ_STRUCT(lhs, rhs) `__AXI_TO_REQ(, lhs, ., rhs, .)
 `define AXI_SET_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -296,12 +296,12 @@
 //
 // Usage Example:
 // `AXI_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
-`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_TO_W(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_TO_B(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_TO_R(assign, lhs, ., rhs, .)
-`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_AW_STRUCT(lhs, rhs) `__AXI_TO_AW(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_W_STRUCT(lhs, rhs) `__AXI_TO_W(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_B_STRUCT(lhs, rhs) `__AXI_TO_B(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_AR_STRUCT(lhs, rhs) `__AXI_TO_AR(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_R_STRUCT(lhs, rhs) `__AXI_TO_R(assign, lhs, ., rhs, .)
+`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs) `__AXI_TO_REQ(assign, lhs, ., rhs, .)
 `define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(assign, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -400,13 +400,13 @@
 // always_comb begin
 //   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct)
 // end
-`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `__AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
-`define AXI_LITE_SET_FROM_W(axi_if, w_struct)        `__AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
-`define AXI_LITE_SET_FROM_B(axi_if, b_struct)        `__AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
-`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct)      `__AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
-`define AXI_LITE_SET_FROM_R(axi_if, r_struct)        `__AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
-`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct)    `__AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
-`define AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_LITE_TO_RESP(, axi_if, _, resp_struct, .)
+`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct) `__AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
+`define AXI_LITE_SET_FROM_W(axi_if, w_struct) `__AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
+`define AXI_LITE_SET_FROM_B(axi_if, b_struct) `__AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
+`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct) `__AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
+`define AXI_LITE_SET_FROM_R(axi_if, r_struct) `__AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
+`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct) `__AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
+`define AXI_LITE_SET_FROM_RESP(axi_if, resp_struct) `__AXI_LITE_TO_RESP(, axi_if, _, resp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -424,13 +424,17 @@
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct)
-`define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
-`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
-`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
-`define AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
-`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
-`define AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
-`define AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_LITE_TO_RESP(assign, axi_if, _, resp_struct, .)
+`define AXI_LITE_ASSIGN_FROM_AW(axi_if,
+                                aw_struct) `__AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
+`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct) `__AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
+`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct) `__AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
+`define AXI_LITE_ASSIGN_FROM_AR(axi_if,
+                                ar_struct) `__AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
+`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct) `__AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
+`define AXI_LITE_ASSIGN_FROM_REQ(axi_if,
+                                 req_struct) `__AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
+`define AXI_LITE_ASSIGN_FROM_RESP(
+  axi_if, resp_struct) `__AXI_LITE_TO_RESP(assign, axi_if, _, resp_struct, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -451,12 +455,12 @@
 // always_comb begin
 //   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if)
 // end
-`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
-`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
-`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
-`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
-`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
-`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
+`define AXI_LITE_SET_TO_AW(aw_struct, axi_if) `__AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
+`define AXI_LITE_SET_TO_W(w_struct, axi_if) `__AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
+`define AXI_LITE_SET_TO_B(b_struct, axi_if) `__AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
+`define AXI_LITE_SET_TO_AR(ar_struct, axi_if) `__AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
+`define AXI_LITE_SET_TO_R(r_struct, axi_if) `__AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
+`define AXI_LITE_SET_TO_REQ(req_struct, axi_if) `__AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
 `define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(, resp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -476,13 +480,17 @@
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if)
-`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
-`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
-`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
-`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
-`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
-`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
-`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(assign, resp_struct, ., axi_if, _)
+`define AXI_LITE_ASSIGN_TO_AW(aw_struct,
+                              axi_if) `__AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
+`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if) `__AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
+`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if) `__AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
+`define AXI_LITE_ASSIGN_TO_AR(ar_struct,
+                              axi_if) `__AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
+`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if) `__AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
+`define AXI_LITE_ASSIGN_TO_REQ(req_struct,
+                               axi_if) `__AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
+`define AXI_LITE_ASSIGN_TO_RESP(resp_struct,
+                                axi_if) `__AXI_LITE_TO_RESP(assign, resp_struct, ., axi_if, _)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -503,12 +511,12 @@
 // always_comb begin
 //   `AXI_LITE_SET_REQ_STRUCT(my_req_struct, another_req_struct)
 // end
-`define AXI_LITE_SET_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
-`define AXI_LITE_SET_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(, lhs, ., rhs, .)
-`define AXI_LITE_SET_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(, lhs, ., rhs, .)
-`define AXI_LITE_SET_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
-`define AXI_LITE_SET_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(, lhs, ., rhs, .)
-`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
+`define AXI_LITE_SET_AW_STRUCT(lhs, rhs) `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_W_STRUCT(lhs, rhs) `__AXI_LITE_TO_W(, lhs, ., rhs, .)
+`define AXI_LITE_SET_B_STRUCT(lhs, rhs) `__AXI_LITE_TO_B(, lhs, ., rhs, .)
+`define AXI_LITE_SET_AR_STRUCT(lhs, rhs) `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+`define AXI_LITE_SET_R_STRUCT(lhs, rhs) `__AXI_LITE_TO_R(, lhs, ., rhs, .)
+`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs) `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
 `define AXI_LITE_SET_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -528,12 +536,12 @@
 //
 // Usage Example:
 // `AXI_LITE_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
-`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
-`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs) `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs) `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs) `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs) `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs) `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
+`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs) `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
 `define AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(assign, lhs, ., rhs, .)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

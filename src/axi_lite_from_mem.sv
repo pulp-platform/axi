@@ -38,20 +38,20 @@ module axi_lite_from_mem #(
   /// Dependent parameter do **not** overwrite!
   ///
   /// Memory address type, derived from `MemAddrWidth`.
-  parameter type mem_addr_t = logic[MemAddrWidth-1:0],
+  parameter type mem_addr_t = logic [MemAddrWidth-1:0],
   /// Dependent parameter do **not** overwrite!
   ///
   /// AXI4-Lite address type, derived from `AxiAddrWidth`.
-  parameter type axi_addr_t = logic[AxiAddrWidth-1:0],
+  parameter type axi_addr_t = logic [AxiAddrWidth-1:0],
   /// Dependent parameter do **not** overwrite!
   ///
   /// Data type for read and write data, derived from `DataWidth`.
   /// This is the same for the memory request side **and** the AXI4-Lite `W` and `R` channels.
-  parameter type data_t = logic[DataWidth-1:0],
+  parameter type data_t = logic [DataWidth-1:0],
   /// Dependent parameter do **not** overwrite!
   ///
   /// Byte enable / AXI4-Lite strobe type, derived from `DataWidth`.
-  parameter type strb_t = logic[DataWidth/8-1:0]
+  parameter type strb_t = logic [DataWidth/8-1:0]
 ) (
   /// Clock input, positive edge triggered.
   input logic clk_i,
@@ -95,7 +95,7 @@ module axi_lite_from_mem #(
   logic fifo_full, fifo_empty;
   // Bookkeeping for sent write beats.
   logic aw_sent_q, aw_sent_d;
-  logic w_sent_q,  w_sent_d;
+  logic w_sent_q, w_sent_d;
 
   // Control for translating request to the AXI4-Lite `AW`, `W` and `AR` channels.
   always_comb begin
@@ -126,25 +126,29 @@ module axi_lite_from_mem #(
         mem_gnt_o          = axi_rsp_i.ar_ready;
       end else begin
         // Is is a write request, decouple `AW` and `W` channels.
-        unique case ({aw_sent_q, w_sent_q})
-          2'b00 : begin
+        unique case ({
+          aw_sent_q, w_sent_q
+        })
+          2'b00: begin
             // None of the AXI4-Lite writes have been sent jet.
             axi_req_o.aw_valid = 1'b1;
             axi_req_o.w_valid  = 1'b1;
-            unique case ({axi_rsp_i.aw_ready, axi_rsp_i.w_ready})
-              2'b01 : begin // W is sent, still needs AW.
+            unique case ({
+              axi_rsp_i.aw_ready, axi_rsp_i.w_ready
+            })
+              2'b01: begin  // W is sent, still needs AW.
                 w_sent_d = 1'b1;
               end
-              2'b10 : begin // AW is sent, still needs W.
+              2'b10: begin  // AW is sent, still needs W.
                 aw_sent_d = 1'b1;
               end
-              2'b11 : begin // Both are transmitted, grant the write request.
+              2'b11: begin  // Both are transmitted, grant the write request.
                 mem_gnt_o = 1'b1;
               end
-              default : /* do nothing */;
+              default:  /* do nothing */;
             endcase
           end
-          2'b10 : begin
+          2'b10: begin
             // W has to be sent.
             axi_req_o.w_valid = 1'b1;
             if (axi_rsp_i.w_ready) begin
@@ -152,7 +156,7 @@ module axi_lite_from_mem #(
               mem_gnt_o = 1'b1;
             end
           end
-          2'b01 : begin
+          2'b01: begin
             // AW has to be sent.
             axi_req_o.aw_valid = 1'b1;
             if (axi_rsp_i.aw_ready) begin
@@ -160,7 +164,7 @@ module axi_lite_from_mem #(
               mem_gnt_o = 1'b1;
             end
           end
-          default : begin
+          default: begin
             // Failsafe go to IDLE.
             aw_sent_d = 1'b0;
             w_sent_d  = 1'b0;
@@ -177,26 +181,26 @@ module axi_lite_from_mem #(
   logic rsp_sel;
 
   fifo_v3 #(
-    .FALL_THROUGH ( 1'b0        ), // No fallthrough for one cycle delay before ready on AXI.
-    .DEPTH        ( MaxRequests ),
-    .dtype        ( logic       )
+    .FALL_THROUGH(1'b0),         // No fallthrough for one cycle delay before ready on AXI.
+    .DEPTH       (MaxRequests),
+    .dtype       (logic)
   ) i_fifo_rsp_mux (
     .clk_i,
     .rst_ni,
-    .flush_i    ( 1'b0            ),
-    .testmode_i ( 1'b0            ),
-    .full_o     ( fifo_full       ),
-    .empty_o    ( fifo_empty      ),
-    .usage_o    ( /*not used*/    ),
-    .data_i     ( mem_we_i        ),
-    .push_i     ( mem_gnt_o       ),
-    .data_o     ( rsp_sel         ),
-    .pop_i      ( mem_rsp_valid_o )
+    .flush_i   (1'b0),
+    .testmode_i(1'b0),
+    .full_o    (fifo_full),
+    .empty_o   (fifo_empty),
+    .usage_o   (  /*not used*/),
+    .data_i    (mem_we_i),
+    .push_i    (mem_gnt_o),
+    .data_o    (rsp_sel),
+    .pop_i     (mem_rsp_valid_o)
   );
 
   // Response selection control.
   // If something is in the FIFO, the corresponding channel is ready.
-  assign axi_req_o.b_ready = !fifo_empty &&  rsp_sel;
+  assign axi_req_o.b_ready = !fifo_empty && rsp_sel;
   assign axi_req_o.r_ready = !fifo_empty && !rsp_sel;
   // Read data is directly forwarded.
   assign mem_rsp_rdata_o = axi_rsp_i.r.data;
@@ -211,37 +215,40 @@ module axi_lite_from_mem #(
                            (axi_rsp_i.r_valid && axi_req_o.r_ready);
 
   // pragma translate_off
-  `ifndef SYNTHESIS
-  `ifndef VERILATOR
-    initial begin : proc_assert
-      assert (MemAddrWidth > 32'd0) else $fatal(1, "MemAddrWidth has to be greater than 0!");
-      assert (AxiAddrWidth > 32'd0) else $fatal(1, "AxiAddrWidth has to be greater than 0!");
-      assert (DataWidth inside {32'd32, 32'd64}) else
-          $fatal(1, "DataWidth has to be either 32 or 64 bit!");
-      assert (MaxRequests > 32'd0) else $fatal(1, "MaxRequests has to be greater than 0!");
-      assert (AxiAddrWidth == $bits(axi_req_o.aw.addr)) else
-          $fatal(1, "AxiAddrWidth has to match axi_req_o.aw.addr!");
-      assert (AxiAddrWidth == $bits(axi_req_o.ar.addr)) else
-          $fatal(1, "AxiAddrWidth has to match axi_req_o.ar.addr!");
-      assert (DataWidth == $bits(axi_req_o.w.data)) else
-          $fatal(1, "DataWidth has to match axi_req_o.w.data!");
-      assert (DataWidth/8 == $bits(axi_req_o.w.strb)) else
-          $fatal(1, "DataWidth / 8 has to match axi_req_o.w.strb!");
-      assert (DataWidth == $bits(axi_rsp_i.r.data)) else
-          $fatal(1, "DataWidth has to match axi_rsp_i.r.data!");
-    end
-    default disable iff (~rst_ni);
-    assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> mem_req_i) else
-        $fatal(1, "It is not allowed to deassert the request if it was not granted!");
-    assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_addr_i)) else
-        $fatal(1, "mem_addr_i has to be stable if request is not granted!");
-    assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_we_i)) else
-        $fatal(1, "mem_we_i has to be stable if request is not granted!");
-    assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_wdata_i)) else
-        $fatal(1, "mem_wdata_i has to be stable if request is not granted!");
-    assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_be_i)) else
-        $fatal(1, "mem_be_i has to be stable if request is not granted!");
-  `endif
-  `endif
+`ifndef SYNTHESIS
+`ifndef VERILATOR
+  initial begin : proc_assert
+    assert (MemAddrWidth > 32'd0)
+    else $fatal(1, "MemAddrWidth has to be greater than 0!");
+    assert (AxiAddrWidth > 32'd0)
+    else $fatal(1, "AxiAddrWidth has to be greater than 0!");
+    assert (DataWidth inside {32'd32, 32'd64})
+    else $fatal(1, "DataWidth has to be either 32 or 64 bit!");
+    assert (MaxRequests > 32'd0)
+    else $fatal(1, "MaxRequests has to be greater than 0!");
+    assert (AxiAddrWidth == $bits(axi_req_o.aw.addr))
+    else $fatal(1, "AxiAddrWidth has to match axi_req_o.aw.addr!");
+    assert (AxiAddrWidth == $bits(axi_req_o.ar.addr))
+    else $fatal(1, "AxiAddrWidth has to match axi_req_o.ar.addr!");
+    assert (DataWidth == $bits(axi_req_o.w.data))
+    else $fatal(1, "DataWidth has to match axi_req_o.w.data!");
+    assert (DataWidth / 8 == $bits(axi_req_o.w.strb))
+    else $fatal(1, "DataWidth / 8 has to match axi_req_o.w.strb!");
+    assert (DataWidth == $bits(axi_rsp_i.r.data))
+    else $fatal(1, "DataWidth has to match axi_rsp_i.r.data!");
+  end
+  default disable iff (~rst_ni);
+  assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> mem_req_i)
+  else $fatal(1, "It is not allowed to deassert the request if it was not granted!");
+  assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_addr_i))
+  else $fatal(1, "mem_addr_i has to be stable if request is not granted!");
+  assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_we_i))
+  else $fatal(1, "mem_we_i has to be stable if request is not granted!");
+  assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_wdata_i))
+  else $fatal(1, "mem_wdata_i has to be stable if request is not granted!");
+  assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_be_i))
+  else $fatal(1, "mem_be_i has to be stable if request is not granted!");
+`endif
+`endif
   // pragma translate_on
 endmodule

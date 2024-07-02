@@ -31,42 +31,58 @@ module tb_axi_lite_to_axi;
   AXI_LITE_DV #(
     .AXI_ADDR_WIDTH(TB_AW),
     .AXI_DATA_WIDTH(TB_DW)
-  ) axi_lite_dv(clk);
+  ) axi_lite_dv (
+    clk
+  );
 
   AXI_LITE #(
     .AXI_ADDR_WIDTH(TB_AW),
     .AXI_DATA_WIDTH(TB_DW)
-  ) axi_lite();
+  ) axi_lite ();
 
   `AXI_LITE_ASSIGN(axi_lite, axi_lite_dv)
 
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH(TB_AW),
     .AXI_DATA_WIDTH(TB_DW),
-    .AXI_ID_WIDTH(TB_IW),
+    .AXI_ID_WIDTH  (TB_IW),
     .AXI_USER_WIDTH(TB_UW)
-  ) axi_dv(clk);
+  ) axi_dv (
+    clk
+  );
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH(TB_AW),
     .AXI_DATA_WIDTH(TB_DW),
-    .AXI_ID_WIDTH(TB_IW),
+    .AXI_ID_WIDTH  (TB_IW),
     .AXI_USER_WIDTH(TB_UW)
-  ) axi();
+  ) axi ();
 
   `AXI_ASSIGN(axi_dv, axi)
 
   axi_lite_to_axi_intf #(
-    .AXI_DATA_WIDTH (TB_DW)
+    .AXI_DATA_WIDTH(TB_DW)
   ) i_dut (
-    .in   ( axi_lite ),
-    .slv_aw_cache_i ('0),
-    .slv_ar_cache_i ('0),
-    .out  ( axi      )
+    .in            (axi_lite),
+    .slv_aw_cache_i('0),
+    .slv_ar_cache_i('0),
+    .out           (axi)
   );
 
-  axi_test::axi_lite_driver #(.AW(TB_AW), .DW(TB_DW)) axi_lite_drv = new(axi_lite_dv);
-  axi_test::axi_driver #(.AW(TB_AW), .DW(TB_DW), .IW(TB_IW), .UW(TB_UW)) axi_drv = new(axi_dv);
+  axi_test::axi_lite_driver #(
+    .AW(TB_AW),
+    .DW(TB_DW)
+  ) axi_lite_drv = new(
+    axi_lite_dv
+  );
+  axi_test::axi_driver #(
+    .AW(TB_AW),
+    .DW(TB_DW),
+    .IW(TB_IW),
+    .UW(TB_UW)
+  ) axi_drv = new(
+    axi_dv
+  );
 
   initial begin
     #tCK;
@@ -76,9 +92,9 @@ module tb_axi_lite_to_axi;
     #tCK;
     while (!done) begin
       clk <= 1;
-      #(tCK/2);
+      #(tCK / 2);
       clk <= 0;
-      #(tCK/2);
+      #(tCK / 2);
     end
   end
 
@@ -95,9 +111,25 @@ module tb_axi_lite_to_axi;
   end
 
   initial begin
-    automatic axi_test::axi_ax_beat #(.AW(TB_AW), .IW(TB_IW), .UW(TB_UW)) ax_beat;
-    automatic axi_test::axi_w_beat #(.DW(TB_DW), .UW(TB_UW)) w_beat;
-    automatic axi_test::axi_b_beat #(.IW(TB_IW), .UW(TB_UW)) b_beat = new;
+    automatic
+    axi_test::axi_ax_beat #(
+      .AW(TB_AW),
+      .IW(TB_IW),
+      .UW(TB_UW)
+    )
+    ax_beat;
+    automatic
+    axi_test::axi_w_beat #(
+      .DW(TB_DW),
+      .UW(TB_UW)
+    )
+    w_beat;
+    automatic
+    axi_test::axi_b_beat #(
+      .IW(TB_IW),
+      .UW(TB_UW)
+    )
+    b_beat = new;
     axi_drv.reset_slave();
     @(posedge clk);
     axi_drv.recv_aw(ax_beat);

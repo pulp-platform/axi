@@ -40,7 +40,7 @@ module tb_axi_to_mem_banked #(
   localparam time TestTime = 8ns;
 
   // localparam and typedefs for AXI4+ATOP
-  localparam int unsigned AxiIdWidth   = 32'd6;
+  localparam int unsigned AxiIdWidth = 32'd6;
   localparam int unsigned AxiAddrWidth = 32'd64;
   localparam int unsigned AxiStrbWidth = TbAxiDataWidth / 8;
   localparam int unsigned AxiUserWidth = 32'd4;
@@ -48,46 +48,46 @@ module tb_axi_to_mem_banked #(
   typedef logic [AxiAddrWidth-1:0] axi_addr_t;
 
   // AXI test defines
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_master#(
     // AXI interface parameters
-    .AW ( AxiAddrWidth ),
-    .DW ( TbAxiDataWidth ),
-    .IW ( AxiIdWidth   ),
-    .UW ( AxiUserWidth ),
+    .AW                  (AxiAddrWidth),
+    .DW                  (TbAxiDataWidth),
+    .IW                  (AxiIdWidth),
+    .UW                  (AxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime     ),
-    .TT ( TestTime     ),
+    .TA                  (ApplTime),
+    .TT                  (TestTime),
     // Maximum number of read and write transactions in flight
-    .MAX_READ_TXNS        (   20 ),
-    .MAX_WRITE_TXNS       (   20 ),
+    .MAX_READ_TXNS       (20),
+    .MAX_WRITE_TXNS      (20),
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
-    .AX_MIN_WAIT_CYCLES   (    0 ),
-    .AX_MAX_WAIT_CYCLES   (    0 ),
-    .W_MIN_WAIT_CYCLES    (    0 ),
-    .W_MAX_WAIT_CYCLES    (    0 ),
-    .RESP_MIN_WAIT_CYCLES (    0 ),
-    .RESP_MAX_WAIT_CYCLES (    0 ),
+    .AX_MIN_WAIT_CYCLES  (0),
+    .AX_MAX_WAIT_CYCLES  (0),
+    .W_MIN_WAIT_CYCLES   (0),
+    .W_MAX_WAIT_CYCLES   (0),
+    .RESP_MIN_WAIT_CYCLES(0),
+    .RESP_MAX_WAIT_CYCLES(0),
     // AXI feature usage
-    .AXI_MAX_BURST_LEN    (    0 ), // maximum number of beats in burst; 0 = AXI max (256)
-    .TRAFFIC_SHAPING      (    0 ),
-    .AXI_EXCLS            ( 1'b0 ),
-    .AXI_ATOPS            ( 1'b0 ),
-    .AXI_BURST_FIXED      ( 1'b0 ),
-    .AXI_BURST_INCR       ( 1'b1 ),
-    .AXI_BURST_WRAP       ( 1'b0 )
+    .AXI_MAX_BURST_LEN   (0),               // maximum number of beats in burst; 0 = AXI max (256)
+    .TRAFFIC_SHAPING     (0),
+    .AXI_EXCLS           (1'b0),
+    .AXI_ATOPS           (1'b0),
+    .AXI_BURST_FIXED     (1'b0),
+    .AXI_BURST_INCR      (1'b1),
+    .AXI_BURST_WRAP      (1'b0)
   ) axi_rand_master_t;
 
   // memory defines
   localparam int unsigned MemAddrWidth = $clog2(TbNumWords);
 
-  localparam int unsigned MemBufDepth  = 1;
+  localparam int unsigned MemBufDepth = 1;
   // addresses
   localparam axi_addr_t StartAddr = axi_addr_t'(64'h0);
   localparam axi_addr_t EndAddr   = axi_addr_t'(StartAddr + 32'd2 * TbNumWords * TbAxiDataWidth/32'd8);
 
-  typedef logic [MemAddrWidth-1:0]     mem_addr_t;
-  typedef logic [5:0]                  mem_atop_t;
-  typedef logic [TbMemDataWidth-1:0]   mem_data_t;
+  typedef logic [MemAddrWidth-1:0] mem_addr_t;
+  typedef logic [5:0] mem_atop_t;
+  typedef logic [TbMemDataWidth-1:0] mem_data_t;
   typedef logic [TbMemDataWidth/8-1:0] mem_strb_t;
 
   // sim signals
@@ -96,7 +96,7 @@ module tb_axi_to_mem_banked #(
   // dut signals
   logic clk, rst_n, one_dut_active;
 
-  logic      [1:0]            dut_busy;
+  logic      [           1:0] dut_busy;
   logic      [TbNumBanks-1:0] mem_req;
   logic      [TbNumBanks-1:0] mem_gnt;
   mem_addr_t [TbNumBanks-1:0] mem_addr;
@@ -110,23 +110,25 @@ module tb_axi_to_mem_banked #(
   assign one_dut_active = |dut_busy;
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth     ),
-    .AXI_USER_WIDTH ( AxiUserWidth   )
-  ) mem_axi_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) mem_axi_dv (
+    clk
+  );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth   ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth     ),
-    .AXI_USER_WIDTH ( AxiUserWidth   )
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
   ) mem_axi ();
   `AXI_ASSIGN(mem_axi, mem_axi_dv)
 
   // stimuli generation
   initial begin : proc_axi_master
-    static axi_rand_master_t axi_rand_master = new ( mem_axi_dv );
+    static axi_rand_master_t axi_rand_master = new(mem_axi_dv);
     end_of_sim <= 1'b0;
     axi_rand_master.add_memory_region(StartAddr, EndAddr, axi_pkg::DEVICE_NONBUFFERABLE);
     axi_rand_master.reset();
@@ -141,22 +143,22 @@ module tb_axi_to_mem_banked #(
   // memory banks
   for (genvar i = 0; i < TbNumBanks; i++) begin : gen_tc_sram
     tc_sram #(
-      .NumWords    ( TbNumWords   ),
-      .DataWidth   ( TbMemDataWidth ),
-      .ByteWidth   ( 32'd8        ),
-      .NumPorts    ( 32'd1        ),
-      .Latency     ( TbMemLatency   ),
-      .SimInit     ( "none"       ),
-      .PrintSimCfg ( 1'b1         )
+      .NumWords   (TbNumWords),
+      .DataWidth  (TbMemDataWidth),
+      .ByteWidth  (32'd8),
+      .NumPorts   (32'd1),
+      .Latency    (TbMemLatency),
+      .SimInit    ("none"),
+      .PrintSimCfg(1'b1)
     ) i_tc_sram_bank (
-      .clk_i   ( clk          ),
-      .rst_ni  ( rst_n        ),
-      .req_i   ( mem_req[i]   ),
-      .we_i    ( mem_we[i]    ),
-      .addr_i  ( mem_addr[i]  ),
-      .wdata_i ( mem_wdata[i] ),
-      .be_i    ( mem_strb[i]  ),
-      .rdata_o ( mem_rdata[i] )
+      .clk_i  (clk),
+      .rst_ni (rst_n),
+      .req_i  (mem_req[i]),
+      .we_i   (mem_we[i]),
+      .addr_i (mem_addr[i]),
+      .wdata_i(mem_wdata[i]),
+      .be_i   (mem_strb[i]),
+      .rdata_o(mem_rdata[i])
     );
     // always be ready
     assign mem_gnt[i] = 1'b1;
@@ -178,70 +180,70 @@ module tb_axi_to_mem_banked #(
 
   // Clock generator
   clk_rst_gen #(
-    .ClkPeriod    ( CyclTime ),
-    .RstClkCycles ( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_rst_gen (
-    .clk_o  ( clk   ),
-    .rst_no ( rst_n )
+    .clk_o (clk),
+    .rst_no(rst_n)
   );
 
   // Design under test
   axi_to_mem_banked_intf #(
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_USER_WIDTH ( AxiUserWidth ),
-    .MEM_NUM_BANKS  ( TbNumBanks     ),
-    .MEM_ADDR_WIDTH ( MemAddrWidth ),
-    .MEM_DATA_WIDTH ( TbMemDataWidth ),
-    .MEM_LATENCY    ( TbMemLatency   )
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_USER_WIDTH(AxiUserWidth),
+    .MEM_NUM_BANKS (TbNumBanks),
+    .MEM_ADDR_WIDTH(MemAddrWidth),
+    .MEM_DATA_WIDTH(TbMemDataWidth),
+    .MEM_LATENCY   (TbMemLatency)
   ) i_axi_to_mem_banked_dut (
-    .clk_i             ( clk       ),
-    .rst_ni            ( rst_n     ),
-    .test_i            ( 1'b0      ),
-    .axi_to_mem_busy_o ( dut_busy  ),
-    .slv               ( mem_axi   ),
-    .mem_req_o         ( mem_req   ),
-    .mem_gnt_i         ( mem_gnt   ),
-    .mem_add_o         ( mem_addr  ), // byte address
-    .mem_wdata_o       ( mem_wdata ), // write data
-    .mem_be_o          ( mem_strb  ), // byte-wise strobe
-    .mem_atop_o        ( mem_atop  ), // atomic operation
-    .mem_we_o          ( mem_we    ), // write enable
-    .mem_rdata_i       ( mem_rdata )  // read data
+    .clk_i            (clk),
+    .rst_ni           (rst_n),
+    .test_i           (1'b0),
+    .axi_to_mem_busy_o(dut_busy),
+    .slv              (mem_axi),
+    .mem_req_o        (mem_req),
+    .mem_gnt_i        (mem_gnt),
+    .mem_add_o        (mem_addr),   // byte address
+    .mem_wdata_o      (mem_wdata),  // write data
+    .mem_be_o         (mem_strb),   // byte-wise strobe
+    .mem_atop_o       (mem_atop),   // atomic operation
+    .mem_we_o         (mem_we),     // write enable
+    .mem_rdata_i      (mem_rdata)   // read data
   );
 
   // monitoring
   logic aw_beat, aw_stall, w_beat, b_beat, ar_beat, ar_stall, r_beat;
   assign aw_beat  = mem_axi.aw_valid & mem_axi.aw_ready;
   assign aw_stall = mem_axi.aw_valid & !mem_axi.aw_ready;
-  assign  w_beat  = mem_axi.w_valid  & mem_axi.w_ready;
-  assign  b_beat  = mem_axi.b_valid  & mem_axi.b_ready;
+  assign w_beat   = mem_axi.w_valid & mem_axi.w_ready;
+  assign b_beat   = mem_axi.b_valid & mem_axi.b_ready;
   assign ar_beat  = mem_axi.ar_valid & mem_axi.ar_ready;
   assign ar_stall = mem_axi.ar_valid & !mem_axi.ar_ready;
-  assign  r_beat  = mem_axi.r_valid  & mem_axi.r_ready;
+  assign r_beat   = mem_axi.r_valid & mem_axi.r_ready;
 
   int unsigned aw_open;
   int unsigned ar_open;
 
   initial begin : proc_monitor
-    automatic bit aw_new = 1;
-    automatic bit w_new  = 1;
-    automatic bit b_new  = 1;
-    automatic bit ar_new = 1;
-    automatic bit r_new  = 1;
+    automatic bit     aw_new = 1;
+    automatic bit     w_new = 1;
+    automatic bit     b_new = 1;
+    automatic bit     ar_new = 1;
+    automatic bit     r_new = 1;
 
 
-    automatic longint      wc_cnt     = 0;
-    automatic longint      rc_cnt     = 0;
-    automatic longint      w_cnt      = 0;
-    automatic longint      r_cnt      = 0;
+    automatic longint wc_cnt = 0;
+    automatic longint rc_cnt = 0;
+    automatic longint w_cnt = 0;
+    automatic longint r_cnt = 0;
 
-    automatic longint      busy_cnt;
-    automatic longint      dut_busy_cnt [TbNumBanks];
-    automatic real         bank_busy_percent;
-    automatic real         axi_busy_percent;
-    automatic real         tmp;
+    automatic longint busy_cnt;
+    automatic longint dut_busy_cnt      [TbNumBanks];
+    automatic real    bank_busy_percent;
+    automatic real    axi_busy_percent;
+    automatic real    tmp;
 
     aw_open           = 0;
     ar_open           = 0;
@@ -334,7 +336,7 @@ module tb_axi_to_mem_banked #(
         $display("Write beat count:      %0d", w_cnt);
         $display("Write utilization:     %0f", real'(w_cnt) / real'(wc_cnt) * 100);
         axi_busy_percent += real'(w_cnt) / real'(wc_cnt) * 100;
-                $display("###############################################################################");
+        $display("###############################################################################");
         $display("Reads:");
         $display("Cycles Open read tnx:  %0d", rc_cnt);
         $display("Read beat count:       %0d", r_cnt);
@@ -392,20 +394,22 @@ module tb_axi_to_mem_banked #(
   end
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth ),
-    .AXI_ID_WIDTH   ( AxiIdWidth   ),
-    .AXI_USER_WIDTH ( AxiUserWidth )
-  ) monitor_dv (clk);
+    .AXI_ADDR_WIDTH(AxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (AxiIdWidth),
+    .AXI_USER_WIDTH(AxiUserWidth)
+  ) monitor_dv (
+    clk
+  );
 
   `AXI_ASSIGN_MONITOR(monitor_dv, mem_axi)
 
-  typedef axi_test::axi_scoreboard #(
-    .IW ( AxiIdWidth   ),
-    .AW ( AxiAddrWidth ),
-    .DW ( TbAxiDataWidth ),
-    .UW ( AxiUserWidth ),
-    .TT ( TestTime     )
+  typedef axi_test::axi_scoreboard#(
+    .IW(AxiIdWidth),
+    .AW(AxiAddrWidth),
+    .DW(TbAxiDataWidth),
+    .UW(AxiUserWidth),
+    .TT(TestTime)
   ) axi_scoreboard_t;
   axi_scoreboard_t axi_scoreboard = new(monitor_dv);
   initial begin : proc_scoreboard

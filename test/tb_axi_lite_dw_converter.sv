@@ -31,13 +31,13 @@ module tb_axi_lite_dw_converter #(
   // Random master no Transactions
   // timing parameters
   localparam time CyclTime = 10ns;
-  localparam time ApplTime =  2ns;
-  localparam time TestTime =  8ns;
+  localparam time ApplTime = 2ns;
+  localparam time TestTime = 8ns;
   // AXI configuration
-  localparam int unsigned TbAxiStrbWidthSlv =  TbAxiDataWidthSlv / 32'd8;
-  localparam int unsigned TbAxiStrbWidthMst =  TbAxiDataWidthMst / 32'd8;
+  localparam int unsigned TbAxiStrbWidthSlv = TbAxiDataWidthSlv / 32'd8;
+  localparam int unsigned TbAxiStrbWidthMst = TbAxiDataWidthMst / 32'd8;
   // Type definitions
-  typedef logic [TbAxiAddrWidth-1:0]    addr_t;
+  typedef logic [TbAxiAddrWidth-1:0] addr_t;
   typedef logic [TbAxiDataWidthSlv-1:0] data_slv_t;
   typedef logic [TbAxiStrbWidthSlv-1:0] strb_slv_t;
   typedef logic [TbAxiDataWidthMst-1:0] data_mst_t;
@@ -61,25 +61,25 @@ module tb_axi_lite_dw_converter #(
   `AXI_LITE_TYPEDEF_RESP_T(res_lite_mst_t, b_chan_lite_t, r_chan_lite_mst_t)
 
 
-  typedef axi_test::axi_lite_rand_master #(
+  typedef axi_test::axi_lite_rand_master#(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth    ),
-    .DW ( TbAxiDataWidthSlv ),
+    .AW            (TbAxiAddrWidth),
+    .DW            (TbAxiDataWidthSlv),
     // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          ),
-    .MIN_ADDR (  0          ),
-    .MAX_ADDR ( '1          ),
-    .MAX_READ_TXNS  ( 100   ),
-    .MAX_WRITE_TXNS ( 100   )
+    .TA            (ApplTime),
+    .TT            (TestTime),
+    .MIN_ADDR      (0),
+    .MAX_ADDR      ('1),
+    .MAX_READ_TXNS (100),
+    .MAX_WRITE_TXNS(100)
   ) rand_lite_master_t;
-  typedef axi_test::axi_lite_rand_slave #(
+  typedef axi_test::axi_lite_rand_slave#(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth    ),
-    .DW ( TbAxiDataWidthMst ),
+    .AW(TbAxiAddrWidth),
+    .DW(TbAxiDataWidthMst),
     // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          )
+    .TA(ApplTime),
+    .TT(TestTime)
   ) rand_lite_slave_t;
 
   // -------------
@@ -91,36 +91,40 @@ module tb_axi_lite_dw_converter #(
   logic end_of_sim;
 
   // master structs
-  req_lite_slv_t  master_req;
+  req_lite_slv_t master_req;
   res_lite_slv_t master_res;
 
   // slave structs
-  req_lite_mst_t  slave_req;
+  req_lite_mst_t slave_req;
   res_lite_mst_t slave_res;
 
   // -------------------------------
   // AXI Interfaces
   // -------------------------------
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth    ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidthSlv )
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidthSlv)
   ) master ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth    ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidthSlv )
-  ) master_dv (clk);
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidthSlv)
+  ) master_dv (
+    clk
+  );
   `AXI_LITE_ASSIGN(master, master_dv)
   `AXI_LITE_ASSIGN_TO_REQ(master_req, master)
   `AXI_LITE_ASSIGN_TO_RESP(master_res, master)
 
   AXI_LITE #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth    ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidthMst )
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidthMst)
   ) slave ();
   AXI_LITE_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth    ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidthMst )
-  ) slave_dv (clk);
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidthMst)
+  ) slave_dv (
+    clk
+  );
   `AXI_LITE_ASSIGN(slave_dv, slave)
   `AXI_LITE_ASSIGN_TO_REQ(slave_req, slave)
   `AXI_LITE_ASSIGN_TO_RESP(slave_res, slave)
@@ -129,21 +133,21 @@ module tb_axi_lite_dw_converter #(
   // -------------------------------
   // Masters control simulation run time
   initial begin : proc_generate_traffic
-    automatic rand_lite_master_t lite_axi_master = new ( master_dv, "MST_0");
-    automatic data_slv_t      data = '0;
-    automatic axi_pkg::resp_t resp = '0;
+    automatic rand_lite_master_t lite_axi_master = new(master_dv, "MST_0");
+    automatic data_slv_t         data = '0;
+    automatic axi_pkg::resp_t    resp = '0;
     end_of_sim <= 1'b0;
     lite_axi_master.reset();
     @(posedge rst_n);
     lite_axi_master.write(32'h0000_1100, axi_pkg::prot_t'('0), data_slv_t'(64'hDEADBEEFDEADBEEF),
-        strb_slv_t'(8'hFF), resp);
+                          strb_slv_t'(8'hFF), resp);
     lite_axi_master.read(32'h0000_e100, axi_pkg::prot_t'('0), data, resp);
     lite_axi_master.run(NumReads, NumWrites);
     end_of_sim <= 1'b1;
   end
 
   initial begin : proc_recieve_traffic
-    automatic rand_lite_slave_t lite_axi_slave = new( slave_dv , "SLV_0");
+    automatic rand_lite_slave_t lite_axi_slave = new(slave_dv, "SLV_0");
     lite_axi_slave.reset();
     @(posedge rst_n);
     lite_axi_slave.run();
@@ -152,16 +156,16 @@ module tb_axi_lite_dw_converter #(
   // FIFOs for sampling the channels
   // Slave Port
   aw_chan_lite_t    fifo_slv_aw[$];
-  w_chan_lite_slv_t fifo_slv_w[$];
-  b_chan_lite_t     fifo_slv_b[$];
+  w_chan_lite_slv_t fifo_slv_w [$];
+  b_chan_lite_t     fifo_slv_b [$];
   ar_chan_lite_t    fifo_slv_ar[$];
-  r_chan_lite_slv_t fifo_slv_r[$];
+  r_chan_lite_slv_t fifo_slv_r [$];
 
   aw_chan_lite_t    fifo_mst_aw[$];
-  w_chan_lite_mst_t fifo_mst_w[$];
-  b_chan_lite_t     fifo_mst_b[$];
+  w_chan_lite_mst_t fifo_mst_w [$];
+  b_chan_lite_t     fifo_mst_b [$];
   ar_chan_lite_t    fifo_mst_ar[$];
-  r_chan_lite_mst_t fifo_mst_r[$];
+  r_chan_lite_mst_t fifo_mst_r [$];
   // Sampling processes
   initial begin : proc_sample
     forever begin
@@ -204,8 +208,8 @@ module tb_axi_lite_dw_converter #(
 
   if (TbAxiDataWidthMst < TbAxiDataWidthSlv) begin : gen_down_gm
     localparam int unsigned DataDivFactor = TbAxiDataWidthSlv / TbAxiDataWidthMst;
-    localparam int unsigned AddrShift     = $clog2(TbAxiDataWidthMst/8);
-    localparam int unsigned SelWidth      = $clog2(DataDivFactor);
+    localparam int unsigned AddrShift = $clog2(TbAxiDataWidthMst / 8);
+    localparam int unsigned SelWidth = $clog2(DataDivFactor);
     typedef logic [SelWidth-1:0] sel_t;
     aw_chan_lite_t    fifo_exp_aw[$];
     w_chan_lite_mst_t fifo_exp_w[$];
@@ -213,15 +217,15 @@ module tb_axi_lite_dw_converter #(
 
     // Golden model for down conversion
     initial begin : proc_write_exp_gen
-      automatic aw_chan_lite_t    chan_aw, exp_aw;
+      automatic aw_chan_lite_t chan_aw, exp_aw;
       automatic w_chan_lite_slv_t chan_w;
       automatic w_chan_lite_mst_t exp_w;
-      automatic int unsigned      num_vectors; // Number of expected transactions generated
+      automatic int unsigned      num_vectors;  // Number of expected transactions generated
       automatic addr_t            exp_addr;
       automatic sel_t             w_sel;
 
       forever begin
-        wait((fifo_slv_aw.size() > 0) && (fifo_slv_w.size() > 0));
+        wait ((fifo_slv_aw.size() > 0) && (fifo_slv_w.size() > 0));
         chan_aw  = fifo_slv_aw.pop_front();
         chan_w   = fifo_slv_w.pop_front();
         exp_addr = chan_aw.addr;
@@ -234,7 +238,7 @@ module tb_axi_lite_dw_converter #(
           };
           fifo_exp_aw.push_back(exp_aw);
           // Generate expected W vector
-          exp_w    = w_chan_lite_mst_t'{
+          exp_w = w_chan_lite_mst_t'{
             data: chan_w.data[i*TbAxiDataWidthMst+:TbAxiDataWidthMst],
             strb: chan_w.strb[i*TbAxiStrbWidthMst+:TbAxiStrbWidthMst]
           };
@@ -246,67 +250,65 @@ module tb_axi_lite_dw_converter #(
     initial begin : proc_aw_exp_check
       automatic aw_chan_lite_t chan_aw, exp_aw;
       forever begin
-        wait((fifo_exp_aw.size() > 0) && (fifo_mst_aw.size() > 0));
+        wait ((fifo_exp_aw.size() > 0) && (fifo_mst_aw.size() > 0));
         chan_aw = fifo_mst_aw.pop_front();
         exp_aw  = fifo_exp_aw.pop_front();
-        assert (chan_aw.addr == exp_aw.addr) else
-            $error("Master port> AW.addr is not expected: EXP: %h ACT:%h",
-                exp_aw.addr, chan_aw.addr);
-        assert (chan_aw.prot == exp_aw.prot) else
-            $error("Master port> AW.prot is not expected: EXP: %h ACT:%h",
-                   exp_aw.prot, chan_aw.prot);
+        assert (chan_aw.addr == exp_aw.addr)
+        else
+          $error("Master port> AW.addr is not expected: EXP: %h ACT:%h", exp_aw.addr, chan_aw.addr);
+        assert (chan_aw.prot == exp_aw.prot)
+        else
+          $error("Master port> AW.prot is not expected: EXP: %h ACT:%h", exp_aw.prot, chan_aw.prot);
       end
     end
     initial begin : proc_w_exp_check
       automatic w_chan_lite_mst_t chan_w, exp_w;
       forever begin
-        wait((fifo_exp_w.size() > 0) && (fifo_mst_w.size() > 0));
+        wait ((fifo_exp_w.size() > 0) && (fifo_mst_w.size() > 0));
         chan_w = fifo_mst_w.pop_front();
         exp_w  = fifo_exp_w.pop_front();
-        assert (chan_w.data == exp_w.data) else
-            $error("Master port> W.data is not expected: EXP: %h ACT:%h",
-                exp_w.data, chan_w.data);
-        assert (chan_w.strb == exp_w.strb) else
-            $error("Master port> W.strb is not expected: EXP: %h ACT:%h",
-                   exp_w.strb, chan_w.strb);
+        assert (chan_w.data == exp_w.data)
+        else $error("Master port> W.data is not expected: EXP: %h ACT:%h", exp_w.data, chan_w.data);
+        assert (chan_w.strb == exp_w.strb)
+        else $error("Master port> W.strb is not expected: EXP: %h ACT:%h", exp_w.strb, chan_w.strb);
       end
     end
     initial begin : proc_b_exp_check
       automatic b_chan_lite_t exp_b, act_b;
       forever begin
         // wait until there are this many B responses in the sampling FIFO
-        wait(fifo_mst_b.size() >= DataDivFactor);
+        wait (fifo_mst_b.size() >= DataDivFactor);
         exp_b = axi_pkg::RESP_OKAY;
         for (int unsigned i = 0; i < DataDivFactor; i++) begin
           act_b = fifo_mst_b.pop_front();
           exp_b = exp_b | act_b;
         end
         // Do the check
-        wait(fifo_slv_b.size() > 0);
+        wait (fifo_slv_b.size() > 0);
         act_b = fifo_slv_b.pop_front();
-        assert(exp_b.resp == act_b.resp) else
-            $error("Slave port> B.resp is not expected: EXP: %h ACT: %h", exp_b.resp, act_b.resp);
+        assert (exp_b.resp == act_b.resp)
+        else $error("Slave port> B.resp is not expected: EXP: %h ACT: %h", exp_b.resp, act_b.resp);
       end
     end
     initial begin : proc_ar_exp_check
       automatic ar_chan_lite_t chan_ar, exp_ar;
       forever begin
-        wait((fifo_exp_ar.size() > 0) && (fifo_mst_ar.size() > 0));
+        wait ((fifo_exp_ar.size() > 0) && (fifo_mst_ar.size() > 0));
         chan_ar = fifo_mst_ar.pop_front();
         exp_ar  = fifo_exp_ar.pop_front();
-        assert (chan_ar.addr == exp_ar.addr) else
-            $error("Master port> AR.addr is not expected: EXP: %h ACT:%h",
-                exp_ar.addr, chan_ar.addr);
-        assert (chan_ar.prot == exp_ar.prot) else
-            $error("Master port> AR.prot is not expected: EXP: %h ACT:%h",
-                   exp_ar.prot, chan_ar.prot);
+        assert (chan_ar.addr == exp_ar.addr)
+        else
+          $error("Master port> AR.addr is not expected: EXP: %h ACT:%h", exp_ar.addr, chan_ar.addr);
+        assert (chan_ar.prot == exp_ar.prot)
+        else
+          $error("Master port> AR.prot is not expected: EXP: %h ACT:%h", exp_ar.prot, chan_ar.prot);
       end
     end
     initial begin : proc_r_exp_check
       automatic r_chan_lite_slv_t exp_r, act_r;
       automatic r_chan_lite_mst_t mst_r;
       forever begin
-        wait(fifo_slv_r.size() > 0);
+        wait (fifo_slv_r.size() > 0);
         act_r = fifo_slv_r.pop_front();
         exp_r = r_chan_lite_slv_t'{default: '0};
         // Build the expected R response from the master port fifo.
@@ -315,12 +317,10 @@ module tb_axi_lite_dw_converter #(
           exp_r.data[i*TbAxiDataWidthMst+:TbAxiDataWidthMst] = mst_r.data;
           exp_r.resp = exp_r.resp | mst_r.resp;
         end
-        assert (act_r.data == exp_r.data) else
-            $error("Slave port> R.data is not expected: EXP: %h ACT:%h",
-                exp_r.data, act_r.data);
-        assert (act_r.resp == exp_r.resp) else
-            $error("Slave port> R.resp is not expected: EXP: %h ACT:%h",
-                   exp_r.resp, act_r.resp);
+        assert (act_r.data == exp_r.data)
+        else $error("Slave port> R.data is not expected: EXP: %h ACT:%h", exp_r.data, act_r.data);
+        assert (act_r.resp == exp_r.resp)
+        else $error("Slave port> R.resp is not expected: EXP: %h ACT:%h", exp_r.resp, act_r.resp);
       end
     end
   end else if (TbAxiDataWidthMst == TbAxiDataWidthSlv) begin
@@ -337,19 +337,19 @@ module tb_axi_lite_dw_converter #(
   end else begin
     // Upsizer
     localparam int unsigned DataMultFactor = TbAxiDataWidthMst / TbAxiDataWidthSlv;
-    localparam int unsigned AddrShift      = $clog2(TbAxiDataWidthSlv/8);
-    localparam int unsigned SelWidth       = $clog2(DataMultFactor);
+    localparam int unsigned AddrShift = $clog2(TbAxiDataWidthSlv / 8);
+    localparam int unsigned SelWidth = $clog2(DataMultFactor);
     typedef logic [SelWidth-1:0] sel_t;
 
-    sel_t             fifo_exp_r_offs[$];
+    sel_t fifo_exp_r_offs[$];
 
     initial begin : proc_aw_w_check
-      automatic aw_chan_lite_t    mst_aw_chan, slv_aw_chan;
-      automatic w_chan_lite_slv_t slv_w_chan;
-      automatic w_chan_lite_mst_t mst_w_chan;
-      automatic addr_t            exp_addr;
-      automatic sel_t             w_sel;
-      automatic logic [TbAxiDataWidthMst/8-1:0] slv_w_strb_concat;
+      automatic aw_chan_lite_t mst_aw_chan, slv_aw_chan;
+      automatic w_chan_lite_slv_t                           slv_w_chan;
+      automatic w_chan_lite_mst_t                           mst_w_chan;
+      automatic addr_t                                      exp_addr;
+      automatic sel_t                                       w_sel;
+      automatic logic             [TbAxiDataWidthMst/8-1:0] slv_w_strb_concat;
 
       forever begin
         wait((fifo_slv_aw.size() > 0) && (fifo_mst_aw.size() > 0) && (fifo_slv_w.size() > 0) && (fifo_mst_w.size() > 0));
@@ -359,25 +359,31 @@ module tb_axi_lite_dw_converter #(
         mst_w_chan  = fifo_mst_w.pop_front();
         w_sel       = slv_aw_chan.addr[AddrShift+SelWidth-1:AddrShift];
 
-        assert (slv_aw_chan == mst_aw_chan) else $error("Master port> AW is not expected: EXP: %h ACT: %h",
-            slv_aw_chan, mst_aw_chan);
-        assert (slv_w_chan.data == mst_w_chan.data[TbAxiDataWidthSlv-1:0]) else $error("Master port> W.data is not expected: EXP: %h ACT: %h",
-            slv_w_chan.data, mst_w_chan.data);
+        assert (slv_aw_chan == mst_aw_chan)
+        else $error("Master port> AW is not expected: EXP: %h ACT: %h", slv_aw_chan, mst_aw_chan);
+        assert (slv_w_chan.data == mst_w_chan.data[TbAxiDataWidthSlv-1:0])
+        else
+          $error(
+            "Master port> W.data is not expected: EXP: %h ACT: %h", slv_w_chan.data, mst_w_chan.data
+          );
 
-        slv_w_strb_concat = slv_w_chan.strb << (w_sel*TbAxiDataWidthSlv/8);
-        assert (slv_w_strb_concat == mst_w_chan.strb) else $error("Master port> W.strb is not expected: EXP: %h ACT: %h",
-            slv_w_chan.strb, mst_w_chan.strb);
+        slv_w_strb_concat = slv_w_chan.strb << (w_sel * TbAxiDataWidthSlv / 8);
+        assert (slv_w_strb_concat == mst_w_chan.strb)
+        else
+          $error(
+            "Master port> W.strb is not expected: EXP: %h ACT: %h", slv_w_chan.strb, mst_w_chan.strb
+          );
       end
     end
 
     initial begin : proc_b_check
       automatic b_chan_lite_t b_act, b_exp;
       forever begin
-        wait((fifo_slv_b.size() > 0) && (fifo_mst_b.size() > 0));
+        wait ((fifo_slv_b.size() > 0) && (fifo_mst_b.size() > 0));
         b_act = fifo_slv_b.pop_front();
         b_exp = fifo_mst_b.pop_front();
-        assert (b_act == b_exp) else  $error("Slave port> B.resp is not expected: EXP: %h ACT:%h",
-            b_exp.resp, b_act.resp);
+        assert (b_act == b_exp)
+        else $error("Slave port> B.resp is not expected: EXP: %h ACT:%h", b_exp.resp, b_act.resp);
       end
     end
 
@@ -386,14 +392,14 @@ module tb_axi_lite_dw_converter #(
       automatic sel_t r_sel;
 
       forever begin
-        wait((fifo_slv_ar.size() > 0) && (fifo_mst_ar.size() > 0));
+        wait ((fifo_slv_ar.size() > 0) && (fifo_mst_ar.size() > 0));
         slv_ar_chan = fifo_slv_ar.pop_front();
         mst_ar_chan = fifo_mst_ar.pop_front();
         r_sel = slv_ar_chan.addr[AddrShift+SelWidth-1:AddrShift];
         fifo_exp_r_offs.push_back(r_sel);
 
-        assert (slv_ar_chan == mst_ar_chan) else $error("Master port> AR is not expected: EXP: %h ACT: %h",
-          slv_ar_chan, mst_ar_chan);
+        assert (slv_ar_chan == mst_ar_chan)
+        else $error("Master port> AR is not expected: EXP: %h ACT: %h", slv_ar_chan, mst_ar_chan);
       end
     end
 
@@ -403,15 +409,21 @@ module tb_axi_lite_dw_converter #(
       automatic sel_t             r_sel;
 
       forever begin
-        wait((fifo_slv_r.size() > 0) && (fifo_mst_r.size() > 0) && (fifo_exp_r_offs.size() > 0));
+        wait ((fifo_slv_r.size() > 0) && (fifo_mst_r.size() > 0) && (fifo_exp_r_offs.size() > 0));
         slv_r_chan = fifo_slv_r.pop_front();
         mst_r_chan = fifo_mst_r.pop_front();
         r_sel      = fifo_exp_r_offs.pop_front();
 
-        assert (slv_r_chan.resp == mst_r_chan.resp) else $error("Slave port> R.resp is not expected: EXP: %h, ACT: %h",
-          mst_r_chan.resp, slv_r_chan.resp);
-        assert (slv_r_chan.data == data_slv_t'(mst_r_chan.data >> (r_sel*TbAxiDataWidthSlv))) else $error("Slave port> R.data is not expected: EXP: %h, ACT: %h",
-          mst_r_chan.data, slv_r_chan.data);
+        assert (slv_r_chan.resp == mst_r_chan.resp)
+        else
+          $error(
+            "Slave port> R.resp is not expected: EXP: %h, ACT: %h", mst_r_chan.resp, slv_r_chan.resp
+          );
+        assert (slv_r_chan.data == data_slv_t'(mst_r_chan.data >> (r_sel * TbAxiDataWidthSlv)))
+        else
+          $error(
+            "Slave port> R.data is not expected: EXP: %h, ACT: %h", mst_r_chan.data, slv_r_chan.data
+          );
       end
     end
 
@@ -429,8 +441,8 @@ module tb_axi_lite_dw_converter #(
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-    .ClkPeriod   ( CyclTime ),
-    .RstClkCycles( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
     .clk_o (clk),
     .rst_no(rst_n)
@@ -440,13 +452,13 @@ module tb_axi_lite_dw_converter #(
   // DUT
   //-----------------------------------
   axi_lite_dw_converter_intf #(
-    .AXI_ADDR_WIDTH          ( TbAxiAddrWidth    ),
-    .AXI_SLV_PORT_DATA_WIDTH ( TbAxiDataWidthSlv ),
-    .AXI_MST_PORT_DATA_WIDTH ( TbAxiDataWidthMst )
+    .AXI_ADDR_WIDTH         (TbAxiAddrWidth),
+    .AXI_SLV_PORT_DATA_WIDTH(TbAxiDataWidthSlv),
+    .AXI_MST_PORT_DATA_WIDTH(TbAxiDataWidthMst)
   ) i_axi_lite_dw_downsizer_dut (
-    .clk_i  ( clk    ),
-    .rst_ni ( rst_n  ),
-    .slv    ( master ),
-    .mst    ( slave  )
+    .clk_i (clk),
+    .rst_ni(rst_n),
+    .slv   (master),
+    .mst   (slave)
   );
 endmodule

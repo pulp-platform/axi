@@ -22,56 +22,61 @@ module tb_axi_sim_mem #(
   parameter time TbAcqDelay = 8ns
 );
 
-  logic clk,
-        rst_n;
+  logic clk, rst_n;
   clk_rst_gen #(
-    .ClkPeriod    (TbTclk),
-    .RstClkCycles (5)
+    .ClkPeriod   (TbTclk),
+    .RstClkCycles(5)
   ) i_clk_rst_gen (
-    .clk_o  (clk),
-    .rst_no (rst_n)
+    .clk_o (clk),
+    .rst_no(rst_n)
   );
 
   localparam int unsigned StrbWidth = TbDataWidth / 8;
   typedef logic [TbAddrWidth-1:0] addr_t;
   typedef logic [TbDataWidth-1:0] data_t;
-  typedef logic [TbIdWidth-1:0]   id_t;
+  typedef logic [TbIdWidth-1:0] id_t;
   typedef logic [StrbWidth-1:0] strb_t;
   typedef logic [TbUserWidth-1:0] user_t;
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH (TbAddrWidth),
-    .AXI_DATA_WIDTH (TbDataWidth),
-    .AXI_ID_WIDTH   (TbIdWidth),
-    .AXI_USER_WIDTH (TbUserWidth)
+    .AXI_ADDR_WIDTH(TbAddrWidth),
+    .AXI_DATA_WIDTH(TbDataWidth),
+    .AXI_ID_WIDTH  (TbIdWidth),
+    .AXI_USER_WIDTH(TbUserWidth)
   ) axi ();
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH (TbAddrWidth),
-    .AXI_DATA_WIDTH (TbDataWidth),
-    .AXI_ID_WIDTH   (TbIdWidth),
-    .AXI_USER_WIDTH (TbUserWidth)
-  ) axi_dv (clk);
-  typedef axi_test::axi_driver #(
-    .AW(TbAddrWidth), .DW(TbDataWidth), .IW(TbIdWidth), .UW(TbUserWidth),
-    .TA(1ns), .TT(6ns)
+    .AXI_ADDR_WIDTH(TbAddrWidth),
+    .AXI_DATA_WIDTH(TbDataWidth),
+    .AXI_ID_WIDTH  (TbIdWidth),
+    .AXI_USER_WIDTH(TbUserWidth)
+  ) axi_dv (
+    clk
+  );
+  typedef axi_test::axi_driver#(
+    .AW(TbAddrWidth),
+    .DW(TbDataWidth),
+    .IW(TbIdWidth),
+    .UW(TbUserWidth),
+    .TA(1ns),
+    .TT(6ns)
   ) drv_t;
   drv_t drv = new(axi_dv);
 
-  `AXI_ASSIGN (axi, axi_dv)
+  `AXI_ASSIGN(axi, axi_dv)
 
   axi_sim_mem_intf #(
-    .AXI_ADDR_WIDTH      (TbAddrWidth),
-    .AXI_DATA_WIDTH      (TbDataWidth),
-    .AXI_ID_WIDTH        (TbIdWidth),
-    .AXI_USER_WIDTH      (TbUserWidth),
-    .WARN_UNINITIALIZED  (TbWarnUninitialized),
-    .APPL_DELAY          (TbApplDelay),
-    .ACQ_DELAY           (TbAcqDelay)
+    .AXI_ADDR_WIDTH    (TbAddrWidth),
+    .AXI_DATA_WIDTH    (TbDataWidth),
+    .AXI_ID_WIDTH      (TbIdWidth),
+    .AXI_USER_WIDTH    (TbUserWidth),
+    .WARN_UNINITIALIZED(TbWarnUninitialized),
+    .APPL_DELAY        (TbApplDelay),
+    .ACQ_DELAY         (TbAcqDelay)
   ) i_sim_mem (
-    .clk_i   (clk),
-    .rst_ni  (rst_n),
-    .axi_slv (axi)
+    .clk_i  (clk),
+    .rst_ni (rst_n),
+    .axi_slv(axi)
   );
 
   // Simply read and write a random memory region.
@@ -88,14 +93,16 @@ module tb_axi_sim_mem #(
 `ifdef XSIM
     // std::randomize(aw_beat) may behave differently to aw_beat.randomize() wrt. limited ranges
     // Keeping alternate implementation for XSIM only
-    rand_success = std::randomize(aw_beat); assert (rand_success);
+    rand_success = std::randomize(aw_beat);
+    assert (rand_success);
 `else
-    rand_success = aw_beat.randomize(); assert (rand_success);
+    rand_success = aw_beat.randomize();
+    assert (rand_success);
 `endif
-    aw_beat.ax_addr >>= $clog2(StrbWidth); // align address with data width
+    aw_beat.ax_addr >>= $clog2(StrbWidth);  // align address with data width
     aw_beat.ax_addr <<= $clog2(StrbWidth);
-    aw_beat.ax_len = $urandom();
-    aw_beat.ax_size = $clog2(StrbWidth);
+    aw_beat.ax_len   = $urandom();
+    aw_beat.ax_size  = $clog2(StrbWidth);
     aw_beat.ax_burst = axi_pkg::BURST_INCR;
     drv.send_aw(aw_beat);
     // W beats
@@ -103,9 +110,11 @@ module tb_axi_sim_mem #(
 `ifdef XSIM
       // std::randomize(w_beat) may behave differently to w_beat.randomize() wrt. limited ranges
       // Keeping alternate implementation for XSIM only
-      rand_success = std::randomize(w_beat); assert (rand_success);
+      rand_success = std::randomize(w_beat);
+      assert (rand_success);
 `else
-      rand_success = w_beat.randomize(); assert (rand_success);
+      rand_success = w_beat.randomize();
+      assert (rand_success);
 `endif
       w_beat.w_strb = '1;
       if (i == aw_beat.ax_len) begin
@@ -116,19 +125,19 @@ module tb_axi_sim_mem #(
     end
     // B
     drv.recv_b(b_beat);
-    assert(b_beat.b_resp == axi_pkg::RESP_OKAY);
+    assert (b_beat.b_resp == axi_pkg::RESP_OKAY);
     // AR
-    ar_beat.ax_addr = aw_beat.ax_addr;
-    ar_beat.ax_len = aw_beat.ax_len;
-    ar_beat.ax_size = aw_beat.ax_size;
+    ar_beat.ax_addr  = aw_beat.ax_addr;
+    ar_beat.ax_len   = aw_beat.ax_len;
+    ar_beat.ax_size  = aw_beat.ax_size;
     ar_beat.ax_burst = aw_beat.ax_burst;
     drv.send_ar(ar_beat);
     // R beats
     for (int unsigned i = 0; i <= ar_beat.ax_len; i++) begin
       automatic data_t exp = exp_data.pop_front();
       drv.recv_r(r_beat);
-      assert(r_beat.r_data == exp) else
-        $error("Received 0x%h != expected 0x%h!", r_beat.r_data, exp);
+      assert (r_beat.r_data == exp)
+      else $error("Received 0x%h != expected 0x%h!", r_beat.r_data, exp);
     end
     // Done.
     #(TbTclk);

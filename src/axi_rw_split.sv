@@ -43,12 +43,12 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Assign Read channel structs
-  `AXI_ASSIGN_AR_STRUCT ( mst_read_req_o.ar  , slv_req_i.ar       )
-  `AXI_ASSIGN_R_STRUCT  ( slv_resp_o.r       , mst_read_resp_i.r  )
+  `AXI_ASSIGN_AR_STRUCT(mst_read_req_o.ar, slv_req_i.ar)
+  `AXI_ASSIGN_R_STRUCT(slv_resp_o.r, mst_read_resp_i.r)
 
   // Read AW and W channel data
-  assign mst_read_req_o.aw        = '0;
-  assign mst_read_req_o.w         = '0;
+  assign mst_read_req_o.aw       = '0;
+  assign mst_read_req_o.w        = '0;
 
 
   //--------------------------------------
@@ -56,17 +56,17 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Read AR channel handshake
-  assign mst_read_req_o.ar_valid  = slv_req_i.ar_valid;
-  assign slv_resp_o.ar_ready      = mst_read_resp_i.ar_ready;
+  assign mst_read_req_o.ar_valid = slv_req_i.ar_valid;
+  assign slv_resp_o.ar_ready     = mst_read_resp_i.ar_ready;
 
   // Read R channel handshake
-  assign slv_resp_o.r_valid       = mst_read_resp_i.r_valid;
-  assign mst_read_req_o.r_ready   = slv_req_i.r_ready;
+  assign slv_resp_o.r_valid      = mst_read_resp_i.r_valid;
+  assign mst_read_req_o.r_ready  = slv_req_i.r_ready;
 
   // Read AW, W and B handshake
-  assign mst_read_req_o.aw_valid  = 1'b0;
-  assign mst_read_req_o.w_valid   = 1'b0;
-  assign mst_read_req_o.b_ready   = 1'b0;
+  assign mst_read_req_o.aw_valid = 1'b0;
+  assign mst_read_req_o.w_valid  = 1'b0;
+  assign mst_read_req_o.b_ready  = 1'b0;
 
   // check for B never to be valid
   `ASSERT_NEVER(mst_read_resp_b_valid, mst_read_resp_i.b_valid, clk_i, !rst_ni)
@@ -77,9 +77,9 @@ module axi_rw_split #(
   //--------------------------------------
 
   // Assign Write channel structs
-  `AXI_ASSIGN_AW_STRUCT ( mst_write_req_o.aw , slv_req_i.aw       )
-  `AXI_ASSIGN_W_STRUCT  ( mst_write_req_o.w  , slv_req_i.w        )
-  `AXI_ASSIGN_B_STRUCT  ( slv_resp_o.b       , mst_write_resp_i.b )
+  `AXI_ASSIGN_AW_STRUCT(mst_write_req_o.aw, slv_req_i.aw)
+  `AXI_ASSIGN_W_STRUCT(mst_write_req_o.w, slv_req_i.w)
+  `AXI_ASSIGN_B_STRUCT(slv_resp_o.b, mst_write_resp_i.b)
 
   // Write AR channel data
   assign mst_write_req_o.ar       = '0;

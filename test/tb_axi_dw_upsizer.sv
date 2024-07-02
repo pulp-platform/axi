@@ -15,17 +15,17 @@
 `include "axi/assign.svh"
 
 module tb_axi_dw_upsizer #(
-    // AXI Parameters
-    parameter int unsigned TbAxiAddrWidth        = 64  ,
-    parameter int unsigned TbAxiIdWidth          = 4   ,
-    parameter int unsigned TbAxiSlvPortDataWidth = 32  ,
-    parameter int unsigned TbAxiMstPortDataWidth = 64  ,
-    parameter int unsigned TbAxiUserWidth        = 8   ,
-    // TB Parameters
-    parameter time TbCyclTime                    = 10ns,
-    parameter time TbApplTime                    = 2ns ,
-    parameter time TbTestTime                    = 8ns
-  );
+  // AXI Parameters
+  parameter int unsigned TbAxiAddrWidth        = 64,
+  parameter int unsigned TbAxiIdWidth          = 4,
+  parameter int unsigned TbAxiSlvPortDataWidth = 32,
+  parameter int unsigned TbAxiMstPortDataWidth = 64,
+  parameter int unsigned TbAxiUserWidth        = 8,
+  // TB Parameters
+  parameter time         TbCyclTime            = 10ns,
+  parameter time         TbApplTime            = 2ns,
+  parameter time         TbTestTime            = 8ns
+);
 
   /*********************
    *  CLOCK GENERATOR  *
@@ -36,10 +36,10 @@ module tb_axi_dw_upsizer #(
   logic eos;
 
   clk_rst_gen #(
-    .ClkPeriod    (TbCyclTime),
-    .RstClkCycles (5       )
+    .ClkPeriod   (TbCyclTime),
+    .RstClkCycles(5)
   ) i_clk_rst_gen (
-    .clk_o (clk  ),
+    .clk_o (clk),
     .rst_no(rst_n)
   );
 
@@ -50,61 +50,65 @@ module tb_axi_dw_upsizer #(
   // Master port
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH(TbAxiAddrWidth       ),
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
     .AXI_DATA_WIDTH(TbAxiSlvPortDataWidth),
-    .AXI_ID_WIDTH  (TbAxiIdWidth         ),
-    .AXI_USER_WIDTH(TbAxiUserWidth       )
+    .AXI_ID_WIDTH  (TbAxiIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
   ) master_dv (
     .clk_i(clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH(TbAxiAddrWidth       ),
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
     .AXI_DATA_WIDTH(TbAxiSlvPortDataWidth),
-    .AXI_ID_WIDTH  (TbAxiIdWidth         ),
-    .AXI_USER_WIDTH(TbAxiUserWidth       )
+    .AXI_ID_WIDTH  (TbAxiIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
   ) master ();
 
   `AXI_ASSIGN(master, master_dv)
 
   axi_test::axi_rand_master #(
-    .AW            (TbAxiAddrWidth       ),
+    .AW            (TbAxiAddrWidth),
     .DW            (TbAxiSlvPortDataWidth),
-    .IW            (TbAxiIdWidth         ),
-    .UW            (TbAxiUserWidth       ),
-    .TA            (TbApplTime           ),
-    .TT            (TbTestTime           ),
-    .MAX_READ_TXNS (8                  ),
-    .MAX_WRITE_TXNS(8                  ),
-    .AXI_ATOPS     (1'b1               )
-  ) master_drv = new (master_dv);
+    .IW            (TbAxiIdWidth),
+    .UW            (TbAxiUserWidth),
+    .TA            (TbApplTime),
+    .TT            (TbTestTime),
+    .MAX_READ_TXNS (8),
+    .MAX_WRITE_TXNS(8),
+    .AXI_ATOPS     (1'b1)
+  ) master_drv = new(
+    master_dv
+  );
 
   // Slave port
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH(TbAxiAddrWidth       ),
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
     .AXI_DATA_WIDTH(TbAxiMstPortDataWidth),
-    .AXI_ID_WIDTH  (TbAxiIdWidth         ),
-    .AXI_USER_WIDTH(TbAxiUserWidth       )
+    .AXI_ID_WIDTH  (TbAxiIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
   ) slave_dv (
     .clk_i(clk)
   );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH(TbAxiAddrWidth       ),
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
     .AXI_DATA_WIDTH(TbAxiMstPortDataWidth),
-    .AXI_ID_WIDTH  (TbAxiIdWidth         ),
-    .AXI_USER_WIDTH(TbAxiUserWidth       )
+    .AXI_ID_WIDTH  (TbAxiIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
   ) slave ();
 
   axi_test::axi_rand_slave #(
-    .AW(TbAxiAddrWidth       ),
+    .AW(TbAxiAddrWidth),
     .DW(TbAxiMstPortDataWidth),
-    .IW(TbAxiIdWidth         ),
-    .UW(TbAxiUserWidth       ),
-    .TA(TbApplTime           ),
-    .TT(TbTestTime           )
-  ) slave_drv = new (slave_dv);
+    .IW(TbAxiIdWidth),
+    .UW(TbAxiUserWidth),
+    .TA(TbApplTime),
+    .TT(TbTestTime)
+  ) slave_drv = new(
+    slave_dv
+  );
 
   `AXI_ASSIGN(slave_dv, slave)
 
@@ -113,12 +117,12 @@ module tb_axi_dw_upsizer #(
    *********/
 
   axi_dw_converter_intf #(
-    .AXI_MAX_READS          (4                  ),
-    .AXI_ADDR_WIDTH         (TbAxiAddrWidth       ),
-    .AXI_ID_WIDTH           (TbAxiIdWidth         ),
+    .AXI_MAX_READS          (4),
+    .AXI_ADDR_WIDTH         (TbAxiAddrWidth),
+    .AXI_ID_WIDTH           (TbAxiIdWidth),
     .AXI_SLV_PORT_DATA_WIDTH(TbAxiSlvPortDataWidth),
     .AXI_MST_PORT_DATA_WIDTH(TbAxiMstPortDataWidth),
-    .AXI_USER_WIDTH         (TbAxiUserWidth       )
+    .AXI_USER_WIDTH         (TbAxiUserWidth)
   ) i_dw_converter (
     .clk_i (clk   ),
     .rst_ni(rst_n ),
@@ -134,16 +138,17 @@ module tb_axi_dw_upsizer #(
     eos = 1'b0;
 
     // Configuration
-    slave_drv.reset()                                                                                  ;
-    master_drv.reset()                                                                                 ;
-    master_drv.add_memory_region({TbAxiAddrWidth{1'b0}}, {TbAxiAddrWidth{1'b1}}, axi_pkg::WTHRU_NOALLOCATE);
+    slave_drv.reset();
+    master_drv.reset();
+    master_drv.add_memory_region({TbAxiAddrWidth{1'b0}}, {TbAxiAddrWidth{1'b1}},
+                                 axi_pkg::WTHRU_NOALLOCATE);
 
     // Wait for the reset before sending requests
     @(posedge rst_n);
 
     fork
       // Act as a sink
-      slave_drv.run()         ;
+      slave_drv.run();
       master_drv.run(200, 200);
     join_any
 
@@ -157,26 +162,30 @@ module tb_axi_dw_upsizer #(
    *************/
 
   initial begin : proc_monitor
-    static tb_axi_dw_pkg::axi_dw_upsizer_monitor #(
-      .AxiAddrWidth       (TbAxiAddrWidth       ),
+    static
+    tb_axi_dw_pkg::axi_dw_upsizer_monitor #(
+      .AxiAddrWidth       (TbAxiAddrWidth),
       .AxiMstPortDataWidth(TbAxiMstPortDataWidth),
       .AxiSlvPortDataWidth(TbAxiSlvPortDataWidth),
-      .AxiIdWidth         (TbAxiIdWidth         ),
-      .AxiUserWidth       (TbAxiUserWidth       ),
-      .TimeTest           (TbTestTime           )
-    ) monitor = new (master_dv, slave_dv);
+      .AxiIdWidth         (TbAxiIdWidth),
+      .AxiUserWidth       (TbAxiUserWidth),
+      .TimeTest           (TbTestTime)
+    )
+    monitor = new(
+      master_dv, slave_dv
+    );
     fork
       monitor.run();
       forever begin
         #TbTestTime;
-        if(eos) begin
+        if (eos) begin
           monitor.print_result();
-          $stop()               ;
+          $stop();
         end
         @(posedge clk);
       end
     join
   end
 
-// vsim -voptargs=+acc work.tb_axi_dw_upsizer
+  // vsim -voptargs=+acc work.tb_axi_dw_upsizer
 endmodule : tb_axi_dw_upsizer

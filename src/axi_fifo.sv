@@ -19,27 +19,27 @@
 // Can be used to buffer transactions
 
 module axi_fifo #(
-    parameter int unsigned Depth       = 32'd1,  // Number of FiFo slots.
-    parameter bit          FallThrough = 1'b0,  // fifos are in fall-through mode
-    // AXI channel structs
-    parameter type         aw_chan_t   = logic,
-    parameter type         w_chan_t    = logic,
-    parameter type         b_chan_t    = logic,
-    parameter type         ar_chan_t   = logic,
-    parameter type         r_chan_t    = logic,
-    // AXI request & response structs
-    parameter type         axi_req_t   = logic,
-    parameter type         axi_resp_t  = logic
+  parameter int unsigned Depth       = 32'd1,  // Number of FiFo slots.
+  parameter bit          FallThrough = 1'b0,   // fifos are in fall-through mode
+  // AXI channel structs
+  parameter type         aw_chan_t   = logic,
+  parameter type         w_chan_t    = logic,
+  parameter type         b_chan_t    = logic,
+  parameter type         ar_chan_t   = logic,
+  parameter type         r_chan_t    = logic,
+  // AXI request & response structs
+  parameter type         axi_req_t   = logic,
+  parameter type         axi_resp_t  = logic
 ) (
-    input  logic      clk_i,  // Clock
-    input  logic      rst_ni,  // Asynchronous reset active low
-    input  logic      test_i,
-    // slave port
-    input  axi_req_t  slv_req_i,
-    output axi_resp_t slv_resp_o,
-    // master port
-    output axi_req_t  mst_req_o,
-    input  axi_resp_t mst_resp_i
+  input  logic      clk_i,       // Clock
+  input  logic      rst_ni,      // Asynchronous reset active low
+  input  logic      test_i,
+  // slave port
+  input  axi_req_t  slv_req_i,
+  output axi_resp_t slv_resp_o,
+  // master port
+  output axi_req_t  mst_req_o,
+  input  axi_resp_t mst_resp_i
 );
 
   if (Depth == '0) begin : gen_no_fifo
@@ -64,89 +64,89 @@ module axi_fifo #(
 
     // A FiFo for each channel
     fifo_v3 #(
-        .dtype(aw_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+      .dtype(aw_chan_t),
+      .DEPTH(Depth),
+      .FALL_THROUGH(FallThrough)
     ) i_aw_fifo (
-        .clk_i,
-        .rst_ni,
-        .flush_i   (1'b0),
-        .testmode_i(test_i),
-        .full_o    (aw_fifo_full),
-        .empty_o   (aw_fifo_empty),
-        .usage_o   (),
-        .data_i    (slv_req_i.aw),
-        .push_i    (slv_req_i.aw_valid && slv_resp_o.aw_ready),
-        .data_o    (mst_req_o.aw),
-        .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
+      .clk_i,
+      .rst_ni,
+      .flush_i   (1'b0),
+      .testmode_i(test_i),
+      .full_o    (aw_fifo_full),
+      .empty_o   (aw_fifo_empty),
+      .usage_o   (),
+      .data_i    (slv_req_i.aw),
+      .push_i    (slv_req_i.aw_valid && slv_resp_o.aw_ready),
+      .data_o    (mst_req_o.aw),
+      .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
     );
     fifo_v3 #(
-        .dtype(ar_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+      .dtype(ar_chan_t),
+      .DEPTH(Depth),
+      .FALL_THROUGH(FallThrough)
     ) i_ar_fifo (
-        .clk_i,
-        .rst_ni,
-        .flush_i   (1'b0),
-        .testmode_i(test_i),
-        .full_o    (ar_fifo_full),
-        .empty_o   (ar_fifo_empty),
-        .usage_o   (),
-        .data_i    (slv_req_i.ar),
-        .push_i    (slv_req_i.ar_valid && slv_resp_o.ar_ready),
-        .data_o    (mst_req_o.ar),
-        .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
+      .clk_i,
+      .rst_ni,
+      .flush_i   (1'b0),
+      .testmode_i(test_i),
+      .full_o    (ar_fifo_full),
+      .empty_o   (ar_fifo_empty),
+      .usage_o   (),
+      .data_i    (slv_req_i.ar),
+      .push_i    (slv_req_i.ar_valid && slv_resp_o.ar_ready),
+      .data_o    (mst_req_o.ar),
+      .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
     );
     fifo_v3 #(
-        .dtype(w_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+      .dtype(w_chan_t),
+      .DEPTH(Depth),
+      .FALL_THROUGH(FallThrough)
     ) i_w_fifo (
-        .clk_i,
-        .rst_ni,
-        .flush_i   (1'b0),
-        .testmode_i(test_i),
-        .full_o    (w_fifo_full),
-        .empty_o   (w_fifo_empty),
-        .usage_o   (),
-        .data_i    (slv_req_i.w),
-        .push_i    (slv_req_i.w_valid && slv_resp_o.w_ready),
-        .data_o    (mst_req_o.w),
-        .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
+      .clk_i,
+      .rst_ni,
+      .flush_i   (1'b0),
+      .testmode_i(test_i),
+      .full_o    (w_fifo_full),
+      .empty_o   (w_fifo_empty),
+      .usage_o   (),
+      .data_i    (slv_req_i.w),
+      .push_i    (slv_req_i.w_valid && slv_resp_o.w_ready),
+      .data_o    (mst_req_o.w),
+      .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
     );
     fifo_v3 #(
-        .dtype(r_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+      .dtype(r_chan_t),
+      .DEPTH(Depth),
+      .FALL_THROUGH(FallThrough)
     ) i_r_fifo (
-        .clk_i,
-        .rst_ni,
-        .flush_i   (1'b0),
-        .testmode_i(test_i),
-        .full_o    (r_fifo_full),
-        .empty_o   (r_fifo_empty),
-        .usage_o   (),
-        .data_i    (mst_resp_i.r),
-        .push_i    (mst_resp_i.r_valid && mst_req_o.r_ready),
-        .data_o    (slv_resp_o.r),
-        .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
+      .clk_i,
+      .rst_ni,
+      .flush_i   (1'b0),
+      .testmode_i(test_i),
+      .full_o    (r_fifo_full),
+      .empty_o   (r_fifo_empty),
+      .usage_o   (),
+      .data_i    (mst_resp_i.r),
+      .push_i    (mst_resp_i.r_valid && mst_req_o.r_ready),
+      .data_o    (slv_resp_o.r),
+      .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
     );
     fifo_v3 #(
-        .dtype(b_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+      .dtype(b_chan_t),
+      .DEPTH(Depth),
+      .FALL_THROUGH(FallThrough)
     ) i_b_fifo (
-        .clk_i,
-        .rst_ni,
-        .flush_i   (1'b0),
-        .testmode_i(test_i),
-        .full_o    (b_fifo_full),
-        .empty_o   (b_fifo_empty),
-        .usage_o   (),
-        .data_i    (mst_resp_i.b),
-        .push_i    (mst_resp_i.b_valid && mst_req_o.b_ready),
-        .data_o    (slv_resp_o.b),
-        .pop_i     (slv_resp_o.b_valid && slv_req_i.b_ready)
+      .clk_i,
+      .rst_ni,
+      .flush_i   (1'b0),
+      .testmode_i(test_i),
+      .full_o    (b_fifo_full),
+      .empty_o   (b_fifo_empty),
+      .usage_o   (),
+      .data_i    (mst_resp_i.b),
+      .push_i    (mst_resp_i.b_valid && mst_req_o.b_ready),
+      .data_o    (slv_resp_o.b),
+      .pop_i     (slv_resp_o.b_valid && slv_req_i.b_ready)
     );
   end
 
@@ -165,18 +165,18 @@ endmodule
 
 // interface wrapper
 module axi_fifo_intf #(
-    parameter int unsigned ADDR_WIDTH = 0,  // The address width.
-    parameter int unsigned DATA_WIDTH = 0,  // The data width.
-    parameter int unsigned ID_WIDTH = 0,  // The ID width.
-    parameter int unsigned USER_WIDTH = 0,  // The user data width.
-    parameter int unsigned DEPTH = 0,  // The number of FiFo slots.
-    parameter int unsigned FALL_THROUGH = 0  // FiFo in fall-through mode
+  parameter int unsigned ADDR_WIDTH = 0,  // The address width.
+  parameter int unsigned DATA_WIDTH = 0,  // The data width.
+  parameter int unsigned ID_WIDTH = 0,  // The ID width.
+  parameter int unsigned USER_WIDTH = 0,  // The user data width.
+  parameter int unsigned DEPTH = 0,  // The number of FiFo slots.
+  parameter int unsigned FALL_THROUGH = 0  // FiFo in fall-through mode
 ) (
-    input logic    clk_i,
-    input logic    rst_ni,
-    input logic    test_i,
-    AXI_BUS.Slave  slv,
-    AXI_BUS.Master mst
+  input logic    clk_i,
+  input logic    rst_ni,
+  input logic    test_i,
+  AXI_BUS.Slave  slv,
+  AXI_BUS.Master mst
 );
 
   typedef logic [ID_WIDTH-1:0] id_t;
@@ -203,23 +203,23 @@ module axi_fifo_intf #(
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
   axi_fifo #(
-      .Depth      (DEPTH),
-      .FallThrough(FALL_THROUGH),
-      .aw_chan_t  (aw_chan_t),
-      .w_chan_t   (w_chan_t),
-      .b_chan_t   (b_chan_t),
-      .ar_chan_t  (ar_chan_t),
-      .r_chan_t   (r_chan_t),
-      .axi_req_t  (axi_req_t),
-      .axi_resp_t (axi_resp_t)
+    .Depth      (DEPTH),
+    .FallThrough(FALL_THROUGH),
+    .aw_chan_t  (aw_chan_t),
+    .w_chan_t   (w_chan_t),
+    .b_chan_t   (b_chan_t),
+    .ar_chan_t  (ar_chan_t),
+    .r_chan_t   (r_chan_t),
+    .axi_req_t  (axi_req_t),
+    .axi_resp_t (axi_resp_t)
   ) i_axi_fifo (
-      .clk_i,
-      .rst_ni,
-      .test_i,
-      .slv_req_i (slv_req),
-      .slv_resp_o(slv_resp),
-      .mst_req_o (mst_req),
-      .mst_resp_i(mst_resp)
+    .clk_i,
+    .rst_ni,
+    .test_i,
+    .slv_req_i (slv_req),
+    .slv_resp_o(slv_resp),
+    .mst_req_o (mst_req),
+    .mst_resp_i(mst_resp)
   );
 
   // Check the invariants.

@@ -23,7 +23,7 @@
 /// the FIFO; see the header of `cdc_fifo_gray` for instructions.
 module axi_cdc_src #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LogDepth   = 1,
+  parameter int unsigned LogDepth = 1,
   /// Number of synchronization registers to insert on the async pointers
   parameter int unsigned SyncStages = 2,
   parameter type aw_chan_t = logic,
@@ -41,116 +41,116 @@ module axi_cdc_src #(
   output axi_resp_t                   src_resp_o,
   // asynchronous master port
   output aw_chan_t  [2**LogDepth-1:0] async_data_master_aw_data_o,
-  output logic           [LogDepth:0] async_data_master_aw_wptr_o,
-  input  logic           [LogDepth:0] async_data_master_aw_rptr_i,
+  output logic      [     LogDepth:0] async_data_master_aw_wptr_o,
+  input  logic      [     LogDepth:0] async_data_master_aw_rptr_i,
   output w_chan_t   [2**LogDepth-1:0] async_data_master_w_data_o,
-  output logic           [LogDepth:0] async_data_master_w_wptr_o,
-  input  logic           [LogDepth:0] async_data_master_w_rptr_i,
+  output logic      [     LogDepth:0] async_data_master_w_wptr_o,
+  input  logic      [     LogDepth:0] async_data_master_w_rptr_i,
   input  b_chan_t   [2**LogDepth-1:0] async_data_master_b_data_i,
-  input  logic           [LogDepth:0] async_data_master_b_wptr_i,
-  output logic           [LogDepth:0] async_data_master_b_rptr_o,
+  input  logic      [     LogDepth:0] async_data_master_b_wptr_i,
+  output logic      [     LogDepth:0] async_data_master_b_rptr_o,
   output ar_chan_t  [2**LogDepth-1:0] async_data_master_ar_data_o,
-  output logic           [LogDepth:0] async_data_master_ar_wptr_o,
-  input  logic           [LogDepth:0] async_data_master_ar_rptr_i,
+  output logic      [     LogDepth:0] async_data_master_ar_wptr_o,
+  input  logic      [     LogDepth:0] async_data_master_ar_rptr_i,
   input  r_chan_t   [2**LogDepth-1:0] async_data_master_r_data_i,
-  input  logic           [LogDepth:0] async_data_master_r_wptr_i,
-  output logic           [LogDepth:0] async_data_master_r_rptr_o
+  input  logic      [     LogDepth:0] async_data_master_r_wptr_i,
+  output logic      [     LogDepth:0] async_data_master_r_rptr_o
 );
 
   cdc_fifo_gray_src #(
     // Workaround for a bug in Questa (see comment in `axi_cdc_dst` for details).
 `ifdef QUESTA
-    .T         ( logic [$bits(aw_chan_t)-1:0] ),
+    .T          (logic [$bits(aw_chan_t)-1:0]),
 `else
-    .T         ( aw_chan_t                    ),
+    .T          (aw_chan_t),
 `endif
-    .LOG_DEPTH   ( LogDepth                     ),
-    .SYNC_STAGES ( SyncStages                   )
+    .LOG_DEPTH  (LogDepth),
+    .SYNC_STAGES(SyncStages)
   ) i_cdc_fifo_gray_src_aw (
     .src_clk_i,
     .src_rst_ni,
-    .src_data_i   ( src_req_i.aw                ),
-    .src_valid_i  ( src_req_i.aw_valid          ),
-    .src_ready_o  ( src_resp_o.aw_ready         ),
-    .async_data_o ( async_data_master_aw_data_o ),
-    .async_wptr_o ( async_data_master_aw_wptr_o ),
-    .async_rptr_i ( async_data_master_aw_rptr_i )
+    .src_data_i  (src_req_i.aw),
+    .src_valid_i (src_req_i.aw_valid),
+    .src_ready_o (src_resp_o.aw_ready),
+    .async_data_o(async_data_master_aw_data_o),
+    .async_wptr_o(async_data_master_aw_wptr_o),
+    .async_rptr_i(async_data_master_aw_rptr_i)
   );
 
   cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T         ( logic [$bits(w_chan_t)-1:0]  ),
+    .T          (logic [$bits(w_chan_t)-1:0]),
 `else
-    .T         ( w_chan_t                     ),
+    .T          (w_chan_t),
 `endif
-    .LOG_DEPTH   ( LogDepth                     ),
-    .SYNC_STAGES ( SyncStages                   )
+    .LOG_DEPTH  (LogDepth),
+    .SYNC_STAGES(SyncStages)
   ) i_cdc_fifo_gray_src_w (
     .src_clk_i,
     .src_rst_ni,
-    .src_data_i   ( src_req_i.w                 ),
-    .src_valid_i  ( src_req_i.w_valid           ),
-    .src_ready_o  ( src_resp_o.w_ready          ),
-    .async_data_o ( async_data_master_w_data_o  ),
-    .async_wptr_o ( async_data_master_w_wptr_o  ),
-    .async_rptr_i ( async_data_master_w_rptr_i  )
+    .src_data_i  (src_req_i.w),
+    .src_valid_i (src_req_i.w_valid),
+    .src_ready_o (src_resp_o.w_ready),
+    .async_data_o(async_data_master_w_data_o),
+    .async_wptr_o(async_data_master_w_wptr_o),
+    .async_rptr_i(async_data_master_w_rptr_i)
   );
 
   cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T         ( logic [$bits(b_chan_t)-1:0]  ),
+    .T          (logic [$bits(b_chan_t)-1:0]),
 `else
-    .T         ( b_chan_t                     ),
+    .T          (b_chan_t),
 `endif
-    .LOG_DEPTH   ( LogDepth                     ),
-    .SYNC_STAGES ( SyncStages                   )
+    .LOG_DEPTH  (LogDepth),
+    .SYNC_STAGES(SyncStages)
   ) i_cdc_fifo_gray_dst_b (
-    .dst_clk_i    ( src_clk_i                   ),
-    .dst_rst_ni   ( src_rst_ni                  ),
-    .dst_data_o   ( src_resp_o.b                ),
-    .dst_valid_o  ( src_resp_o.b_valid          ),
-    .dst_ready_i  ( src_req_i.b_ready           ),
-    .async_data_i ( async_data_master_b_data_i  ),
-    .async_wptr_i ( async_data_master_b_wptr_i  ),
-    .async_rptr_o ( async_data_master_b_rptr_o  )
+    .dst_clk_i   (src_clk_i),
+    .dst_rst_ni  (src_rst_ni),
+    .dst_data_o  (src_resp_o.b),
+    .dst_valid_o (src_resp_o.b_valid),
+    .dst_ready_i (src_req_i.b_ready),
+    .async_data_i(async_data_master_b_data_i),
+    .async_wptr_i(async_data_master_b_wptr_i),
+    .async_rptr_o(async_data_master_b_rptr_o)
   );
 
   cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T         ( logic [$bits(ar_chan_t)-1:0] ),
+    .T          (logic [$bits(ar_chan_t)-1:0]),
 `else
-    .T         ( ar_chan_t                    ),
+    .T          (ar_chan_t),
 `endif
-    .LOG_DEPTH   ( LogDepth                     ),
-    .SYNC_STAGES ( SyncStages                   )
+    .LOG_DEPTH  (LogDepth),
+    .SYNC_STAGES(SyncStages)
   ) i_cdc_fifo_gray_src_ar (
     .src_clk_i,
     .src_rst_ni,
-    .src_data_i   ( src_req_i.ar                ),
-    .src_valid_i  ( src_req_i.ar_valid          ),
-    .src_ready_o  ( src_resp_o.ar_ready         ),
-    .async_data_o ( async_data_master_ar_data_o ),
-    .async_wptr_o ( async_data_master_ar_wptr_o ),
-    .async_rptr_i ( async_data_master_ar_rptr_i )
+    .src_data_i  (src_req_i.ar),
+    .src_valid_i (src_req_i.ar_valid),
+    .src_ready_o (src_resp_o.ar_ready),
+    .async_data_o(async_data_master_ar_data_o),
+    .async_wptr_o(async_data_master_ar_wptr_o),
+    .async_rptr_i(async_data_master_ar_rptr_i)
   );
 
   cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T         ( logic [$bits(r_chan_t)-1:0]  ),
+    .T          (logic [$bits(r_chan_t)-1:0]),
 `else
-    .T         ( r_chan_t                     ),
+    .T          (r_chan_t),
 `endif
-    .LOG_DEPTH   ( LogDepth                     ),
-    .SYNC_STAGES ( SyncStages                   )
+    .LOG_DEPTH  (LogDepth),
+    .SYNC_STAGES(SyncStages)
   ) i_cdc_fifo_gray_dst_r (
-    .dst_clk_i    ( src_clk_i                   ),
-    .dst_rst_ni   ( src_rst_ni                  ),
-    .dst_data_o   ( src_resp_o.r                ),
-    .dst_valid_o  ( src_resp_o.r_valid          ),
-    .dst_ready_i  ( src_req_i.r_ready           ),
-    .async_data_i ( async_data_master_r_data_i  ),
-    .async_wptr_i ( async_data_master_r_wptr_i  ),
-    .async_rptr_o ( async_data_master_r_rptr_o  )
+    .dst_clk_i   (src_clk_i),
+    .dst_rst_ni  (src_rst_ni),
+    .dst_data_o  (src_resp_o.r),
+    .dst_valid_o (src_resp_o.r_valid),
+    .dst_ready_i (src_req_i.r_ready),
+    .async_data_i(async_data_master_r_data_i),
+    .async_wptr_i(async_data_master_r_wptr_i),
+    .async_rptr_o(async_data_master_r_rptr_o)
   );
 
 endmodule
@@ -162,23 +162,23 @@ module axi_cdc_src_intf #(
   parameter int unsigned AXI_DATA_WIDTH = 0,
   parameter int unsigned AXI_USER_WIDTH = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LOG_DEPTH   = 1,
+  parameter int unsigned LOG_DEPTH = 1,
   /// Number of synchronization registers to insert on the async pointers
   parameter int unsigned SYNC_STAGES = 2
 ) (
   // synchronous slave port - clocked by `src_clk_i`
-  input  logic                src_clk_i,
-  input  logic                src_rst_ni,
-  AXI_BUS.Slave               src,
+  input logic                     src_clk_i,
+  input logic                     src_rst_ni,
+        AXI_BUS.Slave             src,
   // asynchronous master port
-  AXI_BUS_ASYNC_GRAY.Master   dst
+        AXI_BUS_ASYNC_GRAY.Master dst
 );
 
-  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_ID_WIDTH-1:0] id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
@@ -194,35 +194,35 @@ module axi_cdc_src_intf #(
   `AXI_ASSIGN_FROM_RESP(src, src_resp)
 
   axi_cdc_src #(
-    .aw_chan_t  ( aw_chan_t   ),
-    .w_chan_t   ( w_chan_t    ),
-    .b_chan_t   ( b_chan_t    ),
-    .ar_chan_t  ( ar_chan_t   ),
-    .r_chan_t   ( r_chan_t    ),
-    .axi_req_t  ( req_t       ),
-    .axi_resp_t ( resp_t      ),
-    .LogDepth   ( LOG_DEPTH   ),
-    .SyncStages ( SYNC_STAGES )
+    .aw_chan_t (aw_chan_t),
+    .w_chan_t  (w_chan_t),
+    .b_chan_t  (b_chan_t),
+    .ar_chan_t (ar_chan_t),
+    .r_chan_t  (r_chan_t),
+    .axi_req_t (req_t),
+    .axi_resp_t(resp_t),
+    .LogDepth  (LOG_DEPTH),
+    .SyncStages(SYNC_STAGES)
   ) i_axi_cdc_src (
     .src_clk_i,
     .src_rst_ni,
-    .src_req_i                    ( src_req     ),
-    .src_resp_o                   ( src_resp    ),
-    .async_data_master_aw_data_o  ( dst.aw_data ),
-    .async_data_master_aw_wptr_o  ( dst.aw_wptr ),
-    .async_data_master_aw_rptr_i  ( dst.aw_rptr ),
-    .async_data_master_w_data_o   ( dst.w_data  ),
-    .async_data_master_w_wptr_o   ( dst.w_wptr  ),
-    .async_data_master_w_rptr_i   ( dst.w_rptr  ),
-    .async_data_master_b_data_i   ( dst.b_data  ),
-    .async_data_master_b_wptr_i   ( dst.b_wptr  ),
-    .async_data_master_b_rptr_o   ( dst.b_rptr  ),
-    .async_data_master_ar_data_o  ( dst.ar_data ),
-    .async_data_master_ar_wptr_o  ( dst.ar_wptr ),
-    .async_data_master_ar_rptr_i  ( dst.ar_rptr ),
-    .async_data_master_r_data_i   ( dst.r_data  ),
-    .async_data_master_r_wptr_i   ( dst.r_wptr  ),
-    .async_data_master_r_rptr_o   ( dst.r_rptr  )
+    .src_req_i                  (src_req),
+    .src_resp_o                 (src_resp),
+    .async_data_master_aw_data_o(dst.aw_data),
+    .async_data_master_aw_wptr_o(dst.aw_wptr),
+    .async_data_master_aw_rptr_i(dst.aw_rptr),
+    .async_data_master_w_data_o (dst.w_data),
+    .async_data_master_w_wptr_o (dst.w_wptr),
+    .async_data_master_w_rptr_i (dst.w_rptr),
+    .async_data_master_b_data_i (dst.b_data),
+    .async_data_master_b_wptr_i (dst.b_wptr),
+    .async_data_master_b_rptr_o (dst.b_rptr),
+    .async_data_master_ar_data_o(dst.ar_data),
+    .async_data_master_ar_wptr_o(dst.ar_wptr),
+    .async_data_master_ar_rptr_i(dst.ar_rptr),
+    .async_data_master_r_data_i (dst.r_data),
+    .async_data_master_r_wptr_i (dst.r_wptr),
+    .async_data_master_r_rptr_o (dst.r_rptr)
   );
 
 endmodule
@@ -237,15 +237,15 @@ module axi_lite_cdc_src_intf #(
   parameter int unsigned SYNC_STAGES = 2
 ) (
   // synchronous slave port - clocked by `src_clk_i`
-  input  logic                src_clk_i,
-  input  logic                src_rst_ni,
-  AXI_BUS.Slave               src,
+  input logic                      src_clk_i,
+  input logic                      src_rst_ni,
+        AXI_BUS.Slave              src,
   // asynchronous master port
-  AXI_LITE_ASYNC_GRAY.Master  dst
+        AXI_LITE_ASYNC_GRAY.Master dst
 );
 
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -262,35 +262,35 @@ module axi_lite_cdc_src_intf #(
   `AXI_LITE_ASSIGN_FROM_RESP(src, src_resp)
 
   axi_cdc_src #(
-    .aw_chan_t  ( aw_chan_t   ),
-    .w_chan_t   ( w_chan_t    ),
-    .b_chan_t   ( b_chan_t    ),
-    .ar_chan_t  ( ar_chan_t   ),
-    .r_chan_t   ( r_chan_t    ),
-    .axi_req_t  ( req_t       ),
-    .axi_resp_t ( resp_t      ),
-    .LogDepth   ( LOG_DEPTH   ),
-    .SyncStages ( SYNC_STAGES )
+    .aw_chan_t (aw_chan_t),
+    .w_chan_t  (w_chan_t),
+    .b_chan_t  (b_chan_t),
+    .ar_chan_t (ar_chan_t),
+    .r_chan_t  (r_chan_t),
+    .axi_req_t (req_t),
+    .axi_resp_t(resp_t),
+    .LogDepth  (LOG_DEPTH),
+    .SyncStages(SYNC_STAGES)
   ) i_axi_cdc_src (
     .src_clk_i,
     .src_rst_ni,
-    .src_req_i                    ( src_req     ),
-    .src_resp_o                   ( src_resp    ),
-    .async_data_master_aw_data_o  ( dst.aw_data ),
-    .async_data_master_aw_wptr_o  ( dst.aw_wptr ),
-    .async_data_master_aw_rptr_i  ( dst.aw_rptr ),
-    .async_data_master_w_data_o   ( dst.w_data  ),
-    .async_data_master_w_wptr_o   ( dst.w_wptr  ),
-    .async_data_master_w_rptr_i   ( dst.w_rptr  ),
-    .async_data_master_b_data_i   ( dst.b_data  ),
-    .async_data_master_b_wptr_i   ( dst.b_wptr  ),
-    .async_data_master_b_rptr_o   ( dst.b_rptr  ),
-    .async_data_master_ar_data_o  ( dst.ar_data ),
-    .async_data_master_ar_wptr_o  ( dst.ar_wptr ),
-    .async_data_master_ar_rptr_i  ( dst.ar_rptr ),
-    .async_data_master_r_data_i   ( dst.r_data  ),
-    .async_data_master_r_wptr_i   ( dst.r_wptr  ),
-    .async_data_master_r_rptr_o   ( dst.r_rptr  )
+    .src_req_i                  (src_req),
+    .src_resp_o                 (src_resp),
+    .async_data_master_aw_data_o(dst.aw_data),
+    .async_data_master_aw_wptr_o(dst.aw_wptr),
+    .async_data_master_aw_rptr_i(dst.aw_rptr),
+    .async_data_master_w_data_o (dst.w_data),
+    .async_data_master_w_wptr_o (dst.w_wptr),
+    .async_data_master_w_rptr_i (dst.w_rptr),
+    .async_data_master_b_data_i (dst.b_data),
+    .async_data_master_b_wptr_i (dst.b_wptr),
+    .async_data_master_b_rptr_o (dst.b_rptr),
+    .async_data_master_ar_data_o(dst.ar_data),
+    .async_data_master_ar_wptr_o(dst.ar_wptr),
+    .async_data_master_ar_rptr_i(dst.ar_rptr),
+    .async_data_master_r_data_i (dst.r_data),
+    .async_data_master_r_wptr_i (dst.r_wptr),
+    .async_data_master_r_rptr_o (dst.r_rptr)
   );
 
 endmodule

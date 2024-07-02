@@ -20,11 +20,11 @@ class tb_iw_converter_ax #(
   type id_t = logic
 );
 
-  ax_t  upstream_ax;
-  id_t  downstream_id;
+  ax_t upstream_ax;
+  id_t downstream_id;
 
   function new(ax_t upstream_ax);
-    this.upstream_ax = upstream_ax;
+    this.upstream_ax   = upstream_ax;
     this.downstream_id = 'x;
   endfunction
 
@@ -39,21 +39,21 @@ endclass
 
 module tb_axi_iw_converter #(
   // DUT Parameters
-  parameter int unsigned TbAxiSlvPortIdWidth = 32'd0,
-  parameter int unsigned TbAxiMstPortIdWidth = 32'd0,
-  parameter int unsigned TbAxiSlvPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbAxiSlvPortIdWidth      = 32'd0,
+  parameter int unsigned TbAxiMstPortIdWidth      = 32'd0,
+  parameter int unsigned TbAxiSlvPortMaxUniqIds   = 32'd0,
   parameter int unsigned TbAxiSlvPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned TbAxiSlvPortMaxTxns = 32'd0,
-  parameter int unsigned TbAxiMstPortMaxUniqIds = 32'd0,
+  parameter int unsigned TbAxiSlvPortMaxTxns      = 32'd0,
+  parameter int unsigned TbAxiMstPortMaxUniqIds   = 32'd0,
   parameter int unsigned TbAxiMstPortMaxTxnsPerId = 32'd0,
-  parameter int unsigned TbAxiAddrWidth = 32'd32,
-  parameter int unsigned TbAxiDataWidth = 32'd32,
-  parameter int unsigned TbAxiUserWidth = 32'd4,
+  parameter int unsigned TbAxiAddrWidth           = 32'd32,
+  parameter int unsigned TbAxiDataWidth           = 32'd32,
+  parameter int unsigned TbAxiUserWidth           = 32'd4,
   // TB Parameters
-  parameter int unsigned TbNumReadTxns = 32'd100,
-  parameter int unsigned TbNumWriteTxns = 32'd200,
-  parameter bit          TbEnAtop = 1'b1,
-  parameter bit          TbEnExcl = 1'b0
+  parameter int unsigned TbNumReadTxns            = 32'd100,
+  parameter int unsigned TbNumWriteTxns           = 32'd200,
+  parameter bit          TbEnAtop                 = 1'b1,
+  parameter bit          TbEnExcl                 = 1'b0
 );
   // AXI4+ATOP channel parameter
 
@@ -63,30 +63,30 @@ module tb_axi_iw_converter #(
   localparam time TestTime = 8ns;
 
   // Driver definitions
-  typedef axi_test::axi_rand_master #(
+  typedef axi_test::axi_rand_master#(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth       ),
-    .DW ( TbAxiDataWidth       ),
-    .IW ( TbAxiSlvPortIdWidth  ),
-    .UW ( TbAxiUserWidth       ),
+    .AW            (TbAxiAddrWidth),
+    .DW            (TbAxiDataWidth),
+    .IW            (TbAxiSlvPortIdWidth),
+    .UW            (TbAxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime           ),
-    .TT ( TestTime           ),
+    .TA            (ApplTime),
+    .TT            (TestTime),
     // Maximum number of read and write transactions in flight
-    .MAX_READ_TXNS  ( 20     ),
-    .MAX_WRITE_TXNS ( 20     ),
-    .AXI_EXCLS      ( TbEnExcl ),
-    .AXI_ATOPS      ( TbEnAtop )
+    .MAX_READ_TXNS (20),
+    .MAX_WRITE_TXNS(20),
+    .AXI_EXCLS     (TbEnExcl),
+    .AXI_ATOPS     (TbEnAtop)
   ) rand_axi_master_t;
-  typedef axi_test::axi_rand_slave #(
+  typedef axi_test::axi_rand_slave#(
     // AXI interface parameters
-    .AW ( TbAxiAddrWidth      ),
-    .DW ( TbAxiDataWidth      ),
-    .IW ( TbAxiMstPortIdWidth ),
-    .UW ( TbAxiUserWidth      ),
+    .AW(TbAxiAddrWidth),
+    .DW(TbAxiDataWidth),
+    .IW(TbAxiMstPortIdWidth),
+    .UW(TbAxiUserWidth),
     // Stimuli application and test time
-    .TA ( ApplTime         ),
-    .TT ( TestTime         )
+    .TA(ApplTime),
+    .TT(TestTime)
   ) rand_axi_slave_t;
 
   // TB signals
@@ -96,42 +96,46 @@ module tb_axi_iw_converter #(
   // Clock generator
   //-----------------------------------
   clk_rst_gen #(
-    .ClkPeriod    ( CyclTime ),
-    .RstClkCycles ( 5        )
+    .ClkPeriod   (CyclTime),
+    .RstClkCycles(5)
   ) i_clk_gen (
-    .clk_o  ( clk   ),
-    .rst_no ( rst_n )
+    .clk_o (clk),
+    .rst_no(rst_n)
   );
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth       ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth       ),
-    .AXI_ID_WIDTH   ( TbAxiSlvPortIdWidth  ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth       )
-  ) axi_upstream_dv (clk);
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (TbAxiSlvPortIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
+  ) axi_upstream_dv (
+    clk
+  );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth       ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth       ),
-    .AXI_ID_WIDTH   ( TbAxiSlvPortIdWidth  ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth       )
-  ) axi_upstream();
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (TbAxiSlvPortIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
+  ) axi_upstream ();
 
   `AXI_ASSIGN(axi_upstream, axi_upstream_dv);
 
   AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth      ),
-    .AXI_ID_WIDTH   ( TbAxiMstPortIdWidth ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth      )
-  ) axi_downstream_dv (clk);
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (TbAxiMstPortIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
+  ) axi_downstream_dv (
+    clk
+  );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( TbAxiAddrWidth      ),
-    .AXI_DATA_WIDTH ( TbAxiDataWidth      ),
-    .AXI_ID_WIDTH   ( TbAxiMstPortIdWidth ),
-    .AXI_USER_WIDTH ( TbAxiUserWidth      )
-  ) axi_downstream();
+    .AXI_ADDR_WIDTH(TbAxiAddrWidth),
+    .AXI_DATA_WIDTH(TbAxiDataWidth),
+    .AXI_ID_WIDTH  (TbAxiMstPortIdWidth),
+    .AXI_USER_WIDTH(TbAxiUserWidth)
+  ) axi_downstream ();
 
   `AXI_ASSIGN(axi_downstream_dv, axi_downstream);
 
@@ -156,56 +160,52 @@ module tb_axi_iw_converter #(
 
   initial begin : proc_sim_stop
     @(posedge rst_n);
-    wait(|sim_done);
+    wait (|sim_done);
     repeat (10) @(posedge clk);
     $finish();
   end
 
   axi_iw_converter_intf #(
-    .AXI_SLV_PORT_ID_WIDTH        ( TbAxiSlvPortIdWidth       ),
-    .AXI_MST_PORT_ID_WIDTH        ( TbAxiMstPortIdWidth       ),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS    ( TbAxiSlvPortMaxUniqIds    ),
-    .AXI_SLV_PORT_MAX_TXNS_PER_ID ( TbAxiSlvPortMaxTxnsPerId  ),
-    .AXI_SLV_PORT_MAX_TXNS        ( TbAxiSlvPortMaxTxns       ),
-    .AXI_MST_PORT_MAX_UNIQ_IDS    ( TbAxiMstPortMaxUniqIds    ),
-    .AXI_MST_PORT_MAX_TXNS_PER_ID ( TbAxiMstPortMaxTxnsPerId  ),
-    .AXI_ADDR_WIDTH               ( TbAxiAddrWidth            ),
-    .AXI_DATA_WIDTH               ( TbAxiDataWidth            ),
-    .AXI_USER_WIDTH               ( TbAxiUserWidth            )
+    .AXI_SLV_PORT_ID_WIDTH       (TbAxiSlvPortIdWidth),
+    .AXI_MST_PORT_ID_WIDTH       (TbAxiMstPortIdWidth),
+    .AXI_SLV_PORT_MAX_UNIQ_IDS   (TbAxiSlvPortMaxUniqIds),
+    .AXI_SLV_PORT_MAX_TXNS_PER_ID(TbAxiSlvPortMaxTxnsPerId),
+    .AXI_SLV_PORT_MAX_TXNS       (TbAxiSlvPortMaxTxns),
+    .AXI_MST_PORT_MAX_UNIQ_IDS   (TbAxiMstPortMaxUniqIds),
+    .AXI_MST_PORT_MAX_TXNS_PER_ID(TbAxiMstPortMaxTxnsPerId),
+    .AXI_ADDR_WIDTH              (TbAxiAddrWidth),
+    .AXI_DATA_WIDTH              (TbAxiDataWidth),
+    .AXI_USER_WIDTH              (TbAxiUserWidth)
   ) i_dut (
-    .clk_i  ( clk            ),
-    .rst_ni ( rst_n          ),
-    .slv    ( axi_upstream   ),
-    .mst    ( axi_downstream )
+    .clk_i (clk),
+    .rst_ni(rst_n),
+    .slv   (axi_upstream),
+    .mst   (axi_downstream)
   );
 
-  typedef rand_axi_master_t::addr_t           addr_t;
-  typedef rand_axi_master_t::data_t           data_t;
-  typedef rand_axi_master_t::id_t             id_t;
-  typedef logic[rand_axi_master_t::DW/8-1:0]  strb_t;
-  typedef rand_axi_master_t::user_t           user_t;
+  typedef rand_axi_master_t::addr_t addr_t;
+  typedef rand_axi_master_t::data_t data_t;
+  typedef rand_axi_master_t::id_t id_t;
+  typedef logic [rand_axi_master_t::DW/8-1:0] strb_t;
+  typedef rand_axi_master_t::user_t user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_beat_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_beat_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_AR_CHAN_T(ar_beat_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_beat_t, data_t, id_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_beat_t, id_t, user_t)
-  typedef tb_iw_converter_ax #(
+  typedef tb_iw_converter_ax#(
     .ax_t(aw_beat_t),
     .id_t(id_t)
   ) aw_t;
-  typedef tb_iw_converter_ax #(
+  typedef tb_iw_converter_ax#(
     .ax_t(ar_beat_t),
     .id_t(id_t)
   ) ar_t;
-  aw_t      aws_by_addr[addr_t],
-            aws_by_downstream_id[id_t][$],
-            aws_by_upstream_id[id_t][$];
-  w_beat_t  ws[$];
-  ar_t      ars_by_addr[addr_t],
-            ars_by_downstream_id[id_t][$],
-            ars_by_upstream_id[id_t][$];
-  r_beat_t  rs_by_upstream_id[id_t][$];
-  b_beat_t  bs_by_upstream_id[id_t][$];
+  aw_t aws_by_addr[addr_t], aws_by_downstream_id[id_t][$], aws_by_upstream_id[id_t][$];
+  w_beat_t ws[$];
+  ar_t ars_by_addr[addr_t], ars_by_downstream_id[id_t][$], ars_by_upstream_id[id_t][$];
+  r_beat_t rs_by_upstream_id[id_t][$];
+  b_beat_t bs_by_upstream_id[id_t][$];
 
   initial begin
     @(posedge rst_n);
@@ -243,18 +243,24 @@ module tb_axi_iw_converter #(
         // Insert to ARs by downstream ID.
         ars_by_downstream_id[ar.downstream_id].push_back(ar);
         // Assert that downstream and upstream AR beat are equal; only their ID may be different.
-        assert(ar.equals_except_id(ar_beat)) else
-          $error("Downstream AR beat %p differs from upstream AR beat %p!",
-              ar_beat, ar.upstream_ax);
+        assert (ar.equals_except_id(ar_beat))
+        else
+          $error(
+            "Downstream AR beat %p differs from upstream AR beat %p!", ar_beat, ar.upstream_ax
+          );
         // Assert that all upstream beats with that ID have the same downstream ID.  It is
         // sufficient if we check that the downstream ID of this AR matches that of the first AR
         // with the same upstream ID.
         other_downstream_id = ars_by_upstream_id[ar.upstream_ax.id][0].downstream_id;
-        assert(ar.downstream_id == other_downstream_id)
-          else $error("Illegal downstream ID 0x%0x for AR with upstream ID 0x%0x: ",
-              ar.downstream_id, ar.upstream_ax.id,
-              "another AR with the same upstream ID has downstream ID 0x%0x!",
-              other_downstream_id);
+        assert (ar.downstream_id == other_downstream_id)
+        else
+          $error(
+            "Illegal downstream ID 0x%0x for AR with upstream ID 0x%0x: ",
+            ar.downstream_id,
+            ar.upstream_ax.id,
+            "another AR with the same upstream ID has downstream ID 0x%0x!",
+            other_downstream_id
+          );
       end
       // Monitor downstream Rs ---------------------------------------------------------------------
       if (axi_downstream.r_valid && axi_downstream.r_ready) begin
@@ -264,9 +270,9 @@ module tb_axi_iw_converter #(
         `AXI_SET_TO_R(r_beat, axi_downstream)
         //$info("Downstream R: %p", r_beat);
         // Obtain corresponding AR.
-        if (!ars_by_downstream_id.exists(r_beat.id)
-            || ars_by_downstream_id[r_beat.id][0] == null)
-        begin
+        if (!ars_by_downstream_id.exists(
+            r_beat.id
+          ) || ars_by_downstream_id[r_beat.id][0] == null) begin
           $fatal(1, "Unknown R with ID 0x%0x: %p", r_beat.id, r_beat);
         end
         ar = ars_by_downstream_id[r_beat.id][0];
@@ -288,9 +294,11 @@ module tb_axi_iw_converter #(
         `AXI_SET_TO_R(r_beat, axi_upstream)
         // Compare for equality to front of queue.
         exp_r_beat = rs_by_upstream_id[r_beat.id].pop_front();
-        assert (r_beat == exp_r_beat) else
-          $error("Incorrect upstream R beat with ID 0x%0x: %p != %p",
-              r_beat.id, r_beat, exp_r_beat);
+        assert (r_beat == exp_r_beat)
+        else
+          $error(
+            "Incorrect upstream R beat with ID 0x%0x: %p != %p", r_beat.id, r_beat, exp_r_beat
+          );
       end
       // Monitor upstream AWs ----------------------------------------------------------------------
       if (axi_upstream.aw_valid && axi_upstream.aw_ready) begin
@@ -314,7 +322,7 @@ module tb_axi_iw_converter #(
           ar = new(ar_beat);
           if (ars_by_addr.exists(ar_beat.addr)) begin
             $fatal(1, "ATOP with read response to the same address as a concurrent AR ",
-                "is not supported by TB!");
+                   "is not supported by TB!");
           end
           ars_by_addr[ar_beat.addr] = ar;
           ars_by_upstream_id[ar_beat.id].push_back(ar);
@@ -337,18 +345,24 @@ module tb_axi_iw_converter #(
         // Insert to AWs by downstream ID.
         aws_by_downstream_id[aw.downstream_id].push_back(aw);
         // Assert that downstream and upstream AW beat are equal; only their ID may be different.
-        assert (aw.equals_except_id(aw_beat)) else
-          $error("Downstream AW beat %p differs from upstream AW beat %p!",
-              aw_beat, aw.upstream_ax);
+        assert (aw.equals_except_id(aw_beat))
+        else
+          $error(
+            "Downstream AW beat %p differs from upstream AW beat %p!", aw_beat, aw.upstream_ax
+          );
         // Assert that all upstream beats with that ID have the same downstream ID.  It is
         // sufficient if we check that the downstream ID of this AW matches that of the first AW
         // with the same upstream ID.
         other_downstream_id = aws_by_upstream_id[aw.upstream_ax.id][0].downstream_id;
-        assert(aw.downstream_id == other_downstream_id)
-          else $error("Illegal downstream ID 0x%0x for AW with upstream ID 0x%0x: ",
-              aw.downstream_id, aw.upstream_ax.id,
-              "another AW with the same upstream ID has downstream ID 0x%0x!",
-              other_downstream_id);
+        assert (aw.downstream_id == other_downstream_id)
+        else
+          $error(
+            "Illegal downstream ID 0x%0x for AW with upstream ID 0x%0x: ",
+            aw.downstream_id,
+            aw.upstream_ax.id,
+            "another AW with the same upstream ID has downstream ID 0x%0x!",
+            other_downstream_id
+          );
         // For ATOPs with a read response, additionally update the corresponding phony AR.
         if (aw_beat.atop[axi_pkg::ATOP_R_RESP]) begin
           automatic ar_t ar = ars_by_upstream_id[aw.upstream_ax.id][0];
@@ -372,8 +386,8 @@ module tb_axi_iw_converter #(
         // Compare this W beat to the front entry in the queue.
         if (ws.size() == 0) $fatal(1, "Unknown W beat %p!", w_beat);
         exp_w_beat = ws.pop_front();
-        assert(w_beat == exp_w_beat) else
-          $error("Illegal downstream W beat: %p != %p", w_beat, exp_w_beat);
+        assert (w_beat == exp_w_beat)
+        else $error("Illegal downstream W beat: %p != %p", w_beat, exp_w_beat);
       end
       // Monitor downstream Bs ---------------------------------------------------------------------
       if (axi_upstream.b_valid && axi_upstream.b_ready) begin
@@ -401,9 +415,11 @@ module tb_axi_iw_converter #(
         `AXI_SET_TO_B(b_beat, axi_upstream)
         // Compare for equality to front of queue.
         exp_b_beat = bs_by_upstream_id[b_beat.id].pop_front();
-        assert (b_beat == exp_b_beat) else
-          $error("Incorrect upstream B beat with ID 0x%0x: %p != %p",
-              b_beat.id, b_beat, exp_b_beat);
+        assert (b_beat == exp_b_beat)
+        else
+          $error(
+            "Incorrect upstream B beat with ID 0x%0x: %p != %p", b_beat.id, b_beat, exp_b_beat
+          );
       end
     end
   end
@@ -411,32 +427,53 @@ module tb_axi_iw_converter #(
   initial begin
     @(posedge rst_n);
     // Wait for the end of simulation.
-    wait(|sim_done);
+    wait (|sim_done);
     // Assert that all AWs sent by upstream were processed.
     foreach (aws_by_upstream_id[i]) begin
-      assert(aws_by_upstream_id[i].size() == 0) else
-        $error("%0d AWs with upstream ID 0x%0x were not processed: %p",
-            aws_by_upstream_id[i].size(), i, aws_by_upstream_id[i]);
+      assert (aws_by_upstream_id[i].size() == 0)
+      else
+        $error(
+          "%0d AWs with upstream ID 0x%0x were not processed: %p",
+          aws_by_upstream_id[i].size(),
+          i,
+          aws_by_upstream_id[i]
+        );
     end
     // Assert that all Ws sent by upstream were processed.
-    assert(ws.size() == 0) else $error("%0d Ws were not processed", ws.size());
+    assert (ws.size() == 0)
+    else $error("%0d Ws were not processed", ws.size());
     // Assert that all Bs were sent upstream.
-    foreach(bs_by_upstream_id[i]) begin
-      assert(bs_by_upstream_id[i].size() == 0) else
-        $error("%0d Bs with upstream ID 0x%0x were not processed: %p",
-            bs_by_upstream_id[i].size(), i, bs_by_upstream_id[i]);
+    foreach (bs_by_upstream_id[i]) begin
+      assert (bs_by_upstream_id[i].size() == 0)
+      else
+        $error(
+          "%0d Bs with upstream ID 0x%0x were not processed: %p",
+          bs_by_upstream_id[i].size(),
+          i,
+          bs_by_upstream_id[i]
+        );
     end
     // Assert that all ARs sent by upstream were processed.
-    foreach(ars_by_upstream_id[i]) begin
-      assert(ars_by_upstream_id[i].size() == 0) else
-        $error("%0d ARs with upstream ID 0x%0x were not processed: %p",
-            ars_by_upstream_id[i].size(), i, ars_by_upstream_id[i]);
+    foreach (ars_by_upstream_id[i]) begin
+      assert (ars_by_upstream_id[i].size() == 0)
+      else
+        $error(
+          "%0d ARs with upstream ID 0x%0x were not processed: %p",
+          ars_by_upstream_id[i].size(),
+          i,
+          ars_by_upstream_id[i]
+        );
     end
     // Assert that all Rs were sent upstream.
-    foreach(rs_by_upstream_id[i]) begin
-      assert(rs_by_upstream_id[i].size() == 0) else
-        $error("%0d Rs with upstream ID 0x%0x were not processed: %p",
-            rs_by_upstream_id[i].size(), i, rs_by_upstream_id[i]);
+    foreach (rs_by_upstream_id[i]) begin
+      assert (rs_by_upstream_id[i].size() == 0)
+      else
+        $error(
+          "%0d Rs with upstream ID 0x%0x were not processed: %p",
+          rs_by_upstream_id[i].size(),
+          i,
+          rs_by_upstream_id[i]
+        );
     end
   end
 

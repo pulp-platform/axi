@@ -23,13 +23,13 @@ module axi_lite_join_intf (
 
   `AXI_LITE_ASSIGN(out, in)
 
-// pragma translate_off
+  // pragma translate_off
 `ifndef VERILATOR
   initial begin
-    assert(in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
-    assert(in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
+    assert (in.AXI_ADDR_WIDTH == out.AXI_ADDR_WIDTH);
+    assert (in.AXI_DATA_WIDTH == out.AXI_DATA_WIDTH);
   end
 `endif
-// pragma translate_on
+  // pragma translate_on
 
 endmodule

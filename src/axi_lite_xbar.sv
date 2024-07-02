@@ -21,31 +21,31 @@
 
 module axi_lite_xbar #(
   parameter axi_pkg::xbar_cfg_t Cfg = '0,
-  parameter type  aw_chan_t         = logic,
-  parameter type   w_chan_t         = logic,
-  parameter type   b_chan_t         = logic,
-  parameter type  ar_chan_t         = logic,
-  parameter type   r_chan_t         = logic,
-  parameter type  axi_req_t         = logic,
-  parameter type axi_resp_t         = logic,
-  parameter type     rule_t         = axi_pkg::xbar_rule_64_t,
+  parameter type aw_chan_t = logic,
+  parameter type w_chan_t = logic,
+  parameter type b_chan_t = logic,
+  parameter type ar_chan_t = logic,
+  parameter type r_chan_t = logic,
+  parameter type axi_req_t = logic,
+  parameter type axi_resp_t = logic,
+  parameter type rule_t = axi_pkg::xbar_rule_64_t,
   // DEPENDENT PARAMETERS, DO NOT OVERWRITE!
   parameter int unsigned MstIdxWidth = (Cfg.NoMstPorts > 32'd1) ? $clog2(Cfg.NoMstPorts) : 32'd1
 ) (
-  input  logic                                        clk_i,
-  input  logic                                        rst_ni,
-  input  logic                                        test_i,
-  input  axi_req_t  [Cfg.NoSlvPorts-1:0]              slv_ports_req_i,
-  output axi_resp_t [Cfg.NoSlvPorts-1:0]              slv_ports_resp_o,
-  output axi_req_t  [Cfg.NoMstPorts-1:0]              mst_ports_req_o,
-  input  axi_resp_t [Cfg.NoMstPorts-1:0]              mst_ports_resp_i,
-  input  rule_t [Cfg.NoAddrRules-1:0]                 addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                  en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
+  input  logic                                             clk_i,
+  input  logic                                             rst_ni,
+  input  logic                                             test_i,
+  input  axi_req_t  [ Cfg.NoSlvPorts-1:0]                  slv_ports_req_i,
+  output axi_resp_t [ Cfg.NoSlvPorts-1:0]                  slv_ports_resp_o,
+  output axi_req_t  [ Cfg.NoMstPorts-1:0]                  mst_ports_req_o,
+  input  axi_resp_t [ Cfg.NoMstPorts-1:0]                  mst_ports_resp_i,
+  input  rule_t     [Cfg.NoAddrRules-1:0]                  addr_map_i,
+  input  logic      [ Cfg.NoSlvPorts-1:0]                  en_default_mst_port_i,
+  input  logic      [ Cfg.NoSlvPorts-1:0][MstIdxWidth-1:0] default_mst_port_i
 );
 
-  typedef logic [Cfg.AxiAddrWidth-1:0]   addr_t;
-  typedef logic [Cfg.AxiDataWidth-1:0]   data_t;
+  typedef logic [Cfg.AxiAddrWidth-1:0] addr_t;
+  typedef logic [Cfg.AxiDataWidth-1:0] data_t;
   typedef logic [Cfg.AxiDataWidth/8-1:0] strb_t;
   // to account for the decoding error slave
   typedef logic [$clog2(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
@@ -60,50 +60,50 @@ module axi_lite_xbar #(
   `AXI_TYPEDEF_RESP_T(full_resp_t, full_b_chan_t, full_r_chan_t)
 
   // signals from the axi_lite_demuxes, one index more for decode error routing
-  axi_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_reqs;
-  axi_resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0] slv_resps;
+  axi_req_t  [Cfg.NoSlvPorts-1:0][  Cfg.NoMstPorts:0] slv_reqs;
+  axi_resp_t [Cfg.NoSlvPorts-1:0][  Cfg.NoMstPorts:0] slv_resps;
 
   // signals into the axi_lite_muxes, are of type slave as the multiplexer extends the ID
   axi_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
   axi_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
-    logic [MstIdxWidth-1:0] dec_aw,        dec_ar;
-    mst_port_idx_t          slv_aw_select, slv_ar_select;
-    logic                   dec_aw_error;
-    logic                   dec_ar_error;
+    logic [MstIdxWidth-1:0] dec_aw, dec_ar;
+    mst_port_idx_t slv_aw_select, slv_ar_select;
+    logic       dec_aw_error;
+    logic       dec_ar_error;
 
     full_req_t  decerr_req;
     full_resp_t decerr_resp;
 
     addr_decode #(
-      .NoIndices  ( Cfg.NoMstPorts  ),
-      .NoRules    ( Cfg.NoAddrRules ),
-      .addr_t     ( addr_t          ),
-      .rule_t     ( rule_t          )
+      .NoIndices(Cfg.NoMstPorts),
+      .NoRules  (Cfg.NoAddrRules),
+      .addr_t   (addr_t),
+      .rule_t   (rule_t)
     ) i_axi_aw_decode (
-      .addr_i           ( slv_ports_req_i[i].aw.addr ),
-      .addr_map_i       ( addr_map_i                 ),
-      .idx_o            ( dec_aw                     ),
-      .dec_valid_o      ( /*not used*/               ),
-      .dec_error_o      ( dec_aw_error               ),
-      .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .addr_i          (slv_ports_req_i[i].aw.addr),
+      .addr_map_i      (addr_map_i),
+      .idx_o           (dec_aw),
+      .dec_valid_o     (  /*not used*/),
+      .dec_error_o     (dec_aw_error),
+      .en_default_idx_i(en_default_mst_port_i[i]),
+      .default_idx_i   (default_mst_port_i[i])
     );
 
     addr_decode #(
-      .NoIndices  ( Cfg.NoMstPorts  ),
-      .addr_t     ( addr_t          ),
-      .NoRules    ( Cfg.NoAddrRules ),
-      .rule_t     ( rule_t          )
+      .NoIndices(Cfg.NoMstPorts),
+      .addr_t   (addr_t),
+      .NoRules  (Cfg.NoAddrRules),
+      .rule_t   (rule_t)
     ) i_axi_ar_decode (
-      .addr_i           ( slv_ports_req_i[i].ar.addr ),
-      .addr_map_i       ( addr_map_i                 ),
-      .idx_o            ( dec_ar                     ),
-      .dec_valid_o      ( /*not used*/               ),
-      .dec_error_o      ( dec_ar_error               ),
-      .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .addr_i          (slv_ports_req_i[i].ar.addr),
+      .addr_map_i      (addr_map_i),
+      .idx_o           (dec_ar),
+      .dec_valid_o     (  /*not used*/),
+      .dec_error_o     (dec_ar_error),
+      .en_default_idx_i(en_default_mst_port_i[i]),
+      .default_idx_i   (default_mst_port_i[i])
     );
 
     assign slv_aw_select = (dec_aw_error) ?
@@ -113,90 +113,101 @@ module axi_lite_xbar #(
 
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
-    `ifndef VERILATOR
-    default disable iff (~rst_ni);
-    default_aw_mst_port_en: assert property(
+`ifndef VERILATOR
+    default disable iff (~rst_ni); default_aw_mst_port_en :
+    assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
+          |=> $stable(
+      en_default_mst_port_i[i]
+    ))
+    else $fatal(1, $sformatf("It is not allowed to change the default mst port\
                                    enable, when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_aw_mst_port: assert property(
+    default_aw_mst_port :
+    assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
+          |=> $stable(
+      default_mst_port_i[i]
+    ))
+    else $fatal(1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_ar_mst_port_en: assert property(
+    default_ar_mst_port_en :
+    assert property(
       @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the enable, when\
+          |=> $stable(
+      en_default_mst_port_i[i]
+    ))
+    else $fatal(1, $sformatf("It is not allowed to change the enable, when\
                                    there is an unserved Ar beat. Slave Port: %0d", i));
-    default_ar_mst_port: assert property(
+    default_ar_mst_port :
+    assert property(
       @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
+          |=> $stable(
+      default_mst_port_i[i]
+    ))
+    else $fatal(1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Ar beat. Slave Port: %0d", i));
-    `endif
+`endif
     // pragma translate_on
     axi_lite_demux #(
-      .aw_chan_t      ( aw_chan_t          ),  // AW Channel Type
-      .w_chan_t       (  w_chan_t          ),  //  W Channel Type
-      .b_chan_t       (  b_chan_t          ),  //  B Channel Type
-      .ar_chan_t      ( ar_chan_t          ),  // AR Channel Type
-      .r_chan_t       (  r_chan_t          ),  //  R Channel Type
-      .axi_req_t      ( axi_req_t          ),
-      .axi_resp_t     ( axi_resp_t         ),
-      .NoMstPorts     ( Cfg.NoMstPorts + 1 ),
-      .MaxTrans       ( Cfg.MaxMstTrans    ),
-      .FallThrough    ( Cfg.FallThrough    ),
-      .SpillAw        ( Cfg.LatencyMode[9] ),
-      .SpillW         ( Cfg.LatencyMode[8] ),
-      .SpillB         ( Cfg.LatencyMode[7] ),
-      .SpillAr        ( Cfg.LatencyMode[6] ),
-      .SpillR         ( Cfg.LatencyMode[5] )
+      .aw_chan_t  (aw_chan_t),           // AW Channel Type
+      .w_chan_t   (w_chan_t),            //  W Channel Type
+      .b_chan_t   (b_chan_t),            //  B Channel Type
+      .ar_chan_t  (ar_chan_t),           // AR Channel Type
+      .r_chan_t   (r_chan_t),            //  R Channel Type
+      .axi_req_t  (axi_req_t),
+      .axi_resp_t (axi_resp_t),
+      .NoMstPorts (Cfg.NoMstPorts + 1),
+      .MaxTrans   (Cfg.MaxMstTrans),
+      .FallThrough(Cfg.FallThrough),
+      .SpillAw    (Cfg.LatencyMode[9]),
+      .SpillW     (Cfg.LatencyMode[8]),
+      .SpillB     (Cfg.LatencyMode[7]),
+      .SpillAr    (Cfg.LatencyMode[6]),
+      .SpillR     (Cfg.LatencyMode[5])
     ) i_axi_lite_demux (
-      .clk_i,   // Clock
+      .clk_i,  // Clock
       .rst_ni,  // Asynchronous reset active low
       .test_i,  // Testmode enable
-      .slv_req_i       ( slv_ports_req_i[i]  ),
-      .slv_aw_select_i ( slv_aw_select       ),
-      .slv_ar_select_i ( slv_ar_select       ),
-      .slv_resp_o      ( slv_ports_resp_o[i] ),
-      .mst_reqs_o      ( slv_reqs[i]         ),
-      .mst_resps_i     ( slv_resps[i]        )
+      .slv_req_i      (slv_ports_req_i[i]),
+      .slv_aw_select_i(slv_aw_select),
+      .slv_ar_select_i(slv_ar_select),
+      .slv_resp_o     (slv_ports_resp_o[i]),
+      .mst_reqs_o     (slv_reqs[i]),
+      .mst_resps_i    (slv_resps[i])
     );
 
     // connect the decode error module to the last index of the demux master port
     // typedef as the decode error slave uses full axi
     axi_lite_to_axi #(
-      .AxiDataWidth ( Cfg.AxiDataWidth  ),
-      .req_lite_t   ( axi_req_t         ),
-      .resp_lite_t  ( axi_resp_t        ),
-      .axi_req_t    ( full_req_t        ),
-      .axi_resp_t   ( full_resp_t       )
+      .AxiDataWidth(Cfg.AxiDataWidth),
+      .req_lite_t  (axi_req_t),
+      .resp_lite_t (axi_resp_t),
+      .axi_req_t   (full_req_t),
+      .axi_resp_t  (full_resp_t)
     ) i_dec_err_conv (
-      .slv_req_lite_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
-      .slv_resp_lite_o ( slv_resps[i][Cfg.NoMstPorts] ),
-      .slv_aw_cache_i  ( 4'd0                         ),
-      .slv_ar_cache_i  ( 4'd0                         ),
-      .mst_req_o       ( decerr_req                   ),
-      .mst_resp_i      ( decerr_resp                  )
+      .slv_req_lite_i (slv_reqs[i][Cfg.NoMstPorts]),
+      .slv_resp_lite_o(slv_resps[i][Cfg.NoMstPorts]),
+      .slv_aw_cache_i (4'd0),
+      .slv_ar_cache_i (4'd0),
+      .mst_req_o      (decerr_req),
+      .mst_resp_i     (decerr_resp)
     );
 
     axi_err_slv #(
-      .AxiIdWidth  ( 32'd1                ), // ID width is one as defined as logic above
-      .axi_req_t   ( full_req_t           ), // AXI request struct
-      .axi_resp_t  ( full_resp_t          ), // AXI response struct
-      .Resp        ( axi_pkg::RESP_DECERR ),
-      .ATOPs       ( 1'b0                 ), // no ATOPs in AXI4-Lite
-      .MaxTrans    ( 1                    )  // Transactions terminate at this slave, and AXI4-Lite
-                                             // transactions have only a single beat.
+      .AxiIdWidth(32'd1),                 // ID width is one as defined as logic above
+      .axi_req_t (full_req_t),            // AXI request struct
+      .axi_resp_t(full_resp_t),           // AXI response struct
+      .Resp      (axi_pkg::RESP_DECERR),
+      .ATOPs     (1'b0),                  // no ATOPs in AXI4-Lite
+      .MaxTrans  (1)                      // Transactions terminate at this slave, and AXI4-Lite
+                                          // transactions have only a single beat.
     ) i_axi_err_slv (
-      .clk_i      ( clk_i       ),  // Clock
-      .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
-      .test_i     ( test_i      ),  // Testmode enable
+      .clk_i     (clk_i),       // Clock
+      .rst_ni    (rst_ni),      // Asynchronous reset active low
+      .test_i    (test_i),      // Testmode enable
       // slave port
-      .slv_req_i  ( decerr_req  ),
-      .slv_resp_o ( decerr_resp )
+      .slv_req_i (decerr_req),
+      .slv_resp_o(decerr_resp)
     );
   end
 
@@ -210,29 +221,29 @@ module axi_lite_xbar #(
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
     axi_lite_mux #(
-      .aw_chan_t   ( aw_chan_t          ), // AW Channel Type
-      .w_chan_t    (  w_chan_t          ), //  W Channel Type
-      .b_chan_t    (  b_chan_t          ), //  B Channel Type
-      .ar_chan_t   ( ar_chan_t          ), // AR Channel Type
-      .r_chan_t    (  r_chan_t          ), //  R Channel Type
-      .axi_req_t   ( axi_req_t          ),
-      .axi_resp_t  ( axi_resp_t         ),
-      .NoSlvPorts  ( Cfg.NoSlvPorts     ), // Number of Masters for the module
-      .MaxTrans    ( Cfg.MaxSlvTrans    ),
-      .FallThrough ( Cfg.FallThrough    ),
-      .SpillAw     ( Cfg.LatencyMode[4] ),
-      .SpillW      ( Cfg.LatencyMode[3] ),
-      .SpillB      ( Cfg.LatencyMode[2] ),
-      .SpillAr     ( Cfg.LatencyMode[1] ),
-      .SpillR      ( Cfg.LatencyMode[0] )
+      .aw_chan_t  (aw_chan_t),           // AW Channel Type
+      .w_chan_t   (w_chan_t),            //  W Channel Type
+      .b_chan_t   (b_chan_t),            //  B Channel Type
+      .ar_chan_t  (ar_chan_t),           // AR Channel Type
+      .r_chan_t   (r_chan_t),            //  R Channel Type
+      .axi_req_t  (axi_req_t),
+      .axi_resp_t (axi_resp_t),
+      .NoSlvPorts (Cfg.NoSlvPorts),      // Number of Masters for the module
+      .MaxTrans   (Cfg.MaxSlvTrans),
+      .FallThrough(Cfg.FallThrough),
+      .SpillAw    (Cfg.LatencyMode[4]),
+      .SpillW     (Cfg.LatencyMode[3]),
+      .SpillB     (Cfg.LatencyMode[2]),
+      .SpillAr    (Cfg.LatencyMode[1]),
+      .SpillR     (Cfg.LatencyMode[0])
     ) i_axi_lite_mux (
       .clk_i,  // Clock
-      .rst_ni, // Asynchronous reset active low
-      .test_i, // Test Mode enable
-      .slv_reqs_i  ( mst_reqs[i]         ),
-      .slv_resps_o ( mst_resps[i]        ),
-      .mst_req_o   ( mst_ports_req_o[i]  ),
-      .mst_resp_i  ( mst_ports_resp_i[i] )
+      .rst_ni,  // Asynchronous reset active low
+      .test_i,  // Test Mode enable
+      .slv_reqs_i (mst_reqs[i]),
+      .slv_resps_o(mst_resps[i]),
+      .mst_req_o  (mst_ports_req_o[i]),
+      .mst_resp_i (mst_ports_resp_i[i])
     );
   end
 endmodule
@@ -240,17 +251,17 @@ endmodule
 `include "axi/assign.svh"
 
 module axi_lite_xbar_intf #(
-  parameter axi_pkg::xbar_cfg_t Cfg = '0,
-  parameter type rule_t             = axi_pkg::xbar_rule_64_t
+  parameter axi_pkg::xbar_cfg_t Cfg    = '0,
+  parameter type                rule_t = axi_pkg::xbar_rule_64_t
 ) (
-  input  logic                                                    clk_i,
-  input  logic                                                    rst_ni,
-  input  logic                                                    test_i,
-  AXI_LITE.Slave                                                  slv_ports [Cfg.NoSlvPorts-1:0],
-  AXI_LITE.Master                                                 mst_ports [Cfg.NoMstPorts-1:0],
-  input  rule_t [Cfg.NoAddrRules-1:0]                             addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                              en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0]  default_mst_port_i
+  input logic clk_i,
+  input logic rst_ni,
+  input logic test_i,
+  AXI_LITE.Slave slv_ports[Cfg.NoSlvPorts-1:0],
+  AXI_LITE.Master mst_ports[Cfg.NoMstPorts-1:0],
+  input rule_t [Cfg.NoAddrRules-1:0] addr_map_i,
+  input logic [Cfg.NoSlvPorts-1:0] en_default_mst_port_i,
+  input logic [Cfg.NoSlvPorts-1:0][$clog2(Cfg.NoMstPorts)-1:0] default_mst_port_i
 );
 
   typedef logic [Cfg.AxiAddrWidth       -1:0] addr_t;
@@ -264,10 +275,10 @@ module axi_lite_xbar_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
 
-  axi_req_t   [Cfg.NoMstPorts-1:0]  mst_reqs;
-  axi_resp_t  [Cfg.NoMstPorts-1:0]  mst_resps;
-  axi_req_t   [Cfg.NoSlvPorts-1:0]  slv_reqs;
-  axi_resp_t  [Cfg.NoSlvPorts-1:0]  slv_resps;
+  axi_req_t  [Cfg.NoMstPorts-1:0] mst_reqs;
+  axi_resp_t [Cfg.NoMstPorts-1:0] mst_resps;
+  axi_req_t  [Cfg.NoSlvPorts-1:0] slv_reqs;
+  axi_resp_t [Cfg.NoSlvPorts-1:0] slv_resps;
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
     `AXI_LITE_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
@@ -280,23 +291,23 @@ module axi_lite_xbar_intf #(
   end
 
   axi_lite_xbar #(
-    .Cfg  (Cfg),
-    .aw_chan_t  ( aw_chan_t  ),
-    .w_chan_t   ( w_chan_t   ),
-    .b_chan_t   ( b_chan_t   ),
-    .ar_chan_t  ( ar_chan_t  ),
-    .r_chan_t   ( r_chan_t   ),
-    .axi_req_t  ( axi_req_t  ),
-    .axi_resp_t ( axi_resp_t ),
-    .rule_t     ( rule_t     )
+    .Cfg       (Cfg),
+    .aw_chan_t (aw_chan_t),
+    .w_chan_t  (w_chan_t),
+    .b_chan_t  (b_chan_t),
+    .ar_chan_t (ar_chan_t),
+    .r_chan_t  (r_chan_t),
+    .axi_req_t (axi_req_t),
+    .axi_resp_t(axi_resp_t),
+    .rule_t    (rule_t)
   ) i_xbar (
     .clk_i,
     .rst_ni,
     .test_i,
-    .slv_ports_req_i  (slv_reqs ),
-    .slv_ports_resp_o (slv_resps),
-    .mst_ports_req_o  (mst_reqs ),
-    .mst_ports_resp_i (mst_resps),
+    .slv_ports_req_i (slv_reqs),
+    .slv_ports_resp_o(slv_resps),
+    .mst_ports_req_o (mst_reqs),
+    .mst_ports_resp_i(mst_resps),
     .addr_map_i,
     .en_default_mst_port_i,
     .default_mst_port_i

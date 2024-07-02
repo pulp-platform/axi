@@ -20,7 +20,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Macros creating flat AXI ports
 // `AXI_M_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t, __b_user_t, __ar_user_t, __r_user_t)
-`define AXI_M_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t, __b_user_t, __ar_user_t, __r_user_t) \
+`define AXI_M_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t,
+                   __b_user_t, __ar_user_t, __r_user_t) \
   output logic             m_axi_``__name``_awvalid,   \
   output __id_t            m_axi_``__name``_awid,      \
   output __addr_t          m_axi_``__name``_awaddr,    \
@@ -70,7 +71,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Macros creating flat AXI ports
 // `AXI_S_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t, __b_user_t, __ar_user_t, __r_user_t)
-`define AXI_S_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t, __b_user_t, __ar_user_t, __r_user_t) \
+`define AXI_S_PORT(__name, __addr_t, __data_t, __strb_t, __id_t, __aw_user_t, __w_user_t,
+                   __b_user_t, __ar_user_t, __r_user_t) \
   input  logic             s_axi_``__name``_awvalid,   \
   input  __id_t            s_axi_``__name``_awid,      \
   input  __addr_t          s_axi_``__name``_awaddr,    \

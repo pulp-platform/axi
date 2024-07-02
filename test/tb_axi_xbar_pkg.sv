@@ -19,25 +19,25 @@
 
 package tb_axi_xbar_pkg;
   class axi_xbar_monitor #(
-    parameter int unsigned AxiAddrWidth,
-    parameter int unsigned AxiDataWidth,
-    parameter int unsigned AxiIdWidthMasters,
-    parameter int unsigned AxiIdWidthSlaves,
-    parameter int unsigned AxiUserWidth,
-    parameter int unsigned NoMasters,
-    parameter int unsigned NoSlaves,
-    parameter int unsigned NoAddrRules,
-    parameter type         rule_t,
-    parameter rule_t [NoAddrRules-1:0] AddrMap,
-      // Stimuli application and test time
-    parameter time  TimeTest
+    parameter int unsigned                   AxiAddrWidth,
+    parameter int unsigned                   AxiDataWidth,
+    parameter int unsigned                   AxiIdWidthMasters,
+    parameter int unsigned                   AxiIdWidthSlaves,
+    parameter int unsigned                   AxiUserWidth,
+    parameter int unsigned                   NoMasters,
+    parameter int unsigned                   NoSlaves,
+    parameter int unsigned                   NoAddrRules,
+    parameter type                           rule_t,
+    parameter rule_t       [NoAddrRules-1:0] AddrMap,
+    // Stimuli application and test time
+    parameter time                           TimeTest
   );
     typedef logic [AxiIdWidthMasters-1:0] mst_axi_id_t;
-    typedef logic [AxiIdWidthSlaves-1:0]  slv_axi_id_t;
-    typedef logic [AxiAddrWidth-1:0]      axi_addr_t;
+    typedef logic [AxiIdWidthSlaves-1:0] slv_axi_id_t;
+    typedef logic [AxiAddrWidth-1:0] axi_addr_t;
 
     typedef logic [$clog2(NoMasters)-1:0] idx_mst_t;
-    typedef int unsigned                  idx_slv_t; // from rule_t
+    typedef int unsigned idx_slv_t;  // from rule_t
 
     typedef struct packed {
       mst_axi_id_t mst_axi_id;
@@ -53,47 +53,47 @@ package tb_axi_xbar_pkg;
       logic        last;
     } slave_exp_t;
 
-    typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( master_exp_t      ),
-      .ID_WIDTH ( AxiIdWidthMasters )
+    typedef rand_id_queue_pkg::rand_id_queue#(
+      .data_t  (master_exp_t),
+      .ID_WIDTH(AxiIdWidthMasters)
     ) master_exp_queue_t;
-    typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( exp_ax_t         ),
-      .ID_WIDTH ( AxiIdWidthSlaves )
+    typedef rand_id_queue_pkg::rand_id_queue#(
+      .data_t  (exp_ax_t),
+      .ID_WIDTH(AxiIdWidthSlaves)
     ) ax_queue_t;
 
-    typedef rand_id_queue_pkg::rand_id_queue #(
-      .data_t   ( slave_exp_t      ),
-      .ID_WIDTH ( AxiIdWidthSlaves )
+    typedef rand_id_queue_pkg::rand_id_queue#(
+      .data_t  (slave_exp_t),
+      .ID_WIDTH(AxiIdWidthSlaves)
     ) slave_exp_queue_t;
 
     //-----------------------------------------
     // Monitoring virtual interfaces
     //-----------------------------------------
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-      .AXI_DATA_WIDTH ( AxiDataWidth      ),
-      .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
-      .AXI_USER_WIDTH ( AxiUserWidth      )
-    ) masters_axi [NoMasters-1:0];
+      .AXI_ADDR_WIDTH(AxiAddrWidth),
+      .AXI_DATA_WIDTH(AxiDataWidth),
+      .AXI_ID_WIDTH  (AxiIdWidthMasters),
+      .AXI_USER_WIDTH(AxiUserWidth)
+    ) masters_axi[NoMasters-1:0];
     virtual AXI_BUS_DV #(
-      .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-      .AXI_DATA_WIDTH ( AxiDataWidth      ),
-      .AXI_ID_WIDTH   ( AxiIdWidthSlaves  ),
-      .AXI_USER_WIDTH ( AxiUserWidth      )
-    ) slaves_axi [NoSlaves-1:0];
+      .AXI_ADDR_WIDTH(AxiAddrWidth),
+      .AXI_DATA_WIDTH(AxiDataWidth),
+      .AXI_ID_WIDTH  (AxiIdWidthSlaves),
+      .AXI_USER_WIDTH(AxiUserWidth)
+    ) slaves_axi[NoSlaves-1:0];
     //-----------------------------------------
     // Queues and FIFOs to hold the expected ids
     //-----------------------------------------
     // Write transactions
-    ax_queue_t         exp_aw_queue [NoSlaves-1:0];
-    slave_exp_t        exp_w_fifo   [NoSlaves-1:0][$];
-    slave_exp_t        act_w_fifo   [NoSlaves-1:0][$];
-    master_exp_queue_t exp_b_queue  [NoMasters-1:0];
+    ax_queue_t exp_aw_queue[NoSlaves-1:0];
+    slave_exp_t exp_w_fifo[NoSlaves-1:0][$];
+    slave_exp_t act_w_fifo[NoSlaves-1:0][$];
+    master_exp_queue_t exp_b_queue[NoMasters-1:0];
 
     // Read transactions
-    ax_queue_t            exp_ar_queue  [NoSlaves-1:0];
-    master_exp_queue_t    exp_r_queue  [NoMasters-1:0];
+    ax_queue_t exp_ar_queue[NoSlaves-1:0];
+    master_exp_queue_t exp_r_queue[NoMasters-1:0];
 
     //-----------------------------------------
     // Bookkeeping
@@ -101,25 +101,24 @@ package tb_axi_xbar_pkg;
     longint unsigned tests_expected;
     longint unsigned tests_conducted;
     longint unsigned tests_failed;
-    semaphore        cnt_sem;
+    semaphore cnt_sem;
 
     //-----------------------------------------
     // Constructor
     //-----------------------------------------
     function new(
       virtual AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-        .AXI_DATA_WIDTH ( AxiDataWidth      ),
-        .AXI_ID_WIDTH   ( AxiIdWidthMasters ),
-        .AXI_USER_WIDTH ( AxiUserWidth      )
-      ) axi_masters_vif [NoMasters-1:0],
+        .AXI_ADDR_WIDTH(AxiAddrWidth),
+        .AXI_DATA_WIDTH(AxiDataWidth),
+        .AXI_ID_WIDTH  (AxiIdWidthMasters),
+        .AXI_USER_WIDTH(AxiUserWidth)
+      ) axi_masters_vif[NoMasters-1:0],
       virtual AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AxiAddrWidth      ),
-        .AXI_DATA_WIDTH ( AxiDataWidth      ),
-        .AXI_ID_WIDTH   ( AxiIdWidthSlaves  ),
-        .AXI_USER_WIDTH ( AxiUserWidth      )
-      ) axi_slaves_vif [NoSlaves-1:0]
-    );
+        .AXI_ADDR_WIDTH(AxiAddrWidth),
+        .AXI_DATA_WIDTH(AxiDataWidth),
+        .AXI_ID_WIDTH  (AxiIdWidthSlaves),
+        .AXI_USER_WIDTH(AxiUserWidth)
+      ) axi_slaves_vif[NoSlaves-1:0]);
       begin
         this.masters_axi     = axi_masters_vif;
         this.slaves_axi      = axi_slaves_vif;
@@ -174,16 +173,18 @@ package tb_axi_xbar_pkg;
         if (!decerr) begin
           exp_aw_id = {idx_mst_t'(i), masters_axi[i].aw_id};
           // $display("Test exp aw_id: %b",exp_aw_id);
-          exp_aw = '{slv_axi_id:   exp_aw_id,
-                     slv_axi_addr: masters_axi[i].aw_addr,
-                     slv_axi_len:  masters_axi[i].aw_len   };
+          exp_aw = '{
+            slv_axi_id: exp_aw_id,
+            slv_axi_addr: masters_axi[i].aw_addr,
+            slv_axi_len: masters_axi[i].aw_len
+          };
           this.exp_aw_queue[to_slave_idx].push(exp_aw_id, exp_aw);
           incr_expected_tests(3);
-          $display("%0tns > Master %0d: AW to Slave %0d: Axi ID: %b",
-              $time, i, to_slave_idx, masters_axi[i].aw_id);
+          $display("%0tns > Master %0d: AW to Slave %0d: Axi ID: %b", $time, i, to_slave_idx,
+                   masters_axi[i].aw_id);
         end else begin
-          $display("%0tns > Master %0d: AW to Decerror: Axi ID: %b",
-              $time, i, to_slave_idx, masters_axi[i].aw_id);
+          $display("%0tns > Master %0d: AW to Decerror: Axi ID: %b", $time, i, to_slave_idx,
+                   masters_axi[i].aw_id);
         end
         // populate the expected b queue anyway
         exp_b = '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1};
@@ -191,13 +192,14 @@ package tb_axi_xbar_pkg;
         incr_expected_tests(1);
         $display("        Expect B response.");
         // inject expected r beats on this id, if it is an atop
-        if(masters_axi[i].aw_atop[5]) begin
+        if (masters_axi[i].aw_atop[5]) begin
           // push the required r beats into the right fifo (reuse the exp_b variable)
           $display("        Expect R response, len: %0d.", masters_axi[i].aw_len);
           for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin
             exp_b = (j == masters_axi[i].aw_len) ?
-                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1} :
-                '{mst_axi_id: masters_axi[i].aw_id, last: 1'b0};
+            '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1}
+            :
+            '{mst_axi_id: masters_axi[i].aw_id, last: 1'b0};
             this.exp_r_queue[i].push(masters_axi[i].aw_id, exp_b);
             incr_expected_tests(1);
           end
@@ -216,21 +218,20 @@ package tb_axi_xbar_pkg;
       if (slaves_axi[i].aw_valid && slaves_axi[i].aw_ready) begin
         // test if the aw beat was expected
         exp_aw = this.exp_aw_queue[i].pop_id(slaves_axi[i].aw_id);
-        $display("%0tns > Slave  %0d: AW Axi ID: %b",
-            $time, i, slaves_axi[i].aw_id);
+        $display("%0tns > Slave  %0d: AW Axi ID: %b", $time, i, slaves_axi[i].aw_id);
         if (exp_aw.slv_axi_id != slaves_axi[i].aw_id) begin
           incr_failed_tests(1);
           $warning("Slave %0d: Unexpected AW with ID: %b", i, slaves_axi[i].aw_id);
         end
         if (exp_aw.slv_axi_addr != slaves_axi[i].aw_addr) begin
           incr_failed_tests(1);
-          $warning("Slave %0d: Unexpected AW with ID: %b and ADDR: %h, exp: %h",
-              i, slaves_axi[i].aw_id, slaves_axi[i].aw_addr, exp_aw.slv_axi_addr);
+          $warning("Slave %0d: Unexpected AW with ID: %b and ADDR: %h, exp: %h", i,
+                   slaves_axi[i].aw_id, slaves_axi[i].aw_addr, exp_aw.slv_axi_addr);
         end
         if (exp_aw.slv_axi_len != slaves_axi[i].aw_len) begin
           incr_failed_tests(1);
-          $warning("Slave %0d: Unexpected AW with ID: %b and LEN: %h, exp: %h",
-              i, slaves_axi[i].aw_id, slaves_axi[i].aw_len, exp_aw.slv_axi_len);
+          $warning("Slave %0d: Unexpected AW with ID: %b and LEN: %h, exp: %h", i,
+                   slaves_axi[i].aw_id, slaves_axi[i].aw_len, exp_aw.slv_axi_len);
         end
         incr_conducted_tests(3);
 
@@ -238,8 +239,9 @@ package tb_axi_xbar_pkg;
         incr_expected_tests(slaves_axi[i].aw_len + 1);
         for (int unsigned j = 0; j <= slaves_axi[i].aw_len; j++) begin
           exp_slv_w = (j == slaves_axi[i].aw_len) ?
-              '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b1} :
-              '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b0};
+          '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b1}
+          :
+          '{slv_axi_id: slaves_axi[i].aw_id, last: 1'b0};
           this.exp_w_fifo[i].push_back(exp_slv_w);
         end
       end
@@ -247,10 +249,10 @@ package tb_axi_xbar_pkg;
 
     // This task just pushes every W beat that gets sent on a master port in its respective fifo.
     task automatic monitor_slv_w(input int unsigned i);
-      slave_exp_t     act_slv_w;
+      slave_exp_t act_slv_w;
       if (slaves_axi[i].w_valid && slaves_axi[i].w_ready) begin
         // $display("%0t > W beat on Slave %0d, last flag: %b", $time, i, slaves_axi[i].w_last);
-        act_slv_w = '{last: slaves_axi[i].w_last , default:'0};
+        act_slv_w = '{last: slaves_axi[i].w_last, default: '0};
         this.act_w_fifo[i].push_back(act_slv_w);
       end
     endtask : monitor_slv_w
@@ -266,10 +268,10 @@ package tb_axi_xbar_pkg;
         act_w = this.act_w_fifo[i].pop_front();
         // do the check
         incr_conducted_tests(1);
-        if(exp_w.last != act_w.last) begin
+        if (exp_w.last != act_w.last) begin
           incr_failed_tests(1);
-          $warning("Slave %d: unexpected W beat last flag %b, expected: %b.",
-                 i, act_w.last, exp_w.last);
+          $warning("Slave %d: unexpected W beat last flag %b, expected: %b.", i, act_w.last,
+                   exp_w.last);
         end
       end
     endtask : check_slv_w
@@ -281,8 +283,7 @@ package tb_axi_xbar_pkg;
       if (masters_axi[i].b_valid && masters_axi[i].b_ready) begin
         incr_conducted_tests(1);
         axi_b_id = masters_axi[i].b_id;
-        $display("%0tns > Master %0d: Got last B with id: %b",
-                $time, i, axi_b_id);
+        $display("%0tns > Master %0d: Got last B with id: %b", $time, i, axi_b_id);
         if (this.exp_b_queue[i].is_empty()) begin
           incr_failed_tests(1);
           $warning("Master %d: unexpected B beat with ID: %b detected!", i, axi_b_id);
@@ -326,24 +327,27 @@ package tb_axi_xbar_pkg;
           end
         end
         if (exp_decerr) begin
-          $display("%0tns > Master %0d: AR to Decerror: Axi ID: %b",
-              $time, i, mst_axi_id);
+          $display("%0tns > Master %0d: AR to Decerror: Axi ID: %b", $time, i, mst_axi_id);
         end else begin
-          $display("%0tns > Master %0d: AR to Slave %0d: Axi ID: %b",
-              $time, i, exp_slv_idx, mst_axi_id);
+          $display("%0tns > Master %0d: AR to Slave %0d: Axi ID: %b", $time, i, exp_slv_idx,
+                   mst_axi_id);
           // push the expected vectors AW for exp_slv
-          exp_slv_ar = '{slv_axi_id:    exp_slv_axi_id,
-                         slv_axi_addr:  mst_axi_addr,
-                         slv_axi_len:   mst_axi_len     };
+          exp_slv_ar = '{
+            slv_axi_id: exp_slv_axi_id,
+            slv_axi_addr: mst_axi_addr,
+            slv_axi_len: mst_axi_len
+          };
           //$display("Expected Slv Axi Id is: %b", exp_slv_axi_id);
           this.exp_ar_queue[exp_slv_idx].push(exp_slv_axi_id, exp_slv_ar);
           incr_expected_tests(1);
         end
         // push the required r beats into the right fifo
-          $display("        Expect R response, len: %0d.", masters_axi[i].ar_len);
-          for (int unsigned j = 0; j <= mst_axi_len; j++) begin
-          exp_mst_r = (j == mst_axi_len) ? '{mst_axi_id: mst_axi_id, last: 1'b1} :
-                                           '{mst_axi_id: mst_axi_id, last: 1'b0};
+        $display("        Expect R response, len: %0d.", masters_axi[i].ar_len);
+        for (int unsigned j = 0; j <= mst_axi_len; j++) begin
+          exp_mst_r = (j == mst_axi_len) ?
+          '{mst_axi_id: mst_axi_id, last: 1'b1}
+          :
+          '{mst_axi_id: mst_axi_id, last: 1'b0};
           this.exp_r_queue[i].push(mst_axi_id, exp_mst_r);
           incr_expected_tests(1);
         end
@@ -353,8 +357,8 @@ package tb_axi_xbar_pkg;
     // This task monitors a master port of the crossbar and checks if a transmitted AR beat was
     // expected.
     task automatic monitor_slv_ar(input int unsigned i);
-      exp_ax_t       exp_slv_ar;
-      slv_axi_id_t   slv_axi_id;
+      exp_ax_t     exp_slv_ar;
+      slv_axi_id_t slv_axi_id;
       if (slaves_axi[i].ar_valid && slaves_axi[i].ar_ready) begin
         incr_conducted_tests(1);
         slv_axi_id = slaves_axi[i].ar_id;
@@ -383,8 +387,7 @@ package tb_axi_xbar_pkg;
         mst_axi_r_id   = masters_axi[i].r_id;
         mst_axi_r_last = masters_axi[i].r_last;
         if (mst_axi_r_last) begin
-          $display("%0tns > Master %0d: Got last R with id: %b",
-                   $time, i, mst_axi_r_id);
+          $display("%0tns > Master %0d: Got last R with id: %b", $time, i, mst_axi_r_id);
         end
         if (this.exp_r_queue[i].is_empty()) begin
           incr_failed_tests(1);
@@ -397,8 +400,8 @@ package tb_axi_xbar_pkg;
           end
           if (mst_axi_r_last != exp_mst_r.last) begin
             incr_failed_tests(1);
-            $warning("Master: %d got unexpected R with ID: %b and last flag: %b",
-                i, mst_axi_r_id, mst_axi_r_last);
+            $warning("Master: %d got unexpected R with ID: %b and last flag: %b", i, mst_axi_r_id,
+                     mst_axi_r_last);
           end
         end
       end
@@ -428,55 +431,58 @@ package tb_axi_xbar_pkg;
     // For the tasks every clock cycle all processes that only push something in the fifo's and
     // Queues get run. When they are finished the processes that pop something get run.
     task run();
-      Continous: fork
+      Continous :
+      fork
         begin
           do begin
             cycle_start();
             // at every cycle span some monitoring processes
             // execute all processes that put something into the queues
-            PushMon: fork
-              proc_mst_aw: begin
+            PushMon :
+            fork
+              proc_mst_aw : begin
                 for (int unsigned i = 0; i < NoMasters; i++) begin
                   monitor_mst_aw(i);
                 end
               end
-              proc_mst_ar: begin
+              proc_mst_ar : begin
                 for (int unsigned i = 0; i < NoMasters; i++) begin
                   monitor_mst_ar(i);
                 end
               end
             join : PushMon
             // this one pops and pushes something
-            proc_slv_aw: begin
+            proc_slv_aw : begin
               for (int unsigned i = 0; i < NoSlaves; i++) begin
                 monitor_slv_aw(i);
               end
             end
-            proc_slv_w: begin
+            proc_slv_w : begin
               for (int unsigned i = 0; i < NoSlaves; i++) begin
                 monitor_slv_w(i);
               end
             end
             // These only pop somethong from the queses
-            PopMon: fork
-              proc_mst_b: begin
+            PopMon :
+            fork
+              proc_mst_b : begin
                 for (int unsigned i = 0; i < NoMasters; i++) begin
                   monitor_mst_b(i);
                 end
               end
-              proc_slv_ar: begin
+              proc_slv_ar : begin
                 for (int unsigned i = 0; i < NoSlaves; i++) begin
                   monitor_slv_ar(i);
                 end
               end
-              proc_mst_r: begin
+              proc_mst_r : begin
                 for (int unsigned i = 0; i < NoMasters; i++) begin
                   monitor_mst_r(i);
                 end
               end
             join : PopMon
             // check the slave W fifos last
-            proc_check_slv_w: begin
+            proc_check_slv_w : begin
               for (int unsigned i = 0; i < NoSlaves; i++) begin
                 check_slv_w(i);
               end
@@ -492,10 +498,10 @@ package tb_axi_xbar_pkg;
       $display("Tests Expected:  %d", this.tests_expected);
       $display("Tests Conducted: %d", this.tests_conducted);
       $display("Tests Failed:    %d", this.tests_failed);
-      if(tests_failed > 0) begin
+      if (tests_failed > 0) begin
         $error("Simulation encountered unexpected Transactions!!!!!!");
       end
-      if(tests_conducted == 0) begin
+      if (tests_conducted == 0) begin
         $error("Simulation did not conduct any tests!");
       end
     endtask : print_result
