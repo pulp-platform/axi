@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Added
+- Add `axi_xbar_unmuxed`: Partial crossbar with unmultiplexed mst_ports.
 
 ## 0.39.3 - 2024-05-08
 ### Added
