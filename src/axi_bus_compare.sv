@@ -556,13 +556,13 @@ module axi_bus_compare #(
     //-----------------------------------
     for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_cmp
         assign aw_mismatch_o [id] = (fifo_cmp_valid_aw_a [id] & fifo_cmp_valid_aw_b [id]) ?
-                                     fifo_cmp_data_aw_a  [id] == fifo_cmp_data_aw_b [id] : '0;
+                                     fifo_cmp_data_aw_a  [id] != fifo_cmp_data_aw_b [id] : '0;
         assign b_mismatch_o  [id] = (fifo_cmp_valid_b_a  [id] & fifo_cmp_valid_b_b  [id]) ?
-                                     fifo_cmp_data_b_a   [id] == fifo_cmp_data_b_b  [id] : '0;
+                                     fifo_cmp_data_b_a   [id] != fifo_cmp_data_b_b  [id] : '0;
         assign ar_mismatch_o [id] = (fifo_cmp_valid_ar_a [id] & fifo_cmp_valid_ar_b [id]) ?
-                                     fifo_cmp_data_ar_a  [id] == fifo_cmp_data_ar_b [id] : '0;
+                                     fifo_cmp_data_ar_a  [id] != fifo_cmp_data_ar_b [id] : '0;
         assign r_mismatch_o  [id] = (fifo_cmp_valid_r_a  [id] & fifo_cmp_valid_r_b  [id]) ?
-                                     fifo_cmp_data_r_a   [id] == fifo_cmp_data_r_b  [id] : '0;
+                                     fifo_cmp_data_r_a   [id] != fifo_cmp_data_r_b  [id] : '0;
     end
 
     assign w_mismatch_o  = (fifo_cmp_valid_w_a  & fifo_cmp_valid_w_b ) ?
