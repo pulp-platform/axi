@@ -22,6 +22,10 @@ module axi_slave_compare #(
     parameter int unsigned AxiIdWidth = 32'd0,
     /// FIFO depth
     parameter int unsigned FifoDepth  = 32'd0,
+    /// Consider size field in comparison
+    parameter bit          UseSize    = 1'b0,
+    /// Data width of the AXI4+ATOP interface
+    parameter int unsigned DataWidth  = 32'd8,
     /// AW channel type of the AXI4+ATOP interface
     parameter type axi_aw_chan_t = logic,
     /// W channel type of the AXI4+ATOP interface
@@ -154,6 +158,8 @@ module axi_slave_compare #(
   axi_bus_compare #(
     .AxiIdWidth     ( AxiIdWidth      ),
     .FifoDepth      ( FifoDepth       ),
+    .UseSize        ( UseSize         ),
+    .DataWidth      ( DataWidth       ),
     .axi_aw_chan_t  ( axi_aw_chan_t   ),
     .axi_w_chan_t   ( axi_w_chan_t    ),
     .axi_b_chan_t   ( axi_b_chan_t    ),
