@@ -355,7 +355,7 @@ module axi_bus_compare #(
             .flush_i   ( 1'b0 ),
             .usage_o   (),
             .data_i    ( {axi_a_req_i.aw.addr[$clog2(DataWidth/8)-1:0], axi_a_req_i.aw.size} ),
-            .valid_i   ( fifo_valid_aw_a [id] & fifo_ready_aw_a [id] ),
+            .valid_i   ( axi_a_req_i.aw_valid & axi_a_rsp_o.aw_ready ),
             .ready_o   (),
             .data_o    ( {w_offset, w_size} ),
             .valid_o   (),
