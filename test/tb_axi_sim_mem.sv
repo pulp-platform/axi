@@ -71,7 +71,21 @@ module tb_axi_sim_mem #(
   ) i_sim_mem (
     .clk_i   (clk),
     .rst_ni  (rst_n),
-    .axi_slv (axi)
+    .axi_slv (axi),
+    .mon_w_valid_o     (),
+    .mon_w_addr_o      (),
+    .mon_w_data_o      (),
+    .mon_w_id_o        (),
+    .mon_w_user_o      (),
+    .mon_w_beat_count_o(),
+    .mon_w_last_o      (),
+    .mon_r_valid_o     (),
+    .mon_r_addr_o      (),
+    .mon_r_data_o      (),
+    .mon_r_id_o        (),
+    .mon_r_user_o      (),
+    .mon_r_beat_count_o(),
+    .mon_r_last_o      ()
   );
 
   // Simply read and write a random memory region.
