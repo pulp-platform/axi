@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Added
+- `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
 
 ## 0.39.3 - 2024-05-08
 ### Added
