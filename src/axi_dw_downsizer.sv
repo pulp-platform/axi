@@ -746,7 +746,7 @@ module axi_dw_downsizer #(
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
             // Valid output
-            mst_req.w_valid = !forward_b_beat_full;
+            mst_req.w_valid = !(forward_b_beat_full && w_req_q.aw.len == 0);
             mst_req.w.last  = w_req_q.aw.len == 0;
             mst_req.w.user  = slv_req_i.w.user   ;
 
