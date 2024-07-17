@@ -545,9 +545,9 @@ module axi_dw_downsizer #(
           end
 
           // Request was accepted
-          if (!r_req_q.ar_valid)
+          if (!r_req_q.ar_valid) begin
             // Our turn
-            if ((idqueue_id == t) && idqueue_valid)
+            if ((idqueue_id == t) && idqueue_valid) begin
               // Ready to accept more data
               if (!slv_r_valid_tran[t] || (slv_r_valid_tran[t] && slv_r_ready_tran[t])) begin
                 mst_r_ready_tran[t] = 1'b1;
@@ -557,12 +557,13 @@ module axi_dw_downsizer #(
                   automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
                   // Serialization
-                  for (int b = 0; b < AxiSlvPortStrbWidth; b++)
+                  for (int b = 0; b < AxiSlvPortStrbWidth; b++) begin
                     if ((b >= slv_port_offset) &&
                         (b - slv_port_offset < (1 << r_req_q.orig_ar_size)) &&
                         (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
                       r_data[b] = mst_resp.r.data[8*(b + mst_port_offset - slv_port_offset) +: 8];
                     end
+                  end
 
                   r_req_d.burst_len = r_req_q.burst_len - 1   ;
                   r_req_d.ar.len    = r_req_q.ar.len - 1      ;
@@ -583,33 +584,44 @@ module axi_dw_downsizer #(
                     end
                   endcase
 
-                  if (r_req_q.burst_len == 0)
+                  if (r_req_q.burst_len == 0) begin
                     idqueue_pop[t] = 1'b1;
+                  end
 
                   case (r_state_q)
-                    R_PASSTHROUGH :
+                    R_PASSTHROUGH : begin
                       // Forward data as soon as we can
                       r_req_d.r_valid = 1'b1;
+                    end
 
-                    R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE:
+                    R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
                       // Forward when the burst is finished, or after filling up a word
-                      if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) != aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)))
+                      if (r_req_q.burst_len == 0 ||
+                          (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) !=
+                           aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)   )) begin
                         r_req_d.r_valid = 1'b1;
+                      end
+                    end
                   endcase
 
                   // Trigger another burst request, if needed
-                  if (r_state_q == R_SPLIT_INCR_DOWNSIZE)
+                  if (r_state_q == R_SPLIT_INCR_DOWNSIZE) begin
                     // Finished current burst, but whole transaction hasn't finished
                     if (r_req_q.ar.len == '0 && r_req_q.burst_len != '0) begin
                       r_req_d.ar_valid = !r_req_q.injected_aw;
                       r_req_d.ar.len   = (r_req_d.burst_len <= 255) ? r_req_d.burst_len : 255;
                     end
+                  end
                 end
               end
+            end
+          end
 
-          if (slv_r_valid_tran[t] && slv_r_ready_tran[t])
-            if (r_req_q.burst_len == '1)
+          if (slv_r_valid_tran[t] && slv_r_ready_tran[t]) begin
+            if (r_req_q.burst_len == '1) begin
               r_state_d = R_IDLE;
+            end
+          end
         end
       endcase
     end
@@ -709,8 +721,9 @@ module axi_dw_downsizer #(
       mst_req.b_ready    = slv_req_i.b_ready;
 
       // Got an ack on the B channel. Pop transaction.
-      if (mst_req.b_ready && mst_resp.b_valid)
+      if (mst_req.b_ready && mst_resp.b_valid) begin
         forward_b_beat_pop = 1'b1;
+      end
     end else begin
       // Otherwise, just acknowlegde the B beats
       slv_resp_o.b_valid = 1'b0            ;
@@ -727,7 +740,7 @@ module axi_dw_downsizer #(
     case (w_state_q)
       W_PASSTHROUGH, W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
         // Request was accepted
-        if (!w_req_q.aw_valid)
+        if (!w_req_q.aw_valid) begin
           if (slv_req_i.w_valid) begin
             automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
             automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
@@ -738,15 +751,17 @@ module axi_dw_downsizer #(
             mst_req.w.user  = slv_req_i.w.user   ;
 
             // Lane steering
-            for (int b = 0; b < AxiSlvPortStrbWidth; b++)
+            for (int b = 0; b < AxiSlvPortStrbWidth; b++) begin
               if ((b >= slv_port_offset) &&
                   (b - slv_port_offset < (1 << w_req_q.orig_aw_size)) &&
                   (b + mst_port_offset - slv_port_offset < AxiMstPortStrbWidth)) begin
                 w_data[b + mst_port_offset - slv_port_offset]         = slv_req_i.w.data[8*b +: 8];
                 mst_req.w.strb[b + mst_port_offset - slv_port_offset] = slv_req_i.w.strb[b]       ;
               end
+            end
             mst_req.w.data = w_data;
           end
+        end
 
         // Acknowledgment
         if (mst_resp.w_ready && mst_req.w_valid) begin
@@ -763,16 +778,21 @@ module axi_dw_downsizer #(
           endcase
 
           case (w_state_q)
-            W_PASSTHROUGH:
+            W_PASSTHROUGH: begin
               slv_resp_o.w_ready = 1'b1;
+            end
 
-            W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE:
-              if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) != aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)))
+            W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
+              if (w_req_q.burst_len == 0 ||
+                  (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) !=
+                   aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)   )) begin
                 slv_resp_o.w_ready = 1'b1;
+              end
+            end
           endcase
 
           // Trigger another burst request, if needed
-          if (w_state_q == W_SPLIT_INCR_DOWNSIZE)
+          if (w_state_q == W_SPLIT_INCR_DOWNSIZE) begin
             // Finished current burst, but whole transaction hasn't finished
             if (w_req_q.aw.len == '0 && w_req_q.burst_len != '0) begin
               w_req_d.aw_valid = 1'b1;
@@ -782,6 +802,7 @@ module axi_dw_downsizer #(
               forward_b_beat_i    = 1'b0;
               forward_b_beat_push = 1'b1;
             end
+          end
 
           if (w_req_q.burst_len == 0) begin
             w_state_d = W_IDLE;
