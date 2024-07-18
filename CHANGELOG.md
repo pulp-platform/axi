@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_bus_compare`: Fix mismatch detection.
 - `axi_to_detailed_mem`: Only respond with `exokay` if `lock` was set on the request.
   Bump `common_cells` for `mem_to_banks` fix.
+- `axi_dw_downsizer`: Fix `i_forward_b_beats_queue` underflow.
 
 ## 0.39.3 - 2024-05-08
 ### Added

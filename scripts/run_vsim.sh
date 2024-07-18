@@ -49,6 +49,14 @@ exec_test() {
             call_vsim tb_$1
             ;;
         axi_dw_downsizer)
+            call_vsim tb_axi_dw_downsizer \
+                    -gTbAxiSlvPortDataWidth=32 \
+                    -gTbAxiMstPortDataWidth=16 \
+                    -gTbInitialBStallCycles=100000 -t 1ps
+            call_vsim tb_axi_dw_downsizer \
+                    -gTbAxiSlvPortDataWidth=32 \
+                    -gTbAxiMstPortDataWidth=16 \
+                    -gTbInitialRStallCycles=100000 -t 1ps
             for AxiSlvPortDataWidth in 8 16 32 64 128 256 512 1024; do
                 for (( AxiMstPortDataWidth = 8; \
                         AxiMstPortDataWidth < $AxiSlvPortDataWidth; \
