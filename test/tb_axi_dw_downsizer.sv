@@ -21,8 +21,8 @@ module tb_axi_dw_downsizer #(
     parameter int unsigned TbAxiSlvPortDataWidth = 64  ,
     parameter int unsigned TbAxiMstPortDataWidth = 32  ,
     parameter int unsigned TbAxiUserWidth        = 8   ,
-    parameter int unsigned TbInitialBStallCycles = 1000,
-    parameter int unsigned TbInitialRStallCycles = 1000,
+    parameter int unsigned TbInitialBStallCycles = 0,
+    parameter int unsigned TbInitialRStallCycles = 0,
     // TB Parameters
     parameter time TbCyclTime                    = 10ns,
     parameter time TbApplTime                    = 2ns ,
