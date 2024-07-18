@@ -533,9 +533,9 @@ module axi_to_detailed_mem #(
                                      ((i*NumBytesPerBank) < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size));
   end
   assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
-  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb) & meta_buf.lock;   // Ensure only active banks are used (strobe)
   assign resp_r_err    = |(m2s_resp.err    &  meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
-  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable) & meta_buf.lock; // Ensure only active banks are used (size & addr offset)
 
   logic collect_b_err_d, collect_b_err_q;
   logic collect_b_exokay_d, collect_b_exokay_q;
