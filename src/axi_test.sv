@@ -951,14 +951,14 @@ package axi_test;
 
     task rand_atop_burst(inout ax_beat_t beat);
       automatic logic rand_success;
-      beat.ax_atop[5:4] = $random();
-      if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
-        // We can emit ATOPs only if INCR bursts are allowed.
-        $warning("ATOP suppressed because INCR bursts are disabled!");
-        beat.ax_atop[5:4] = 2'b00;
-      end
-      if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
-        forever begin
+      forever begin
+        beat.ax_atop[5:4] = $random();
+        if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
+          // We can emit ATOPs only if INCR bursts are allowed.
+          $warning("ATOP suppressed because INCR bursts are disabled!");
+          beat.ax_atop[5:4] = 2'b00;
+        end
+        if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
           // Determine `ax_atop`.
           if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
               beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
@@ -1020,6 +1020,8 @@ package axi_test;
           if (axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, 0) >> 12 ==
               axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, beat.ax_len) >> 12) begin
             break;
+          end else begin
+            beat = new_rand_burst(1'b0);
           end
         end
       end
@@ -1056,6 +1058,8 @@ package axi_test;
         if (axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, 0) >> 12 ==
             axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, ar_beat.ax_len) >> 12) begin
           break;
+        end else begin
+          ar_beat = new_rand_burst(1'b1);
         end
       end
     endfunction
