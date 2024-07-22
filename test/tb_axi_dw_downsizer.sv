@@ -15,17 +15,19 @@
 `include "axi/assign.svh"
 
 module tb_axi_dw_downsizer #(
-  // AXI Parameters
-  parameter int unsigned TbAxiAddrWidth        = 64,
-  parameter int unsigned TbAxiIdWidth          = 4,
-  parameter int unsigned TbAxiSlvPortDataWidth = 64,
-  parameter int unsigned TbAxiMstPortDataWidth = 32,
-  parameter int unsigned TbAxiUserWidth        = 8,
-  // TB Parameters
-  parameter time         TbCyclTime            = 10ns,
-  parameter time         TbApplTime            = 2ns,
-  parameter time         TbTestTime            = 8ns
-);
+    // AXI Parameters
+    parameter int unsigned TbAxiAddrWidth        = 64  ,
+    parameter int unsigned TbAxiIdWidth          = 4   ,
+    parameter int unsigned TbAxiSlvPortDataWidth = 64  ,
+    parameter int unsigned TbAxiMstPortDataWidth = 32  ,
+    parameter int unsigned TbAxiUserWidth        = 8   ,
+    parameter int unsigned TbInitialBStallCycles = 0,
+    parameter int unsigned TbInitialRStallCycles = 0,
+    // TB Parameters
+    parameter time TbCyclTime                    = 10ns,
+    parameter time TbApplTime                    = 2ns ,
+    parameter time TbTestTime                    = 8ns
+  );
 
   /*********************
    *  CLOCK GENERATOR  *
@@ -34,6 +36,9 @@ module tb_axi_dw_downsizer #(
   logic clk;
   logic rst_n;
   logic eos;
+
+  int unsigned b_stall;
+  int unsigned r_stall;
 
   clk_rst_gen #(
     .ClkPeriod   (TbCyclTime),
@@ -65,7 +70,31 @@ module tb_axi_dw_downsizer #(
     .AXI_USER_WIDTH(TbAxiUserWidth)
   ) master ();
 
-  `AXI_ASSIGN(master, master_dv)
+  `AXI_ASSIGN_AW(master, master_dv)
+  `AXI_ASSIGN_W(master, master_dv)
+  `AXI_ASSIGN_AR(master, master_dv)
+  assign master_dv.b_id    =                       master.b_id;
+  assign master_dv.b_resp  =                       master.b_resp;
+  assign master_dv.b_user  =                       master.b_user;
+  assign master_dv.b_valid = b_stall != 0 ? 1'b0 : master.b_valid;
+  assign master.b_ready    = b_stall != 0 ? 1'b0 : master_dv.b_ready;
+  assign master_dv.r_id    =                       master.r_id;
+  assign master_dv.r_data  =                       master.r_data;
+  assign master_dv.r_resp  =                       master.r_resp;
+  assign master_dv.r_last  =                       master.r_last;
+  assign master_dv.r_user  =                       master.r_user;
+  assign master_dv.r_valid = r_stall != 0 ? 1'b0 : master.r_valid;
+  assign master.r_ready    = r_stall != 0 ? 1'b0 : master_dv.r_ready;
+
+  always_ff @(posedge clk or negedge rst_n) begin : proc_
+    if(~rst_n) begin
+      b_stall <= TbInitialBStallCycles;
+      r_stall <= TbInitialRStallCycles;
+    end else begin
+      b_stall <= b_stall == 0 ? 0 : b_stall-1;
+      r_stall <= r_stall == 0 ? 0 : r_stall-1;
+    end
+  end
 
   axi_test::axi_rand_master #(
     .AW             (TbAxiAddrWidth),

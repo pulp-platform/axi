@@ -73,21 +73,12 @@ module axi_atop_filter #(
   cnt_t w_cnt_d, w_cnt_q;
 
   typedef enum logic [2:0] {
-    W_FEEDTHROUGH,
-    BLOCK_AW,
-    ABSORB_W,
-    HOLD_B,
-    INJECT_B,
-    WAIT_R
+    W_RESET, W_FEEDTHROUGH, BLOCK_AW, ABSORB_W, HOLD_B, INJECT_B, WAIT_R
   } w_state_e;
   w_state_e w_state_d, w_state_q;
 
-  typedef enum logic [1:0] {
-    R_FEEDTHROUGH,
-    INJECT_R,
-    R_HOLD
-  } r_state_e;
-  r_state_e r_state_d, r_state_q;
+  typedef enum logic [1:0] { R_RESET, R_FEEDTHROUGH, INJECT_R, R_HOLD } r_state_e;
+  r_state_e   r_state_d, r_state_q;
 
   typedef logic [AxiIdWidth-1:0] id_t;
   id_t id_d, id_q;
@@ -132,6 +123,8 @@ module axi_atop_filter #(
     w_state_d             = w_state_q;
 
     unique case (w_state_q)
+      W_RESET: w_state_d = W_FEEDTHROUGH;
+
       W_FEEDTHROUGH: begin
         // Feed AW channel through if the maximum number of outstanding bursts is not reached.
         if (complete_w_without_aw_downstream || (w_cnt_q.cnt < AxiMaxWriteTxns)) begin
@@ -254,7 +247,7 @@ module axi_atop_filter #(
         end
       end
 
-      default: w_state_d = W_FEEDTHROUGH;
+      default: w_state_d = W_RESET;
     endcase
   end
   // Connect signals on AW and W channel that are not managed by the control FSM from slave port to
@@ -282,6 +275,8 @@ module axi_atop_filter #(
     r_state_d            = r_state_q;
 
     unique case (r_state_q)
+      R_RESET: r_state_d = R_FEEDTHROUGH;
+
       R_FEEDTHROUGH: begin
         if (mst_resp_i.r_valid && !slv_req_i.r_ready) begin
           r_state_d = R_HOLD;
@@ -317,7 +312,7 @@ module axi_atop_filter #(
         end
       end
 
-      default: r_state_d = R_FEEDTHROUGH;
+      default: r_state_d = R_RESET;
     endcase
   end
   // Feed all signals on AR through.
@@ -345,9 +340,9 @@ module axi_atop_filter #(
     if (!rst_ni) begin
       id_q <= '0;
       r_beats_q <= '0;
-      r_state_q <= R_FEEDTHROUGH;
+      r_state_q <= R_RESET;
       w_cnt_q <= '{default: '0};
-      w_state_q <= W_FEEDTHROUGH;
+      w_state_q <= W_RESET;
     end else begin
       id_q <= id_d;
       r_beats_q <= r_beats_d;

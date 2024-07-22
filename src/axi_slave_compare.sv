@@ -22,59 +22,63 @@
 /* verilator lint_off DECLFILENAME */
 
 module axi_slave_compare #(
-  /// ID width of the AXI4+ATOP interface
-  parameter int unsigned AxiIdWidth    = 32'd0,
-  /// FIFO depth
-  parameter int unsigned FifoDepth     = 32'd0,
-  /// AW channel type of the AXI4+ATOP interface
-  parameter type         axi_aw_chan_t = logic,
-  /// W channel type of the AXI4+ATOP interface
-  parameter type         axi_w_chan_t  = logic,
-  /// B channel type of the AXI4+ATOP interface
-  parameter type         axi_b_chan_t  = logic,
-  /// AR channel type of the AXI4+ATOP interface
-  parameter type         axi_ar_chan_t = logic,
-  /// R channel type of the AXI4+ATOP interface
-  parameter type         axi_r_chan_t  = logic,
-  /// Request struct type of the AXI4+ATOP slave port
-  parameter type         axi_req_t     = logic,
-  /// Response struct type of the AXI4+ATOP slave port
-  parameter type         axi_rsp_t     = logic,
-  /// ID type (*do not overwrite*)
-  parameter type         id_t          = logic [2**AxiIdWidth-1:0]
-) (
-  /// Clock
-  input  logic     clk_i,
-  /// Asynchronous reset, active low
-  input  logic     rst_ni,
-  /// Testmode
-  input  logic     testmode_i,
-  /// AXI4+ATOP channel request in
-  input  axi_req_t axi_mst_req_i,
-  /// AXI4+ATOP channel response out
-  output axi_rsp_t axi_mst_rsp_o,
-  /// AXI4+ATOP reference channel request out
-  output axi_req_t axi_ref_req_o,
-  /// AXI4+ATOP reference channel response in
-  input  axi_rsp_t axi_ref_rsp_i,
-  /// AXI4+ATOP test channel request out
-  output axi_req_t axi_test_req_o,
-  /// AXI4+ATOP test channel response in
-  input  axi_rsp_t axi_test_rsp_i,
-  /// AW mismatch
-  output id_t      aw_mismatch_o,
-  /// W mismatch
-  output logic     w_mismatch_o,
-  /// B mismatch
-  output id_t      b_mismatch_o,
-  /// AR mismatch
-  output id_t      ar_mismatch_o,
-  /// R mismatch
-  output id_t      r_mismatch_o,
-  /// General mismatch
-  output logic     mismatch_o,
-  /// Unit is busy
-  output logic     busy_o
+    /// ID width of the AXI4+ATOP interface
+    parameter int unsigned AxiIdWidth = 32'd0,
+    /// FIFO depth
+    parameter int unsigned FifoDepth  = 32'd0,
+    /// Consider size field in comparison
+    parameter bit          UseSize    = 1'b0,
+    /// Data width of the AXI4+ATOP interface
+    parameter int unsigned DataWidth  = 32'd8,
+    /// AW channel type of the AXI4+ATOP interface
+    parameter type axi_aw_chan_t = logic,
+    /// W channel type of the AXI4+ATOP interface
+    parameter type axi_w_chan_t  = logic,
+    /// B channel type of the AXI4+ATOP interface
+    parameter type axi_b_chan_t  = logic,
+    /// AR channel type of the AXI4+ATOP interface
+    parameter type axi_ar_chan_t = logic,
+    /// R channel type of the AXI4+ATOP interface
+    parameter type axi_r_chan_t  = logic,
+    /// Request struct type of the AXI4+ATOP slave port
+    parameter type axi_req_t     = logic,
+    /// Response struct type of the AXI4+ATOP slave port
+    parameter type axi_rsp_t     = logic,
+    /// ID type (*do not overwrite*)
+    parameter type id_t          = logic [2**AxiIdWidth-1:0]
+)(
+    /// Clock
+    input  logic     clk_i,
+    /// Asynchronous reset, active low
+    input  logic     rst_ni,
+    /// Testmode
+    input  logic     testmode_i,
+    /// AXI4+ATOP channel request in
+    input  axi_req_t axi_mst_req_i,
+    /// AXI4+ATOP channel response out
+    output axi_rsp_t axi_mst_rsp_o,
+    /// AXI4+ATOP reference channel request out
+    output axi_req_t axi_ref_req_o,
+    /// AXI4+ATOP reference channel response in
+    input  axi_rsp_t axi_ref_rsp_i,
+    /// AXI4+ATOP test channel request out
+    output axi_req_t axi_test_req_o,
+    /// AXI4+ATOP test channel response in
+    input  axi_rsp_t axi_test_rsp_i,
+    /// AW mismatch
+    output id_t      aw_mismatch_o,
+    /// W mismatch
+    output logic     w_mismatch_o,
+    /// B mismatch
+    output id_t      b_mismatch_o,
+    /// AR mismatch
+    output id_t      ar_mismatch_o,
+    /// R mismatch
+    output id_t      r_mismatch_o,
+    /// General mismatch
+    output logic     mismatch_o,
+    /// Unit is busy
+    output logic     busy_o
 );
 
   axi_req_t axi_ref_req_in, axi_test_req_in;
@@ -156,6 +160,7 @@ module axi_slave_compare #(
   end
 
   axi_bus_compare #(
+<<<<<<< master
     .AxiIdWidth   (AxiIdWidth),
     .FifoDepth    (FifoDepth),
     .axi_aw_chan_t(axi_aw_chan_t),
@@ -165,6 +170,19 @@ module axi_slave_compare #(
     .axi_r_chan_t (axi_r_chan_t),
     .axi_req_t    (axi_req_t),
     .axi_rsp_t    (axi_rsp_t)
+=======
+    .AxiIdWidth     ( AxiIdWidth      ),
+    .FifoDepth      ( FifoDepth       ),
+    .UseSize        ( UseSize         ),
+    .DataWidth      ( DataWidth       ),
+    .axi_aw_chan_t  ( axi_aw_chan_t   ),
+    .axi_w_chan_t   ( axi_w_chan_t    ),
+    .axi_b_chan_t   ( axi_b_chan_t    ),
+    .axi_ar_chan_t  ( axi_ar_chan_t   ),
+    .axi_r_chan_t   ( axi_r_chan_t    ),
+    .axi_req_t      ( axi_req_t       ),
+    .axi_rsp_t      ( axi_rsp_t       )
+>>>>>>> master
   ) i_axi_bus_compare (
     .clk_i,
     .rst_ni,
