@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_dw_downsizer`: Fix `i_forward_b_beats_queue` underflow.
 - `axi_test`: Ensure random requests do not cross 4KiB page boundaries.
 
+### Changed
+- `axi_id_serializer`: Change internal design (and behavior) for simpler code, less hardware, and
+  less stalling.
+
 ## 0.39.3 - 2024-05-08
 ### Added
 - `axi_sim_mem`: Allow response data for uninitialized region to have configurable defined value.
