@@ -64,7 +64,7 @@ module axi_id_serialize #(
   /// Spill AR and AW
   parameter bit          SpillAx = 1'b1,
   // unused parameters, no longer needed, left for backwards-compatibility
-  parameter int unsigned AxiSlvPortMaxTxns = 32'd0, // unused
+  parameter int unsigned AxiSlvPortMaxTxns = 32'd0,
   parameter int unsigned AxiDataWidth = 32'd0,
   parameter bit          AtopSupport  = 1'b1
 ) (
@@ -127,6 +127,7 @@ module axi_id_serialize #(
   logic [AxiMstPortMaxUniqIds-1:0] to_serializer_resps_b_valid,
                                    to_serializer_resps_r_valid;
 
+  // Convert B response valid to index for selection
   onehot_to_bin #(
     .ONEHOT_WIDTH( AxiMstPortMaxUniqIds )
   ) i_slv_b_select (
@@ -134,6 +135,7 @@ module axi_id_serialize #(
     .bin   (slv_b_select)
   );
 
+  // Convert R response valid to index for selection
   onehot_to_bin #(
     .ONEHOT_WIDTH( AxiMstPortMaxUniqIds )
   ) i_slv_r_select (
@@ -150,19 +152,24 @@ module axi_id_serialize #(
   always_comb begin
     // AW, W, AR
     for (int unsigned i = 0; i < AxiMstPortMaxUniqIds; i++) begin
-      to_serializer_reqs[i] = slv_req_i; // .aw, .w, .ar
+      to_serializer_reqs[i] = slv_req_i; // assigns.aw, .w, .ar
       to_serializer_reqs[i].aw_valid = '0;
       to_serializer_reqs[i].w_valid = '0;
       to_serializer_reqs[i].ar_valid = '0;
     end
+
+    // Only pass AW to the selected serializer
     to_serializer_reqs[slv_aw_select].aw_valid = slv_req_i.aw_valid;
     slv_resp_o.aw_ready = to_serializer_resps[slv_aw_select].aw_ready;
 
+    // W is always in order (i.e., serialized) and does not have ID field, pass through
     slv_resp_o.w_ready = mst_resp_i.w_ready;
 
+    // Only pass AR to the selected serializer
     to_serializer_reqs[slv_ar_select].ar_valid = slv_req_i.ar_valid;
     slv_resp_o.ar_ready = to_serializer_resps[slv_ar_select].ar_ready;
 
+    // Recombine responses, only one will be active at a time
     // B, R (these are passed through or both gated inside the serializer)
     slv_resp_o.b_valid = |to_serializer_resps_b_valid;
     slv_resp_o.b = to_serializer_resps[slv_b_select].b;
@@ -179,6 +186,7 @@ module axi_id_serialize #(
   mst_req_t  [AxiMstPortMaxUniqIds-1:0] from_serializer_reqs;
   mst_resp_t [AxiMstPortMaxUniqIds-1:0] from_serializer_resps;
 
+  // One serializer per desired ouput ID
   for (genvar i = 0; i < AxiMstPortMaxUniqIds; i++) begin : gen_serializers
     // serializer takes care to ensure unique IDs for ATOPs
     axi_serializer #(
@@ -195,6 +203,7 @@ module axi_id_serialize #(
       .mst_req_o  ( tmp_serializer_reqs[i]  ),
       .mst_resp_i ( tmp_serializer_resps[i] )
     );
+    // Assign desired output ID
     always_comb begin
       `AXI_SET_REQ_STRUCT(from_serializer_reqs[i], tmp_serializer_reqs[i])
       from_serializer_reqs[i].aw.id = i;
@@ -213,6 +222,7 @@ module axi_id_serialize #(
 
   select_t mst_aw_select, mst_ar_select;
 
+  // Convert AW request valid to index for selection
   onehot_to_bin #(
     .ONEHOT_WIDTH( AxiMstPortMaxUniqIds )
   ) i_mst_aw_select (
@@ -220,6 +230,7 @@ module axi_id_serialize #(
     .bin   (mst_aw_select)
   );
 
+  // Convert AR request valid to index for selection
   onehot_to_bin #(
     .ONEHOT_WIDTH( AxiMstPortMaxUniqIds )
   ) i_mst_ar_select (
@@ -236,17 +247,25 @@ module axi_id_serialize #(
   logic mst_aw_ready, mst_ar_ready;
 
   always_comb begin
+    // Recombine AW requests, only one active at a time
     mst_req.aw_valid = |from_serializer_reqs_aw_valid;
     mst_req.aw = from_serializer_reqs[mst_aw_select].aw;
+
+    // W is always in order (i.e., serialized) and does not have ID field, pass through
     mst_req.w_valid = slv_req_i.w_valid;
     mst_req.w = slv_req_i.w;
+    
+    // Recombine AR requests, only one active at a time
     mst_req.ar_valid = |from_serializer_reqs_ar_valid;
     mst_req.ar = from_serializer_reqs[mst_ar_select].ar;
+
+    // AW/AR ready distributed, only one request active at a time
     for (int unsigned i = 0; i < AxiMstPortMaxUniqIds; i++) begin
       from_serializer_resps[i].aw_ready = mst_aw_ready;
       from_serializer_resps[i].ar_ready = mst_ar_ready;
     end
 
+    // Distribute B and R responses to corresponding serializers
     for (int unsigned i = 0; i < AxiMstPortMaxUniqIds; i++) begin
       from_serializer_reqs_b_ready[i] = from_serializer_reqs[i].b_ready;
       from_serializer_reqs_r_ready[i] = from_serializer_reqs[i].r_ready;
@@ -261,6 +280,7 @@ module axi_id_serialize #(
     mst_req.r_ready = from_serializer_reqs[mst_resp_i.r.id].r_ready;
   end
 
+  // Optional spill register to help prevent timing loops
   spill_register #(
     .T     ( mst_aw_t ),
     .Bypass( ~SpillAx )
@@ -275,6 +295,7 @@ module axi_id_serialize #(
     .data_o ( mst_req_o.aw )
   );
 
+  // Optional spill register to help prevent timing loops
   spill_register #(
     .T     ( mst_ar_t ),
     .Bypass( ~SpillAx )
@@ -326,13 +347,18 @@ endmodule
 /// See the documentation of the main module for the definition of ports and parameters.
 module axi_id_serialize_intf #(
   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
-  parameter int unsigned AXI_SLV_PORT_MAX_TXNS = 32'd0,
   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
   parameter int unsigned AXI_MST_PORT_MAX_UNIQ_IDS = 32'd0,
   parameter int unsigned AXI_MST_PORT_MAX_TXNS_PER_ID = 32'd0,
   parameter int unsigned AXI_ADDR_WIDTH = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH = 32'd0,
-  parameter int unsigned AXI_USER_WIDTH = 32'd0
+  parameter int unsigned AXI_USER_WIDTH = 32'd0,
+  parameter int unsigned MST_ID_BASE_OFFSET = 32'd0,
+  parameter int unsigned ID_MAP_NUM_ENTRIES = 32'd0,
+  parameter int unsigned ID_MAP [ID_MAP_NUM_ENTRIES-1:0][0:1] = '{default: {32'b0, 32'b0}},
+  parameter bit          SPILL_AX       = 1'b1,
+  // Now unused, kept for backward compatibility
+  parameter int unsigned AXI_SLV_PORT_MAX_TXNS = 32'd0
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
@@ -374,17 +400,19 @@ module axi_id_serialize_intf #(
 
   axi_id_serialize #(
     .AxiSlvPortIdWidth      ( AXI_SLV_PORT_ID_WIDTH         ),
-    .AxiSlvPortMaxTxns      ( AXI_SLV_PORT_MAX_TXNS         ),
     .AxiMstPortIdWidth      ( AXI_MST_PORT_ID_WIDTH         ),
     .AxiMstPortMaxUniqIds   ( AXI_MST_PORT_MAX_UNIQ_IDS     ),
     .AxiMstPortMaxTxnsPerId ( AXI_MST_PORT_MAX_TXNS_PER_ID  ),
     .AxiAddrWidth           ( AXI_ADDR_WIDTH                ),
-    .AxiDataWidth           ( AXI_DATA_WIDTH                ),
     .AxiUserWidth           ( AXI_USER_WIDTH                ),
     .slv_req_t              ( slv_req_t                     ),
     .slv_resp_t             ( slv_resp_t                    ),
     .mst_req_t              ( mst_req_t                     ),
-    .mst_resp_t             ( mst_resp_t                    )
+    .mst_resp_t             ( mst_resp_t                    ),
+    .MstIdBaseOffset        ( MST_ID_BASE_OFFSET            ),
+    .IdMapNumEntries        ( ID_MAP_NUM_ENTRIES            ),
+    .IdMap                  ( ID_MAP                        ),
+    .SpillAx                ( SPILL_AX                      )
   ) i_axi_id_serialize (
     .clk_i,
     .rst_ni,
