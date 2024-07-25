@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
 - `axi_bus_compare`: Optionally consider AXI `size` field to only compare used data.
+- `AXI_BUS_DV`: Add property checking that bursts do not cross 4KiB page boundaries.
 
 ### Fixed
 - `axi_bus_compare`: Fix mismatch detection.
 - `axi_to_detailed_mem`: Only respond with `exokay` if `lock` was set on the request.
   Bump `common_cells` for `mem_to_banks` fix.
 - `axi_dw_downsizer`: Fix `i_forward_b_beats_queue` underflow.
+- `axi_test`: Ensure random requests do not cross 4KiB page boundaries.
 
 ## 0.39.3 - 2024-05-08
 ### Added
