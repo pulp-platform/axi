@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+
+## 0.39.4 - 2024-07-25
 ### Added
 - `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
 - `axi_bus_compare`: Optionally consider AXI `size` field to only compare used data.
@@ -17,11 +19,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_to_detailed_mem`: Only respond with `exokay` if `lock` was set on the request.
   Bump `common_cells` for `mem_to_banks` fix.
 - `axi_dw_downsizer`: Fix `i_forward_b_beats_queue` underflow.
+- `axi_atop_filter`: Add reset state to internal FSM to avoid simulation bug in XSIM.
 - `axi_test`: Ensure random requests do not cross 4KiB page boundaries.
 
 ### Changed
 - `axi_id_serializer`: Change internal design (and behavior) for simpler code, less hardware, and
   less stalling.
+
+`v0.39.4` is fully **backward-compatible** to `v0.39.3`.
 
 ## 0.39.3 - 2024-05-08
 ### Added
