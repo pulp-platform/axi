@@ -99,18 +99,25 @@ module tb_axi_sim_mem #(
     drv.reset_master();
     wait (rst_n);
     // AW
+    forever begin
 `ifdef XSIM
-    // std::randomize(aw_beat) may behave differently to aw_beat.randomize() wrt. limited ranges
-    // Keeping alternate implementation for XSIM only
-    rand_success = std::randomize(aw_beat); assert (rand_success);
+      // std::randomize(aw_beat) may behave differently to aw_beat.randomize() wrt. limited ranges
+      // Keeping alternate implementation for XSIM only
+      rand_success = std::randomize(aw_beat); assert (rand_success);
 `else
-    rand_success = aw_beat.randomize(); assert (rand_success);
+      rand_success = aw_beat.randomize(); assert (rand_success);
 `endif
-    aw_beat.ax_addr >>= $clog2(StrbWidth); // align address with data width
-    aw_beat.ax_addr <<= $clog2(StrbWidth);
-    aw_beat.ax_len = $urandom();
-    aw_beat.ax_size = $clog2(StrbWidth);
-    aw_beat.ax_burst = axi_pkg::BURST_INCR;
+      aw_beat.ax_addr >>= $clog2(StrbWidth); // align address with data width
+      aw_beat.ax_addr <<= $clog2(StrbWidth);
+      aw_beat.ax_len = $urandom();
+      aw_beat.ax_size = $clog2(StrbWidth);
+      aw_beat.ax_burst = axi_pkg::BURST_INCR;
+      // Make sure that the burst does not cross a 4KiB boundary.
+      if (axi_pkg::beat_addr(aw_beat.ax_addr, aw_beat.ax_size, aw_beat.ax_len, aw_beat.ax_burst, 0) >> 12 ==
+          axi_pkg::beat_addr(aw_beat.ax_addr, aw_beat.ax_size, aw_beat.ax_len, aw_beat.ax_burst, aw_beat.ax_len) >> 12) begin
+        break;
+      end
+    end
     drv.send_aw(aw_beat);
     // W beats
     for (int unsigned i = 0; i <= aw_beat.ax_len; i++) begin
@@ -132,10 +139,17 @@ module tb_axi_sim_mem #(
     drv.recv_b(b_beat);
     assert(b_beat.b_resp == axi_pkg::RESP_OKAY);
     // AR
-    ar_beat.ax_addr = aw_beat.ax_addr;
-    ar_beat.ax_len = aw_beat.ax_len;
-    ar_beat.ax_size = aw_beat.ax_size;
-    ar_beat.ax_burst = aw_beat.ax_burst;
+    forever begin
+      ar_beat.ax_addr = aw_beat.ax_addr;
+      ar_beat.ax_len = aw_beat.ax_len;
+      ar_beat.ax_size = aw_beat.ax_size;
+      ar_beat.ax_burst = aw_beat.ax_burst;
+      // Make sure that the burst does not cross a 4KiB boundary.
+      if (axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, 0) >> 12 ==
+          axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, ar_beat.ax_len) >> 12) begin
+        break;
+      end
+    end
     drv.send_ar(ar_beat);
     // R beats
     for (int unsigned i = 0; i <= ar_beat.ax_len; i++) begin
