@@ -67,6 +67,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)             | AXI4 to AXI4-Lite protocol converter.                                                                |                                  |
 | [`axi_to_mem`](src/axi_to_mem.sv)                       | AXI4 to memory protocol (req, gnt, rvalid) converter. Additional banked, interleaved, split variant. |                                  |
 | [`axi_xbar`](src/axi_xbar.sv)                           | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.               | [Doc](doc/axi_xbar.md)           |
+| [`axi_xbar_unmuxed`](src/axi_xbar_unmuxed.sv)           | Demux side of fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports. | [Doc](doc/axi_xbar.md)           |
 | [`axi_xp`](src/axi_xp.sv)                               | AXI Crosspoint (XP) with homomorphous slave and master ports.                                        |                                  |
 | [`axi_zero_mem`](src/axi_zero_mem.sv)                   | AXI-attached /dev/zero. All reads will be zero, writes are absorbed.                                 |                                  |
 

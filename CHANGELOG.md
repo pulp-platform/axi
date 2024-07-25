@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
 - `axi_bus_compare`: Optionally consider AXI `size` field to only compare used data.
 - `AXI_BUS_DV`: Add property checking that bursts do not cross 4KiB page boundaries.
+- Add `axi_xbar_unmuxed`: Partial crossbar with unmultiplexed mst_ports.
 
 ### Fixed
 - `axi_bus_compare`: Fix mismatch detection.
