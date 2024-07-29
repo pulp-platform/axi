@@ -30,9 +30,9 @@ import cf_math_pkg::idx_width;
   parameter type w_chan_t                                             = logic,
   /// AXI4+ATOP B channel struct type for the slave ports.
   parameter type b_chan_t                                             = logic,
-  /// AXI4+ATOP AR channel struct type for the slave ports.  
+  /// AXI4+ATOP AR channel struct type for the slave ports.
   parameter type ar_chan_t                                            = logic,
-  /// AXI4+ATOP R channel struct type for the slave ports.  
+  /// AXI4+ATOP R channel struct type for the slave ports.
   parameter type r_chan_t                                             = logic,
   /// AXI4+ATOP request struct type for the slave ports.
   parameter type req_t                                                = logic,
@@ -56,17 +56,17 @@ import cf_math_pkg::idx_width;
 ) (
   /// Clock, positive edge triggered.
   input  logic                                                          clk_i,
-  /// Asynchronous reset, active low.  
+  /// Asynchronous reset, active low.
   input  logic                                                          rst_ni,
   /// Testmode enable, active high.
   input  logic                                                          test_i,
-  /// AXI4+ATOP requests to the slave ports.  
+  /// AXI4+ATOP requests to the slave ports.
   input  req_t  [Cfg.NoSlvPorts-1:0]                                    slv_ports_req_i,
-  /// AXI4+ATOP responses of the slave ports.  
+  /// AXI4+ATOP responses of the slave ports.
   output resp_t [Cfg.NoSlvPorts-1:0]                                    slv_ports_resp_o,
-  /// AXI4+ATOP requests of the master ports.  
+  /// AXI4+ATOP requests of the master ports.
   output req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_ports_req_o,
-  /// AXI4+ATOP responses to the master ports.  
+  /// AXI4+ATOP responses to the master ports.
   input  resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_ports_resp_i,
   /// Address map array input for the crossbar. This map is global for the whole module.
   /// It is used for routing the transactions to the respective master ports.
@@ -77,12 +77,12 @@ import cf_math_pkg::idx_width;
 `ifdef VCS
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
+  /// When not used, tie to `'0`.
   input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
 `else
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
+  /// When not used, tie to `'0`.
   input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
 `endif
 );
