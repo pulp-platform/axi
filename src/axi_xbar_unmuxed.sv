@@ -284,6 +284,8 @@ import cf_math_pkg::idx_width;
   // pragma translate_on
 endmodule
 
+`ifndef VCS
+// As of now, VCS does not support multi-dimensional array of interfaces.
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
@@ -295,10 +297,6 @@ import cf_math_pkg::idx_width;
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
-`ifdef VCS
-  , localparam int unsigned MstPortsIdxWidth =
-        (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
-`endif
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
@@ -307,11 +305,7 @@ import cf_math_pkg::idx_width;
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
-  input  logic  [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
   input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
 );
 
   typedef logic [Cfg.AxiIdWidthSlvPorts -1:0] id_t;
@@ -371,3 +365,5 @@ import cf_math_pkg::idx_width;
   );
 
 endmodule
+
+`endif
