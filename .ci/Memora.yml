@@ -83,6 +83,9 @@ artifacts:
       - src/axi_pkg.sv
       - src/axi_intf.sv
       - src/axi_test.sv
+      - src/axi_err_slv.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
       - src/axi_dw_downsizer.sv
       - src/axi_dw_converter.sv
       - test/tb_axi_dw_downsizer.sv
@@ -97,6 +100,9 @@ artifacts:
       - src/axi_pkg.sv
       - src/axi_intf.sv
       - src/axi_test.sv
+      - src/axi_err_slv.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
       - src/axi_dw_upsizer.sv
       - src/axi_dw_converter.sv
       - test/tb_axi_dw_upsizer.sv
@@ -125,6 +131,9 @@ artifacts:
       - src/axi_pkg.sv
       - src/axi_intf.sv
       - src/axi_test.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_err_slv.sv
       - src/axi_isolate.sv
       - test/tb_axi_isolate.sv
     outputs:
@@ -141,6 +150,7 @@ artifacts:
       - src/axi_id_prepend.sv
       - src/axi_id_remap.sv
       - src/axi_demux.sv
+      - src/axi_demux_simple.sv
       - src/axi_serializer.sv
       - src/axi_mux.sv
       - src/axi_id_serialize.sv
@@ -294,6 +304,7 @@ artifacts:
       - src/axi_intf.sv
       - src/axi_test.sv
       - src/axi_demux.sv
+      - src/axi_demux_simple.sv
       - src/axi_to_detailed_mem.sv
       - src/axi_to_mem.sv
       - src/axi_to_mem_banked.sv
@@ -310,8 +321,11 @@ artifacts:
       - src/axi_intf.sv
       - src/axi_test.sv
       - src/axi_demux.sv
+      - src/axi_demux_simple.sv
       - src/axi_err_slv.sv
       - src/axi_mux.sv
+      - src/axi_multicut.sv
+      - src/axi_xbar_unmuxed.sv
       - src/axi_xbar.sv
       - test/tb_axi_xbar.sv
     outputs:
