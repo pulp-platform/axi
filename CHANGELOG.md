@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Fixed
+- Disabled the interface variant of `axi_xbar_unmuxed` for VCS, as VCS does not support multi-dimensional arrays of interfaces yet.
+
 ## 0.39.4 - 2024-07-25
 ### Added
 - `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
