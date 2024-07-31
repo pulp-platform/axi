@@ -359,7 +359,7 @@ module axi_dw_upsizer #(
       // Initialize r_data
       r_data = '0;
 
-      case (r_state_q)
+      unique case (r_state_q)
         R_IDLE : begin
           // Reset channels
           r_req_d.ar = '0;
@@ -381,7 +381,7 @@ module axi_dw_upsizer #(
               r_req_d.burst_len    = slv_req_i.ar.len ;
               r_req_d.orig_ar_size = slv_req_i.ar.size;
 
-              case (r_req_d.ar.burst)
+              unique case (r_req_d.ar.burst)
                 axi_pkg::BURST_INCR: begin
                   // Modifiable transaction
                   if (modifiable(r_req_d.ar.cache)) begin
@@ -413,6 +413,8 @@ module axi_dw_upsizer #(
                   if (r_req_d.ar.len == '0)
                     r_req_d.ar_throw_error = 1'b0;
                 end
+
+                default: ;
               endcase
             end
           end
@@ -439,7 +441,7 @@ module axi_dw_upsizer #(
           // Default state
           r_state_d = R_PASSTHROUGH;
 
-          case (r_req_d.ar.burst)
+          unique case (r_req_d.ar.burst)
             axi_pkg::BURST_INCR: begin
               // Modifiable transaction
               if (modifiable(r_req_d.ar.cache)) begin
@@ -471,6 +473,8 @@ module axi_dw_upsizer #(
               if (r_req_d.ar.len == '0)
                 r_req_d.ar_throw_error = 1'b0;
             end
+
+            default: ;
           endcase
         end
 
@@ -499,22 +503,25 @@ module axi_dw_upsizer #(
               if (slv_r_ready_tran[t]) begin
                 r_req_d.burst_len = r_req_q.burst_len - 1;
 
-                case (r_req_q.ar.burst)
+                unique case (r_req_q.ar.burst)
                   axi_pkg::BURST_INCR: begin
                     r_req_d.ar.addr = aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size) + (1 << r_req_q.orig_ar_size);
                   end
                   axi_pkg::BURST_FIXED: begin
                     r_req_d.ar.addr = r_req_q.ar.addr;
                   end
+                  default: ;
                 endcase
 
-                case (r_state_q)
+                unique case (r_state_q)
                   R_PASSTHROUGH:
                     mst_r_ready_tran[t] = 1'b1;
 
                   R_INCR_UPSIZE:
                     if (r_req_q.burst_len == 0 || (aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize) != aligned_addr(r_req_q.ar.addr, AxiMstPortMaxSize)))
                       mst_r_ready_tran[t] = 1'b1;
+
+                  default: ;
                 endcase
 
                 if (r_req_q.burst_len == '0)
@@ -522,6 +529,8 @@ module axi_dw_upsizer #(
               end
             end
         end
+
+        default: ;
       endcase
     end
 
@@ -585,7 +594,7 @@ module axi_dw_upsizer #(
       w_req_d.aw_throw_error = 1'b0;
     end
 
-    case (w_state_q)
+    unique case (w_state_q)
       W_PASSTHROUGH, W_INCR_UPSIZE: begin
         // Got a grant on the W channel
         if (mst_req.w_valid && mst_resp.w_ready) begin
@@ -617,16 +626,17 @@ module axi_dw_upsizer #(
             w_req_d.w.last    = (w_req_q.burst_len == 0);
             w_req_d.w.user    = slv_req_i.w.user        ;
 
-            case (w_req_q.aw.burst)
+            unique case (w_req_q.aw.burst)
               axi_pkg::BURST_INCR: begin
                 w_req_d.aw.addr = aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size) + (1 << w_req_q.orig_aw_size);
               end
               axi_pkg::BURST_FIXED: begin
                 w_req_d.aw.addr = w_req_q.aw.addr;
               end
+              default: ;
             endcase
 
-            case (w_state_q)
+            unique case (w_state_q)
               W_PASSTHROUGH:
                 // Forward data as soon as we can
                 w_req_d.w_valid = 1'b1;
@@ -635,6 +645,7 @@ module axi_dw_upsizer #(
                 // Forward when the burst is finished, or after filling up a word
                 if (w_req_q.burst_len == 0 || (aligned_addr(w_req_d.aw.addr, AxiMstPortMaxSize) != aligned_addr(w_req_q.aw.addr, AxiMstPortMaxSize)))
                   w_req_d.w_valid = 1'b1;
+              default: ;
             endcase
           end
         end
@@ -645,6 +656,7 @@ module axi_dw_upsizer #(
             w_state_d          = W_IDLE;
           end
       end
+      default: ;
     endcase
 
     // Can start a new request as soon as w_state_d is W_IDLE
@@ -675,7 +687,7 @@ module axi_dw_upsizer #(
         w_req_d.burst_len    = slv_req_i.aw.len ;
         w_req_d.orig_aw_size = slv_req_i.aw.size;
 
-        case (slv_req_i.aw.burst)
+        unique case (slv_req_i.aw.burst)
           axi_pkg::BURST_INCR: begin
             // Modifiable transaction
             if (modifiable(slv_req_i.aw.cache))
@@ -707,6 +719,8 @@ module axi_dw_upsizer #(
             if (slv_req_i.aw.len == '0)
               w_req_d.aw_throw_error = 1'b0;
           end
+
+          default: ;
         endcase
       end
     end
