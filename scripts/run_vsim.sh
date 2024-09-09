@@ -219,7 +219,7 @@ exec_test() {
                             MST_ID=5
                             for DATA_WIDTH in 64 256; do
                                 for PIPE in 0 1; do
-                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
+                                    call_vsim tb_axi_xbar -t 1ns      \
                                         -gTbNumMasters=$NUM_MST       \
                                         -gTbNumSlaves=$NUM_SLV        \
                                         -gTbAxiIdWidthMasters=$MST_ID \
@@ -250,14 +250,14 @@ exec_test() {
                             for DATA_WIDTH in 64 256; do
                                 for PIPE in 0; do
                                     for UNIQUE_IDS in 0 1; do
-                                        call_vsim tb_axi_mcast_xbar -t 1ns -voptargs="+acc" \
-                                            -gTbNumMasters=$NUM_MST       \
-                                            -gTbNumMcastSlaves=$NUM_SLV   \
-                                            -gTbAxiIdWidthMasters=$MST_ID \
-                                            -gTbAxiIdUsed=$MST_ID_USE     \
-                                            -gTbAxiDataWidth=$DATA_WIDTH  \
-                                            -gTbPipeline=$PIPE            \
-                                            -gTbEnAtop=$GEN_ATOP          \
+                                        call_vsim tb_axi_mcast_xbar -t 1ns \
+                                            -gTbNumMasters=$NUM_MST        \
+                                            -gTbNumMcastSlaves=$NUM_SLV    \
+                                            -gTbAxiIdWidthMasters=$MST_ID  \
+                                            -gTbAxiIdUsed=$MST_ID_USE      \
+                                            -gTbAxiDataWidth=$DATA_WIDTH   \
+                                            -gTbPipeline=$PIPE             \
+                                            -gTbEnAtop=$GEN_ATOP           \
                                             -gTbUniqueIds=$UNIQUE_IDS
                                     done
                                 done
