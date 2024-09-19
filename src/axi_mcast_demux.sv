@@ -50,6 +50,8 @@ module axi_mcast_demux #(
   parameter type         axi_req_t      = logic,
   parameter type         axi_resp_t     = logic,
   parameter int unsigned NoMstPorts     = 32'd0,
+  /// Connectivity vector
+  parameter bit [NoMstPorts-1:0] Connectivity = '1,
   parameter int unsigned MaxTrans       = 32'd8,
   parameter int unsigned AxiLookBits    = 32'd3,
   parameter bit          UniqueIds      = 1'b0,
@@ -354,8 +356,11 @@ module axi_mcast_demux #(
     // Note: assumes the slaves targeted by multicast lie at the lower indices
     assign dec_aw_select = (dec_aw_idx_valid << dec_aw_idx) | dec_aw_select_partial;
 
+    // Filter out messages on ports that are not connected, otherwise the error slave
+    // would respond with DECERR and, when merged with the other responses, this results
+    // in an error being returned to the master.
     assign slv_aw_select_mask = (dec_aw_idx_error && dec_aw_select_error) ?
-      {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select};
+      {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select & Connectivity};
     assign slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_addr};
     assign slv_aw_mask = {'0, dec_aw_mask};
 
