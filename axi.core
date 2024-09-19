@@ -137,11 +137,15 @@ generators:
 
                    offset (int): Base address for the slave
                    size   (int): Size of the allocated memory map for the slave
+                   slaves (list): List of device ports that this host is
+                                  connected to. A missing or empty list means
+                                  connection to all devices.
 
       Example usage:
         The following config will generate an interconnect wrapper to which two
         AXI4 master interfaces (dma and ibus) with different id widths are
         connected, and connects downstream to three AXI4 slaves (rom, gpio, ram)
+        The ibus port is only allowed to access the rom and ram ports.
 
         soc_intercon:
           generator: axi_intercon_gen
@@ -151,6 +155,7 @@ generators:
                 id_width : 1
               ibus:
                 id_width : 2
+                slaves: [ram, rom]
             slaves:
               ram:
                 offset : 0
