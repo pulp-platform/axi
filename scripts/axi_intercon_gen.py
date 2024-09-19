@@ -275,7 +275,7 @@ class AxiIntercon:
             print("Found slave " + k)
             self.slaves.append(Slave(k,v))
 
-        self.output_file = config.get('output_file', 'axi_intercon.v')
+        self.output_file = config.get('output_file', 'axi_intercon.sv')
         self.atop = config.get('atop', False)
 
     def _dump(self):
@@ -451,14 +451,15 @@ class AxiIntercon:
                                           _template_ports))
 
         self.verilog_writer.write(file)
-        self.template_writer.write(file+'h')
+        template_file = file.split('.')[0]+'.vh'
+        self.template_writer.write(template_file)
 
         core_file = self.vlnv.split(':')[2]+'.core'
         vlnv = self.vlnv
         with open(core_file, 'w') as f:
             f.write('CAPI=2:\n')
             files = [{file     : {'file_type' : 'systemVerilogSource'}},
-                     {file+'h' : {'is_include_file' : True,
+                     {template_file : {'is_include_file' : True,
                                   'file_type' : 'verilogSource'}}
             ]
             coredata = {'name' : vlnv,
