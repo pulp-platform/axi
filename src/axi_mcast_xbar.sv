@@ -143,6 +143,7 @@ import cf_math_pkg::idx_width;
     axi_mcast_demux #(
       .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
       .AtopSupport    ( ATOPs                  ),
+      .Connectivity   ( Connectivity[i]        ),
       .aw_addr_t      ( addr_t                 ),  // AW Address Type
       .aw_chan_t      ( slv_aw_chan_t          ),  // AW Channel Type
       .w_chan_t       ( w_chan_t               ),  //  W Channel Type
