@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.5 - 2024-10-24
+
 ### Fixed
 - Disabled the interface variant of `axi_xbar_unmuxed` for VCS, as VCS does not support multi-dimensional arrays of interfaces yet.
 
-## 0.39.4 - 2024-07-25
+### Changed
+- `axi_id_serialize`: Revert #342 to fix boot problems of CVA6 in Cheshire.
+
+## 0.39.4 - 2024-07-25 (Yanked 2024-10-23)
 ### Added
 - `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
 - `axi_bus_compare`: Optionally consider AXI `size` field to only compare used data.
