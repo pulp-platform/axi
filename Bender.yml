@@ -113,6 +113,7 @@ sources:
       # Level 1
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
+      - test/tb_axi_burst_unwrap.sv
       - test/tb_axi_bus_compare.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv

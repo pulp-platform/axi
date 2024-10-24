@@ -465,12 +465,15 @@ module axi_burst_unwrap_ax_chan #(
   chan_t ax_d, ax_q;
 
   logic [10:0]          container_size;
+  logic [AddrWidth-1:0] aligned_addr;
   logic [AddrWidth-1:0] wrap_boundary;
 
   // The total size of this burst (beat_size * burst_length)
   assign container_size = (ax_i.len + 1) << ax_i.size;
   // For wrapping bursts, this returns the wrap boundary (container size is power of two according to A.3.4.1)
   assign wrap_boundary = ax_i.addr & ~(AddrWidth'(container_size) - 1);
+  // Aligned address of the first transfer
+  assign aligned_addr = (ax_i.addr >> ax_i.size) << ax_i.size;
 
   enum logic {Idle, Busy} state_d, state_q;
   always_comb begin
@@ -484,22 +487,22 @@ module axi_burst_unwrap_ax_chan #(
     unique case (state_q)
       Idle: begin
         if (ax_valid_i && &cnt_alloc_gnt) begin
-          if (ax_i.burst == axi_pkg::BURST_WRAP && ax_i.addr != wrap_boundary) begin // Splitting required.
+          if (ax_i.burst == axi_pkg::BURST_WRAP && aligned_addr != wrap_boundary) begin // Splitting required.
             // Store Ax, allocate a counter, and acknowledge upstream.
             ax_d          = ax_i;
             ax_d.burst    = axi_pkg::BURST_INCR;
             split_len     = 8'd1;
-            // Allocate second counter only for AwChan
-            cnt_alloc_req = { AwChan, 1'b1 };
             // Try to feed first burst through.
             ax_o       = ax_d;
             // First (this) incr burst from addr to wrap boundary + container size
-            ax_o.len   = ((wrap_boundary + container_size - ax_i.addr) >> ax_i.size) - 1;
+            ax_o.len   = ((wrap_boundary + container_size - aligned_addr) >> ax_i.size) - 1;
             // Next incr burst from wrap boundary to addr
-            ax_d.len   = ((ax_i.addr - wrap_boundary) >> ax_i.size) - 1;
+            ax_d.len   = ((aligned_addr - wrap_boundary) >> ax_i.size) - 1;
             ax_d.addr  = wrap_boundary;
             ax_valid_o = 1'b1;
             if (ax_ready_i) begin
+              // Allocate second counter only for AwChan
+              cnt_alloc_req = { AwChan, 1'b1 };
               ax_ready_o = 1'b1;
               state_d    = Busy;
             end
@@ -519,7 +522,7 @@ module axi_burst_unwrap_ax_chan #(
         end
       end
       Busy: begin
-        // Sent next burst from split.
+        // Send next burst from split.
         ax_o       = ax_q;
         ax_valid_o = 1'b1;
         if (ax_ready_i) begin

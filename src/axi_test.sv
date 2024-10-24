@@ -2006,7 +2006,7 @@ package axi_test;
         wait (this.aw_sample.size() > 0);
         aw_beat        = this.aw_sample.pop_front();
         // This scoreborad only supports this type of burst:
-        assert (aw_beat.ax_burst == axi_pkg::BURST_INCR || aw_beat.ax_len == '0) else
+        assert (aw_beat.ax_burst inside {axi_pkg::BURST_INCR, axi_pkg::BURST_WRAP} || aw_beat.ax_len == '0) else
             $warning("Not supported AW burst: BURST: %0h.", aw_beat.ax_burst);
         assert (aw_beat.ax_atop == '0) else
             $warning("Atomic transfers not supported: ATOP: %0h.", aw_beat.ax_atop);
@@ -2016,7 +2016,7 @@ package axi_test;
           beat_addresses[i] = axi_pkg::beat_addr(aw_beat.ax_addr, aw_beat.ax_size, aw_beat.ax_len,
               aw_beat.ax_burst, i);
           bus_address       = axi_pkg::aligned_addr(beat_addresses[i], BUS_SIZE);
-          // Check if the memory array is initialyzed at this beat address (aligned on the bus)
+          // Check if the memory array is initialized at this beat address (aligned on the bus)
           if (!this.memory_q.exists(bus_address)) begin
             for (int unsigned j = 0; j < axi_pkg::num_bytes(BUS_SIZE); j++) begin
               this.memory_q[bus_address+j].push_back(8'bxxxxxxxx);
@@ -2082,7 +2082,7 @@ package axi_test;
         wait (this.ar_sample[id].size() > 0);
         ar_beat = this.ar_sample[id].pop_front();
         // This scoreborad only supports this type of burst:
-        assert (ar_beat.ax_burst == axi_pkg::BURST_INCR || ar_beat.ax_len == '0) else
+        assert (ar_beat.ax_burst inside {axi_pkg::BURST_INCR, axi_pkg::BURST_WRAP} || ar_beat.ax_len == '0) else
             $warning("Not supported AR burst: BURST: %0h.", ar_beat.ax_burst);
 
         for (int unsigned i = 0; i <= ar_beat.ax_len; i++) begin
