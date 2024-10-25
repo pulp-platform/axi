@@ -532,4 +532,9 @@ package axi_pkg;
     logic [31:0] end_addr;
   } xbar_rule_32_t;
 
+  // Return either the argument minus 1 or 0 if 0; useful for IO vector width declaration
+  function automatic integer unsigned iomsb (input integer unsigned width);
+      return (width != 32'd0) ? unsigned'(width-1) : 32'd0;
+  endfunction
+
 endpackage
