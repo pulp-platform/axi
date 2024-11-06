@@ -92,6 +92,8 @@ sources:
   - src/axi_xbar.sv
   # Level 6
   - src/axi_xp.sv
+  - src/autocc_axi_xbar_pkg.sv
+  - src/axi_xbar_superwrap.sv
 
   - target: synth_test
     files:
