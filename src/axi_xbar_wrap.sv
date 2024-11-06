@@ -53,7 +53,7 @@ import cf_math_pkg::idx_width;
 		/// Enables a default master port for each slave port. When this is enabled unmapped
 		/// transactions get issued at the master port given by `default_mst_port_i`.
 		/// When not used, tie to `'0`.  
-		input  logic      [Cfg.NoSlvPorts-1:0][1-1:0]          default_mst_port_i
+		input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
 		`else
 		/// Enables a default master port for each slave port. When this is enabled unmapped
 		/// transactions get issued at the master port given by `default_mst_port_i`.
