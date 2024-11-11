@@ -468,7 +468,7 @@ module axi_burst_unwrap_ax_chan #(
   logic [AddrWidth-1:0] wrap_boundary;
 
   // The total size of this burst (beat_size * burst_length)
-  assign container_size = ax_i.len << ax_i.size;
+  assign container_size   = (ax_i.len + 1) << ax_i.size;
   // For wrapping bursts, this returns the wrap boundary (container size is power of two according to A.3.4.1)
   assign wrap_boundary = ax_i.addr & ~(AddrWidth'(container_size) - 1);
 
@@ -494,9 +494,10 @@ module axi_burst_unwrap_ax_chan #(
             // Try to feed first burst through.
             ax_o       = ax_d;
             // First (this) incr burst from addr to wrap boundary + container size
-            ax_o.len   = (wrap_boundary + container_size - ax_i.addr) >> ax_i.size;
+            ax_o.len   = ((wrap_boundary + container_size - ax_i.addr) >> ax_i.size) - 1;
             // Next incr burst from wrap boundary to addr
-            ax_d.len   = (ax_i.addr - wrap_boundary) >> ax_i.size;
+            ax_d.len   = ((ax_i.addr - wrap_boundary) >> ax_i.size) - 1;
+            ax_d.addr  = wrap_boundary;
             ax_valid_o = 1'b1;
             if (ax_ready_i) begin
               ax_ready_o = 1'b1;
