@@ -137,7 +137,11 @@ module tb_axi_serializer #(
     axi_rand_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
     repeat (100) @(posedge clk);
+    `ifdef TARGET_VCS
+    $finish(1);
+    `else
     $stop();
+    `endif
   end
 
   initial begin : proc_axi_slave

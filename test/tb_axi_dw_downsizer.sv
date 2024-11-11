@@ -201,7 +201,11 @@ module tb_axi_dw_downsizer #(
         #TbTestTime;
         if(eos) begin
           monitor.print_result();
+          `ifdef TARGET_VCS
+          $finish(1)            ;
+          `else
           $stop()               ;
+          `endif
         end
         @(posedge clk);
       end
