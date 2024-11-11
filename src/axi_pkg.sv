@@ -114,7 +114,7 @@ package axi_pkg;
 
   /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
   function automatic shortint unsigned num_bytes(size_t size);
-    return 1 << size;
+    return shortint'(1 << size);
   endfunction
 
   /// An overly long address type.
