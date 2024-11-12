@@ -474,7 +474,7 @@ module axi_burst_unwrap_ax_chan #(
 
   enum logic {Idle, Busy} state_d, state_q;
   always_comb begin
-    cnt_alloc_req = 1'b0;
+    cnt_alloc_req = '0;
     ax_d          = ax_q;
     state_d       = state_q;
     ax_o          = '0;
@@ -489,8 +489,6 @@ module axi_burst_unwrap_ax_chan #(
             ax_d          = ax_i;
             ax_d.burst    = axi_pkg::BURST_INCR;
             split_len     = 8'd1;
-            // Allocate second counter only for AwChan
-            cnt_alloc_req = { AwChan, 1'b1 };
             // Try to feed first burst through.
             ax_o       = ax_d;
             // First (this) incr burst from addr to wrap boundary + container size
@@ -502,6 +500,8 @@ module axi_burst_unwrap_ax_chan #(
             if (ax_ready_i) begin
               ax_ready_o = 1'b1;
               state_d    = Busy;
+              // Allocate second counter only for AwChan
+              cnt_alloc_req = { AwChan, 1'b1 };
             end
           end else begin // No splitting required -> feed through.
             ax_o       = ax_i;
