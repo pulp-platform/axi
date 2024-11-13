@@ -101,7 +101,7 @@ package tb_axi_xbar_pkg;
     longint unsigned tests_expected;
     longint unsigned tests_conducted;
     longint unsigned tests_failed;
-    semaphore        cnt_sem;
+    std::semaphore   cnt_sem;
 
     //-----------------------------------------
     // Constructor

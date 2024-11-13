@@ -134,7 +134,7 @@ package tb_axi_dw_pkg       ;
     longint unsigned tests_expected;
     longint unsigned tests_conducted;
     longint unsigned tests_failed;
-    semaphore        cnt_sem;
+    std::semaphore   cnt_sem;
 
     // Queues and FIFOs to hold the expected AXIDs
 

@@ -226,9 +226,9 @@ package axi_test;
 
   /// The data transferred on a beat on the AW/AR channels.
   class axi_ax_beat #(
-    parameter AW = 32,
-    parameter IW = 8 ,
-    parameter UW = 1
+    parameter int AW = 32,
+    parameter int IW = 8 ,
+    parameter int UW = 1
   );
     rand logic [IW-1:0] ax_id     = '0;
     rand logic [AW-1:0] ax_addr   = '0;
@@ -246,8 +246,8 @@ package axi_test;
 
   /// The data transferred on a beat on the W channel.
   class axi_w_beat #(
-    parameter DW = 32,
-    parameter UW = 1
+    parameter int DW = 32,
+    parameter int UW = 1
   );
     rand logic [DW-1:0]   w_data = '0;
     rand logic [DW/8-1:0] w_strb = '0;
@@ -257,8 +257,8 @@ package axi_test;
 
   /// The data transferred on a beat on the B channel.
   class axi_b_beat #(
-    parameter IW = 8,
-    parameter UW = 1
+    parameter int IW = 8,
+    parameter int UW = 1
   );
     rand logic [IW-1:0] b_id   = '0;
     axi_pkg::resp_t     b_resp = '0;
@@ -267,9 +267,9 @@ package axi_test;
 
   /// The data transferred on a beat on the R channel.
   class axi_r_beat #(
-    parameter DW = 32,
-    parameter IW = 8 ,
-    parameter UW = 1
+    parameter int DW = 32,
+    parameter int IW = 8 ,
+    parameter int UW = 1
   );
     rand logic [IW-1:0] r_id   = '0;
     rand logic [DW-1:0] r_data = '0;
@@ -747,7 +747,7 @@ package axi_test;
     len_t                 max_len;
     burst_t               allowed_bursts[$];
 
-    semaphore cnt_sem;
+    std::semaphore cnt_sem;
 
     ax_beat_t aw_queue[$],
               w_queue[$],
@@ -1037,7 +1037,7 @@ package axi_test;
           automatic addr_t addr_mask;
           // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
           // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
-          static int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
+          int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
           rand_success = std::randomize(n_bytes) with {
             n_bytes >= 1;
             n_bytes <= ul;
@@ -1848,8 +1848,8 @@ package axi_test;
     typedef axi_driver_t::r_beat_t r_beat_t;
 
     axi_driver_t          drv;
-    mailbox aw_mbx = new, w_mbx = new, b_mbx = new,
-            ar_mbx = new, r_mbx = new;
+    std::mailbox aw_mbx = new, w_mbx = new, b_mbx = new,
+                 ar_mbx = new, r_mbx = new;
 
     function new(
       virtual AXI_BUS_DV #(
