@@ -142,6 +142,9 @@ module axi_isolate #(
   end else begin
     assign demux_req[0] = slv_req_i;
     assign slv_resp_o = demux_rsp[0];
+    // In pass-through, silence the second demux port as it is not used
+    assign demux_req[1] = '0;
+    assign demux_rsp[1] = '0;
   end
 
   axi_isolate_inner #(
