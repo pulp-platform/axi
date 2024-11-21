@@ -80,31 +80,31 @@ import cf_math_pkg::idx_width;
   mst_port_r_req_0: mst_port_r_req_0 --OUT> mst_port_r_resp_0
   mst_port_r_req_0_val = mst_ports_req_o[0].ar_valid
   mst_port_r_req_0_rdy = mst_ports_resp_i[0].ar_ready
-  mst_port_r_req_0_transid = mst_ports_req_o[0].ar.id
+  [1:0] mst_port_r_req_0_transid = mst_ports_req_o[0].ar.id
   mst_port_r_resp_0_val = mst_ports_resp_i[0].r_valid
   mst_port_r_resp_0_rdy = mst_ports_req_o[0].r_ready
-  mst_port_r_resp_0_transid = mst_ports_resp_o[0].ar.id
+  [1:0] mst_port_r_resp_0_transid = mst_ports_resp_i[0].r.id
   mst_port_r_req_1: mst_port_r_req_1 --OUT> mst_port_r_resp_1
   mst_port_r_req_1_val = mst_ports_req_o[1].ar_valid
   mst_port_r_req_1_rdy = mst_ports_resp_i[1].ar_ready
-  mst_port_r_req_1_transid = mst_ports_req_o[1].ar.id
+  [1:0] mst_port_r_req_1_transid = mst_ports_req_o[1].ar.id
   mst_port_r_resp_1_val = mst_ports_resp_i[1].r_valid
   mst_port_r_resp_1_rdy = mst_ports_req_o[1].r_ready
-  mst_port_r_resp_1_transid = mst_ports_resp_o[1].ar.id
+  [1:0] mst_port_r_resp_1_transid = mst_ports_resp_i[1].r.id
   mst_port_w_req_0: mst_port_w_req_0 --OUT> mst_port_w_resp_0
   mst_port_w_req_0_val = mst_ports_req_o[0].aw_valid
   mst_port_w_req_0_rdy = mst_ports_resp_i[0].aw_ready
-  mst_port_w_req_0_transid = mst_ports_req_o[0].aw.id
+  [1:0] mst_port_w_req_0_transid = mst_ports_req_o[0].aw.id
   mst_port_w_resp_0_val = mst_ports_resp_i[0].b_valid
   mst_port_w_resp_0_rdy = mst_ports_req_o[0].b_ready
-  mst_port_w_resp_0_transid = mst_ports_resp_o[0].b.id
+  [1:0] mst_port_w_resp_0_transid = mst_ports_resp_i[0].b.id
   mst_port_w_req_1: mst_port_w_req_1 --OUT> mst_port_w_resp_1
   mst_port_w_req_1_val = mst_ports_req_o[1].aw_valid
   mst_port_w_req_1_rdy = mst_ports_resp_i[1].aw_ready
-  mst_port_w_req_1_transid = mst_ports_req_o[1].aw.id
+  [1:0] mst_port_w_req_1_transid = mst_ports_req_o[1].aw.id
   mst_port_w_resp_1_val = mst_ports_resp_i[1].b_valid
   mst_port_w_resp_1_rdy = mst_ports_req_o[1].b_ready
-  mst_port_w_resp_1_transid = mst_ports_resp_o[1].b.id
+  [1:0] mst_port_w_resp_1_transid = mst_ports_resp_i[1].b.id
   */
   /// AXI4+ATOP requests of the master ports.  
   output mst_req_t  [Cfg.NoMstPorts-1:0]                                mst_ports_req_o,
