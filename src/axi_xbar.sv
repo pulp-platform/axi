@@ -72,6 +72,36 @@ import cf_math_pkg::idx_width;
   input  logic                                                          rst_ni,
   /// Testmode enable, active high.
   input  logic                                                          test_i,
+  /*AUTOSVA
+  slv_port_r_req_0: slv_port_r_req_0 --IN> slv_port_r_resp_0
+  slv_port_r_req_0_val = slv_ports_req_i[0].ar_valid
+  slv_port_r_req_0_rdy = slv_ports_resp_o[0].ar_ready
+  slv_port_r_req_0_transid = slv_ports_req_i[0].ar.id
+  slv_port_r_resp_0_val = slv_ports_resp_o[0].r_valid
+  slv_port_r_resp_0_rdy = slv_ports_req_i[0].r_ready
+  slv_port_r_resp_0_transid = slv_ports_resp_o[0].r.id
+  slv_port_r_req_1: slv_port_r_req_1 --IN> slv_port_r_resp_1
+  slv_port_r_req_1_val = slv_ports_req_i[1].ar_valid
+  slv_port_r_req_1_rdy = slv_ports_resp_o[1].ar_ready
+  slv_port_r_req_1_transid = slv_ports_req_i[1].ar.id
+  slv_port_r_resp_1_val = slv_ports_resp_o[1].r_valid
+  slv_port_r_resp_1_rdy = slv_ports_req_i[1].r_ready
+  slv_port_r_resp_1_transid = slv_ports_resp_o[1].r.id
+  slv_port_w_req_0: slv_port_w_req_0 --IN> slv_port_w_resp_0
+  slv_port_w_req_0_val = slv_ports_req_i[0].aw_valid
+  slv_port_w_req_0_rdy = slv_ports_resp_o[0].aw_ready
+  slv_port_w_req_0_transid = slv_ports_req_i[0].aw.id
+  slv_port_w_resp_0_val = slv_ports_resp_o[0].b_valid
+  slv_port_w_resp_0_rdy = slv_ports_req_i[0].b_ready
+  slv_port_w_resp_0_transid = slv_ports_resp_o[0].b.id
+  slv_port_w_req_1: slv_port_w_req_1 --IN> slv_port_w_resp_1
+  slv_port_w_req_1_val = slv_ports_req_i[1].aw_valid
+  slv_port_w_req_1_rdy = slv_ports_resp_o[1].aw_ready
+  slv_port_w_req_1_transid = slv_ports_req_i[1].aw.id
+  slv_port_w_resp_1_val = slv_ports_resp_o[1].b_valid
+  slv_port_w_resp_1_rdy = slv_ports_req_i[1].b_ready
+  slv_port_w_resp_1_transid = slv_ports_resp_o[1].b.id
+  */
   /// AXI4+ATOP requests to the slave ports.  
   input  slv_req_t  [Cfg.NoSlvPorts-1:0]                                slv_ports_req_i,
   /// AXI4+ATOP responses of the slave ports.  
