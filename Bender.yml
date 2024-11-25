@@ -94,6 +94,7 @@ sources:
   - src/axi_xp.sv
   - src/autocc_axi_xbar_pkg.sv
   - src/axi_xbar_superwrap.sv
+  - src/axi_xslv_superwrap.sv
 
   - target: synth_test
     files:
