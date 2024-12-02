@@ -17,6 +17,7 @@
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 `include "axi/assign.svh"
+`include "ace/assign.svh"
 
 `ifdef QUESTA
 // Derive `TARGET_VSIM`, which is used for tool-specific workarounds in this file, from `QUESTA`,
@@ -49,6 +50,7 @@ module axi_demux_simple #(
   parameter int unsigned MaxTrans       = 32'd8,
   parameter int unsigned AxiLookBits    = 32'd3,
   parameter bit          UniqueIds      = 1'b0,
+  parameter bit          Ace            = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter int unsigned SelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
   parameter type         select_t       = logic [SelectWidth-1:0]
@@ -71,8 +73,13 @@ module axi_demux_simple #(
 
   // pass through if only one master port
   if (NoMstPorts == 32'h1) begin : gen_no_demux
-    `AXI_ASSIGN_REQ_STRUCT(mst_reqs_o[0], slv_req_i)
-    `AXI_ASSIGN_RESP_STRUCT(slv_resp_o, mst_resps_i[0])
+    if (Ace) begin : gen_ace
+      `ACE_ASSIGN_REQ_STRUCT(mst_reqs_o[0], slv_req_i)
+      `ACE_ASSIGN_RESP_STRUCT(slv_resp_o, mst_resps_i[0])
+    end else begin : gen_axi
+      `AXI_ASSIGN_REQ_STRUCT(mst_reqs_o[0], slv_req_i)
+      `AXI_ASSIGN_RESP_STRUCT(slv_resp_o, mst_resps_i[0])
+    end
   end else begin
 
     //--------------------------------------
@@ -104,6 +111,10 @@ module axi_demux_simple #(
     // B channles input into the arbitration
     logic    [NoMstPorts-1:0] mst_b_valids,       mst_b_readies;
 
+    // WACK
+    logic                     wack_fifo_full;
+    logic    [NoMstPorts-1:0] mst_wacks;
+
     //--------------------------------------
     // Read Transaction
     //--------------------------------------
@@ -118,6 +129,10 @@ module axi_demux_simple #(
     logic                     ar_valid,           ar_ready;
 
     logic    [NoMstPorts-1:0] mst_r_valids, mst_r_readies;
+
+    // RACK
+    logic                     rack_fifo_full;
+    logic    [NoMstPorts-1:0] mst_racks;
 
 
 
@@ -260,6 +275,10 @@ module axi_demux_simple #(
     //  B Channel
     //--------------------------------------
     logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
+    logic slv_b_ready, slv_b_valid;
+
+    assign slv_b_ready        = slv_req_i.b_ready && !wack_fifo_full;
+    assign slv_resp_o.b_valid = slv_b_valid       && !wack_fifo_full;
 
     // Arbitration of the different B responses
     rr_arb_tree #(
@@ -275,8 +294,8 @@ module axi_demux_simple #(
       .req_i  ( mst_b_valids  ),
       .gnt_o  ( mst_b_readies ),
       .data_i ( '0   ),
-      .gnt_i  ( slv_req_i.b_ready  ),
-      .req_o  ( slv_resp_o.b_valid ),
+      .gnt_i  ( slv_b_ready   ),
+      .req_o  ( slv_b_valid   ),
       .data_o (        ),
       .idx_o  ( b_idx              )
     );
@@ -378,6 +397,10 @@ module axi_demux_simple #(
     //--------------------------------------
 
     logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+    logic slv_r_ready, slv_r_valid;
+
+    assign slv_r_ready        = slv_req_i.r_ready && !rack_fifo_full;
+    assign slv_resp_o.r_valid = slv_r_valid       && !rack_fifo_full;
 
     // Arbitration of the different r responses
     rr_arb_tree #(
@@ -393,15 +416,19 @@ module axi_demux_simple #(
       .req_i  ( mst_r_valids  ),
       .gnt_o  ( mst_r_readies ),
       .data_i ( '0            ),
-      .gnt_i  ( slv_req_i.r_ready   ),
-      .req_o  ( slv_resp_o.r_valid   ),
+      .gnt_i  ( slv_r_ready   ),
+      .req_o  ( slv_r_valid   ),
       .data_o (),
       .idx_o  ( r_idx              )
     );
 
     always_comb begin
       if (slv_resp_o.r_valid) begin
-        `AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
+        if (Ace) begin
+          `ACE_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
+        end else begin
+          `AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
+        end
       end else begin
         slv_resp_o.r = '0;
       end
@@ -447,14 +474,81 @@ module axi_demux_simple #(
 
         //  R channel
         mst_reqs_o[i].r_ready = mst_r_readies[i];
+
+        // xACK steering
+        if (Ace) begin
+          mst_reqs_o[i].wack = mst_wacks[i];
+          mst_reqs_o[i].rack = mst_racks[i];
+        end
       end
     end
+
     // unpack the response B and R channels for the arbitration
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_b_channels
       // assign mst_b_chans[i]        = mst_resps_i[i].b;
       assign mst_b_valids[i]       = mst_resps_i[i].b_valid;
       // assign mst_r_chans[i]        = mst_resps_i[i].r;
       assign mst_r_valids[i]       = mst_resps_i[i].r_valid;
+    end
+
+    //--------------------------------------
+    //  xACKs
+    //--------------------------------------
+
+    if (Ace) begin : gen_ace
+
+        fifo_v3 #(
+            .FALL_THROUGH (1'b0),
+            .DEPTH        (MaxTrans),
+            .dtype        (select_t)
+        ) i_switch_w_fifo (
+            .clk_i,
+            .rst_ni,
+            .flush_i    (1'b0),
+            .testmode_i (1'b0),
+            .full_o     (wack_fifo_full),
+            .empty_o    (),
+            .usage_o    (),
+            .data_i     (b_idx),
+            .push_i     (slv_resp_o.b_valid && slv_req_i.b_ready),
+            .data_o     (wack_idx),
+            .pop_i      (slv_req_i.wack)
+        );
+
+        fifo_v3 #(
+            .FALL_THROUGH (1'b0),
+            .DEPTH        (MaxTrans),
+            .dtype        (select_t)
+        ) i_switch_r_fifo (
+            .clk_i,
+            .rst_ni,
+            .flush_i    (1'b0),
+            .testmode_i (1'b0),
+            .full_o     (rack_fifo_full),
+            .empty_o    (),
+            .usage_o    (),
+            .data_i     (r_idx),
+            .push_i     (slv_resp_o.r_valid && slv_req_i.r_ready && slv_resp_o.r.last),
+            .data_o     (rack_idx),
+            .pop_i      (slv_req_i.rack)
+        );
+
+        always_comb begin
+          mst_wacks = '0;
+          mst_racks = '0;
+
+          if (slv_req_i.rack)
+            mst_racks[rack_idx] = 1'b1;
+
+          if (slv_req_i.wack)
+            mst_wacks[wack_idx] = 1'b1;
+        end
+
+    end else begin : gen_axi
+      assign wack_fifo_full = 1'b0;
+      assign mst_wacks      = '0;
+      assign rack_fifo_full = 1'b0;
+      assign mst_racks      = '0;
     end
 
 // Validate parameters.

@@ -53,11 +53,13 @@ module axi_demux #(
   parameter int unsigned MaxTrans       = 32'd8,
   parameter int unsigned AxiLookBits    = 32'd3,
   parameter bit          UniqueIds      = 1'b0,
+  parameter bit          Ace            = 1'b0,
   parameter bit          SpillAw        = 1'b1,
   parameter bit          SpillW         = 1'b0,
   parameter bit          SpillB         = 1'b0,
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
+  parameter bit          AceRegAck      = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter int unsigned SelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
   parameter type         select_t       = logic [SelectWidth-1:0]
@@ -186,6 +188,23 @@ module axi_demux #(
     .data_o  ( slv_resp_o.r         )
   );
 
+  if (Ace) begin : gen_ace
+    if (AceRegAck) begin : gen_xack_regs
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+          slv_req_cut.rack <= 1'b0;
+          slv_req_cut.wack <= 1'b0;
+        end else begin
+          slv_req_cut.rack <= slv_req_i.rack;
+          slv_req_cut.wack <= slv_req_i.wack;
+        end
+      end
+    end else begin : gen_no_xack_reg
+      assign slv_req_cut.rack = slv_req_i.rack;
+      assign slv_req_cut.wack = slv_req_i.wack;
+    end
+  end
+
   axi_demux_simple #(
     .AxiIdWidth ( AxiIdWidth  ),
     .AtopSupport( AtopSupport ),
@@ -194,7 +213,8 @@ module axi_demux #(
     .NoMstPorts ( NoMstPorts  ),
     .MaxTrans   ( MaxTrans    ),
     .AxiLookBits( AxiLookBits ),
-    .UniqueIds  ( UniqueIds   )
+    .UniqueIds  ( UniqueIds   ),
+    .Ace        ( Ace         )
   ) i_demux_simple (
     .clk_i,
     .rst_ni,
