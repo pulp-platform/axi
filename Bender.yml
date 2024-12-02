@@ -32,8 +32,11 @@ sources:
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
   - src/axi_pkg.sv
+  - src/ace/ace_pkg.sv
   # Level 1
   - src/axi_intf.sv
+  - src/ace/ace_intf.sv
+  - src/ace/snoop_intf.sv
   # Level 2
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
