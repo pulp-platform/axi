@@ -437,48 +437,43 @@ module axi_demux_simple #(
     assign ar_ready = ar_valid & mst_resps_i[slv_ar_select_i].ar_ready;
     assign aw_ready = aw_valid & mst_resps_i[slv_aw_select_i].aw_ready;
 
-    // process that defines the individual demuxes and assignments for the arbitration
-    // as mst_reqs_o has to be drivem from the same always comb block!
+    // individual demuxes and assignments for the arbitration
+    for (genvar i = 0; i < NoMstPorts; i++) begin
+        // AW channel
+        assign mst_reqs_o[i].aw       = slv_req_i.aw;
+        assign mst_reqs_o[i].aw_valid = aw_valid && (slv_aw_select_i == i);
+
+        //  W channel
+        assign mst_reqs_o[i].w       = slv_req_i.w;
+        assign mst_reqs_o[i].w_valid = w_select_valid && (w_select == i) ? slv_req_i.w_valid      : 1'b0;
+
+        //  B channel
+        assign mst_reqs_o[i].b_ready = mst_b_readies[i];
+
+        // AR channel
+        assign mst_reqs_o[i].ar       = slv_req_i.ar;
+        assign mst_reqs_o[i].ar_valid = ar_valid && (slv_ar_select_i == i);
+
+        //  R channel
+        assign mst_reqs_o[i].r_ready = mst_r_readies[i];
+
+        // xACK steering
+        if (Ace) begin
+          assign mst_reqs_o[i].wack = mst_wacks[i];
+          assign mst_reqs_o[i].rack = mst_racks[i];
+        end
+    end
+
     always_comb begin
       // default assignments
-      mst_reqs_o  = '0;
       slv_resp_o.w_ready = 1'b0;
       w_cnt_down  = 1'b0;
 
       for (int unsigned i = 0; i < NoMstPorts; i++) begin
-        // AW channel
-        mst_reqs_o[i].aw       = slv_req_i.aw;
-        mst_reqs_o[i].aw_valid = 1'b0;
-        if (aw_valid && (slv_aw_select_i == i)) begin
-          mst_reqs_o[i].aw_valid = 1'b1;
-        end
-
         //  W channel
-        mst_reqs_o[i].w       = slv_req_i.w;
-        mst_reqs_o[i].w_valid = 1'b0;
         if (w_select_valid && (w_select == i)) begin
-          mst_reqs_o[i].w_valid = slv_req_i.w_valid;
           slv_resp_o.w_ready           = mst_resps_i[i].w_ready;
           w_cnt_down            = slv_req_i.w_valid & mst_resps_i[i].w_ready & slv_req_i.w.last;
-        end
-
-        //  B channel
-        mst_reqs_o[i].b_ready = mst_b_readies[i];
-
-        // AR channel
-        mst_reqs_o[i].ar       = slv_req_i.ar;
-        mst_reqs_o[i].ar_valid = 1'b0;
-        if (ar_valid && (slv_ar_select_i == i)) begin
-          mst_reqs_o[i].ar_valid = 1'b1;
-        end
-
-        //  R channel
-        mst_reqs_o[i].r_ready = mst_r_readies[i];
-
-        // xACK steering
-        if (Ace) begin
-          mst_reqs_o[i].wack = mst_wacks[i];
-          mst_reqs_o[i].rack = mst_racks[i];
         end
       end
     end
