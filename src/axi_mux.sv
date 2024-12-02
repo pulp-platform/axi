@@ -44,6 +44,12 @@ module axi_mux #(
   parameter int unsigned NoSlvPorts    = 32'd0, // Number of slave ports
   // Maximum number of outstanding transactions per write
   parameter int unsigned MaxWTrans     = 32'd8,
+  // Enable ACE support (ACE)
+  parameter bit          Ace           = 1'b0,
+  // Maximum number of outstanding transactions per B channel (ACE)
+  parameter int unsigned AceMaxBTrans  = 32'd8,
+  // Maximum number of outstanding transactions per R channel (ACE)
+  parameter int unsigned AceMaxRTrans  = 32'd8,
   // If enabled, this multiplexer is purely combinatorial
   parameter bit          FallThrough   = 1'b0,
   // add spill register on write master ports, adds a cycle latency on write channels
@@ -52,7 +58,9 @@ module axi_mux #(
   parameter bit          SpillB        = 1'b0,
   // add spill register on read master ports, adds a cycle latency on read channels
   parameter bit          SpillAr       = 1'b1,
-  parameter bit          SpillR        = 1'b0
+  parameter bit          SpillR        = 1'b0,
+  // add registers on xACK ports, add a cycle latency on acknowledgment signals (ACE)
+  parameter bit          AceRegAck     = 1'b0
 ) (
   input  logic                       clk_i,    // Clock
   input  logic                       rst_ni,   // Asynchronous reset active low
@@ -135,6 +143,22 @@ module axi_mux #(
       .ready_i ( slv_reqs_i[0].r_ready  ),
       .data_o  ( slv_resps_o[0].r       )
     );
+    if (Ace) begin : gen_ace
+      if (AceRegAck) begin : gen_xack_regs
+        always_ff @(posedge clk_i or negedge rst_ni) begin
+          if (!rst_ni) begin
+            mst_req_o.rack <= 1'b0;
+            mst_req_o.wack <= 1'b0;
+          end else begin
+            mst_req_o.rack <= slv_reqs_i[0].rack;
+            mst_req_o.wack <= slv_reqs_i[0].wack;
+          end
+        end
+      end else begin : gen_no_xack_reg
+        assign mst_req_o.rack = slv_reqs_i[0].rack;
+        assign mst_req_o.wack = slv_reqs_i[0].wack;
+      end
+    end
 // Validate parameters.
 // pragma translate_off
     `ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvAxiIDWidth)
@@ -192,7 +216,7 @@ module axi_mux #(
 
     // B channel spill reg
     mst_b_chan_t    mst_b_chan;
-    logic           mst_b_valid;
+    logic           mst_b_valid,  mst_b_ready;
 
     // AR channel for when spill is enabled
     mst_ar_chan_t   mst_ar_chan;
@@ -203,7 +227,10 @@ module axi_mux #(
 
     // R channel spill reg
     mst_r_chan_t    mst_r_chan;
-    logic           mst_r_valid;
+    logic           mst_r_valid,  mst_r_ready;
+
+    // xACK FIFOs
+    logic           rack_fifo_full, wack_fifo_full;
 
     //--------------------------------------
     // ID prepend for all slave ports
@@ -387,7 +414,8 @@ module axi_mux #(
     assign slv_b_chans  = {NoSlvPorts{mst_b_chan}};
     // control B channel handshake
     assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
-    assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
+    assign slv_b_valids = (mst_b_valid && !wack_fifo_full) ? (1 << switch_b_id) : '0;
+    assign mst_b_ready  = slv_b_readies[switch_b_id] && !wack_fifo_full;
 
     spill_register #(
       .T       ( mst_b_chan_t ),
@@ -399,7 +427,7 @@ module axi_mux #(
       .ready_o ( mst_req_o.b_ready          ),
       .data_i  ( mst_resp_i.b               ),
       .valid_o ( mst_b_valid                ),
-      .ready_i ( slv_b_readies[switch_b_id] ),
+      .ready_i ( mst_b_ready                ),
       .data_o  ( mst_b_chan                 )
     );
 
@@ -446,7 +474,8 @@ module axi_mux #(
     assign slv_r_chans  = {NoSlvPorts{mst_r_chan}};
     // R channel handshake control
     assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
-    assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
+    assign slv_r_valids = (mst_r_valid && !rack_fifo_full) ? (1 << switch_r_id) : '0;
+    assign mst_r_ready  = slv_r_readies[switch_r_id] && !rack_fifo_full;
 
     spill_register #(
       .T       ( mst_r_chan_t ),
@@ -458,9 +487,72 @@ module axi_mux #(
       .ready_o ( mst_req_o.r_ready          ),
       .data_i  ( mst_resp_i.r               ),
       .valid_o ( mst_r_valid                ),
-      .ready_i ( slv_r_readies[switch_r_id] ),
+      .ready_i ( mst_r_ready                ),
       .data_o  ( mst_r_chan                 )
     );
+
+    //--------------------------------------
+    // xACKs signals (ACE)
+    //--------------------------------------
+
+    if (Ace) begin : gen_ace
+
+        switch_id_t switch_wack_id, switch_rack_id;
+
+        fifo_v3 #(
+            .FALL_THROUGH (1'b0),
+            .DEPTH        (AceMaxBTrans),
+            .dtype        (switch_id_t)
+        ) i_switch_b_fifo (
+            .clk_i,
+            .rst_ni,
+            .flush_i    (1'b0),
+            .testmode_i (1'b0),
+            .full_o     (wack_fifo_full),
+            .empty_o    (),
+            .usage_o    (),
+            .data_i     (switch_b_id),
+            .push_i     (mst_resp_i.b_valid && mst_req_o.b_ready),
+            .data_o     (switch_wack_id),
+            .pop_i      (mst_req_o.wack)
+        );
+
+        fifo_v3 #(
+            .FALL_THROUGH (1'b0),
+            .DEPTH        (AceMaxRTrans),
+            .dtype        (switch_id_t)
+        ) i_switch_r_fifo (
+            .clk_i,
+            .rst_ni,
+            .flush_i    (1'b0),
+            .testmode_i (1'b0),
+            .full_o     (rack_fifo_full),
+            .empty_o    (),
+            .usage_o    (),
+            .data_i     (switch_r_id),
+            .push_i     (mst_resp_i.r_valid && mst_req_o.r_ready && mst_resp_i.r.last),
+            .data_o     (switch_rack_id),
+            .pop_i      (mst_req_o.rack)
+        );
+
+      if (AceRegAck) begin : gen_xack_regs
+        always_ff @(posedge clk_i or negedge rst_ni) begin
+          if (!rst_ni) begin
+            mst_req_o.rack <= 1'b0;
+            mst_req_o.wack <= 1'b0;
+          end else begin
+            mst_req_o.rack <= slv_reqs_i[switch_wack_id].wack;
+            mst_req_o.wack <= slv_reqs_i[switch_rack_id].rack;
+          end
+        end
+      end else begin : gen_no_xack_reg
+        assign mst_req_o.wack = slv_reqs_i[switch_wack_id].wack;
+        assign mst_req_o.rack = slv_reqs_i[switch_rack_id].rack;
+      end
+    end else begin : gen_no_ace
+      assign rack_fifo_full = 1'b0;
+      assign wack_fifo_full = 1'b0;
+    end
   end
 
 // pragma translate_off
