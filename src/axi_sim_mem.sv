@@ -116,8 +116,10 @@ module axi_sim_mem #(
 
   monitor_t [NumPorts-1:0] mon_w, mon_r;
   logic [7:0]     mem[addr_t];
-  axi_pkg::resp_t rerr[addr_t] = '{default: axi_pkg::RESP_OKAY};
-  axi_pkg::resp_t werr[addr_t] = '{default: axi_pkg::RESP_OKAY};
+  axi_pkg::resp_t rerr[addr_t] = '{default: 2'b0}; // default: 'axi_pkg::RESP_OKAY'
+  axi_pkg::resp_t werr[addr_t] = '{default: 2'b0}; // default: 'axi_pkg::RESP_OKAY'
+  // - Verilator cannot determine the type of 'axi_pkg::RESP_OKAY' in this context.
+  //   The 'axi_pkg::RESP_OKAY' is expanded to 0 for Verilator compatibility.
 
   // error happened in write burst
   axi_pkg::resp_t [NumPorts-1:0] error_happened = axi_pkg::RESP_OKAY;
