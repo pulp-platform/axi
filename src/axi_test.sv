@@ -226,9 +226,9 @@ package axi_test;
 
   /// The data transferred on a beat on the AW/AR channels.
   class axi_ax_beat #(
-    parameter int AW = 32,
-    parameter int IW = 8 ,
-    parameter int UW = 1
+    parameter int unsigned AW = 32,
+    parameter int unsigned IW = 8 ,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] ax_id     = '0;
     rand logic [AW-1:0] ax_addr   = '0;
@@ -246,8 +246,8 @@ package axi_test;
 
   /// The data transferred on a beat on the W channel.
   class axi_w_beat #(
-    parameter int DW = 32,
-    parameter int UW = 1
+    parameter int unsigned DW = 32,
+    parameter int unsigned UW = 1
   );
     rand logic [DW-1:0]   w_data = '0;
     rand logic [DW/8-1:0] w_strb = '0;
@@ -257,8 +257,8 @@ package axi_test;
 
   /// The data transferred on a beat on the B channel.
   class axi_b_beat #(
-    parameter int IW = 8,
-    parameter int UW = 1
+    parameter int unsigned IW = 8,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] b_id   = '0;
     axi_pkg::resp_t     b_resp = '0;
@@ -267,9 +267,9 @@ package axi_test;
 
   /// The data transferred on a beat on the R channel.
   class axi_r_beat #(
-    parameter int DW = 32,
-    parameter int IW = 8 ,
-    parameter int UW = 1
+    parameter int unsigned DW = 32,
+    parameter int unsigned IW = 8 ,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] r_id   = '0;
     rand logic [DW-1:0] r_data = '0;
@@ -281,12 +281,12 @@ package axi_test;
 
   /// A driver for AXI4 interface.
   class axi_driver #(
-    parameter int  AW = 32  ,
-    parameter int  DW = 32  ,
-    parameter int  IW = 8   ,
-    parameter int  UW = 1   ,
-    parameter time TA = 0ns , // stimuli application time
-    parameter time TT = 0ns   // stimuli test time
+    parameter int unsigned AW = 32  ,
+    parameter int unsigned DW = 32  ,
+    parameter int unsigned IW = 8   ,
+    parameter int unsigned UW = 1   ,
+    parameter time         TA = 0ns , // stimuli application time
+    parameter time         TT = 0ns   // stimuli test time
   );
     virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
