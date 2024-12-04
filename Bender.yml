@@ -20,7 +20,7 @@ package:
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.37.0 }
-  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.3 }
+  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.4 }
   tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
 
 export_include_dirs:

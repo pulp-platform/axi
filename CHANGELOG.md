@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.6 - 2024-12-04
+### Added
+- Support connectivity in `axi_intercon_gen`. #351
+- Add `iomsb` function to avoid underflow in array lengths to `axi_pkg`. #355
+
+### Fixed
+- Make the case statements in `axi_dw_upsizer` unique. Add default cases to prevent simulator warnings. #348
+- Fix write channel assertions in `axi_rw_split`. #357
+- Tie unused `demux` port in pass-through termination in `axi_isolate`. #359
+
+### Changed
+- Improve VCS and Verilator support treewide. #358
+- Update `common_verification` to `v0.2.4` to include Verilator fixes.
+
 ## 0.39.5 - 2024-10-24
 
 ### Fixed
