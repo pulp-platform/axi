@@ -23,6 +23,7 @@ In addition to the documents linked in the following table, we are setting up [d
 |---------------------------------------------------------|------------------------------------------------------------------------------------------------------|----------------------------------|
 | [`axi_atop_filter`](src/axi_atop_filter.sv)             | Filters atomic operations (ATOPs), i.e., write transactions that have a non-zero `aw_atop` value.    |                                  |
 | [`axi_burst_splitter`](src/axi_burst_splitter.sv)       | Split AXI4 burst transfers into single-beat transactions.                                            |                                  |
+| [`axi_burst_unwrap`](src/axi_burst_unwrap.sv)           | Convert AXI4 wrapping burst transfers into up to two incremental bursts.                             |                                  |
 | [`axi_cdc`](src/axi_cdc.sv)                             | AXI clock domain crossing based on a Gray FIFO implementation.                                       |                                  |
 | [`axi_cut`](src/axi_cut.sv)                             | Breaks all combinatorial paths between its input and output.                                         |                                  |
 | [`axi_delayer`](src/axi_delayer.sv)                     | Synthesizable module which can (randomly) delays AXI channels.                                       |                                  |
