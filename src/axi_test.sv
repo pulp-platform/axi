@@ -972,7 +972,7 @@ package axi_test;
       return ax_beat;
     endfunction
 
-    task rand_atop_burst(inout ax_beat_t beat);
+    task rand_atop_burst(inout ax_beat_t beat, input user_t user);
       automatic logic rand_success;
       forever begin
         beat.ax_atop[5:4] = $random();
@@ -1044,13 +1044,13 @@ package axi_test;
               axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, beat.ax_len) >> 12) begin
             break;
           end else begin
-            beat = new_rand_burst(1'b0);
+            beat = new_rand_burst(1'b0, user);
           end
         end
       end
     endtask
 
-    function void rand_excl_ar(inout ax_beat_t ar_beat);
+    function void rand_excl_ar(inout ax_beat_t ar_beat, input user_t user);
       forever begin
         ar_beat.ax_lock = $random();
         if (ar_beat.ax_lock) begin
@@ -1082,7 +1082,7 @@ package axi_test;
             axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, ar_beat.ax_len) >> 12) begin
           break;
         end else begin
-          ar_beat = new_rand_burst(1'b1);
+          ar_beat = new_rand_burst(1'b1, user);
         end
       end
     endfunction
@@ -1175,7 +1175,7 @@ package axi_test;
           rand_wait(1, 1);
         end
         if (AXI_EXCLS) begin
-          rand_excl_ar(ar_beat);
+          rand_excl_ar(ar_beat, user);
         end
         legalize_id(1'b1, ar_beat);
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
@@ -1219,7 +1219,7 @@ package axi_test;
           aw_beat = excl_queue.pop_front();
         end else begin
           aw_beat = new_rand_burst(1'b0, user);
-          if (AXI_ATOPS) rand_atop_burst(aw_beat);
+          if (AXI_ATOPS) rand_atop_burst(aw_beat, user);
         end
         while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin
           rand_wait(1, 1);
