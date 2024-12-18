@@ -37,6 +37,7 @@ sources:
   # Level 2
   - src/axi_atop_filter.sv
   - src/axi_burst_splitter.sv
+  - src/axi_burst_unwrap.sv
   - src/axi_bus_compare.sv
   - src/axi_cdc_dst.sv
   - src/axi_cdc_src.sv
