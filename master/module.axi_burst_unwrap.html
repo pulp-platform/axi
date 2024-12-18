@@ -1,19 +1,15 @@
-<!-- Compiled by morty-0.9.0 / 2024-12-18 13:41:37.215716501 +00:00 -->
+<!-- Compiled by morty-0.9.0 / 2024-12-18 13:41:37.217993708 +00:00 -->
 
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
-<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_burst_splitter</a></h1>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_burst_unwrap</a></h1>
 <div class="docblock">
-<p>Split AXI4 bursts into single-beat transactions.</p>
+<p>Splits wrapping AXI4 bursts into incremental bursts.</p>
 <h2>Limitations</h2>
 <ul>
-<li>
-<p>This module does not support wrapping (<a href="package.axi_pkg"><code>axi_pkg::BURST_WRAP</code></a>) bursts and</p>
-<p>responds to such bursts with slave error(s).</p>
-</li>
 <li>
 <p>This module does not support atomic operations (ATOPs) and responds to ATOPs with a slave</p>
 <p>error.  Place an <a href="module.axi_atop_filter"><code>axi_atop_filter</code></a> before this module if upstream</p>
@@ -24,7 +20,6 @@
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.MaxReadTxns" class="impl"><code class="in-band"><a href="#parameter.MaxReadTxns">MaxReadTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h3 id="parameter.MaxWriteTxns" class="impl"><code class="in-band"><a href="#parameter.MaxWriteTxns">MaxWriteTxns</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
-</div><h3 id="parameter.FullBW" class="impl"><code class="in-band"><a href="#parameter.FullBW">FullBW</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
 </div><h3 id="parameter.AddrWidth" class="impl"><code class="in-band"><a href="#parameter.AddrWidth">AddrWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h3 id="parameter.DataWidth" class="impl"><code class="in-band"><a href="#parameter.DataWidth">DataWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h3 id="parameter.IdWidth" class="impl"><code class="in-band"><a href="#parameter.IdWidth">IdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
