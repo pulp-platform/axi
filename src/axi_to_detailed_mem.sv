@@ -24,15 +24,15 @@ module axi_to_detailed_mem #(
   /// Address width, has to be less or equal than the width off the AXI address field.
   /// Determines the width of `mem_addr_o`. Has to be wide enough to emit the memory region
   /// which should be accessible.
-  parameter int unsigned AddrWidth  = 0,
+  parameter int unsigned AddrWidth  = 1,
   /// AXI4+ATOP data width.
-  parameter int unsigned DataWidth  = 0,
+  parameter int unsigned DataWidth  = 1,
   /// AXI4+ATOP ID width.
-  parameter int unsigned IdWidth    = 0,
+  parameter int unsigned IdWidth    = 1,
   /// AXI4+ATOP user width.
-  parameter int unsigned UserWidth  = 0,
+  parameter int unsigned UserWidth  = 1,
   /// Number of banks at output, must evenly divide `DataWidth`.
-  parameter int unsigned NumBanks   = 0,
+  parameter int unsigned NumBanks   = 1,
   /// Depth of memory response buffer. This should be equal to the memory response latency.
   parameter int unsigned BufDepth   = 1,
   /// Hide write requests if the strb == '0
@@ -533,9 +533,9 @@ module axi_to_detailed_mem #(
                                      ((i*NumBytesPerBank) < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size));
   end
   assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
-  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
+  assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb) & meta_buf.lock;   // Ensure only active banks are used (strobe)
   assign resp_r_err    = |(m2s_resp.err    &  meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
-  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable); // Ensure only active banks are used (size & addr offset)
+  assign resp_r_exokay = &(m2s_resp.exokay | ~meta_buf_size_enable) & meta_buf.lock; // Ensure only active banks are used (size & addr offset)
 
   logic collect_b_err_d, collect_b_err_q;
   logic collect_b_exokay_d, collect_b_exokay_q;

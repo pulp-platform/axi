@@ -282,6 +282,8 @@ module axi_to_mem_interleaved_intf #(
   input  logic                          clk_i,
   /// Asynchronous reset, active low
   input  logic                          rst_ni,
+  /// Testmode enable
+  input  logic                          test_i,
   /// Status output, busy flag of `axi_to_mem`
   output logic                          busy_o,
   /// AXI4+ATOP slave port
@@ -337,6 +339,7 @@ module axi_to_mem_interleaved_intf #(
   ) i_axi_to_mem_interleaved (
     .clk_i,
     .rst_ni,
+    .test_i,
     .busy_o,
     .axi_req_i  ( mem_axi_req  ),
     .axi_resp_o ( mem_axi_resp ),

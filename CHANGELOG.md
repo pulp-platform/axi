@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.6 - 2024-12-04
+### Added
+- Support connectivity in `axi_intercon_gen`. #351
+- Add `iomsb` function to avoid underflow in array lengths to `axi_pkg`. #355
+
+### Fixed
+- Make the case statements in `axi_dw_upsizer` unique. Add default cases to prevent simulator warnings. #348
+- Fix write channel assertions in `axi_rw_split`. #357
+- Tie unused `demux` port in pass-through termination in `axi_isolate`. #359
+
+### Changed
+- Improve VCS and Verilator support treewide. #358
+- Update `common_verification` to `v0.2.4` to include Verilator fixes.
+
+## 0.39.5 - 2024-10-24
+
+### Fixed
+- Disabled the interface variant of `axi_xbar_unmuxed` for VCS, as VCS does not support multi-dimensional arrays of interfaces yet.
+
+### Changed
+- `axi_id_serialize`: Revert #342 to fix boot problems of CVA6 in Cheshire.
+
+## 0.39.4 - 2024-07-25 (Yanked 2024-10-23)
+### Added
+- `axi_sim_mem`: Increase number of request ports, add multiport interface variant.
+- `axi_bus_compare`: Optionally consider AXI `size` field to only compare used data.
+- `AXI_BUS_DV`: Add property checking that bursts do not cross 4KiB page boundaries.
+- Add `axi_xbar_unmuxed`: Partial crossbar with unmultiplexed mst_ports.
+
+### Fixed
+- `axi_bus_compare`: Fix mismatch detection.
+- `axi_to_detailed_mem`: Only respond with `exokay` if `lock` was set on the request.
+  Bump `common_cells` for `mem_to_banks` fix.
+- `axi_dw_downsizer`: Fix `i_forward_b_beats_queue` underflow.
+- `axi_atop_filter`: Add reset state to internal FSM to avoid simulation bug in XSIM.
+- `axi_test`: Ensure random requests do not cross 4KiB page boundaries.
+
+### Changed
+- `axi_id_serializer`: Change internal design (and behavior) for simpler code, less hardware, and
+  less stalling.
+
+`v0.39.4` is fully **backward-compatible** to `v0.39.3`.
+
+## 0.39.3 - 2024-05-08
+### Added
+- `axi_sim_mem`: Allow response data for uninitialized region to have configurable defined value.
+- `axi_test`: add `clear_memory_regions` to `axi_rand_master`.
+- `axi_test`: Add `add_traffic_shaping_with_size` to `axi_rand_master` to allow for traffic shaping
+  with a custom size.
+
+### Changed
+- `axi_pkg`: Adjust `LatencyMode` parameter of `xbar_cfg_t` to bit vector from `xbar_pipeline_e`
+  enum to allow custom configurations.
+
+`v0.39.3` is fully **backward-compatible** to `v0.39.2`.
+
+## 0.39.2 - 2024-03-13
+
+### Added
+- `axi_interleaved_xbar`: An experimental crossbar extension interleaving memory transfers over #334
+  subordinate devices. ***Use at your own risk***.
+- `axi_zero_mem`: Implementing *\dev\zero* function for AXI. #334
+
+### Fixed
+- `axi_to_detailed_mem`: VCS crashed on default parameters 0, changed them to 1 #334
+- `axi_to_mem`: Add missing testmode pins #327
+- `axi_sim_mem`: Fix byte calculation in R and W forks #331
+
+`v0.39.2` is fully **backward-compatible** to `v0.39.1`.
+
 ## 0.39.1 - 2023-09-05
 
 ### Added

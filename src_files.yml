@@ -59,14 +59,18 @@ axi:
     - src/axi_multicut.sv
     - src/axi_to_axi_lite.sv
     - src/axi_to_mem.sv
+    - src/axi_zero_mem.sv
     # Level 4
+    - src/axi_interleaved_xbar.sv
     - src/axi_iw_converter.sv
     - src/axi_lite_xbar.sv
-    - src/axi_xbar.sv
+    - src/axi_xbar_unmuxed.sv
     - src/axi_to_mem_banked.sv
     - src/axi_to_mem_interleaved.sv
     - src/axi_to_mem_split.sv
     # Level 5
+    - src/axi_xbar.sv
+    # Level 6
     - src/axi_xp.sv
 
 axi_sim:

@@ -226,9 +226,9 @@ package axi_test;
 
   /// The data transferred on a beat on the AW/AR channels.
   class axi_ax_beat #(
-    parameter AW = 32,
-    parameter IW = 8 ,
-    parameter UW = 1
+    parameter int unsigned AW = 32,
+    parameter int unsigned IW = 8 ,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] ax_id     = '0;
     rand logic [AW-1:0] ax_addr   = '0;
@@ -246,8 +246,8 @@ package axi_test;
 
   /// The data transferred on a beat on the W channel.
   class axi_w_beat #(
-    parameter DW = 32,
-    parameter UW = 1
+    parameter int unsigned DW = 32,
+    parameter int unsigned UW = 1
   );
     rand logic [DW-1:0]   w_data = '0;
     rand logic [DW/8-1:0] w_strb = '0;
@@ -257,8 +257,8 @@ package axi_test;
 
   /// The data transferred on a beat on the B channel.
   class axi_b_beat #(
-    parameter IW = 8,
-    parameter UW = 1
+    parameter int unsigned IW = 8,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] b_id   = '0;
     axi_pkg::resp_t     b_resp = '0;
@@ -267,9 +267,9 @@ package axi_test;
 
   /// The data transferred on a beat on the R channel.
   class axi_r_beat #(
-    parameter DW = 32,
-    parameter IW = 8 ,
-    parameter UW = 1
+    parameter int unsigned DW = 32,
+    parameter int unsigned IW = 8 ,
+    parameter int unsigned UW = 1
   );
     rand logic [IW-1:0] r_id   = '0;
     rand logic [DW-1:0] r_data = '0;
@@ -281,12 +281,12 @@ package axi_test;
 
   /// A driver for AXI4 interface.
   class axi_driver #(
-    parameter int  AW = 32  ,
-    parameter int  DW = 32  ,
-    parameter int  IW = 8   ,
-    parameter int  UW = 1   ,
-    parameter time TA = 0ns , // stimuli application time
-    parameter time TT = 0ns   // stimuli test time
+    parameter int unsigned AW = 32  ,
+    parameter int unsigned DW = 32  ,
+    parameter int unsigned IW = 8   ,
+    parameter int unsigned UW = 1   ,
+    parameter time         TA = 0ns , // stimuli application time
+    parameter time         TT = 0ns   // stimuli test time
   );
     virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
@@ -712,7 +712,10 @@ package axi_test;
                                               // same direction
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
-    parameter int   N_AXI_IDS = 2**IW
+    parameter int   N_AXI_IDS = 2**IW,
+    parameter int   AX_USER_RANGE = 1,  // The upper limit of randomized ax user signal
+    parameter bit   AX_USER_RAND = 0    // set to 1 to enable randomize aw/ar user signal
+                                        // 0 <= user < AX_USER_RANGE
   );
     typedef axi_test::axi_driver #(
       .AW(AW), .DW(DW), .IW(IW), .UW(UW), .TA(TA), .TT(TT)
@@ -747,7 +750,7 @@ package axi_test;
     len_t                 max_len;
     burst_t               allowed_bursts[$];
 
-    semaphore cnt_sem;
+    std::semaphore cnt_sem;
 
     ax_beat_t aw_queue[$],
               w_queue[$],
@@ -762,6 +765,7 @@ package axi_test;
 
     struct packed {
       int unsigned len  ;
+      int unsigned size ;
       int unsigned cprob;
     } traffic_shape[$];
     int unsigned max_cprob;
@@ -808,16 +812,49 @@ package axi_test;
       mem_map.push_back({addr_begin, addr_end, mem_type});
     endfunction
 
+    function void clear_memory_regions();
+       mem_map.delete();
+    endfunction
+
     function void add_traffic_shaping(input int unsigned len, input int unsigned freq);
+      int unsigned size = -1;
       if (traffic_shape.size() == 0)
-        traffic_shape.push_back({len, freq});
+        traffic_shape.push_back({len, size, freq});
       else
-        traffic_shape.push_back({len, traffic_shape[$].cprob + freq});
+        traffic_shape.push_back({len, size, traffic_shape[$].cprob + freq});
 
       max_cprob = traffic_shape[$].cprob;
     endfunction : add_traffic_shaping
 
-    function ax_beat_t new_rand_burst(input logic is_read);
+    function void add_traffic_shaping_with_size(input int unsigned len, input int unsigned size, input int unsigned freq);
+      if (traffic_shape.size() == 0)
+        traffic_shape.push_back({len, size, freq});
+      else
+        traffic_shape.push_back({len, size, traffic_shape[$].cprob + freq});
+
+      max_cprob = traffic_shape[$].cprob;
+    endfunction : add_traffic_shaping_with_size
+
+    /// Cache-Partition
+    // This function is used to generate a random PatID every time send a 
+    // burst of R/W requests down to the cache. Therefore, within one test,
+    // its PatID will be fixed and we can call multiple tests to test the 
+    // partition functionalities. 
+    function user_t rand_user(input int unsigned user_range, input logic user_rand);
+      static logic rand_success;
+      automatic user_t user;
+      if (user_rand) begin
+        rand_success = std::randomize(user) with {
+          user >= 0; user < user_range;
+        }; assert(rand_success);
+      end else begin
+        user = '0;
+      end
+      return user;
+    endfunction
+
+    // Cache-Partition: add user signal as an input 
+    function ax_beat_t new_rand_burst(input logic is_read, input user_t user);
       automatic logic rand_success;
       automatic ax_beat_t ax_beat = new;
       automatic addr_t addr;
@@ -863,6 +900,7 @@ package axi_test;
         for (int i = 0; i < traffic_shape.size(); i++)
           if (traffic_shape[i].cprob > cprob) begin
             len = traffic_shape[i].len;
+            size = traffic_shape[i].size;
             if (ax_beat.ax_burst == BURST_WRAP) begin
               assert (len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)});
             end
@@ -871,12 +909,17 @@ package axi_test;
 
         // Randomize address.  Make sure that the burst does not cross a 4KiB boundary.
         forever begin
-          rand_success = std::randomize(size) with {
-            2**size <= AXI_STRB_WIDTH;
-            2**size <= len;
-          }; assert(rand_success);
-          ax_beat.ax_size = size;
-          ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+          if(size==-1) begin
+             rand_success = std::randomize(size) with {
+               2**size <= AXI_STRB_WIDTH;
+               2**size <= len;
+             }; assert(rand_success);
+             ax_beat.ax_size = size;
+             ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
+          end else begin
+             ax_beat.ax_size = size;
+             ax_beat.ax_len = len;
+          end
 
           rand_success = std::randomize(addr) with {
             addr >= mem_region.addr_begin;
@@ -884,14 +927,9 @@ package axi_test;
             addr + len <= mem_region.addr_end;
           }; assert(rand_success);
 
-          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
-          end else begin // BURST_INCR
-            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
+          if (axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, ax_beat.ax_len) >> 12) begin
+            break;
           end
         end
       end else begin
@@ -916,14 +954,9 @@ package axi_test;
             addr + ((len + 1) << size) <= mem_region.addr_end;
           }; assert(rand_success);
 
-          if (ax_beat.ax_burst == axi_pkg::BURST_FIXED) begin
-            if (((addr + 2**ax_beat.ax_size) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
-          end else begin // BURST_INCR, BURST_WRAP
-            if (((addr + 2**ax_beat.ax_size * (ax_beat.ax_len + 1)) & PFN_MASK) == (addr & PFN_MASK)) begin
-              break;
-            end
+          if (axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(addr, ax_beat.ax_size, ax_beat.ax_len, ax_beat.ax_burst, ax_beat.ax_len) >> 12) begin
+            break;
           end
         end
       end
@@ -935,103 +968,122 @@ package axi_test;
       // currently done in the functions `create_aws()` and `send_ars()`.
       ax_beat.ax_id = id;
       ax_beat.ax_qos = qos;
+      ax_beat.ax_user = user;
       return ax_beat;
     endfunction
 
-    task rand_atop_burst(inout ax_beat_t beat);
+    task rand_atop_burst(inout ax_beat_t beat, input user_t user);
       automatic logic rand_success;
-      beat.ax_atop[5:4] = $random();
-      if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
-        // We can emit ATOPs only if INCR bursts are allowed.
-        $warning("ATOP suppressed because INCR bursts are disabled!");
-        beat.ax_atop[5:4] = 2'b00;
-      end
-      if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
-        // Determine `ax_atop`.
-        if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
-            beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
-          // Endianness
-          beat.ax_atop[3] = $random();
-          // Atomic operation
-          beat.ax_atop[2:0] = $random();
-        end else begin // Atomic{Swap,Compare}
-          beat.ax_atop[3:1] = '0;
-          beat.ax_atop[0] = $random();
+      forever begin
+        beat.ax_atop[5:4] = $random();
+        if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
+          // We can emit ATOPs only if INCR bursts are allowed.
+          $warning("ATOP suppressed because INCR bursts are disabled!");
+          beat.ax_atop[5:4] = 2'b00;
         end
-        // Determine `ax_size` and `ax_len`.
-        if (2**beat.ax_size < AXI_STRB_WIDTH) begin
-          // Transaction does *not* occupy full data bus, so we must send just one beat. [E1.1.3]
-          beat.ax_len = '0;
-        end else begin
-          automatic int unsigned bytes;
-          if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
-            // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
-            automatic int unsigned log_bytes;
-            rand_success = std::randomize(log_bytes) with {
-              log_bytes > 0; 2**log_bytes <= 32;
-            }; assert(rand_success);
-            bytes = 2**log_bytes;
-          end else begin
-            // Total data transferred in burst can be 1, 2, 4, or 8 B.
-            if (AXI_STRB_WIDTH >= 8) begin
-              bytes = AXI_STRB_WIDTH;
-            end else begin
-              automatic int unsigned log_bytes;
-              rand_success = std::randomize(log_bytes); assert(rand_success);
-              log_bytes = log_bytes % (4 - $clog2(AXI_STRB_WIDTH)) - $clog2(AXI_STRB_WIDTH);
-              bytes = 2**log_bytes;
-            end
+        if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
+          // Determine `ax_atop`.
+          if (beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICSTORE ||
+              beat.ax_atop[5:4] == axi_pkg::ATOP_ATOMICLOAD) begin
+            // Endianness
+            beat.ax_atop[3] = $random();
+            // Atomic operation
+            beat.ax_atop[2:0] = $random();
+          end else begin // Atomic{Swap,Compare}
+            beat.ax_atop[3:1] = '0;
+            beat.ax_atop[0] = $random();
           end
-          beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
-        end
-        // Determine `ax_addr` and `ax_burst`.
-        if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
-          // The address must be aligned to half the outbound data size. [E1.1.3]
-          beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
-          // If the address is aligned to the total size of outgoing data, the burst type must be
-          // INCR. Otherwise, it must be WRAP. [E1.1.3]
-          beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
-              axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
-          // If we are not allowed to emit WRAP bursts, align the address to the total size of
-          // outgoing data and fall back to INCR.
-          if (beat.ax_burst == axi_pkg::BURST_WRAP && !AXI_BURST_WRAP) begin
-            beat.ax_addr -= (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size));
+          // Determine `ax_size` and `ax_len`.
+          if (2**beat.ax_size < AXI_STRB_WIDTH) begin
+            // Transaction does *not* occupy full data bus, so we must send just one beat. [E1.1.3]
+            beat.ax_len = '0;
+          end else begin
+            automatic int unsigned bytes;
+            if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+              // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
+              automatic int unsigned log_bytes;
+              rand_success = std::randomize(log_bytes) with {
+                log_bytes > 0; 2**log_bytes <= 32;
+              }; assert(rand_success);
+              bytes = 2**log_bytes;
+            end else begin
+              // Total data transferred in burst can be 1, 2, 4, or 8 B.
+              if (AXI_STRB_WIDTH >= 8) begin
+                bytes = AXI_STRB_WIDTH;
+              end else begin
+                automatic int unsigned log_bytes;
+                rand_success = std::randomize(log_bytes); assert(rand_success);
+                log_bytes = log_bytes % (4 - $clog2(AXI_STRB_WIDTH)) - $clog2(AXI_STRB_WIDTH);
+                bytes = 2**log_bytes;
+              end
+            end
+            beat.ax_len = bytes / AXI_STRB_WIDTH - 1;
+          end
+          // Determine `ax_addr` and `ax_burst`.
+          if (beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+            // The address must be aligned to half the outbound data size. [E1.1.3]
+            beat.ax_addr = beat.ax_addr & ~((1'b1 << beat.ax_size) - 1);
+            // If the address is aligned to the total size of outgoing data, the burst type must be
+            // INCR. Otherwise, it must be WRAP. [E1.1.3]
+            beat.ax_burst = (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size) == 0) ?
+                axi_pkg::BURST_INCR : axi_pkg::BURST_WRAP;
+            // If we are not allowed to emit WRAP bursts, align the address to the total size of
+            // outgoing data and fall back to INCR.
+            if (beat.ax_burst == axi_pkg::BURST_WRAP && !AXI_BURST_WRAP) begin
+              beat.ax_addr -= (beat.ax_addr % ((beat.ax_len+1) * 2**beat.ax_size));
+              beat.ax_burst = axi_pkg::BURST_INCR;
+            end
+          end else begin
+            // The address must be aligned to the data size. [E1.1.3]
+            beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
+            // Only INCR allowed.
             beat.ax_burst = axi_pkg::BURST_INCR;
           end
-        end else begin
-          // The address must be aligned to the data size. [E1.1.3]
-          beat.ax_addr = beat.ax_addr & ~((1'b1 << (beat.ax_size+1)) - 1);
-          // Only INCR allowed.
-          beat.ax_burst = axi_pkg::BURST_INCR;
+          // Make sure that the burst does not cross a 4KiB boundary.
+          if (axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, 0) >> 12 ==
+              axi_pkg::beat_addr(beat.ax_addr, beat.ax_size, beat.ax_len, beat.ax_burst, beat.ax_len) >> 12) begin
+            break;
+          end else begin
+            beat = new_rand_burst(1'b0, user);
+          end
         end
       end
     endtask
 
-    function void rand_excl_ar(inout ax_beat_t ar_beat);
-      ar_beat.ax_lock = $random();
-      if (ar_beat.ax_lock) begin
-        automatic logic rand_success;
-        automatic int unsigned n_bytes;
-        automatic size_t size;
-        automatic addr_t addr_mask;
-        // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
-        // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
-        static int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
-        rand_success = std::randomize(n_bytes) with {
-          n_bytes >= 1;
-          n_bytes <= ul;
-        }; assert(rand_success);
-        n_bytes = 2**n_bytes;
-        rand_success = std::randomize(size) with {
-          size >= 0;
-          2**size <= n_bytes;
-          2**size <= AXI_STRB_WIDTH;
-          n_bytes / 2**size <= 16;
-        }; assert(rand_success);
-        ar_beat.ax_size = size;
-        ar_beat.ax_len = n_bytes / 2**size;
-        // The address must be aligned to the total number of bytes in the burst.
-        ar_beat.ax_addr = ar_beat.ax_addr & ~(n_bytes-1);
+    function void rand_excl_ar(inout ax_beat_t ar_beat, input user_t user);
+      forever begin
+        ar_beat.ax_lock = $random();
+        if (ar_beat.ax_lock) begin
+          automatic logic rand_success;
+          automatic int unsigned n_bytes;
+          automatic size_t size;
+          automatic addr_t addr_mask;
+          // In an exclusive burst, the number of bytes to be transferred must be a power of 2, i.e.,
+          // 1, 2, 4, 8, 16, 32, 64, or 128 bytes, and the burst length must not exceed 16 transfers.
+          int unsigned ul = (AXI_STRB_WIDTH < 8) ? 4 + $clog2(AXI_STRB_WIDTH) : 7;
+          rand_success = std::randomize(n_bytes) with {
+            n_bytes >= 1;
+            n_bytes <= ul;
+          }; assert(rand_success);
+          n_bytes = 2**n_bytes;
+          rand_success = std::randomize(size) with {
+            size >= 0;
+            2**size <= n_bytes;
+            2**size <= AXI_STRB_WIDTH;
+            n_bytes / 2**size <= 16;
+          }; assert(rand_success);
+          ar_beat.ax_size = size;
+          ar_beat.ax_len = n_bytes / 2**size;
+          // The address must be aligned to the total number of bytes in the burst.
+          ar_beat.ax_addr = ar_beat.ax_addr & ~(n_bytes-1);
+        end
+        // Make sure that the burst does not cross a 4KiB boundary.
+        if (axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, 0) >> 12 ==
+            axi_pkg::beat_addr(ar_beat.ax_addr, ar_beat.ax_size, ar_beat.ax_len, ar_beat.ax_burst, ar_beat.ax_len) >> 12) begin
+          break;
+        end else begin
+          ar_beat = new_rand_burst(1'b1, user);
+        end
       end
     endfunction
 
@@ -1113,16 +1165,17 @@ package axi_test;
       cnt_sem.put();
     endtask
 
-    task send_ars(input int n_reads);
+    // Cache-Partition: add user signal as an input 
+    task send_ars(input int n_reads, input user_t user);
       automatic logic rand_success;
       repeat (n_reads) begin
         automatic id_t id;
-        automatic ax_beat_t ar_beat = new_rand_burst(1'b1);
+        automatic ax_beat_t ar_beat = new_rand_burst(1'b1, user);
         while (tot_r_flight_cnt >= MAX_READ_TXNS) begin
           rand_wait(1, 1);
         end
         if (AXI_EXCLS) begin
-          rand_excl_ar(ar_beat);
+          rand_excl_ar(ar_beat, user);
         end
         legalize_id(1'b1, ar_beat);
         rand_wait(AX_MIN_WAIT_CYCLES, AX_MAX_WAIT_CYCLES);
@@ -1149,11 +1202,14 @@ package axi_test;
             end
             cnt_sem.put();
           end
+        end else begin
+           rand_wait(1,1);
         end
       end
     endtask
 
-    task create_aws(input int n_writes);
+    // Cache-Partition: add user signal as an input 
+    task create_aws(input int n_writes, input user_t user);
       automatic logic rand_success;
       repeat (n_writes) begin
         automatic bit excl = 1'b0;
@@ -1162,8 +1218,8 @@ package axi_test;
         if (excl) begin
           aw_beat = excl_queue.pop_front();
         end else begin
-          aw_beat = new_rand_burst(1'b0);
-          if (AXI_ATOPS) rand_atop_burst(aw_beat);
+          aw_beat = new_rand_burst(1'b0, user);
+          if (AXI_ATOPS) rand_atop_burst(aw_beat, user);
         end
         while (tot_w_flight_cnt >= MAX_WRITE_TXNS) begin
           rand_wait(1, 1);
@@ -1237,18 +1293,21 @@ package axi_test;
       end
     endtask
 
+    // Cache-Partition: add user signal as an input 
     // Issue n_reads random read and n_writes random write transactions to an address range.
     task run(input int n_reads, input int n_writes);
       automatic logic  ar_done = 1'b0,
                        aw_done = 1'b0;
       fork
+        // Cache-Partition: randomize the patid
+        automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
         begin
-          send_ars(n_reads);
+          send_ars(n_reads, ax_user);
           ar_done = 1'b1;
         end
         recv_rs(ar_done, aw_done);
         begin
-          create_aws(n_writes);
+          create_aws(n_writes, ax_user);
           aw_done = 1'b1;
         end
         send_aws(aw_done);
@@ -1817,8 +1876,8 @@ package axi_test;
     typedef axi_driver_t::r_beat_t r_beat_t;
 
     axi_driver_t          drv;
-    mailbox aw_mbx = new, w_mbx = new, b_mbx = new,
-            ar_mbx = new, r_mbx = new;
+    std::mailbox aw_mbx = new, w_mbx = new, b_mbx = new,
+                 ar_mbx = new, r_mbx = new;
 
     function new(
       virtual AXI_BUS_DV #(

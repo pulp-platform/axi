@@ -94,7 +94,7 @@ module axi_rw_split #(
   assign mst_write_req_o.r_ready  = 1'b0;
 
   // check for R never to be valid
-  `ASSERT_NEVER(mst_read_resp_r_valid, mst_read_resp_i.r_valid, clk_i, !rst_ni)
+  `ASSERT_NEVER(mst_write_resp_r_valid, mst_write_resp_i.r_valid, clk_i, !rst_ni)
 
   // Write AW channel handshake
   assign mst_write_req_o.aw_valid = slv_req_i.aw_valid;

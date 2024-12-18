@@ -38,6 +38,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_id_prepend`](src/axi_id_prepend.sv)               | This module prepends/strips the MSB from the AXI IDs.                                                |                                  |
 | [`axi_id_remap`](src/axi_id_remap.sv)                   | Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.                    | [Doc][doc.axi_id_remap]          |
 | [`axi_id_serialize`](src/axi_id_serialize.sv)           | Reduce AXI IDs by serializing transactions when necessary.                                           | [Doc][doc.axi_id_serialize]      |
+| [`axi_interleaved_xbar`](src/axi_interleaved_xbar.sv)   | Interleaved version of the crossbar. This module is experimental; use at your own risk.              |                                  |
 | [`axi_intf`](src/axi_intf.sv)                           | This file defines the interfaces we support.                                                         |                                  |
 | [`axi_isolate`](src/axi_isolate.sv)                     | A module that can isolate downstream slaves from receiving new AXI4 transactions.                    |                                  |
 | [`axi_iw_converter`](src/axi_iw_converter.sv)           | Convert between any two AXI ID widths.                                                               | [Doc][doc.axi_iw_converter]      |
@@ -67,7 +68,9 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)             | AXI4 to AXI4-Lite protocol converter.                                                                |                                  |
 | [`axi_to_mem`](src/axi_to_mem.sv)                       | AXI4 to memory protocol (req, gnt, rvalid) converter. Additional banked, interleaved, split variant. |                                  |
 | [`axi_xbar`](src/axi_xbar.sv)                           | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.               | [Doc](doc/axi_xbar.md)           |
+| [`axi_xbar_unmuxed`](src/axi_xbar_unmuxed.sv)           | Demux side of fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports. | [Doc](doc/axi_xbar.md)           |
 | [`axi_xp`](src/axi_xp.sv)                               | AXI Crosspoint (XP) with homomorphous slave and master ports.                                        |                                  |
+| [`axi_zero_mem`](src/axi_zero_mem.sv)                   | AXI-attached /dev/zero. All reads will be zero, writes are absorbed.                                 |                                  |
 
 ## Synthesizable Verification Modules
 

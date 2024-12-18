@@ -200,13 +200,12 @@ class Master:
         for key, value in d.items():
             if key == 'slaves':
                 # Handled in file loading, ignore here
-                continue
-            if key == 'id_width':
+                self.slaves = value
+            elif key == 'id_width':
                 self.idw = value
             elif key == 'read_only':
                 self.read_only = value
             else:
-                print(key)
                 raise UnknownPropertyError(
                     "Unknown property '%s' in master section '%s'" % (
                     key, self.name))
@@ -276,7 +275,7 @@ class AxiIntercon:
             print("Found slave " + k)
             self.slaves.append(Slave(k,v))
 
-        self.output_file = config.get('output_file', 'axi_intercon.v')
+        self.output_file = config.get('output_file', 'axi_intercon.sv')
         self.atop = config.get('atop', False)
 
     def _dump(self):
@@ -349,6 +348,7 @@ class AxiIntercon:
     MaxSlvTrans:        6,
     FallThrough:        1'b0,
     LatencyMode:        axi_pkg::CUT_ALL_AX,
+    PipelineStages:     0,
     AxiIdWidthSlvPorts: AxiIdWidthMasters,
     AxiIdUsedSlvPorts:  AxiIdUsed,
     UniqueIds:          1'b0,
@@ -403,7 +403,18 @@ class AxiIntercon:
         raw += "   mst_req_t  [{}:0] slaves_req;\n".format(ns-1)
         raw += "   mst_resp_t [{}:0] slaves_resp;\n".format(ns-1)
 
-        ns = len(self.slaves)
+        raw += f"\n  localparam bit [{nm-1}:0][{ns-1}:0] connectivity = " + '{\n   {'
+        connmap = []
+        for master in reversed(self.masters):
+            connstr = f"{ns}'b"
+            if master.slaves:
+                for slave in reversed(self.slaves):
+                    connstr += '1' if slave.name in master.slaves else '0'
+            else:
+                connstr += '1'*ns
+            connmap.append(connstr)
+        raw += "},\n   {".join(connmap)
+        raw += "}};\n"
 
         raw += assigns(w, max_idw, self.masters, self.slaves)
 
@@ -411,6 +422,7 @@ class AxiIntercon:
         parameters = [
             Parameter('Cfg'          , 'xbar_cfg' ),
             Parameter('ATOPs'        , "1'b"+str(int(self.atop))),
+            Parameter('Connectivity' , 'connectivity'),
             Parameter('slv_aw_chan_t', 'aw_chan_mst_t'),
             Parameter('mst_aw_chan_t', 'aw_chan_slv_t'),
             Parameter('w_chan_t'     , 'w_chan_t'     ),
@@ -439,14 +451,15 @@ class AxiIntercon:
                                           _template_ports))
 
         self.verilog_writer.write(file)
-        self.template_writer.write(file+'h')
+        template_file = file.split('.')[0]+'.vh'
+        self.template_writer.write(template_file)
 
         core_file = self.vlnv.split(':')[2]+'.core'
         vlnv = self.vlnv
         with open(core_file, 'w') as f:
             f.write('CAPI=2:\n')
             files = [{file     : {'file_type' : 'systemVerilogSource'}},
-                     {file+'h' : {'is_include_file' : True,
+                     {template_file : {'is_include_file' : True,
                                   'file_type' : 'verilogSource'}}
             ]
             coredata = {'name' : vlnv,
