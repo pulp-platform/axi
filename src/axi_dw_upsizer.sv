@@ -482,8 +482,8 @@ module axi_dw_upsizer #(
           // Request was accepted
           if (!r_req_q.ar_valid)
             if (mst_resp.r_valid && (idx_r_upsizer == t) && r_upsizer_valid) begin
-              automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-              automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+              automatic logic [idx_width(AxiMstPortStrbWidth)-1:0] mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
+              automatic logic [idx_width(AxiSlvPortStrbWidth)-1:0] slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
               // Valid output
               slv_r_valid_tran[t] = 1'b1                                       ;
