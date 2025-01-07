@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- Add `axi_burst_unwrap`. #326
+
+### Fixed
+- Modify `axi_dw_upsizer` to avoid unnecessarily wide indices into r_data. #362
+
+### Changed
+- Add random user signal generation for llc-partition test. #315
+- Update `common_verification` from `v0.2.4` to `v0.2.5`.
+
 ## 0.39.6 - 2024-12-04
 ### Added
 - Support connectivity in `axi_intercon_gen`. #351
