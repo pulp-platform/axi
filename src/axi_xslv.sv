@@ -43,14 +43,14 @@ import cf_math_pkg::idx_width;
   slv_port_r_req_0_val = slv_ports_req_i[0].ar_valid
   slv_port_r_req_0_rdy = slv_ports_resp_o[0].ar_ready
   slv_port_r_req_0_transid = slv_ports_req_i[0].ar.id
-  slv_port_r_resp_0_val = slv_ports_resp_o[0].r_valid
+  slv_port_r_resp_0_val = slv_ports_resp_o[0].r_valid && slv_ports_resp_o[0].r.last
   slv_port_r_resp_0_rdy = slv_ports_req_i[0].r_ready
   slv_port_r_resp_0_transid = slv_ports_resp_o[0].r.id
   slv_port_r_req_1: slv_port_r_req_1 --IN> slv_port_r_resp_1
   slv_port_r_req_1_val = slv_ports_req_i[1].ar_valid
   slv_port_r_req_1_rdy = slv_ports_resp_o[1].ar_ready
   slv_port_r_req_1_transid = slv_ports_req_i[1].ar.id
-  slv_port_r_resp_1_val = slv_ports_resp_o[1].r_valid
+  slv_port_r_resp_1_val = slv_ports_resp_o[1].r_valid && slv_ports_resp_o[1].r.last
   slv_port_r_resp_1_rdy = slv_ports_req_i[1].r_ready
   slv_port_r_resp_1_transid = slv_ports_resp_o[1].r.id
   slv_port_w_req_0: slv_port_w_req_0 --IN> slv_port_w_resp_0
@@ -134,9 +134,9 @@ import cf_math_pkg::idx_width;
     axi_zero_mem #(
       .axi_req_t(mst_req_t),
       .axi_resp_t(mst_resp_t),
-      .AddrWidth($bits(mst_ports_req[0].ar.addr)),
-      .DataWidth($bits(mst_ports_req[0].w.data)),
-      .IdWidth($bits(mst_ports_req[0].ar.id)),
+      .AddrWidth(autocc_axi_xbar_pkg::AxiAddrWidth),
+      .DataWidth(autocc_axi_xbar_pkg::AxiDataWidth),
+      .IdWidth(autocc_axi_xbar_pkg::AxiIdWidthSlaves),
       .NumBanks(1),
       .BufDepth(1)
     ) i_axi_zero_mem (
