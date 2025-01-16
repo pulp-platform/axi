@@ -90,6 +90,8 @@ sources:
   - src/axi_to_mem_split.sv
   # Level 5
   - src/axi_xbar.sv
+  - src/axi_xslv.sv
+  - src/axi_xslv_wrap.sv
   # Level 6
   - src/axi_xp.sv
   - src/autocc_axi_xbar_pkg.sv
@@ -136,3 +138,6 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
+      - src/axi_xslv_prop.sv
+      - src/axi_xslv_bind.svh
+      - test/tb_axi_xslv.sv

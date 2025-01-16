@@ -37,7 +37,8 @@ TBS         ?= axi_addr_test \
                axi_sim_mem \
                axi_to_axi_lite \
                axi_to_mem_banked \
-               axi_xbar
+               axi_xbar \
+               axi_xslv
 
 SIM_TARGETS := $(addsuffix .log,$(addprefix sim-,$(TBS)))
 
