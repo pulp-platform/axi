@@ -216,8 +216,13 @@ module axi_lite_from_mem #(
     initial begin : proc_assert
       assert (MemAddrWidth > 32'd0) else $fatal(1, "MemAddrWidth has to be greater than 0!");
       assert (AxiAddrWidth > 32'd0) else $fatal(1, "AxiAddrWidth has to be greater than 0!");
-      assert (DataWidth inside {32'd32, 32'd64}) else
-          $fatal(1, "DataWidth has to be either 32 or 64 bit!");
+
+      // Disabling this assertion because the axi_from_mem module -- which
+      // uses this module in its implementation -- could be used for *any*
+      // data width, not just 32 or 64.
+      //assert (DataWidth inside {32'd32, 32'd64}) else
+      //    $fatal(1, "DataWidth has to be either 32 or 64 bit!");
+
       assert (MaxRequests > 32'd0) else $fatal(1, "MaxRequests has to be greater than 0!");
       assert (AxiAddrWidth == $bits(axi_req_o.aw.addr)) else
           $fatal(1, "AxiAddrWidth has to match axi_req_o.aw.addr!");
