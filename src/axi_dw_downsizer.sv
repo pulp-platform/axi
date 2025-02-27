@@ -742,8 +742,8 @@ module axi_dw_downsizer #(
         // Request was accepted
         if (!w_req_q.aw_valid) begin
           if (slv_req_i.w_valid) begin
-            automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-            automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+            automatic logic [idx_width(AxiMstPortStrbWidth)-1:0] mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
+            automatic logic [idx_width(AxiSlvPortStrbWidth)-1:0] slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
             // Valid output
             mst_req.w_valid = !(forward_b_beat_full && w_req_q.aw.len == 0);
