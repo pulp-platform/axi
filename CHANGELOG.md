@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Changed
+- Add optional single beat atop support to `axi_burst_splitter`.
+
 ### Added
 - Add `axi_burst_unwrap`. #326
 
