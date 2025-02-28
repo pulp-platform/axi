@@ -30,7 +30,7 @@ module axi_burst_splitter #(
   // Maximum number of AXI write bursts outstanding at the same time
   parameter int unsigned MaxWriteTxns = 32'd0,
   // If single-beat ATOPs are supported, will then allow unmatched ids to pass upstream
-  parameter bit SingleBeatAtopSupport = 1'b0,
+  parameter bit          AtopSupport  = 1'b0,
   // Internal ID queue can work in two bandwidth modes: see id_queue.sv for details
   parameter bit          FullBW       = 0,
   // AXI Bus Types
@@ -101,7 +101,7 @@ module axi_burst_splitter #(
   function bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
       axi_pkg::len_t len);
     // Single-beat transactions do not need splitting, so all are supported.
-    if (len == '0 && (SingleBeatAtopSupport || atop[5:4] == axi_pkg::ATOP_NONE)) return 1'b1;
+    if (len == '0 && (AtopSupport || atop[5:4] == axi_pkg::ATOP_NONE)) return 1'b1;
     // Wrapping bursts are currently not supported.
     if (burst == axi_pkg::BURST_WRAP) return 1'b0;
     // ATOP bursts are not supported.
@@ -144,7 +144,7 @@ module axi_burst_splitter #(
     .IdWidth               ( IdWidth               ),
     .MaxTxns               ( MaxWriteTxns          ),
     .FullBW                ( FullBW                ),
-    .SingleBeatAtopSupport ( SingleBeatAtopSupport )
+    .AtopSupport           ( AtopSupport           )
   ) i_axi_burst_splitter_aw_chan (
     .clk_i,
     .rst_ni,
@@ -239,7 +239,7 @@ module axi_burst_splitter #(
     .IdWidth               ( IdWidth               ),
     .MaxTxns               ( MaxReadTxns           ),
     .FullBW                ( FullBW                ),
-    .SingleBeatAtopSupport ( SingleBeatAtopSupport )
+    .AtopSupport           ( AtopSupport           )
   ) i_axi_burst_splitter_ar_chan (
     .clk_i,
     .rst_ni,
@@ -329,12 +329,16 @@ module axi_burst_splitter #(
   assume property (@(posedge clk_i) slv_req_i.ar_valid |->
       txn_supported('0, slv_req_i.ar.burst, slv_req_i.ar.cache, slv_req_i.ar.len)
     ) else $warning("Unsupported AR transaction received, returning slave error!");
-  assume property (@(posedge clk_i) slv_req_i.aw_valid |->
-      slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE ||
-      SingleBeatAtopSupport ||
-      slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_ATOMICSTORE
-    ) else $fatal(1, {"Unsupported ATOP that gives rise to a R response received,",
-                      "cannot respond in protocol-compliant manner!"});
+  if (AtopSupport) begin : gen_atop_support_assertion
+    assume property (@(posedge clk_i) slv_req_i.aw_valid |->
+        slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE ||
+        slv_req_i.aw.len == '0
+      ) else $fatal(1, {"ATOP burst received, which are not supported: returning slave error!"});
+  end else begin : gen_no_atop_support_assertion
+    assume property (@(posedge clk_i) slv_req_i.aw_valid |->
+        slv_req_i.aw.atop[5:4] == axi_pkg::ATOP_NONE
+      ) else $fatal(1, {"ATOP received but not supported: returning slave error!"});
+  end
   // Outputs
   assert property (@(posedge clk_i) mst_req_o.aw_valid |-> mst_req_o.aw.len == '0)
     else $fatal(1, "AW burst longer than a single beat emitted!");
@@ -354,7 +358,7 @@ module axi_burst_splitter_ax_chan #(
   parameter int unsigned IdWidth = 0,
   parameter int unsigned MaxTxns = 0,
   parameter bit          FullBW  = 0,
-  parameter bit SingleBeatAtopSupport = 1'b0,
+  parameter bit          AtopSupport = 1'b0,
   parameter type         id_t    = logic[IdWidth-1:0]
 ) (
   input  logic          clk_i,
@@ -382,7 +386,7 @@ module axi_burst_splitter_ax_chan #(
   axi_burst_splitter_counters #(
     .MaxTxns               ( MaxTxns               ),
     .FullBW                ( FullBW                ),
-    .SingleBeatAtopSupport ( SingleBeatAtopSupport ),
+    .AtopSupport           ( AtopSupport           ),
     .IdWidth               ( IdWidth               )
   ) i_axi_burst_splitter_counters (
     .clk_i,
@@ -418,7 +422,7 @@ module axi_burst_splitter_ax_chan #(
             ax_valid_o = 1'b1;
             // As soon as downstream is ready, allocate a counter and acknowledge upstream.
             if (ax_ready_i) begin
-              cnt_alloc_req = SingleBeatAtopSupport ? ~ax_is_atop_i : 1'b1;
+              cnt_alloc_req = AtopSupport ? ~ax_is_atop_i : 1'b1;
               ax_ready_o    = 1'b1;
             end
           end else begin // Splitting required.
@@ -473,7 +477,7 @@ module axi_burst_splitter_counters #(
   parameter int unsigned MaxTxns = 0,
   parameter bit          FullBW  = 0,
   parameter int unsigned IdWidth = 0,
-  parameter bit SingleBeatAtopSupport = 0,
+  parameter bit          AtopSupport = 0,
   parameter type         id_t    = logic [IdWidth-1:0]
 ) (
   input  logic          clk_i,
@@ -585,7 +589,7 @@ module axi_burst_splitter_counters #(
 
   `ifndef VERILATOR
   // pragma translate_off
-  assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid || SingleBeatAtopSupport)
+  assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid || AtopSupport)
     else $warning("Invalid output at ID queue, read not granted!");
   // pragma translate_on
   `endif
