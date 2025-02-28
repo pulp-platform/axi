@@ -436,9 +436,9 @@ module axi_burst_splitter_ax_chan #(
             ax_valid_o = 1'b1;
             if (ax_ready_i) begin
               // Reduce number of bursts still to be sent by one and increment address.
-              ax_d.len--;
-              if (ax_d.burst == axi_pkg::BURST_INCR) begin
-                ax_d.addr += (1 << ax_d.size);
+              ax_d.len = ax_i.len - 1;
+              if (ax_i.burst == axi_pkg::BURST_INCR) begin
+                ax_d.addr = ax_i.addr + (1 << ax_i.size);
               end
             end
             state_d = Busy;
@@ -456,9 +456,9 @@ module axi_burst_splitter_ax_chan #(
             state_d = Idle;
           end else begin
             // Otherwise, continue with the next burst.
-            ax_d.len--;
+            ax_d.len = ax_q.len - 1;
             if (ax_q.burst == axi_pkg::BURST_INCR) begin
-              ax_d.addr += (1 << ax_q.size);
+              ax_d.addr = ax_q.addr + (1 << ax_q.size);
             end
           end
         end
