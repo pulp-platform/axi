@@ -418,7 +418,7 @@ module axi_burst_splitter_ax_chan #(
             ax_valid_o = 1'b1;
             // As soon as downstream is ready, allocate a counter and acknowledge upstream.
             if (ax_ready_i) begin
-              cnt_alloc_req = SingleBeatAtopSupport ? ax_is_atop_i : 1'b1;
+              cnt_alloc_req = SingleBeatAtopSupport ? ~ax_is_atop_i : 1'b1;
               ax_ready_o    = 1'b1;
             end
           end else begin // Splitting required.
