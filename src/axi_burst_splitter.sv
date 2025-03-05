@@ -30,9 +30,11 @@ module axi_burst_splitter #(
   // Maximum number of AXI write bursts outstanding at the same time
   parameter int unsigned MaxWriteTxns = 32'd0,
   // If single-beat ATOPs are supported, will then allow unmatched ids to pass upstream
-  parameter bit          AtopSupport  = 1'b0,
+  parameter bit          AtopSupport  = 0,
   // Internal ID queue can work in two bandwidth modes: see id_queue.sv for details
   parameter bit          FullBW       = 0,
+  // Internal ID queue parameter: if 1, cannot allocate a new ID if full but being popped
+  parameter bit          CutOupPopInpGnt = 0,
   // AXI Bus Types
   parameter int unsigned AddrWidth    = 32'd0,
   parameter int unsigned DataWidth    = 32'd0,
@@ -144,6 +146,7 @@ module axi_burst_splitter #(
     .IdWidth               ( IdWidth               ),
     .MaxTxns               ( MaxWriteTxns          ),
     .FullBW                ( FullBW                ),
+    .CutOupPopInpGnt       ( CutOupPopInpGnt       ),
     .AtopSupport           ( AtopSupport           )
   ) i_axi_burst_splitter_aw_chan (
     .clk_i,
@@ -239,6 +242,7 @@ module axi_burst_splitter #(
     .IdWidth               ( IdWidth               ),
     .MaxTxns               ( MaxReadTxns           ),
     .FullBW                ( FullBW                ),
+    .CutOupPopInpGnt       ( CutOupPopInpGnt       ),
     .AtopSupport           ( AtopSupport           )
   ) i_axi_burst_splitter_ar_chan (
     .clk_i,
@@ -358,7 +362,8 @@ module axi_burst_splitter_ax_chan #(
   parameter int unsigned IdWidth = 0,
   parameter int unsigned MaxTxns = 0,
   parameter bit          FullBW  = 0,
-  parameter bit          AtopSupport = 1'b0,
+  parameter bit          CutOupPopInpGnt = 0,
+  parameter bit          AtopSupport = 0,
   parameter type         id_t    = logic[IdWidth-1:0]
 ) (
   input  logic          clk_i,
@@ -384,10 +389,11 @@ module axi_burst_splitter_ax_chan #(
 
   logic cnt_alloc_req, cnt_alloc_gnt;
   axi_burst_splitter_counters #(
-    .MaxTxns               ( MaxTxns               ),
-    .FullBW                ( FullBW                ),
-    .AtopSupport           ( AtopSupport           ),
-    .IdWidth               ( IdWidth               )
+    .MaxTxns               ( MaxTxns         ),
+    .FullBW                ( FullBW          ),
+    .CutOupPopInpGnt       ( CutOupPopInpGnt ),
+    .AtopSupport           ( AtopSupport     ),
+    .IdWidth               ( IdWidth         )
   ) i_axi_burst_splitter_counters (
     .clk_i,
     .rst_ni,
@@ -476,6 +482,7 @@ endmodule
 module axi_burst_splitter_counters #(
   parameter int unsigned MaxTxns = 0,
   parameter bit          FullBW  = 0,
+  parameter bit          CutOupPopInpGnt = 0,
   parameter int unsigned IdWidth = 0,
   parameter bit          AtopSupport = 0,
   parameter type         id_t    = logic [IdWidth-1:0]
@@ -533,10 +540,11 @@ module axi_burst_splitter_counters #(
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   id_queue #(
-    .ID_WIDTH ( $bits(id_t) ),
-    .CAPACITY ( MaxTxns     ),
-    .data_t   ( cnt_idx_t   ),
-    .FULL_BW  ( FullBW      )
+    .ID_WIDTH            ( $bits(id_t)     ),
+    .CAPACITY            ( MaxTxns         ),
+    .data_t              ( cnt_idx_t       ),
+    .FULL_BW             ( FullBW          ),
+    .CUT_OUP_POP_INP_GNT ( CutOupPopInpGnt )
   ) i_idq (
     .clk_i,
     .rst_ni,
