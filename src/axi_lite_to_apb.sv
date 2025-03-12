@@ -300,7 +300,9 @@ module axi_lite_to_apb #(
             // `Setup` step
             // set the request output
             apb_req_o[apb_sel_idx] = '{
-              paddr:   apb_req.addr,
+              // Align address as an unaligned APB paddr can cause unpredictable behavior (APB spec 2.1.1)
+              // AXI-lite data is always bus-aligned, even if address is not
+              paddr:   axi_pkg::aligned_addr(apb_req.addr, $clog2(DataWidth/8)),
               pprot:   apb_req.prot,
               psel:    1'b1,
               penable: 1'b0,
@@ -326,7 +328,9 @@ module axi_lite_to_apb #(
       Access: begin
         // `Access` step
         apb_req_o[apb_sel_idx] = '{
-          paddr:   apb_req.addr,
+          // Align address as an unaligned APB paddr can cause unpredictable behavior (APB spec 2.1.1)
+          // AXI-lite data is always bus-aligned, even if address is not
+          paddr:   axi_pkg::aligned_addr(apb_req.addr, $clog2(DataWidth/8)),
           pprot:   apb_req.prot,
           psel:    1'b1,
           penable: 1'b1,
