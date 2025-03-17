@@ -140,8 +140,8 @@ module axi_to_detailed_mem #(
     logic [NumBanks-1:0] exokay;
   } mem_rsp_t;
 
-  mem_rsp_t       mem_rdata,
-                  m2s_resp;
+  mem_rsp_t       m2s_resp;
+                  // mem_rdata;
   axi_pkg::len_t  r_cnt_d,        r_cnt_q,
                   w_cnt_d,        w_cnt_q;
   logic           arb_valid,      arb_ready,
@@ -156,11 +156,11 @@ module axi_to_detailed_mem #(
                   meta_buf_valid, meta_buf_ready,
                   meta_sel_d,     meta_sel_q,
                   m2s_req_valid,  m2s_req_ready,
-                  m2s_resp_valid, m2s_resp_ready,
-                  mem_req_valid,  mem_req_ready,
-                  mem_rvalid;
-  mem_req_t       m2s_req,
-                  mem_req;
+                  m2s_resp_valid, m2s_resp_ready;
+                  // mem_req_valid,  mem_req_ready,
+                  // mem_rvalid;
+  mem_req_t       m2s_req;
+                  // mem_req;
   meta_t          rd_meta,
                   rd_meta_d,      rd_meta_q,
                   wr_meta,
@@ -391,26 +391,27 @@ module axi_to_detailed_mem #(
     region: meta.region
   };
 
-  // Interface memory as stream.
-  stream_to_mem #(
-    .mem_req_t  ( mem_req_t  ),
-    .mem_resp_t ( mem_rsp_t  ),
-    .BufDepth   ( BufDepth   )
-  ) i_stream_to_mem (
-    .clk_i,
-    .rst_ni,
-    .req_i            ( m2s_req        ),
-    .req_valid_i      ( m2s_req_valid  ),
-    .req_ready_o      ( m2s_req_ready  ),
-    .resp_o           ( m2s_resp       ),
-    .resp_valid_o     ( m2s_resp_valid ),
-    .resp_ready_i     ( m2s_resp_ready ),
-    .mem_req_o        ( mem_req        ),
-    .mem_req_valid_o  ( mem_req_valid  ),
-    .mem_req_ready_i  ( mem_req_ready  ),
-    .mem_resp_i       ( mem_rdata      ),
-    .mem_resp_valid_i ( mem_rvalid     )
-  );
+  // Using mem_to_banks fifo to buffer responses
+  // // Interface memory as stream.
+  // stream_to_mem #(
+  //   .mem_req_t  ( mem_req_t  ),
+  //   .mem_resp_t ( mem_rsp_t  ),
+  //   .BufDepth   ( BufDepth   )
+  // ) i_stream_to_mem (
+  //   .clk_i,
+  //   .rst_ni,
+  //   .req_i            ( m2s_req        ),
+  //   .req_valid_i      ( m2s_req_valid  ),
+  //   .req_ready_o      ( m2s_req_ready  ),
+  //   .resp_o           ( m2s_resp       ),
+  //   .resp_valid_o     ( m2s_resp_valid ),
+  //   .resp_ready_i     ( m2s_resp_ready ),
+  //   .mem_req_o        ( mem_req        ),
+  //   .mem_req_valid_o  ( mem_req_valid  ),
+  //   .mem_req_ready_i  ( mem_req_ready  ),
+  //   .mem_resp_i       ( mem_rdata      ),
+  //   .mem_resp_valid_i ( mem_rvalid     )
+  // );
 
   typedef struct packed {
     axi_pkg::atop_t   atop;
@@ -427,14 +428,14 @@ module axi_to_detailed_mem #(
   tmp_atop_t [NumBanks-1:0] banked_req_atop;
 
   assign mem_req_atop = '{
-    atop:   mem_req.atop,
-    lock:   mem_req.lock,
-    id:     mem_req.id,
-    user:   mem_req.user,
-    cache:  mem_req.cache,
-    prot:   mem_req.prot,
-    qos:    mem_req.qos,
-    region: mem_req.region
+    atop:   m2s_req.atop,
+    lock:   m2s_req.lock,
+    id:     m2s_req.id,
+    user:   m2s_req.user,
+    cache:  m2s_req.cache,
+    prot:   m2s_req.prot,
+    qos:    m2s_req.qos,
+    region: m2s_req.region
   };
 
   for (genvar i = 0; i < NumBanks; i++) begin
@@ -451,34 +452,35 @@ module axi_to_detailed_mem #(
   logic [NumBanks-1:0][1:0] tmp_ersp;
   logic [NumBanks-1:0][1:0] bank_ersp;
   for (genvar i = 0; i < NumBanks; i++) begin
-    assign mem_rdata.err[i]    = tmp_ersp[i][0];
-    assign mem_rdata.exokay[i] = tmp_ersp[i][1];
+    assign m2s_resp.err[i]    = tmp_ersp[i][0];
+    assign m2s_resp.exokay[i] = tmp_ersp[i][1];
     assign bank_ersp[i][0] = mem_err_i[i];
     assign bank_ersp[i][1] = mem_exokay_i[i];
   end
 
   // Split single memory request to desired number of banks.
-  mem_to_banks_detailed #(
-    .AddrWidth  ( AddrWidth         ),
-    .DataWidth  ( DataWidth         ),
-    .RUserWidth ( 2                 ),
-    .NumBanks   ( NumBanks          ),
-    .HideStrb   ( HideStrb          ),
-    .MaxTrans   ( BufDepth          ),
-    .FifoDepth  ( OutFifoDepth      ),
-    .WUserWidth ( $bits(tmp_atop_t) )
+  mem_stream_to_banks_detailed #(
+    .AddrWidth   ( AddrWidth         ),
+    .DataWidth   ( DataWidth         ),
+    .RUserWidth  ( 2                 ),
+    .NumBanks    ( NumBanks          ),
+    .HideStrb    ( HideStrb          ),
+    .MaxTrans    ( BufDepth          ),
+    .OutFifoDepth( OutFifoDepth      ),
+    .WUserWidth  ( $bits(tmp_atop_t) )
   ) i_mem_to_banks (
     .clk_i,
     .rst_ni,
-    .req_i         ( mem_req_valid ),
-    .gnt_o         ( mem_req_ready ),
-    .addr_i        ( mem_req.addr  ),
-    .wdata_i       ( mem_req.wdata ),
-    .strb_i        ( mem_req.strb  ),
+    .req_i         ( m2s_req_valid ),
+    .gnt_o         ( m2s_req_ready ),
+    .addr_i        ( m2s_req.addr  ),
+    .wdata_i       ( m2s_req.wdata ),
+    .strb_i        ( m2s_req.strb  ),
     .wuser_i       ( mem_req_atop  ),
-    .we_i          ( mem_req.we    ),
-    .rvalid_o      ( mem_rvalid    ),
-    .rdata_o       ( mem_rdata.data ),
+    .we_i          ( m2s_req.we    ),
+    .rvalid_o      ( m2s_resp_valid ),
+    .rready_i      ( m2s_resp_ready ),
+    .rdata_o       ( m2s_resp.data ),
     .ruser_o       ( tmp_ersp      ),
     .bank_req_o    ( mem_req_o     ),
     .bank_gnt_i    ( mem_gnt_i     ),
@@ -743,4 +745,252 @@ module axi_to_detailed_mem_intf #(
     .mem_err_i,
     .mem_exokay_i
   );
+endmodule
+
+/// Split memory access over multiple parallel banks, where each bank has its own req/gnt
+/// request and valid response direction.
+module mem_stream_to_banks_detailed #(
+  /// Input address width.
+  parameter int unsigned AddrWidth = 32'd0,
+  /// Input data width, must be a power of two.
+  parameter int unsigned DataWidth = 32'd0,
+  /// Request sideband width.
+  parameter int unsigned WUserWidth = 32'd0,
+  /// Response sideband width.
+  parameter int unsigned RUserWidth = 32'd0,
+  /// Number of banks at output, must evenly divide `DataWidth`.
+  parameter int unsigned NumBanks  = 32'd1,
+  /// Remove transactions that have zero strobe
+  parameter bit          HideStrb  = 1'b0,
+  /// Number of outstanding transactions
+  parameter int unsigned MaxTrans  = 32'd1,
+  /// Request FIFO depth
+  parameter int unsigned OutFifoDepth  = 32'd1,
+  /// Request sideband type.
+  parameter  type wuser_t     = logic [WUserWidth-1:0],
+  /// Dependent parameter, do not override! Address type.
+  localparam type addr_t      = logic [AddrWidth-1:0],
+  /// Dependent parameter, do not override! Input data type.
+  localparam type inp_data_t  = logic [DataWidth-1:0],
+  /// Dependent parameter, do not override! Input write strobe type.
+  localparam type inp_strb_t  = logic [DataWidth/8-1:0],
+  /// Dependent parameter, do not override! Input response sideband type.
+  localparam type inp_ruser_t = logic [NumBanks-1:0][RUserWidth-1:0],
+  /// Dependent parameter, do not override! Output data type.
+  localparam type oup_data_t  = logic [DataWidth/NumBanks-1:0],
+  /// Dependent parameter, do not override! Output write strobe type.
+  localparam type oup_strb_t  = logic [DataWidth/NumBanks/8-1:0],
+  /// Dependent parameter, do not override! Output response sideband type.
+  localparam type oup_ruser_t = logic [RUserWidth-1:0]
+) (
+  /// Clock input.
+  input  logic                       clk_i,
+  /// Asynchronous reset, active low.
+  input  logic                       rst_ni,
+  /// Memory request to split, request is valid.
+  input  logic                       req_i,
+  /// Memory request to split, request can be granted.
+  output logic                       gnt_o,
+  /// Memory request to split, request address, byte-wise.
+  input  addr_t                      addr_i,
+  /// Memory request to split, request write data.
+  input  inp_data_t                  wdata_i,
+  /// Memory request to split, request write strobe.
+  input  inp_strb_t                  strb_i,
+  /// Memory request to split, request sideband.
+  input  wuser_t                     wuser_i,
+  /// Memory request to split, request write enable, active high.
+  input  logic                       we_i,
+  /// Memory request to split, response is valid. Required for read and write requests
+  output logic                       rvalid_o,
+  /// Memory request to split, response ready input. Tie to 1'b1 if unused.
+  input  logic                       rready_i,
+  /// Memory request to split, response read data.
+  output inp_data_t                  rdata_o,
+  /// Memory request to split, response sideband.
+  output inp_ruser_t                 ruser_o,
+  /// Memory bank request, request is valid.
+  output logic       [NumBanks-1:0]  bank_req_o,
+  /// Memory bank request, request can be granted.
+  input  logic       [NumBanks-1:0]  bank_gnt_i,
+  /// Memory bank request, request address, byte-wise. Will be different for each bank.
+  output addr_t      [NumBanks-1:0]  bank_addr_o,
+  /// Memory bank request, request write data.
+  output oup_data_t  [NumBanks-1:0]  bank_wdata_o,
+  /// Memory bank request, request write strobe.
+  output oup_strb_t  [NumBanks-1:0]  bank_strb_o,
+  /// Memory bank request, request sideband.
+  output wuser_t     [NumBanks-1:0]  bank_wuser_o,
+  /// Memory bank request, request write enable, active high.
+  output logic       [NumBanks-1:0]  bank_we_o,
+  /// Memory bank request, response is valid. Required for read and write requests
+  input  logic       [NumBanks-1:0]  bank_rvalid_i,
+  /// Memory bank request, response read data.
+  input  oup_data_t  [NumBanks-1:0]  bank_rdata_i,
+  /// Memory bank request, response sideband.
+  input  oup_ruser_t [NumBanks-1:0]  bank_ruser_i
+);
+
+  localparam int unsigned DataBytes    = $bits(inp_strb_t);
+  localparam int unsigned BitsPerBank  = $bits(oup_data_t);
+  localparam int unsigned BytesPerBank = $bits(oup_strb_t);
+
+  typedef struct packed {
+    addr_t     addr;
+    oup_data_t wdata;
+    oup_strb_t strb;
+    wuser_t    wuser;
+    logic      we;
+  } req_t;
+
+  logic                 req_valid;
+  logic [NumBanks-1:0]              req_ready,
+                        resp_valid, resp_ready;
+  req_t [NumBanks-1:0]  bank_req,
+                        bank_oup;
+  logic [NumBanks-1:0]  bank_req_internal, bank_gnt_internal, zero_strobe, dead_response;
+  logic                 dead_write_fifo_full;
+
+  function automatic addr_t align_addr(input addr_t addr);
+    return (addr >> $clog2(DataBytes)) << $clog2(DataBytes);
+  endfunction
+
+  logic mem_req_valid, mem_req_ready;
+
+  // Stream logic to only send requests that can be buffered.
+  typedef logic [$clog2(MaxTrans+1):0] cnt_t;
+
+  cnt_t cnt_d, cnt_q;
+  logic cnt_req_ready;
+
+  if (MaxTrans > 0) begin : gen_buf
+    // Count number of outstanding requests.
+    always_comb begin
+      cnt_d = cnt_q;
+      if (req_i && gnt_o) begin
+        cnt_d++;
+      end
+      if (rvalid_o && rready_i) begin
+        cnt_d--;
+      end
+    end
+
+    // Can issue another request if the counter is not at its limit or a response is delivered in
+    // the current cycle.
+    assign cnt_req_ready = (cnt_q < MaxTrans) | (rvalid_o & rready_i);
+
+    // Control request and memory request interface handshakes.
+    assign gnt_o = mem_req_ready & cnt_req_ready;
+    assign mem_req_valid = req_i & cnt_req_ready;
+
+    // Register
+    `FFARN(cnt_q, cnt_d, '0, clk_i, rst_ni)
+  end
+
+  // Handle requests.
+  assign req_valid = mem_req_valid & mem_req_ready;
+  for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_reqs
+    assign bank_req[i].addr  = align_addr(addr_i) + 7'(i * BytesPerBank);
+    assign bank_req[i].wdata = wdata_i[i*BitsPerBank+:BitsPerBank];
+    assign bank_req[i].strb  = strb_i[i*BytesPerBank+:BytesPerBank];
+    assign bank_req[i].wuser = wuser_i;
+    assign bank_req[i].we    = we_i;
+    stream_fifo #(
+      .FALL_THROUGH ( 1'b1         ),
+      .DATA_WIDTH   ( $bits(req_t) ),
+      .DEPTH        ( OutFifoDepth ),
+      .T            ( req_t        )
+    ) i_ft_reg (
+      .clk_i,
+      .rst_ni,
+      .flush_i    ( 1'b0          ),
+      .testmode_i ( 1'b0          ),
+      .usage_o    (),
+      .data_i     ( bank_req[i]   ),
+      .valid_i    ( req_valid     ),
+      .ready_o    ( req_ready[i]  ),
+      .data_o     ( bank_oup[i]   ),
+      .valid_o    ( bank_req_internal[i] ),
+      .ready_i    ( bank_gnt_internal[i] )
+    );
+    assign bank_addr_o[i]  = bank_oup[i].addr;
+    assign bank_wdata_o[i] = bank_oup[i].wdata;
+    assign bank_strb_o[i]  = bank_oup[i].strb;
+    assign bank_wuser_o[i] = bank_oup[i].wuser;
+    assign bank_we_o[i]    = bank_oup[i].we;
+
+    assign zero_strobe[i] = (bank_oup[i].strb == '0);
+
+    if (HideStrb) begin : gen_hide_strb
+      assign bank_req_o[i] = (bank_oup[i].we && zero_strobe[i]) ? 1'b0 : bank_req_internal[i];
+      assign bank_gnt_internal[i] = (bank_oup[i].we && zero_strobe[i]) ? 1'b1 : bank_gnt_i[i];
+    end else begin : gen_legacy_strb
+      assign bank_req_o[i] = bank_req_internal[i];
+      assign bank_gnt_internal[i] = bank_gnt_i[i];
+    end
+  end
+
+  // Grant output if all our requests have been granted.
+  assign mem_req_ready = (&req_ready) & (&resp_ready) & !dead_write_fifo_full;
+
+  if (HideStrb) begin : gen_dead_write_fifo
+    fifo_v3 #(
+      .FALL_THROUGH ( 1'b0     ),
+      .DEPTH        ( MaxTrans+1 ),
+      .DATA_WIDTH   ( NumBanks )
+    ) i_dead_write_fifo (
+      .clk_i,
+      .rst_ni,
+      .flush_i    ( 1'b0                    ),
+      .testmode_i ( 1'b0                    ),
+      .full_o     ( dead_write_fifo_full    ),
+      .empty_o    (),
+      .usage_o    (),
+      .data_i     ( bank_we_o & zero_strobe ),
+      .push_i     ( mem_req_valid & mem_req_ready           ),
+      .data_o     ( dead_response           ),
+      .pop_i      ( rvalid_o & rready_i     )
+    );
+  end else begin : gen_no_dead_write_fifo
+    assign dead_response = '0;
+    assign dead_write_fifo_full = 1'b0;
+  end
+
+  // Handle responses.
+  for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
+    stream_fifo #(
+      .FALL_THROUGH ( 1'b1              ),
+      .DATA_WIDTH   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
+      .DEPTH        ( MaxTrans         )
+    ) i_ft_reg (
+      .clk_i,
+      .rst_ni,
+      .flush_i    ( 1'b0                                              ),
+      .testmode_i ( 1'b0                                              ),
+      .usage_o    (),
+      .data_i     ( {bank_rdata_i[i], bank_ruser_i[i]}                ),
+      .valid_i    ( bank_rvalid_i[i]                                  ),
+      .ready_o    ( resp_ready[i]                                     ),
+      .data_o     ( {rdata_o[i*BitsPerBank+:BitsPerBank], ruser_o[i]} ),
+      .valid_o    ( resp_valid[i]                                     ),
+      .ready_i    ( rvalid_o & !dead_response[i] & rready_i           )
+    );
+  end
+  assign rvalid_o = &(resp_valid | dead_response);
+
+  // Assertions
+  `ifndef SYNTHESIS
+  `ifndef COMMON_CELLS_ASSERTS_OFF
+  `ifndef SYNTHESIS
+    initial begin
+      assume (DataWidth != 0 && (DataWidth & (DataWidth - 1)) == 0)
+        else $fatal(1, "Data width must be a power of two!");
+      assume (DataWidth % NumBanks == 0)
+        else $fatal(1, "Data width must be evenly divisible over banks!");
+      assume ((DataWidth / NumBanks) % 8 == 0)
+        else $fatal(1, "Data width of each bank must be divisible into 8-bit bytes!");
+    end
+  `endif
+  `endif
+  `endif
 endmodule
