@@ -20,6 +20,11 @@
 module axi_cut #(
   // bypass enable
   parameter bit  Bypass     = 1'b0,
+  parameter bit  BypassAw   = Bypass,
+  parameter bit  BypassW    = Bypass,
+  parameter bit  BypassB    = Bypass,
+  parameter bit  BypassAr   = Bypass,
+  parameter bit  BypassR    = Bypass,
   // AXI channel structs
   parameter type  aw_chan_t = logic,
   parameter type   w_chan_t = logic,
@@ -43,7 +48,7 @@ module axi_cut #(
   // a spill register for each channel
   spill_register #(
     .T       ( aw_chan_t ),
-    .Bypass  ( Bypass    )
+    .Bypass  ( BypassAw  )
   ) i_reg_aw (
     .clk_i   ( clk_i               ),
     .rst_ni  ( rst_ni              ),
@@ -57,7 +62,7 @@ module axi_cut #(
 
   spill_register #(
     .T       ( w_chan_t ),
-    .Bypass  ( Bypass   )
+    .Bypass  ( BypassW  )
   ) i_reg_w  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
@@ -71,7 +76,7 @@ module axi_cut #(
 
   spill_register #(
     .T       ( b_chan_t ),
-    .Bypass  ( Bypass   )
+    .Bypass  ( BypassB  )
   ) i_reg_b  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
@@ -85,7 +90,7 @@ module axi_cut #(
 
   spill_register #(
     .T       ( ar_chan_t ),
-    .Bypass  ( Bypass    )
+    .Bypass  ( BypassAr  )
   ) i_reg_ar (
     .clk_i   ( clk_i               ),
     .rst_ni  ( rst_ni              ),
@@ -99,7 +104,7 @@ module axi_cut #(
 
   spill_register #(
     .T       ( r_chan_t ),
-    .Bypass  ( Bypass   )
+    .Bypass  ( BypassR  )
   ) i_reg_r  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
@@ -119,6 +124,11 @@ endmodule
 module axi_cut_intf #(
   // Bypass eneable
   parameter bit          BYPASS     = 1'b0,
+  parameter bit          BYPASS_AW  = BYPASS,
+  parameter bit          BYPASS_W   = BYPASS,
+  parameter bit          BYPASS_B   = BYPASS,
+  parameter bit          BYPASS_AR  = BYPASS,
+  parameter bit          BYPASS_R   = BYPASS,
   // The address width.
   parameter int unsigned ADDR_WIDTH = 0,
   // The data width.
@@ -159,6 +169,11 @@ module axi_cut_intf #(
 
   axi_cut #(
     .Bypass     (     BYPASS ),
+    .BypassAw   (  BYPASS_AW ),
+    .BypassW    (   BYPASS_W ),
+    .BypassB    (   BYPASS_B ),
+    .BypassAr   (  BYPASS_AR ),
+    .BypassR    (   BYPASS_R ),
     .aw_chan_t  (  aw_chan_t ),
     .w_chan_t   (   w_chan_t ),
     .b_chan_t   (   b_chan_t ),
@@ -199,6 +214,11 @@ endmodule
 module axi_lite_cut_intf #(
   // bypass enable
   parameter bit          BYPASS     = 1'b0,
+  parameter bit          BYPASS_AW  = BYPASS,
+  parameter bit          BYPASS_W   = BYPASS,
+  parameter bit          BYPASS_B   = BYPASS,
+  parameter bit          BYPASS_AR  = BYPASS,
+  parameter bit          BYPASS_R   = BYPASS,
   /// The address width.
   parameter int unsigned ADDR_WIDTH = 0,
   /// The data width.
@@ -233,6 +253,11 @@ module axi_lite_cut_intf #(
 
   axi_cut #(
     .Bypass     (     BYPASS ),
+    .BypassAw   (  BYPASS_AW ),
+    .BypassW    (   BYPASS_W ),
+    .BypassB    (   BYPASS_B ),
+    .BypassAr   (  BYPASS_AR ),
+    .BypassR    (   BYPASS_R ),
     .aw_chan_t  (  aw_chan_t ),
     .w_chan_t   (   w_chan_t ),
     .b_chan_t   (   b_chan_t ),
