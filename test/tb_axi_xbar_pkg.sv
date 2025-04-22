@@ -30,7 +30,7 @@ package tb_axi_xbar_pkg;
     parameter type         rule_t,
     parameter rule_t [NoAddrRules-1:0] AddrMap,
       // Stimuli application and test time
-    parameter time  TimeTest
+    parameter realtime  TimeTest
   );
     typedef logic [AxiIdWidthMasters-1:0] mst_axi_id_t;
     typedef logic [AxiIdWidthSlaves-1:0]  slv_axi_id_t;

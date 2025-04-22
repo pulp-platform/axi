@@ -34,7 +34,7 @@ package tb_axi_dw_pkg       ;
       parameter int unsigned AxiIdWidth         ,
       parameter int unsigned AxiUserWidth       ,
       // Stimuli application and test time
-      parameter time TimeTest
+      parameter realtime TimeTest
     );
 
     localparam AxiSlvPortStrbWidth = AxiSlvPortDataWidth / 8;
@@ -577,7 +577,7 @@ package tb_axi_dw_pkg       ;
       parameter int unsigned AxiIdWidth         ,
       parameter int unsigned AxiUserWidth       ,
       // Stimuli application and test time
-      parameter time TimeTest
+      parameter realtime TimeTest
     ) extends axi_dw_monitor #(
       .AxiAddrWidth       (AxiAddrWidth       ),
       .AxiSlvPortDataWidth(AxiSlvPortDataWidth),
@@ -907,7 +907,7 @@ package tb_axi_dw_pkg       ;
       parameter int unsigned AxiIdWidth         ,
       parameter int unsigned AxiUserWidth       ,
       // Stimuli application and test time
-      parameter time TimeTest
+      parameter realtime TimeTest
     ) extends axi_dw_monitor #(
       .AxiAddrWidth       (AxiAddrWidth       ),
       .AxiSlvPortDataWidth(AxiSlvPortDataWidth),

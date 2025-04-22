@@ -46,9 +46,9 @@ module axi_sim_mem #(
   /// Clear error on access
   parameter bit ClearErrOnAccess = 1'b0,
   /// Application delay (measured after rising clock edge)
-  parameter time ApplDelay = 0ps,
+  parameter realtime ApplDelay = 0ps,
   /// Acquisition delay (measured after rising clock edge)
-  parameter time AcqDelay = 0ps
+  parameter realtime AcqDelay = 0ps
 ) (
   /// Rising-edge clock
   input  logic clk_i,
@@ -363,8 +363,8 @@ module axi_sim_mem_intf #(
   parameter bit WARN_UNINITIALIZED = 1'b0,
   parameter UNINITIALIZED_DATA = "undefined",
   parameter bit ClearErrOnAccess = 1'b0,
-  parameter time APPL_DELAY = 0ps,
-  parameter time ACQ_DELAY = 0ps
+  parameter realtime APPL_DELAY = 0ps,
+  parameter realtime ACQ_DELAY = 0ps
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
@@ -445,8 +445,8 @@ module axi_sim_mem_multiport_intf #(
   parameter bit WARN_UNINITIALIZED = 1'b0,
   parameter UNINITIALIZED_DATA = "undefined",
   parameter bit ClearErrOnAccess = 1'b0,
-  parameter time APPL_DELAY = 0ps,
-  parameter time ACQ_DELAY = 0ps
+  parameter realtime APPL_DELAY = 0ps,
+  parameter realtime ACQ_DELAY = 0ps
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,

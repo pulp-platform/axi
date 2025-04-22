@@ -26,8 +26,8 @@ package axi_test;
   class axi_lite_driver #(
     parameter int  AW = 32  ,
     parameter int  DW = 32  ,
-    parameter time TA = 0ns , // stimuli application time
-    parameter time TT = 0ns   // stimuli test time
+    parameter realtime TA = 0ns , // stimuli application time
+    parameter realtime TT = 0ns   // stimuli test time
   );
     virtual AXI_LITE_DV #(
       .AXI_ADDR_WIDTH(AW),
@@ -285,8 +285,8 @@ package axi_test;
     parameter int unsigned DW = 32  ,
     parameter int unsigned IW = 8   ,
     parameter int unsigned UW = 1   ,
-    parameter time         TA = 0ns , // stimuli application time
-    parameter time         TT = 0ns   // stimuli test time
+    parameter realtime         TA = 0ns , // stimuli application time
+    parameter realtime         TT = 0ns   // stimuli test time
   );
     virtual AXI_BUS_DV #(
       .AXI_ADDR_WIDTH(AW),
@@ -686,8 +686,8 @@ package axi_test;
     parameter int   IW = 8,
     parameter int   UW = 1,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps,
+    parameter realtime  TA = 0ps,
+    parameter realtime  TT = 0ps,
     // Maximum number of read and write transactions in flight
     parameter int   MAX_READ_TXNS = 1,
     parameter int   MAX_WRITE_TXNS = 1,
@@ -1325,8 +1325,8 @@ package axi_test;
     parameter int   IW = 8,
     parameter int   UW = 1,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps,
+    parameter realtime  TA = 0ps,
+    parameter realtime  TT = 0ps,
     parameter bit   RAND_RESP = 0,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
@@ -1556,8 +1556,8 @@ package axi_test;
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
     // Stimuli application and test time
-    parameter time  TA = 2ns,
-    parameter time  TT = 8ns,
+    parameter realtime  TA = 2ns,
+    parameter realtime  TT = 8ns,
     parameter int unsigned MIN_ADDR = 32'h0000_0000,
     parameter int unsigned MAX_ADDR = 32'h1000_0000,
     // Maximum number of open transactions
@@ -1725,8 +1725,8 @@ package axi_test;
     parameter int unsigned AW = 0,
     parameter int unsigned DW = 0,
     // Stimuli application and test time
-    parameter time  TA = 2ns,
-    parameter time  TT = 8ns,
+    parameter realtime  TA = 2ns,
+    parameter realtime  TT = 8ns,
     // Upper and lower bounds on wait cycles on Ax, W, and resp (R and B) channels
     parameter int   AX_MIN_WAIT_CYCLES = 0,
     parameter int   AX_MAX_WAIT_CYCLES = 100,
@@ -1863,7 +1863,7 @@ package axi_test;
     /// AXI4+ATOP user width
     parameter int unsigned UW = 0,
     /// Stimuli test time
-    parameter time TT = 0ns
+    parameter realtime TT = 0ns
   );
 
     typedef axi_test::axi_driver #(
@@ -1958,7 +1958,7 @@ package axi_test;
     /// AXI4+ATOP user width
     parameter int unsigned UW = 0,
     /// Stimuli test time
-    parameter time TT = 0ns
+    parameter realtime TT = 0ns
   );
     // Number of checks
     localparam int unsigned NUM_CHECKS  = 32'd3;
@@ -2381,8 +2381,8 @@ package axi_test;
     parameter int   IW = 8,
     parameter int   UW = 1,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps
+    parameter realtime  TA = 0ps,
+    parameter realtime  TT = 0ps
   );
 
     typedef axi_test::axi_driver #(
@@ -2607,7 +2607,7 @@ endpackage
 // a log file per id for the reads
 // atomic transactions with read response are injected into the corresponding log file of the read
 module axi_chan_logger #(
-  parameter time TestTime     = 8ns,          // Time after clock, where sampling happens
+  parameter realtime TestTime     = 8ns,          // Time after clock, where sampling happens
   parameter string LoggerName = "axi_logger", // name of the logger
   parameter type aw_chan_t    = logic,        // axi AW type
   parameter type  w_chan_t    = logic,        // axi  W type
