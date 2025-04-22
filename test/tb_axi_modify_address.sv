@@ -23,9 +23,9 @@ module tb_axi_modify_address #(
   parameter int unsigned AXI_ID_WIDTH = 3,
   parameter int unsigned AXI_USER_WIDTH = 2,
   // TB Parameters
-  parameter time TCLK = 10ns,
-  parameter time TA = TCLK * 1/4,
-  parameter time TT = TCLK * 3/4,
+  parameter realtime TCLK = 10ns,
+  parameter realtime TA = TCLK * 1/4,
+  parameter realtime TT = TCLK * 3/4,
   parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
   parameter int unsigned REQ_MAX_WAIT_CYCLES = 10,
   parameter int unsigned RESP_MIN_WAIT_CYCLES = 0,

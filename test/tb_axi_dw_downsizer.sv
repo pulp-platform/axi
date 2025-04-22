@@ -24,9 +24,9 @@ module tb_axi_dw_downsizer #(
     parameter int unsigned TbInitialBStallCycles = 0,
     parameter int unsigned TbInitialRStallCycles = 0,
     // TB Parameters
-    parameter time TbCyclTime                    = 10ns,
-    parameter time TbApplTime                    = 2ns ,
-    parameter time TbTestTime                    = 8ns
+    parameter realtime TbCyclTime                    = 10ns,
+    parameter realtime TbApplTime                    = 2ns ,
+    parameter realtime TbTestTime                    = 8ns
   );
 
   /*********************

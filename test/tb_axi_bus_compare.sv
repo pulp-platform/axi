@@ -10,15 +10,15 @@
 /// Testbench for `axi_bus_compare`
 module tb_axi_bus_compare #(
   // TB Parameters
-  parameter time TbTclk = 10ns,
+  parameter realtime TbTclk = 10ns,
   // Module Parameters
   parameter int unsigned TbAddrWidth = 32'd64,
   parameter int unsigned TbDataWidth = 32'd128,
   parameter int unsigned TbIdWidth = 32'd6,
   parameter int unsigned TbUserWidth = 32'd2,
   parameter bit TbWarnUninitialized = 1'b0,
-  parameter time TbApplDelay = 2ns,
-  parameter time TbAcqDelay = 8ns
+  parameter realtime TbApplDelay = 2ns,
+  parameter realtime TbAcqDelay = 8ns
 );
 
   logic clk,

@@ -24,9 +24,9 @@ module tb_axi_atop_filter #(
   parameter int unsigned TB_AXI_MAX_READ_TXNS = 10,
   parameter int unsigned TB_AXI_MAX_WRITE_TXNS = 12,
   // TB Parameters
-  parameter time TB_TCLK = 10ns,
-  parameter time TB_TA = TB_TCLK * 1/4,
-  parameter time TB_TT = TB_TCLK * 3/4,
+  parameter realtime TB_TCLK = 10ns,
+  parameter realtime TB_TA = TB_TCLK * 1/4,
+  parameter realtime TB_TT = TB_TCLK * 3/4,
   parameter int unsigned TB_REQ_MIN_WAIT_CYCLES = 0,
   parameter int unsigned TB_REQ_MAX_WAIT_CYCLES = 10,
   parameter int unsigned TB_RESP_MIN_WAIT_CYCLES = 0,

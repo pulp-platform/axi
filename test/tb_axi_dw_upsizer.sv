@@ -22,9 +22,9 @@ module tb_axi_dw_upsizer #(
     parameter int unsigned TbAxiMstPortDataWidth = 64  ,
     parameter int unsigned TbAxiUserWidth        = 8   ,
     // TB Parameters
-    parameter time TbCyclTime                    = 10ns,
-    parameter time TbApplTime                    = 2ns ,
-    parameter time TbTestTime                    = 8ns
+    parameter realtime TbCyclTime                    = 10ns,
+    parameter realtime TbApplTime                    = 2ns ,
+    parameter realtime TbTestTime                    = 8ns
   );
 
   /*********************
