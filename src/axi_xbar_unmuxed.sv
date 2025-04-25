@@ -119,14 +119,12 @@ import cf_math_pkg::idx_width;
     logic                                 dec_ar_valid,  dec_ar_error;
 
     //if there is no connection betwen master and slave, one index for decode error will be used
-    for (genvar j = 0; j < Cfg.NoMstPorts; j++) begin : gen_addr_map
-      if (!Connectivity[i][j]) begin : fix_addr_map
-        assign addr_map[i][j].idx         = mst_port_idx_t'(Cfg.NoMstPorts);
-        assign addr_map[i][j].start_addr  = addr_map_i[j].start_addr;
-        assign addr_map[i][j].end_addr    = addr_map_i[j].end_addr;
-      end
-      else begin : keep_addr_map
-        assign addr_map[i][j] = addr_map_i[j];
+    for (genvar j = 0; j < Cfg.NoAddrRules; j++) begin : gen_addr_map
+      always_comb begin
+        addr_map[i][j] = addr_map_i[j];
+        if (!Connectivity[i][addr_map_i[j].idx]) begin
+          addr_map[i][j].idx = mst_port_idx_t'(Cfg.NoMstPorts);
+        end
       end
     end
 
