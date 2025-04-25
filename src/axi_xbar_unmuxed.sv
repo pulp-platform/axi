@@ -140,7 +140,7 @@ import cf_math_pkg::idx_width;
       .dec_valid_o      ( dec_aw_valid               ),
       .dec_error_o      ( dec_aw_error               ),
       .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .default_idx_i    ( Connectivity[i][default_mst_port_i[i]] ? default_mst_port_i[i] : mst_port_idx_t'(Cfg.NoMstPorts) )
     );
 
     addr_decode #(
@@ -155,7 +155,7 @@ import cf_math_pkg::idx_width;
       .dec_valid_o      ( dec_ar_valid               ),
       .dec_error_o      ( dec_ar_error               ),
       .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .default_idx_i    ( Connectivity[i][default_mst_port_i[i]] ? default_mst_port_i[i] : mst_port_idx_t'(Cfg.NoMstPorts) )
     );
 
     assign slv_aw_select = (dec_aw_error) ?
