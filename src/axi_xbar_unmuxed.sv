@@ -104,16 +104,29 @@ import cf_math_pkg::idx_width;
 
   // workaround for issue #133 (problem with vsim 10.6c)
   localparam int unsigned cfg_NoMstPorts = Cfg.NoMstPorts;
+  // addr_map_i and connectivity relationship
+  rule_t [Cfg.NoSlvPorts-1:0][Cfg.NoAddrRules-1:0]  addr_map;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
-`ifdef VCS
-    logic [MstPortsIdxWidth-1:0]          dec_aw,        dec_ar;
-`else
-    logic [idx_width(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
-`endif
+    `ifdef VCS
+        logic [MstPortsIdxWidth-1:0]          dec_aw,        dec_ar;
+    `else
+        logic [idx_width(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
+    `endif
+
     mst_port_idx_t                        slv_aw_select, slv_ar_select;
     logic                                 dec_aw_valid,  dec_aw_error;
     logic                                 dec_ar_valid,  dec_ar_error;
+
+    //if there is no connection betwen master and slave, one index for decode error will be used
+    for (genvar j = 0; j < Cfg.NoAddrRules; j++) begin : gen_addr_map
+      always_comb begin
+        addr_map[i][j] = addr_map_i[j];
+        if (!Connectivity[i][addr_map_i[j].idx]) begin
+          addr_map[i][j].idx = mst_port_idx_t'(Cfg.NoMstPorts);
+        end
+      end
+    end
 
     addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
@@ -122,12 +135,12 @@ import cf_math_pkg::idx_width;
       .rule_t     ( rule_t          )
     ) i_axi_aw_decode (
       .addr_i           ( slv_ports_req_i[i].aw.addr ),
-      .addr_map_i       ( addr_map_i                 ),
+      .addr_map_i       ( addr_map                   ),
       .idx_o            ( dec_aw                     ),
       .dec_valid_o      ( dec_aw_valid               ),
       .dec_error_o      ( dec_aw_error               ),
       .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .default_idx_i    ( Connectivity[i][default_mst_port_i[i]] ? default_mst_port_i[i] : mst_port_idx_t'(Cfg.NoMstPorts) )
     );
 
     addr_decode #(
@@ -137,12 +150,12 @@ import cf_math_pkg::idx_width;
       .rule_t     ( rule_t          )
     ) i_axi_ar_decode (
       .addr_i           ( slv_ports_req_i[i].ar.addr ),
-      .addr_map_i       ( addr_map_i                 ),
+      .addr_map_i       ( addr_map                   ),
       .idx_o            ( dec_ar                     ),
       .dec_valid_o      ( dec_ar_valid               ),
       .dec_error_o      ( dec_ar_error               ),
       .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .default_idx_i    ( Connectivity[i][default_mst_port_i[i]] ? default_mst_port_i[i] : mst_port_idx_t'(Cfg.NoMstPorts) )
     );
 
     assign slv_aw_select = (dec_aw_error) ?
@@ -252,20 +265,6 @@ import cf_math_pkg::idx_width;
 
       end else begin : gen_no_connection
         assign mst_ports_req_o[j][i] = '0;
-        axi_err_slv #(
-          .AxiIdWidth ( Cfg.AxiIdWidthSlvPorts  ),
-          .axi_req_t  ( req_t                   ),
-          .axi_resp_t ( resp_t                  ),
-          .Resp       ( axi_pkg::RESP_DECERR    ),
-          .ATOPs      ( ATOPs                   ),
-          .MaxTrans   ( 1                       )
-        ) i_axi_err_slv (
-          .clk_i,
-          .rst_ni,
-          .test_i,
-          .slv_req_i  ( slv_reqs[i][j]  ),
-          .slv_resp_o ( slv_resps[i][j] )
-        );
       end
     end
   end
