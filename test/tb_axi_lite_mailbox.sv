@@ -151,7 +151,7 @@ module tb_axi_lite_mailbox;
     assert (data == data_t'(3'b100)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
-    $display("%0t MST_0> Acknowledge Error by writing to IRQS", $time());
+    $display("%0t MST_0> Acknowledge error by writing to IRQS", $time());
     lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), 64'h4, 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
@@ -175,7 +175,7 @@ module tb_axi_lite_mailbox;
     // -------------------------------
     repeat (50) @(posedge clk);
     $info("Test error interrupt");
-    $display("%0t MST_0> Enable Error interrupt  ", $time());
+    $display("%0t MST_0> Enable error interrupt  ", $time());
     lite_axi_master.write(IRQEN, axi_pkg::prot_t'('0), data_t'(3'b100), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
@@ -189,7 +189,7 @@ module tb_axi_lite_mailbox;
     assert (data == data_t'(1)) else begin test_failed[0]++; $error("Unexpected result"); end
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
-    $display("%0t MST_0> Acknowledge Error by writing to IRQS", $time());
+    $display("%0t MST_0> Acknowledge error by writing to IRQS", $time());
     lite_axi_master.write(IRQS, axi_pkg::prot_t'('0), data_t'(3'b100), 8'hFF, resp);
     assert (resp == axi_pkg::RESP_OKAY) else begin test_failed[0]++; $error("Unexpected result"); end
 
@@ -430,7 +430,11 @@ module tb_axi_lite_mailbox;
     end else begin
         $info("Simulation stopped as all Masters transferred their data, Success.",);
     end
+    `ifdef TARGET_VCS
+    $finish(1);
+    `else
     $stop();
+    `endif
   end
 
   //-----------------------------------
