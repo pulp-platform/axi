@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.7 - 2025-05-20
 ### Added
 - Add `axi_burst_unwrap`. #326
 
 ### Fixed
 - Modify `axi_dw_upsizer` to avoid unnecessarily wide indices into r_data. #362
+- [test] Remove begin/end from constructors to fix morty ci err
+- `axi_lite_lfsr`: Add missing signal declaration. (#363)
+- `axi_to_mem_interleaved`: Fix busy signal.
+- `axi_dw_downsizer`: Fix unnecessarily wide indices for verilator compatibility. #366
 
 ### Changed
 - Add random user signal generation for llc-partition test. #315
