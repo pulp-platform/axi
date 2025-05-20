@@ -185,6 +185,7 @@ module axi_sim_mem #(
                 assert (axi_req_i[i].w.last) else $error("Expected last beat of W burst!");
                 b_beat.id = aw_queue[0].id;
                 b_beat.resp = error_happened[i];
+                b_beat.user = aw_queue[0].user;
                 b_queue.push_back(b_beat);
                 w_cnt = 0;
                 mon_w[i].last = 1'b1;
@@ -238,6 +239,7 @@ module axi_sim_mem #(
             r_beat.data = 'x;
             r_beat.id = ar_queue[0].id;
             r_beat.resp = axi_pkg::RESP_OKAY;
+            r_beat.user = ar_queue[0].user;
             for (shortint unsigned
                 i_byte = axi_pkg::beat_lower_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
                 i_byte <= axi_pkg::beat_upper_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
