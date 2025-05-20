@@ -1,6 +1,6 @@
 CAPI=2:
 
-name : pulp-platform.org::axi:0.39.6
+name : pulp-platform.org::axi:0.39.7
 
 filesets:
   rtl:
@@ -17,6 +17,7 @@ filesets:
       # Level 2
       - src/axi_atop_filter.sv
       - src/axi_burst_splitter.sv
+      - src/axi_burst_unwrap.sv
       - src/axi_bus_compare.sv
       - src/axi_cdc_dst.sv
       - src/axi_cdc_src.sv
@@ -109,7 +110,7 @@ filesets:
       - test/tb_axi_xbar.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_verification:0.2.4"
+      - ">=pulp-platform.org::common_verification:0.2.5"
 
 generators:
   axi_intercon_gen:

@@ -95,6 +95,8 @@ module axi_to_mem_interleaved #(
   logic           [NumBanks-1:0]  r_mem_rvalid, w_mem_rvalid;
   mem_data_t      [NumBanks-1:0]  r_mem_rdata,  w_mem_rdata;
 
+  assign busy_o = w_busy | r_busy;
+
   // split AXI bus in read and write
   axi_demux_simple #(
     .AxiIdWidth  ( IdWidth    ),

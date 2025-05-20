@@ -3,7 +3,7 @@ common_cells:
     group: pulp-platform
 
 common_verification:
-    commit: v0.2.4
+    commit: v0.2.5
     group: pulp-platform
 
 tech_cells_generic:

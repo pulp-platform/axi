@@ -612,16 +612,14 @@ package tb_axi_dw_pkg       ;
           .AXI_USER_WIDTH(AxiUserWidth       )
         ) mst_port_vif
       );
-      begin
-        super.new(slv_port_vif, mst_port_vif);
-        slv_port_w_cnt = '0;
-        mst_port_w_cnt = '0;
-        mst_port_w_pnt = '1;
-        mst_port_w     = '0;
-        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
-          slv_port_r_cnt[id] = '0;
-          mst_port_r_cnt[id] = '0;
-        end
+      super.new(slv_port_vif, mst_port_vif);
+      slv_port_w_cnt = '0;
+      mst_port_w_cnt = '0;
+      mst_port_w_pnt = '1;
+      mst_port_w     = '0;
+      for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+        slv_port_r_cnt[id] = '0;
+        mst_port_r_cnt[id] = '0;
       end
     endfunction
 
@@ -956,17 +954,15 @@ package tb_axi_dw_pkg       ;
           .AXI_USER_WIDTH(AxiUserWidth       )
         ) mst_port_vif
       );
-      begin
-        super.new(slv_port_vif, mst_port_vif);
+      super.new(slv_port_vif, mst_port_vif);
 
-        slv_port_w_cnt = 0;
-        mst_port_w_cnt = 0;
-        for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
-          slv_port_r_cnt[id] = '0;
-          mst_port_r_cnt[id] = '0;
-          slv_port_r[id]     = '0;
-          slv_port_r_pnt[id] = '1;
-        end
+      slv_port_w_cnt = 0;
+      mst_port_w_cnt = 0;
+      for (int unsigned id = 0; id < 2**AxiIdWidth; id++) begin
+        slv_port_r_cnt[id] = '0;
+        mst_port_r_cnt[id] = '0;
+        slv_port_r[id]     = '0;
+        slv_port_r_pnt[id] = '1;
       end
     endfunction
 
