@@ -103,7 +103,9 @@ module axi_to_mem_split #(
     .slv_aw_select_i ( 1'b1                            ),
     .slv_resp_o      ( axi_resp_o                      ),
     .mst_reqs_o      ( {axi_write_req,  axi_read_req}  ),
-    .mst_resps_i     ( {axi_write_resp, axi_read_resp} )
+    .mst_resps_i     ( {axi_write_resp, axi_read_resp} ),
+    .mst_b_idx_o     (                                 ),
+    .mst_r_idx_o     (                                 )
   );
 
   assign busy_o = read_busy || write_busy;
