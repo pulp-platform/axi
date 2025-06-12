@@ -12,7 +12,7 @@
 
 # select IIS-internal tool commands if we run on IIS machines
 ifneq (,$(wildcard /etc/iis.version))
-	VSIM        ?= questa-2022.3 vsim
+	VSIM        ?= questa-2025.1 vsim
 	SYNOPSYS_DC ?= synopsys-2022.03 dcnxt_shell
 else
 	VSIM        ?= vsim

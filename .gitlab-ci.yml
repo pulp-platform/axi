@@ -28,7 +28,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '2022.3']
+      - VSIM_VER: ['2025.1']
 
 synopsys_dc:
   stage: build
@@ -73,7 +73,7 @@ fuse_xsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '2022.3']
+      - VSIM_VER: ['2025.1']
 
 axi_addr_test:
   <<: *run_vsim
