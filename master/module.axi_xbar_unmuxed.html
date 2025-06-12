@@ -1,4 +1,4 @@
-<!-- Compiled by morty-0.9.0 / 2025-05-22 09:02:44.114475071 +00:00 -->
+<!-- Compiled by morty-0.9.0 / 2025-06-12 12:21:06.345067650 +00:00 -->
 
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
@@ -47,6 +47,8 @@ typedef struct packed {
 } rule_t;
 
 </code></pre>
+</div><h3 id="parameter.MstPortsIdxWidth" class="impl"><code class="in-band"><a href="#parameter.MstPortsIdxWidth">MstPortsIdxWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MstPortsIdxWidthOne" class="impl"><code class="in-band"><a href="#parameter.MstPortsIdxWidthOne">MstPortsIdxWidthOne</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h3 id="parameter.cfg_NoMstPorts" class="impl"><code class="in-band"><a href="#parameter.cfg_NoMstPorts">cfg_NoMstPorts</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
@@ -69,7 +71,7 @@ typedef struct packed {
 <p>Each master port can have multiple different rules.</p>
 </div><h3 id="port.en_default_mst_port_i" class="impl"><code class="in-band"><a href="#port.en_default_mst_port_i">en_default_mst_port_i</a><span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0]</span></code></h3><div class="docblock">
 <p>Enable default master port.</p>
-</div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band"><a href="#port.default_mst_port_i">default_mst_port_i</a><span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.default_mst_port_i" class="impl"><code class="in-band"><a href="#port.default_mst_port_i">default_mst_port_i</a><span class="type-annotation">: input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]</span></code></h3><div class="docblock">
 <p>Enables a default master port for each slave port. When this is enabled unmapped</p>
 <p>transactions get issued at the master port given by <code>default_mst_port_i</code>.</p>
 <p>When not used, tie to <code>'0</code>.</p>
