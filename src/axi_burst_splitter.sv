@@ -428,6 +428,7 @@ module axi_burst_splitter_ax_chan #(
               // Reduce number of bursts still to be sent by one and increment address.
               ax_d.len--;
               if (ax_d.burst == axi_pkg::BURST_INCR) begin
+                ax_d.addr = axi_pkg::aligned_addr(axi_pkg::largest_addr_t'(ax_d.addr), ax_d.size);
                 ax_d.addr += (1 << ax_d.size);
               end
             end
@@ -448,6 +449,7 @@ module axi_burst_splitter_ax_chan #(
             // Otherwise, continue with the next burst.
             ax_d.len--;
             if (ax_q.burst == axi_pkg::BURST_INCR) begin
+              ax_d.addr = axi_pkg::aligned_addr(axi_pkg::largest_addr_t'(ax_q.addr), ax_q.size);
               ax_d.addr += (1 << ax_q.size);
             end
           end
