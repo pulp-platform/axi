@@ -114,7 +114,7 @@ package axi_pkg;
 
   /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
   function automatic shortint unsigned num_bytes(size_t size);
-    return 1 << size;
+    return shortint'(1 << size);
   endfunction
 
   /// An overly long address type.
@@ -153,10 +153,10 @@ package axi_pkg;
     // equivalent with multiplication and division by a power of two, which conveniently are the
     // only allowed values for `len` of a `BURST_WRAP`.
     unique case (len)
-      4'b1    : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
-      4'b11   : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
-      4'b111  : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
-      4'b1111 : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
+      len_t'(4'b1   ) : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
+      len_t'(4'b11  ) : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
+      len_t'(4'b111 ) : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
+      len_t'(4'b1111) : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
       default : wrap_addr = '0;
     endcase
     return wrap_addr;
@@ -188,8 +188,8 @@ package axi_pkg;
       // over the wrap threshold, the address wraps around by subtracting the accessed address
       // space from the normal `BURST_INCR` address. The lower wrap boundary is equivalent to
       // The wrap trigger condition minus the container size (`num_bytes(size) * (len + 1)`).
-      if (burst == BURST_WRAP && ret_addr >= wrp_bond + (num_bytes(size) * (len + 1))) begin
-        ret_addr = ret_addr - (num_bytes(size) * (len + 1));
+      if (burst == BURST_WRAP && ret_addr >= wrp_bond + (num_bytes(size) * (largest_addr_t'(len) + 1))) begin
+        ret_addr = ret_addr - (num_bytes(size) * (largest_addr_t'(len) + 1));
       end
     end
     return ret_addr;
@@ -200,15 +200,16 @@ package axi_pkg;
   beat_lower_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
       shortint unsigned strobe_width, shortint unsigned i_beat);
     largest_addr_t _addr = beat_addr(addr, size, len, burst, i_beat);
-    return shortint'(_addr - (_addr / strobe_width) * strobe_width);
+    return shortint'(($bits(_addr)  + $bits(strobe_width))'(_addr) - (_addr / largest_addr_t'(strobe_width)) * strobe_width);
   endfunction
 
   /// Index of highest byte in beat (see A3-51).
   function automatic shortint unsigned
   beat_upper_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
       shortint unsigned strobe_width, shortint unsigned i_beat);
+      typedef shortint unsigned SU;
     if (i_beat == 0) begin
-      return aligned_addr(addr, size) + (num_bytes(size) - 1) - (addr / strobe_width) * strobe_width;
+      return SU'(aligned_addr(addr, size) + (largest_addr_t'(num_bytes(size)) - 1) - (addr / largest_addr_t'(strobe_width)) * strobe_width);
     end else begin
       return beat_lower_byte(addr, size, len, burst, strobe_width, i_beat) + num_bytes(size) - 1;
     end
@@ -255,6 +256,7 @@ package axi_pkg;
       WBACK_RALLOCATE                   : return 4'b1111;
       WBACK_WALLOCATE                   : return 4'b1011;
       WBACK_RWALLOCATE                  : return 4'b1111;
+      default                           : return 4'bxxxx;
     endcase // mtype
   endfunction
 
@@ -273,6 +275,7 @@ package axi_pkg;
       WBACK_RALLOCATE                   : return 4'b0111;
       WBACK_WALLOCATE                   : return 4'b1111;
       WBACK_RWALLOCATE                  : return 4'b1111;
+      default                           : return 4'bxxxx;
     endcase // mtype
   endfunction
 

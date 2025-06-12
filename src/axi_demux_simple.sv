@@ -516,8 +516,8 @@ module axi_demux_id_counters #(
   parameter int unsigned CounterWidth      = 4,
   parameter type         mst_port_select_t = logic
 ) (
-  input                        clk_i,   // Clock
-  input                        rst_ni,  // Asynchronous reset active low
+  input  logic                 clk_i,   // Clock
+  input  logic                 rst_ni,  // Asynchronous reset active low
   // lookup
   input  logic [AxiIdBits-1:0] lookup_axi_id_i,
   output mst_port_select_t     lookup_mst_select_o,

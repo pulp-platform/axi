@@ -115,7 +115,7 @@ module axi_lite_to_axi_intf #(
   assign out.aw_id     = '0;
   assign out.aw_addr   = in.aw_addr;
   assign out.aw_len    = '0;
-  assign out.aw_size   = AxiSize;
+  assign out.aw_size   = axi_pkg::size_t'(AxiSize);
   assign out.aw_burst  = axi_pkg::BURST_FIXED;
   assign out.aw_lock   = '0;
   assign out.aw_cache  = slv_aw_cache_i;
@@ -141,7 +141,7 @@ module axi_lite_to_axi_intf #(
   assign out.ar_id     = '0;
   assign out.ar_addr   = in.ar_addr;
   assign out.ar_len    = '0;
-  assign out.ar_size   = AxiSize;
+  assign out.ar_size   = axi_pkg::size_t'(AxiSize);
   assign out.ar_burst  = axi_pkg::BURST_FIXED;
   assign out.ar_lock   = '0;
   assign out.ar_cache  = slv_ar_cache_i;

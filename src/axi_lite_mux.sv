@@ -123,7 +123,9 @@ module axi_lite_mux #(
   // other non degenerate cases
   end else begin : gen_mux
     // typedef for the FIFO types
-    typedef logic [$clog2(NoSlvPorts)-1:0] select_t;
+    // @rmcnulty: workaround for Verilator internal error
+    localparam int unsigned CLog2NoSlvPorts = $clog2(NoSlvPorts);
+    typedef logic [CLog2NoSlvPorts-1:0] select_t;
 
     // input to the AW arbitration tree, unpacked from request struct
     aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;

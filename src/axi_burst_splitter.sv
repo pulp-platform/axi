@@ -97,7 +97,7 @@ module axi_burst_splitter #(
     .mst_resps_i      ( {unsupported_resp, act_resp}  )
   );
   // Define supported transactions.
-  function bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
+  function automatic bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
       axi_pkg::len_t len);
     // Single-beat transactions do not need splitting, so all are supported.
     if (len == '0) return 1'b1;
