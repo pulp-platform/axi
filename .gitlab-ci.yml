@@ -51,6 +51,13 @@ fuse_xsim:
     - $HOME/.local/bin/fusesoc core list
     - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
+verilator_lint:
+  stage: build
+  variables:
+    VERILATOR: verilator-5.020 verilator
+  script:
+    - scripts/run_verilator.sh
+
 .run_vsim: &run_vsim
   stage: test
   needs:

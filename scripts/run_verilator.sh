@@ -26,4 +26,4 @@ bender script verilator -t synthesis -t synth_test > ./verilator.f
 VERILATOR_FLAGS=()
 VERILATOR_FLAGS+=(-Wno-fatal)
 
-$VERILATOR --top-module axi_synth_bench --lint-only -f verilator.f ${VERILATOR_FLAGS[@]}
+$VERILATOR --top-module axi_synth_bench --lint-only --timing -f verilator.f ${VERILATOR_FLAGS[@]}
