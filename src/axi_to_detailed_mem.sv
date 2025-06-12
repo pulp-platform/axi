@@ -141,7 +141,6 @@ module axi_to_detailed_mem #(
   } mem_rsp_t;
 
   mem_rsp_t       m2s_resp;
-                  // mem_rdata;
   axi_pkg::len_t  r_cnt_d,        r_cnt_q,
                   w_cnt_d,        w_cnt_q;
   logic           arb_valid,      arb_ready,
@@ -157,10 +156,7 @@ module axi_to_detailed_mem #(
                   meta_sel_d,     meta_sel_q,
                   m2s_req_valid,  m2s_req_ready,
                   m2s_resp_valid, m2s_resp_ready;
-                  // mem_req_valid,  mem_req_ready,
-                  // mem_rvalid;
   mem_req_t       m2s_req;
-                  // mem_req;
   meta_t          rd_meta,
                   rd_meta_d,      rd_meta_q,
                   wr_meta,
@@ -390,28 +386,6 @@ module axi_to_detailed_mem #(
     qos:    meta.qos,
     region: meta.region
   };
-
-  // Using mem_to_banks fifo to buffer responses
-  // // Interface memory as stream.
-  // stream_to_mem #(
-  //   .mem_req_t  ( mem_req_t  ),
-  //   .mem_resp_t ( mem_rsp_t  ),
-  //   .BufDepth   ( BufDepth   )
-  // ) i_stream_to_mem (
-  //   .clk_i,
-  //   .rst_ni,
-  //   .req_i            ( m2s_req        ),
-  //   .req_valid_i      ( m2s_req_valid  ),
-  //   .req_ready_o      ( m2s_req_ready  ),
-  //   .resp_o           ( m2s_resp       ),
-  //   .resp_valid_o     ( m2s_resp_valid ),
-  //   .resp_ready_i     ( m2s_resp_ready ),
-  //   .mem_req_o        ( mem_req        ),
-  //   .mem_req_valid_o  ( mem_req_valid  ),
-  //   .mem_req_ready_i  ( mem_req_ready  ),
-  //   .mem_resp_i       ( mem_rdata      ),
-  //   .mem_resp_valid_i ( mem_rvalid     )
-  // );
 
   typedef struct packed {
     axi_pkg::atop_t   atop;
