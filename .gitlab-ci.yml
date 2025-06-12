@@ -53,6 +53,8 @@ fuse_xsim:
 
 .run_vsim: &run_vsim
   stage: test
+  needs:
+    - vsim
   script:
     - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
     - >
