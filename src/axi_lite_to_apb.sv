@@ -296,11 +296,13 @@ module axi_lite_to_apb #(
         // `Idle` and `Setup` steps
         // can check here for readiness, because the response goes into spill_registers
         if (apb_req_valid && apb_wresp_ready && apb_rresp_ready) begin
-          if (apb_dec_valid) begin
+          if (apb_dec_valid && ((apb_req.write && (|apb_req.strb)) || (!apb_req.write))) begin
             // `Setup` step
             // set the request output
             apb_req_o[apb_sel_idx] = '{
-              paddr:   apb_req.addr,
+              // Align address as an unaligned APB paddr can cause unpredictable behavior (APB spec 2.1.1)
+              // AXI-lite data is always bus-aligned, even if address is not
+              paddr:   axi_pkg::aligned_addr(axi_pkg::largest_addr_t'(apb_req.addr), $clog2(DataWidth/8)),
               pprot:   apb_req.prot,
               psel:    1'b1,
               penable: 1'b0,
@@ -314,7 +316,7 @@ module axi_lite_to_apb #(
             // decode error, generate error and do not generate APB request, pop it
             apb_req_ready = 1'b1;
             if (apb_req.write) begin
-              apb_wresp       = axi_pkg::RESP_DECERR;
+              apb_wresp       = ~(|apb_req.strb) ? axi_pkg::RESP_OKAY : axi_pkg::RESP_DECERR;
               apb_wresp_valid = 1'b1;
             end else begin
               apb_rresp.resp  = axi_pkg::RESP_DECERR;
@@ -326,7 +328,9 @@ module axi_lite_to_apb #(
       Access: begin
         // `Access` step
         apb_req_o[apb_sel_idx] = '{
-          paddr:   apb_req.addr,
+          // Align address as an unaligned APB paddr can cause unpredictable behavior (APB spec 2.1.1)
+          // AXI-lite data is always bus-aligned, even if address is not
+          paddr:   axi_pkg::aligned_addr(axi_pkg::largest_addr_t'(apb_req.addr), $clog2(DataWidth/8)),
           pprot:   apb_req.prot,
           psel:    1'b1,
           penable: 1'b1,

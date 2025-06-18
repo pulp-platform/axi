@@ -34,11 +34,11 @@ import cf_math_pkg::idx_width;
   parameter type slv_b_chan_t                                         = logic,
   /// AXI4+ATOP B channel struct type for the master ports.
   parameter type mst_b_chan_t                                         = logic,
-  /// AXI4+ATOP AR channel struct type for the slave ports.  
+  /// AXI4+ATOP AR channel struct type for the slave ports.
   parameter type slv_ar_chan_t                                        = logic,
   /// AXI4+ATOP AR channel struct type for the master ports.
   parameter type mst_ar_chan_t                                        = logic,
-  /// AXI4+ATOP R channel struct type for the slave ports.  
+  /// AXI4+ATOP R channel struct type for the slave ports.
   parameter type slv_r_chan_t                                         = logic,
   /// AXI4+ATOP R channel struct type for the master ports.
   parameter type mst_r_chan_t                                         = logic,
@@ -60,25 +60,23 @@ import cf_math_pkg::idx_width;
   ///   axi_addr_t   end_addr;
   /// } rule_t;
   /// ```
-  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t
-`ifdef VCS
-  , localparam int unsigned MstPortsIdxWidth =
+  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t,
+  localparam int unsigned MstPortsIdxWidth =
       (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
-`endif
 ) (
   /// Clock, positive edge triggered.
   input  logic                                                          clk_i,
-  /// Asynchronous reset, active low.  
+  /// Asynchronous reset, active low.
   input  logic                                                          rst_ni,
   /// Testmode enable, active high.
   input  logic                                                          test_i,
-  /// AXI4+ATOP requests to the slave ports.  
+  /// AXI4+ATOP requests to the slave ports.
   input  slv_req_t  [Cfg.NoSlvPorts-1:0]                                slv_ports_req_i,
-  /// AXI4+ATOP responses of the slave ports.  
+  /// AXI4+ATOP responses of the slave ports.
   output slv_resp_t [Cfg.NoSlvPorts-1:0]                                slv_ports_resp_o,
-  /// AXI4+ATOP requests of the master ports.  
+  /// AXI4+ATOP requests of the master ports.
   output mst_req_t  [Cfg.NoMstPorts-1:0]                                mst_ports_req_o,
-  /// AXI4+ATOP responses to the master ports.  
+  /// AXI4+ATOP responses to the master ports.
   input  mst_resp_t [Cfg.NoMstPorts-1:0]                                mst_ports_resp_i,
   /// Address map array input for the crossbar. This map is global for the whole module.
   /// It is used for routing the transactions to the respective master ports.
@@ -86,17 +84,10 @@ import cf_math_pkg::idx_width;
   input  rule_t     [Cfg.NoAddrRules-1:0]                               addr_map_i,
   /// Enable default master port.
   input  logic      [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
+  /// When not used, tie to `'0`.
   input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
-  /// Enables a default master port for each slave port. When this is enabled unmapped
-  /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
-  input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
 );
 
   // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
@@ -187,11 +178,9 @@ import cf_math_pkg::idx_width;
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter type rule_t                 = axi_pkg::xbar_rule_64_t
-`ifdef VCS
-  , localparam int unsigned MstPortsIdxWidth =
+  parameter type rule_t                 = axi_pkg::xbar_rule_64_t,
+  localparam int unsigned MstPortsIdxWidth =
         (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
-`endif
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
@@ -200,11 +189,7 @@ import cf_math_pkg::idx_width;
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
   input  logic  [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
-  input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
 );
 
   localparam int unsigned AxiIdWidthMstPorts = Cfg.AxiIdWidthSlvPorts + $clog2(Cfg.NoSlvPorts);
