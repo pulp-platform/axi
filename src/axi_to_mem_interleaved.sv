@@ -79,6 +79,9 @@ module axi_to_mem_interleaved #(
   // internal signals
   logic w_busy, r_busy;
   logic [NumBanks-1:0] arb_outcome, arb_outcome_head;
+  logic [NumBanks-1:0] fifo_full;
+  logic [NumBanks-1:0] r_axi_to_mem_req, w_axi_to_mem_req;
+  logic [NumBanks-1:0] r_axi_to_mem_gnt, w_axi_to_mem_gnt;
 
   // internal AXI buses
   axi_req_t  r_axi_req,  w_axi_req;
@@ -130,20 +133,20 @@ module axi_to_mem_interleaved #(
     .HideStrb    ( HideStrb     ),
     .OutFifoDepth( OutFifoDepth )
   ) i_axi_to_mem_write (
-    .clk_i        ( clk_i         ),
-    .rst_ni       ( rst_ni        ),
-    .busy_o       ( w_busy        ),
-    .axi_req_i    ( w_axi_req     ),
-    .axi_resp_o   ( w_axi_resp    ),
-    .mem_req_o    ( w_mem_req     ),
-    .mem_gnt_i    ( w_mem_gnt     ),
-    .mem_addr_o   ( w_mem_addr    ),
-    .mem_wdata_o  ( w_mem_wdata   ),
-    .mem_strb_o   ( w_mem_strb    ),
-    .mem_atop_o   ( w_mem_atop    ),
-    .mem_we_o     ( w_mem_we      ),
-    .mem_rvalid_i ( w_mem_rvalid  ),
-    .mem_rdata_i  ( w_mem_rdata   )
+    .clk_i        ( clk_i            ),
+    .rst_ni       ( rst_ni           ),
+    .busy_o       ( w_busy           ),
+    .axi_req_i    ( w_axi_req        ),
+    .axi_resp_o   ( w_axi_resp       ),
+    .mem_req_o    ( w_axi_to_mem_req ),
+    .mem_gnt_i    ( w_axi_to_mem_gnt ),
+    .mem_addr_o   ( w_mem_addr       ),
+    .mem_wdata_o  ( w_mem_wdata      ),
+    .mem_strb_o   ( w_mem_strb       ),
+    .mem_atop_o   ( w_mem_atop       ),
+    .mem_we_o     ( w_mem_we         ),
+    .mem_rvalid_i ( w_mem_rvalid     ),
+    .mem_rdata_i  ( w_mem_rdata      )
   );
 
   axi_to_mem #(
@@ -157,20 +160,20 @@ module axi_to_mem_interleaved #(
     .HideStrb     ( HideStrb     ),
     .OutFifoDepth ( OutFifoDepth )
   ) i_axi_to_mem_read (
-    .clk_i        ( clk_i         ),
-    .rst_ni       ( rst_ni        ),
-    .busy_o       ( r_busy        ),
-    .axi_req_i    ( r_axi_req     ),
-    .axi_resp_o   ( r_axi_resp    ),
-    .mem_req_o    ( r_mem_req     ),
-    .mem_gnt_i    ( r_mem_gnt     ),
-    .mem_addr_o   ( r_mem_addr    ),
-    .mem_wdata_o  ( r_mem_wdata   ),
-    .mem_strb_o   ( r_mem_strb    ),
-    .mem_atop_o   ( r_mem_atop    ),
-    .mem_we_o     ( r_mem_we      ),
-    .mem_rvalid_i ( r_mem_rvalid  ),
-    .mem_rdata_i  ( r_mem_rdata   )
+    .clk_i        ( clk_i            ),
+    .rst_ni       ( rst_ni           ),
+    .busy_o       ( r_busy           ),
+    .axi_req_i    ( r_axi_req        ),
+    .axi_resp_o   ( r_axi_resp       ),
+    .mem_req_o    ( r_axi_to_mem_req ),
+    .mem_gnt_i    ( r_axi_to_mem_gnt ),
+    .mem_addr_o   ( r_mem_addr       ),
+    .mem_wdata_o  ( r_mem_wdata      ),
+    .mem_strb_o   ( r_mem_strb       ),
+    .mem_atop_o   ( r_mem_atop       ),
+    .mem_we_o     ( r_mem_we         ),
+    .mem_rvalid_i ( r_mem_rvalid     ),
+    .mem_rdata_i  ( r_mem_rdata      )
   );
 
   // create a struct for the rr-arb-tree
@@ -211,6 +214,12 @@ module axi_to_mem_interleaved #(
     assign w_mem_rvalid[i] = mem_rvalid_i[i] & !arb_outcome_head[i];
     assign r_mem_rvalid[i] = mem_rvalid_i[i] &  arb_outcome_head[i];
 
+    assign w_mem_req[i] = w_axi_to_mem_req[i] & ~fifo_full[i];
+    assign r_mem_req[i] = r_axi_to_mem_req[i] & ~fifo_full[i];
+
+    assign w_axi_to_mem_gnt[i] = w_mem_gnt[i] & ~fifo_full[i];
+    assign r_axi_to_mem_gnt[i] = r_mem_gnt[i] & ~fifo_full[i];
+
     // fine-grain arbitration
     rr_arb_tree #(
       .NumIn     ( 2                 ),
@@ -238,7 +247,7 @@ module axi_to_mem_interleaved #(
       .rst_ni     ( rst_ni                      ),
       .flush_i    ( 1'b0                        ),
       .testmode_i ( 1'b0                        ),
-      .full_o     ( ),
+      .full_o     ( fifo_full[i]                ),
       .empty_o    ( ),
       .usage_o    ( ),
       .data_i     ( arb_outcome[i]              ),
