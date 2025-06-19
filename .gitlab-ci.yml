@@ -28,7 +28,7 @@ vsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '2022.3']
+      - VSIM_VER: ['2025.1']
 
 synopsys_dc:
   stage: build
@@ -51,8 +51,17 @@ fuse_xsim:
     - $HOME/.local/bin/fusesoc core list
     - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
+verilator_lint:
+  stage: build
+  variables:
+    VERILATOR: verilator-5.020 verilator
+  script:
+    - scripts/run_verilator.sh
+
 .run_vsim: &run_vsim
   stage: test
+  needs:
+    - vsim
   script:
     - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
     - >
@@ -73,7 +82,7 @@ fuse_xsim:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['10.7b', '2022.3']
+      - VSIM_VER: ['2025.1']
 
 axi_addr_test:
   <<: *run_vsim
