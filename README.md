@@ -80,7 +80,9 @@ The following modules are meant to be used for verification purposes only but ar
 | Name                                                 | Description                                                                                             |
 |------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | [`axi_bus_compare`](src/axi_bus_compare.sv)          | Compares two buses of the same type (and in the same clock domain), returns events on mismatch.         |
+| [`axi_fifo_delay_dyn`](src/axi_fifo_delay_dyn.sv)    | Delay and buffer each channel of an AXI bus individually.                                               |
 | [`axi_slave_compare`](src/axi_slave_compare.sv)      | Compares two slave devices of the same type (and in the same clock domain), returns events on mismatch. |
+
 
 ### Simulation-Only Modules
 
