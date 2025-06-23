@@ -29,7 +29,7 @@ module tb_axi_to_axi_lite;
 
   localparam     MAX_READ_TXNS  = 32'd20;
   localparam     MAX_WRITE_TXNS = 32'd20;
-  localparam bit AXI_ATOPS      = 1'b1;
+  localparam bit AXI_ATOPS      = 1'b0;
 
   logic clk = 0;
   logic rst = 1;
@@ -140,12 +140,13 @@ module tb_axi_to_axi_lite;
     axi_lite_drv.run();
   end
 
+  longint aw_cnt = 0;
+  longint w_cnt  = 0;
+  longint b_cnt  = 0;
+  longint ar_cnt = 0;
+  longint r_cnt  = 0;
+
   initial begin : proc_count_lite_beats
-    automatic longint aw_cnt = 0;
-    automatic longint w_cnt  = 0;
-    automatic longint b_cnt  = 0;
-    automatic longint ar_cnt = 0;
-    automatic longint r_cnt  = 0;
     @(posedge rst);
     while (!done) begin
       @(posedge clk);
