@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.8 - 2025-06-24
+### Added
+- Add a non-synthesizable IP to delay each channel of an AXI bus individually. #380
+- Add granular version of the `burst_splitter`, originally developed for AXI-Realm. #377
+- Add linting pass to CI elaborating with Verilator. #378
+
+### Fixed
+- `axi_burst_splitter`: Fix address alignment issues. #375
+- `axi_lite_to_apb`: Various fixes. #375
+- `axi_to_mem`: Fix edge cases. #376
+-  Various lint fixes. #374
+`
+### Changed
+- `axi_sim_mem`: Propagate user field on B and R channels. #373
+- Switched to VSIM version 2025.1 in CI. #378
+
+
 ## 0.39.7 - 2025-05-20
 ### Added
 - Add `axi_burst_unwrap`. #326
