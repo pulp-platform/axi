@@ -1,13 +1,13 @@
-<!-- Compiled by morty-0.9.0 / 2025-06-24 17:12:39.389547479 +00:00 -->
+<!-- Compiled by morty-0.9.0 / 2025-06-24 17:12:39.403372375 +00:00 -->
 
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
 <link rel="stylesheet" type="text/css" href="static/light.css">
 <link rel="stylesheet" type="text/css" href="static/svdoc.css">
 <body>
-<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_delayer</a></h1>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">axi_fifo_delay_dyn</a></h1>
 <div class="docblock">
-<p>Synthesizable module that (randomly) delays AXI channels.</p>
+<p>Delay and buffer an AXI bus</p>
 </div>
 <h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
 <h3 id="parameter.aw_chan_t" class="impl"><code class="in-band"><a href="#parameter.aw_chan_t">aw_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
@@ -17,13 +17,21 @@
 </div><h3 id="parameter.r_chan_t" class="impl"><code class="in-band"><a href="#parameter.r_chan_t">r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.axi_req_t" class="impl"><code class="in-band"><a href="#parameter.axi_req_t">axi_req_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.axi_resp_t" class="impl"><code class="in-band"><a href="#parameter.axi_resp_t">axi_resp_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
-</div><h3 id="parameter.StallRandomInput" class="impl"><code class="in-band"><a href="#parameter.StallRandomInput">StallRandomInput</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
-</div><h3 id="parameter.StallRandomOutput" class="impl"><code class="in-band"><a href="#parameter.StallRandomOutput">StallRandomOutput</a><span class="type-annotation">: bit</span></code></h3><div class="docblock">
-</div><h3 id="parameter.FixedDelayInput" class="impl"><code class="in-band"><a href="#parameter.FixedDelayInput">FixedDelayInput</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
-</div><h3 id="parameter.FixedDelayOutput" class="impl"><code class="in-band"><a href="#parameter.FixedDelayOutput">FixedDelayOutput</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DepthAR" class="impl"><code class="in-band"><a href="#parameter.DepthAR">DepthAR</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DepthAW" class="impl"><code class="in-band"><a href="#parameter.DepthAW">DepthAW</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DepthR" class="impl"><code class="in-band"><a href="#parameter.DepthR">DepthR</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DepthW" class="impl"><code class="in-band"><a href="#parameter.DepthW">DepthW</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DepthB" class="impl"><code class="in-band"><a href="#parameter.DepthB">DepthB</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxDelay" class="impl"><code class="in-band"><a href="#parameter.MaxDelay">MaxDelay</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.DelayWidth" class="impl"><code class="in-band"><a href="#parameter.DelayWidth">DelayWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
 <h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
 </div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.aw_delay_i" class="impl"><code class="in-band"><a href="#port.aw_delay_i">aw_delay_i</a><span class="type-annotation">: input  logic [DelayWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.w_delay_i" class="impl"><code class="in-band"><a href="#port.w_delay_i">w_delay_i</a><span class="type-annotation">: input  logic [DelayWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.b_delay_i" class="impl"><code class="in-band"><a href="#port.b_delay_i">b_delay_i</a><span class="type-annotation">: input  logic [DelayWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.ar_delay_i" class="impl"><code class="in-band"><a href="#port.ar_delay_i">ar_delay_i</a><span class="type-annotation">: input  logic [DelayWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.r_delay_i" class="impl"><code class="in-band"><a href="#port.r_delay_i">r_delay_i</a><span class="type-annotation">: input  logic [DelayWidth-1:0]</span></code></h3><div class="docblock">
 </div><h3 id="port.slv_req_i" class="impl"><code class="in-band"><a href="#port.slv_req_i">slv_req_i</a><span class="type-annotation">: input  axi_req_t</span></code></h3><div class="docblock">
 </div><h3 id="port.slv_resp_o" class="impl"><code class="in-band"><a href="#port.slv_resp_o">slv_resp_o</a><span class="type-annotation">: output axi_resp_t</span></code></h3><div class="docblock">
 </div><h3 id="port.mst_req_o" class="impl"><code class="in-band"><a href="#port.mst_req_o">mst_req_o</a><span class="type-annotation">: output axi_req_t</span></code></h3><div class="docblock">

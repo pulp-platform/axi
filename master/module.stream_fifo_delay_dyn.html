@@ -1,0 +1,32 @@
+<!-- Compiled by morty-0.9.0 / 2025-06-24 17:12:39.405321199 +00:00 -->
+
+<html>
+<link rel="stylesheet" type="text/css" href="static/rustdoc.css">
+<link rel="stylesheet" type="text/css" href="static/light.css">
+<link rel="stylesheet" type="text/css" href="static/svdoc.css">
+<body>
+<section id="main" class="content"><h1 class="fqn">Module <a class="module">stream_fifo_delay_dyn</a></h1>
+<div class="docblock">
+<p>Delay and buffer a stream with AXI-like handshaking</p>
+</div>
+<h2 id="parameters" class="section-header"><a href="#parameters">Parameters</a></h2>
+<h3 id="parameter.payload_t" class="impl"><code class="in-band"><a href="#parameter.payload_t">payload_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
+</div><h3 id="parameter.MaxDelay" class="impl"><code class="in-band"><a href="#parameter.MaxDelay">MaxDelay</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.Depth" class="impl"><code class="in-band"><a href="#parameter.Depth">Depth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.CounterWidth" class="impl"><code class="in-band"><a href="#parameter.CounterWidth">CounterWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h3 id="parameter.BookeepingBits" class="impl"><code class="in-band"><a href="#parameter.BookeepingBits">BookeepingBits</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
+</div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
+<h3 id="port.clk_i" class="impl"><code class="in-band"><a href="#port.clk_i">clk_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.rst_ni" class="impl"><code class="in-band"><a href="#port.rst_ni">rst_ni</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.delay_i" class="impl"><code class="in-band"><a href="#port.delay_i">delay_i</a><span class="type-annotation">: input  logic     [CounterWidth-1:0]</span></code></h3><div class="docblock">
+</div><h3 id="port.payload_i" class="impl"><code class="in-band"><a href="#port.payload_i">payload_i</a><span class="type-annotation">: input  payload_t</span></code></h3><div class="docblock">
+</div><h3 id="port.ready_o" class="impl"><code class="in-band"><a href="#port.ready_o">ready_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+</div><h3 id="port.valid_i" class="impl"><code class="in-band"><a href="#port.valid_i">valid_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.payload_o" class="impl"><code class="in-band"><a href="#port.payload_o">payload_o</a><span class="type-annotation">: output payload_t</span></code></h3><div class="docblock">
+</div><h3 id="port.ready_i" class="impl"><code class="in-band"><a href="#port.ready_i">ready_i</a><span class="type-annotation">: input  logic</span></code></h3><div class="docblock">
+</div><h3 id="port.valid_o" class="impl"><code class="in-band"><a href="#port.valid_o">valid_o</a><span class="type-annotation">: output logic</span></code></h3><div class="docblock">
+</div><h2 id="signals" class="section-header"><a href="#signals">Signals</a></h2>
+<h3 id="signal.head_data" class="impl"><code class="in-band"><a href="#signal.head_data">head_data</a><span class="type-annotation">: payload_t</span></code></h3><div class="docblock">
+</div></section>
+</body>
+</html>
