@@ -26,27 +26,27 @@ module axi_fifo_delay_dyn #(
   // AXI request & response types
   parameter type  axi_req_t = logic,
   parameter type axi_resp_t = logic,
-  // delay parameters
+  // Delay parameters
   parameter int unsigned DepthAR  = 4,    // Power of two
   parameter int unsigned DepthAW  = 4,    // Power of two
   parameter int unsigned DepthR   = 4,    // Power of two
   parameter int unsigned DepthW   = 4,    // Power of two
-  parameter int unsigned DepthB   = 4,     // Power of two
+  parameter int unsigned DepthB   = 4,    // Power of two
   parameter int unsigned MaxDelay = 1024,
   // DO NOT EDIT, derived parameters
   localparam int unsigned DelayWidth = $clog2(MaxDelay) + 1
 ) (
   input  logic                  clk_i,      // Clock
   input  logic                  rst_ni,     // Asynchronous reset active low
-  input  logic [DelayWidth-1:0] aw_delay_i,
-  input  logic [DelayWidth-1:0] w_delay_i,
-  input  logic [DelayWidth-1:0] b_delay_i,
-  input  logic [DelayWidth-1:0] ar_delay_i,
-  input  logic [DelayWidth-1:0] r_delay_i,
-  // slave port
+  input  logic [DelayWidth-1:0] aw_delay_i, // Delay of AW channel
+  input  logic [DelayWidth-1:0] w_delay_i,  // Delay of W channel
+  input  logic [DelayWidth-1:0] b_delay_i,  // Delay of B channel
+  input  logic [DelayWidth-1:0] ar_delay_i, // Delay of AR channel
+  input  logic [DelayWidth-1:0] r_delay_i,  // Delay of R channel
+  // Slave port
   input  axi_req_t              slv_req_i,
   output axi_resp_t             slv_resp_o,
-  // master port
+  // Master port
   output axi_req_t              mst_req_o,
   input  axi_resp_t             mst_resp_i
 );
@@ -168,33 +168,31 @@ module axi_fifo_delay_dyn #(
 
 endmodule
 
-
-
 /// Delay and buffer an AXI bus interface wrapper
 module axi_fifo_delay_dyn_intf #(
   // Synopsys DC requires a default value for parameters.
-  parameter int unsigned AXI_ID_WIDTH        = 0,
-  parameter int unsigned AXI_ADDR_WIDTH      = 0,
-  parameter int unsigned AXI_DATA_WIDTH      = 0,
-  parameter int unsigned AXI_USER_WIDTH      = 0,
-  parameter int unsigned DEPTH_AR            = 4, // Power of two
-  parameter int unsigned DEPTH_AW            = 4, // Power of two
-  parameter int unsigned DEPTH_R             = 4, // Power of two
-  parameter int unsigned DEPTH_W             = 4, // Power of two
-  parameter int unsigned DEPTH_B             = 4, // Power of two
-  parameter int unsigned MAX_DELAY           = 0,
+  parameter int unsigned AXI_ID_WIDTH   = 0,
+  parameter int unsigned AXI_ADDR_WIDTH = 0,
+  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_USER_WIDTH = 0,
+  parameter int unsigned DEPTH_AR       = 4, // Power of two
+  parameter int unsigned DEPTH_AW       = 4, // Power of two
+  parameter int unsigned DEPTH_R        = 4, // Power of two
+  parameter int unsigned DEPTH_W        = 4, // Power of two
+  parameter int unsigned DEPTH_B        = 4, // Power of two
+  parameter int unsigned MAX_DELAY      = 0,
   // DO NOT EDIT, derived parameters
-  parameter int unsigned DELAY_WIDTH         = $clog2(MAX_DELAY) + 1
+  parameter int unsigned DELAY_WIDTH    = $clog2(MAX_DELAY) + 1
 ) (
-  input  logic                 clk_i,
-  input  logic                 rst_ni,
-  input  logic [MAX_DELAY-1:0] aw_delay_i,
-  input  logic [MAX_DELAY-1:0] w_delay_i,
-  input  logic [MAX_DELAY-1:0] b_delay_i,
-  input  logic [MAX_DELAY-1:0] ar_delay_i,
-  input  logic [MAX_DELAY-1:0] r_delay_i,
-  AXI_BUS.Slave                slv,
-  AXI_BUS.Master               mst
+  input  logic                 clk_i,      // Clock
+  input  logic                 rst_ni,     // Asynchronous reset active low
+  input  logic [MAX_DELAY-1:0] aw_delay_i, // Delay of AW channel
+  input  logic [MAX_DELAY-1:0] w_delay_i,  // Delay of W channel
+  input  logic [MAX_DELAY-1:0] b_delay_i,  // Delay of B channel
+  input  logic [MAX_DELAY-1:0] ar_delay_i, // Delay of AR channel
+  input  logic [MAX_DELAY-1:0] r_delay_i,  // Delay of R channel
+  AXI_BUS.Slave                slv,        // Slave port
+  AXI_BUS.Master               mst         // Master port
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]     id_t;
@@ -260,25 +258,23 @@ module axi_fifo_delay_dyn_intf #(
 // pragma translate_on
 endmodule
 
-
-
 /// Delay and buffer a stream with AXI-like handshaking
 module stream_fifo_delay_dyn #(
-  parameter type payload_t           = logic,
-  parameter int unsigned MaxDelay    = 1024,
-  parameter int unsigned Depth       = 4,      // Power of two
+  parameter type payload_t            = logic,
+  parameter int unsigned MaxDelay     = 1024,
+  parameter int unsigned Depth        = 4,      // Power of two
   // DO NOT EDIT, derived parameters
   parameter int unsigned CounterWidth = $clog2(MaxDelay) + 1
 )(
-  input  logic                    clk_i,
-  input  logic                    rst_ni,
-  input  logic [CounterWidth-1 : 0]     delay_i,
-  input  payload_t                payload_i,
-  output logic                    ready_o,
-  input  logic                    valid_i,
-  output payload_t                payload_o,
-  input  logic                    ready_i,
-  output logic                    valid_o
+  input  logic                        clk_i,
+  input  logic                        rst_ni,
+  input  logic     [CounterWidth-1:0] delay_i,
+  input  payload_t                    payload_i,
+  output logic                        ready_o,
+  input  logic                        valid_i,
+  output payload_t                    payload_o,
+  input  logic                        ready_i,
+  output logic                        valid_o
 );
 
   `ifdef SYNTHESIS
@@ -291,151 +287,161 @@ module stream_fifo_delay_dyn #(
     $fatal(1, "Depth must be a power of two");
 
   localparam int unsigned BookeepingBits = $clog2(Depth) + 1;
-  logic [BookeepingBits-1 : 0] dead_count_d, dead_count_q;
 
-  // head_deadline : latest element's deadline
-  // tail_deadline : next element's deadline
-  logic [CounterWidth-1 : 0] count_val;
-  logic [CounterWidth-1 : 0] head_deadline, tail_deadline;
+  // Number of elements that have been held in the data FIFO
+  // for at least the amount of cycles specified by delay_i.
+  logic [BookeepingBits-1:0] ready_count_d, ready_count_q;
+
+  logic [CounterWidth-1:0] count_val;     // Counter value
+  logic [CounterWidth-1:0] head_deadline; // Last element's deadline
+  logic [CounterWidth-1:0] tail_deadline; // Next element's deadline
   payload_t head_data;
 
   logic fifo_dead_full, fifo_dead_empty, fifo_dead_push, fifo_dead_pop;
   logic fifo_data_full, fifo_data_empty, fifo_data_push, fifo_data_pop;
 
-  `FF(dead_count_q, dead_count_d, '0, clk_i, rst_ni);
+  `FF(ready_count_q, ready_count_d, '0, clk_i, rst_ni);
 
   always_comb begin
-    dead_count_d = dead_count_q;
-    if (fifo_dead_pop)
-      dead_count_d += 1;
-    if (fifo_data_pop)
-      dead_count_d -= 1;
+    ready_count_d = ready_count_q;
+    if (fifo_dead_pop) // A new element timed out
+      ready_count_d += 1;
+    if (fifo_data_pop) // A ready element was popped from the downstream interface
+      ready_count_d -= 1;
   end
 
+  // The deadline of a new incoming data is calculated by adding
+  // the input delay value to the current counter value.
   assign tail_deadline = count_val + delay_i + 1;
 
   assign fifo_data_push = ~fifo_data_full & valid_i;
   assign fifo_dead_push = fifo_data_push;
 
+  // Pop value from deadline FIFO once the counter reaches the deadline
+  // value of the first element in the queue.
   assign fifo_dead_pop = (count_val == head_deadline) & ~fifo_dead_empty;
   assign fifo_data_pop = valid_o & ready_i;
 
-  assign valid_o = (dead_count_q > 0);
+  assign valid_o = (ready_count_q > 0);
   assign ready_o = ~fifo_data_full;
 
   assign payload_o = head_data;
 
   counter #(
-    .WIDTH      ( CounterWidth )
+    .WIDTH ( CounterWidth )
   ) i_counter (
-    .clk_i,
-    .rst_ni,
-    .clear_i    ( 1'b0         ),
-    .en_i       ( 1'b1         ),
-    .load_i     ( 1'b0         ),
-    .down_i     ( 1'b0         ),
-    .d_i        ( '0           ),
-    .q_o        ( count_val    ),
-    .overflow_o (              )
+    .clk_i      ( clk_i     ),
+    .rst_ni     ( rst_ni    ),
+    .clear_i    ( 1'b0      ),
+    .en_i       ( 1'b1      ),
+    .load_i     ( 1'b0      ),
+    .down_i     ( 1'b0      ),
+    .d_i        ( '0        ),
+    .q_o        ( count_val ),
+    .overflow_o (           ) // Not used
   );
 
+  // Data FIFO
+  // Buffers the payload data
 `ifdef TARGET_XILINX
   xpm_fifo_sync #(
-    .FIFO_MEMORY_TYPE    ( "auto"           ) , // string; "auto", "block", "distributed", or "ultra";
-    .ECC_MODE            ( "no_ecc"         ) , // string; "no_ecc" or "en_ecc";
-    .FIFO_WRITE_DEPTH    ( Depth            ) , // positive integer
-    .WRITE_DATA_WIDTH    ( $bits(payload_t) ) , // positive integer
-    .WR_DATA_COUNT_WIDTH ( $clog2(Depth)+1  ) , // positive integer, not used
-    .PROG_FULL_THRESH    ( 10               ) , // positive integer, not used
-    .FULL_RESET_VALUE    ( 1                ) , // positive integer; 0 or 1
-    .USE_ADV_FEATURES    ( "1F1F"           ) , // string; "0000" to "1F1F";
-    .READ_MODE           ( "std"            ) , // string; "std" or "fwft";
-    .FIFO_READ_LATENCY   ( 0                ) , // positive integer;
-    .READ_DATA_WIDTH     ( $bits(payload_t) ) , // positive integer
-    .RD_DATA_COUNT_WIDTH ( $clog2(Depth)+1  ) , // positive integer, not used
-    .PROG_EMPTY_THRESH   ( 10               ) , // positive integer, not used
-    .DOUT_RESET_VALUE    ( "0"              ) , // string, don't care
-    .WAKEUP_TIME         ( 0                ) // positive integer; 0 or 2;
+    .FIFO_MEMORY_TYPE    ( "auto"           ), // string; "auto", "block", "distributed", or "ultra";
+    .ECC_MODE            ( "no_ecc"         ), // string; "no_ecc" or "en_ecc";
+    .FIFO_WRITE_DEPTH    ( Depth            ), // positive integer
+    .WRITE_DATA_WIDTH    ( $bits(payload_t) ), // positive integer
+    .WR_DATA_COUNT_WIDTH ( $clog2(Depth)+1  ), // positive integer, not used
+    .PROG_FULL_THRESH    ( 10               ), // positive integer, not used
+    .FULL_RESET_VALUE    ( 1                ), // positive integer; 0 or 1
+    .USE_ADV_FEATURES    ( "1F1F"           ), // string; "0000" to "1F1F";
+    .READ_MODE           ( "std"            ), // string; "std" or "fwft";
+    .FIFO_READ_LATENCY   ( 0                ), // positive integer;
+    .READ_DATA_WIDTH     ( $bits(payload_t) ), // positive integer
+    .RD_DATA_COUNT_WIDTH ( $clog2(Depth)+1  ), // positive integer, not used
+    .PROG_EMPTY_THRESH   ( 10               ), // positive integer, not used
+    .DOUT_RESET_VALUE    ( "0"              ), // string, don't care
+    .WAKEUP_TIME         ( 0                )  // positive integer; 0 or 2;
   ) data_fifo (
-    .sleep('0),
-    .injectsbiterr('0),
-    .injectdbiterr('0),
-    .wr_clk(clk_i),
-    .rst(~rst_ni),
-    .wr_en(fifo_data_push),
-    .rd_en(fifo_data_pop),
-    .full(fifo_data_full),
-    .empty(fifo_data_empty),
-    .din(payload_i),
-    .dout(head_data)
+    .sleep         ( '0              ),
+    .injectsbiterr ( '0              ),
+    .injectdbiterr ( '0              ),
+    .wr_clk        ( clk_i           ),
+    .rst           ( ~rst_ni         ),
+    .wr_en         ( fifo_data_push  ),
+    .rd_en         ( fifo_data_pop   ),
+    .full          ( fifo_data_full  ),
+    .empty         ( fifo_data_empty ),
+    .din           ( payload_i       ),
+    .dout          ( head_data       )
   );
 `else
   fifo_v3 #(
-    .DATA_WIDTH  ( $bits(payload_t) ),
-    .DEPTH       ( Depth            ),
-    .FALL_THROUGH( 1'b0             )
+    .DATA_WIDTH   ( $bits(payload_t) ),
+    .DEPTH        ( Depth            ),
+    .FALL_THROUGH ( 1'b0             )
   ) data_fifo (
-    .clk_i     (clk_i               ),
-    .rst_ni    (rst_ni              ),
-    .flush_i   (1'b0                ),
-    .testmode_i(1'b0                ),
-    .data_i    (payload_i           ),
-    .push_i    (fifo_data_push      ),
-    .full_o    (fifo_data_full      ),
-    .data_o    (head_data           ),
-    .pop_i     (fifo_data_pop       ),
-    .empty_o   (fifo_data_empty     ),
-    .usage_o   (/* Unused */        )
+    .clk_i      ( clk_i           ),
+    .rst_ni     ( rst_ni          ),
+    .flush_i    ( 1'b0            ),
+    .testmode_i ( 1'b0            ),
+    .data_i     ( payload_i       ),
+    .push_i     ( fifo_data_push  ),
+    .full_o     ( fifo_data_full  ),
+    .data_o     ( head_data       ),
+    .pop_i      ( fifo_data_pop   ),
+    .empty_o    ( fifo_data_empty ),
+    .usage_o    (                 )  // Not used
   );
 `endif
 
+  // Deadline FIFO
+  // Buffers the deadline for each buffered payload data
 `ifdef TARGET_XILINX
   xpm_fifo_sync #(
-    .FIFO_MEMORY_TYPE    ( "auto"          ) , // string; "auto", "block", "distributed", or "ultra";
-    .ECC_MODE            ( "no_ecc"        ) , // string; "no_ecc" or "en_ecc";
-    .FIFO_WRITE_DEPTH    ( Depth           ) , // positive integer
-    .WRITE_DATA_WIDTH    ( CounterWidth    ) , // positive integer
-    .WR_DATA_COUNT_WIDTH ( $clog2(Depth)+1 ) , // positive integer, not used
-    .PROG_FULL_THRESH    ( 10              ) , // positive integer, not used
-    .FULL_RESET_VALUE    ( 1               ) , // positive integer; 0 or 1
-    .USE_ADV_FEATURES    ( "1F1F"          ) , // string; "0000" to "1F1F";
-    .READ_MODE           ( "std"           ) , // string; "std" or "fwft";
-    .FIFO_READ_LATENCY   ( 0               ) , // positive integer;
-    .READ_DATA_WIDTH     ( CounterWidth    ) , // positive integer
-    .RD_DATA_COUNT_WIDTH ( $clog2(Depth)+1 ) , // positive integer, not used
-    .PROG_EMPTY_THRESH   ( 10              ) , // positive integer, not used
-    .DOUT_RESET_VALUE    ( "0"             ) , // string, don't care
-    .WAKEUP_TIME         ( 0               ) // positive integer; 0 or 2;
+    .FIFO_MEMORY_TYPE    ( "auto"          ), // string; "auto", "block", "distributed", or "ultra";
+    .ECC_MODE            ( "no_ecc"        ), // string; "no_ecc" or "en_ecc";
+    .FIFO_WRITE_DEPTH    ( Depth           ), // positive integer
+    .WRITE_DATA_WIDTH    ( CounterWidth    ), // positive integer
+    .WR_DATA_COUNT_WIDTH ( $clog2(Depth)+1 ), // positive integer, not used
+    .PROG_FULL_THRESH    ( 10              ), // positive integer, not used
+    .FULL_RESET_VALUE    ( 1               ), // positive integer; 0 or 1
+    .USE_ADV_FEATURES    ( "1F1F"          ), // string; "0000" to "1F1F";
+    .READ_MODE           ( "std"           ), // string; "std" or "fwft";
+    .FIFO_READ_LATENCY   ( 0               ), // positive integer;
+    .READ_DATA_WIDTH     ( CounterWidth    ), // positive integer
+    .RD_DATA_COUNT_WIDTH ( $clog2(Depth)+1 ), // positive integer, not used
+    .PROG_EMPTY_THRESH   ( 10              ), // positive integer, not used
+    .DOUT_RESET_VALUE    ( "0"             ), // string, don't care
+    .WAKEUP_TIME         ( 0               )  // positive integer; 0 or 2;
   ) deadline_fifo (
-    .sleep('0),
-    .injectsbiterr('0),
-    .injectdbiterr('0),
-    .wr_clk(clk_i),
-    .rst(~rst_ni),
-    .wr_en(fifo_dead_push),
-    .rd_en(fifo_dead_pop),
-    .full(fifo_dead_full),
-    .empty(fifo_dead_empty),
-    .din(tail_deadline),
-    .dout(head_deadline)
+    .sleep         ( '0              ),
+    .injectsbiterr ( '0              ),
+    .injectdbiterr ( '0              ),
+    .wr_clk        ( clk_i           ),
+    .rst           ( ~rst_ni         ),
+    .wr_en         ( fifo_dead_push  ),
+    .rd_en         ( fifo_dead_pop   ),
+    .full          ( fifo_dead_full  ),
+    .empty         ( fifo_dead_empty ),
+    .din           ( tail_deadline   ),
+    .dout          ( head_deadline   )
   );
 `else
   fifo_v3 #(
-    .DATA_WIDTH  ( CounterWidth     ),
-    .DEPTH       ( Depth            ),
-    .FALL_THROUGH( 1'b0             )
+    .DATA_WIDTH   ( CounterWidth ),
+    .DEPTH        ( Depth        ),
+    .FALL_THROUGH ( 1'b0         )
   ) deadline_fifo (
-    .clk_i     (clk_i               ),
-    .rst_ni    (rst_ni              ),
-    .flush_i   (1'b0                ),
-    .testmode_i(1'b0                ),
-    .data_i    (tail_deadline       ),
-    .push_i    (fifo_dead_push      ),
-    .full_o    (fifo_dead_full      ),
-    .data_o    (head_deadline       ),
-    .pop_i     (fifo_dead_pop       ),
-    .empty_o   (fifo_dead_empty     ),
-    .usage_o   (/* Unused */        )
+    .clk_i      ( clk_i           ),
+    .rst_ni     ( rst_ni          ),
+    .flush_i    ( 1'b0            ),
+    .testmode_i ( 1'b0            ),
+    .data_i     ( tail_deadline   ),
+    .push_i     ( fifo_dead_push  ),
+    .full_o     ( fifo_dead_full  ),
+    .data_o     ( head_deadline   ),
+    .pop_i      ( fifo_dead_pop   ),
+    .empty_o    ( fifo_dead_empty ),
+    .usage_o    (                 )  // Not used
   );
 `endif
 
