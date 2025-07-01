@@ -101,9 +101,10 @@ module axi_burst_unwrap #(
     // ATOPs are not supported.
     if (atop != '0) return 1'b0;
     // The AXI Spec (A3.4.1) only allows splitting non-modifiable transactions ..
-    if (!axi_pkg::modifiable(cache)) begin
+    // ... but this module only splits WRAP bursts, so ignore all others
+    if (!axi_pkg::modifiable(cache) && (burst == axi_pkg::BURST_WRAP)) begin
       // .. if they are INCR bursts and longer than 16 beats.
-      return (burst == axi_pkg::BURST_INCR) & (len > 16);
+      return 1'b0;
     end
     // All other transactions are supported.
     return 1'b1;
