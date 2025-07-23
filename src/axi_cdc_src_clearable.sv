@@ -16,12 +16,12 @@
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-/// Source-clock-domain half of the AXI CDC crossing.
+/// Source-clock-domain half of the clearable AXI CDC crossing.
 ///
 /// For each of the five AXI channels, this module instantiates the source or destination half of
-/// a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through
-/// the FIFO; see the header of `cdc_fifo_gray` for instructions.
-module axi_cdc_src #(
+/// a clearable CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths
+/// through the FIFO; see the header of `cdc_fifo_gray_clearable` for instructions.
+module axi_cdc_src_clearable #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
   parameter int unsigned LogDepth   = 1,
   /// Number of synchronization registers to insert on the async pointers
@@ -37,6 +37,7 @@ module axi_cdc_src #(
   // synchronous slave port - clocked by `src_clk_i`
   input  logic                        src_clk_i,
   input  logic                        src_rst_ni,
+  input  logic                        src_clear_i,
   input  axi_req_t                    src_req_i,
   output axi_resp_t                   src_resp_o,
   // asynchronous master port
@@ -57,7 +58,7 @@ module axi_cdc_src #(
   output logic           [LogDepth:0] async_data_master_r_rptr_o
 );
 
-  cdc_fifo_gray_src #(
+  cdc_fifo_gray_src_clearable #(
     // Workaround for a bug in Questa (see comment in `axi_cdc_dst` for details).
 `ifdef QUESTA
     .T         ( logic [$bits(aw_chan_t)-1:0] ),
@@ -69,6 +70,7 @@ module axi_cdc_src #(
   ) i_cdc_fifo_gray_src_aw (
     .src_clk_i,
     .src_rst_ni,
+    .src_clear_i,
     .src_data_i   ( src_req_i.aw                ),
     .src_valid_i  ( src_req_i.aw_valid          ),
     .src_ready_o  ( src_resp_o.aw_ready         ),
@@ -77,7 +79,7 @@ module axi_cdc_src #(
     .async_rptr_i ( async_data_master_aw_rptr_i )
   );
 
-  cdc_fifo_gray_src #(
+  cdc_fifo_gray_src_clearable #(
 `ifdef QUESTA
     .T         ( logic [$bits(w_chan_t)-1:0]  ),
 `else
@@ -88,6 +90,7 @@ module axi_cdc_src #(
   ) i_cdc_fifo_gray_src_w (
     .src_clk_i,
     .src_rst_ni,
+    .src_clear_i,
     .src_data_i   ( src_req_i.w                 ),
     .src_valid_i  ( src_req_i.w_valid           ),
     .src_ready_o  ( src_resp_o.w_ready          ),
@@ -96,7 +99,7 @@ module axi_cdc_src #(
     .async_rptr_i ( async_data_master_w_rptr_i  )
   );
 
-  cdc_fifo_gray_dst #(
+  cdc_fifo_gray_dst_clearable #(
 `ifdef QUESTA
     .T         ( logic [$bits(b_chan_t)-1:0]  ),
 `else
@@ -107,6 +110,7 @@ module axi_cdc_src #(
   ) i_cdc_fifo_gray_dst_b (
     .dst_clk_i    ( src_clk_i                   ),
     .dst_rst_ni   ( src_rst_ni                  ),
+    .dst_clear_i  ( src_clear_i                 ),
     .dst_data_o   ( src_resp_o.b                ),
     .dst_valid_o  ( src_resp_o.b_valid          ),
     .dst_ready_i  ( src_req_i.b_ready           ),
@@ -115,7 +119,7 @@ module axi_cdc_src #(
     .async_rptr_o ( async_data_master_b_rptr_o  )
   );
 
-  cdc_fifo_gray_src #(
+  cdc_fifo_gray_src_clearable #(
 `ifdef QUESTA
     .T         ( logic [$bits(ar_chan_t)-1:0] ),
 `else
@@ -126,6 +130,7 @@ module axi_cdc_src #(
   ) i_cdc_fifo_gray_src_ar (
     .src_clk_i,
     .src_rst_ni,
+    .src_clear_i,
     .src_data_i   ( src_req_i.ar                ),
     .src_valid_i  ( src_req_i.ar_valid          ),
     .src_ready_o  ( src_resp_o.ar_ready         ),
@@ -134,7 +139,7 @@ module axi_cdc_src #(
     .async_rptr_i ( async_data_master_ar_rptr_i )
   );
 
-  cdc_fifo_gray_dst #(
+  cdc_fifo_gray_dst_clearable #(
 `ifdef QUESTA
     .T         ( logic [$bits(r_chan_t)-1:0]  ),
 `else
@@ -145,6 +150,7 @@ module axi_cdc_src #(
   ) i_cdc_fifo_gray_dst_r (
     .dst_clk_i    ( src_clk_i                   ),
     .dst_rst_ni   ( src_rst_ni                  ),
+    .dst_clear_i  ( src_clear_i                 ),
     .dst_data_o   ( src_resp_o.r                ),
     .dst_valid_o  ( src_resp_o.r_valid          ),
     .dst_ready_i  ( src_req_i.r_ready           ),
@@ -156,7 +162,7 @@ module axi_cdc_src #(
 endmodule
 
 
-module axi_cdc_src_intf #(
+module axi_cdc_src_clearable_intf #(
   parameter int unsigned AXI_ID_WIDTH = 0,
   parameter int unsigned AXI_ADDR_WIDTH = 0,
   parameter int unsigned AXI_DATA_WIDTH = 0,
@@ -169,6 +175,7 @@ module axi_cdc_src_intf #(
   // synchronous slave port - clocked by `src_clk_i`
   input  logic                src_clk_i,
   input  logic                src_rst_ni,
+  input  logic                src_clear_i,
   AXI_BUS.Slave               src,
   // asynchronous master port
   AXI_BUS_ASYNC_GRAY.Master   dst
@@ -193,7 +200,7 @@ module axi_cdc_src_intf #(
   `AXI_ASSIGN_TO_REQ(src_req, src)
   `AXI_ASSIGN_FROM_RESP(src, src_resp)
 
-  axi_cdc_src #(
+  axi_cdc_src_clearable #(
     .aw_chan_t  ( aw_chan_t   ),
     .w_chan_t   ( w_chan_t    ),
     .b_chan_t   ( b_chan_t    ),
@@ -206,6 +213,7 @@ module axi_cdc_src_intf #(
   ) i_axi_cdc_src (
     .src_clk_i,
     .src_rst_ni,
+    .src_clear_i,
     .src_req_i                    ( src_req     ),
     .src_resp_o                   ( src_resp    ),
     .async_data_master_aw_data_o  ( dst.aw_data ),
@@ -228,7 +236,7 @@ module axi_cdc_src_intf #(
 endmodule
 
 
-module axi_lite_cdc_src_intf #(
+module axi_lite_cdc_src_clearable_intf #(
   parameter int unsigned AXI_ADDR_WIDTH = 0,
   parameter int unsigned AXI_DATA_WIDTH = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
@@ -239,6 +247,7 @@ module axi_lite_cdc_src_intf #(
   // synchronous slave port - clocked by `src_clk_i`
   input  logic                src_clk_i,
   input  logic                src_rst_ni,
+  input  logic                src_clear_i,
   AXI_BUS.Slave               src,
   // asynchronous master port
   AXI_LITE_ASYNC_GRAY.Master  dst
@@ -261,7 +270,7 @@ module axi_lite_cdc_src_intf #(
   `AXI_LITE_ASSIGN_TO_REQ(src_req, src)
   `AXI_LITE_ASSIGN_FROM_RESP(src, src_resp)
 
-  axi_cdc_src #(
+  axi_cdc_src_clearable #(
     .aw_chan_t  ( aw_chan_t   ),
     .w_chan_t   ( w_chan_t    ),
     .b_chan_t   ( b_chan_t    ),
@@ -274,6 +283,7 @@ module axi_lite_cdc_src_intf #(
   ) i_axi_cdc_src (
     .src_clk_i,
     .src_rst_ni,
+    .src_clear_i,
     .src_req_i                    ( src_req     ),
     .src_resp_o                   ( src_resp    ),
     .async_data_master_aw_data_o  ( dst.aw_data ),

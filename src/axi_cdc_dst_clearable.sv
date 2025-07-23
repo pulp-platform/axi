@@ -16,12 +16,12 @@
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-/// Destination-clock-domain half of the AXI CDC crossing.
+/// Destination-clock-domain half of the clearable AXI CDC crossing.
 ///
 /// For each of the five AXI channels, this module instantiates the source or destination half of
-/// a CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths through
-/// the FIFO; see the header of `cdc_fifo_gray` for instructions.
-module axi_cdc_dst #(
+/// a clearable CDC FIFO.  IMPORTANT: For each AXI channel, you MUST properly constrain three paths
+/// through the FIFO; see the header of `cdc_fifo_gray_clearable` for instructions.
+module axi_cdc_dst_clearable #(
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
   parameter int unsigned LogDepth = 1,
   /// Number of synchronization registers to insert on the async pointers
@@ -53,11 +53,12 @@ module axi_cdc_dst #(
   // synchronous master port - clocked by `dst_clk_i`
   input  logic                        dst_clk_i,
   input  logic                        dst_rst_ni,
+  input  logic                        dst_clear_i,
   output axi_req_t                    dst_req_o,
   input  axi_resp_t                   dst_resp_i
 );
 
-  cdc_fifo_gray_dst #(
+  cdc_fifo_gray_dst_clearable #(
 `ifdef QUESTA
     // Workaround for a bug in Questa: Pass flat logic vector instead of struct to type parameter.
     .T          ( logic [$bits(aw_chan_t)-1:0]  ),
@@ -73,12 +74,13 @@ module axi_cdc_dst #(
     .async_rptr_o ( async_data_slave_aw_rptr_o  ),
     .dst_clk_i,
     .dst_rst_ni,
+    .dst_clear_i,
     .dst_data_o   ( dst_req_o.aw                ),
     .dst_valid_o  ( dst_req_o.aw_valid          ),
     .dst_ready_i  ( dst_resp_i.aw_ready         )
   );
 
-  cdc_fifo_gray_dst #(
+  cdc_fifo_gray_dst_clearable #(
 `ifdef QUESTA
     .T          ( logic [$bits(w_chan_t)-1:0] ),
 `else
@@ -92,12 +94,13 @@ module axi_cdc_dst #(
     .async_rptr_o ( async_data_slave_w_rptr_o ),
     .dst_clk_i,
     .dst_rst_ni,
+    .dst_clear_i,
     .dst_data_o   ( dst_req_o.w               ),
     .dst_valid_o  ( dst_req_o.w_valid         ),
     .dst_ready_i  ( dst_resp_i.w_ready        )
   );
 
-  cdc_fifo_gray_src #(
+  cdc_fifo_gray_src_clearable #(
 `ifdef QUESTA
     .T          ( logic [$bits(b_chan_t)-1:0] ),
 `else
@@ -108,6 +111,7 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_src_b (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),
+    .src_clear_i  ( dst_clear_i               ),
     .src_data_i   ( dst_resp_i.b              ),
     .src_valid_i  ( dst_resp_i.b_valid        ),
     .src_ready_o  ( dst_req_o.b_ready         ),
@@ -116,7 +120,7 @@ module axi_cdc_dst #(
     .async_rptr_i ( async_data_slave_b_rptr_i )
   );
 
-  cdc_fifo_gray_dst #(
+  cdc_fifo_gray_dst_clearable #(
 `ifdef QUESTA
     .T          ( logic [$bits(ar_chan_t)-1:0]  ),
 `else
@@ -127,6 +131,7 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_dst_ar (
     .dst_clk_i,
     .dst_rst_ni,
+    .dst_clear_i,
     .dst_data_o   ( dst_req_o.ar                ),
     .dst_valid_o  ( dst_req_o.ar_valid          ),
     .dst_ready_i  ( dst_resp_i.ar_ready         ),
@@ -135,7 +140,7 @@ module axi_cdc_dst #(
     .async_rptr_o ( async_data_slave_ar_rptr_o  )
   );
 
-  cdc_fifo_gray_src #(
+  cdc_fifo_gray_src_clearable #(
 `ifdef QUESTA
     .T          ( logic [$bits(r_chan_t)-1:0] ),
 `else
@@ -146,6 +151,7 @@ module axi_cdc_dst #(
   ) i_cdc_fifo_gray_src_r (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),
+    .src_clear_i  ( dst_clear_i               ),
     .src_data_i   ( dst_resp_i.r              ),
     .src_valid_i  ( dst_resp_i.r_valid        ),
     .src_ready_o  ( dst_req_o.r_ready         ),
@@ -157,7 +163,7 @@ module axi_cdc_dst #(
 endmodule
 
 
-module axi_cdc_dst_intf #(
+module axi_cdc_dst_clearable_intf #(
   parameter int unsigned AXI_ID_WIDTH = 0,
   parameter int unsigned AXI_ADDR_WIDTH = 0,
   parameter int unsigned AXI_DATA_WIDTH = 0,
@@ -172,6 +178,7 @@ module axi_cdc_dst_intf #(
   // synchronous master port - clocked by `dst_clk_i`
   input  logic              dst_clk_i,
   input  logic              dst_rst_ni,
+  input  logic              dst_clear_i,
   AXI_BUS.Master            dst
 );
 
@@ -191,7 +198,7 @@ module axi_cdc_dst_intf #(
   req_t  dst_req;
   resp_t dst_resp;
 
-  axi_cdc_dst #(
+  axi_cdc_dst_clearable #(
     .aw_chan_t  ( aw_chan_t   ),
     .w_chan_t   ( w_chan_t    ),
     .b_chan_t   ( b_chan_t    ),
@@ -219,6 +226,7 @@ module axi_cdc_dst_intf #(
     .async_data_slave_r_rptr_i  ( src.r_rptr  ),
     .dst_clk_i,
     .dst_rst_ni,
+    .dst_clear_i,
     .dst_req_o                  ( dst_req     ),
     .dst_resp_i                 ( dst_resp    )
   );
@@ -229,7 +237,7 @@ module axi_cdc_dst_intf #(
 endmodule
 
 
-module axi_lite_cdc_dst_intf #(
+module axi_lite_cdc_dst_clearable_intf #(
   parameter int unsigned AXI_ADDR_WIDTH = 0,
   parameter int unsigned AXI_DATA_WIDTH = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
@@ -242,6 +250,7 @@ module axi_lite_cdc_dst_intf #(
   // synchronous master port - clocked by `dst_clk_i`
   input  logic                dst_clk_i,
   input  logic                dst_rst_ni,
+  input  logic                dst_clear_i,
   AXI_LITE.Master             dst
 );
 
@@ -259,7 +268,7 @@ module axi_lite_cdc_dst_intf #(
   req_t   dst_req;
   resp_t  dst_resp;
 
-  axi_cdc_dst #(
+  axi_cdc_dst_clearable #(
     .aw_chan_t  ( aw_chan_t   ),
     .w_chan_t   ( w_chan_t    ),
     .b_chan_t   ( b_chan_t    ),
@@ -287,6 +296,7 @@ module axi_lite_cdc_dst_intf #(
     .async_data_slave_r_rptr_i  ( src.r_rptr  ),
     .dst_clk_i,
     .dst_rst_ni,
+    .dst_clear_i,
     .dst_req_o                  ( dst_req     ),
     .dst_resp_i                 ( dst_resp    )
   );
