@@ -406,13 +406,16 @@ module axi_dw_downsizer #(
 
               case (r_req_d.ar.burst)
                 axi_pkg::BURST_INCR : begin
+                  automatic addr_t size_mask;
+                  automatic addr_t conv_ratio;
+                  automatic addr_t align_adj;
                   // Evaluate downsize ratio
-                  automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
-                  automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+                  size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+                  conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
                   // Evaluate output burst length
-                  automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-                  r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1                     ;
+                  align_adj         = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                  r_req_d.burst_len = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1                     ;
 
                   if (conv_ratio != 1) begin
                     r_req_d.ar.size = AxiMstPortMaxSize;
@@ -430,13 +433,16 @@ module axi_dw_downsizer #(
                 axi_pkg::BURST_FIXED: begin
                   // Single transaction
                   if (r_req_d.ar.len == '0) begin
+                    automatic addr_t size_mask;
+                    automatic addr_t conv_ratio;
+                    automatic addr_t align_adj;
                     // Evaluate downsize ratio
-                    automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
-                    automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+                    size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+                    conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
                     // Evaluate output burst length
-                    automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-                    r_req_d.burst_len          = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
+                    align_adj         = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                    r_req_d.burst_len = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0      ;
 
                     if (conv_ratio != 1) begin
                       r_state_d        = R_INCR_DOWNSIZE    ;
@@ -455,6 +461,8 @@ module axi_dw_downsizer #(
                   r_state_d              = R_PASSTHROUGH;
                   r_req_d.ar_throw_error = 1'b1         ;
                 end
+
+                default: ;
               endcase
             end
           end
@@ -484,13 +492,16 @@ module axi_dw_downsizer #(
 
           case (r_req_d.ar.burst)
             axi_pkg::BURST_INCR : begin
+              automatic addr_t size_mask;
+              automatic addr_t conv_ratio;
+              automatic addr_t align_adj;
               // Evaluate downsize ratio
-              automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
-              automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+              size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+              conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
               // Evaluate output burst length
-              automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-              r_req_d.burst_len          = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1                     ;
+              align_adj         = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+              r_req_d.burst_len = (r_req_d.ar.len + 1) * conv_ratio - align_adj - 1                     ;
 
               if (conv_ratio != 1) begin
                 r_req_d.ar.size = AxiMstPortMaxSize;
@@ -508,13 +519,16 @@ module axi_dw_downsizer #(
             axi_pkg::BURST_FIXED: begin
               // Single transaction
               if (r_req_d.ar.len == '0) begin
+                automatic addr_t size_mask;
+                automatic addr_t conv_ratio;
+                automatic addr_t align_adj;
                 // Evaluate downsize ratio
-                automatic addr_t size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
-                automatic addr_t conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+                size_mask  = (1 << r_req_d.ar.size) - 1                                              ;
+                conv_ratio = ((1 << r_req_d.ar.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
                 // Evaluate output burst length
-                automatic addr_t align_adj = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-                r_req_d.burst_len          = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
+                align_adj         = (r_req_d.ar.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                r_req_d.burst_len = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
 
                 if (conv_ratio != 1) begin
                   r_state_d        = R_INCR_DOWNSIZE    ;
@@ -533,6 +547,8 @@ module axi_dw_downsizer #(
               r_state_d              = R_PASSTHROUGH;
               r_req_d.ar_throw_error = 1'b1         ;
             end
+
+            default: ;
           endcase
         end
 
@@ -553,8 +569,10 @@ module axi_dw_downsizer #(
                 mst_r_ready_tran[t] = 1'b1;
 
                 if (mst_resp.r_valid) begin
-                  automatic addr_t mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-                  automatic addr_t slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+                  automatic addr_t mst_port_offset;
+                  automatic addr_t slv_port_offset;
+                  mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiMstPortStrbWidth)-1:0];
+                  slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : r_req_q.ar.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
                   // Serialization
                   for (int b = 0; b < AxiSlvPortStrbWidth; b++) begin
@@ -577,7 +595,7 @@ module axi_dw_downsizer #(
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
-                      r_req_d.ar.addr = aligned_addr(r_req_q.ar.addr, r_req_q.ar.size) + (1 << r_req_q.ar.size);
+                      r_req_d.ar.addr = aligned_addr(axi_pkg::largest_addr_t'(r_req_q.ar.addr), r_req_q.ar.size) + (1 << r_req_q.ar.size);
                     end
                     axi_pkg::BURST_FIXED: begin
                       r_req_d.ar.addr = r_req_q.ar.addr;
@@ -597,8 +615,8 @@ module axi_dw_downsizer #(
                     R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin
                       // Forward when the burst is finished, or after filling up a word
                       if (r_req_q.burst_len == 0 ||
-                          (aligned_addr(r_req_d.ar.addr, r_req_q.orig_ar_size) !=
-                           aligned_addr(r_req_q.ar.addr, r_req_q.orig_ar_size)   )) begin
+                          (aligned_addr(axi_pkg::largest_addr_t'(r_req_d.ar.addr), r_req_q.orig_ar_size) !=
+                           aligned_addr(axi_pkg::largest_addr_t'(r_req_q.ar.addr), r_req_q.orig_ar_size)   )) begin
                         r_req_d.r_valid = 1'b1;
                       end
                     end
@@ -623,6 +641,8 @@ module axi_dw_downsizer #(
             end
           end
         end
+
+        default: ;
       endcase
     end
 
@@ -742,8 +762,10 @@ module axi_dw_downsizer #(
         // Request was accepted
         if (!w_req_q.aw_valid) begin
           if (slv_req_i.w_valid) begin
-            automatic logic [idx_width(AxiMstPortStrbWidth)-1:0] mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
-            automatic logic [idx_width(AxiSlvPortStrbWidth)-1:0] slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
+            automatic logic [idx_width(AxiMstPortStrbWidth)-1:0] mst_port_offset;
+            automatic logic [idx_width(AxiSlvPortStrbWidth)-1:0] slv_port_offset;
+            mst_port_offset = AxiMstPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiMstPortStrbWidth)-1:0];
+            slv_port_offset = AxiSlvPortStrbWidth == 1 ? '0 : w_req_q.aw.addr[idx_width(AxiSlvPortStrbWidth)-1:0];
 
             // Valid output
             mst_req.w_valid = !(forward_b_beat_full && w_req_q.aw.len == 0);
@@ -770,7 +792,7 @@ module axi_dw_downsizer #(
 
           case (w_req_d.aw.burst)
             axi_pkg::BURST_INCR: begin
-              w_req_d.aw.addr = aligned_addr(w_req_q.aw.addr, w_req_q.aw.size) + (1 << w_req_q.aw.size);
+              w_req_d.aw.addr = aligned_addr(axi_pkg::largest_addr_t'(w_req_q.aw.addr), w_req_q.aw.size) + (1 << w_req_q.aw.size);
             end
             axi_pkg::BURST_FIXED: begin
               w_req_d.aw.addr = w_req_q.aw.addr;
@@ -784,8 +806,8 @@ module axi_dw_downsizer #(
 
             W_INCR_DOWNSIZE, W_SPLIT_INCR_DOWNSIZE: begin
               if (w_req_q.burst_len == 0 ||
-                  (aligned_addr(w_req_d.aw.addr, w_req_q.orig_aw_size) !=
-                   aligned_addr(w_req_q.aw.addr, w_req_q.orig_aw_size)   )) begin
+                  (aligned_addr(axi_pkg::largest_addr_t'(w_req_d.aw.addr), w_req_q.orig_aw_size) !=
+                   aligned_addr(axi_pkg::largest_addr_t'(w_req_q.aw.addr), w_req_q.orig_aw_size)   )) begin
                 slv_resp_o.w_ready = 1'b1;
               end
             end
@@ -812,6 +834,7 @@ module axi_dw_downsizer #(
           end
         end
       end
+    default: ;
     endcase
 
     // Can start a new request as soon as w_state_d is W_IDLE
@@ -845,13 +868,16 @@ module axi_dw_downsizer #(
 
           case (slv_req_i.aw.burst)
             axi_pkg::BURST_INCR: begin
+              automatic addr_t size_mask;
+              automatic addr_t conv_ratio;
+              automatic addr_t align_adj;
               // Evaluate downsize ratio
-              automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
-              automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+              size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
+              conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
               // Evaluate output burst length
-              automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-              w_req_d.burst_len          = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1                     ;
+              align_adj         = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+              w_req_d.burst_len = (slv_req_i.aw.len + 1) * conv_ratio - align_adj - 1                     ;
 
               if (conv_ratio != 1) begin
                 w_req_d.aw.size = AxiMstPortMaxSize;
@@ -869,13 +895,16 @@ module axi_dw_downsizer #(
             axi_pkg::BURST_FIXED: begin
               // Single transaction
               if (slv_req_i.aw.len == '0) begin
+                automatic addr_t size_mask;
+                automatic addr_t conv_ratio;
+                automatic addr_t align_adj;
                 // Evaluate downsize ratio
-                automatic addr_t size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
-                automatic addr_t conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
+                size_mask  = (1 << slv_req_i.aw.size) - 1                                              ;
+                conv_ratio = ((1 << slv_req_i.aw.size) + AxiMstPortStrbWidth - 1) / AxiMstPortStrbWidth;
 
                 // Evaluate output burst length
-                automatic addr_t align_adj = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
-                w_req_d.burst_len          = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0;
+                align_adj         = (slv_req_i.aw.addr & size_mask & ~MstPortByteMask) / AxiMstPortStrbWidth;
+                w_req_d.burst_len = (conv_ratio >= align_adj + 1) ? (conv_ratio - align_adj - 1) : 0        ;
 
                 if (conv_ratio != 1) begin
                   w_state_d        = W_INCR_DOWNSIZE    ;
@@ -894,6 +923,8 @@ module axi_dw_downsizer #(
               w_state_d              = W_PASSTHROUGH;
               w_req_d.aw_throw_error = 1'b1         ;
             end
+
+            default: ;
           endcase
         end
       end
