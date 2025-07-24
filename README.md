@@ -41,6 +41,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_id_serialize`](src/axi_id_serialize.sv)               | Reduce AXI IDs by serializing transactions when necessary.                                           | [Doc][doc.axi_id_serialize]      |
 | [`axi_interleaved_xbar`](src/axi_interleaved_xbar.sv)       | Interleaved version of the crossbar. This module is experimental; use at your own risk.              |                                  |
 | [`axi_intf`](src/axi_intf.sv)                               | This file defines the interfaces we support.                                                         |                                  |
+| [`axi_inval_filter`](src/axi_inval_filter.sv)               | Listens to AXI4 AW channel and issues single cacheline invalidations.                                |                                  |
 | [`axi_isolate`](src/axi_isolate.sv)                         | A module that can isolate downstream slaves from receiving new AXI4 transactions.                    |                                  |
 | [`axi_iw_converter`](src/axi_iw_converter.sv)               | Convert between any two AXI ID widths.                                                               | [Doc][doc.axi_iw_converter]      |
 | [`axi_join`](src/axi_join.sv)                               | A connector that joins two AXI interfaces.                                                           |                                  |
