@@ -908,6 +908,8 @@ module mem_stream_to_banks_detailed #(
   assign mem_req_ready = (&req_ready) & (&resp_ready) & !dead_write_fifo_full;
 
   if (HideStrb) begin : gen_dead_write_fifo
+    logic                dead_write_fifo_empty;
+    logic [NumBanks-1:0] dead_write_fifo_out_data;
     fifo_v3 #(
       .FALL_THROUGH ( 1'b0     ),
       .DEPTH        ( MaxTrans+1 ),
@@ -915,16 +917,19 @@ module mem_stream_to_banks_detailed #(
     ) i_dead_write_fifo (
       .clk_i,
       .rst_ni,
-      .flush_i    ( 1'b0                    ),
-      .testmode_i ( 1'b0                    ),
-      .full_o     ( dead_write_fifo_full    ),
-      .empty_o    (),
-      .usage_o    (),
-      .data_i     ( bank_we_o & zero_strobe ),
-      .push_i     ( mem_req_valid & mem_req_ready           ),
-      .data_o     ( dead_response           ),
-      .pop_i      ( rvalid_o & rready_i     )
+      .flush_i    ( 1'b0                          ),
+      .testmode_i ( 1'b0                          ),
+      .full_o     ( dead_write_fifo_full          ),
+      .empty_o    ( dead_write_fifo_empty         ),
+      .usage_o    (                               ),
+      .data_i     ( bank_we_o & zero_strobe       ),
+      .push_i     ( mem_req_valid & mem_req_ready ),
+      .data_o     ( dead_write_fifo_out_data      ),
+      .pop_i      ( rvalid_o & rready_i           )
     );
+    // We only actually have a dead response if the FIFO is not empty. Otherwise, we could signal
+    // rvalid_o based on stale data in the FIFO.
+    assign dead_response = dead_write_fifo_empty ? '0 : dead_write_fifo_out_data;
   end else begin : gen_no_dead_write_fifo
     assign dead_response = '0;
     assign dead_write_fifo_full = 1'b0;
