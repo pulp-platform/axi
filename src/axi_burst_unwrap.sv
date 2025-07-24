@@ -131,9 +131,9 @@ module axi_burst_unwrap #(
   // --------------------------------------------------
   // AW Channel
   // --------------------------------------------------
-  logic b_cnt_dec, b_cnt_req, b_cnt_gnt, b_cnt_err, b_cnt_empty;
-  logic w_cnt_dec, w_cnt_req, w_cnt_gnt, w_cnt_empty;
-  axi_pkg::len_t b_cnt_len, w_cnt_len;
+  logic           b_cnt_dec, b_cnt_req, b_cnt_gnt, b_cnt_err;
+  logic           w_cnt_dec, w_cnt_req, w_cnt_gnt;
+  axi_pkg::len_t  b_cnt_len, w_cnt_len;
   axi_burst_unwrap_ax_chan #(
     .AwChan   ( 1'b1         ),
     .chan_t   ( aw_chan_t    ),
@@ -151,7 +151,6 @@ module axi_burst_unwrap #(
     .ax_ready_i     ( mst_resp_i.aw_ready                ),
     .cnt_id_i       ( mst_resp_i.b.id                    ),
     .cnt_len_o      ({ w_cnt_len      , b_cnt_len       }),
-    .cnt_empty_o    ({ w_cnt_empty    , b_cnt_empty     }),
     .cnt_set_err_i  ( mst_resp_i.b.resp[1]               ),
     .cnt_err_o      ( b_cnt_err                          ),
     .cnt_dec_i      ({ w_cnt_dec      , b_cnt_dec       }),
@@ -176,16 +175,15 @@ module axi_burst_unwrap #(
 
     unique case (w_state_q)
       WReady: begin
-        // Moritz: Additionally verify that we are expecting a W beat.
-        if (act_req.w_valid & ~w_cnt_empty) begin
+        if (act_req.w_valid) begin
           w_cnt_req = 1'b1;
           if (w_cnt_gnt) begin
             w_last_d = act_req.w.last | (w_cnt_len == 8'd0);
             mst_req_o.w.last  = w_last_d;
             // Try to forward the beat downstream.
             mst_req_o.w_valid = 1'b1;
-            w_cnt_dec        = 1'b1;
             if (mst_resp_i.w_ready) begin
+              w_cnt_dec        = 1'b1;
               act_resp.w_ready = 1'b1;
               if (w_last_d && !act_req.w.last) begin
                 w_state_d = WFeedthrough;
@@ -233,8 +231,7 @@ module axi_burst_unwrap #(
 
     unique case (b_state_q)
       BReady: begin
-        // Moritz: Additionally verify that we are expecting a B channel response.
-        if (mst_resp_i.b_valid & ~b_cnt_empty) begin
+        if (mst_resp_i.b_valid) begin
           b_cnt_req = 1'b1;
           if (b_cnt_gnt) begin
             if (b_cnt_len == 8'd0) begin
@@ -295,7 +292,6 @@ module axi_burst_unwrap #(
     .ax_ready_i     ( mst_resp_i.ar_ready      ),
     .cnt_id_i       ( mst_resp_i.r.id          ),
     .cnt_len_o      ({ unc1 , r_cnt_len       }),
-    .cnt_empty_o    (                          ),
     .cnt_set_err_i  ( 1'b0                     ),
     .cnt_err_o      (                          ),
     .cnt_dec_i      ({ 1'b0 , r_cnt_dec       }),
@@ -410,7 +406,6 @@ module axi_burst_unwrap_ax_chan #(
 
   input  id_t                 cnt_id_i,
   output axi_pkg::len_t [1:0] cnt_len_o,
-  output logic          [1:0] cnt_empty_o,
   input  logic                cnt_set_err_i,
   output logic                cnt_err_o,
   input  logic          [1:0] cnt_dec_i,
@@ -435,7 +430,6 @@ module axi_burst_unwrap_ax_chan #(
     .alloc_gnt_o   ( cnt_alloc_gnt[0] ),
     .cnt_id_i      ( cnt_id_i         ),
     .cnt_len_o     ( cnt_len_o[0]     ),
-    .cnt_empty_o   ( cnt_empty_o[0]   ),
     .cnt_set_err_i ( cnt_set_err_i    ),
     .cnt_err_o     ( cnt_err_o        ),
     .cnt_dec_i     ( cnt_dec_i[0]     ),
@@ -461,7 +455,6 @@ module axi_burst_unwrap_ax_chan #(
     .alloc_gnt_o   ( cnt_alloc_gnt[1] ),
     .cnt_id_i      ( 1'b0             ),
     .cnt_len_o     ( cnt_len_o[1]     ),
-    .cnt_empty_o   ( cnt_empty_o[1]   ),
     .cnt_set_err_i ( 1'b0             ),
     .cnt_err_o     (                  ),
     .cnt_dec_i     ( cnt_dec_i[1]     ),
@@ -558,7 +551,6 @@ module axi_burst_counters #(
 
   input  id_t           cnt_id_i,
   output axi_pkg::len_t cnt_len_o,
-  logic                 cnt_empty_o,
   input  logic          cnt_set_err_i,
   output logic          cnt_err_o,
   input  logic          cnt_dec_i,
@@ -630,7 +622,6 @@ module axi_burst_counters #(
   logic [8:0] read_len;
   assign read_len    = cnt_oup[cnt_r_idx] - 1;
   assign cnt_len_o   = read_len[7:0];
-  assign cnt_empty_o = (&cnt_free);
 
   assign idq_oup_pop = cnt_req_i & cnt_gnt_o & cnt_dec_i & (cnt_len_o == 8'd0);
   always_comb begin
