@@ -46,28 +46,30 @@
 /// pop ports are in separate clock domains.  IMPORTANT: For each AXI channel, you MUST properly
 /// constrain three paths through the FIFO; see the header of `cdc_fifo_gray_clearable` for
 /// instructions.
-module axi_cdc_isolatable #(
+module axi_cdc_isolatable
+  import axi_pkg::*;
+#(
   /// Address width of all AXI4+ATOP ports
-  parameter int signed AxiAddrWidth = 32'd0,
+  parameter int signed   AxiAddrWidth         = 32'd0,
   /// Data width of all AXI4+ATOP ports
-  parameter int signed AxiDataWidth = 32'd0,
+  parameter int signed   AxiDataWidth         = 32'd0,
   /// ID width of all AXI4+ATOP ports
-  parameter int signed AxiIdWidth = 32'd0,
+  parameter int signed   AxiIdWidth           = 32'd0,
   /// User signal width of all AXI4+ATOP ports
-  parameter int signed AxiUserWidth = 32'd0,
+  parameter int signed   AxiUserWidth         = 32'd0,
   /// Support atomic operations (ATOPs)
-  parameter bit AtopSupport = 1'b1,
+  parameter bit          AtopSupport          = 1'b1,
   /// Request struct type of all AXI4+ATOP ports
-  parameter type axi_req_t  = logic,
+  parameter type         axi_req_t            = logic,
   /// Response struct type of all AXI4+ATOP ports
-  parameter type axi_resp_t = logic,
+  parameter type         axi_resp_t           = logic,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LogDepth   = 1,
+  parameter int unsigned LogDepth             = 1,
   /// Number of synchronization registers to insert on the async pointers
-  parameter int unsigned SyncStages = 3,
+  parameter int unsigned SyncStages           = 3,
   /// Gracefully terminate all incoming transactions in case of isolation by returning proper error
   /// responses.
-  parameter bit TerminateTransaction = 1'b0
+  parameter bit          TerminateTransaction = 1'b0
 ) (
   // slave side - clocked by `src_clk_i`
   input  logic      src_clk_i,
@@ -85,11 +87,11 @@ module axi_cdc_isolatable #(
   input  axi_resp_t dst_resp_i
 );
 
-  typedef logic [AxiIdWidth-1:0]     id_t;
-  typedef logic [AxiAddrWidth-1:0]   addr_t;
-  typedef logic [AxiDataWidth-1:0]   data_t;
+  typedef logic [AxiIdWidth-1:0] id_t;
+  typedef logic [AxiAddrWidth-1:0] addr_t;
+  typedef logic [AxiDataWidth-1:0] data_t;
   typedef logic [AxiDataWidth/8-1:0] strb_t;
-  typedef logic [AxiUserWidth-1:0]   user_t;
+  typedef logic [AxiUserWidth-1:0] user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
@@ -113,24 +115,24 @@ module axi_cdc_isolatable #(
   assign axi_src_isolate = src_isolate_i | cdc_src_isolate | dst_isolate_sync;
 
   axi_isolate #(
-    .NumPending           ( 2**LogDepth          ),
-    .TerminateTransaction ( TerminateTransaction ),
-    .AtopSupport          ( AtopSupport          ),
-    .AxiAddrWidth         ( AxiAddrWidth         ),
-    .AxiDataWidth         ( AxiDataWidth         ),
-    .AxiIdWidth           ( AxiIdWidth           ),
-    .AxiUserWidth         ( AxiUserWidth         ),
-    .axi_req_t            ( axi_req_t            ),
-    .axi_resp_t           ( axi_resp_t           )
+    .NumPending          (2 ** LogDepth),
+    .TerminateTransaction(TerminateTransaction),
+    .AtopSupport         (AtopSupport),
+    .AxiAddrWidth        (AxiAddrWidth),
+    .AxiDataWidth        (AxiDataWidth),
+    .AxiIdWidth          (AxiIdWidth),
+    .AxiUserWidth        (AxiUserWidth),
+    .axi_req_t           (axi_req_t),
+    .axi_resp_t          (axi_resp_t)
   ) i_src_iso (
-    .clk_i      ( src_clk_i        ),
-    .rst_ni     ( src_rst_ni       ),
-    .slv_req_i  ( src_req_i        ),
-    .slv_resp_o ( src_resp_o       ),
-    .mst_req_o  ( src_req_iso      ),
-    .mst_resp_i ( src_resp_iso     ),
-    .isolate_i  ( axi_src_isolate  ),
-    .isolated_o ( axi_src_isolated )
+    .clk_i     (src_clk_i),
+    .rst_ni    (src_rst_ni),
+    .slv_req_i (src_req_i),
+    .slv_resp_o(src_resp_o),
+    .mst_req_o (src_req_iso),
+    .mst_resp_i(src_resp_iso),
+    .isolate_i (axi_src_isolate),
+    .isolated_o(axi_src_isolated)
   );
 
   //--------------------------------
@@ -145,23 +147,23 @@ module axi_cdc_isolatable #(
 
   // Synchronize the clear and reset signaling in both directions
   cdc_reset_ctrlr #(
-    .SYNC_STAGES          ( SyncStages-1 ),
-    .CLEAR_ON_ASYNC_RESET (         1'b0 )
+    .SYNC_STAGES         (SyncStages - 1),
+    .CLEAR_ON_ASYNC_RESET(1'b0)
   ) i_cdc_reset_ctrlr (
-    .a_clk_i         ( src_clk_i         ),
-    .a_rst_ni        ( src_rst_ni        ),
-    .a_clear_i       ( src_clear         ),
-    .a_clear_o       ( src_clear_req     ),
-    .a_clear_ack_i   ( src_clear_ack_q   ),
-    .a_isolate_o     ( cdc_src_isolate   ),
-    .a_isolate_ack_i ( axi_src_isolated  ),
-    .b_clk_i         ( dst_clk_i         ),
-    .b_rst_ni        ( dst_rst_ni        ),
-    .b_clear_i       ( dst_clear         ),
-    .b_clear_o       ( dst_clear_req     ),
-    .b_clear_ack_i   ( dst_clear_ack_q   ),
-    .b_isolate_o     ( dst_isolate_req   ),
-    .b_isolate_ack_i ( dst_isolate_ack_q )
+    .a_clk_i        (src_clk_i),
+    .a_rst_ni       (src_rst_ni),
+    .a_clear_i      (src_clear),
+    .a_clear_o      (src_clear_req),
+    .a_clear_ack_i  (src_clear_ack_q),
+    .a_isolate_o    (cdc_src_isolate),
+    .a_isolate_ack_i(axi_src_isolated),
+    .b_clk_i        (dst_clk_i),
+    .b_rst_ni       (dst_rst_ni),
+    .b_clear_i      (dst_clear),
+    .b_clear_o      (dst_clear_req),
+    .b_clear_ack_i  (dst_clear_ack_q),
+    .b_isolate_o    (dst_isolate_req),
+    .b_isolate_ack_i(dst_isolate_ack_q)
   );
 
   // The CDC can be cleared in one cycle
@@ -255,10 +257,10 @@ module axi_cdc_isolatable #(
   always_ff @(posedge dst_clk_i, negedge dst_rst_ni) begin
     if (!dst_rst_ni) begin
       dst_isolate_in_q <= 1'b0;
-      dst_isolated_q  <= 1'b0;
+      dst_isolated_q   <= 1'b0;
     end else begin
       dst_isolate_in_q <= dst_isolate_i;
-      dst_isolated_q  <= dst_isolated_d;
+      dst_isolated_q   <= dst_isolated_d;
     end
   end
 
@@ -269,19 +271,19 @@ module axi_cdc_isolatable #(
   sync #(
     .STAGES(SyncStages)
   ) i_dst_isolate_sync (
-    .clk_i    ( src_clk_i        ),
-    .rst_ni   ( src_rst_ni       ),
-    .serial_i ( dst_isolate_i    ),
-    .serial_o ( dst_isolate_sync )
+    .clk_i   (src_clk_i),
+    .rst_ni  (src_rst_ni),
+    .serial_i(dst_isolate_i),
+    .serial_o(dst_isolate_sync)
   );
 
   sync #(
     .STAGES(SyncStages)
   ) i_dst_isolated_sync (
-    .clk_i    ( dst_clk_i           ),
-    .rst_ni   ( dst_rst_ni          ),
-    .serial_i ( !axi_src_isolated   ),
-    .serial_o ( src_isolated_sync_n )
+    .clk_i   (dst_clk_i),
+    .rst_ni  (dst_rst_ni),
+    .serial_i(!axi_src_isolated),
+    .serial_o(src_isolated_sync_n)
   );
 
   //-----
@@ -293,93 +295,99 @@ module axi_cdc_isolatable #(
   b_chan_t  [2**LogDepth-1:0] async_data_b_data;
   ar_chan_t [2**LogDepth-1:0] async_data_ar_data;
   r_chan_t  [2**LogDepth-1:0] async_data_r_data;
-  logic          [LogDepth:0] async_data_aw_wptr, async_data_aw_rptr,
-                              async_data_w_wptr,  async_data_w_rptr,
-                              async_data_b_wptr,  async_data_b_rptr,
-                              async_data_ar_wptr, async_data_ar_rptr,
-                              async_data_r_wptr,  async_data_r_rptr;
+  logic [LogDepth:0]
+      async_data_aw_wptr,
+      async_data_aw_rptr,
+      async_data_w_wptr,
+      async_data_w_rptr,
+      async_data_b_wptr,
+      async_data_b_rptr,
+      async_data_ar_wptr,
+      async_data_ar_rptr,
+      async_data_r_wptr,
+      async_data_r_rptr;
 
   axi_cdc_src_clearable #(
-    .aw_chan_t  ( aw_chan_t   ),
-    .w_chan_t   ( w_chan_t    ),
-    .b_chan_t   ( b_chan_t    ),
-    .ar_chan_t  ( ar_chan_t   ),
-    .r_chan_t   ( r_chan_t    ),
-    .axi_req_t  ( axi_req_t   ),
-    .axi_resp_t ( axi_resp_t  ),
-    .LogDepth   ( LogDepth    ),
-    .SyncStages ( SyncStages  )
+    .aw_chan_t (aw_chan_t),
+    .w_chan_t  (w_chan_t),
+    .b_chan_t  (b_chan_t),
+    .ar_chan_t (ar_chan_t),
+    .r_chan_t  (r_chan_t),
+    .axi_req_t (axi_req_t),
+    .axi_resp_t(axi_resp_t),
+    .LogDepth  (LogDepth),
+    .SyncStages(SyncStages)
   ) i_axi_cdc_src (
-                .src_clk_i,
-                .src_rst_ni,
-                .src_clear_i                  ( src_clear_req       ),
-                .src_req_i                    ( src_req_iso         ),
-                .src_resp_o                   ( src_resp_iso        ),
-    (* async *) .async_data_master_aw_data_o  ( async_data_aw_data  ),
-    (* async *) .async_data_master_aw_wptr_o  ( async_data_aw_wptr  ),
-    (* async *) .async_data_master_aw_rptr_i  ( async_data_aw_rptr  ),
-    (* async *) .async_data_master_w_data_o   ( async_data_w_data   ),
-    (* async *) .async_data_master_w_wptr_o   ( async_data_w_wptr   ),
-    (* async *) .async_data_master_w_rptr_i   ( async_data_w_rptr   ),
-    (* async *) .async_data_master_b_data_i   ( async_data_b_data   ),
-    (* async *) .async_data_master_b_wptr_i   ( async_data_b_wptr   ),
-    (* async *) .async_data_master_b_rptr_o   ( async_data_b_rptr   ),
-    (* async *) .async_data_master_ar_data_o  ( async_data_ar_data  ),
-    (* async *) .async_data_master_ar_wptr_o  ( async_data_ar_wptr  ),
-    (* async *) .async_data_master_ar_rptr_i  ( async_data_ar_rptr  ),
-    (* async *) .async_data_master_r_data_i   ( async_data_r_data   ),
-    (* async *) .async_data_master_r_wptr_i   ( async_data_r_wptr   ),
-    (* async *) .async_data_master_r_rptr_o   ( async_data_r_rptr   )
+    .src_clk_i,
+    .src_rst_ni,
+                .src_clear_i                (src_clear_req),
+                .src_req_i                  (src_req_iso),
+                .src_resp_o                 (src_resp_iso),
+    (* async *) .async_data_master_aw_data_o(async_data_aw_data),
+    (* async *) .async_data_master_aw_wptr_o(async_data_aw_wptr),
+    (* async *) .async_data_master_aw_rptr_i(async_data_aw_rptr),
+    (* async *) .async_data_master_w_data_o (async_data_w_data),
+    (* async *) .async_data_master_w_wptr_o (async_data_w_wptr),
+    (* async *) .async_data_master_w_rptr_i (async_data_w_rptr),
+    (* async *) .async_data_master_b_data_i (async_data_b_data),
+    (* async *) .async_data_master_b_wptr_i (async_data_b_wptr),
+    (* async *) .async_data_master_b_rptr_o (async_data_b_rptr),
+    (* async *) .async_data_master_ar_data_o(async_data_ar_data),
+    (* async *) .async_data_master_ar_wptr_o(async_data_ar_wptr),
+    (* async *) .async_data_master_ar_rptr_i(async_data_ar_rptr),
+    (* async *) .async_data_master_r_data_i (async_data_r_data),
+    (* async *) .async_data_master_r_wptr_i (async_data_r_wptr),
+    (* async *) .async_data_master_r_rptr_o (async_data_r_rptr)
   );
 
   axi_cdc_dst_clearable #(
-    .aw_chan_t  ( aw_chan_t   ),
-    .w_chan_t   ( w_chan_t    ),
-    .b_chan_t   ( b_chan_t    ),
-    .ar_chan_t  ( ar_chan_t   ),
-    .r_chan_t   ( r_chan_t    ),
-    .axi_req_t  ( axi_req_t   ),
-    .axi_resp_t ( axi_resp_t  ),
-    .LogDepth   ( LogDepth    ),
-    .SyncStages ( SyncStages  )
+    .aw_chan_t (aw_chan_t),
+    .w_chan_t  (w_chan_t),
+    .b_chan_t  (b_chan_t),
+    .ar_chan_t (ar_chan_t),
+    .r_chan_t  (r_chan_t),
+    .axi_req_t (axi_req_t),
+    .axi_resp_t(axi_resp_t),
+    .LogDepth  (LogDepth),
+    .SyncStages(SyncStages)
   ) i_axi_cdc_dst (
-                .dst_clk_i,
-                .dst_rst_ni,
-                .dst_clear_i                ( dst_clear_req       ),
-                .dst_req_o,
-                .dst_resp_i,
-    (* async *) .async_data_slave_aw_wptr_i ( async_data_aw_wptr  ),
-    (* async *) .async_data_slave_aw_rptr_o ( async_data_aw_rptr  ),
-    (* async *) .async_data_slave_aw_data_i ( async_data_aw_data  ),
-    (* async *) .async_data_slave_w_wptr_i  ( async_data_w_wptr   ),
-    (* async *) .async_data_slave_w_rptr_o  ( async_data_w_rptr   ),
-    (* async *) .async_data_slave_w_data_i  ( async_data_w_data   ),
-    (* async *) .async_data_slave_b_wptr_o  ( async_data_b_wptr   ),
-    (* async *) .async_data_slave_b_rptr_i  ( async_data_b_rptr   ),
-    (* async *) .async_data_slave_b_data_o  ( async_data_b_data   ),
-    (* async *) .async_data_slave_ar_wptr_i ( async_data_ar_wptr  ),
-    (* async *) .async_data_slave_ar_rptr_o ( async_data_ar_rptr  ),
-    (* async *) .async_data_slave_ar_data_i ( async_data_ar_data  ),
-    (* async *) .async_data_slave_r_wptr_o  ( async_data_r_wptr   ),
-    (* async *) .async_data_slave_r_rptr_i  ( async_data_r_rptr   ),
-    (* async *) .async_data_slave_r_data_o  ( async_data_r_data   )
+    .dst_clk_i,
+    .dst_rst_ni,
+                .dst_clear_i               (dst_clear_req),
+    .dst_req_o,
+    .dst_resp_i,
+    (* async *) .async_data_slave_aw_wptr_i(async_data_aw_wptr),
+    (* async *) .async_data_slave_aw_rptr_o(async_data_aw_rptr),
+    (* async *) .async_data_slave_aw_data_i(async_data_aw_data),
+    (* async *) .async_data_slave_w_wptr_i (async_data_w_wptr),
+    (* async *) .async_data_slave_w_rptr_o (async_data_w_rptr),
+    (* async *) .async_data_slave_w_data_i (async_data_w_data),
+    (* async *) .async_data_slave_b_wptr_o (async_data_b_wptr),
+    (* async *) .async_data_slave_b_rptr_i (async_data_b_rptr),
+    (* async *) .async_data_slave_b_data_o (async_data_b_data),
+    (* async *) .async_data_slave_ar_wptr_i(async_data_ar_wptr),
+    (* async *) .async_data_slave_ar_rptr_o(async_data_ar_rptr),
+    (* async *) .async_data_slave_ar_data_i(async_data_ar_data),
+    (* async *) .async_data_slave_r_wptr_o (async_data_r_wptr),
+    (* async *) .async_data_slave_r_rptr_i (async_data_r_rptr),
+    (* async *) .async_data_slave_r_data_o (async_data_r_data)
   );
 
   // pragma translate_off
-  `ifndef SYNTHESIS
-    assert property (@(posedge src_clk_i) disable iff (~src_rst_ni)
-      (src_isolate_i && !src_isolated_o) |=> src_isolate_i) else
-      $error(1, "src isolate signal was de-asserted before isolation was complete!");
-    assert property (@(posedge src_clk_i) disable iff (~src_rst_ni)
-      (!src_isolate_i && src_isolated_o) |=> !src_isolate_i) else
-      $error(1, "src isolate signal was asserted before previous isolation was complete!");
-    assert property (@(posedge dst_clk_i) disable iff (~dst_rst_ni)
-      (dst_isolate_i && !dst_isolated_o) |=> dst_isolate_i) else
-      $error(1, "dst isolate signal was de-asserted before isolation was complete!");
-    assert property (@(posedge dst_clk_i) disable iff (~dst_rst_ni)
-      (!dst_isolate_i && dst_isolated_o) |=> !dst_isolate_i) else
-      $error(1, "dst isolate signal was asserted before previous isolation was complete!");
-  `endif
+`ifndef SYNTHESIS
+  assert property (@(posedge src_clk_i)
+                   disable iff (~src_rst_ni) (src_isolate_i && !src_isolated_o) |=> src_isolate_i)
+  else $error(1, "src isolate signal was de-asserted before isolation was complete!");
+  assert property (@(posedge src_clk_i)
+                   disable iff (~src_rst_ni) (!src_isolate_i && src_isolated_o) |=> !src_isolate_i)
+  else $error(1, "src isolate signal was asserted before previous isolation was complete!");
+  assert property (@(posedge dst_clk_i)
+                   disable iff (~dst_rst_ni) (dst_isolate_i && !dst_isolated_o) |=> dst_isolate_i)
+  else $error(1, "dst isolate signal was de-asserted before isolation was complete!");
+  assert property (@(posedge dst_clk_i)
+                   disable iff (~dst_rst_ni) (!dst_isolate_i && dst_isolated_o) |=> !dst_isolate_i)
+  else $error(1, "dst isolate signal was asserted before previous isolation was complete!");
+`endif
   // pragma translate_on
 
 endmodule
@@ -389,38 +397,38 @@ endmodule
 
 // interface wrapper
 module axi_cdc_isolatable_intf #(
-  parameter int unsigned AXI_ID_WIDTH   = 0,
-  parameter int unsigned AXI_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_DATA_WIDTH = 0,
-  parameter int unsigned AXI_USER_WIDTH = 0,
-  parameter bit ATOP_SUPPORT = 1'b1,
+  parameter int unsigned AXI_ID_WIDTH          = 0,
+  parameter int unsigned AXI_ADDR_WIDTH        = 0,
+  parameter int unsigned AXI_DATA_WIDTH        = 0,
+  parameter int unsigned AXI_USER_WIDTH        = 0,
+  parameter bit          ATOP_SUPPORT          = 1'b1,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LOG_DEPTH = 1,
+  parameter int unsigned LOG_DEPTH             = 1,
   /// Number of synchronization registers to insert on the async pointers
-  parameter int unsigned SYNC_STAGES = 2,
+  parameter int unsigned SYNC_STAGES           = 2,
   /// Gracefully terminate all incoming transactions in case of isolation by returning proper error
   /// responses.
-  parameter bit TERMINATE_TRANSACTION = 1'b0
+  parameter bit          TERMINATE_TRANSACTION = 1'b0
 ) (
-   // slave side - clocked by `src_clk_i`
-  input  logic      src_clk_i,
-  input  logic      src_rst_ni,
-  input  logic      src_isolate_i,
-  output logic      src_isolated_o,
-  AXI_BUS.Slave     src,
+  // slave side - clocked by `src_clk_i`
+  input  logic          src_clk_i,
+  input  logic          src_rst_ni,
+  input  logic          src_isolate_i,
+  output logic          src_isolated_o,
+         AXI_BUS.Slave  src,
   // master side - clocked by `dst_clk_i`
-  input  logic      dst_clk_i,
-  input  logic      dst_rst_ni,
-  input  logic      dst_isolate_i,
-  output logic      dst_isolated_o,
-  AXI_BUS.Master    dst
+  input  logic          dst_clk_i,
+  input  logic          dst_rst_ni,
+  input  logic          dst_isolate_i,
+  output logic          dst_isolated_o,
+         AXI_BUS.Master dst
 );
 
-  typedef logic [AXI_ID_WIDTH-1:0]     id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_ID_WIDTH-1:0] id_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
+  typedef logic [AXI_USER_WIDTH-1:0] user_t;
   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
@@ -429,7 +437,7 @@ module axi_cdc_isolatable_intf #(
   `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
-  req_t  src_req,  dst_req;
+  req_t src_req, dst_req;
   resp_t src_resp, dst_resp;
 
   `AXI_ASSIGN_TO_REQ(src_req, src)
@@ -439,60 +447,60 @@ module axi_cdc_isolatable_intf #(
   `AXI_ASSIGN_TO_RESP(dst_resp, dst)
 
   axi_cdc_isolatable #(
-    .AxiAddrWidth         ( AXI_ADDR_WIDTH        ),
-    .AxiDataWidth         ( AXI_DATA_WIDTH        ),
-    .AxiIdWidth           ( AXI_ID_WIDTH          ),
-    .AxiUserWidth         ( AXI_USER_WIDTH        ),
-    .AtopSupport          ( ATOP_SUPPORT          ),
-    .axi_req_t            ( req_t                 ),
-    .axi_resp_t           ( resp_t                ),
-    .LogDepth             ( LOG_DEPTH             ),
-    .SyncStages           ( SYNC_STAGES           ),
-    .TerminateTransaction ( TERMINATE_TRANSACTION )
+    .AxiAddrWidth        (AXI_ADDR_WIDTH),
+    .AxiDataWidth        (AXI_DATA_WIDTH),
+    .AxiIdWidth          (AXI_ID_WIDTH),
+    .AxiUserWidth        (AXI_USER_WIDTH),
+    .AtopSupport         (ATOP_SUPPORT),
+    .axi_req_t           (req_t),
+    .axi_resp_t          (resp_t),
+    .LogDepth            (LOG_DEPTH),
+    .SyncStages          (SYNC_STAGES),
+    .TerminateTransaction(TERMINATE_TRANSACTION)
   ) i_axi_cdc (
     .src_clk_i,
     .src_rst_ni,
     .src_isolate_i,
     .src_isolated_o,
-    .src_req_i  ( src_req  ),
-    .src_resp_o ( src_resp ),
+    .src_req_i (src_req),
+    .src_resp_o(src_resp),
     .dst_clk_i,
     .dst_rst_ni,
     .dst_isolate_i,
     .dst_isolated_o,
-    .dst_req_o  ( dst_req  ),
-    .dst_resp_i ( dst_resp )
+    .dst_req_o (dst_req),
+    .dst_resp_i(dst_resp)
   );
 
 endmodule
 
 module axi_lite_cdc_isolatable_intf #(
-  parameter int unsigned AXI_ADDR_WIDTH = 0,
-  parameter int unsigned AXI_DATA_WIDTH = 0,
+  parameter int unsigned AXI_ADDR_WIDTH        = 0,
+  parameter int unsigned AXI_DATA_WIDTH        = 0,
   /// Depth of the FIFO crossing the clock domain, given as 2**LOG_DEPTH.
-  parameter int unsigned LOG_DEPTH = 1,
+  parameter int unsigned LOG_DEPTH             = 1,
   /// Number of synchronization registers to insert on the async pointers
-  parameter int unsigned SYNC_STAGES = 2,
+  parameter int unsigned SYNC_STAGES           = 2,
   /// Gracefully terminate all incoming transactions in case of isolation by returning proper error
   /// responses.
-  parameter bit TERMINATE_TRANSACTION = 1'b0
+  parameter bit          TERMINATE_TRANSACTION = 1'b0
 ) (
-   // slave side - clocked by `src_clk_i`
-  input  logic      src_clk_i,
-  input  logic      src_rst_ni,
-  input  logic      src_isolate_i,
-  output logic      src_isolated_o,
-  AXI_LITE.Slave    src,
+  // slave side - clocked by `src_clk_i`
+  input  logic           src_clk_i,
+  input  logic           src_rst_ni,
+  input  logic           src_isolate_i,
+  output logic           src_isolated_o,
+         AXI_LITE.Slave  src,
   // master side - clocked by `dst_clk_i`
-  input  logic      dst_clk_i,
-  input  logic      dst_rst_ni,
-  input  logic      dst_isolate_i,
-  output logic      dst_isolated_o,
-  AXI_LITE.Master   dst
+  input  logic           dst_clk_i,
+  input  logic           dst_rst_ni,
+  input  logic           dst_isolate_i,
+  output logic           dst_isolated_o,
+         AXI_LITE.Master dst
 );
 
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+  typedef logic [AXI_ADDR_WIDTH-1:0] addr_t;
+  typedef logic [AXI_DATA_WIDTH-1:0] data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
   `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
@@ -502,7 +510,7 @@ module axi_lite_cdc_isolatable_intf #(
   `AXI_LITE_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
   `AXI_LITE_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
 
-  req_t  src_req,  dst_req;
+  req_t src_req, dst_req;
   resp_t src_resp, dst_resp;
 
   `AXI_LITE_ASSIGN_TO_REQ(src_req, src)
@@ -512,27 +520,27 @@ module axi_lite_cdc_isolatable_intf #(
   `AXI_LITE_ASSIGN_TO_RESP(dst_resp, dst)
 
   axi_cdc_isolatable #(
-    .AxiAddrWidth         ( AXI_ADDR_WIDTH        ),
-    .AxiDataWidth         ( AXI_DATA_WIDTH        ),
-    .AtopSupport          ( 1'b0                  ),
-    .axi_req_t            ( req_t                 ),
-    .axi_resp_t           ( resp_t                ),
-    .LogDepth             ( LOG_DEPTH             ),
-    .SyncStages           ( SYNC_STAGES           ),
-    .TerminateTransaction ( TERMINATE_TRANSACTION )
+    .AxiAddrWidth        (AXI_ADDR_WIDTH),
+    .AxiDataWidth        (AXI_DATA_WIDTH),
+    .AtopSupport         (1'b0),
+    .axi_req_t           (req_t),
+    .axi_resp_t          (resp_t),
+    .LogDepth            (LOG_DEPTH),
+    .SyncStages          (SYNC_STAGES),
+    .TerminateTransaction(TERMINATE_TRANSACTION)
   ) i_axi_cdc (
     .src_clk_i,
     .src_rst_ni,
     .src_isolate_i,
     .src_isolated_o,
-    .src_req_i  ( src_req  ),
-    .src_resp_o ( src_resp ),
+    .src_req_i (src_req),
+    .src_resp_o(src_resp),
     .dst_clk_i,
     .dst_rst_ni,
     .dst_isolate_i,
     .dst_isolated_o,
-    .dst_req_o  ( dst_req  ),
-    .dst_resp_i ( dst_resp )
+    .dst_req_o (dst_req),
+    .dst_resp_i(dst_resp)
   );
 
 endmodule
