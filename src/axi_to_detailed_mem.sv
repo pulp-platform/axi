@@ -908,6 +908,11 @@ module mem_stream_to_banks_detailed #(
   assign mem_req_ready = (&req_ready) & (&resp_ready) & !dead_write_fifo_full;
 
   if (HideStrb) begin : gen_dead_write_fifo
+
+    logic [NumBanks-1:0] zero_strobe_on_input;
+    for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin
+      assign zero_strobe_on_input[i] = (strb_i[i*BytesPerBank+:BytesPerBank] == '0);
+    end
     fifo_v3 #(
       .FALL_THROUGH ( 1'b0     ),
       .DEPTH        ( MaxTrans+1 ),
@@ -920,8 +925,8 @@ module mem_stream_to_banks_detailed #(
       .full_o     ( dead_write_fifo_full    ),
       .empty_o    (),
       .usage_o    (),
-      .data_i     ( bank_we_o & zero_strobe ),
-      .push_i     ( mem_req_valid & mem_req_ready           ),
+      .data_i     ( we_i ? zero_strobe_on_input : '0 ),
+      .push_i     ( mem_req_valid & mem_req_ready ),
       .data_o     ( dead_response           ),
       .pop_i      ( rvalid_o & rready_i     )
     );
