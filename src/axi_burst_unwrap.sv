@@ -176,6 +176,7 @@ module axi_burst_unwrap #(
     unique case (w_state_q)
       WReady: begin
         if (act_req.w_valid) begin
+          w_cnt_req = 1'b1;
           if (w_cnt_gnt) begin
             w_last_d = act_req.w.last | (w_cnt_len == 8'd0);
             mst_req_o.w.last  = w_last_d;
@@ -183,7 +184,6 @@ module axi_burst_unwrap #(
             // Try to forward the beat downstream.
             mst_req_o.w_valid = 1'b1;
             if (mst_resp_i.w_ready) begin
-              w_cnt_req = 1'b1;
               act_resp.w_ready = 1'b1;
               if (w_last_d && !act_req.w.last) begin
                 w_state_d = WFeedthrough;
