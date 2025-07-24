@@ -14,8 +14,10 @@
 // - Luca Valente <luca.valente@unibo.it>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Luca Rufer <luca@mosaic-soc.ch>
+// - Moritz Scherer <moritz@mosaic-soc.ch>
 
 `include "axi/assign.svh"
+`include "axi/typedef.svh"
 
 /// An isolatable clock domain crossing on an AXI interface. This isolatable variant of the AXI CDC
 /// allows one-sided power-down or reset without having to reset the other side of the CDC.
@@ -46,6 +48,7 @@
 /// pop ports are in separate clock domains.  IMPORTANT: For each AXI channel, you MUST properly
 /// constrain three paths through the FIFO; see the header of `cdc_fifo_gray_clearable` for
 /// instructions.
+
 module axi_cdc_isolatable
   import axi_pkg::*;
 #(
@@ -391,9 +394,6 @@ module axi_cdc_isolatable
   // pragma translate_on
 
 endmodule
-
-`include "axi/assign.svh"
-`include "axi/typedef.svh"
 
 // interface wrapper
 module axi_cdc_isolatable_intf #(
