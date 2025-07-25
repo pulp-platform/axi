@@ -99,6 +99,11 @@ axi_cdc:
   variables:
     TEST_MODULE: axi_cdc
 
+axi_cdc_isolatable:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_cdc_isolatable
+
 axi_delayer:
   <<: *run_vsim
   variables:

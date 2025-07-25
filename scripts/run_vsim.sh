@@ -45,7 +45,7 @@ exec_test() {
                 call_vsim tb_axi_atop_filter -gTB_N_TXNS=1000 -gTB_AXI_MAX_WRITE_TXNS=$MAX_TXNS
             done
             ;;
-        axi_cdc|axi_delayer)
+        axi_cdc|axi_cdc_isolatable|axi_delayer)
             call_vsim tb_$1
             ;;
         axi_dw_downsizer)
