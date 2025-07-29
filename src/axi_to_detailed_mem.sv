@@ -567,6 +567,7 @@ module axi_to_detailed_mem #(
   // Assertions
   // pragma translate_off
   `ifndef VERILATOR
+  `ifndef XSIM
   default disable iff (!rst_ni);
   assume property (@(posedge clk_i)
       axi_req_i.ar_valid && !axi_resp_o.ar_ready |=> $stable(axi_req_i.ar))
@@ -591,6 +592,7 @@ module axi_to_detailed_mem #(
     else $error("Non-incrementing bursts are not supported!");
   assert property (@(posedge clk_i) meta_valid && meta.atop != '0 |-> meta.write)
     else $warning("Unexpected atomic operation on read.");
+  `endif
   `endif
   // pragma translate_on
 endmodule
