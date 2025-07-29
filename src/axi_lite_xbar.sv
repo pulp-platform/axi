@@ -114,6 +114,7 @@ module axi_lite_xbar #(
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
     `ifndef VERILATOR
+    `ifndef XSIM
     default disable iff (~rst_ni);
     default_aw_mst_port_en: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
@@ -135,6 +136,7 @@ module axi_lite_xbar #(
           |=> $stable(default_mst_port_i[i]))
         else $fatal (1, $sformatf("It is not allowed to change the default mst port\
                                    when there is an unserved Ar beat. Slave Port: %0d", i));
+    `endif
     `endif
     // pragma translate_on
     axi_lite_demux #(
