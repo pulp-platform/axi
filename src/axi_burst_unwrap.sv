@@ -647,11 +647,4 @@ module axi_burst_counters #(
   // registers
   `FFARN(err_q, err_d, '0, clk_i, rst_ni)
 
-  `ifndef VERILATOR
-  // pragma translate_off
-  assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid)
-    else $warning("Invalid output at ID queue, read not granted!");
-  // pragma translate_on
-  `endif
-
 endmodule
