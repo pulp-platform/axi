@@ -649,6 +649,67 @@
   assign s_axi_``pat``_rresp   = rsp.r.resp;     \
   assign s_axi_``pat``_rlast   = rsp.r.last;     \
   assign s_axi_``pat``_ruser   = rsp.r.user;
+
+`define AXI_ASSIGN_TO_FLAT_PORT(pat, req, rsp)  \
+  .``pat``_awvalid  ( req.aw_valid  ), \
+  .``pat``_awid     ( req.aw.id     ), \
+  .``pat``_awaddr   ( req.aw.addr   ), \
+  .``pat``_awlen    ( req.aw.len    ), \
+  .``pat``_awsize   ( req.aw.size   ), \
+  .``pat``_awburst  ( req.aw.burst  ), \
+  .``pat``_awlock   ( req.aw.lock   ), \
+  .``pat``_awcache  ( req.aw.cache  ), \
+  .``pat``_awprot   ( req.aw.prot   ), \
+  .``pat``_awqos    ( req.aw.qos    ), \
+  .``pat``_awregion ( req.aw.region ), \
+  .``pat``_awuser   ( req.aw.user   ), \
+                                       \
+  .``pat``_wvalid   ( req.w_valid   ), \
+  .``pat``_wdata    ( req.w.data    ), \
+  .``pat``_wstrb    ( req.w.strb    ), \
+  .``pat``_wlast    ( req.w.last    ), \
+  .``pat``_wuser    ( req.w.user    ), \
+                                       \
+  .``pat``_bready   ( req.b_ready   ), \
+                                       \
+  .``pat``_arvalid  ( req.ar_valid  ), \
+  .``pat``_arid     ( req.ar.id     ), \
+  .``pat``_araddr   ( req.ar.addr   ), \
+  .``pat``_arlen    ( req.ar.len    ), \
+  .``pat``_arsize   ( req.ar.size   ), \
+  .``pat``_arburst  ( req.ar.burst  ), \
+  .``pat``_arlock   ( req.ar.lock   ), \
+  .``pat``_arcache  ( req.ar.cache  ), \
+  .``pat``_arprot   ( req.ar.prot   ), \
+  .``pat``_arqos    ( req.ar.qos    ), \
+  .``pat``_arregion ( req.ar.region ), \
+  .``pat``_aruser   ( req.ar.user   ), \
+                                       \
+  .``pat``_rready   ( req.r_ready   ), \
+                                       \
+  .``pat``_awready  ( rsp.aw_ready  ), \
+  .``pat``_arready  ( rsp.ar_ready  ), \
+  .``pat``_wready   ( rsp.w_ready   ), \
+                                       \
+  .``pat``_bvalid   ( rsp.b_valid   ), \
+  .``pat``_bid      ( rsp.b.id      ), \
+  .``pat``_bresp    ( rsp.b.resp    ), \
+  .``pat``_buser    ( rsp.b.user    ), \
+                                       \
+  .``pat``_rvalid   ( rsp.r_valid   ), \
+  .``pat``_rid      ( rsp.r.id      ), \
+  .``pat``_rdata    ( rsp.r.data    ), \
+  .``pat``_rresp    ( rsp.r.resp    ), \
+  .``pat``_rlast    ( rsp.r.last    ), \
+  .``pat``_ruser    ( rsp.r.user    )
+
+`define AXI_ASSIGN_MASTER_TO_FLAT_PORT(name, req, rsp) \
+  `AXI_ASSIGN_TO_FLAT_PORT(m_axi_``name``, req, rsp)
+
+`define AXI_ASSIGN_SLAVE_TO_FLAT_PORT(name, req, rsp) \
+  `AXI_ASSIGN_TO_FLAT_PORT(s_axi_``name``, req, rsp)
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
