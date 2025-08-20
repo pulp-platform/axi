@@ -198,8 +198,8 @@ module axi_burst_splitter_gran #(
     w_len_vld_d        = w_len_vld_q;
     // the entire detection machine is only required if len_limit > 0
     if (len_limit_i != 8'h00) begin
-      // In the case we are in the granular mode: last is default 0
-      mst_req_o.w.last = 1'b0;
+      // In the case we are in the granular mode: last is from req or when w_len valid and '0.
+      mst_req_o.w.last = (w_len_vld_q & (w_len_q == 8'h00)) | act_req.w.last;
       // only advance the machine if w ready and valid
       if (act_resp.w_ready & act_req.w_valid)  begin
         // the counter is not yet valid, set it to valid and initialize
@@ -211,14 +211,12 @@ module axi_burst_splitter_gran #(
           // in the last case, reinitialize the counter
           if (w_len_q == 8'h00) begin
             w_len_d          = len_limit_i;
-            mst_req_o.w.last = 1'b1;
           end
         end
         // final overwrite. if a downstream last comes, the counter is invalid and set to 0
         if (act_req.w.last) begin
           w_len_vld_d  = 1'b0;
           w_len_d      = 8'h00;
-          mst_req_o.w.last = 1'b1;
         end
       end
     end else begin
