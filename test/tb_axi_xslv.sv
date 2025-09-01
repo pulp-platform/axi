@@ -120,15 +120,19 @@ module tb_axi_xslv;
     wait(rst_n);
     @(posedge clk);
     #(ApplTime);
-    for (int j = 0; j < NumMasters; j++) begin
-      slv_ports_req[0][j].ar_valid = 1'b1;
-    end
+    // for (int j = 0; j < NumMasters; j++) begin
+      // slv_ports_req[0][j].ar_valid = 1'b1;
+    // end
+    slv_ports_req[0][0].ar_valid = 1'b1;
+    slv_ports_req[1][1].ar_valid = 1'b1;
 
     @(posedge clk);
     #(ApplTime);
-    for (int j = 0; j < NumMasters; j++) begin
-      slv_ports_req[0][j].ar_valid = 1'b0;
-    end
+    //for (int j = 0; j < NumMasters; j++) begin
+      //slv_ports_req[0][j].ar_valid = 1'b0;
+    //end
+    slv_ports_req[0][0].ar_valid = 1'b0;
+    slv_ports_req[1][1].ar_valid = 1'b0;
 
     wait(slv_ports_resp[0][0].r_valid && slv_ports_resp[0][0].r.last == 1'b1);
     repeat(6) @(posedge clk);
