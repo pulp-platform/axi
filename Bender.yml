@@ -96,6 +96,7 @@ sources:
   - src/axi_xbar.sv
   # Level 6
   - src/axi_xp.sv
+  - src/axi_xbar_clearable.sv
 
   - target: synth_test
     files:
