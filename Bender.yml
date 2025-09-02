@@ -89,12 +89,13 @@ sources:
   - src/axi_to_mem_interleaved.sv
   - src/axi_to_mem_split.sv
   # Level 5
+  - src/autocc_axi_xbar_pkg.sv
   - src/axi_xbar.sv
   - src/axi_xslv.sv
   - src/axi_xslv_wrap.sv
   # Level 6
   - src/axi_xp.sv
-  - src/autocc_axi_xbar_pkg.sv
+  - src/axi_xbar_clearable.sv
   - src/axi_xbar_superwrap.sv
   - src/axi_xslv_superwrap.sv
 
