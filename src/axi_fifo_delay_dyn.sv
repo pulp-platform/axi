@@ -184,13 +184,13 @@ module axi_fifo_delay_dyn_intf #(
   // DO NOT EDIT, derived parameters
   parameter int unsigned DELAY_WIDTH    = $clog2(MAX_DELAY) + 1
 ) (
-  input  logic                 clk_i,      // Clock
-  input  logic                 rst_ni,     // Asynchronous reset active low
-  input  logic [MAX_DELAY-1:0] aw_delay_i, // Delay of AW channel
-  input  logic [MAX_DELAY-1:0] w_delay_i,  // Delay of W channel
-  input  logic [MAX_DELAY-1:0] b_delay_i,  // Delay of B channel
-  input  logic [MAX_DELAY-1:0] ar_delay_i, // Delay of AR channel
-  input  logic [MAX_DELAY-1:0] r_delay_i,  // Delay of R channel
+  input  logic                   clk_i,      // Clock
+  input  logic                   rst_ni,     // Asynchronous reset active low
+  input  logic [DELAY_WIDTH-1:0] aw_delay_i, // Delay of AW channel
+  input  logic [DELAY_WIDTH-1:0] w_delay_i,  // Delay of W channel
+  input  logic [DELAY_WIDTH-1:0] b_delay_i,  // Delay of B channel
+  input  logic [DELAY_WIDTH-1:0] ar_delay_i, // Delay of AR channel
+  input  logic [DELAY_WIDTH-1:0] r_delay_i,  // Delay of R channel
   AXI_BUS.Slave                slv,        // Slave port
   AXI_BUS.Master               mst         // Master port
 );
