@@ -29,6 +29,7 @@ axi:
     - src/axi_fifo_delay_dyn.sv
     - src/axi_id_remap.sv
     - src/axi_id_prepend.sv
+    - src/axi_inval_filter.sv
     - src/axi_isolate.sv
     - src/axi_join.sv
     - src/axi_lite_demux.sv
