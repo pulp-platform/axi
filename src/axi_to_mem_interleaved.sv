@@ -119,7 +119,9 @@ module axi_to_mem_interleaved #(
     .slv_aw_select_i ( 1'b1                     ),
     .slv_resp_o      ( axi_resp_o               ),
     .mst_reqs_o      ( {w_axi_req,  r_axi_req}  ),
-    .mst_resps_i     ( {w_axi_resp, r_axi_resp} )
+    .mst_resps_i     ( {w_axi_resp, r_axi_resp} ),
+    .mst_b_idx_o     (                          ),
+    .mst_r_idx_o     (                          )
   );
 
   axi_to_mem #(
