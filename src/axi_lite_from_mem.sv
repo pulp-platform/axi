@@ -235,6 +235,7 @@ module axi_lite_from_mem #(
       assert (DataWidth == $bits(axi_rsp_i.r.data)) else
           $fatal(1, "DataWidth has to match axi_rsp_i.r.data!");
     end
+  `ifndef XSIM
     default disable iff (~rst_ni);
     assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> mem_req_i) else
         $fatal(1, "It is not allowed to deassert the request if it was not granted!");
@@ -246,6 +247,7 @@ module axi_lite_from_mem #(
         $fatal(1, "mem_wdata_i has to be stable if request is not granted!");
     assert property (@(posedge clk_i) (mem_req_i && !mem_gnt_o) |=> $stable(mem_be_i)) else
         $fatal(1, "mem_be_i has to be stable if request is not granted!");
+  `endif
   `endif
   `endif
   // pragma translate_on
