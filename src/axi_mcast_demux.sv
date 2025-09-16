@@ -39,38 +39,38 @@
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
 module axi_mcast_demux #(
-  parameter int unsigned AxiIdWidth     = 32'd0,
-  parameter bit          AtopSupport    = 1'b1,
-  parameter type         aw_addr_t      = logic,
-  parameter type         aw_chan_t      = logic,
-  parameter type         w_chan_t       = logic,
-  parameter type         b_chan_t       = logic,
-  parameter type         ar_chan_t      = logic,
-  parameter type         r_chan_t       = logic,
-  parameter type         axi_req_t      = logic,
-  parameter type         axi_resp_t     = logic,
-  parameter int unsigned NoMstPorts     = 32'd0,
+  parameter int unsigned         AxiIdWidth                = 32'd0,
+  parameter bit                  AtopSupport               = 1'b1,
+  parameter type                 aw_addr_t                 = logic,
+  parameter type                 aw_chan_t                 = logic,
+  parameter type                 w_chan_t                  = logic,
+  parameter type                 b_chan_t                  = logic,
+  parameter type                 ar_chan_t                 = logic,
+  parameter type                 r_chan_t                  = logic,
+  parameter type                 axi_req_t                 = logic,
+  parameter type                 axi_resp_t                = logic,
+  parameter int unsigned         NoMstPorts                = 32'd0,
   /// Connectivity vector
-  parameter bit [NoMstPorts-1:0] Connectivity = '1,
-  parameter int unsigned MaxTrans       = 32'd8,
-  parameter int unsigned AxiLookBits    = 32'd3,
-  parameter bit          UniqueIds      = 1'b0,
-  parameter bit          SpillAw        = 1'b1,
-  parameter bit          SpillW         = 1'b0,
-  parameter bit          SpillB         = 1'b0,
-  parameter bit          SpillAr        = 1'b1,
-  parameter bit          SpillR         = 1'b0,
-  parameter type         rule_t         = logic,
-  parameter int unsigned NoAddrRules    = 32'd0,
-  parameter int unsigned NoMulticastRules = 32'd0,
-  parameter int unsigned NoMulticastPorts = 32'd0,
-  parameter int unsigned MaxMcastTrans    = 32'd7,
+  parameter bit [NoMstPorts-1:0] Connectivity              = '1,
+  /// Collective Operation Connectivity (to mask certain outputs for coll operations)
+  parameter bit [NoMstPorts-1:0] CollectiveOpsConnectivity = '1,
+  parameter int unsigned         MaxTrans                  = 32'd8,
+  parameter int unsigned         AxiLookBits               = 32'd3,
+  parameter bit                  UniqueIds                 = 1'b0,
+  parameter bit                  SpillAw                   = 1'b1,
+  parameter bit                  SpillW                    = 1'b0,
+  parameter bit                  SpillB                    = 1'b0,
+  parameter bit                  SpillAr                   = 1'b1,
+  parameter bit                  SpillR                    = 1'b0,
+  parameter type                 rule_t                    = logic,
+  parameter int unsigned         NoAddrRules               = 32'd0,
+  parameter int unsigned         NoMulticastRules          = 32'd0,
+  parameter int unsigned         NoMulticastPorts          = 32'd0,
+  parameter int unsigned         MaxMcastTrans             = 32'd7,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter int unsigned DecodeIdxWidth = ((NoMstPorts - 1) > 32'd1) ? $clog2(NoMstPorts - 1) : 32'd1,
-  parameter int unsigned IdxSelectWidth = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
-  parameter type         decode_idx_t   = logic [DecodeIdxWidth-1:0],
-  parameter type         idx_select_t   = logic [IdxSelectWidth-1:0],
-  parameter type         mask_select_t  = logic [NoMstPorts-1:0]
+  parameter int unsigned         IdxSelectWidth            = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type                 idx_select_t              = logic [IdxSelectWidth-1:0],
+  parameter type                 mask_select_t             = logic [NoMstPorts-1:0]
 ) (
   input  logic                       clk_i,
   input  logic                       rst_ni,
@@ -189,13 +189,20 @@ module axi_mcast_demux #(
     // AW address decoder
     mask_rule_t [NoMulticastRules-1:0] multicast_rules;
     mask_rule_t                        default_rule;
-    decode_idx_t                       dec_aw_idx;
-    logic                              dec_aw_idx_valid, dec_aw_idx_error;
-    logic       [NoMulticastPorts-1:0] dec_aw_select_partial;
-    aw_addr_t   [NoMulticastPorts-1:0] dec_aw_addr, dec_aw_mask;
-    logic                              dec_aw_select_error;
-    logic       [NoMstPorts-2:0]       dec_aw_select;
-    aw_addr_t   [NoMstPorts-1:0]       slv_aw_addr, slv_aw_mask;
+
+    idx_select_t                       dec_aw_unicast_selected_idx;
+    logic [NoMstPorts-1:0]             dec_aw_unicast_selected_out;
+    logic                              dec_aw_unicast_valid;
+    logic                              dec_aw_unicast_error;
+
+    logic [NoMulticastPorts-1:0]       dec_aw_multicast_selected_out;
+    aw_addr_t [NoMulticastPorts-1:0]   dec_aw_multicast_addr;
+    aw_addr_t [NoMulticastPorts-1:0]   dec_aw_multicast_mask;
+    logic                              dec_aw_multicast_valid;
+    logic                              dec_aw_multicast_error;
+
+    aw_addr_t [NoMstPorts-1:0]         slv_aw_addr;
+    aw_addr_t [NoMstPorts-1:0]         slv_aw_mask;
     mask_select_t                      slv_aw_select_mask;
     idx_select_t                       slv_aw_select;
 
@@ -297,28 +304,6 @@ module axi_mcast_demux #(
       .data_o  ( slv_aw_chan        )
     );
 
-    if (NoMulticastRules != NoAddrRules) begin : g_aw_idx_decode
-      // Compare request against {start_addr, end_addr} rules
-      addr_decode #(
-        .NoIndices(NoMstPorts - 1),
-        .NoRules  (NoAddrRules - NoMulticastRules),
-        .addr_t   (aw_addr_t),
-        .rule_t   (rule_t)
-      ) i_axi_aw_idx_decode (
-        .addr_i          (slv_aw_chan.addr),
-        .addr_map_i      (addr_map_i[NoAddrRules-1:NoMulticastRules]),
-        .idx_o           (dec_aw_idx),
-        .dec_valid_o     (dec_aw_idx_valid),
-        .dec_error_o     (dec_aw_idx_error),
-        .en_default_idx_i(1'b0),
-        .default_idx_i   ('0)
-      );
-    end else begin : g_no_aw_idx_decode
-      assign dec_aw_idx_valid = 1'b0;
-      assign dec_aw_idx_error = 1'b1;
-      assign dec_aw_idx = '0;
-    end
-
     // Convert multicast rules to mask (NAPOT) form
     // - mask =  {'0, {log2(end_addr - start_addr){1'b1}}}
     // - addr = start_addr / (end_addr - start_addr)
@@ -333,36 +318,80 @@ module axi_mcast_demux #(
     assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
     assign default_rule.addr = default_mst_port_i.start_addr;
 
-    // Compare request against {addr, mask} rules
-    multiaddr_decode #(
-      .NoIndices(NoMulticastPorts),
-      .NoRules(NoMulticastRules),
-      .addr_t (aw_addr_t),
-      .rule_t (mask_rule_t)
-    ) i_axi_aw_mask_decode (
-      .addr_map_i (multicast_rules),
-      .addr_i     (slv_aw_chan.addr),
-      .mask_i     (slv_aw_chan.user.mcast),
-      .select_o   (dec_aw_select_partial),
-      .addr_o     (dec_aw_addr),
-      .mask_o     (dec_aw_mask),
-      .dec_valid_o(),
-      .dec_error_o(dec_aw_select_error),
-      .en_default_idx_i(en_default_mst_port_i),
-      .default_idx_i   (default_rule)
+    // Address decoding for unicast requests
+    addr_decode #(
+      .NoIndices          (NoMstPorts),
+      .NoRules            (NoAddrRules),
+      .addr_t             (aw_addr_t),
+      .rule_t             (rule_t)
+    ) i_axi_aw_idx_unicast_decode (
+      .addr_i             (slv_aw_chan.addr),
+      .addr_map_i         (addr_map_i),
+      .idx_o              (dec_aw_unicast_selected_idx),
+      .dec_valid_o        (dec_aw_unicast_valid),
+      .dec_error_o        (dec_aw_unicast_error),
+      .en_default_idx_i   (en_default_mst_port_i),
+      .default_idx_i      (idx_select_t'(default_mst_port_i.idx))
     );
 
-    // Combine output from the two address decoders
-    // Note: assumes the slaves targeted by multicast lie at the lower indices
-    assign dec_aw_select = (dec_aw_idx_valid << dec_aw_idx) | dec_aw_select_partial;
+    // Generate the output mask from the index
+    assign dec_aw_unicast_selected_out = (1'b1 << dec_aw_unicast_selected_idx);
 
-    // Filter out messages on ports that are not connected, otherwise the error slave
-    // would respond with DECERR and, when merged with the other responses, this results
-    // in an error being returned to the master.
-    assign slv_aw_select_mask = (dec_aw_idx_error && dec_aw_select_error) ?
-      {1'b1, {(NoMstPorts-1){1'b0}}} : {1'b0, dec_aw_select & Connectivity};
-    assign slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_addr};
-    assign slv_aw_mask = {'0, dec_aw_mask};
+    // Address decoding for multicast requests
+    if (NoMulticastRules > 0) begin : gen_multicast_decoding
+      multiaddr_decode #(
+        .NoIndices        (NoMulticastPorts),
+        .NoRules          (NoMulticastRules),
+        .addr_t           (aw_addr_t),
+        .rule_t           (mask_rule_t)
+      ) i_axi_aw_multicast_decode (
+        .addr_map_i       (multicast_rules),
+        .addr_i           (slv_aw_chan.addr),
+        .mask_i           (slv_aw_chan.user.collective_mask),
+        .select_o         (dec_aw_multicast_selected_out),
+        .addr_o           (dec_aw_multicast_addr),
+        .mask_o           (dec_aw_multicast_mask),
+        .dec_valid_o      (dec_aw_multicast_valid),
+        .dec_error_o      (dec_aw_multicast_error),
+        .en_default_idx_i (en_default_mst_port_i),
+        .default_idx_i    (default_rule)
+      );
+    end else begin : gen_no_multicast_decoding
+      assign dec_aw_multicast_selected_out = '0;
+      assign dec_aw_multicast_addr = '0;
+      assign dec_aw_multicast_mask = '0;
+      assign dec_aw_multicast_valid = '0;
+      assign dec_aw_multicast_error = '0;
+    end
+
+    // If the address decoding doesn't produce any match, the request
+    // is routed to the error slave, which lies at the highest index.
+    mask_select_t select_error_slave;
+    assign select_error_slave = 1'b1 << (NoMstPorts - 1);
+
+    // Mux the multicast and unicast decoding outputs
+    always_comb begin
+      slv_aw_select_mask = '0;
+      slv_aw_addr = '0;
+      slv_aw_mask = '0;
+
+      if (slv_aw_chan.user.collective_mask == '0) begin
+        slv_aw_addr = {NoMstPorts{slv_aw_chan.addr}};
+        if (dec_aw_unicast_error) begin
+          slv_aw_select_mask = select_error_slave;
+        end else begin
+          slv_aw_select_mask = dec_aw_unicast_selected_out & Connectivity;
+        end
+      end else begin
+        slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_aw_chan.addr}}, dec_aw_multicast_addr};
+        slv_aw_mask = {'0, dec_aw_multicast_mask};
+        if (dec_aw_multicast_error) begin
+          slv_aw_select_mask = select_error_slave;
+        end else begin
+          slv_aw_select_mask = {'0, dec_aw_multicast_selected_out} & CollectiveOpsConnectivity;
+        end
+      end
+    end
 
     // Control of the AW handshake
     always_comb begin
@@ -889,10 +918,10 @@ module axi_mcast_demux #(
 
       for (int unsigned i = 0; i < NoMstPorts; i++) begin
         // AW channel
-        mst_reqs_o[i].aw            = slv_aw_chan;
-        mst_reqs_o[i].aw.addr       = slv_aw_addr[i];
-        mst_reqs_o[i].aw.user.mcast = slv_aw_mask[i];
-        mst_reqs_o[i].aw_valid      = mst_aw_valids[i];
+        mst_reqs_o[i].aw                      = slv_aw_chan;
+        mst_reqs_o[i].aw.addr                 = slv_aw_addr[i];
+        mst_reqs_o[i].aw.user.collective_mask = slv_aw_mask[i];
+        mst_reqs_o[i].aw_valid                = mst_aw_valids[i];
 
         //  W channel
         mst_reqs_o[i].w       = slv_w_chan;
