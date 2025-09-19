@@ -987,12 +987,13 @@ package axi_test;
           mcast -> mcast_mask != 0;
         }; assert(rand_success);
         ax_beat.ax_user = mcast_mask;
+      end else begin
+        ax_beat.ax_user = user;
       end
       // The random ID *must* be legalized with `legalize_id()` before the beat is sent!  This is
       // currently done in the functions `create_aws()` and `send_ars()`.
       ax_beat.ax_id = id;
       ax_beat.ax_qos = qos;
-      ax_beat.ax_user = user;
       return ax_beat;
     endfunction
 
@@ -1329,7 +1330,8 @@ package axi_test;
                        aw_done = 1'b0;
       fork
         // Cache-Partition: randomize the patid
-        automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
+        // Multicast: randomize each burst separately
+        automatic user_t ax_user = ENABLE_MULTICAST ? '0 : rand_user(AX_USER_RANGE, AX_USER_RAND);
         begin
           send_ars(n_reads, ax_user);
           ar_done = 1'b1;
