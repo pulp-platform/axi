@@ -9,9 +9,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
+// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Luca Colagrande <colluca@iis.ee.ethz.ch>
-// Based on:
-// - tb_axi_xbar_pkg.sv
 
 // `axi_mcast_xbar_monitor` implements an AXI bus monitor that is tuned for the AXI multicast
 // crossbar. It snoops on each of the slaves and master ports of the crossbar and
@@ -104,7 +104,7 @@ package tb_axi_mcast_xbar_pkg;
     longint unsigned tests_expected;
     longint unsigned tests_conducted;
     longint unsigned tests_failed;
-    semaphore        cnt_sem;
+    std::semaphore   cnt_sem;
 
     //-----------------------------------------
     // Constructor
@@ -197,7 +197,8 @@ package tb_axi_mcast_xbar_pkg;
           // Log masked address
           for (int k = 0; k < AxiAddrWidth; k++)
             aw_addr_masked[k] = aw_mcast[k] ? 1'bx : aw_addr[k];
-          $display("Trying to match: %b", aw_addr_masked);
+
+          $display("Trying to match: %x", aw_addr_masked);
 
           // Compare request against each multicast rule. We look at the rules starting from the
           // last ones. In case of multiple rules matching for the same slave, we want only
@@ -234,10 +235,8 @@ package tb_axi_mcast_xbar_pkg;
 
           // Compare request against each interval-form rule. We look at the rules starting from
           // the last ones. We ignore the case of multiple rules matching for the same slave
-          // (as is the case in tb_mcast_xbar_pkg.sv)
           $display("Trying to match: %x", aw_addr);
           for (int j = (NoAddrRules - 1); j >= 0; j--) begin
-            $display("With slave %3d : [%x, %x)", AddrMap[j].idx, AddrMap[j].start_addr, AddrMap[j].end_addr);
             if ((aw_addr >= AddrMap[j].start_addr) &&
                 (aw_addr < AddrMap[j].end_addr)) begin
               decerr = 0;
