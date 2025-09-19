@@ -1,4 +1,4 @@
-// Copyright (c) 2022 ETH Zurich and University of Bologna.
+// Copyright (c) 2019 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
 // compliance with the License.  You may obtain a copy of the License at
@@ -9,9 +9,10 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
+// - Wolfgang Roenninger <wroennin@ethz.ch>
+// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Luca Colagrande <colluca@iis.ee.ethz.ch>
-// Based on:
-// - tb_axi_xbar.sv
 
 // Directed Random Verification Testbench for `axi_xbar`:  The crossbar is instantiated with
 // a number of random axi master and slave modules.  Each random master executes a fixed number of
@@ -49,7 +50,7 @@ module tb_axi_mcast_xbar #(
   /// Enable exclusive accesses
   parameter bit TbEnExcl                     = 1'b0,   
   /// Restrict to only unique IDs         
-  parameter bit TbUniqueIds                  = 1'b0      
+  parameter bit TbUniqueIds                  = 1'b0
 );
 
   // TB timing parameters
@@ -78,6 +79,7 @@ module tb_axi_mcast_xbar #(
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
     NoAddrRules:        TbNumMcastSlaves * 2 + 1,
+    EnableMulticast:    1,
     NoMulticastRules:   TbNumMcastSlaves * 2,
     NoMulticastPorts:   TbNumMcastSlaves
   };
@@ -110,13 +112,15 @@ module tb_axi_mcast_xbar #(
   `AXI_TYPEDEF_RESP_T(slv_resp_t, b_chan_slv_t, r_chan_slv_t)
 
   // Each slave has its own address range:
-  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = {rule_t'{
-                                                            idx:        TbNumMcastSlaves,
-                                                            start_addr: 32'h7000_0000,
-                                                            end_addr:   32'h7008_0000
-                                                          },
-                                                          addr_map_gen(32'h1000_0000, 32'h10_0000),
-                                                          addr_map_gen(32'h0b00_0000, 32'h1_0000)};
+  localparam rule_t [xbar_cfg.NoAddrRules-1:0] AddrMap = {
+    rule_t'{
+      idx:        TbNumMcastSlaves,
+      start_addr: 32'h7000_0000,
+      end_addr:   32'h7008_0000
+    },
+    addr_map_gen(32'h1000_0000, 32'h10_0000),
+    addr_map_gen(32'h0b00_0000, 32'h1_0000)
+  };
 
   function rule_t [xbar_cfg.NoMulticastPorts-1:0] addr_map_gen (addr_t base, addr_t offset);
     for (int unsigned i = 0; i < xbar_cfg.NoMulticastPorts; i++) begin
@@ -144,7 +148,7 @@ module tb_axi_mcast_xbar #(
     .AXI_EXCLS      ( TbEnExcl    ),
     .AXI_ATOPS      ( TbEnAtop    ),
     .UNIQUE_IDS     ( TbUniqueIds ),
-    .ENABLE_MULTICAST( 1 )
+    .ENABLE_MULTICAST ( 1         )
   ) axi_rand_master_t;
   typedef axi_test::axi_rand_slave #(
     // AXI interface parameters

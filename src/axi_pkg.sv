@@ -519,6 +519,8 @@ package axi_pkg;
     /// Each master port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
     int unsigned   NoAddrRules;
+    /// When asserted, the XBAR is configured to support multicast.
+    bit            EnableMulticast;
     /// The number of address rules to be considered for multicasting,
     /// assumed to be at the start of `addr_map_i`.
     int unsigned   NoMulticastRules;
