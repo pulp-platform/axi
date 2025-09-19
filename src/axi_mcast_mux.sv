@@ -76,7 +76,6 @@ module axi_mcast_mux #(
 
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
-
     spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
@@ -573,6 +572,8 @@ module axi_mcast_mux_intf #(
   input  logic   clk_i,                  // Clock
   input  logic   rst_ni,                 // Asynchronous reset active low
   input  logic   test_i,                 // Testmode enable
+  input  logic [NO_SLV_PORTS-1:0] slv_is_mcast_i,
+  input  logic [NO_SLV_PORTS-1:0] slv_aw_commit_i,
   AXI_BUS.Slave  slv [NO_SLV_PORTS-1:0], // slave ports
   AXI_BUS.Master mst                     // master port
 );
@@ -617,7 +618,7 @@ module axi_mcast_mux_intf #(
   `AXI_ASSIGN_FROM_REQ(mst, mst_req)
   `AXI_ASSIGN_TO_RESP(mst_resp, mst)
 
-  axi_mux #(
+  axi_mcast_mux #(
     .SlvAxiIDWidth ( SLV_AXI_ID_WIDTH ),
     .slv_aw_chan_t ( slv_aw_chan_t    ), // AW Channel Type, slave ports
     .mst_aw_chan_t ( mst_aw_chan_t    ), // AW Channel Type, master port
@@ -644,6 +645,8 @@ module axi_mcast_mux_intf #(
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
     .test_i      ( test_i    ), // Test Mode enable
+    .slv_is_mcast_i,
+    .slv_aw_commit_i,
     .slv_reqs_i  ( slv_reqs  ),
     .slv_resps_o ( slv_resps ),
     .mst_req_o   ( mst_req   ),
