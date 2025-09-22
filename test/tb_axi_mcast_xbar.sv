@@ -264,7 +264,7 @@ module tb_axi_mcast_xbar #(
   end
 
   initial begin : proc_monitor
-    static tb_axi_mcast_xbar_pkg::axi_mcast_xbar_monitor #(
+    static tb_axi_xbar_pkg::axi_xbar_monitor #(
       .AxiAddrWidth      ( TbAxiAddrWidth       ),
       .AxiDataWidth      ( TbAxiDataWidth       ),
       .AxiIdWidthMasters ( TbAxiIdWidthMasters  ),
