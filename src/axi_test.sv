@@ -1005,11 +1005,13 @@ package axi_test;
           // We can emit ATOPs only if INCR bursts are allowed.
           $warning("ATOP suppressed because INCR bursts are disabled!");
           beat.ax_atop[5:4] = 2'b00;
+          break;
         end
-        if (beat.ax_atop[5:4] != 2'b00 && beat.ax_user != '0) begin
+        if (ENABLE_MULTICAST && beat.ax_atop[5:4] != 2'b00 && beat.ax_user != '0) begin
           // We can emit ATOPs only if current burst is not a multicast.
           $warning("ATOP suppressed because burst is a multicast!");
           beat.ax_atop[5:4] = 2'b00;
+          break;
         end
         if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
           // Determine `ax_atop`.
