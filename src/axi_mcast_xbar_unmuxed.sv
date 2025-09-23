@@ -81,6 +81,8 @@ import cf_math_pkg::idx_width;
   input  rule_t [Cfg.NoSlvPorts-1:0]                     default_mst_port_i
 );
 
+  localparam bit EnableMulticast = (Cfg.NoMulticastPorts > 0) || (Cfg.NoMulticastRules > 0);
+
   // signals from the axi_demuxes
   req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_reqs;
   resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_resps;
@@ -225,7 +227,7 @@ import cf_math_pkg::idx_width;
       $fatal(1, $sformatf("Slv_req and aw_addr width not equal."));
     addr_mst_req_ports: assert ($bits(mst_ports_req_o[0][0].aw.addr) == Cfg.AxiAddrWidth) else
       $fatal(1, $sformatf("Mst_req and aw_addr width not equal."));
-    no_cuts_if_mcast: assert (!Cfg.EnableMulticast || (Cfg.PipelineStages == 0)) else
+    no_cuts_if_mcast: assert (!EnableMulticast || (Cfg.PipelineStages == 0)) else
       $fatal(1, $sformatf("Multicast XBAR currently does not support pipeline stages."));
   end
   `endif

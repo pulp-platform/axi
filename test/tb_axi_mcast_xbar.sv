@@ -79,7 +79,6 @@ module tb_axi_mcast_xbar #(
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
     NoAddrRules:        TbNumMcastSlaves * 2 + 1,
-    EnableMulticast:    1,
     NoMulticastRules:   TbNumMcastSlaves * 2,
     NoMulticastPorts:   TbNumMcastSlaves
   };
