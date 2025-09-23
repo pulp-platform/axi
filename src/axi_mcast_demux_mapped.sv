@@ -40,7 +40,7 @@
 ///
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
-module axi_mcast_demux #(
+module axi_mcast_demux_mapped #(
   parameter int unsigned         AxiIdWidth            = 32'd0,
   parameter int unsigned         AxiAddrWidth          = 32'd0,
   parameter bit                  AtopSupport           = 1'b1,
