@@ -120,7 +120,7 @@ import cf_math_pkg::idx_width;
     `endif
     // pragma translate_on
 
-    axi_mcast_demux #(
+    axi_mcast_demux_mapped #(
       .AxiIdWidth            ( Cfg.AxiIdWidthSlvPorts   ),  // ID Width
       .AxiAddrWidth          ( Cfg.AxiAddrWidth         ),
       .AtopSupport           ( ATOPs                    ),
