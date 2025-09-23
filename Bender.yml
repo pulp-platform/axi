@@ -108,10 +108,6 @@ sources:
     files:
       - test/axi_synth_bench.sv
 
-  - target: gf12
-    files:
-      - test/axi_synth_bench.sv
-
   - target: simulation
     files:
       - src/axi_chan_compare.sv
