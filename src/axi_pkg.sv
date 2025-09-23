@@ -515,12 +515,10 @@ package axi_pkg;
     int unsigned   AxiAddrWidth;
     /// AXI4+ATOP data field width.
     int unsigned   AxiDataWidth;
-    /// The number of address rules defined for routing of the AR transactions.
+    /// The number of address rules defined for routing of the transactions.
     /// Each master port can have multiple rules, should have however at least one.
     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
     int unsigned   NoAddrRules;
-    /// When asserted, the XBAR is configured to support multicast.
-    bit            EnableMulticast;
     /// The number of address rules to be considered for multicasting,
     /// assumed to be at the start of `addr_map_i`.
     int unsigned   NoMulticastRules;
@@ -536,24 +534,12 @@ package axi_pkg;
     logic [63:0] end_addr;
   } xbar_rule_64_t;
 
-  /// Commonly used rule types for `axi_xbar` (64-bit addresses).
-  typedef struct packed {
-    logic [63:0] addr;
-    logic [63:0] mask;
-  } xbar_mask_rule_64_t;
-
   /// Commonly used rule types for `axi_xbar` (32-bit addresses).
   typedef struct packed {
     int unsigned idx;
     logic [31:0] start_addr;
     logic [31:0] end_addr;
   } xbar_rule_32_t;
-
-  /// Commonly used rule types for `axi_xbar` (32-bit addresses).
-  typedef struct packed {
-    logic [31:0] addr;
-    logic [31:0] mask;
-  } xbar_mask_rule_32_t;
 
   // Return either the argument minus 1 or 0 if 0; useful for IO vector width declaration
   function automatic integer unsigned iomsb (input integer unsigned width);
