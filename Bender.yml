@@ -83,8 +83,8 @@ sources:
   - src/axi_dw_converter.sv
   - src/axi_from_mem.sv
   - src/axi_id_serialize.sv
-  - src/axi_mcast_demux.sv
   - src/axi_lfsr.sv
+  - src/axi_mcast_demux_mapped.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
   - src/axi_to_mem.sv
