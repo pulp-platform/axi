@@ -345,6 +345,6 @@ artifacts:
       - src/axi_mcast_mux.sv
       - src/axi_mcast_xbar.sv
       - test/tb_axi_mcast_xbar.sv
-      - test/tb_axi_mcast_xbar_pkg.sv
+      - test/tb_axi_xbar_pkg.sv
     outputs:
       - build/axi_mcast_xbar-%.tested
