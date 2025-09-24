@@ -67,10 +67,6 @@ module axi_mcast_mux #(
   input  mst_resp_t                  mst_resp_i
 );
 
-  // TODO colluca: can this be merged with MstIdxBits?
-  localparam int unsigned SlvPortIdxBits = cf_math_pkg::idx_width(NoSlvPorts);
-  typedef logic [SlvPortIdxBits-1:0] mst_idx_t;
-
   localparam int unsigned MstIdxBits    = $clog2(NoSlvPorts);
   localparam int unsigned MstAxiIDWidth = SlvAxiIDWidth + MstIdxBits;
 
@@ -182,7 +178,7 @@ module axi_mcast_mux #(
     logic                  ucast_aw_valid, ucast_aw_ready;
     logic                  mcast_aw_valid, mcast_aw_ready, mcast_aw_commit;
     logic                  mcast_not_aw_valid;
-    mst_idx_t              mcast_sel_q, mcast_sel_d;
+    logic [MstIdxBits-1:0] mcast_sel_q, mcast_sel_d;
     logic [NoSlvPorts-1:0] mcast_sel_mask;
     logic [NoSlvPorts-1:0] ucast_aw_readies, mcast_aw_readies;
 
@@ -299,7 +295,6 @@ module axi_mcast_mux #(
     );
 
     // Arbitrate multicast requests in priority encoder fashion
-    // TODO colluca: extend lzc to return mask form instead of cnt?
     lzc #(
       .WIDTH ( NoSlvPorts ),
       .MODE  ( 1'b0       ) // Trailing zero mode
@@ -314,8 +309,7 @@ module axi_mcast_mux #(
     assign mcast_aw_commit = |slv_aw_commit_i;
     assign mcast_aw_readies = {NoSlvPorts{mcast_aw_ready}} & mcast_sel_mask;
 
-    // TODO colluca: change all FFxARN to FFx
-    `FFLARN(mcast_sel_q, mcast_sel_d, mcast_aw_valid && mcast_aw_ready, '0, clk_i, rst_ni)
+    `FFL(mcast_sel_q, mcast_sel_d, mcast_aw_valid && mcast_aw_ready, '0, clk_i, rst_ni)
 
     // Arbitrate "winners" of unicast and multicast arbitrations
     // giving priority to multicast
@@ -546,7 +540,6 @@ module axi_mcast_mux #(
 // pragma translate_on
 endmodule
 
-// TODO colluca: adapt this
 // interface wrap
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
