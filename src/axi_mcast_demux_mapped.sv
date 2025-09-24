@@ -228,11 +228,7 @@ module axi_mcast_demux_mapped #(
   addr_t [NoMstPortsExt-1:0] dec_aw_addr;
   addr_t [NoMstPortsExt-1:0] dec_aw_mask;
 
-  // Convert multicast rules to mask (NAPOT) form
-  // - mask =  {'0, {log2(end_addr - start_addr){1'b1}}}
-  // - addr = start_addr / (end_addr - start_addr)
-  // More info in `multiaddr_decode` module
-  // TODO colluca: add checks on conversion feasibility
+  // Convert multicast rules to mask (NAPOT) form, see https://arxiv.org/pdf/2502.19215
   for (genvar i = 0; i < NoMulticastRules; i++) begin : g_multicast_rules
     assign multicast_rules[i].idx = addr_map_i[i].idx;
     assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
@@ -377,6 +373,36 @@ module axi_mcast_demux_mapped #(
     .slv_req_i  ( errslv_req  ),
     .slv_resp_o ( errslv_resp )
   );
+
+  // -----------------
+  // Assertions
+  // -----------------
+
+  // Check that multicast address map rules expressed in interval form can be converted to
+  // mask form, see https://arxiv.org/pdf/2502.19215
+  for (genvar i = 0; i < NoMulticastRules; i++) begin : gen_multicast_rule_assertion
+    addr_t size;
+    assign size = addr_map_i[i].end_addr - addr_map_i[i].start_addr;
+    `ASSERT(MulticastRuleSize,
+      ((size & (size - 1)) == 0), clk_i, !rst_ni,
+      $sformatf("Size %d of rule %d is not a power of 2", size, i))
+    `ASSERT(MulticastRuleAlignment,
+      (addr_map_i[i].start_addr % size) == 0, clk_i, !rst_ni,
+      $sformatf("Rule %d, starting at 0x%x, is not aligned to its size (%d)",
+        addr_map_i[i].start_addr, i, size))
+  end
+  // Default rule is only converted to mask form if there are any other multicast rules
+  if (NoMulticastRules > 0) begin : gen_multicast_default_rule_assertion
+    addr_t size;
+    assign size = default_mst_port_i.end_addr - default_mst_port_i.start_addr;
+    `ASSERT(DefaultRuleSize,
+      !en_default_mst_port_i || ((size & (size - 1)) == 0), clk_i, !rst_ni,
+      $sformatf("Size %d of default rule is not a power of 2", size))
+    `ASSERT(DefaultRuleAlignment,
+      !en_default_mst_port_i || ((default_mst_port_i.start_addr % size) == 0), clk_i, !rst_ni,
+      $sformatf("Default rule, starting at 0x%x, is not aligned to its size (%d)",
+        default_mst_port_i.start_addr, size))
+  end
 
 endmodule
 
