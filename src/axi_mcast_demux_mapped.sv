@@ -378,6 +378,10 @@ module axi_mcast_demux_mapped #(
   // Assertions
   // -----------------
 
+// pragma translate_off
+`ifndef VERILATOR
+`ifndef XSIM
+
   // Check that multicast address map rules expressed in interval form can be converted to
   // mask form, see https://arxiv.org/pdf/2502.19215
   for (genvar i = 0; i < NoMulticastRules; i++) begin : gen_multicast_rule_assertion
@@ -403,6 +407,36 @@ module axi_mcast_demux_mapped #(
       $sformatf("Default rule, starting at 0x%x, is not aligned to its size (%d)",
         default_mst_port_i.start_addr, size))
   end
+
+  // Check that addrmap and default slave do not change while there is an unserved Ax
+  `ASSERT(default_mst_port_en_aw_stable,
+    (slv_req_cut.aw_valid && !slv_resp_cut.aw_ready) |=> $stable(en_default_mst_port_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the default mst port enable when there is an unserved Aw beat.")
+  `ASSERT(default_mst_port_aw_stable,
+    (slv_req_cut.aw_valid && !slv_resp_cut.aw_ready) |=> $stable(default_mst_port_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the default mst port when there is an unserved Aw beat.")
+  `ASSERT(addrmap_aw_stable,
+    (slv_req_cut.aw_valid && !slv_resp_cut.aw_ready) |=> $stable(addr_map_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the address map when there is an unserved Aw beat.")
+  `ASSERT(default_mst_port_en_ar_stable,
+    (slv_req_cut.ar_valid && !slv_resp_cut.ar_ready) |=> $stable(en_default_mst_port_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the default mst port enable when there is an unserved Ar beat.")
+  `ASSERT(default_mst_port_ar_stable,
+    (slv_req_cut.ar_valid && !slv_resp_cut.ar_ready) |=> $stable(default_mst_port_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the default mst port when there is an unserved Ar beat.")
+  `ASSERT(addrmap_ar_stable,
+    (slv_req_cut.ar_valid && !slv_resp_cut.ar_ready) |=> $stable(addr_map_i),
+    clk_i, !rst_ni,
+    "It is not allowed to change the address map when there is an unserved Ar beat.")
+
+`endif
+`endif
+// pragma translate_on
 
 endmodule
 
