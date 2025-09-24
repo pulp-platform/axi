@@ -906,7 +906,6 @@ package axi_test;
       // Determine memory type.
       ax_beat.ax_cache = is_read ? axi_pkg::get_arcache(mem_region.mem_type) : axi_pkg::get_awcache(mem_region.mem_type);
       // Randomize beat size.
-      // TODO colluca: how do we handle traffic shaping w/ multicast?
       if (TRAFFIC_SHAPING) begin
         rand_success = std::randomize(cprob) with {
           cprob >= 0; cprob < max_cprob;

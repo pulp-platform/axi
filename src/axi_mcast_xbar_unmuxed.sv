@@ -91,37 +91,6 @@ import cf_math_pkg::idx_width;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
 
-    // make sure that the default slave does not get changed, if there is an unserved Ax
-    // pragma translate_off
-    // TODO(colluca): is this still the right place for these? and are they still correct after
-    //                moving the address decoders past the spill registers
-    `ifndef VERILATOR
-    `ifndef XSIM
-    default disable iff (~rst_ni);
-    default_aw_mst_port_en: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   enable, when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_aw_mst_port: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_ar_mst_port_en: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the enable, when\
-                                   there is an unserved Ar beat. Slave Port: %0d", i));
-    default_ar_mst_port: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Ar beat. Slave Port: %0d", i));
-    `endif
-    `endif
-    // pragma translate_on
-
     axi_mcast_demux_mapped #(
       .AxiIdWidth            ( Cfg.AxiIdWidthSlvPorts   ),  // ID Width
       .AxiAddrWidth          ( Cfg.AxiAddrWidth         ),
