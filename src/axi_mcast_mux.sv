@@ -177,7 +177,7 @@ module axi_mcast_mux #(
     mst_aw_chan_t          ucast_aw_chan, mcast_aw_chan;
     logic                  ucast_aw_valid, ucast_aw_ready;
     logic                  mcast_aw_valid, mcast_aw_ready, mcast_aw_commit;
-    logic                  mcast_not_aw_valid;
+    logic                  mcast_not_aw_valid, mcast_aw_priority;
     logic [MstIdxBits-1:0] mcast_sel_q, mcast_sel_d;
     logic [NoSlvPorts-1:0] mcast_sel_mask;
     logic [NoSlvPorts-1:0] ucast_aw_readies, mcast_aw_readies;
@@ -189,6 +189,7 @@ module axi_mcast_mux #(
     // gets pushed into the W FIFO, when it now stalls prevent subsequent pushing
     // This FF removes AW to W dependency
     logic           lock_aw_valid_d, lock_aw_valid_q;
+    logic           lock_unicast_d, lock_unicast_q;
     logic           load_aw_lock;
 
     // signals for the FIFO that holds the last switching decision of the AW channel
@@ -311,22 +312,32 @@ module axi_mcast_mux #(
 
     `FFL(mcast_sel_q, mcast_sel_d, mcast_aw_valid && mcast_aw_ready, '0, clk_i, rst_ni)
 
-    // Arbitrate "winners" of unicast and multicast arbitrations
-    // giving priority to multicast
-    assign mcast_aw_ready = aw_ready && mcast_aw_valid && !mcast_aw_commit;
-    assign ucast_aw_ready = aw_ready && !mcast_aw_valid && !mcast_aw_commit;
+    // Arbitrate "winners" of unicast and multicast arbitrations,
+    // giving priority to multicast.
+    // On a multicast, the downstream valid is gated until we get the commit signal.
+    // But the commit signal is only received after we have received the downstream
+    // ready and propagated it upstream. So the downstream ready will be kept high
+    // for an additional cycle after there was an upstream handshake. We must thus
+    // gate it upstream for that additional cycle (with !mcast_aw_commit).
+    // If we already locked the AW on a unicast transaction, we must wait for it to
+    // complete before accepting a multicast transaction, so we give priority to the
+    // unicast.
+    assign mcast_aw_priority = mcast_aw_valid && !lock_unicast_q;
+    assign mcast_aw_ready = aw_ready && !mcast_aw_commit &&  mcast_aw_priority;
+    assign ucast_aw_ready = aw_ready && !mcast_aw_commit && !mcast_aw_priority;
     assign mst_aw_chan = mcast_aw_commit ? mcast_aw_chan : ucast_aw_chan;
     assign slv_aw_readies = mcast_aw_readies | ucast_aw_readies;
-    // !!! CAUTION !!! 
-    // This valid depends combinationally on aw_ready (through aw_commit),
-    // hence aw_ready shouldn't depend on aw_valid to avoid combinational loops!
-    // TODO colluca: replace ucast_aw_ready with !mcast_aw_valid to remove combinational loop
-    assign aw_valid = mcast_aw_commit || (ucast_aw_valid && ucast_aw_ready);
+    // In case of a multicast transaction, downstream valid should only be asserted
+    // on commit. However, a multicast transaction is already accepted on the cycle
+    // before, when we have mcast_aw_valid. We must prevent a unicast transaction
+    // from raising the downstream valid in that time (with !mcast_aw_valid).
+    assign aw_valid = mcast_aw_commit || (ucast_aw_valid && !mcast_aw_valid);
 
     // control of the AW channel
     always_comb begin
       // default assignments
       lock_aw_valid_d = lock_aw_valid_q;
+      lock_unicast_d  = lock_unicast_q;
       load_aw_lock    = 1'b0;
       w_fifo_push     = 1'b0;
       mst_aw_valid    = 1'b0;
@@ -338,27 +349,33 @@ module axi_mcast_mux #(
         if (mst_aw_ready) begin
           aw_ready        = 1'b1;
           lock_aw_valid_d = 1'b0;
+          lock_unicast_d  = 1'b0;
           load_aw_lock    = 1'b1;
+          w_fifo_push     = 1'b1;
         end
       end else begin
         if (!w_fifo_full) begin
           if (mst_aw_ready) begin
             aw_ready = 1'b1;
-          end 
+          end
           if (aw_valid) begin
             mst_aw_valid = 1'b1;
-            w_fifo_push = 1'b1;
             if (!mst_aw_ready) begin
               // go to lock if transaction not in this cycle
               lock_aw_valid_d = 1'b1;
               load_aw_lock    = 1'b1;
+              // remember if it was a unicast transaction
+              lock_unicast_d  = !mcast_aw_commit;
+            end else begin
+              w_fifo_push = 1'b1;
             end
           end
         end
       end
     end
 
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_unicast_q, lock_unicast_d, load_aw_lock, '0, clk_i, rst_ni)
 
     fifo_v3 #(
       .FALL_THROUGH ( FallThrough ),
