@@ -207,8 +207,8 @@ module axi_mcast_demux_mapped #(
   // -----------------
 
   // AW decoder inputs
-  mask_rule_t [NoMulticastRules-1:0] multicast_rules;
-  mask_rule_t                        default_rule;
+  mask_rule_t [axi_pkg::iomsb(NoMulticastRules):0] multicast_rules;
+  mask_rule_t                                      default_rule;
 
   // AW unicast decoder outputs
   idx_select_t                       dec_aw_unicast_select_idx;
@@ -227,16 +227,6 @@ module axi_mcast_demux_mapped #(
   mask_select_t              dec_aw_select_mask;
   addr_t [NoMstPortsExt-1:0] dec_aw_addr;
   addr_t [NoMstPortsExt-1:0] dec_aw_mask;
-
-  // Convert multicast rules to mask (NAPOT) form, see https://arxiv.org/pdf/2502.19215
-  for (genvar i = 0; i < NoMulticastRules; i++) begin : g_multicast_rules
-    assign multicast_rules[i].idx = addr_map_i[i].idx;
-    assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
-    assign multicast_rules[i].addr = addr_map_i[i].start_addr;
-  end
-  assign default_rule.idx = default_mst_port_i.idx;
-  assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
-  assign default_rule.addr = default_mst_port_i.start_addr;
 
   // Address decoding for unicast requests
   addr_decode #(
@@ -257,40 +247,53 @@ module axi_mcast_demux_mapped #(
   // Generate the output mask from the index
   assign dec_aw_unicast_select_mask = 1'b1 << dec_aw_unicast_select_idx;
 
-  // Address decoding for multicast requests
-  if (NoMulticastRules > 0) begin : gen_multicast_decoding
-    multiaddr_decode #(
-      .NoIndices        (NoMulticastPorts),
-      .NoRules          (NoMulticastRules),
-      .addr_t           (addr_t),
-      .rule_t           (mask_rule_t)
-    ) i_axi_aw_multicast_decode (
-      .addr_map_i       (multicast_rules),
-      .addr_i           (slv_req_cut.aw.addr),
-      .mask_i           (slv_req_cut.aw.user.collective_mask),
-      .select_o         (dec_aw_multicast_select_mask),
-      .addr_o           (dec_aw_multicast_addr),
-      .mask_o           (dec_aw_multicast_mask),
-      .dec_valid_o      (dec_aw_multicast_valid),
-      .dec_error_o      (dec_aw_multicast_error),
-      .en_default_idx_i (en_default_mst_port_i),
-      .default_idx_i    (default_rule)
-    );
-  end else begin : gen_no_multicast_decoding
-    assign dec_aw_multicast_select_mask = '0;
-    assign dec_aw_multicast_addr = '0;
-    assign dec_aw_multicast_mask = '0;
-    assign dec_aw_multicast_valid = '0;
-    assign dec_aw_multicast_error = '0;
-  end
-
   // If the address decoding doesn't produce any match, the request
   // is routed to the error slave, which lies at the highest index.
   mask_select_t select_error_slave;
   assign select_error_slave = 1'b1 << NoMstPorts;
 
-  // Mux the multicast and unicast decoding outputs
-  if (NoMulticastRules > 0) begin : gen_decoding_mux
+  // Disable multicast only if NoMulticastPorts == 0. In some instances you may want to
+  // match the multicast decoder's default port, even if NoMulticastRules == 0.
+  if (NoMulticastPorts > 0) begin : gen_multicast
+
+    // Convert multicast rules to mask (NAPOT) form, see https://arxiv.org/pdf/2502.19215
+    for (genvar i = 0; i < NoMulticastRules; i++) begin : gen_multicast_rules
+      assign multicast_rules[i].idx = addr_map_i[i].idx;
+      assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
+      assign multicast_rules[i].addr = addr_map_i[i].start_addr;
+    end
+    assign default_rule.idx = default_mst_port_i.idx;
+    assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
+    assign default_rule.addr = default_mst_port_i.start_addr;
+
+    if (NoMulticastRules > 0) begin : gen_multiaddr_decode
+      // Address decoding for multicast requests.
+      multiaddr_decode #(
+        .NoIndices        (NoMulticastPorts),
+        .NoRules          (NoMulticastRules),
+        .addr_t           (addr_t),
+        .rule_t           (mask_rule_t)
+      ) i_axi_aw_multicast_decode (
+        .addr_map_i       (multicast_rules),
+        .addr_i           (slv_req_cut.aw.addr),
+        .mask_i           (slv_req_cut.aw.user.collective_mask),
+        .select_o         (dec_aw_multicast_select_mask),
+        .addr_o           (dec_aw_multicast_addr),
+        .mask_o           (dec_aw_multicast_mask),
+        .dec_valid_o      (dec_aw_multicast_valid),
+        .dec_error_o      (dec_aw_multicast_error),
+        .en_default_idx_i (en_default_mst_port_i),
+        .default_idx_i    (default_rule)
+      );
+    end else begin : gen_no_multiaddr_decode
+      assign dec_aw_multicast_select_mask = 1'b1 << default_rule.idx;
+      assign dec_aw_multicast_addr = slv_req_cut.aw.addr;
+      assign dec_aw_multicast_mask = slv_req_cut.aw.user.collective_mask;
+      assign dec_aw_multicast_valid = 1'b1;
+      assign dec_aw_multicast_error = 1'b0;
+    end
+
+    // Mux the multicast and unicast decoding outputs.
     always_comb begin
       dec_aw_select_mask = '0;
       dec_aw_addr = '0;
@@ -313,7 +316,8 @@ module axi_mcast_demux_mapped #(
         end
       end
     end
-  end else begin
+
+  end else begin : gen_no_multicast
     assign dec_aw_addr = {'0, {NoMstPorts{slv_req_cut.aw.addr}}};
     assign dec_aw_mask = '0;
     assign dec_aw_select_mask = (dec_aw_unicast_error) ? select_error_slave :
@@ -396,7 +400,7 @@ module axi_mcast_demux_mapped #(
       i, addr_map_i[i].start_addr, size))
   end
   // Default rule is only converted to mask form if there are any other multicast rules
-  if (NoMulticastRules > 0) begin : gen_multicast_default_rule_assertion
+  if (NoMulticastPorts > 0) begin : gen_multicast_default_rule_assertion
     addr_t size;
     assign size = default_mst_port_i.end_addr - default_mst_port_i.start_addr;
     `ASSERT(DefaultRuleSize,
