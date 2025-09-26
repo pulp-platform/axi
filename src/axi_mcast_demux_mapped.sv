@@ -389,11 +389,11 @@ module axi_mcast_demux_mapped #(
     assign size = addr_map_i[i].end_addr - addr_map_i[i].start_addr;
     `ASSERT(MulticastRuleSize,
       ((size & (size - 1)) == 0), clk_i, !rst_ni,
-      $sformatf("Size %d of rule %d is not a power of 2", size, i))
+      $sformatf("Size %0d of rule %0d is not a power of 2", size, i))
     `ASSERT(MulticastRuleAlignment,
       (addr_map_i[i].start_addr % size) == 0, clk_i, !rst_ni,
-      $sformatf("Rule %d, starting at 0x%x, is not aligned to its size (%d)",
-        addr_map_i[i].start_addr, i, size))
+      $sformatf("Rule %0d, starting at 0x%0x, is not aligned to its size (%0d)",
+      i, addr_map_i[i].start_addr, size))
   end
   // Default rule is only converted to mask form if there are any other multicast rules
   if (NoMulticastRules > 0) begin : gen_multicast_default_rule_assertion
@@ -401,10 +401,10 @@ module axi_mcast_demux_mapped #(
     assign size = default_mst_port_i.end_addr - default_mst_port_i.start_addr;
     `ASSERT(DefaultRuleSize,
       !en_default_mst_port_i || ((size & (size - 1)) == 0), clk_i, !rst_ni,
-      $sformatf("Size %d of default rule is not a power of 2", size))
+      $sformatf("Size %0d of default rule is not a power of 2", size))
     `ASSERT(DefaultRuleAlignment,
       !en_default_mst_port_i || ((default_mst_port_i.start_addr % size) == 0), clk_i, !rst_ni,
-      $sformatf("Default rule, starting at 0x%x, is not aligned to its size (%d)",
+      $sformatf("Default rule, starting at 0x%0x, is not aligned to its size (%0d)",
         default_mst_port_i.start_addr, size))
   end
 
