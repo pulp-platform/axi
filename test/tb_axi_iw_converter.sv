@@ -415,28 +415,40 @@ module tb_axi_iw_converter #(
     // Assert that all AWs sent by upstream were processed.
     foreach (aws_by_upstream_id[i]) begin
       assert(aws_by_upstream_id[i].size() == 0) else
-        $error("%0d AWs with upstream ID 0x%0x were not processed: %p",
-            aws_by_upstream_id[i].size(), i, aws_by_upstream_id[i]);
+        $error("%0d AWs with upstream ID 0x%0x were not processed",
+            aws_by_upstream_id[i].size(), i);
+      foreach (aws_by_upstream_id[i][j]) begin
+        $display("[%0d] %p", j, aws_by_upstream_id[i][j]);
+      end
     end
     // Assert that all Ws sent by upstream were processed.
     assert(ws.size() == 0) else $error("%0d Ws were not processed", ws.size());
     // Assert that all Bs were sent upstream.
     foreach(bs_by_upstream_id[i]) begin
       assert(bs_by_upstream_id[i].size() == 0) else
-        $error("%0d Bs with upstream ID 0x%0x were not processed: %p",
-            bs_by_upstream_id[i].size(), i, bs_by_upstream_id[i]);
+        $error("%0d Bs with upstream ID 0x%0x were not processed",
+            bs_by_upstream_id[i].size(), i);
+      foreach (bs_by_upstream_id[i][j]) begin
+        $display("[%0d] %p", j, bs_by_upstream_id[i][j]);
+      end
     end
     // Assert that all ARs sent by upstream were processed.
     foreach(ars_by_upstream_id[i]) begin
       assert(ars_by_upstream_id[i].size() == 0) else
-        $error("%0d ARs with upstream ID 0x%0x were not processed: %p",
-            ars_by_upstream_id[i].size(), i, ars_by_upstream_id[i]);
+        $error("%0d ARs with upstream ID 0x%0x were not processed",
+            ars_by_upstream_id[i].size(), i);
+      foreach (ars_by_upstream_id[i][j]) begin
+        $display("[%0d] %p", j, ars_by_upstream_id[i][j]);
+      end
     end
     // Assert that all Rs were sent upstream.
     foreach(rs_by_upstream_id[i]) begin
       assert(rs_by_upstream_id[i].size() == 0) else
-        $error("%0d Rs with upstream ID 0x%0x were not processed: %p",
-            rs_by_upstream_id[i].size(), i, rs_by_upstream_id[i]);
+        $error("%0d Rs with upstream ID 0x%0x were not processed",
+            rs_by_upstream_id[i].size(), i);
+      foreach (rs_by_upstream_id[i][j]) begin
+        $display("[%0d] %p", j, rs_by_upstream_id[i][j]);
+      end
     end
   end
 
