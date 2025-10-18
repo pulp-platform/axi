@@ -283,7 +283,7 @@ module stream_fifo_delay_dyn #(
   `endif
   `endif
 
-  if (Depth & (Depth - 1) == 0)
+  if ((Depth & (Depth - 1)) != 0)
     $fatal(1, "Depth must be a power of two");
 
   localparam int unsigned BookeepingBits = $clog2(Depth) + 1;
