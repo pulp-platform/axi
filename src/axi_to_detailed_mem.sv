@@ -30,7 +30,7 @@ module axi_to_detailed_mem #(
   /// AXI4+ATOP ID width.
   parameter int unsigned IdWidth    = 0,
   /// AXI4+ATOP user width.
-  parameter int unsigned UserWidth  = 0,
+  parameter int unsigned UserWidth  = 1,
   /// Number of banks at output, must evenly divide `DataWidth`.
   parameter int unsigned NumBanks   = 0,
   /// Depth of memory response buffer. This should be equal to the memory response latency.

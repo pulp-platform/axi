@@ -64,7 +64,7 @@ module axi_id_serialize #(
   /// it is simply mapped to the output ID `id % AxiMstPortMaxUniqIds`. If `id` appears in more
   /// than one entry, it is matched to the *last* matching entry's output ID.
   /// Number of Entries in the explicit ID map (default: None)
-  parameter int unsigned IdMapNumEntries = 32'd0,
+  parameter int unsigned IdMapNumEntries = 32'd1,
   /// Explicit ID map; index [0] in each entry is the input ID to match, index [1] the output ID.
   parameter int unsigned IdMap [IdMapNumEntries-1:0][0:1] = '{default: {32'b0, 32'b0}}
 ) (
