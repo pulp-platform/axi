@@ -442,6 +442,7 @@ module axi_lite_demux #(
 
     // pragma translate_off
     `ifndef VERILATOR
+    `ifndef XSIM
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
                                                  (slv_aw_select_i < NoMstPorts))) else
@@ -463,6 +464,7 @@ module axi_lite_demux #(
     ar_stable: assert property( @(posedge clk_i) (slv_ar_valid && !slv_ar_ready)
                                |=> $stable(slv_ar_chan)) else
       $fatal(1, "slv_aw_chan_select unstable with valid set.");
+    `endif
     `endif
     // pragma translate_on
   end
