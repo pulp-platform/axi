@@ -211,17 +211,17 @@ module axi_mcast_demux_mapped #(
   mask_rule_t                                      default_rule;
 
   // AW unicast decoder outputs
-  idx_select_t                       dec_aw_unicast_select_idx;
-  logic [NoMstPorts-1:0]             dec_aw_unicast_select_mask;
-  logic                              dec_aw_unicast_valid;
-  logic                              dec_aw_unicast_error;
+  idx_select_t           dec_aw_unicast_select_idx;
+  logic [NoMstPorts-1:0] dec_aw_unicast_select_mask;
+  logic                  dec_aw_unicast_valid;
+  logic                  dec_aw_unicast_error;
 
   // AW multicast decoder outputs
-  logic  [NoMulticastPorts-1:0]      dec_aw_multicast_select_mask;
-  addr_t [NoMulticastPorts-1:0]      dec_aw_multicast_addr;
-  addr_t [NoMulticastPorts-1:0]      dec_aw_multicast_mask;
-  logic                              dec_aw_multicast_valid;
-  logic                              dec_aw_multicast_error;
+  logic  [axi_pkg::iomsb(NoMulticastPorts):0] dec_aw_multicast_select_mask;
+  addr_t [axi_pkg::iomsb(NoMulticastPorts):0] dec_aw_multicast_addr;
+  addr_t [axi_pkg::iomsb(NoMulticastPorts):0] dec_aw_multicast_mask;
+  logic                                       dec_aw_multicast_valid;
+  logic                                       dec_aw_multicast_error;
 
   // Decoding outputs (merged from unicast and multicast paths)
   mask_select_t              dec_aw_select_mask;
