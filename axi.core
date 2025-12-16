@@ -1,6 +1,8 @@
 CAPI=2:
 
-name : pulp-platform.org::axi:0.39.9
+name: pulp-platform.org::axi:0.39.9
+description: AXI SystemVerilog synthesizable IP modules and verification infrastructure for high-performance on-chip communication.
+license: SHL-0.51
 
 filesets:
   rtl:
