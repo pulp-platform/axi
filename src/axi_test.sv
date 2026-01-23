@@ -15,6 +15,7 @@
 // - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 // - Thomas Benz <tbenz@iis.ee.ethz.ch>
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
 
 
 /// A set of testbench utilities for AXI interfaces.
@@ -710,6 +711,8 @@ package axi_test;
     parameter bit   UNIQUE_IDS        = 1'b0, // guarantee that the ID of each transaction is
                                               // unique among all in-flight transactions in the
                                               // same direction
+    // Custom features
+    parameter bit   ENABLE_MULTICAST = 1'b0,
     // Dependent parameters, do not override.
     parameter int   AXI_STRB_WIDTH = DW/8,
     parameter int   N_AXI_IDS = 2**IW,
@@ -770,6 +773,8 @@ package axi_test;
     } traffic_shape[$];
     int unsigned max_cprob;
 
+    int unsigned mcast_prob;
+
     function new(
       virtual AXI_BUS_DV #(
         .AXI_ADDR_WIDTH(AW),
@@ -806,6 +811,13 @@ package axi_test;
       tot_w_flight_cnt = 0;
       atop_resp_b = '0;
       atop_resp_r = '0;
+    endfunction
+
+    // Sets the probability to generate a transaction with a non-zero multicast mask.
+    // `prob` should be a percentage, as Questa 2022.3 doesn't support real types
+    // in SystemVerilog `dist` constraints.
+    function void set_multicast_probability(int unsigned prob);
+      mcast_prob = prob;
     endfunction
 
     function void add_memory_region(input addr_t addr_begin, input addr_t addr_end, input mem_type_t mem_type);
@@ -867,6 +879,8 @@ package axi_test;
       automatic int unsigned mem_region_idx;
       automatic mem_region_t mem_region;
       automatic int cprob;
+      automatic bit mcast;
+      automatic addr_t mcast_mask;
 
       // No memory regions defined
       if (mem_map.size() == 0) begin
@@ -892,6 +906,7 @@ package axi_test;
       // Determine memory type.
       ax_beat.ax_cache = is_read ? axi_pkg::get_arcache(mem_region.mem_type) : axi_pkg::get_awcache(mem_region.mem_type);
       // Randomize beat size.
+      // TODO colluca: how do we handle traffic shaping w/ multicast?
       if (TRAFFIC_SHAPING) begin
         rand_success = std::randomize(cprob) with {
           cprob >= 0; cprob < max_cprob;
@@ -964,6 +979,15 @@ package axi_test;
       ax_beat.ax_addr =  axi_pkg::aligned_addr(addr, axi_pkg::size_t'(SIZE_ALIGN) );
       rand_success = std::randomize(id); assert(rand_success);
       rand_success = std::randomize(qos); assert(rand_success);
+      // Randomize multicast mask.
+      if (ENABLE_MULTICAST && !is_read) begin
+        rand_success = std::randomize(mcast, mcast_mask) with {
+          mcast dist {0 := (100 - mcast_prob), 1 := mcast_prob};
+          !mcast -> mcast_mask == 0;
+          mcast -> mcast_mask != 0;
+        }; assert(rand_success);
+        ax_beat.ax_user = mcast_mask;
+      end
       // The random ID *must* be legalized with `legalize_id()` before the beat is sent!  This is
       // currently done in the functions `create_aws()` and `send_ars()`.
       ax_beat.ax_id = id;
@@ -979,6 +1003,11 @@ package axi_test;
         if (beat.ax_atop[5:4] != 2'b00 && !AXI_BURST_INCR) begin
           // We can emit ATOPs only if INCR bursts are allowed.
           $warning("ATOP suppressed because INCR bursts are disabled!");
+          beat.ax_atop[5:4] = 2'b00;
+        end
+        if (beat.ax_atop[5:4] != 2'b00 && beat.ax_user != '0) begin
+          // We can emit ATOPs only if current burst is not a multicast.
+          $warning("ATOP suppressed because burst is a multicast!");
           beat.ax_atop[5:4] = 2'b00;
         end
         if (beat.ax_atop[5:4] != 2'b00) begin // ATOP
@@ -2613,7 +2642,8 @@ module axi_chan_logger #(
   parameter type  w_chan_t    = logic,        // axi  W type
   parameter type  b_chan_t    = logic,        // axi  B type
   parameter type ar_chan_t    = logic,        // axi AR type
-  parameter type  r_chan_t    = logic         // axi  R type
+  parameter type  r_chan_t    = logic,        // axi  R type
+  parameter bit ENABLE_MULTICAST = 1'b0
 ) (
   input logic     clk_i,     // Clock
   input logic     rst_ni,    // Asynchronous reset active low, when `1'b0` no sampling
@@ -2643,6 +2673,10 @@ module axi_chan_logger #(
   localparam int unsigned IdWidth = $bits(aw_chan_i.id);
   localparam int unsigned NoIds   = 2**IdWidth;
 
+  // addr width from channel
+  localparam int unsigned AddrWidth = $bits(aw_chan_i.addr);
+  typedef logic [AddrWidth-1:0] addr_t;
+
   // queues for writes and reads
   aw_chan_t aw_queue[$];
   w_chan_t  w_queue[$];
@@ -2656,6 +2690,8 @@ module axi_chan_logger #(
     automatic int       fd;
     automatic string    log_file;
     automatic string    log_str;
+    automatic addr_t    aw_mcast_mask;
+    automatic addr_t    aw_addr;
     // only execute when reset is high
     if (rst_ni) begin
       // AW channel
@@ -2664,8 +2700,13 @@ module axi_chan_logger #(
         log_file = $sformatf("./axi_log/%s/write.log", LoggerName);
         fd = $fopen(log_file, "a");
         if (fd) begin
-          log_str = $sformatf("%0t> ID: %h AW on channel: LEN: %d, ATOP: %b",
-                        $time, aw_chan_i.id, aw_chan_i.len, aw_chan_i.atop);
+          aw_addr = aw_chan_i.addr;
+          if (ENABLE_MULTICAST) begin
+            aw_mcast_mask = aw_chan_i.user[AddrWidth-1:0];
+            for (int i = 0; i < AddrWidth; i++) if (aw_mcast_mask[i]) aw_addr[i] = 1'bx;
+          end
+          log_str = $sformatf("%0t> ID: %h AW on channel: LEN: %d, ATOP: %b, ADDR: %b",
+                        $time, aw_chan_i.id, aw_chan_i.len, aw_chan_i.atop, aw_addr);
           $fdisplay(fd, log_str);
           $fclose(fd);
         end
