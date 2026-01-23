@@ -19,7 +19,7 @@ package:
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.37.0 }
+  common_cells:        { git: "https://github.com/pulp-platform/common_cells.git", rev: "multicast-xbar" }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.5 }
   tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
 
@@ -65,6 +65,7 @@ sources:
   - src/axi_lite_to_axi.sv
   - src/axi_modify_address.sv
   - src/axi_mux.sv
+  - src/axi_mcast_mux.sv
   - src/axi_rw_join.sv
   - src/axi_rw_split.sv
   - src/axi_serializer.sv
@@ -75,6 +76,7 @@ sources:
   - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
   - src/axi_demux.sv
+  - src/axi_mcast_demux.sv
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
   - src/axi_from_mem.sv
@@ -89,6 +91,8 @@ sources:
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
   - src/axi_xbar_unmuxed.sv
+  - src/axi_xbar.sv
+  - src/axi_mcast_xbar.sv
   - src/axi_to_mem_banked.sv
   - src/axi_to_mem_interleaved.sv
   - src/axi_to_mem_split.sv
@@ -98,6 +102,10 @@ sources:
   - src/axi_xp.sv
 
   - target: synth_test
+    files:
+      - test/axi_synth_bench.sv
+
+  - target: gf12
     files:
       - test/axi_synth_bench.sv
 
@@ -113,6 +121,7 @@ sources:
       # Level 0
       - test/tb_axi_dw_pkg.sv
       - test/tb_axi_xbar_pkg.sv
+      - test/tb_axi_mcast_xbar_pkg.sv
       # Level 1
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
@@ -137,3 +146,4 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
+      - test/tb_axi_mcast_xbar.sv

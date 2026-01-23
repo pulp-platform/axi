@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ETH Zurich and University of Bologna.
+// Copyright (c) 2022 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
 // compliance with the License.  You may obtain a copy of the License at
@@ -9,8 +9,9 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-// - Andreas Kurth <akurth@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
+// Based on:
+// - axi_demux.sv
 
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
@@ -37,9 +38,10 @@
 ///
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
-module axi_demux #(
+module axi_mcast_demux #(
   parameter int unsigned AxiIdWidth     = 32'd0,
   parameter bit          AtopSupport    = 1'b1,
+  parameter type         aw_addr_t      = logic,
   parameter type         aw_chan_t      = logic,
   parameter type         w_chan_t       = logic,
   parameter type         b_chan_t       = logic,
@@ -57,20 +59,27 @@ module axi_demux #(
   parameter bit          SpillAr        = 1'b1,
   parameter bit          SpillR         = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter int unsigned SelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
-  parameter type         select_t       = logic [SelectWidth-1:0]
+  parameter int unsigned IdxSelectWidth = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type         idx_select_t   = logic [IdxSelectWidth-1:0],
+  parameter type         mask_select_t  = logic [NoMstPorts-1:0],
+  // Multi-address type (represents a set of addresses)
+  parameter type         aw_multi_addr_t = struct packed {
+                                             aw_addr_t aw_addr;
+                                             aw_addr_t aw_mask;
+                                           }
 ) (
-  input  logic                          clk_i,
-  input  logic                          rst_ni,
-  input  logic                          test_i,
+  input  logic                       clk_i,
+  input  logic                       rst_ni,
+  input  logic                       test_i,
   // Slave Port
-  input  axi_req_t                      slv_req_i,
-  input  select_t                       slv_aw_select_i,
-  input  select_t                       slv_ar_select_i,
-  output axi_resp_t                     slv_resp_o,
+  input  axi_req_t                   slv_req_i,
+  input  mask_select_t               slv_aw_select_i,
+  input  idx_select_t                slv_ar_select_i,
+  input  aw_multi_addr_t [NoMstPorts-1:0] slv_aw_mcast_i,
+  output axi_resp_t                  slv_resp_o,
   // Master Ports
-  output axi_req_t    [NoMstPorts-1:0]  mst_reqs_o,
-  input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
+  output axi_req_t  [NoMstPorts-1:0] mst_reqs_o,
+  input  axi_resp_t [NoMstPorts-1:0] mst_resps_i
 );
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
@@ -158,20 +167,33 @@ module axi_demux #(
     // Write Transaction
     //--------------------------------------
     // comes from spill register at input
-    aw_chan_t                 slv_aw_chan;
-    select_t                  slv_aw_select;
+    aw_chan_t                        slv_aw_chan;
+    mask_select_t                    slv_aw_select;
+    aw_multi_addr_t [NoMstPorts-1:0] slv_aw_mcast;
 
-    logic                     slv_aw_valid, slv_aw_valid_chan, slv_aw_valid_sel;
-    logic                     slv_aw_ready, slv_aw_ready_chan, slv_aw_ready_sel;
+    logic                     slv_aw_valid, slv_aw_valid_chan, slv_aw_valid_sel, slv_aw_valid_mcast;
+    logic                     slv_aw_ready, slv_aw_ready_chan, slv_aw_ready_sel, slv_aw_ready_mcast;
+
+    // AW channel to slave ports
+    logic [NoMstPorts-1:0]    mst_aw_valids, mst_aw_readies;
 
     // AW ID counter
-    select_t                  lookup_aw_select;
+    mask_select_t             lookup_aw_select;
     logic                     aw_select_occupied, aw_id_cnt_full;
+    logic                     aw_any_outstanding_unicast_trx;
+    logic                     aw_any_outstanding_trx;
     // Upon an ATOP load, inject IDs from the AW into the AR channel
     logic                     atop_inject;
+    // Multicast logic
+    logic                     aw_is_multicast;
+    logic                     outstanding_multicast;
+    logic                     multicast_stall;
+    mask_select_t             multicast_select_q, multicast_select_d;
+    logic                     multicast_select_load;
+    logic [$clog2(NoMstPorts)+1-1:0] aw_select_popcount;                                                                                  
 
-    // W select counter: stores the decision to which master W beats should go
-    select_t                  w_select,           w_select_q;
+    // W select counter: stores the decision to which masters W beats should go
+    mask_select_t             w_select,           w_select_q;
     logic                     w_select_valid;
     id_cnt_t                  w_open;
     logic                     w_cnt_up,           w_cnt_down;
@@ -184,13 +206,20 @@ module axi_demux #(
     w_chan_t                  slv_w_chan;
     logic                     slv_w_valid,        slv_w_ready;
 
-    // B channles input into the arbitration
+    // W channel to slave ports
+    logic [NoMstPorts-1:0]    mst_w_valids,       mst_w_readies;
+
+    // B channels input into the arbitration (unicast transactions)
+    // or join module (multicast transactions)
     b_chan_t [NoMstPorts-1:0] mst_b_chans;
     logic    [NoMstPorts-1:0] mst_b_valids,       mst_b_readies;
+    logic    [NoMstPorts-1:0] mst_b_readies_arb,  mst_b_readies_join;
 
     // B channel to spill register
     b_chan_t                  slv_b_chan;
     logic                     slv_b_valid,        slv_b_ready;
+    b_chan_t                  slv_b_chan_arb,     slv_b_chan_join;
+    logic                     slv_b_valid_arb,    slv_b_valid_join;
 
     //--------------------------------------
     // Read Transaction
@@ -200,7 +229,7 @@ module axi_demux #(
     logic                     slv_ar_ready, slv_ar_ready_chan, slv_ar_ready_sel;
 
     // AR ID counter
-    select_t                  lookup_ar_select;
+    idx_select_t              lookup_ar_select;
     logic                     ar_select_occupied, ar_id_cnt_full;
     logic                     ar_push;
 
@@ -240,7 +269,7 @@ module axi_demux #(
       .data_o  ( slv_aw_chan        )
     );
     spill_register #(
-      .T       ( select_t           ),
+      .T       ( mask_select_t      ),
       .Bypass  ( ~SpillAw           ) // because module param indicates if we want a spill reg
     ) i_aw_select_spill_reg (
       .clk_i   ( clk_i              ),
@@ -252,8 +281,21 @@ module axi_demux #(
       .ready_i ( slv_aw_ready       ),
       .data_o  ( slv_aw_select      )
     );
-    assign slv_resp_o.aw_ready = slv_aw_ready_chan & slv_aw_ready_sel;
-    assign slv_aw_valid = slv_aw_valid_chan & slv_aw_valid_sel;
+    spill_register #(
+      .T       ( aw_multi_addr_t [NoMstPorts-1:0] ),
+      .Bypass  ( ~SpillAw           ) // because module param indicates if we want a spill reg
+    ) i_aw_mcast_spill_reg (
+      .clk_i   ( clk_i              ),
+      .rst_ni  ( rst_ni             ),
+      .valid_i ( slv_req_i.aw_valid ),
+      .ready_o ( slv_aw_ready_mcast ),
+      .data_i  ( slv_aw_mcast_i     ),
+      .valid_o ( slv_aw_valid_mcast ),
+      .ready_i ( slv_aw_ready       ),
+      .data_o  ( slv_aw_mcast       )
+    );
+    assign slv_resp_o.aw_ready = slv_aw_ready_chan & slv_aw_ready_sel & slv_aw_ready_mcast;
+    assign slv_aw_valid = slv_aw_valid_chan & slv_aw_valid_sel & slv_aw_valid_mcast;
 
     // Control of the AW handshake
     always_comb begin
@@ -295,7 +337,8 @@ module axi_demux #(
           // Handling of the B responses.
           if (slv_aw_valid &&
                 ((w_open == '0) || (w_select == slv_aw_select)) &&
-                (!aw_select_occupied || (slv_aw_select == lookup_aw_select))) begin
+                (!aw_select_occupied || (slv_aw_select == lookup_aw_select)) &&
+                !multicast_stall) begin
             // connect the handshake
             aw_valid     = 1'b1;
             // push arbitration to the W FIFO regardless, do not wait for the AW transaction
@@ -318,6 +361,75 @@ module axi_demux #(
     // prevent further pushing
     `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
+    /// Multicast logic
+
+    // Popcount to identify multicast requests
+    popcount #(NoMstPorts) i_aw_select_popcount (
+        .data_i    (slv_aw_select),
+        .popcount_o(aw_select_popcount)
+    );
+
+    // While there can be multiple outstanding write transactions, i.e. 
+    // multiple AWs can be accepted before the corresponding Bs are returned,
+    // in the case of multicast transactions this would require the need
+    // for additional (possibly expensive) hardware.
+    // The reason is that multicast transactions require merging multiple B
+    // responses arriving on different master ports. To know which master ports
+    // need to be merged we need to register the select signal of the
+    // write transaction. And if we allow multiple outstanding transactions
+    // we need to register the select signal of each, and we need a big
+    // associative (by ID) table for this. And actually this still allows
+    // deadlocks to occur, e.g. if two multicast transactions A and B are partially
+    // reordered, i.e. some masters respond to A first and some to B.
+    // If we restrict the outstanding transactions to a single ID then ordering is
+    // guaranteed, but we anyways need a FIFO to store the selects.
+    // So for the moment we disallow multiple outstanding transactions in presence
+    // of a multicast. This means stall an AW request if:
+    // - there is an outstanding multicast transaction or
+    // - if the request is a multicast, until there are no more outstanding transactions
+    assign aw_is_multicast        = aw_select_popcount > 1;
+    assign outstanding_multicast  = |multicast_select_q;
+    assign aw_any_outstanding_trx = aw_any_outstanding_unicast_trx || outstanding_multicast;
+    assign multicast_stall        = outstanding_multicast || (aw_is_multicast && aw_any_outstanding_trx);
+
+    // Keep track of which B responses need to be returned to complete the multicast
+    `FFLARN(multicast_select_q, multicast_select_d, multicast_select_load, '0, clk_i, rst_ni)
+
+    // Logic to update multicast_select_q. Loads the register upon the AW handshake
+    // of a multicast transaction. Successively clears it upon the "joined" B handshake
+    always_comb begin
+      multicast_select_d = multicast_select_q;
+      multicast_select_load = 1'b0;
+
+      unique if (aw_is_multicast && aw_valid && aw_ready) begin
+        multicast_select_d    = slv_aw_select;
+        multicast_select_load = 1'b1;
+      end else if (outstanding_multicast && slv_b_valid && slv_b_ready) begin
+        multicast_select_d    = '0;
+        multicast_select_load = 1'b1;
+      end else begin
+        multicast_select_d = multicast_select_q;
+        multicast_select_load = 1'b0;
+      end
+    end
+
+    // When a multicast occurs, the upstream valid signals need to
+    // be forwarded to multiple master ports.
+    // Proper stream forking is necessary to avoid protocol violations
+    stream_fork_dynamic #(
+      .N_OUP(NoMstPorts)
+    ) i_aw_stream_fork_dynamic (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .valid_i    (aw_valid),
+      .ready_o    (aw_ready),
+      .sel_i      (slv_aw_select),
+      .sel_valid_i(slv_aw_valid_sel),
+      .sel_ready_o(),
+      .valid_o    (mst_aw_valids),
+      .ready_i    (mst_aw_readies)
+    );
+
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
       // all in-flight write transactions, or all write transactions with a given ID target the same
@@ -326,12 +438,34 @@ module axi_demux #(
       // derived from existing signals.  The ID counters can therefore be omitted.
       assign lookup_aw_select = slv_aw_select;
       assign aw_select_occupied = 1'b0;
-      assign aw_id_cnt_full = 1'b0;
+
+      // We still need a (single) counter to keep track of any outstanding transactions
+      axi_mcast_demux_id_counters #(
+        .AxiIdBits         ( 0              ),
+        .CounterWidth      ( IdCounterWidth ),
+        .mst_port_select_t ( idx_select_t   )
+      ) i_aw_id_counter (
+        .clk_i                        ( clk_i                          ),
+        .rst_ni                       ( rst_ni                         ),
+        .lookup_axi_id_i              ( '0                             ),
+        .lookup_mst_select_o          ( /* Not used */                 ),
+        .lookup_mst_select_occupied_o ( /* Not used */                 ),
+        .full_o                       ( aw_id_cnt_full                 ),
+        .inject_axi_id_i              ( '0                             ),
+        .inject_i                     ( 1'b0                           ),
+        .push_axi_id_i                ( '0                             ),
+        .push_mst_select_i            ( '0                             ),
+        .push_i                       ( w_cnt_up && !aw_is_multicast   ),
+        .pop_axi_id_i                 ( '0                             ),
+        .pop_i                        ( slv_b_valid & slv_b_ready & ~outstanding_multicast ),
+        .any_outstanding_trx_o        ( aw_any_outstanding_unicast_trx )
+      );
+
     end else begin : gen_aw_id_counter
-      axi_demux_id_counters #(
+      axi_mcast_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
-        .mst_port_select_t ( select_t       )
+        .mst_port_select_t ( mask_select_t  )
       ) i_aw_id_counter (
         .clk_i                        ( clk_i                          ),
         .rst_ni                       ( rst_ni                         ),
@@ -343,9 +477,10 @@ module axi_demux #(
         .inject_i                     ( 1'b0                           ),
         .push_axi_id_i                ( slv_aw_chan.id[0+:AxiLookBits] ),
         .push_mst_select_i            ( slv_aw_select                  ),
-        .push_i                       ( w_cnt_up                       ),
+        .push_i                       ( w_cnt_up && !aw_is_multicast   ),
         .pop_axi_id_i                 ( slv_b_chan.id[0+:AxiLookBits]  ),
-        .pop_i                        ( slv_b_valid & slv_b_ready      )
+        .pop_i                        ( slv_b_valid & slv_b_ready & ~outstanding_multicast ),
+        .any_outstanding_trx_o        ( aw_any_outstanding_unicast_trx )
       );
       // pop from ID counter on outward transaction
     end
@@ -369,9 +504,10 @@ module axi_demux #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select, w_cnt_up, select_t'(0), clk_i, rst_ni)
+    `FFLARN(w_select_q, slv_aw_select, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
     assign w_select       = (|w_open) ? w_select_q : slv_aw_select;
     assign w_select_valid = w_cnt_up | (|w_open);
+    assign w_cnt_down     = slv_w_valid & slv_w_ready & slv_w_chan.last;
 
     //--------------------------------------
     //  W Channel
@@ -388,6 +524,23 @@ module axi_demux #(
       .valid_o ( slv_w_valid        ),
       .ready_i ( slv_w_ready        ),
       .data_o  ( slv_w_chan         )
+    );
+
+    // When a multicast occurs, the upstream valid signals need to
+    // be forwarded to multiple master ports.
+    // Proper stream forking is necessary to avoid protocol violations
+    stream_fork_dynamic #(
+      .N_OUP(NoMstPorts)
+    ) i_w_stream_fork_dynamic (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .valid_i    (slv_w_valid),
+      .ready_o    (slv_w_ready),
+      .sel_i      (w_select),
+      .sel_valid_i(w_select_valid),
+      .sel_ready_o(),
+      .valid_o    (mst_w_valids),
+      .ready_i    (mst_w_readies)
     );
 
     //--------------------------------------
@@ -419,20 +572,36 @@ module axi_demux #(
       .rst_ni ( rst_ni        ),
       .flush_i( 1'b0          ),
       .rr_i   ( '0            ),
-      .req_i  ( mst_b_valids  ),
-      .gnt_o  ( mst_b_readies ),
+      .req_i  ( mst_b_valids & {NoMstPorts{!outstanding_multicast}} ),
+      .gnt_o  ( mst_b_readies_arb ),
       .data_i ( mst_b_chans   ),
       .gnt_i  ( slv_b_ready   ),
-      .req_o  ( slv_b_valid   ),
-      .data_o ( slv_b_chan    ),
+      .req_o  ( slv_b_valid_arb ),
+      .data_o ( slv_b_chan_arb ),
       .idx_o  (               )
     );
+
+    // Streams must be joined instead of arbitrated when multicast
+    stream_join_dynamic #(NoMstPorts) i_b_stream_join (
+      .inp_valid_i(mst_b_valids & {NoMstPorts{outstanding_multicast}}),
+      .inp_ready_o(mst_b_readies_join),
+      .sel_i      (multicast_select_q),
+      .oup_valid_o(slv_b_valid_join),
+      .oup_ready_i(slv_b_ready)
+    );
+    // TODO colluca: merge B channels appropriately
+    assign slv_b_chan_join = mst_b_chans[0];
+
+    // Mux output of arbiter and stream_join_dynamic modules
+    assign mst_b_readies = mst_b_readies_arb | mst_b_readies_join;
+    assign slv_b_valid   = slv_b_valid_arb | slv_b_valid_join;
+    assign slv_b_chan    = outstanding_multicast ? slv_b_chan_join : slv_b_chan_arb;
 
     //--------------------------------------
     //  AR Channel
     //--------------------------------------
     ar_chan_t slv_ar_chan;
-    select_t  slv_ar_select;
+    idx_select_t slv_ar_select;
     spill_register #(
       .T       ( ar_chan_t          ),
       .Bypass  ( ~SpillAr           )
@@ -447,7 +616,7 @@ module axi_demux #(
       .data_o  ( slv_ar_chan        )
     );
     spill_register #(
-      .T       ( select_t           ),
+      .T       ( idx_select_t       ),
       .Bypass  ( ~SpillAr           )
     ) i_ar_sel_spill_reg (
       .clk_i   ( clk_i              ),
@@ -524,7 +693,7 @@ module axi_demux #(
       axi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
-        .mst_port_select_t ( select_t       )
+        .mst_port_select_t ( idx_select_t   )
       ) i_ar_id_counter (
         .clk_i                        ( clk_i                                       ),
         .rst_ni                       ( rst_ni                                      ),
@@ -580,33 +749,24 @@ module axi_demux #(
       .idx_o  (               )
     );
 
-   assign ar_ready = ar_valid & mst_resps_i[slv_ar_select].ar_ready;
-   assign aw_ready = aw_valid & mst_resps_i[slv_aw_select].aw_ready;
+    assign ar_ready = ar_valid & mst_resps_i[slv_ar_select].ar_ready;
 
     // process that defines the individual demuxes and assignments for the arbitration
-    // as mst_reqs_o has to be drivem from the same always comb block!
+    // as mst_reqs_o has to be driven from the same always comb block!
     always_comb begin
       // default assignments
       mst_reqs_o  = '0;
-      slv_w_ready = 1'b0;
-      w_cnt_down  = 1'b0;
 
       for (int unsigned i = 0; i < NoMstPorts; i++) begin
         // AW channel
-        mst_reqs_o[i].aw       = slv_aw_chan;
-        mst_reqs_o[i].aw_valid = 1'b0;
-        if (aw_valid && (slv_aw_select == i)) begin
-          mst_reqs_o[i].aw_valid = 1'b1;
-        end
+        mst_reqs_o[i].aw            = slv_aw_chan;
+        mst_reqs_o[i].aw.addr       = slv_aw_mcast[i].aw_addr;
+        mst_reqs_o[i].aw.user.mcast = slv_aw_mcast[i].aw_mask;
+        mst_reqs_o[i].aw_valid      = mst_aw_valids[i];
 
         //  W channel
         mst_reqs_o[i].w       = slv_w_chan;
-        mst_reqs_o[i].w_valid = 1'b0;
-        if (w_select_valid && (w_select == i)) begin
-          mst_reqs_o[i].w_valid = slv_w_valid;
-          slv_w_ready           = mst_resps_i[i].w_ready;
-          w_cnt_down            = slv_w_valid & mst_resps_i[i].w_ready & slv_w_chan.last;
-        end
+        mst_reqs_o[i].w_valid = mst_w_valids[i];
 
         //  B channel
         mst_reqs_o[i].b_ready = mst_b_readies[i];
@@ -622,12 +782,14 @@ module axi_demux #(
         mst_reqs_o[i].r_ready = mst_r_readies[i];
       end
     end
-    // unpack the response B and R channels for the arbitration
+    // unpack the response AW, W, R and B channels for the arbitration/muxes
     for (genvar i = 0; i < NoMstPorts; i++) begin : gen_b_channels
       assign mst_b_chans[i]        = mst_resps_i[i].b;
       assign mst_b_valids[i]       = mst_resps_i[i].b_valid;
       assign mst_r_chans[i]        = mst_resps_i[i].r;
       assign mst_r_valids[i]       = mst_resps_i[i].r_valid;
+      assign mst_w_readies[i]      = mst_resps_i[i].w_ready;
+      assign mst_aw_readies[i]     = mst_resps_i[i].aw_ready;
     end
 
 
@@ -640,12 +802,10 @@ module axi_demux #(
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
       AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
         $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
+      aw_addr_bits: assume ($bits(slv_aw_mcast_i[0].aw_addr) == $bits(slv_req_i.aw.addr)) else
+        $fatal(1, "aw_addr_t must be the type of slv_req_i.aw.addr");
     end
     default disable iff (!rst_ni);
-    aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
-                                                 (slv_aw_select_i < NoMstPorts))) else
-      $fatal(1, "slv_aw_select_i is %d: AW has selected a slave that is not defined.\
-                 NoMstPorts: %d", slv_aw_select_i, NoMstPorts);
     ar_select: assume property( @(posedge clk_i) (slv_req_i.ar_valid |->
                                                  (slv_ar_select_i < NoMstPorts))) else
       $fatal(1, "slv_ar_select_i is %d: AR has selected a slave that is not defined.\
@@ -670,9 +830,6 @@ module axi_demux #(
     internal_ar_select: assert property( @(posedge clk_i)
         (ar_valid |-> slv_ar_select < NoMstPorts))
       else $fatal(1, "slv_ar_select illegal while ar_valid.");
-    internal_aw_select: assert property( @(posedge clk_i)
-        (aw_valid |-> slv_aw_select < NoMstPorts))
-      else $fatal(1, "slv_aw_select illegal while aw_valid.");
     w_underflow: assert property( @(posedge clk_i)
         ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
         $fatal(1, "W counter underflowed!");
@@ -683,7 +840,7 @@ module axi_demux #(
   end
 endmodule
 
-module axi_demux_id_counters #(
+module axi_mcast_demux_id_counters #(
   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
   parameter int unsigned AxiIdBits         = 2,
   parameter int unsigned CounterWidth      = 4,
@@ -705,7 +862,9 @@ module axi_demux_id_counters #(
   input  logic                 inject_i,
   // pop
   input  logic [AxiIdBits-1:0] pop_axi_id_i,
-  input  logic                 pop_i
+  input  logic                 pop_i,
+  // outstanding transactions
+  output logic                 any_outstanding_trx_o
 );
   localparam int unsigned NoCounters = 2**AxiIdBits;
   typedef logic [CounterWidth-1:0] cnt_t;
@@ -728,6 +887,11 @@ module axi_demux_id_counters #(
   assign inject_en = (inject_i) ? (1 << inject_axi_id_i) : '0;
   assign pop_en    = (pop_i)    ? (1 << pop_axi_id_i)    : '0;
   assign full_o    = |cnt_full;
+  //-----------------------------------
+  // Status
+  //-----------------------------------
+  assign any_outstanding_trx_o = |occupied;
+
   // counters
   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
     logic cnt_en, cnt_down, overflow;
@@ -807,7 +971,7 @@ endmodule
 // interface wrapper
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
-module axi_demux_intf #(
+module axi_mcast_demux_intf #(
   parameter int unsigned AXI_ID_WIDTH     = 32'd0, // Synopsys DC requires default value for params
   parameter bit          ATOP_SUPPORT     = 1'b1,
   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
@@ -824,19 +988,26 @@ module axi_demux_intf #(
   parameter bit          SPILL_R          = 1'b0,
   // Dependent parameters, DO NOT OVERRIDE!
   parameter int unsigned SELECT_WIDTH   = (NO_MST_PORTS > 32'd1) ? $clog2(NO_MST_PORTS) : 32'd1,
-  parameter type         select_t       = logic [SELECT_WIDTH-1:0] // MST port select type
+  parameter type         idx_select_t   = logic [SELECT_WIDTH-1:0],
+  parameter type         mask_select_t  = logic [NO_MST_PORTS-1:0],
+  parameter type         addr_t         = logic [AXI_ADDR_WIDTH-1:0],
+  // Multi-address type (represents a set of addresses)
+  parameter type         aw_multi_addr_t = struct packed {
+                                             addr_t aw_addr;
+                                             addr_t aw_mask;
+                                           }
 ) (
   input  logic    clk_i,                 // Clock
   input  logic    rst_ni,                // Asynchronous reset active low
   input  logic    test_i,                // Testmode enable
-  input  select_t slv_aw_select_i,       // has to be stable, when aw_valid
-  input  select_t slv_ar_select_i,       // has to be stable, when ar_valid
+  input  mask_select_t slv_aw_select_i,  // has to be stable, when aw_valid
+  input  idx_select_t  slv_ar_select_i,  // has to be stable, when ar_valid
+  input  aw_multi_addr_t [NO_MST_PORTS-1:0] slv_aw_mcast_i,
   AXI_BUS.Slave   slv,                   // slave port
   AXI_BUS.Master  mst [NO_MST_PORTS-1:0] // master ports
 );
 
   typedef logic [AXI_ID_WIDTH-1:0]       id_t;
-  typedef logic [AXI_ADDR_WIDTH-1:0]   addr_t;
   typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
   typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
   typedef logic [AXI_USER_WIDTH-1:0]   user_t;
@@ -861,9 +1032,10 @@ module axi_demux_intf #(
     `AXI_ASSIGN_TO_RESP(mst_resp[i], mst[i])
   end
 
-  axi_demux #(
+  axi_mcast_demux #(
     .AxiIdWidth     ( AXI_ID_WIDTH  ), // ID Width
     .AtopSupport    ( ATOP_SUPPORT  ),
+    .aw_addr_t      (     addr_t    ), // AW Address Type
     .aw_chan_t      (  aw_chan_t    ), // AW Channel Type
     .w_chan_t       (   w_chan_t    ), //  W Channel Type
     .b_chan_t       (   b_chan_t    ), //  B Channel Type
@@ -888,6 +1060,7 @@ module axi_demux_intf #(
     .slv_req_i       ( slv_req         ),
     .slv_aw_select_i ( slv_aw_select_i ),
     .slv_ar_select_i ( slv_ar_select_i ),
+    .slv_aw_mcast_i  ( slv_aw_mcast_i  ),
     .slv_resp_o      ( slv_resp        ),
     // master port
     .mst_reqs_o      ( mst_req         ),
