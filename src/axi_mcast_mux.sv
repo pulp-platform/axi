@@ -25,7 +25,7 @@
 `include "common_cells/assertions.svh"
 `include "common_cells/registers.svh"
 
-module axi_mux #(
+module axi_mcast_mux #(
   // AXI parameter and channel types
   parameter int unsigned SlvAxiIDWidth = 32'd0, // AXI ID width, slave ports
   parameter type         slv_aw_chan_t = logic, // AW Channel Type, slave ports

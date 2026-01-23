@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ETH Zurich and University of Bologna.
+// Copyright (c) 2022 ETH Zurich and University of Bologna.
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
 // compliance with the License.  You may obtain a copy of the License at
@@ -9,13 +9,14 @@
 // specific language governing permissions and limitations under the License.
 //
 // Authors:
-// - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
-// - Andreas Kurth <akurth@iis.ee.ethz.ch>
-// - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
+// Based on:
+// - axi_xbar.sv
 
-/// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
-/// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
-module axi_xbar
+// axi_multicast_xbar: Multicast-enabled fully-connected AXI4+ATOP crossbar with an arbitrary number
+// of slave and master ports.
+// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
+module axi_mcast_xbar
 import cf_math_pkg::idx_width;
 #(
   /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
@@ -60,11 +61,17 @@ import cf_math_pkg::idx_width;
   ///   axi_addr_t   end_addr;
   /// } rule_t;
   /// ```
-  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t
-`ifdef VCS
-  , localparam int unsigned MstPortsIdxWidth =
-      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
-`endif
+  parameter type ar_rule_t                                           = axi_pkg::xbar_rule_32_t,
+  /// Address rule type for the address decoders from `common_cells:multiaddr_decode`.
+  /// Example types are provided in `axi_pkg`.
+  /// Required struct fields:
+  /// ```
+  /// typedef struct packed {
+  ///   axi_addr_t   addr;
+  ///   axi_addr_t   mask;
+  /// } rule_t;
+  /// ```
+  parameter type aw_rule_t                                          = axi_pkg::xbar_mask_rule_32_t
 ) (
   /// Clock, positive edge triggered.
   input  logic                                                          clk_i,
@@ -82,24 +89,12 @@ import cf_math_pkg::idx_width;
   input  mst_resp_t [Cfg.NoMstPorts-1:0]                                mst_ports_resp_i,
   /// Address map array input for the crossbar. This map is global for the whole module.
   /// It is used for routing the transactions to the respective master ports.
-  /// Each master port can have multiple different rules.
-  input  rule_t     [Cfg.NoAddrRules-1:0]                               addr_map_i,
-  /// Enable default master port.
-  input  logic      [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
-  /// Enables a default master port for each slave port. When this is enabled unmapped
-  /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
-  input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
-  /// Enables a default master port for each slave port. When this is enabled unmapped
-  /// transactions get issued at the master port given by `default_mst_port_i`.
-  /// When not used, tie to `'0`.  
-  input  logic      [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
+
+  input  ar_rule_t [Cfg.NoAddrRules-1:0]                               ar_addr_map_i,
+  input  aw_rule_t [Cfg.NoAddrRules-1:0]                               aw_addr_map_i
 );
 
-  // Address tpye for inidvidual address signals
+  // Address type for individual address signals
   typedef logic [Cfg.AxiAddrWidth-1:0] addr_t;
   // to account for the decoding error slave
 `ifdef VCS
@@ -109,6 +104,12 @@ import cf_math_pkg::idx_width;
 `else
   typedef logic [idx_width(Cfg.NoMstPorts + 1)-1:0] mst_port_idx_t;
 `endif
+  typedef logic [(Cfg.NoMstPorts+1)-1:0] mst_port_mask_t;
+
+  typedef struct packed {
+    addr_t addr;
+    addr_t mask;
+  } multi_addr_t;
 
   // signals from the axi_demuxes, one index more for decode error
   slv_req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
@@ -123,80 +124,66 @@ import cf_math_pkg::idx_width;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
 `ifdef VCS
-    logic [MstPortsIdxWidth-1:0]          dec_aw,        dec_ar;
+    logic [MstPortsIdxWidth-1:0]          dec_ar_select;
 `else
-    logic [idx_width(Cfg.NoMstPorts)-1:0] dec_aw,        dec_ar;
+    logic [idx_width(Cfg.NoMstPorts)-1:0] dec_ar_select;
 `endif
-    mst_port_idx_t                        slv_aw_select, slv_ar_select;
-    logic                                 dec_aw_valid,  dec_aw_error;
-    logic                                 dec_ar_valid,  dec_ar_error;
+    logic  [Cfg.NoMstPorts-1:0] dec_aw_select;
+    addr_t [Cfg.NoMstPorts-1:0] dec_aw_addr,   dec_aw_mask;
+    logic                       dec_aw_valid,  dec_aw_error;
+    logic                       dec_ar_valid,  dec_ar_error;
+    mst_port_mask_t             slv_aw_select;
+    mst_port_idx_t              slv_ar_select;
+    addr_t [Cfg.NoMstPorts:0]   slv_aw_addr,   slv_aw_mask;
+    multi_addr_t [Cfg.NoMstPorts:0] slv_aw_mcast;
 
-    addr_decode #(
-      .NoIndices  ( Cfg.NoMstPorts  ),
-      .NoRules    ( Cfg.NoAddrRules ),
-      .addr_t     ( addr_t          ),
-      .rule_t     ( rule_t          )
+    multiaddr_decode #(
+      .NoRules(Cfg.NoMstPorts),
+      .addr_t (addr_t),
+      .rule_t (aw_rule_t)
     ) i_axi_aw_decode (
-      .addr_i           ( slv_ports_req_i[i].aw.addr ),
-      .addr_map_i       ( addr_map_i                 ),
-      .idx_o            ( dec_aw                     ),
-      .dec_valid_o      ( dec_aw_valid               ),
-      .dec_error_o      ( dec_aw_error               ),
-      .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .addr_i     (slv_ports_req_i[i].aw.addr),
+      .mask_i     (slv_ports_req_i[i].aw.user.mcast),
+      .addr_map_i (aw_addr_map_i),
+      .select_o   (dec_aw_select),
+      .addr_o     (dec_aw_addr),
+      .mask_o     (dec_aw_mask),
+      .dec_valid_o(dec_aw_valid),
+      .dec_error_o(dec_aw_error)
     );
 
     addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),
-      .rule_t     ( rule_t          )
+      .rule_t     ( ar_rule_t       )
     ) i_axi_ar_decode (
       .addr_i           ( slv_ports_req_i[i].ar.addr ),
-      .addr_map_i       ( addr_map_i                 ),
-      .idx_o            ( dec_ar                     ),
+      .addr_map_i       ( ar_addr_map_i              ),
+      .idx_o            ( dec_ar_select              ),
       .dec_valid_o      ( dec_ar_valid               ),
       .dec_error_o      ( dec_ar_error               ),
-      .en_default_idx_i ( en_default_mst_port_i[i]   ),
-      .default_idx_i    ( default_mst_port_i[i]      )
+      .en_default_idx_i ( '0                         ),
+      .default_idx_i    ( '0                         )
     );
 
     assign slv_aw_select = (dec_aw_error) ?
-        mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_aw);
+        {1'b1, {Cfg.NoMstPorts{1'b0}}} : {1'b0, dec_aw_select};
     assign slv_ar_select = (dec_ar_error) ?
-        mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_ar);
+        mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_ar_select);
+    assign slv_aw_addr = {'0, dec_aw_addr};
+    assign slv_aw_mask = {'0, dec_aw_mask};
 
-    // make sure that the default slave does not get changed, if there is an unserved Ax
-    // pragma translate_off
-    `ifndef VERILATOR
-    `ifndef XSIM
-    default disable iff (~rst_ni);
-    default_aw_mst_port_en: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   enable, when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_aw_mst_port: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Aw beat. Slave Port: %0d", i));
-    default_ar_mst_port_en: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(en_default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the enable, when\
-                                   there is an unserved Ar beat. Slave Port: %0d", i));
-    default_ar_mst_port: assert property(
-      @(posedge clk_i) (slv_ports_req_i[i].ar_valid && !slv_ports_resp_o[i].ar_ready)
-          |=> $stable(default_mst_port_i[i]))
-        else $fatal (1, $sformatf("It is not allowed to change the default mst port\
-                                   when there is an unserved Ar beat. Slave Port: %0d", i));
-    `endif
-    `endif
-    // pragma translate_on
-    axi_demux #(
+    // Zip slv_aw_addr and slv_aw_mask into one array of structs
+    for (genvar mst_idx = 0; mst_idx <= Cfg.NoMstPorts; mst_idx++) begin : gen_aw_mcast
+      assign slv_aw_mcast[mst_idx].addr = slv_aw_addr[mst_idx];
+      assign slv_aw_mcast[mst_idx].mask = slv_aw_mask[mst_idx];
+    end
+
+    axi_mcast_demux #(
       .AxiIdWidth     ( Cfg.AxiIdWidthSlvPorts ),  // ID Width
       .AtopSupport    ( ATOPs                  ),
+      .aw_addr_t      ( addr_t                 ),  // AW Address Type
       .aw_chan_t      ( slv_aw_chan_t          ),  // AW Channel Type
       .w_chan_t       ( w_chan_t               ),  //  W Channel Type
       .b_chan_t       ( slv_b_chan_t           ),  //  B Channel Type
@@ -220,6 +207,7 @@ import cf_math_pkg::idx_width;
       .slv_req_i       ( slv_ports_req_i[i]  ),
       .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
+      .slv_aw_mcast_i  ( slv_aw_mcast        ),
       .slv_resp_o      ( slv_ports_resp_o[i] ),
       .mst_reqs_o      ( slv_reqs[i]         ),
       .mst_resps_i     ( slv_resps[i]        )
@@ -329,6 +317,10 @@ import cf_math_pkg::idx_width;
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
     id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
+    addr_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.addr) == Cfg.AxiAddrWidth) else
+      $fatal(1, $sformatf("Slv_req and aw_addr width not equal."));
+    addr_mst_req_ports: assert ($bits(mst_ports_req_o[0].aw.addr) == Cfg.AxiAddrWidth) else
+      $fatal(1, $sformatf("Mst_req and aw_addr width not equal."));
   end
   `endif
   `endif
@@ -338,31 +330,23 @@ endmodule
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-module axi_xbar_intf
+module axi_mcast_xbar_intf
 import cf_math_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter type rule_t                 = axi_pkg::xbar_rule_64_t
-`ifdef VCS
-  , localparam int unsigned MstPortsIdxWidth =
-        (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
-`endif
+  parameter type ar_rule_t              = axi_pkg::xbar_rule_64_t,
+  parameter type aw_rule_t              = axi_pkg::xbar_mask_rule_64_t
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
   input  logic                                                      test_i,
   AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
-  input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-`ifdef VCS
-  input  logic  [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
-`else
-  input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-`endif
+  input  ar_rule_t [Cfg.NoAddrRules-1:0]                            ar_addr_map_i,
+  input  aw_rule_t [Cfg.NoAddrRules-1:0]                            aw_addr_map_i
 );
 
   localparam int unsigned AxiIdWidthMstPorts = Cfg.AxiIdWidthSlvPorts + $clog2(Cfg.NoSlvPorts);
@@ -373,9 +357,13 @@ import cf_math_pkg::idx_width;
   typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
   typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
   typedef logic [AXI_USER_WIDTH         -1:0] user_t;
+  // AW channel adds multicast mask to USER signals
+  typedef struct packed {
+    addr_t mcast;
+  } aw_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, aw_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
@@ -403,7 +391,7 @@ import cf_math_pkg::idx_width;
     `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
   end
 
-  axi_xbar #(
+  axi_mcast_xbar #(
     .Cfg  (Cfg),
     .ATOPs          ( ATOPS         ),
     .Connectivity   ( CONNECTIVITY  ),
@@ -420,18 +408,18 @@ import cf_math_pkg::idx_width;
     .slv_resp_t     ( slv_resp_t    ),
     .mst_req_t      ( mst_req_t     ),
     .mst_resp_t     ( mst_resp_t    ),
-    .rule_t         ( rule_t        )
+    .ar_rule_t      ( ar_rule_t     ),
+    .aw_rule_t      ( aw_rule_t     )
   ) i_xbar (
     .clk_i,
     .rst_ni,
     .test_i,
-    .slv_ports_req_i  (slv_reqs ),
-    .slv_ports_resp_o (slv_resps),
-    .mst_ports_req_o  (mst_reqs ),
-    .mst_ports_resp_i (mst_resps),
-    .addr_map_i,
-    .en_default_mst_port_i,
-    .default_mst_port_i
+    .slv_ports_req_i (slv_reqs),
+    .slv_ports_resp_o(slv_resps),
+    .mst_ports_req_o (mst_reqs),
+    .mst_ports_resp_i(mst_resps),
+    .ar_addr_map_i,
+    .aw_addr_map_i
   );
 
 endmodule
