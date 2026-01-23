@@ -38,22 +38,16 @@ sources:
   - src/axi_intf.sv
   # Level 2
   - src/axi_atop_filter.sv
-  - src/axi_burst_splitter_gran.sv
-  - src/axi_burst_unwrap.sv
   - src/axi_bus_compare.sv
   - src/axi_cdc_dst.sv
   - src/axi_cdc_src.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
-  - src/axi_demux_simple.sv
-  - src/axi_dw_downsizer.sv
-  - src/axi_dw_upsizer.sv
   - src/axi_fifo.sv
   - src/axi_fifo_delay_dyn.sv
   - src/axi_id_remap.sv
   - src/axi_id_prepend.sv
   - src/axi_inval_filter.sv
-  - src/axi_isolate.sv
   - src/axi_join.sv
   - src/axi_lite_demux.sv
   - src/axi_lite_dw_converter.sv
@@ -68,7 +62,6 @@ sources:
   - src/axi_mcast_demux_simple.sv
   - src/axi_mcast_mux.sv
   - src/axi_modify_address.sv
-  - src/axi_mux.sv
   - src/axi_rw_join.sv
   - src/axi_rw_split.sv
   - src/axi_serializer.sv
@@ -76,32 +69,40 @@ sources:
   - src/axi_throttle.sv
   - src/axi_to_detailed_mem.sv
   # Level 3
-  - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
-  - src/axi_demux.sv
+  - src/axi_demux_simple.sv
   - src/axi_err_slv.sv
-  - src/axi_dw_converter.sv
   - src/axi_from_mem.sv
-  - src/axi_id_serialize.sv
-  - src/axi_lfsr.sv
   - src/axi_mcast_demux_mapped.sv
   - src/axi_multicut.sv
-  - src/axi_to_axi_lite.sv
+  - src/axi_mux.sv
   - src/axi_to_mem.sv
   - src/axi_zero_mem.sv
   # Level 4
-  - src/axi_interleaved_xbar.sv
-  - src/axi_iw_converter.sv
+  - src/axi_burst_splitter_gran.sv
+  - src/axi_demux.sv
   - src/axi_lite_xbar.sv
   - src/axi_mcast_xbar_unmuxed.sv
-  - src/axi_xbar_unmuxed.sv
-  - src/axi_to_mem_banked.sv
   - src/axi_to_mem_interleaved.sv
   - src/axi_to_mem_split.sv
   # Level 5
+  - src/axi_burst_splitter.sv
+  - src/axi_burst_unwrap.sv
+  - src/axi_dw_downsizer.sv
+  - src/axi_dw_upsizer.sv
+  - src/axi_id_serialize.sv
+  - src/axi_interleaved_xbar.sv
+  - src/axi_isolate.sv
   - src/axi_mcast_xbar.sv
-  - src/axi_xbar.sv
+  - src/axi_to_mem_banked.sv
+  - src/axi_xbar_unmuxed.sv
   # Level 6
+  - src/axi_dw_converter.sv
+  - src/axi_iw_converter.sv
+  - src/axi_to_axi_lite.sv
+  - src/axi_xbar.sv
+  # Level 7
+  - src/axi_lfsr.sv
   - src/axi_xp.sv
 
   - target: synth_test
