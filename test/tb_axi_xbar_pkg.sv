@@ -174,10 +174,6 @@ package tb_axi_xbar_pkg;
 
       master_exp_t exp_b;
 
-      // TODO colluca: add check that multicast requests only arrive on multicast ports
-      //               (lower NoMulticastPorts) and that multicast requests only originate
-      //               from multicast rules (lower NoMulticastRules)
-
       if (masters_axi[i].aw_valid && masters_axi[i].aw_ready) begin
 
         // Check to which slaves the transaction is directed or if it should go to a decerror.
