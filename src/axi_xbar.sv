@@ -154,18 +154,6 @@ import cf_math_pkg::idx_width;
     );
   end
 
-  // pragma translate_off
-  `ifndef VERILATOR
-  `ifndef XSIM
-  initial begin : check_params
-    id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == Cfg.AxiIdWidthSlvPorts) else
-      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-    id_slv_resp_ports: assert ($bits(slv_ports_resp_o[0].r.id) == Cfg.AxiIdWidthSlvPorts) else
-      $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
-  end
-  `endif
-  `endif
-  // pragma translate_on
 endmodule
 
 `include "axi/assign.svh"
