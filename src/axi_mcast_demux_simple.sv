@@ -42,37 +42,30 @@
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
 module axi_mcast_demux_simple #(
-  parameter int unsigned AxiIdWidth     = 32'd0,
-  parameter bit          AtopSupport    = 1'b1,
-  parameter type         axi_req_t      = logic,
-  parameter type         axi_resp_t     = logic,
-  parameter int unsigned NoMstPorts     = 32'd0,
-  parameter int unsigned MaxTrans       = 32'd8,
-  parameter int unsigned AxiLookBits    = 32'd3,
-  parameter bit          UniqueIds      = 1'b0,
-  parameter bit [NoMstPorts-1:0] Connectivity              = '1,
-  parameter bit [NoMstPorts-1:0] MulticastConnectivity     = '1,
-  parameter type                 aw_addr_t                 = logic,
-  parameter type                 b_chan_t                  = logic,
-  parameter type                 rule_t                    = logic,
-  parameter int unsigned         NoAddrRules               = 32'd0,
-  parameter int unsigned         NoMulticastRules          = 32'd0,
-  parameter int unsigned         NoMulticastPorts          = 32'd0,
-  parameter int unsigned         MaxMcastTrans             = 32'd7,
+  parameter int unsigned AxiIdWidth       = 32'd0,
+  parameter bit          AtopSupport      = 1'b1,
+  parameter type         axi_req_t        = logic,
+  parameter type         axi_resp_t       = logic,
+  parameter int unsigned NoMstPorts       = 32'd0,
+  parameter int unsigned MaxTrans         = 32'd8,
+  parameter int unsigned AxiLookBits      = 32'd3,
+  parameter bit          UniqueIds        = 1'b0,
+  parameter type         aw_addr_t        = logic,
+  parameter int unsigned NoMulticastPorts = 32'd0,
+  parameter int unsigned MaxMcastTrans    = 32'd7,
   // Dependent parameters, DO NOT OVERRIDE!
-  parameter int unsigned         IdxSelectWidth            = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
-  parameter type                 idx_select_t              = logic [IdxSelectWidth-1:0],
-  parameter type                 mask_select_t             = logic [NoMstPorts-1:0]
+  parameter int unsigned IdxSelectWidth   = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+  parameter type         idx_select_t     = logic [IdxSelectWidth-1:0],
+  parameter type         mask_select_t    = logic [NoMstPorts-1:0]
 ) (
   input  logic                          clk_i,
   input  logic                          rst_ni,
   input  logic                          test_i,
-  // Addressing rules
-  input  rule_t    [NoAddrRules-1:0]    addr_map_i,
-  input  logic                          en_default_mst_port_i,
-  input  rule_t                         default_mst_port_i,
   // Slave Port
   input  axi_req_t                      slv_req_i,
+  input  mask_select_t                  slv_aw_select_i,
+  input  aw_addr_t    [NoMstPorts-1:0]  slv_aw_addr_i,
+  input  aw_addr_t    [NoMstPorts-1:0]  slv_aw_mask_i,
   input  idx_select_t                   slv_ar_select_i,
   output axi_resp_t                     slv_resp_o,
   // Master Ports
@@ -87,12 +80,6 @@ module axi_mcast_demux_simple #(
 
   localparam int unsigned McastCounterWidth = (MaxMcastTrans > 32'd1) ? $clog2(MaxMcastTrans+1) : 32'd1;
   typedef logic [McastCounterWidth-1:0] mcast_cnt_t;
-
-  typedef struct packed {
-    int unsigned idx;
-    aw_addr_t addr;
-    aw_addr_t mask;
-  } mask_rule_t;
 
   // pass through if only one master port
   if (NoMstPorts == 32'h1) begin : gen_no_demux
@@ -110,27 +97,7 @@ module axi_mcast_demux_simple #(
     // Write Transaction
     //--------------------------------------
 
-    // AW decoder inputs
-    mask_rule_t [NoMulticastRules-1:0] multicast_rules;
-    mask_rule_t                        default_rule;
-
-    // AW unicast decoder outputs
-    idx_select_t                       dec_aw_unicast_select_idx;
-    logic [NoMstPorts-1:0]             dec_aw_unicast_select_mask;
-    logic                              dec_aw_unicast_valid;
-    logic                              dec_aw_unicast_error;
-
-    // AW multicast decoder outputs
-    logic     [NoMulticastPorts-1:0]   dec_aw_multicast_select_mask;
-    aw_addr_t [NoMulticastPorts-1:0]   dec_aw_multicast_addr;
-    aw_addr_t [NoMulticastPorts-1:0]   dec_aw_multicast_mask;
-    logic                              dec_aw_multicast_valid;
-    logic                              dec_aw_multicast_error;
-
-    // Merged AW unicast and multicast decoder outputs
-    aw_addr_t [NoMstPorts-1:0]         slv_aw_addr;
-    aw_addr_t [NoMstPorts-1:0]         slv_aw_mask;
-    mask_select_t                      slv_aw_select_mask;
+    // Index-form AW select signal for unicast requests
     idx_select_t                       slv_aw_select;
 
     // AW channel to slave ports
@@ -173,7 +140,6 @@ module axi_mcast_demux_simple #(
 
     // B channel to spill register
     logic                     slv_b_valid_arb,    slv_b_valid_join;
-    b_chan_t                  slv_b_chan_join;
 
     //--------------------------------------
     // Read Transaction
@@ -204,95 +170,6 @@ module axi_mcast_demux_simple #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
-
-    // Convert multicast rules to mask (NAPOT) form
-    // - mask =  {'0, {log2(end_addr - start_addr){1'b1}}}
-    // - addr = start_addr / (end_addr - start_addr)
-    // More info in `multiaddr_decode` module
-    // TODO colluca: add checks on conversion feasibility
-    for (genvar i = 0; i < NoMulticastRules; i++) begin : g_multicast_rules
-      assign multicast_rules[i].idx = addr_map_i[i].idx;
-      assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
-      assign multicast_rules[i].addr = addr_map_i[i].start_addr;
-    end
-    assign default_rule.idx = default_mst_port_i.idx;
-    assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
-    assign default_rule.addr = default_mst_port_i.start_addr;
-
-    // Address decoding for unicast requests
-    addr_decode #(
-      .NoIndices          (NoMstPorts),
-      .NoRules            (NoAddrRules),
-      .addr_t             (aw_addr_t),
-      .rule_t             (rule_t)
-    ) i_axi_aw_idx_unicast_decode (
-      .addr_i             (slv_req_i.aw.addr),
-      .addr_map_i         (addr_map_i),
-      .idx_o              (dec_aw_unicast_select_idx),
-      .dec_valid_o        (dec_aw_unicast_valid),
-      .dec_error_o        (dec_aw_unicast_error),
-      .en_default_idx_i   (en_default_mst_port_i),
-      .default_idx_i      (idx_select_t'(default_mst_port_i.idx))
-    );
-
-    // Generate the output mask from the index
-    assign dec_aw_unicast_select_mask = (1'b1 << dec_aw_unicast_select_idx);
-
-    // Address decoding for multicast requests
-    if (NoMulticastRules > 0) begin : gen_multicast_decoding
-      multiaddr_decode #(
-        .NoIndices        (NoMulticastPorts),
-        .NoRules          (NoMulticastRules),
-        .addr_t           (aw_addr_t),
-        .rule_t           (mask_rule_t)
-      ) i_axi_aw_multicast_decode (
-        .addr_map_i       (multicast_rules),
-        .addr_i           (slv_req_i.aw.addr),
-        .mask_i           (slv_req_i.aw.user.collective_mask),
-        .select_o         (dec_aw_multicast_select_mask),
-        .addr_o           (dec_aw_multicast_addr),
-        .mask_o           (dec_aw_multicast_mask),
-        .dec_valid_o      (dec_aw_multicast_valid),
-        .dec_error_o      (dec_aw_multicast_error),
-        .en_default_idx_i (en_default_mst_port_i),
-        .default_idx_i    (default_rule)
-      );
-    end else begin : gen_no_multicast_decoding
-      assign dec_aw_multicast_select_mask = '0;
-      assign dec_aw_multicast_addr = '0;
-      assign dec_aw_multicast_mask = '0;
-      assign dec_aw_multicast_valid = '0;
-      assign dec_aw_multicast_error = '0;
-    end
-
-    // If the address decoding doesn't produce any match, the request
-    // is routed to the error slave, which lies at the highest index.
-    mask_select_t select_error_slave;
-    assign select_error_slave = 1'b1 << (NoMstPorts - 1);
-
-    // Mux the multicast and unicast decoding outputs
-    always_comb begin
-      slv_aw_select_mask = '0;
-      slv_aw_addr = '0;
-      slv_aw_mask = '0;
-
-      if (slv_req_i.aw.user.collective_mask == '0) begin
-        slv_aw_addr = {NoMstPorts{slv_req_i.aw.addr}};
-        if (dec_aw_unicast_error) begin
-          slv_aw_select_mask = select_error_slave;
-        end else begin
-          slv_aw_select_mask = dec_aw_unicast_select_mask & Connectivity;
-        end
-      end else begin
-        slv_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_req_i.aw.addr}}, dec_aw_multicast_addr};
-        slv_aw_mask = {'0, dec_aw_multicast_mask};
-        if (dec_aw_multicast_error) begin
-          slv_aw_select_mask = select_error_slave;
-        end else begin
-          slv_aw_select_mask = {'0, dec_aw_multicast_select_mask} & MulticastConnectivity;
-        end
-      end
-    end
 
     // Control of the AW handshake
     always_comb begin
@@ -333,7 +210,7 @@ module axi_mcast_demux_simple #(
           // This prevents deadlocking of the W channel. The counters are there for the
           // Handling of the B responses.
           if (slv_req_i.aw_valid &&
-                ((w_open == '0) || (w_select == slv_aw_select_mask)) &&
+                ((w_open == '0) || (w_select == slv_aw_select_i)) &&
                 (!aw_select_occupied || (slv_aw_select == lookup_aw_select)) &&
                 !multicast_stall) begin
             // connect the handshake
@@ -370,13 +247,13 @@ module axi_mcast_demux_simple #(
     onehot_to_bin #(
       .ONEHOT_WIDTH(NoMstPorts)
     ) i_onehot_to_bin  (
-        .onehot(slv_aw_select_mask & {NoMstPorts{!aw_is_multicast}}),
+        .onehot(slv_aw_select_i & {NoMstPorts{!aw_is_multicast}}),
         .bin   (slv_aw_select)
     );
 
     // Popcount to identify multicast requests
     popcount #(NoMstPorts) i_aw_select_popcount (
-        .data_i    (slv_aw_select_mask),
+        .data_i    (slv_aw_select_i),
         .popcount_o(aw_select_popcount)
     );
 
@@ -403,7 +280,7 @@ module axi_mcast_demux_simple #(
     // additional select signals.
     assign aw_is_multicast = aw_select_popcount > 1;
     assign outstanding_multicast = outstanding_mcast_cnt_q != '0;
-    assign multicast_stall = (outstanding_multicast && (slv_aw_select_mask != multicast_select_q)) ||
+    assign multicast_stall = (outstanding_multicast && (slv_aw_select_i != multicast_select_q)) ||
                              (aw_is_multicast && aw_any_outstanding_unicast_trx) ||
                              (outstanding_mcast_cnt_q == MaxMcastTrans);
     // We can send this signal to all slaves since we will only have one outstanding aw
@@ -424,8 +301,8 @@ module axi_mcast_demux_simple #(
       // For the same reason the right hand side uses outstanding_mcast_cnt_d
       // instead of outstanding_mcast_cnt_q
       if (aw_is_multicast && aw_valid && aw_ready) begin
-        outstanding_mcast_cnt_d = outstanding_mcast_cnt_d + (|slv_aw_select_mask);
-        multicast_select_d      = slv_aw_select_mask;
+        outstanding_mcast_cnt_d = outstanding_mcast_cnt_d + (|slv_aw_select_i);
+        multicast_select_d      = slv_aw_select_i;
       end
       if (outstanding_multicast && slv_resp_o.b_valid && slv_req_i.b_ready) begin
         outstanding_mcast_cnt_d = outstanding_mcast_cnt_d - 1;
@@ -468,11 +345,12 @@ module axi_mcast_demux_simple #(
     // handshake can now actually take place.
     // Using commit, instead of valid, to this end ensures that we don't have
     // any combinational loops.
-    assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select_mask;
-    assign accept_aw = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select_mask);
+    assign mst_aw_valids = {NoMstPorts{aw_valid}} & slv_aw_select_i;
+    assign accept_aw = &((mst_aw_valids & mst_aw_readies) | ~slv_aw_select_i);
     assign aw_ready = aw_is_multicast ? mcast_aw_hs_in_progress : accept_aw;
-    assign mst_aw_commit_o = {NoMstPorts{mcast_aw_hs_in_progress}} & slv_aw_select_mask;
+    assign mst_aw_commit_o = {NoMstPorts{mcast_aw_hs_in_progress}} & slv_aw_select_i;
 
+    // If multicast is enabled, we need to count the number of outstanding transactions 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
       // all in-flight write transactions, or all write transactions with a given ID target the same
@@ -481,32 +359,12 @@ module axi_mcast_demux_simple #(
       // derived from existing signals.  The ID counters can therefore be omitted.
       assign lookup_aw_select = slv_aw_select;
       assign aw_select_occupied = 1'b0;
-
-      // We still need a (single) counter to keep track of any outstanding transactions
-      axi_mcast_demux_id_counters #(
-        .AxiIdBits         ( 0              ),
-        .CounterWidth      ( IdCounterWidth ),
-        .mst_port_select_t ( idx_select_t   )
-      ) i_aw_id_counter (
-        .clk_i                        ( clk_i                          ),
-        .rst_ni                       ( rst_ni                         ),
-        .lookup_axi_id_i              ( '0                             ),
-        .lookup_mst_select_o          ( /* Not used */                 ),
-        .lookup_mst_select_occupied_o ( /* Not used */                 ),
-        .full_o                       ( aw_id_cnt_full                 ),
-        .inject_axi_id_i              ( '0                             ),
-        .inject_i                     ( 1'b0                           ),
-        .push_axi_id_i                ( '0                             ),
-        .push_mst_select_i            ( '0                             ),
-        .push_i                       ( w_cnt_up && !aw_is_multicast   ),
-        .pop_axi_id_i                 ( '0                             ),
-        .pop_i                        ( slv_resp_o.b_valid & slv_req_i.b_ready & ~outstanding_multicast ),
-        .any_outstanding_trx_o        ( aw_any_outstanding_unicast_trx )
-      );
+      assign aw_id_cnt_full = 1'b0;
+      assign aw_any_outstanding_unicast_trx = 1'b0;
 
     end else begin : gen_aw_id_counter
 
-      axi_mcast_demux_id_counters #(
+      axi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
         .mst_port_select_t ( idx_select_t   )
@@ -532,7 +390,7 @@ module axi_mcast_demux_simple #(
     // This counter steers the demultiplexer of the W channel.
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
-    // `slv_aw_select`.
+    // `slv_aw_select_i`.
     counter #(
       .WIDTH           ( IdCounterWidth ),
       .STICKY_OVERFLOW ( 1'b0           )
@@ -548,8 +406,8 @@ module axi_mcast_demux_simple #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select_mask, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
-    assign w_select       = (|w_open) ? w_select_q : slv_aw_select_mask;
+    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
+    assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
     assign w_select_valid = w_cnt_up | (|w_open);
     assign w_cnt_down     = slv_req_i.w_valid & slv_resp_o.w_ready & slv_req_i.w.last;
 
@@ -610,6 +468,11 @@ module axi_mcast_demux_simple #(
     for (genvar i=0; i<NoMstPorts; i++) begin : g_mst_b_resps
       assign mst_b_resps[i] = multicast_select_q[i] ? mst_resps_i[i].b.resp : axi_pkg::RESP_OKAY;
     end
+
+    // Mux output of arbiter and stream_join_dynamic modules
+    assign mst_b_readies      = mst_b_readies_arb | mst_b_readies_join;
+    assign slv_resp_o.b_valid = slv_b_valid_arb | slv_b_valid_join;
+
     // All fields of B other than RESP can be taken from any slave (need not be merged).
     // We use a priority encoder to take them from the first addressed slave.
     lzc #(
@@ -620,24 +483,17 @@ module axi_mcast_demux_simple #(
       .cnt_o   ( mst_b_valids_tzc                                   ),
       .empty_o ( /* Not used */                                     )
     );
-    always_comb begin
-      slv_b_chan_join = mst_resps_i[mst_b_valids_tzc].b;
-      // If a response to a multicast transaction from any slave is different
-      // from OKAY, we return SLVERR. Note: we assume multicast transactions
-      // cannot be exclusive requests, i.e. the EX_OKAY response is not allowed.
-      slv_b_chan_join.resp = |mst_b_resps ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
-    end
-
-    // Mux output of arbiter and stream_join_dynamic modules
-    assign mst_b_readies      = mst_b_readies_arb | mst_b_readies_join;
-    assign slv_resp_o.b_valid = slv_b_valid_arb | slv_b_valid_join;
 
     always_comb begin
       if (slv_resp_o.b_valid) begin
         if (outstanding_multicast) begin
-        `AXI_SET_B_STRUCT(slv_resp_o.b, slv_b_chan_join)
+          `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[mst_b_valids_tzc].b)
+          // If a response to a multicast transaction from any slave is different
+          // from OKAY, we return SLVERR. Note: we assume multicast transactions
+          // cannot be exclusive requests, i.e. the EX_OKAY response is not allowed.
+          slv_resp_o.b.resp = |mst_b_resps ? axi_pkg::RESP_SLVERR : axi_pkg::RESP_OKAY;
         end else begin
-        `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx].b)
+          `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx].b)
         end
       end else begin
         slv_resp_o.b = '0;
@@ -723,8 +579,9 @@ module axi_mcast_demux_simple #(
         .push_axi_id_i                ( slv_req_i.ar.id[0+:AxiLookBits]             ),
         .push_mst_select_i            ( slv_ar_select_i                             ),
         .push_i                       ( ar_push                                     ),
-        .pop_axi_id_i                 ( slv_resp_o.r.id[0+:AxiLookBits]               ),
-        .pop_i                        ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last )
+        .pop_axi_id_i                 ( slv_resp_o.r.id[0+:AxiLookBits]             ),
+        .pop_i                        ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last ),
+        .any_outstanding_trx_o        (                                             )
       );
     end
 
@@ -764,38 +621,67 @@ module axi_mcast_demux_simple #(
 
     assign ar_ready = ar_valid & mst_resps_i[slv_ar_select_i].ar_ready;
 
-    // process that defines the individual demuxes and assignments for the arbitration
-    // as mst_reqs_o has to be driven from the same always comb block!
-    always_comb begin
-      // default assignments
-      mst_reqs_o  = '0;
+    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_req_connection
+      // process that defines the individual demuxes and assignments for the arbitration
+      // as mst_reqs_o has to be driven from the same always comb block!
+      
+      if (i < NoMulticastPorts) begin : gen_mcast_connection
+        always_comb begin
+          // default assignments
+          mst_reqs_o[i]  = '0;
 
-      for (int unsigned i = 0; i < NoMstPorts; i++) begin
-        // AW channel
-        mst_reqs_o[i].aw                      = slv_req_i.aw;
-        mst_reqs_o[i].aw.addr                 = slv_aw_addr[i];
-        mst_reqs_o[i].aw.user.collective_mask = slv_aw_mask[i];
-        mst_reqs_o[i].aw_valid                = mst_aw_valids[i];
+          // AW channel
+          mst_reqs_o[i].aw                      = slv_req_i.aw;
+          mst_reqs_o[i].aw.addr                 = slv_aw_addr_i[i];
+          mst_reqs_o[i].aw.user.collective_mask = slv_aw_mask_i[i];
+          mst_reqs_o[i].aw_valid                = mst_aw_valids[i];
 
-        //  W channel
-        mst_reqs_o[i].w       = slv_req_i.w;
-        mst_reqs_o[i].w_valid = mst_w_valids[i];
-        //  B channel
-        mst_reqs_o[i].b_ready = mst_b_readies[i];
+          //  W channel
+          mst_reqs_o[i].w       = slv_req_i.w;
+          mst_reqs_o[i].w_valid = mst_w_valids[i];
+          //  B channel
+          mst_reqs_o[i].b_ready = mst_b_readies[i];
 
-        // AR channel
-        mst_reqs_o[i].ar       = slv_req_i.ar;
-        mst_reqs_o[i].ar_valid = 1'b0;
-        if (ar_valid && (slv_ar_select_i == i)) begin
-          mst_reqs_o[i].ar_valid = 1'b1;
+          // AR channel
+          mst_reqs_o[i].ar       = slv_req_i.ar;
+          mst_reqs_o[i].ar_valid = 1'b0;
+          if (ar_valid && (slv_ar_select_i == i)) begin
+            mst_reqs_o[i].ar_valid = 1'b1;
+          end
+
+          //  R channel
+          mst_reqs_o[i].r_ready = mst_r_readies[i];
         end
+      end else begin : gen_ucast_connection
+        always_comb begin
+          // default assignments
+          mst_reqs_o[i]  = '0;
 
-        //  R channel
-        mst_reqs_o[i].r_ready = mst_r_readies[i];
+          // AW channel
+          mst_reqs_o[i].aw       = slv_req_i.aw;
+          mst_reqs_o[i].aw_valid = mst_aw_valids[i];
+
+          //  W channel
+          mst_reqs_o[i].w       = slv_req_i.w;
+          mst_reqs_o[i].w_valid = mst_w_valids[i];
+          //  B channel
+          mst_reqs_o[i].b_ready = mst_b_readies[i];
+
+          // AR channel
+          mst_reqs_o[i].ar       = slv_req_i.ar;
+          mst_reqs_o[i].ar_valid = 1'b0;
+          if (ar_valid && (slv_ar_select_i == i)) begin
+            mst_reqs_o[i].ar_valid = 1'b1;
+          end
+
+          //  R channel
+          mst_reqs_o[i].r_ready = mst_r_readies[i];
+        end
       end
     end
+
     // unpack the response AW, W, R and B channels for the arbitration/muxes
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_b_channels
+    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_rsp_connection
       assign mst_b_valids[i]       = mst_resps_i[i].b_valid;
       assign mst_r_valids[i]       = mst_resps_i[i].r_valid;
       assign mst_w_readies[i]      = mst_resps_i[i].w_ready;
@@ -812,8 +698,10 @@ module axi_mcast_demux_simple #(
         $fatal(1, "The Number of slaves (NoMstPorts) has to be at least 1");
       AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
         $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
-      aw_addr_bits: assume ($bits(slv_aw_addr[0]) == $bits(slv_req_i.aw.addr)) else
-        $fatal(1, "aw_addr_t must be the type of slv_req_i.aw.addr");
+      no_multicast_ports: assume (NoMstPorts >= NoMulticastPorts) else
+        $fatal(1, "NoMstPorts needs to be >= NoMulticastPorts.");
+      unique_ids_multicast:  assume (!UniqueIds || (NoMulticastPorts == 0)) else
+        $fatal(1, "UniqueIds not supported when multicast is enabled (NoMulticastPorts > 0).");
     end
     default disable iff (!rst_ni);
     ar_select: assume property( @(posedge clk_i) (slv_req_i.ar_valid |->
@@ -829,8 +717,8 @@ module axi_mcast_demux_simple #(
                                |=> $stable(slv_req_i.aw)) else
       $fatal(1, "slv_aw_chan unstable with valid set.");
     slv_aw_select_stable: assert property( @(posedge clk_i) (aw_valid && !aw_ready)
-                               |=> $stable(slv_aw_select)) else
-      $fatal(1, "slv_aw_select unstable with valid set.");
+                               |=> $stable(slv_aw_select_i)) else
+      $fatal(1, "slv_aw_select_i unstable with valid set.");
     slv_ar_chan_stable: assert property( @(posedge clk_i) (ar_valid && !ar_ready)
                                |=> $stable(slv_req_i.ar)) else
       $fatal(1, "slv_ar_chan unstable with valid set.");
@@ -849,133 +737,3 @@ module axi_mcast_demux_simple #(
 // pragma translate_on
   end
 endmodule
-
-
-module axi_mcast_demux_id_counters #(
-  // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
-  parameter int unsigned AxiIdBits         = 2,
-  parameter int unsigned CounterWidth      = 4,
-  parameter type         mst_port_select_t = logic
-) (
-  input  logic                 clk_i,   // Clock
-  input  logic                 rst_ni,  // Asynchronous reset active low
-  // lookup
-  input  logic [AxiIdBits-1:0] lookup_axi_id_i,
-  output mst_port_select_t     lookup_mst_select_o,
-  output logic                 lookup_mst_select_occupied_o,
-  // push
-  output logic                 full_o,
-  input  logic [AxiIdBits-1:0] push_axi_id_i,
-  input  mst_port_select_t     push_mst_select_i,
-  input  logic                 push_i,
-  // inject ATOPs in AR channel
-  input  logic [AxiIdBits-1:0] inject_axi_id_i,
-  input  logic                 inject_i,
-  // pop
-  input  logic [AxiIdBits-1:0] pop_axi_id_i,
-  input  logic                 pop_i,
-  // outstanding transactions
-  output logic                 any_outstanding_trx_o
-);
-  localparam int unsigned NoCounters = 2**AxiIdBits;
-  typedef logic [CounterWidth-1:0] cnt_t;
-
-  // registers, each gets loaded when push_en[i]
-  mst_port_select_t [NoCounters-1:0] mst_select_q;
-
-  // counter signals
-  logic [NoCounters-1:0] push_en, inject_en, pop_en, occupied, cnt_full;
-
-  //-----------------------------------
-  // Lookup
-  //-----------------------------------
-  assign lookup_mst_select_o          = mst_select_q[lookup_axi_id_i];
-  assign lookup_mst_select_occupied_o = occupied[lookup_axi_id_i];
-  //-----------------------------------
-  // Push and Pop
-  //-----------------------------------
-  assign push_en   = (push_i)   ? (1 << push_axi_id_i)   : '0;
-  assign inject_en = (inject_i) ? (1 << inject_axi_id_i) : '0;
-  assign pop_en    = (pop_i)    ? (1 << pop_axi_id_i)    : '0;
-  assign full_o    = |cnt_full;
-  //-----------------------------------
-  // Status
-  //-----------------------------------
-  assign any_outstanding_trx_o = |occupied;
-
-  // counters
-  for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
-    logic cnt_en, cnt_down, overflow;
-    cnt_t cnt_delta, in_flight;
-    always_comb begin
-      unique case ({push_en[i], inject_en[i], pop_en[i]})
-        3'b001  : begin // pop_i = -1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b1;
-          cnt_delta = cnt_t'(1);
-        end
-        3'b010  : begin // inject_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-     // 3'b011, inject_i & pop_i = 0 --> use default
-        3'b100  : begin // push_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-     // 3'b101, push_i & pop_i = 0 --> use default
-        3'b110  : begin // push_i & inject_i = +2
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(2);
-        end
-        3'b111  : begin // push_i & inject_i & pop_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-        default : begin // do nothing to the counters
-          cnt_en    = 1'b0;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(0);
-        end
-      endcase
-    end
-
-    delta_counter #(
-      .WIDTH           ( CounterWidth ),
-      .STICKY_OVERFLOW ( 1'b0         )
-    ) i_in_flight_cnt (
-      .clk_i      ( clk_i     ),
-      .rst_ni     ( rst_ni    ),
-      .clear_i    ( 1'b0      ),
-      .en_i       ( cnt_en    ),
-      .load_i     ( 1'b0      ),
-      .down_i     ( cnt_down  ),
-      .delta_i    ( cnt_delta ),
-      .d_i        ( '0        ),
-      .q_o        ( in_flight ),
-      .overflow_o ( overflow  )
-    );
-    assign occupied[i] = |in_flight;
-    assign cnt_full[i] = overflow | (&in_flight);
-
-    // holds the selection signal for this id
-    `FFLARN(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
-
-// pragma translate_off
-`ifndef VERILATOR
-`ifndef XSIM
-    // Validate parameters.
-    cnt_underflow: assert property(
-      @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
-        $fatal(1, "axi_demux_id_counters > Counter: %0d underflowed.\
-                   The reason is probably a faulty AXI response.", i);
-`endif
-`endif
-// pragma translate_on
-  end
-endmodule
-

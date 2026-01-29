@@ -77,6 +77,7 @@ module tb_axi_xbar #(
     AxiAddrWidth:       TbAxiAddrWidth,
     AxiDataWidth:       TbAxiDataWidth,
     NoAddrRules:        TbNumSlaves,
+    EnableMulticast:    1'b0,
     NoMulticastRules:   0,
     NoMulticastPorts:   0
   };

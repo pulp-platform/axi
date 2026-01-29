@@ -11,9 +11,10 @@
 // Authors:
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
 
-// `axi_xbar_monitor` implements an AXI bus monitor that is tuned for the AXI crossbar.
-// It snoops on each of the slaves and master ports of the crossbar and
+// `axi_xbar_monitor` implements an AXI bus monitor that is tuned for the AXI multicast
+// crossbar. It snoops on each of the slaves and master ports of the crossbar and
 // populates FIFOs and ID queues to validate that no AXI beats get
 // lost or sent to the wrong destination.
 
@@ -27,6 +28,7 @@ package tb_axi_xbar_pkg;
     parameter int unsigned NoMasters,
     parameter int unsigned NoSlaves,
     parameter int unsigned NoAddrRules,
+    parameter int unsigned NoMulticastRules = 0,
     parameter type         rule_t,
     parameter rule_t [NoAddrRules-1:0] AddrMap,
       // Stimuli application and test time
@@ -46,6 +48,7 @@ package tb_axi_xbar_pkg;
     typedef struct packed {
       slv_axi_id_t   slv_axi_id;
       axi_addr_t     slv_axi_addr;
+      axi_addr_t     slv_axi_mcast;
       axi_pkg::len_t slv_axi_len;
     } exp_ax_t;
     typedef struct packed {
@@ -148,50 +151,139 @@ package tb_axi_xbar_pkg;
       @(posedge masters_axi[0].clk_i);
     endtask
 
-    // This task monitors a slave ports of the crossbar. Every time an AW beat is seen
-    // it populates an id queue at the right master port (if there is no expected decode error),
-    // populates the expected b response in its own id_queue and in case when the atomic bit [5]
+    // This task monitors a slave port of the crossbar. Every time an AW beat is seen
+    // it populates an id queue at the right master port(s) (if there is no expected decode error),
+    // populates the expected b response in its own id_queue and in case the atomic bit [5]
     // is set it also injects an expected response in the R channel.
     task automatic monitor_mst_aw(input int unsigned i);
-      idx_slv_t    to_slave_idx;
-      exp_ax_t     exp_aw;
-      slv_axi_id_t exp_aw_id;
-      bit          decerr;
+      axi_addr_t         aw_addr;
+      axi_addr_t         aw_mcast;
+      axi_addr_t         rule_addr;
+      axi_addr_t         rule_mask;
+      axi_addr_t         aw_addr_masked;
+      axi_addr_t         addrmap_masked;
+      idx_slv_t          to_slave_idx[$];
+      axi_addr_t         addr_to_slave[$];
+      axi_addr_t         mask_to_slave[$];
+      bit [NoSlaves-1:0] matched_slaves;
+      int unsigned       num_slaves_matched;
+      bit                decerr;
+      exp_ax_t           exp_aw;
+      slv_axi_id_t       exp_aw_id;
+      string             slaves_str;
 
       master_exp_t exp_b;
 
+      // TODO colluca: add check that multicast requests only arrive on multicast ports
+      //               (lower NoMulticastPorts) and that multicast requests only originate
+      //               from multicast rules (lower NoMulticastRules)
+
       if (masters_axi[i].aw_valid && masters_axi[i].aw_ready) begin
-        // check if it should go to a decerror
-        decerr = 1'b1;
-        for (int unsigned j = 0; j < NoAddrRules; j++) begin
-          if ((masters_axi[i].aw_addr >= AddrMap[j].start_addr) &&
-              (masters_axi[i].aw_addr < AddrMap[j].end_addr)) begin
-            to_slave_idx = idx_slv_t'(AddrMap[j].idx);
-            decerr = 1'b0;
+
+        // Check to which slaves the transaction is directed or if it should go to a decerror.
+        // Store the indices of the selected slaves (to_slave_idx) and the filtered address
+        // sets {addr, mask} to be forwarded to each slave (addr_queue, mask_queue).
+
+        // Get address information from request
+        aw_addr = masters_axi[i].aw_addr;
+        aw_mcast = masters_axi[i].aw_user[AxiAddrWidth-1:0];
+
+        // Set decode error by default, reset if a rule is matched in the following
+        decerr = 1;
+
+        // When a mask is present, multicast rules are used, otherwise the unicast rules are used.
+        if (aw_mcast != '0) begin
+
+          // Log masked address
+          for (int k = 0; k < AxiAddrWidth; k++)
+            aw_addr_masked[k] = aw_mcast[k] ? 1'bx : aw_addr[k];
+
+          $display("Trying to match: %x", aw_addr_masked);
+
+          // Compare request against each multicast rule. We look at the rules starting from the
+          // last ones. In case of multiple rules matching for the same slave, we want only
+          // the last rule to have effect
+          for (int j = (NoMulticastRules - 1); j >= 0; j--) begin
+
+            // Convert address rule to mask (NAPOT) form
+            rule_mask = AddrMap[j].end_addr - AddrMap[j].start_addr - 1;
+            rule_addr = AddrMap[j].start_addr;
+            for (int k = 0; k < AxiAddrWidth; k++)
+              addrmap_masked[k] = rule_mask[k] ? 1'bx : rule_addr[k];
+            $display("With slave %3d : %b", AddrMap[j].idx, addrmap_masked);
+
+            // Request goes to the slave if all bits match, out of those which are neither masked
+            // in the request nor in the addrmap rule
+            if (&(~(aw_addr ^ rule_addr) | rule_mask | aw_mcast)) begin
+              int unsigned slave_idx = AddrMap[j].idx;
+              decerr = 0;
+
+              // Only push the request if we haven't already matched it with a previous rule
+              // for the same slave
+              if (!matched_slaves[slave_idx]) begin
+                matched_slaves[slave_idx] = 1'b1;
+                to_slave_idx.push_back(slave_idx);
+                mask_to_slave.push_back(aw_mcast & rule_mask);
+                addr_to_slave.push_back((~aw_mcast & aw_addr) | (aw_mcast & rule_addr));
+                $display("  Push mask    : %32b", aw_mcast & rule_mask);
+                $display("  Push address : %32b", (~aw_mcast & aw_addr) | (aw_mcast & rule_addr));
+              end
+            end
           end
-        end
-        // send the exp aw beat down into the queue of the slave when no decerror
-        if (!decerr) begin
-          exp_aw_id = {idx_mst_t'(i), masters_axi[i].aw_id};
-          // $display("Test exp aw_id: %b",exp_aw_id);
-          exp_aw = '{slv_axi_id:   exp_aw_id,
-                     slv_axi_addr: masters_axi[i].aw_addr,
-                     slv_axi_len:  masters_axi[i].aw_len   };
-          this.exp_aw_queue[to_slave_idx].push(exp_aw_id, exp_aw);
-          incr_expected_tests(3);
-          $display("%0tns > Master %0d: AW to Slave %0d: Axi ID: %b",
-              $time, i, to_slave_idx, masters_axi[i].aw_id);
+        
         end else begin
-          $display("%0tns > Master %0d: AW to Decerror: Axi ID: %b",
-              $time, i, to_slave_idx, masters_axi[i].aw_id);
+
+          // Compare request against each interval-form rule. We look at the rules starting from
+          // the last ones. We ignore the case of multiple rules matching for the same slave
+          $display("Trying to match: %x", aw_addr);
+          for (int j = (NoAddrRules - 1); j >= 0; j--) begin
+            if ((aw_addr >= AddrMap[j].start_addr) &&
+                (aw_addr < AddrMap[j].end_addr)) begin
+              decerr = 0;
+              to_slave_idx.push_back(AddrMap[j].idx);
+              addr_to_slave.push_back(aw_addr);
+              mask_to_slave.push_back('0);
+              $display("  Push address : %x", aw_addr);
+            end
+          end
+
         end
+
+        num_slaves_matched = to_slave_idx.size();
+
+        // send the exp aw beats down into the queues of the selected slaves 
+        // when no decerror
+        if (decerr) begin
+          $display("%0tns > Master %0d: AW to Decerror: Axi ID: %b",
+              $time, i, masters_axi[i].aw_id);
+        end else begin
+          exp_aw_id = {idx_mst_t'(i), masters_axi[i].aw_id};
+          for (int j = 0; j < num_slaves_matched; j++) begin
+            automatic idx_slv_t slave_idx = to_slave_idx.pop_front(); 
+            // $display("Test exp aw_id: %b",exp_aw_id);
+            exp_aw = '{slv_axi_id:   exp_aw_id,
+                       slv_axi_addr: addr_to_slave.pop_front(),
+                       slv_axi_mcast: mask_to_slave.pop_front(),
+                       slv_axi_len:  masters_axi[i].aw_len};
+            this.exp_aw_queue[slave_idx].push(exp_aw_id, exp_aw);
+            incr_expected_tests(4);
+            if (j == 0) slaves_str = $sformatf("%0d", slave_idx);
+            else slaves_str = $sformatf("%s, %0d", slaves_str, slave_idx);
+          end
+          $display("%0tns > Master %0d: AW to Slaves [%s]: Axi ID: %b",
+              $time, i, slaves_str, masters_axi[i].aw_id);
+        end
+
         // populate the expected b queue anyway
         exp_b = '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1};
         this.exp_b_queue[i].push(masters_axi[i].aw_id, exp_b);
         incr_expected_tests(1);
         $display("        Expect B response.");
+
         // inject expected r beats on this id, if it is an atop
+        // throw an error if a multicast atop is attempted (not supported)
         if(masters_axi[i].aw_atop[5]) begin
+          if (num_slaves_matched > 1) $fatal(0, "Multicast ATOPs are not supported");
           // push the required r beats into the right fifo (reuse the exp_b variable)
           $display("        Expect R response, len: %0d.", masters_axi[i].aw_len);
           for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin
@@ -205,7 +297,7 @@ package tb_axi_xbar_pkg;
       end
     endtask : monitor_mst_aw
 
-    // This task monitors a slave port of the crossbar. Every time there is an AW vector it
+    // This task monitors a master port of the crossbar. Every time there is an AW vector it
     // gets checked for its contents and if it was expected. The task then pushes an expected
     // amount of W beats in the respective fifo. Emphasis of the last flag.
     task automatic monitor_slv_aw(input int unsigned i);
@@ -227,14 +319,21 @@ package tb_axi_xbar_pkg;
           $warning("Slave %0d: Unexpected AW with ID: %b and ADDR: %h, exp: %h",
               i, slaves_axi[i].aw_id, slaves_axi[i].aw_addr, exp_aw.slv_axi_addr);
         end
+        if (exp_aw.slv_axi_mcast != slaves_axi[i].aw_user[AxiAddrWidth-1:0]) begin
+          incr_failed_tests(1);
+          $warning("Slave %0d: Unexpected AW with ID: %b and MCAST: %h, exp: %h",
+              i, slaves_axi[i].aw_id, slaves_axi[i].aw_user[AxiAddrWidth-1:0], 
+              exp_aw.slv_axi_mcast);
+        end
         if (exp_aw.slv_axi_len != slaves_axi[i].aw_len) begin
           incr_failed_tests(1);
           $warning("Slave %0d: Unexpected AW with ID: %b and LEN: %h, exp: %h",
               i, slaves_axi[i].aw_id, slaves_axi[i].aw_len, exp_aw.slv_axi_len);
         end
-        incr_conducted_tests(3);
+        incr_conducted_tests(4);
 
         // push the required w beats into the right fifo
+        $display("        Expect %0d W beats.", slaves_axi[i].aw_len + 1);
         incr_expected_tests(slaves_axi[i].aw_len + 1);
         for (int unsigned j = 0; j <= slaves_axi[i].aw_len; j++) begin
           exp_slv_w = (j == slaves_axi[i].aw_len) ?
@@ -334,13 +433,14 @@ package tb_axi_xbar_pkg;
           // push the expected vectors AW for exp_slv
           exp_slv_ar = '{slv_axi_id:    exp_slv_axi_id,
                          slv_axi_addr:  mst_axi_addr,
-                         slv_axi_len:   mst_axi_len     };
+                         slv_axi_mcast: '0,
+                         slv_axi_len:   mst_axi_len};
           //$display("Expected Slv Axi Id is: %b", exp_slv_axi_id);
           this.exp_ar_queue[exp_slv_idx].push(exp_slv_axi_id, exp_slv_ar);
           incr_expected_tests(1);
         end
         // push the required r beats into the right fifo
-          $display("        Expect R response, len: %0d.", masters_axi[i].ar_len);
+          $display("        Expect R response, len: %0d.", mst_axi_len);
           for (int unsigned j = 0; j <= mst_axi_len; j++) begin
           exp_mst_r = (j == mst_axi_len) ? '{mst_axi_id: mst_axi_id, last: 1'b1} :
                                            '{mst_axi_id: mst_axi_id, last: 1'b0};
@@ -497,6 +597,12 @@ package tb_axi_xbar_pkg;
       end
       if(tests_conducted == 0) begin
         $error("Simulation did not conduct any tests!");
+      end
+      if (tests_conducted < tests_expected) begin
+        $error("Some of the expected tests were not conducted!");
+      end
+      if (tests_conducted > tests_expected) begin
+        $error("Conducted more than the expected tests!");
       end
     endtask : print_result
   endclass : axi_xbar_monitor
