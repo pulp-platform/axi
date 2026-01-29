@@ -364,6 +364,7 @@ module axi_burst_unwrap #(
   // Assumptions and assertions
   // --------------------------------------------------
   `ifndef VERILATOR
+  `ifndef XSIM
   // pragma translate_off
   default disable iff (!rst_ni);
   // Inputs
@@ -378,6 +379,7 @@ module axi_burst_unwrap #(
     ) else $fatal(1, "Unsupported ATOP that gives rise to a R response received,\
                       cannot respond in protocol-compliant manner!");
   // pragma translate_on
+  `endif
   `endif
 
 endmodule
