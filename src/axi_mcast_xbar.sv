@@ -176,6 +176,7 @@ import cf_math_pkg::idx_width;
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] MULTICAST_CONNECTIVITY = '1,
+  parameter type aw_user_t              = logic [AXI_USER_WIDTH-1:0],
   parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 ) (
   input  logic                                                      clk_i,
@@ -196,10 +197,6 @@ import cf_math_pkg::idx_width;
   typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
   typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
   typedef logic [AXI_USER_WIDTH         -1:0] user_t;
-  // AW channel adds collective mask to USER signals
-  typedef struct packed {
-    addr_t collective_mask;
-  } aw_user_t;
 
   `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, aw_user_t)
   `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, aw_user_t)
