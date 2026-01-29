@@ -26,9 +26,9 @@
 
 /// Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.
 ///
-/// The AW and AR slave channels each have a `select` input to determine to which master port the
-/// current request is sent.  The `select` can, for example, be driven by an address decoding module
-/// to map address ranges to different AXI slaves.
+/// The module internally decodes Ax requests, determining the master port route based on the
+/// address of the request. To this end an address map, and additional inputs required by the
+/// address decoding modules, are provided.
 ///
 /// ## Design overview
 ///
@@ -41,39 +41,34 @@
 /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
 /// a round-robin arbitration tree.
 module axi_mcast_demux #(
-  parameter int unsigned         AxiIdWidth                = 32'd0,
-  parameter bit                  AtopSupport               = 1'b1,
-  parameter type                 aw_addr_t                 = logic,
-  parameter type                 aw_chan_t                 = logic,
-  parameter type                 w_chan_t                  = logic,
-  parameter type                 b_chan_t                  = logic,
-  parameter type                 ar_chan_t                 = logic,
-  parameter type                 r_chan_t                  = logic,
-  parameter type                 axi_req_t                 = logic,
-  parameter type                 axi_resp_t                = logic,
-  parameter int unsigned         NoMstPorts                = 32'd0,
-  parameter int unsigned         MaxTrans                  = 32'd8,
-  parameter int unsigned         AxiLookBits               = 32'd3,
-  parameter bit                  UniqueIds                 = 1'b0,
-  parameter bit                  SpillAw                   = 1'b1,
-  parameter bit                  SpillW                    = 1'b0,
-  parameter bit                  SpillB                    = 1'b0,
-  parameter bit                  SpillAr                   = 1'b1,
-  parameter bit                  SpillR                    = 1'b0,
-  /// Connectivity vector
-  parameter bit [NoMstPorts-1:0] Connectivity              = '1,
-  /// Collective operation connectivity
-  parameter bit [NoMstPorts-1:0] MulticastConnectivity     = '1,
-  parameter type                 rule_t                    = logic,
-  parameter int unsigned         NoAddrRules               = 32'd0,
-  parameter int unsigned         NoMulticastRules          = 32'd0,
-  parameter int unsigned         NoMulticastPorts          = 32'd0,
-  parameter int unsigned         MaxMcastTrans             = 32'd7,
-  // Dependent parameters, DO NOT OVERRIDE!
-  parameter int unsigned         IdxSelectWidth            = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
-  parameter type                 idx_select_t              = logic [IdxSelectWidth-1:0]
+  parameter int unsigned         AxiIdWidth            = 32'd0,
+  parameter int unsigned         AxiAddrWidth          = 32'd0,
+  parameter bit                  AtopSupport           = 1'b1,
+  parameter type                 aw_chan_t             = logic,
+  parameter type                 w_chan_t              = logic,
+  parameter type                 b_chan_t              = logic,
+  parameter type                 ar_chan_t             = logic,
+  parameter type                 r_chan_t              = logic,
+  parameter type                 axi_req_t             = logic,
+  parameter type                 axi_resp_t            = logic,
+  parameter int unsigned         NoMstPorts            = 32'd0,
+  parameter int unsigned         MaxTrans              = 32'd8,
+  parameter int unsigned         AxiLookBits           = 32'd3,
+  parameter bit                  UniqueIds             = 1'b0,
+  parameter bit                  SpillAw               = 1'b1,
+  parameter bit                  SpillW                = 1'b0,
+  parameter bit                  SpillB                = 1'b0,
+  parameter bit                  SpillAr               = 1'b1,
+  parameter bit                  SpillR                = 1'b0,
+  parameter bit [NoMstPorts-1:0] Connectivity          = '1,
+  parameter bit [NoMstPorts-1:0] MulticastConnectivity = '1,
+  parameter type                 rule_t                = logic,
+  parameter int unsigned         NoAddrRules           = 32'd0,
+  parameter int unsigned         NoMulticastRules      = 32'd0,
+  parameter int unsigned         NoMulticastPorts      = 32'd0,
+  parameter int unsigned         MaxMcastTrans         = 32'd7
 ) (
-  input  logic                        clk_i,
+  input  logic                       clk_i,
   input  logic                       rst_ni,
   input  logic                       test_i,
   // Addressing rules
@@ -82,7 +77,6 @@ module axi_mcast_demux #(
   input  rule_t                      default_mst_port_i,
   // Slave Port
   input  axi_req_t                   slv_req_i,
-  input  idx_select_t                slv_ar_select_i,
   output axi_resp_t                  slv_resp_o,
   // Master Ports
   output axi_req_t  [NoMstPorts-1:0] mst_reqs_o,
@@ -91,13 +85,30 @@ module axi_mcast_demux #(
   output logic      [NoMstPorts-1:0] mst_aw_commit_o
 );
 
+  // Account for additional error slave
+  localparam int unsigned NoMstPortsExt = NoMstPorts + 1;
+
+  localparam int unsigned IdxSelectWidth = cf_math_pkg::idx_width(NoMstPorts);
+  localparam int unsigned IdxSelectWidthExt = cf_math_pkg::idx_width(NoMstPortsExt);
+  typedef logic [IdxSelectWidth-1:0] idx_select_t;
+  typedef logic [IdxSelectWidthExt-1:0] idx_select_ext_t;
+
+  typedef logic [NoMstPortsExt-1:0] mask_select_t;
+
+  typedef logic [AxiAddrWidth-1:0] addr_t;
+
+  typedef struct packed {
+    int unsigned idx;
+    addr_t addr;
+    addr_t mask;
+  } mask_rule_t;
+
+  // ----------------
+  // Spill registers
+  // ----------------
+
   axi_req_t slv_req_cut;
   axi_resp_t slv_resp_cut;
-
-  logic slv_ar_ready_chan, slv_ar_ready_sel;
-  logic slv_ar_valid_chan, slv_ar_valid_sel;
-
-  idx_select_t slv_ar_select;
 
   spill_register #(
     .T       ( aw_chan_t  ),
@@ -132,29 +143,12 @@ module axi_mcast_demux #(
     .clk_i,
     .rst_ni,
     .valid_i ( slv_req_i.ar_valid    ),
-    .ready_o ( slv_ar_ready_chan     ),
+    .ready_o ( slv_resp_o.ar_ready   ),
     .data_i  ( slv_req_i.ar          ),
-    .valid_o ( slv_ar_valid_chan     ),
+    .valid_o ( slv_req_cut.ar_valid  ),
     .ready_i ( slv_resp_cut.ar_ready ),
     .data_o  ( slv_req_cut.ar        )
   );
-  spill_register #(
-    .T       ( idx_select_t ),
-    .Bypass  ( ~SpillAr )
-  ) i_ar_sel_spill_reg (
-    .clk_i,
-    .rst_ni,
-    .valid_i ( slv_req_i.ar_valid    ),
-    .ready_o ( slv_ar_ready_sel      ),
-    .data_i  ( slv_ar_select_i       ),
-    .valid_o ( slv_ar_valid_sel      ),
-    .ready_i ( slv_resp_cut.ar_ready ),
-    .data_o  ( slv_ar_select         )
-  );
-
-  assign slv_resp_o.ar_ready  = slv_ar_ready_chan & slv_ar_ready_sel;
-  assign slv_req_cut.ar_valid = slv_ar_valid_chan & slv_ar_valid_sel;
-
   spill_register #(
     .T       ( b_chan_t ),
     .Bypass  ( ~SpillB  )
@@ -182,38 +176,206 @@ module axi_mcast_demux #(
     .data_o  ( slv_resp_o.r         )
   );
 
+  // -----------------
+  // AR address decoding
+  // -----------------
+
+  idx_select_t     dec_ar_select_idx;
+  logic            dec_ar_error;
+  idx_select_ext_t ar_select_idx;
+
+  // Address decoding for unicast requests
+  addr_decode #(
+    .NoIndices          (NoMstPorts),
+    .NoRules            (NoAddrRules),
+    .addr_t             (addr_t),
+    .rule_t             (rule_t)
+  ) i_axi_ar_decode (
+    .addr_i             (slv_req_cut.ar.addr),
+    .addr_map_i         (addr_map_i),
+    .idx_o              (dec_ar_select_idx),
+    .dec_valid_o        (),
+    .dec_error_o        (dec_ar_error),
+    .en_default_idx_i   (en_default_mst_port_i),
+    .default_idx_i      (idx_select_t'(default_mst_port_i.idx))
+  );
+
+  assign ar_select_idx = dec_ar_error ? NoMstPorts : idx_select_ext_t'(dec_ar_select_idx);
+
+  // -----------------
+  // AW address decoding
+  // -----------------
+
+  // AW decoder inputs
+  mask_rule_t [NoMulticastRules-1:0] multicast_rules;
+  mask_rule_t                        default_rule;
+
+  // AW unicast decoder outputs
+  idx_select_t                       dec_aw_unicast_select_idx;
+  logic [NoMstPorts-1:0]             dec_aw_unicast_select_mask;
+  logic                              dec_aw_unicast_valid;
+  logic                              dec_aw_unicast_error;
+
+  // AW multicast decoder outputs
+  logic  [NoMulticastPorts-1:0]      dec_aw_multicast_select_mask;
+  addr_t [NoMulticastPorts-1:0]      dec_aw_multicast_addr;
+  addr_t [NoMulticastPorts-1:0]      dec_aw_multicast_mask;
+  logic                              dec_aw_multicast_valid;
+  logic                              dec_aw_multicast_error;
+
+  // Decoding outputs (merged from unicast and multicast paths)
+  mask_select_t              dec_aw_select_mask;
+  addr_t [NoMstPortsExt-1:0] dec_aw_addr;
+  addr_t [NoMstPortsExt-1:0] dec_aw_mask;
+
+  // Convert multicast rules to mask (NAPOT) form
+  // - mask =  {'0, {log2(end_addr - start_addr){1'b1}}}
+  // - addr = start_addr / (end_addr - start_addr)
+  // More info in `multiaddr_decode` module
+  // TODO colluca: add checks on conversion feasibility
+  for (genvar i = 0; i < NoMulticastRules; i++) begin : g_multicast_rules
+    assign multicast_rules[i].idx = addr_map_i[i].idx;
+    assign multicast_rules[i].mask = addr_map_i[i].end_addr - addr_map_i[i].start_addr - 1;
+    assign multicast_rules[i].addr = addr_map_i[i].start_addr;
+  end
+  assign default_rule.idx = default_mst_port_i.idx;
+  assign default_rule.mask = default_mst_port_i.end_addr - default_mst_port_i.start_addr - 1;
+  assign default_rule.addr = default_mst_port_i.start_addr;
+
+  // Address decoding for unicast requests
+  addr_decode #(
+    .NoIndices          (NoMstPorts),
+    .NoRules            (NoAddrRules),
+    .addr_t             (addr_t),
+    .rule_t             (rule_t)
+  ) i_axi_aw_unicast_decode (
+    .addr_i             (slv_req_cut.aw.addr),
+    .addr_map_i         (addr_map_i),
+    .idx_o              (dec_aw_unicast_select_idx),
+    .dec_valid_o        (dec_aw_unicast_valid),
+    .dec_error_o        (dec_aw_unicast_error),
+    .en_default_idx_i   (en_default_mst_port_i),
+    .default_idx_i      (idx_select_t'(default_mst_port_i.idx))
+  );
+
+  // Generate the output mask from the index
+  assign dec_aw_unicast_select_mask = 1'b1 << dec_aw_unicast_select_idx;
+
+  // Address decoding for multicast requests
+  if (NoMulticastRules > 0) begin : gen_multicast_decoding
+    multiaddr_decode #(
+      .NoIndices        (NoMulticastPorts),
+      .NoRules          (NoMulticastRules),
+      .addr_t           (addr_t),
+      .rule_t           (mask_rule_t)
+    ) i_axi_aw_multicast_decode (
+      .addr_map_i       (multicast_rules),
+      .addr_i           (slv_req_cut.aw.addr),
+      .mask_i           (slv_req_cut.aw.user.collective_mask),
+      .select_o         (dec_aw_multicast_select_mask),
+      .addr_o           (dec_aw_multicast_addr),
+      .mask_o           (dec_aw_multicast_mask),
+      .dec_valid_o      (dec_aw_multicast_valid),
+      .dec_error_o      (dec_aw_multicast_error),
+      .en_default_idx_i (en_default_mst_port_i),
+      .default_idx_i    (default_rule)
+    );
+  end else begin : gen_no_multicast_decoding
+    assign dec_aw_multicast_select_mask = '0;
+    assign dec_aw_multicast_addr = '0;
+    assign dec_aw_multicast_mask = '0;
+    assign dec_aw_multicast_valid = '0;
+    assign dec_aw_multicast_error = '0;
+  end
+
+  // If the address decoding doesn't produce any match, the request
+  // is routed to the error slave, which lies at the highest index.
+  mask_select_t select_error_slave;
+  assign select_error_slave = 1'b1 << NoMstPorts;
+
+  // Mux the multicast and unicast decoding outputs
+  if (NoMulticastRules > 0) begin : gen_decoding_mux
+    always_comb begin
+      dec_aw_select_mask = '0;
+      dec_aw_addr = '0;
+      dec_aw_mask = '0;
+
+      if (slv_req_cut.aw.user.collective_mask == '0) begin
+        dec_aw_addr = {'0, {NoMstPorts{slv_req_cut.aw.addr}}};
+        if (dec_aw_unicast_error) begin
+          dec_aw_select_mask = select_error_slave;
+        end else begin
+          dec_aw_select_mask = dec_aw_unicast_select_mask & Connectivity;
+        end
+      end else begin
+        dec_aw_addr = {'0, {(NoMstPorts-NoMulticastPorts){slv_req_cut.aw.addr}}, dec_aw_multicast_addr};
+        dec_aw_mask = {'0, dec_aw_multicast_mask};
+        if (dec_aw_multicast_error) begin
+          dec_aw_select_mask = select_error_slave;
+        end else begin
+          dec_aw_select_mask = {'0, dec_aw_multicast_select_mask} & MulticastConnectivity;
+        end
+      end
+    end
+  end else begin
+    assign dec_aw_addr = {'0, {NoMstPorts{slv_req_cut.aw.addr}}};
+    assign dec_aw_mask = '0;
+    assign dec_aw_select_mask = (dec_aw_unicast_error) ? select_error_slave :
+                                (dec_aw_unicast_select_mask & Connectivity);
+  end
+
+  // -----------------
+  // Demux
+  // -----------------
+
+  axi_req_t  errslv_req;
+  axi_resp_t errslv_resp;
+  logic      errslv_is_mcast;
+  logic      errslv_aw_commit;
+
   axi_mcast_demux_simple #(
-    .AxiIdWidth ( AxiIdWidth  ),
-    .AtopSupport( AtopSupport ),
-    .axi_req_t  ( axi_req_t   ),
-    .axi_resp_t ( axi_resp_t  ),
-    .NoMstPorts ( NoMstPorts  ),
-    .MaxTrans   ( MaxTrans    ),
-    .AxiLookBits( AxiLookBits ),
-    .UniqueIds  ( UniqueIds   ),
-    .Connectivity          ( Connectivity          ),
-    .MulticastConnectivity ( MulticastConnectivity ),
-    .aw_addr_t             ( aw_addr_t             ),
-    .b_chan_t              ( b_chan_t              ),
-    .rule_t                ( rule_t                ),
-    .NoAddrRules           ( NoAddrRules           ),
-    .NoMulticastRules      ( NoMulticastRules      ),
-    .NoMulticastPorts      ( NoMulticastPorts      ),
-    .MaxMcastTrans         ( MaxMcastTrans         )
-  ) i_demux_simple (
+    .AxiIdWidth       ( AxiIdWidth       ),
+    .AtopSupport      ( AtopSupport      ),
+    .axi_req_t        ( axi_req_t        ),
+    .axi_resp_t       ( axi_resp_t       ),
+    .NoMstPorts       ( NoMstPortsExt    ),
+    .MaxTrans         ( MaxTrans         ),
+    .AxiLookBits      ( AxiLookBits      ),
+    .UniqueIds        ( UniqueIds        ),
+    .aw_addr_t        ( addr_t           ),
+    .NoMulticastPorts ( NoMulticastPorts ),
+    .MaxMcastTrans    ( MaxMcastTrans    )
+  ) i_mcast_demux_simple (
     .clk_i,
     .rst_ni,
     .test_i,
-    .addr_map_i,
-    .en_default_mst_port_i,
-    .default_mst_port_i,
-    .slv_req_i       ( slv_req_cut   ),
-    .slv_ar_select_i ( slv_ar_select ),
-    .slv_resp_o      ( slv_resp_cut  ),
-    .mst_reqs_o      ( mst_reqs_o    ),
-    .mst_resps_i     ( mst_resps_i   ),
-    .mst_is_mcast_o,
-    .mst_aw_commit_o
+    .slv_req_i       ( slv_req_cut                         ),
+    .slv_aw_select_i ( dec_aw_select_mask                  ),
+    .slv_aw_addr_i   ( dec_aw_addr                         ),
+    .slv_aw_mask_i   ( dec_aw_mask                         ),
+    .slv_ar_select_i ( ar_select_idx                       ),
+    .slv_resp_o      ( slv_resp_cut                        ),
+    .mst_reqs_o      ( {errslv_req,       mst_reqs_o}      ),
+    .mst_resps_i     ( {errslv_resp,      mst_resps_i}     ),
+    .mst_is_mcast_o  ( {errslv_is_mcast,  mst_is_mcast_o}  ),
+    .mst_aw_commit_o ( {errslv_aw_commit, mst_aw_commit_o} )
+  );
+
+  axi_err_slv #(
+    .AxiIdWidth  ( AxiIdWidth           ),
+    .axi_req_t   ( axi_req_t            ),
+    .axi_resp_t  ( axi_resp_t           ),
+    .Resp        ( axi_pkg::RESP_DECERR ),
+    .ATOPs       ( AtopSupport          ),
+    // Transactions terminate at this slave, so minimize resource consumption by accepting
+    // only a few transactions at a time.
+    .MaxTrans    ( 4                    )
+  ) i_axi_err_slv (
+    .clk_i,
+    .rst_ni,
+    .test_i,
+    .slv_req_i  ( errslv_req  ),
+    .slv_resp_o ( errslv_resp )
   );
 
 endmodule

@@ -5,6 +5,7 @@ package:
     - "Thomas Benz <tbenz@iis.ee.ethz.ch>" # current maintainer
     - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>" # current maintainer
     - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
+    - "Luca Colagrande <colluca@iis.ee.ethz.ch>"
     - "Tim Fischer <fischeti@iis.ee.ethz.ch>"
     - "Noah Huetter <huettern@ethz.ch>"
     - "Cyril Koenig <cykoenig@iis.ee.ethz.ch>"
@@ -122,7 +123,6 @@ sources:
     files:
       # Level 0
       - test/tb_axi_dw_pkg.sv
-      - test/tb_axi_mcast_xbar_pkg.sv
       - test/tb_axi_xbar_pkg.sv
       # Level 1
       - test/tb_axi_addr_test.sv

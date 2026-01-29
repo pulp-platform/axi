@@ -90,69 +90,46 @@ import cf_math_pkg::idx_width;
   input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
 );
 
-  // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
-  slv_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
-  slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
-
-  axi_xbar_unmuxed #(
-    .Cfg          (Cfg),
-    .ATOPs        (ATOPs),
-    .Connectivity (Connectivity),
-    .aw_chan_t    (slv_aw_chan_t),
-    .w_chan_t     (w_chan_t),
-    .b_chan_t     (slv_b_chan_t),
-    .ar_chan_t    (slv_ar_chan_t),
-    .r_chan_t     (slv_r_chan_t),
-    .req_t        (slv_req_t),
-    .resp_t       (slv_resp_t),
-    .rule_t       (rule_t)
-  ) i_xbar_unmuxed (
-    .clk_i,
-    .rst_ni,
-    .test_i,
-    .slv_ports_req_i,
-    .slv_ports_resp_o,
-    .mst_ports_req_o  (mst_reqs),
-    .mst_ports_resp_i (mst_resps),
-    .addr_map_i,
-    .en_default_mst_port_i,
-    .default_mst_port_i
-  );
-
-  for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
-    axi_mux #(
-      .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
-      .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
-      .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
-      .w_chan_t      ( w_chan_t               ), //  W Channel Type, all ports
-      .slv_b_chan_t  ( slv_b_chan_t           ), //  B Channel Type, slave ports
-      .mst_b_chan_t  ( mst_b_chan_t           ), //  B Channel Type, master port
-      .slv_ar_chan_t ( slv_ar_chan_t          ), // AR Channel Type, slave ports
-      .mst_ar_chan_t ( mst_ar_chan_t          ), // AR Channel Type, master port
-      .slv_r_chan_t  ( slv_r_chan_t           ), //  R Channel Type, slave ports
-      .mst_r_chan_t  ( mst_r_chan_t           ), //  R Channel Type, master port
-      .slv_req_t     ( slv_req_t              ),
-      .slv_resp_t    ( slv_resp_t             ),
-      .mst_req_t     ( mst_req_t              ),
-      .mst_resp_t    ( mst_resp_t             ),
-      .NoSlvPorts    ( Cfg.NoSlvPorts         ), // Number of Masters for the module
-      .MaxWTrans     ( Cfg.MaxSlvTrans        ),
-      .FallThrough   ( Cfg.FallThrough        ),
-      .SpillAw       ( Cfg.LatencyMode[4]     ),
-      .SpillW        ( Cfg.LatencyMode[3]     ),
-      .SpillB        ( Cfg.LatencyMode[2]     ),
-      .SpillAr       ( Cfg.LatencyMode[1]     ),
-      .SpillR        ( Cfg.LatencyMode[0]     )
-    ) i_axi_mux (
-      .clk_i,   // Clock
-      .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Test Mode enable
-      .slv_reqs_i  ( mst_reqs[i]         ),
-      .slv_resps_o ( mst_resps[i]        ),
-      .mst_req_o   ( mst_ports_req_o[i]  ),
-      .mst_resp_i  ( mst_ports_resp_i[i] )
-    );
+  rule_t [Cfg.NoSlvPorts-1:0] default_rules;
+  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_default_rules
+    assign default_rules[i] = '{
+      idx:        default_mst_port_i[i],
+      start_addr: '0,
+      end_addr:   '0
+    };
   end
+
+  axi_mcast_xbar #(
+    .Cfg                  (Cfg),
+    .ATOPs                (ATOPs),
+    .Connectivity         (Connectivity),
+    .MulticastConnectivity('1),
+    .slv_aw_chan_t        (slv_aw_chan_t),
+    .mst_aw_chan_t        (mst_aw_chan_t),
+    .w_chan_t             (w_chan_t),
+    .slv_b_chan_t         (slv_b_chan_t),
+    .mst_b_chan_t         (mst_b_chan_t),
+    .slv_ar_chan_t        (slv_ar_chan_t),
+    .mst_ar_chan_t        (mst_ar_chan_t),
+    .slv_r_chan_t         (slv_r_chan_t),
+    .mst_r_chan_t         (mst_r_chan_t),
+    .slv_req_t            (slv_req_t),
+    .slv_resp_t           (slv_resp_t),
+    .mst_req_t            (mst_req_t),
+    .mst_resp_t           (mst_resp_t),
+    .rule_t               (rule_t)
+  ) i_axi_mcast_xbar (
+    .clk_i                (clk_i),
+    .rst_ni               (rst_ni),
+    .test_i               (test_i),
+    .slv_ports_req_i      (slv_ports_req_i),
+    .slv_ports_resp_o     (slv_ports_resp_o),
+    .mst_ports_req_o      (mst_ports_req_o),
+    .mst_ports_resp_i     (mst_ports_resp_i),
+    .addr_map_i           (addr_map_i),
+    .en_default_mst_port_i(en_default_mst_port_i),
+    .default_mst_port_i   (default_rules)
+  );
 
 endmodule
 
