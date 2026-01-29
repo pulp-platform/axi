@@ -300,7 +300,7 @@ module stream_fifo_delay_dyn #(
   logic fifo_dead_full, fifo_dead_empty, fifo_dead_push, fifo_dead_pop;
   logic fifo_data_full, fifo_data_empty, fifo_data_push, fifo_data_pop;
 
-  `FF(ready_count_q, ready_count_d, '0, clk_i, rst_ni);
+  `FF(ready_count_q, ready_count_d, '0, clk_i, rst_ni)
 
   always_comb begin
     ready_count_d = ready_count_q;
