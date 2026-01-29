@@ -93,9 +93,13 @@ module tb_axi_mcast_xbar #(
   typedef logic [TbAxiDataWidth-1:0]      data_t;
   typedef logic [TbAxiStrbWidth-1:0]      strb_t;
   typedef logic [TbAxiUserWidth-1:0]      user_t;
+  // For collectives, AW channel should contain collective mask in USER field
+  typedef struct packed {
+    addr_t collective_mask;
+  } aw_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_mst_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_slv_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_mst_t, addr_t, id_mst_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_slv_t, addr_t, id_slv_t, aw_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_mst_t, id_mst_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(b_chan_slv_t, id_slv_t, user_t)
@@ -308,6 +312,7 @@ module tb_axi_mcast_xbar #(
   axi_mcast_xbar_intf #(
     .AXI_USER_WIDTH ( TbAxiUserWidth ),
     .Cfg            ( xbar_cfg       ),
+    .aw_user_t      ( aw_user_t      ),
     .rule_t         ( rule_t         )
   ) i_xbar_dut (
     .clk_i                  ( clk     ),
