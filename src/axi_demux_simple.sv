@@ -97,4 +97,8 @@ module axi_demux_simple #(
     .mst_aw_commit_o      ()
   );
 
+  `ASSUME(aw_select, slv_req_i.aw_valid |-> (slv_aw_select_i < NoMstPorts), clk_i, rst_ni,
+          $sformatf("slv_aw_select_i is %d: AW has selected a slave that is not defined.\
+                     NoMstPorts: %d", slv_aw_select_i, NoMstPorts))
+
 endmodule
