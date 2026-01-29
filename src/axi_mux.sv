@@ -296,17 +296,23 @@ module axi_mux #(
           aw_ready        = 1'b1;
           lock_aw_valid_d = 1'b0;
           load_aw_lock    = 1'b1;
+          w_fifo_push     = 1'b1;
         end
       end else begin
-        if (!w_fifo_full && aw_valid) begin
-          mst_aw_valid = 1'b1;
-          w_fifo_push = 1'b1;
+        if (!w_fifo_full) begin
           if (mst_aw_ready) begin
             aw_ready = 1'b1;
-          end else begin
-            // go to lock if transaction not in this cycle
-            lock_aw_valid_d = 1'b1;
-            load_aw_lock    = 1'b1;
+          end
+          if (aw_valid) begin
+            mst_aw_valid = 1'b1;
+            if (!mst_aw_ready) begin
+              // go to lock if transaction not in this cycle
+              lock_aw_valid_d = 1'b1;
+              load_aw_lock    = 1'b1;
+              // remember if it was a unicast transaction
+            end else begin
+              w_fifo_push = 1'b1;
+            end
           end
         end
       end
