@@ -53,78 +53,46 @@ import cf_math_pkg::idx_width;
   parameter type rule_t                                               = axi_pkg::xbar_rule_64_t
 ) (
   /// Clock, positive edge triggered.
-  input  logic                                                          clk_i,
+  input  logic                                           clk_i,
   /// Asynchronous reset, active low.
-  input  logic                                                          rst_ni,
+  input  logic                                           rst_ni,
   /// Testmode enable, active high.
-  input  logic                                                          test_i,
+  input  logic                                           test_i,
   /// AXI4+ATOP requests to the slave ports.
-  input  req_t  [Cfg.NoSlvPorts-1:0]                                    slv_ports_req_i,
+  input  req_t  [Cfg.NoSlvPorts-1:0]                     slv_ports_req_i,
   /// AXI4+ATOP responses of the slave ports.
-  output resp_t [Cfg.NoSlvPorts-1:0]                                    slv_ports_resp_o,
+  output resp_t [Cfg.NoSlvPorts-1:0]                     slv_ports_resp_o,
   /// AXI4+ATOP requests of the master ports.
-  output req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_ports_req_o,
+  output req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_ports_req_o,
   /// AXI4+ATOP responses to the master ports.
-  input  resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_ports_resp_i,
+  input  resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_ports_resp_i,
   /// Additional multicast signals to the master ports.
-  output logic  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_is_mcast_o,
-  output logic  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0]                mst_aw_commit_o,
+  output logic  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_is_mcast_o,
+  output logic  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_commit_o,
   /// Address map array input for the crossbar. This map is global for the whole module.
   /// It is used for routing the transactions to the respective master ports.
   /// Each master port can have multiple different rules.
-  input  rule_t     [Cfg.NoAddrRules-1:0]                               addr_map_i,
+  input  rule_t [Cfg.NoAddrRules-1:0]                    addr_map_i,
   /// Enable default master port.
-  input  logic      [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
+  input  logic  [Cfg.NoSlvPorts-1:0]                     en_default_mst_port_i,
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
   /// When not used, tie to `'0`.
-  input  rule_t     [Cfg.NoSlvPorts-1:0]                                default_mst_port_i
+  input  rule_t [Cfg.NoSlvPorts-1:0]                     default_mst_port_i
 );
 
-  // Address type for individual address signals
-  typedef logic [Cfg.AxiAddrWidth-1:0] addr_t;
-  // to account for the decoding error slave
-  localparam int unsigned MstPortsIdxWidthOne =
-      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts + 1));
-  localparam int unsigned MstPortsIdxWidth =
-      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts));
-  typedef logic [MstPortsIdxWidthOne-1:0]           mst_port_idx_t;
-  typedef logic [MstPortsIdxWidth-1:0]              mst_port_idx_m1_t;
-
-  // signals from the axi_demuxes, one index more for decode error
-  req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_reqs;
-  resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_resps;
-
-  logic  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_is_mcast;
-  logic  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts:0]  slv_aw_commit;
-
-  // workaround for issue #133 (problem with vsim 10.6c)
-  localparam int unsigned cfg_NoMstPorts = Cfg.NoMstPorts;
+  // signals from the axi_demuxes
+  req_t  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_reqs;
+  resp_t [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_resps;
+  logic  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_is_mcast;
+  logic  [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] slv_aw_commit;
 
   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_slv_port_demux
-    mst_port_idx_m1_t           dec_ar_select;
-    logic                       dec_ar_valid,  dec_ar_error;
-    mst_port_idx_t              slv_ar_select;
-
-    addr_decode #(
-      .NoIndices  ( Cfg.NoMstPorts  ),
-      .addr_t     ( addr_t          ),
-      .NoRules    ( Cfg.NoAddrRules ),
-      .rule_t     ( rule_t          )
-    ) i_axi_ar_decode (
-      .addr_i           ( slv_ports_req_i[i].ar.addr                    ),
-      .addr_map_i       ( addr_map_i                                    ),
-      .idx_o            ( dec_ar_select                                 ),
-      .dec_valid_o      ( dec_ar_valid                                  ),
-      .dec_error_o      ( dec_ar_error                                  ),
-      .en_default_idx_i ( en_default_mst_port_i[i]                      ),
-      .default_idx_i    ( mst_port_idx_m1_t'(default_mst_port_i[i].idx) )
-    );
-    assign slv_ar_select = (dec_ar_error) ?
-        mst_port_idx_t'(Cfg.NoMstPorts) : mst_port_idx_t'(dec_ar_select);
 
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
+    // TODO(colluca): is this still the right place for these? and are they still correct after
+    //                moving the address decoders past the spill registers
     `ifndef VERILATOR
     `ifndef XSIM
     default disable iff (~rst_ni);
@@ -154,8 +122,8 @@ import cf_math_pkg::idx_width;
 
     axi_mcast_demux #(
       .AxiIdWidth            ( Cfg.AxiIdWidthSlvPorts   ),  // ID Width
+      .AxiAddrWidth          ( Cfg.AxiAddrWidth         ),
       .AtopSupport           ( ATOPs                    ),
-      .aw_addr_t             ( addr_t                   ),  // AW Address Type
       .aw_chan_t             ( aw_chan_t                ),  // AW Channel Type
       .w_chan_t              ( w_chan_t                 ),  //  W Channel Type
       .b_chan_t              ( b_chan_t                 ),  //  B Channel Type
@@ -163,7 +131,7 @@ import cf_math_pkg::idx_width;
       .r_chan_t              ( r_chan_t                 ),  //  R Channel Type
       .axi_req_t             ( req_t                    ),
       .axi_resp_t            ( resp_t                   ),
-      .NoMstPorts            ( Cfg.NoMstPorts + 1       ),
+      .NoMstPorts            ( Cfg.NoMstPorts           ),
       .MaxTrans              ( Cfg.MaxMstTrans          ),
       .AxiLookBits           ( Cfg.AxiIdUsedSlvPorts    ),
       .UniqueIds             ( Cfg.UniqueIds            ),
@@ -186,7 +154,6 @@ import cf_math_pkg::idx_width;
       .en_default_mst_port_i ( en_default_mst_port_i[i] ),
       .default_mst_port_i    ( default_mst_port_i[i]    ),
       .slv_req_i             ( slv_ports_req_i[i]       ),
-      .slv_ar_select_i       ( slv_ar_select            ),
       .slv_resp_o            ( slv_ports_resp_o[i]      ),
       .mst_reqs_o            ( slv_reqs[i]              ),
       .mst_resps_i           ( slv_resps[i]             ),
@@ -194,23 +161,6 @@ import cf_math_pkg::idx_width;
       .mst_aw_commit_o       ( slv_aw_commit[i]         )
     );
 
-    axi_err_slv #(
-      .AxiIdWidth  ( Cfg.AxiIdWidthSlvPorts ),
-      .axi_req_t   ( req_t                  ),
-      .axi_resp_t  ( resp_t                 ),
-      .Resp        ( axi_pkg::RESP_DECERR   ),
-      .ATOPs       ( ATOPs                  ),
-      .MaxTrans    ( 4                      )   // Transactions terminate at this slave, so minimize
-                                                // resource consumption by accepting only a few
-                                                // transactions at a time.
-    ) i_axi_err_slv (
-      .clk_i,   // Clock
-      .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
-      // slave port
-      .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
-      .slv_resp_o ( slv_resps[i][cfg_NoMstPorts]  )
-    );
   end
 
   // cross all channels
