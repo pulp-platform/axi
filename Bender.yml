@@ -5,6 +5,7 @@ package:
     - "Thomas Benz <tbenz@iis.ee.ethz.ch>" # current maintainer
     - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>" # current maintainer
     - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
+    - "Luca Colagrande <colluca@iis.ee.ethz.ch>"
     - "Tim Fischer <fischeti@iis.ee.ethz.ch>"
     - "Noah Huetter <huettern@ethz.ch>"
     - "Cyril Koenig <cykoenig@iis.ee.ethz.ch>"
@@ -19,7 +20,7 @@ package:
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.37.0 }
+  common_cells:        { git: "https://github.com/pulp-platform/common_cells.git", rev: "multicast-xbar" }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.5 }
   tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
 
@@ -33,25 +34,20 @@ sources:
   # Level 0
   - src/axi_pkg.sv
   # Level 1
+  - src/axi_demux_id_counters.sv
   - src/axi_intf.sv
   # Level 2
   - src/axi_atop_filter.sv
-  - src/axi_burst_splitter_gran.sv
-  - src/axi_burst_unwrap.sv
   - src/axi_bus_compare.sv
   - src/axi_cdc_dst.sv
   - src/axi_cdc_src.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
-  - src/axi_demux_simple.sv
-  - src/axi_dw_downsizer.sv
-  - src/axi_dw_upsizer.sv
   - src/axi_fifo.sv
   - src/axi_fifo_delay_dyn.sv
   - src/axi_id_remap.sv
   - src/axi_id_prepend.sv
   - src/axi_inval_filter.sv
-  - src/axi_isolate.sv
   - src/axi_join.sv
   - src/axi_lite_demux.sv
   - src/axi_lite_dw_converter.sv
@@ -63,8 +59,9 @@ sources:
   - src/axi_lite_regs.sv
   - src/axi_lite_to_apb.sv
   - src/axi_lite_to_axi.sv
+  - src/axi_mcast_demux_simple.sv
+  - src/axi_mcast_mux.sv
   - src/axi_modify_address.sv
-  - src/axi_mux.sv
   - src/axi_rw_join.sv
   - src/axi_rw_split.sv
   - src/axi_serializer.sv
@@ -72,29 +69,40 @@ sources:
   - src/axi_throttle.sv
   - src/axi_to_detailed_mem.sv
   # Level 3
-  - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
-  - src/axi_demux.sv
+  - src/axi_demux_simple.sv
   - src/axi_err_slv.sv
-  - src/axi_dw_converter.sv
   - src/axi_from_mem.sv
-  - src/axi_id_serialize.sv
-  - src/axi_lfsr.sv
+  - src/axi_mcast_demux_mapped.sv
   - src/axi_multicut.sv
-  - src/axi_to_axi_lite.sv
+  - src/axi_mux.sv
   - src/axi_to_mem.sv
   - src/axi_zero_mem.sv
   # Level 4
-  - src/axi_interleaved_xbar.sv
-  - src/axi_iw_converter.sv
+  - src/axi_burst_splitter_gran.sv
+  - src/axi_demux.sv
   - src/axi_lite_xbar.sv
-  - src/axi_xbar_unmuxed.sv
-  - src/axi_to_mem_banked.sv
+  - src/axi_mcast_xbar_unmuxed.sv
   - src/axi_to_mem_interleaved.sv
   - src/axi_to_mem_split.sv
   # Level 5
-  - src/axi_xbar.sv
+  - src/axi_burst_splitter.sv
+  - src/axi_burst_unwrap.sv
+  - src/axi_dw_downsizer.sv
+  - src/axi_dw_upsizer.sv
+  - src/axi_id_serialize.sv
+  - src/axi_interleaved_xbar.sv
+  - src/axi_isolate.sv
+  - src/axi_mcast_xbar.sv
+  - src/axi_to_mem_banked.sv
+  - src/axi_xbar_unmuxed.sv
   # Level 6
+  - src/axi_dw_converter.sv
+  - src/axi_iw_converter.sv
+  - src/axi_to_axi_lite.sv
+  - src/axi_xbar.sv
+  # Level 7
+  - src/axi_lfsr.sv
   - src/axi_xp.sv
 
   - target: synth_test
@@ -130,6 +138,7 @@ sources:
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_mcast_xbar.sv
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv

@@ -12,10 +12,11 @@
 // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 // - Andreas Kurth <akurth@iis.ee.ethz.ch>
 // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+// - Luca Colagrande <colluca@iis.ee.ethz.ch>
 
 /// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
 /// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
-module axi_xbar
+module axi_mcast_xbar
 import cf_math_pkg::idx_width;
 #(
   /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
@@ -24,6 +25,8 @@ import cf_math_pkg::idx_width;
   parameter bit  ATOPs                                                = 1'b1,
   /// Connectivity matrix
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] Connectivity = '1,
+  /// Connectivity matrix for multicast transactions
+  parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] MulticastConnectivity = '1,
   /// AXI4+ATOP AW channel struct type for the slave ports.
   parameter type slv_aw_chan_t                                        = logic,
   /// AXI4+ATOP AW channel struct type for the master ports.
@@ -60,9 +63,7 @@ import cf_math_pkg::idx_width;
   ///   axi_addr_t   end_addr;
   /// } rule_t;
   /// ```
-  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t,
-  localparam int unsigned MstPortsIdxWidth =
-      (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t
 ) (
   /// Clock, positive edge triggered.
   input  logic                                                          clk_i,
@@ -87,65 +88,95 @@ import cf_math_pkg::idx_width;
   /// Enables a default master port for each slave port. When this is enabled unmapped
   /// transactions get issued at the master port given by `default_mst_port_i`.
   /// When not used, tie to `'0`.
-  input  logic      [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
+  input  rule_t     [Cfg.NoSlvPorts-1:0]                                default_mst_port_i
 );
 
-  rule_t [Cfg.NoSlvPorts-1:0] default_rules;
-  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_default_rules
-    assign default_rules[i] = '{
-      idx:        default_mst_port_i[i],
-      start_addr: '0,
-      end_addr:   '0
-    };
-  end
+  // signals into the axi_muxes, are of type slave as the multiplexer extends the ID
+  slv_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
+  slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
 
-  axi_mcast_xbar #(
-    .Cfg                  (Cfg),
-    .ATOPs                (ATOPs),
-    .Connectivity         (Connectivity),
-    .MulticastConnectivity('1),
-    .slv_aw_chan_t        (slv_aw_chan_t),
-    .mst_aw_chan_t        (mst_aw_chan_t),
-    .w_chan_t             (w_chan_t),
-    .slv_b_chan_t         (slv_b_chan_t),
-    .mst_b_chan_t         (mst_b_chan_t),
-    .slv_ar_chan_t        (slv_ar_chan_t),
-    .mst_ar_chan_t        (mst_ar_chan_t),
-    .slv_r_chan_t         (slv_r_chan_t),
-    .mst_r_chan_t         (mst_r_chan_t),
-    .slv_req_t            (slv_req_t),
-    .slv_resp_t           (slv_resp_t),
-    .mst_req_t            (mst_req_t),
-    .mst_resp_t           (mst_resp_t),
-    .rule_t               (rule_t)
-  ) i_axi_mcast_xbar (
-    .clk_i                (clk_i),
-    .rst_ni               (rst_ni),
-    .test_i               (test_i),
-    .slv_ports_req_i      (slv_ports_req_i),
-    .slv_ports_resp_o     (slv_ports_resp_o),
-    .mst_ports_req_o      (mst_ports_req_o),
-    .mst_ports_resp_i     (mst_ports_resp_i),
-    .addr_map_i           (addr_map_i),
-    .en_default_mst_port_i(en_default_mst_port_i),
-    .default_mst_port_i   (default_rules)
+  logic [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_is_mcast;
+  logic [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_aw_commit;
+
+  axi_mcast_xbar_unmuxed #(
+    .Cfg          (Cfg),
+    .ATOPs        (ATOPs),
+    .Connectivity (Connectivity),
+    .MulticastConnectivity (MulticastConnectivity),
+    .aw_chan_t    (slv_aw_chan_t),
+    .w_chan_t     (w_chan_t),
+    .b_chan_t     (slv_b_chan_t),
+    .ar_chan_t    (slv_ar_chan_t),
+    .r_chan_t     (slv_r_chan_t),
+    .req_t        (slv_req_t),
+    .resp_t       (slv_resp_t),
+    .rule_t       (rule_t)
+  ) i_xbar_unmuxed (
+    .clk_i,
+    .rst_ni,
+    .test_i,
+    .slv_ports_req_i,
+    .slv_ports_resp_o,
+    .mst_ports_req_o  (mst_reqs),
+    .mst_ports_resp_i (mst_resps),
+    .mst_is_mcast_o   (mst_is_mcast),
+    .mst_aw_commit_o  (mst_aw_commit),
+    .addr_map_i,
+    .en_default_mst_port_i,
+    .default_mst_port_i
   );
+
+  for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
+    axi_mcast_mux #(
+      .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
+      .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
+      .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
+      .w_chan_t      ( w_chan_t               ), //  W Channel Type, all ports
+      .slv_b_chan_t  ( slv_b_chan_t           ), //  B Channel Type, slave ports
+      .mst_b_chan_t  ( mst_b_chan_t           ), //  B Channel Type, master port
+      .slv_ar_chan_t ( slv_ar_chan_t          ), // AR Channel Type, slave ports
+      .mst_ar_chan_t ( mst_ar_chan_t          ), // AR Channel Type, master port
+      .slv_r_chan_t  ( slv_r_chan_t           ), //  R Channel Type, slave ports
+      .mst_r_chan_t  ( mst_r_chan_t           ), //  R Channel Type, master port
+      .slv_req_t     ( slv_req_t              ),
+      .slv_resp_t    ( slv_resp_t             ),
+      .mst_req_t     ( mst_req_t              ),
+      .mst_resp_t    ( mst_resp_t             ),
+      .NoSlvPorts    ( Cfg.NoSlvPorts         ), // Number of Masters for the module
+      .MaxWTrans     ( Cfg.MaxSlvTrans        ),
+      .FallThrough   ( Cfg.FallThrough        ),
+      .SpillAw       ( Cfg.LatencyMode[4]     ),
+      .SpillW        ( Cfg.LatencyMode[3]     ),
+      .SpillB        ( Cfg.LatencyMode[2]     ),
+      .SpillAr       ( Cfg.LatencyMode[1]     ),
+      .SpillR        ( Cfg.LatencyMode[0]     )
+    ) i_axi_mux (
+      .clk_i,   // Clock
+      .rst_ni,  // Asynchronous reset active low
+      .test_i,  // Test Mode enable
+      .slv_is_mcast_i  ( mst_is_mcast[i]  ),
+      .slv_aw_commit_i ( mst_aw_commit[i] ),
+      .slv_reqs_i  ( mst_reqs[i]         ),
+      .slv_resps_o ( mst_resps[i]        ),
+      .mst_req_o   ( mst_ports_req_o[i]  ),
+      .mst_resp_i  ( mst_ports_resp_i[i] )
+    );
+  end
 
 endmodule
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
-module axi_xbar_intf
+module axi_mcast_xbar_intf
 import cf_math_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter bit ATOPS                   = 1'b1,
   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter type rule_t                 = axi_pkg::xbar_rule_64_t,
-  localparam int unsigned MstPortsIdxWidth =
-        (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+  parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] MULTICAST_CONNECTIVITY = '1,
+  parameter type rule_t                 = axi_pkg::xbar_rule_64_t
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
@@ -154,7 +185,7 @@ import cf_math_pkg::idx_width;
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][MstPortsIdxWidth-1:0]          default_mst_port_i
+  input  rule_t [Cfg.NoSlvPorts-1:0]                                default_mst_port_i
 );
 
   localparam int unsigned AxiIdWidthMstPorts = Cfg.AxiIdWidthSlvPorts + $clog2(Cfg.NoSlvPorts);
@@ -165,9 +196,13 @@ import cf_math_pkg::idx_width;
   typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
   typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
   typedef logic [AXI_USER_WIDTH         -1:0] user_t;
+  // AW channel adds collective mask to USER signals
+  typedef struct packed {
+    addr_t collective_mask;
+  } aw_user_t;
 
-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, aw_user_t)
+  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, aw_user_t)
   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
   `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
@@ -195,10 +230,11 @@ import cf_math_pkg::idx_width;
     `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
   end
 
-  axi_xbar #(
+  axi_mcast_xbar #(
     .Cfg  (Cfg),
     .ATOPs          ( ATOPS         ),
     .Connectivity   ( CONNECTIVITY  ),
+    .MulticastConnectivity ( MULTICAST_CONNECTIVITY ),
     .slv_aw_chan_t  ( slv_aw_chan_t ),
     .mst_aw_chan_t  ( mst_aw_chan_t ),
     .w_chan_t       ( w_chan_t      ),
