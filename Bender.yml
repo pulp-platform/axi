@@ -33,6 +33,7 @@ sources:
   # Level 0
   - src/axi_pkg.sv
   # Level 1
+  - src/axi_demux_id_counters.sv
   - src/axi_intf.sv
   # Level 2
   - src/axi_atop_filter.sv
