@@ -224,7 +224,8 @@ module axi_demux_simple #(
         .push_mst_select_i            ( slv_aw_select_i                ),
         .push_i                       ( w_cnt_up                       ),
         .pop_axi_id_i                 ( slv_resp_o.b.id[0+:AxiLookBits]  ),
-        .pop_i                        ( slv_resp_o.b_valid & slv_req_i.b_ready      )
+        .pop_i                        ( slv_resp_o.b_valid & slv_req_i.b_ready      ),
+        .any_outstanding_trx_o        ( )
       );
       // pop from ID counter on outward transaction
     end
@@ -369,7 +370,8 @@ module axi_demux_simple #(
         .push_mst_select_i            ( slv_ar_select_i                             ),
         .push_i                       ( ar_push                                     ),
         .pop_axi_id_i                 ( slv_resp_o.r.id[0+:AxiLookBits]               ),
-        .pop_i                        ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last )
+        .pop_i                        ( slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last ),
+        .any_outstanding_trx_o        ( )
       );
     end
 
