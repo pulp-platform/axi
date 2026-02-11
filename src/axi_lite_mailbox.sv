@@ -429,7 +429,7 @@ module axi_lite_mailbox_slave #(
             // ERROR:  read only
             WIRQT:  begin
               for (int unsigned i = 0; i < AxiDataWidth/8; i++) begin
-                wirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                wirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : wirqt_d[i*8+:8];
               end
               if (wirqt_d >= data_t'(MailboxDepth)) begin
                 // the `-1` is to have the interrupt fireing when the FIFO is comletely full
@@ -440,7 +440,7 @@ module axi_lite_mailbox_slave #(
             end
             RIRQT:  begin
               for (int unsigned i = 0; i < AxiDataWidth/8; i++) begin
-                rirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : 8'b0000_0000;
+                rirqt_d[i*8+:8] = slv_req_i.w.strb[i] ? slv_req_i.w.data[i*8+:8] : rirqt_d[i*8+:8];
               end
               if (rirqt_d >= data_t'(MailboxDepth)) begin
               // Threshold to maximal value, minus two to prevent overflow in usage
