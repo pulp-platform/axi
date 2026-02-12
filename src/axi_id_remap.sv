@@ -302,23 +302,93 @@ module axi_id_remap #(
       end
 
       HoldAR: begin
+        // Writes
+        if (slv_req_i.aw_valid) begin
+          // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
+          // on the write direction.
+          if (!slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
+            // If a burst with the same input ID is already in flight or there are free output IDs:
+            if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
+              // Determine the output ID: if another in-flight burst had the same input ID, we must
+              // reuse its output ID to maintain ordering; else, we assign the next free ID.
+              wr_push_oup_id     = wr_exists ? wr_exists_id : wr_free_oup_id;
+              // Forward the AW and push a new entry to the write table.
+              mst_req_o.aw_valid = 1'b1;
+              wr_push            = 1'b1;
+            end
+            // If this is an ATOP that gives rise to an R response, we must remap to an ID that is
+            // free on both read and write direction and push also to the read table.
+            // Not allowed when waiting for AR handshake (could be optimized as AR already reserved ID)
+          end
+        end
+
+        if (mst_req_o.aw_valid) begin
+          slv_resp_o.aw_ready = mst_resp_i.aw_ready;
+          if (!mst_resp_i.aw_ready) begin
+            aw_id_d = wr_push_oup_id;
+          end
+        end
+
         // Drive `mst_req_o.ar.id` through `rd_push_oup_id`.
         rd_push_oup_id      = ar_id_q;
         mst_req_o.ar_valid  = 1'b1;
         slv_resp_o.ar_ready = mst_resp_i.ar_ready;
         if (mst_resp_i.ar_ready) begin
-          state_d = Ready;
+          if (mst_req_o.aw_valid && !mst_resp_i.aw_ready) begin
+            state_d = HoldAW;
+          end else begin
+            state_d = Ready;
+          end
           ar_prio_d = 1'b0; // Reset AR priority, because handshake was successful in this cycle.
+        end else begin
+          if (mst_req_o.aw_valid && !mst_resp_i.aw_ready) begin
+            state_d = HoldAx;
+          end else begin
+            state_d = HoldAR;
+          end
         end
       end
 
       HoldAW: begin
+        // Reads
+        if (!slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] && slv_req_i.ar_valid) begin
+          // If a burst with the same input ID is already in flight or there are free output IDs:
+          if ((rd_exists && !rd_exists_full) || (!rd_exists && !rd_full)) begin
+            // Determine the output ID: if another in-flight burst had the same input ID, we must
+            // reuse its output ID to maintain ordering; else, we assign the next free ID.
+            rd_push_inp_id     = slv_req_i.ar.id;
+            rd_push_oup_id     = rd_exists ? rd_exists_id : rd_free_oup_id;
+            // Forward the AR and push a new entry to the read table.
+            mst_req_o.ar_valid = 1'b1;
+            rd_push            = 1'b1;
+          end
+        end
+
+        // Hold AR if it is valid but not yet ready.
+        if (mst_req_o.ar_valid) begin
+          slv_resp_o.ar_ready = mst_resp_i.ar_ready;
+          if (!mst_resp_i.ar_ready) begin
+            ar_id_d = rd_push_oup_id;
+          end
+        end
+
         // Drive mst_req_o.aw.id through `wr_push_oup_id`.
         wr_push_oup_id      = aw_id_q;
         mst_req_o.aw_valid  = 1'b1;
         slv_resp_o.aw_ready = mst_resp_i.aw_ready;
         if (mst_resp_i.aw_ready) begin
-          state_d = Ready;
+          if (mst_req_o.ar_valid && !mst_resp_i.ar_ready) begin
+            state_d = HoldAR;
+          end else begin
+            state_d = Ready;
+          end
+        end else begin
+          if (mst_req_o.ar_valid && !mst_resp_i.ar_ready) begin
+            state_d = HoldAx;
+          end else begin
+            state_d = HoldAW;
+            ar_prio_d = 1'b0; // Reset AR priority, because no handshake was successful in this cycle.
+          end
         end
       end
 
