@@ -62,6 +62,21 @@ artifacts:
     outputs:
       - build/axi_cdc-%.tested
 
+  axi_cdc_isolatable-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_cdc_dst_clearable.sv
+      - src/axi_cdc_src_clearable.sv
+      - src/axi_cdc_isolatable.sv
+      - test/tb_axi_cdc_isolatable.sv
+    outputs:
+      - build/axi_cdc_isolatable-%.tested
+
   axi_delayer-%:
     inputs:
       - Bender.yml

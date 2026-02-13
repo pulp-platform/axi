@@ -41,7 +41,9 @@ sources:
   - src/axi_burst_unwrap.sv
   - src/axi_bus_compare.sv
   - src/axi_cdc_dst.sv
+  - src/axi_cdc_dst_clearable.sv
   - src/axi_cdc_src.sv
+  - src/axi_cdc_src_clearable.sv
   - src/axi_cut.sv
   - src/axi_delayer.sv
   - src/axi_demux_simple.sv
@@ -75,6 +77,7 @@ sources:
   # Level 3
   - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
+  - src/axi_cdc_isolatable.sv
   - src/axi_demux.sv
   - src/axi_err_slv.sv
   - src/axi_dw_converter.sv
@@ -119,6 +122,7 @@ sources:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_bus_compare.sv
       - test/tb_axi_cdc.sv
+      - test/tb_axi_cdc_isolatable.sv
       - test/tb_axi_delayer.sv
       - test/tb_axi_dw_downsizer.sv
       - test/tb_axi_dw_upsizer.sv
