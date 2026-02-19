@@ -63,7 +63,9 @@ module axi_demux_simple #(
   output axi_resp_t                     slv_resp_o,
   // Master Ports
   output axi_req_t    [NoMstPorts-1:0]  mst_reqs_o,
-  input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
+  input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i,
+  output select_t                       mst_b_idx_o,
+  output select_t                       mst_r_idx_o
 );
 
   localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
@@ -375,6 +377,8 @@ module axi_demux_simple #(
       );
     end
 
+    assign mst_b_idx_o = b_idx;
+
     //--------------------------------------
     //  R Channel
     //--------------------------------------
@@ -458,6 +462,8 @@ module axi_demux_simple #(
       // assign mst_r_chans[i]        = mst_resps_i[i].r;
       assign mst_r_valids[i]       = mst_resps_i[i].r_valid;
     end
+
+    assign mst_r_idx_o = r_idx;
 
 // Validate parameters.
 // pragma translate_off
