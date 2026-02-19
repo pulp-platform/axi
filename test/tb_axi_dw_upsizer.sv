@@ -171,7 +171,11 @@ module tb_axi_dw_upsizer #(
         #TbTestTime;
         if(eos) begin
           monitor.print_result();
-          $stop()               ;
+          `ifdef TARGET_VCS
+          $finish(1);
+          `else
+          $stop();
+          `endif
         end
         @(posedge clk);
       end

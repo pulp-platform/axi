@@ -5,6 +5,10 @@ before_script:
   - export PATH=~/.cargo/bin:$PATH
   - mkdir -p build
 
+stages:
+  - build
+  - test
+
 vsim:
   stage: build
   script:
@@ -188,3 +192,103 @@ axi_xbar:
   <<: *run_vsim
   variables:
     TEST_MODULE: axi_xbar
+
+vcs_axi_addr_test:
+  stage: test
+  script:
+    - make sim_vcs-axi_addr_test.log
+
+vcs_axi_atop_filter:
+  stage: test
+  script:
+    - make sim_vcs-axi_atop_filter.log
+
+vcs_axi_cdc:
+  stage: test
+  script:
+    - make sim_vcs-axi_cdc.log
+
+vcs_axi_delayer:
+  stage: test
+  script:
+    - make sim_vcs-axi_delayer.log
+
+vcs_axi_dw_downsizer:
+  stage: test
+  script:
+    - make sim_vcs-axi_dw_downsizer.log
+
+vcs_axi_dw_upsizer:
+  stage: test
+  script:
+    - make sim_vcs-axi_dw_upsizer.log
+
+vcs_axi_fifo:
+  stage: test
+  script:
+    - make sim_vcs-axi_fifo.log
+
+vcs_axi_isolate:
+  stage: test
+  script:
+    - make sim_vcs-axi_isolate.log
+
+vcs_axi_iw_converter:
+  stage: test
+  script:
+    - make sim_vcs-axi_iw_converter.log
+
+vcs_axi_lite_regs:
+  stage: test
+  script:
+    - make sim_vcs-axi_lite_regs.log
+
+vcs_axi_lite_to_apb:
+  stage: test
+  script:
+    - make sim_vcs-axi_lite_to_apb.log
+
+vcs_axi_lite_to_axi:
+  stage: test
+  script:
+    - make sim_vcs-axi_lite_to_axi.log
+
+vcs_axi_lite_mailbox:
+  stage: test
+  script:
+    - make sim_vcs-axi_lite_mailbox.log
+
+vcs_axi_lite_xbar:
+  stage: test
+  script:
+    - make sim_vcs-axi_lite_xbar.log
+
+vcs_axi_modify_address:
+  stage: test
+  script:
+    - make sim_vcs-axi_modify_address.log
+
+vcs_axi_serializer:
+  stage: test
+  script:
+    - make sim_vcs-axi_serializer.log
+
+vcs_axi_sim_mem:
+  stage: test
+  script:
+    - make sim_vcs-axi_sim_mem.log
+
+vcs_axi_to_axi_lite:
+  stage: test
+  script:
+    - make sim_vcs-axi_to_axi_lite.log
+
+vcs_axi_to_mem_banked:
+  stage: test
+  script:
+    - make sim_vcs-axi_to_mem_banked.log
+
+vcs_axi_xbar:
+  stage: test
+  script:
+    - make sim_vcs-axi_xbar.log
