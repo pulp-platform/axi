@@ -17,11 +17,11 @@ jobs:
     container:
       image: hpretl/iic-osic-tools:latest
       options: --user root
+    defaults:
+      run:
+        shell: /bin/bash
 
     steps:
-      - name: Set up tools
-        run: source ~/.bashrc
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -37,11 +37,11 @@ jobs:
     container:
       image: hpretl/iic-osic-tools:latest
       options: --user root
+    defaults:
+      run:
+        shell: /bin/bash
 
     steps:
-      - name: Set up tools
-        run: source ~/.bashrc
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -57,6 +57,9 @@ jobs:
     container:
       image: hpretl/iic-osic-tools:latest
       options: --user root
+    defaults:
+      run:
+        shell: /bin/bash
     strategy:
       fail-fast: false
       matrix:
@@ -84,9 +87,6 @@ jobs:
           - axi_xbar
 
     steps:
-      - name: Set up tools
-        run: source ~/.bashrc
-
       - name: Checkout
         uses: actions/checkout@v6
 
