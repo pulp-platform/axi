@@ -19,12 +19,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Bender
-        uses: pulp-platform/pulp-actions/bender-install@v2
-        with:
-          version: 0.30.0
+        uses: actions/checkout@v6
 
       - name: Bender checkout
         run: bender checkout
@@ -40,12 +35,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Bender
-        uses: pulp-platform/pulp-actions/bender-install@v2
-        with:
-          version: 0.30.0
+        uses: actions/checkout@v6
 
       - name: Bender checkout
         run: bender checkout
@@ -86,12 +76,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Bender
-        uses: pulp-platform/pulp-actions/bender-install@v2
-        with:
-          version: 0.30.0
+        uses: actions/checkout@v6
 
       - name: Bender checkout
         run: bender checkout
