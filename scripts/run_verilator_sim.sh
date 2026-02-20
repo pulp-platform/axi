@@ -11,15 +11,12 @@
 # specific language governing permissions and limitations under the License.
 #
 # Authors:
-# - Andreas Kurth <akurth@iis.ee.ethz.ch>
-# - Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
-# - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
 # - Michael Rogenmoser <michaero@iis.ee.ethz.ch>
 
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-[ ! -z "$VERILATOR" ] || VERILATOR="verilator"
+VERILATOR="${VERILATOR:-verilator}"
 
 SEEDS=(0)
 
