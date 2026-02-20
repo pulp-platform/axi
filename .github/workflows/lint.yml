@@ -1,0 +1,100 @@
+name: Lint
+
+on:
+  push:
+    branches-ignore:
+      - gh-pages
+      - v**
+  pull_request:
+    branches-ignore:
+      - gh-pages
+      - v**
+
+jobs:
+  verilator-lint:
+    name: Verilator lint
+    runs-on: ubuntu-latest
+    container:
+      image: hpretl/iic-osic-tools:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2
+        with:
+          version: 0.30.0
+
+      - name: Bender checkout
+        run: bender checkout
+
+      - name: Run Verilator lint
+        run: scripts/run_verilator.sh
+
+  yosys-slang:
+    name: yosys-slang elaboration
+    runs-on: ubuntu-latest
+    container:
+      image: hpretl/iic-osic-tools:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2
+        with:
+          version: 0.30.0
+
+      - name: Bender checkout
+        run: bender checkout
+
+      - name: Run yosys-slang
+        run: scripts/run_yosys_slang.sh
+
+  verilator-sim:
+    name: Verilator sim (${{ matrix.test }})
+    runs-on: ubuntu-latest
+    container:
+      image: hpretl/iic-osic-tools:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - axi_addr_test
+          - axi_atop_filter
+          - axi_cdc
+          - axi_delayer
+          - axi_dw_downsizer
+          - axi_dw_upsizer
+          - axi_fifo
+          - axi_isolate
+          - axi_iw_converter
+          - axi_lite_dw_converter
+          - axi_lite_mailbox
+          - axi_lite_regs
+          - axi_lite_to_apb
+          - axi_lite_to_axi
+          - axi_lite_xbar
+          - axi_modify_address
+          - axi_serializer
+          - axi_sim_mem
+          - axi_to_axi_lite
+          - axi_to_mem_banked
+          - axi_xbar
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2
+        with:
+          version: 0.30.0
+
+      - name: Bender checkout
+        run: bender checkout
+
+      - name: Run Verilator sim
+        run: scripts/run_verilator_sim.sh ${{ matrix.test }}
