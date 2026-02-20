@@ -18,7 +18,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 VERILATOR="${VERILATOR:-verilator}"
 
-SEEDS=(0)
+SEEDS=(1)
 
 compile_and_run() {
     local tb_module="$1"
@@ -27,7 +27,7 @@ compile_and_run() {
     local build_dir="build_${tb_module}"
 
     # Build a unique directory name incorporating parameters to allow parallel runs
-    for p in "${params[@]}"; do
+    for p in "${params[@]+"${params[@]}"}"; do
         build_dir="${build_dir}_${p//=/_}"
     done
 
@@ -41,7 +41,7 @@ compile_and_run() {
     VERILATOR_FLAGS+=(--assert)
     VERILATOR_FLAGS+=(--binary)
     VERILATOR_FLAGS+=(--top-module "$tb_module")
-    for p in "${params[@]}"; do
+    for p in "${params[@]+"${params[@]}"}"; do
         VERILATOR_FLAGS+=("-G${p}")
     done
     VERILATOR_FLAGS+=(-f "$build_dir/verilator.f")
