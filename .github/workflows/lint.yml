@@ -19,7 +19,7 @@ jobs:
       options: --user root
     defaults:
       run:
-        shell: /bin/bash
+        shell: bash
 
     steps:
       - name: Checkout
@@ -39,7 +39,7 @@ jobs:
       options: --user root
     defaults:
       run:
-        shell: /bin/bash
+        shell: bash
 
     steps:
       - name: Checkout
@@ -59,7 +59,7 @@ jobs:
       options: --user root
     defaults:
       run:
-        shell: /bin/bash
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
