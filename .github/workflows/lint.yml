@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
+      options: --user root
 
     steps:
       - name: Checkout
@@ -32,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
+      options: --user root
 
     steps:
       - name: Checkout
@@ -48,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
