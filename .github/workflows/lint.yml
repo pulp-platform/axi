@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
-      options: --user root
 
     steps:
+      - name: Enable root mode
+        run: ./start_shell.sh
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -33,9 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
-      options: --user root
 
     steps:
+      - name: Enable root mode
+        run: ./start_shell.sh
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -50,7 +54,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: hpretl/iic-osic-tools:latest
-      options: --user root
     strategy:
       fail-fast: false
       matrix:
@@ -78,6 +81,9 @@ jobs:
           - axi_xbar
 
     steps:
+      - name: Enable root mode
+        run: ./start_shell.sh
+
       - name: Checkout
         uses: actions/checkout@v6
 
