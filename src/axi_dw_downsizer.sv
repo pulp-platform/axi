@@ -330,7 +330,10 @@ module axi_dw_downsizer #(
     .exists_mask_i   ('0              ),
     .exists_req_i    ('0              ),
     .exists_o        (/* Unused  */   ),
-    .exists_gnt_o    (/* Unused  */   )
+    .exists_gnt_o    (/* Unused  */   ),
+
+    .full_o (),
+    .empty_o ()
   );
 
   for (genvar t = 0; unsigned'(t) < AxiMaxReads; t++) begin: gen_read_downsizer
