@@ -735,6 +735,9 @@ package axi_test;
     typedef axi_driver_t::r_beat_t  r_beat_t;
     typedef axi_driver_t::w_beat_t  w_beat_t;
 
+    int axi_strb_width = AXI_STRB_WIDTH;
+    bit [1:0] burst_wrap = BURST_WRAP;
+
     static addr_t PFN_MASK = '{11: 1'b0, 10: 1'b0, 9: 1'b0, 8: 1'b0, 7: 1'b0, 6: 1'b0, 5: 1'b0,
         4: 1'b0, 3: 1'b0, 2: 1'b0, 1: 1'b0, 0: 1'b0, default: '1};
 
@@ -911,8 +914,8 @@ package axi_test;
         forever begin
           if(size==-1) begin
              rand_success = std::randomize(size) with {
-               2**size <= AXI_STRB_WIDTH;
-               2**size <= len;
+               size <= $clog2(axi_strb_width);
+               size <= $clog2(len);
              }; assert(rand_success);
              ax_beat.ax_size = size;
              ax_beat.ax_len = ((len + (1 << size) - 1) >> size) - 1;
@@ -938,11 +941,11 @@ package axi_test;
           // Randomize burst length.
           rand_success = std::randomize(len) with {
             len <= this.max_len;
-            (ax_beat.ax_burst == BURST_WRAP) ->
+            (ax_beat.ax_burst == burst_wrap) ->
                 len inside {len_t'(1), len_t'(3), len_t'(7), len_t'(15)};
           }; assert(rand_success);
           rand_success = std::randomize(size) with {
-            2**size <= AXI_STRB_WIDTH;
+            size <= size_t'($clog2(axi_strb_width));
           }; assert(rand_success);
           ax_beat.ax_size = size;
           ax_beat.ax_len = len;
@@ -1003,7 +1006,8 @@ package axi_test;
               // Total data transferred in burst can be 2, 4, 8, 16, or 32 B.
               automatic int unsigned log_bytes;
               rand_success = std::randomize(log_bytes) with {
-                log_bytes > 0; 2**log_bytes <= 32;
+                log_bytes > 0;
+                log_bytes <= $clog2(32);
               }; assert(rand_success);
               bytes = 2**log_bytes;
             end else begin
@@ -1068,9 +1072,9 @@ package axi_test;
           n_bytes = 2**n_bytes;
           rand_success = std::randomize(size) with {
             size >= 0;
-            2**size <= n_bytes;
-            2**size <= AXI_STRB_WIDTH;
-            n_bytes / 2**size <= 16;
+            size <= $clog2(n_bytes);
+            size <= $clog2(axi_strb_width);
+            $clog2(n_bytes/16) <= size; // n_bytes / 2**size <= 16;
           }; assert(rand_success);
           ar_beat.ax_size = size;
           ar_beat.ax_len = n_bytes / 2**size;
