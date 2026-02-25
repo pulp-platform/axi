@@ -18,29 +18,29 @@ jobs:
       fail-fast: false
       matrix:
         test:
-          - axi_addr_test
+          - axi_addr_test # sim error, needs debug
           - axi_atop_filter
           - axi_bus_compare
-          - axi_cdc
+          # - axi_cdc # Function Argument expects a CLASSREFDTYPE 'axi_ax_beat__I4_U2', got CLASSREFDTYPE 'axi_ax_beat'
           - axi_delayer
-          - axi_dw_downsizer
-          - axi_dw_upsizer
+          # - axi_dw_downsizer # CLASSREFDTYPE parameterized-class binding error
+          # - axi_dw_upsizer # CLASSREFDTYPE parameterized-class binding error
           - axi_fifo
           - axi_isolate
-          - axi_iw_converter
+          # - axi_iw_converter # CLASSREFDTYPE parameterized-class binding error
           - axi_lite_dw_converter
           - axi_lite_mailbox
           - axi_lite_regs
           - axi_lite_to_apb
           - axi_lite_to_axi
           - axi_lite_xbar
-          - axi_modify_address
+          # - axi_modify_address # CLASSREFDTYPE parameterized-class binding error
           - axi_serializer
           - axi_sim_mem
           - axi_slave_compare
           - axi_to_axi_lite
           - axi_to_mem_banked
-          - axi_xbar
+          # - axi_xbar # only 1x1 config has no CLASSREFDTYPE parameterized-class binding error
 
     steps:
       - name: Checkout
