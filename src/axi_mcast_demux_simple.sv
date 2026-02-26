@@ -109,7 +109,7 @@ module axi_mcast_demux_simple #(
     logic                              multicast_stall;
     mask_select_t                      multicast_select_q, multicast_select_d;
     mcast_cnt_t                        outstanding_mcast_cnt_q, outstanding_mcast_cnt_d;
-    logic [$clog2(NoMstPorts)+1-1:0]   aw_select_popcount;
+    logic [$clog2(NoMstPorts+1)-1:0]   aw_select_popcount;
     logic                              accept_aw;
     logic                              mcast_aw_hs_in_progress;
 
