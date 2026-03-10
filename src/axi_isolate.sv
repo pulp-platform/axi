@@ -393,6 +393,7 @@ module axi_isolate_inner #(
     assume (NumPending > 0) else $fatal(1, "At least one pending transaction required.");
   end
 `ifndef XSIM
+`ifndef XILINX_SIMULATOR
   default disable iff (!rst_ni);
   aw_overflow: assert property (@(posedge clk_i)
       (pending_aw_q == '1) |=> (pending_aw_q != '0)) else
@@ -406,6 +407,7 @@ module axi_isolate_inner #(
   ar_underflow: assert property (@(posedge clk_i)
       (pending_ar_q == '0) |=> (pending_ar_q != '1)) else
       $fatal(1, "pending_ar_q underflowed");
+`endif
 `endif
 `endif
 // pragma translate_on

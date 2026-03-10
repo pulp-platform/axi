@@ -383,6 +383,7 @@ module axi_id_remap #(
     assert ($bits(mst_resp_i.r.id) == AxiMstPortIdWidth);
   end
   `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   default disable iff (!rst_ni);
   assert property (@(posedge clk_i) slv_req_i.aw_valid && slv_resp_o.aw_ready
       |-> mst_req_o.aw_valid && mst_resp_i.aw_ready);
@@ -398,6 +399,7 @@ module axi_id_remap #(
       |=> mst_req_o.ar_valid && $stable(mst_req_o.ar.id));
   assert property (@(posedge clk_i) mst_req_o.aw_valid && !mst_resp_i.aw_ready
       |=> mst_req_o.aw_valid && $stable(mst_req_o.aw.id));
+  `endif
   `endif
   `endif
   // pragma translate_on
@@ -555,6 +557,7 @@ module axi_id_remap_table #(
   // pragma translate_off
   `ifndef VERILATOR
   `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
     default disable iff (!rst_ni);
     assume property (@(posedge clk_i) push_i |->
         table_q[push_oup_id_i].cnt == '0 || table_q[push_oup_id_i].inp_id == push_inp_id_i)
@@ -572,6 +575,7 @@ module axi_id_remap_table #(
       assert (MaxTxnsPerId > 0);
       assert (IdxWidth >= 1);
     end
+  `endif
   `endif
   `endif
   // pragma translate_on
