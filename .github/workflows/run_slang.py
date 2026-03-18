@@ -2,7 +2,7 @@
 """Run slang on a file list via pyslang's Driver API and emit a JSON diagnostic file."""
 
 import sys
-import pyslang.driver as slang_driver
+import pyslang
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
 
     flist, output_json = sys.argv[1], sys.argv[2]
 
-    driver = slang_driver.Driver()
+    driver = pyslang.driver.Driver()
     driver.parseCommandLine(
         f"-f {flist}"
         f" --top axi_lint_top"
