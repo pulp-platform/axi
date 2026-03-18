@@ -1,0 +1,45 @@
+name: Slang lint
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2.4.5
+
+      - name: Install pyslang
+        run: pip install pyslang
+
+      - name: Generate file list
+        run: bender script flist-plus -t lint > sources.flist
+
+      - name: Run slang
+        run: python3 .github/workflows/run_slang.py sources.flist slang_diags.json
+
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Run reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/workflows/slang_to_rdjson.py slang_diags.json \
+            | reviewdog -f=rdjson \
+                -name=slang \
+                -reporter=${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }} \
+                -filter-mode=nofilter \
+                -fail-level=error
