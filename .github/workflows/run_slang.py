@@ -2,7 +2,8 @@
 """Run slang on a file list via pyslang's Driver API and emit a JSON diagnostic file."""
 
 import sys
-import pyslang
+
+from pyslang import CommandLineOptions, Driver
 
 
 def main():
@@ -12,13 +13,23 @@ def main():
 
     flist, output_json = sys.argv[1], sys.argv[2]
 
-    driver = pyslang.driver.Driver()
-    driver.parseCommandLine(
-        f"-f {flist}"
+    driver = Driver()
+    driver.addStandardArgs()
+
+    args = (
+        f"{sys.argv[0]}"
+        f" -f {flist}"
         f" --top axi_lint_top"
         f" --error-limit 0"
         f" --diag-json {output_json}"
     )
+    if not driver.parseCommandLine(args, CommandLineOptions()):
+        sys.exit(1)
+
+    if not driver.processOptions():
+        sys.exit(1)
+
+    driver.parseAllSources()
     driver.runFullCompilation()
     # Exit 0 regardless of compile errors so the CI step continues
     # and reviewdog can annotate the diagnostics.
