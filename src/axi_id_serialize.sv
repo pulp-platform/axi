@@ -346,7 +346,7 @@ module axi_id_serialize #(
       else $fatal(1, "Not enought Id width on MST port to map all ID's.");
     assert(AxiSlvPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiSlvPortIdWidth has to be larger than 0!");
-    assert(AxiMstPortIdWidth)
+    assert(AxiMstPortIdWidth > 32'd0)
       else $fatal(1, "Parameter AxiMstPortIdWidth has to be larger than 0!");
     assert(AxiMstPortIdWidth <= AxiSlvPortIdWidth)
       else $fatal(1, "Downsize implies that AxiMstPortIdWidth <= AxiSlvPortIdWidth!");
