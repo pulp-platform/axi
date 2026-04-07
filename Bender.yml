@@ -100,7 +100,7 @@ sources:
 
   - target: synth_test
     files:
-      - test/axi_synth_bench.sv
+      - test/axi_xbar_synth.sv
 
   - target: simulation
     files:
@@ -138,3 +138,5 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
+      - test/tb_axi_xbar_zoix.sv
+
