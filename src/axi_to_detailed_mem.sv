@@ -623,7 +623,11 @@ module axi_to_detailed_mem_intf #(
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_data_t`.
   localparam type mem_data_t = logic [DATA_WIDTH/NUM_BANKS-1:0],
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_strb_t`.
-  localparam type mem_strb_t = logic [DATA_WIDTH/NUM_BANKS/8-1:0]
+  localparam type mem_strb_t = logic [DATA_WIDTH/NUM_BANKS/8-1:0],
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_id_t`.
+  localparam type mem_id_t   = logic [ID_WIDTH-1:0],
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_user_t`.
+  localparam type mem_user_t = logic [USER_WIDTH-1:0]
 ) (
   /// Clock input.
   input  logic                              clk_i,
@@ -649,10 +653,10 @@ module axi_to_detailed_mem_intf #(
   output logic             [NUM_BANKS-1:0]  mem_lock_o,
   /// See `axi_to_mem`, port `mem_we_o`.
   output logic             [NUM_BANKS-1:0]  mem_we_o,
-  /// See `axi_to_mem`, port `mem_id_o`.
-  output logic             [NUM_BANKS-1:0]  mem_id_o,
-  /// See `axi_to_mem`, port `mem_user_o`.
-  output logic             [NUM_BANKS-1:0]  mem_user_o,
+  /// See `axi_to_detailed_mem`, port `mem_id_o`.
+  output mem_id_t          [NUM_BANKS-1:0]  mem_id_o,
+  /// See `axi_to_detailed_mem`, port `mem_user_o`.
+  output mem_user_t        [NUM_BANKS-1:0]  mem_user_o,
   /// See `axi_to_mem`, port `mem_cache_o`.
   output axi_pkg::cache_t  [NUM_BANKS-1:0]  mem_cache_o,
   /// See `axi_to_mem`, port `mem_prot_o`.
