@@ -172,6 +172,8 @@ module axi_opt_lfsr #(
 
     always_comb begin : gen_register
 
+        xnor_feedback = reg_q[XnorFeedback[MaxNumTabs-1]-1];
+
         // get the parameters
         case (Width)
             'd8     : XnorFeedback = { 'd8,    'd6,    'd5,    'd4    };
@@ -203,7 +205,6 @@ module axi_opt_lfsr #(
             reg_d[Width-1] = ser_data_i;
         // LFSR mode
         end else begin
-            xnor_feedback = reg_q[XnorFeedback[MaxNumTabs-1]-1];
             for (int unsigned t = 0; t < MaxNumTabs - 1; t++) begin : gen_feedback_path
                 xnor_feedback = xnor_feedback;
                 if (XnorFeedback[t] != 0) begin
