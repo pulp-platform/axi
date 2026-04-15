@@ -600,74 +600,78 @@ endmodule
 
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
-/// Interface wrapper for module `axi_to_mem`.
+/// Interface wrapper for module `axi_to_detailed_mem`.
 module axi_to_detailed_mem_intf #(
-  /// See `axi_to_mem`, parameter `AddrWidth`.
+  /// See `axi_to_detailed_mem`, parameter `AddrWidth`.
   parameter int unsigned ADDR_WIDTH     = 32'd0,
-  /// See `axi_to_mem`, parameter `DataWidth`.
+  /// See `axi_to_detailed_mem`, parameter `DataWidth`.
   parameter int unsigned DATA_WIDTH     = 32'd0,
   /// AXI4+ATOP ID width.
   parameter int unsigned ID_WIDTH       = 32'd0,
   /// AXI4+ATOP user width.
   parameter int unsigned USER_WIDTH     = 32'd0,
-  /// See `axi_to_mem`, parameter `NumBanks`.
+  /// See `axi_to_detailed_mem`, parameter `NumBanks`.
   parameter int unsigned NUM_BANKS      = 32'd0,
-  /// See `axi_to_mem`, parameter `BufDepth`.
+  /// See `axi_to_detailed_mem`, parameter `BufDepth`.
   parameter int unsigned BUF_DEPTH      = 32'd1,
   /// Hide write requests if the strb == '0
   parameter bit          HIDE_STRB      = 1'b0,
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OUT_FIFO_DEPTH = 32'd1,
-  /// Dependent parameter, do not override. See `axi_to_mem`, parameter `addr_t`.
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `addr_t`.
   localparam type addr_t     = logic [ADDR_WIDTH-1:0],
-  /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_data_t`.
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_data_t`.
   localparam type mem_data_t = logic [DATA_WIDTH/NUM_BANKS-1:0],
-  /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_strb_t`.
-  localparam type mem_strb_t = logic [DATA_WIDTH/NUM_BANKS/8-1:0]
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_strb_t`.
+  localparam type mem_strb_t = logic [DATA_WIDTH/NUM_BANKS/8-1:0],
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_id_t`.
+  localparam type mem_id_t   = logic [ID_WIDTH-1:0],
+  /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_user_t`.
+  localparam type mem_user_t = logic [USER_WIDTH-1:0]
 ) (
   /// Clock input.
   input  logic                              clk_i,
   /// Asynchronous reset, active low.
   input  logic                              rst_ni,
-  /// See `axi_to_mem`, port `busy_o`.
+  /// See `axi_to_detailed_mem`, port `busy_o`.
   output logic                              busy_o,
   /// AXI4+ATOP slave interface port.
   AXI_BUS.Slave                             slv,
-  /// See `axi_to_mem`, port `mem_req_o`.
+  /// See `axi_to_detailed_mem`, port `mem_req_o`.
   output logic             [NUM_BANKS-1:0]  mem_req_o,
-  /// See `axi_to_mem`, port `mem_gnt_i`.
+  /// See `axi_to_detailed_mem`, port `mem_gnt_i`.
   input  logic             [NUM_BANKS-1:0]  mem_gnt_i,
-  /// See `axi_to_mem`, port `mem_addr_o`.
+  /// See `axi_to_detailed_mem`, port `mem_addr_o`.
   output addr_t            [NUM_BANKS-1:0]  mem_addr_o,
-  /// See `axi_to_mem`, port `mem_wdata_o`.
+  /// See `axi_to_detailed_mem`, port `mem_wdata_o`.
   output mem_data_t        [NUM_BANKS-1:0]  mem_wdata_o,
-  /// See `axi_to_mem`, port `mem_strb_o`.
+  /// See `axi_to_detailed_mem`, port `mem_strb_o`.
   output mem_strb_t        [NUM_BANKS-1:0]  mem_strb_o,
-  /// See `axi_to_mem`, port `mem_atop_o`.
+  /// See `axi_to_detailed_mem`, port `mem_atop_o`.
   output axi_pkg::atop_t   [NUM_BANKS-1:0]  mem_atop_o,
-  /// See `axi_to_mem`, port `mem_lock_o`.
+  /// See `axi_to_detailed_mem`, port `mem_lock_o`.
   output logic             [NUM_BANKS-1:0]  mem_lock_o,
-  /// See `axi_to_mem`, port `mem_we_o`.
+  /// See `axi_to_detailed_mem`, port `mem_we_o`.
   output logic             [NUM_BANKS-1:0]  mem_we_o,
-  /// See `axi_to_mem`, port `mem_id_o`.
-  output logic             [NUM_BANKS-1:0]  mem_id_o,
-  /// See `axi_to_mem`, port `mem_user_o`.
-  output logic             [NUM_BANKS-1:0]  mem_user_o,
-  /// See `axi_to_mem`, port `mem_cache_o`.
+  /// See `axi_to_detailed_mem`, port `mem_id_o`.
+  output mem_id_t          [NUM_BANKS-1:0]  mem_id_o,
+  /// See `axi_to_detailed_mem`, port `mem_user_o`.
+  output mem_user_t        [NUM_BANKS-1:0]  mem_user_o,
+  /// See `axi_to_detailed_mem`, port `mem_cache_o`.
   output axi_pkg::cache_t  [NUM_BANKS-1:0]  mem_cache_o,
-  /// See `axi_to_mem`, port `mem_prot_o`.
+  /// See `axi_to_detailed_mem`, port `mem_prot_o`.
   output axi_pkg::prot_t   [NUM_BANKS-1:0]  mem_prot_o,
-  /// See `axi_to_mem`, port `mem_qos_o`.
+  /// See `axi_to_detailed_mem`, port `mem_qos_o`.
   output axi_pkg::qos_t    [NUM_BANKS-1:0]  mem_qos_o,
-  /// See `axi_to_mem`, port `mem_region_o`.
+  /// See `axi_to_detailed_mem`, port `mem_region_o`.
   output axi_pkg::region_t [NUM_BANKS-1:0]  mem_region_o,
-  /// See `axi_to_mem`, port `mem_rvalid_i`.
+  /// See `axi_to_detailed_mem`, port `mem_rvalid_i`.
   input  logic             [NUM_BANKS-1:0]  mem_rvalid_i,
-  /// See `axi_to_mem`, port `mem_rdata_i`.
+  /// See `axi_to_detailed_mem`, port `mem_rdata_i`.
   input  mem_data_t        [NUM_BANKS-1:0]  mem_rdata_i,
-  /// See `axi_to_mem`, port `mem_err_i`.
+  /// See `axi_to_detailed_mem`, port `mem_err_i`.
   input  logic             [NUM_BANKS-1:0]  mem_err_i,
-  /// See `axi_to_mem`, port `mem_exokay_i`.
+  /// See `axi_to_detailed_mem`, port `mem_exokay_i`.
   input  logic             [NUM_BANKS-1:0]  mem_exokay_i
 );
   typedef logic [ID_WIDTH-1:0]     id_t;
