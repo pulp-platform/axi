@@ -98,7 +98,9 @@ module axi_burst_splitter_gran #(
     .slv_ar_select_i  ( sel_ar_unsupported            ),
     .slv_resp_o       ( slv_resp ),
     .mst_reqs_o       ( {unsupported_req,  act_req}   ),
-    .mst_resps_i      ( {unsupported_resp, act_resp}  )
+    .mst_resps_i      ( {unsupported_resp, act_resp}  ),
+    .mst_b_idx_o      (                               ),
+    .mst_r_idx_o      (                               )
   );
 
   // Define supported transactions.
