@@ -256,7 +256,7 @@
 `define RELAXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)            \
   typedef struct packed {                                                    \
     id_t                                                             id;     \
-    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]      addr;   \
+    logic [$bits(addr_t) + hsiao_ecc_pkg::min_ecc($bits(addr_t))-1:0]addr;   \
     axi_pkg::len_t                                                   len;    \
     axi_pkg::size_t                                                  size;   \
     axi_pkg::burst_t                                                 burst;  \
@@ -268,22 +268,22 @@
     axi_pkg::atop_t                                                  atop;   \
     user_t                                                           user;   \
     logic [hsiao_ecc_pkg::min_ecc(                                           \
-             ID_WIDTH          +                                             \
-             `RELAXI_AXI_LEN_W    +                                          \
-             `RELAXI_AXI_SIZE_W   +                                          \
-             `RELAXI_AXI_BURST_W  +                                          \
-             `RELAXI_AXI_LOCK_W   +                                          \
-             `RELAXI_AXI_CACHE_W  +                                          \
-             `RELAXI_AXI_PROT_W   +                                          \
-             `RELAXI_AXI_QOS_W    +                                          \
-             `RELAXI_AXI_REGION_W +                                          \
-             `RELAXI_AXI_ATOP_W   +                                          \
-             USER_WIDTH)-1:0]                                awother_ecc;    \
+             $bits(id_t)          +                                          \
+             $bits(axi_pkg::len_t)    +                                      \
+             $bits(axi_pkg::size_t)   +                                      \
+             $bits(axi_pkg::burst_t)  +                                      \
+             1   +                                                           \
+             $bits(axi_pkg::cache_t)  +                                      \
+             $bits(axi_pkg::prot_t)   +                                      \
+             $bits(axi_pkg::qos_t)    +                                      \
+             $bits(axi_pkg::region_t) +                                      \
+             $bits(axi_pkg::atop_t)   +                                      \
+             $bits(axi_pkg::user_t))-1:0]                    awother_ecc;    \
   } aw_chan_t;
 
 `define RELAXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)            \
   typedef struct packed {                                                    \
-    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     data;    \
+    logic [bits + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     data;    \
     strb_t                                                          strb;    \
     logic                                                           last;    \
     user_t                                                          user;    \
@@ -307,7 +307,7 @@
 `define RELAXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)            \
   typedef struct packed {                                                    \
     id_t              id;                                                    \
-    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     addr;    \
+    logic [$bits(addr_t) + hsiao_ecc_pkg::min_ecc($bits(addr_t))-1:0]     addr;    \
     axi_pkg::len_t    len;                                                   \
     axi_pkg::size_t   size;                                                  \
     axi_pkg::burst_t  burst;                                                 \
@@ -318,31 +318,31 @@
     axi_pkg::region_t region;                                                \
     user_t            user;                                                  \
     logic [hsiao_ecc_pkg::min_ecc(                                           \
-             ID_WIDTH          +                                             \
-             `RELAXI_AXI_LEN_W    +                                          \
-             `RELAXI_AXI_SIZE_W   +                                          \
-             `RELAXI_AXI_BURST_W  +                                          \
-             `RELAXI_AXI_LOCK_W   +                                          \
-             `RELAXI_AXI_CACHE_W  +                                          \
-             `RELAXI_AXI_PROT_W   +                                          \
-             `RELAXI_AXI_QOS_W    +                                          \
-             `RELAXI_AXI_REGION_W +                                          \
-             USER_WIDTH)-1:0]                               ar_other_ecc;    \
+             $bits(id_t)          +                                          \
+             $bits(axi_pkg::len_t)    +                                      \
+             $bits(axi_pkg::size_t)   +                                      \
+             $bits(axi_pkg::burst_t)  +                                      \
+             1   +                                                           \
+             $bits(axi_pkg::cache_t)  +                                      \
+             $bits(axi_pkg::prot_t)   +                                      \
+             $bits(axi_pkg::qos_t)    +                                      \
+             $bits(axi_pkg::region_t) +                                      \
+             $bits(axi_pkg::user_t))-1:0]                   ar_other_ecc;    \
   } ar_chan_t;
 
 `define RELAXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)              \
   typedef struct packed {                                                    \
     id_t            id;                                                      \
-    logic [DATA_WIDTH + hsiao_ecc_pkg::min_ecc(DATA_WIDTH)-1:0]      data;   \
+    logic [$bits(data_t) + hsiao_ecc_pkg::min_ecc($bits(data_t))-1:0] data;   \
     axi_pkg::resp_t resp;                                                    \
     logic           last;                                                    \
     user_t          user;                                                    \
     logic [hsiao_ecc_pkg::min_ecc(                                           \
-             ID_WIDTH          +                                             \
-             DATA_WIDTH        +                                             \
-             `RELAXI_AXI_RESP_W +                                            \
+             $bits(id_t)          +                                          \
+             $bits(data_t)        +                                          \
+             $bits(axi_pkg::resp_t) +                                        \
              1 +                                                             \
-             USER_WIDTH)-1:0]                                 r_other_ecc;   \
+             $bits(axi_pkg::user_t))-1:0]                     r_other_ecc;   \
   } r_chan_t;
 
 `define RELAXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)  \
