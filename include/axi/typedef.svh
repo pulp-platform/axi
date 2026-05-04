@@ -283,14 +283,14 @@
 
 `define RELAXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)            \
   typedef struct packed {                                                    \
-    logic [bits + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     data;    \
+    logic [$bits(data_t) + hsiao_ecc_pkg::min_ecc(data_t)-1:0]      data;    \
     strb_t                                                          strb;    \
     logic                                                           last;    \
     user_t                                                          user;    \
     logic [hsiao_ecc_pkg::min_ecc(                                           \
-             STRB_WIDTH         +                                            \
+             $bits(strb_t)  +                                                \
              1 +                                                             \
-             USER_WIDTH)-1:0]                                w_other_ecc;    \
+             $bits(user_t))-1:0]                                w_other_ecc; \
   } w_chan_t;
 
 `define AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)                         \
@@ -299,9 +299,9 @@
     axi_pkg::resp_t resp;                                                    \
     user_t          user;                                                    \
      logic [hsiao_ecc_pkg::min_ecc(                                          \
-             ID_WIDTH          +                                             \
-             `RELAXI_AXI_RESP_W +                                            \
-             USER_WIDTH)-1:0]                                     b_ecc;     \
+             $bits(id_t)          +                                          \
+             $bits(axi_pkg::resp_t) +                                        \
+             $bits(user_t))-1:0]                                     b_ecc;  \
   } b_chan_t;
 
 `define RELAXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)            \
