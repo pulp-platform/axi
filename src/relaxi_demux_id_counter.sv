@@ -12,7 +12,7 @@
 
 `include "common_cells/registers.svh"
 
-module axi_demux_id_counters #(
+module relaxi_demux_id_counters #(
   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
   parameter int unsigned AxiIdBits         = 2,
   parameter int unsigned CounterWidth      = 4,
