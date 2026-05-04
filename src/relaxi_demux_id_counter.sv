@@ -27,7 +27,7 @@ module axi_demux_id_counters #(
   // push
   output logic              [2:0] full_o,
   input  logic   [AxiIdBits-1:0]  push_axi_id_i,
-  input  mst_port_select_t        push_mst_select_i,
+  input  mst_port_select_t [2:0]  push_mst_select_i,
   input  logic                    push_i,
   // inject ATOPs in AR channel
   input  logic   [AxiIdBits-1:0]  inject_axi_id_i,
@@ -91,15 +91,15 @@ module axi_demux_id_counters #(
     .fault_detected_o ( outstand_fault         )
   );
 
-  assign fault_o = outstand_fault | |cnt_fault;
-
+  assign fault_o = outstand_fault | |cnt_fault | |overflow_fault;
+  
   // counters
   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
     logic                         cnt_en, cnt_down;
     cnt_t                         cnt_delta;
     logic [2:0][CounterWidth-1:0] in_flight;
     logic [2:0]                   overflow;
-    logic                         cnt_fault_i;
+    logic [NoCounters-1:0]        overflow_fault;
     always_comb begin
       unique case ({push_en[i], inject_en[i], pop_en[i]})
         3'b001  : begin // pop_i = -1
@@ -151,34 +151,31 @@ module axi_demux_id_counters #(
       .d_i        ( '0        ),
       .q_o        ( in_flight ),
       .overflow_o ( overflow  ),
-      .fault_o    ( cnt_fault_i )
+      .fault_o    ( cnt_fault[i] )
     );
     
-    assign cnt_fault[i] = cnt_fault_i;
-
     // Per-replica occupied and cnt_full
     for (genvar j = 0; j < 3; j++) begin : gen_replica_status
       assign occupied[j][i] = |in_flight[j];
       assign cnt_full[j][i] = overflow[j] | (&in_flight[j]);
     end
     
+    // inside gen_counters (genvar i = ID slot):
+    for (genvar r = 0; r < 3; r++) begin : gen_mst_select_tmr
+        `FFLARN(mst_select_q[r][i], push_mst_select_i[r], push_en[i], '0, clk_i, rst_ni)
+    end
+
+// pragma translate_off
+`ifndef VERILATOR
+`ifndef XSIM
     logic overflow_voted;
     TMR_voter_fail i_overflow_vote (
       .a_i              ( overflow[0]    ),
       .b_i              ( overflow[1]    ),
       .c_i              ( overflow[2]    ),
       .majority_o       ( overflow_voted ),
-      .fault_detected_o (                )
+      .fault_detected_o ( overflow_fault[i] )
     );
-
-    // inside gen_counters (genvar i = ID slot):
-    for (genvar r = 0; r < 3; r++) begin : gen_mst_select_tmr
-        `FFLARN(mst_select_q[r][i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
-    end
-
-// pragma translate_off
-`ifndef VERILATOR
-`ifndef XSIM
     // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow_voted)) else

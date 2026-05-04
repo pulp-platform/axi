@@ -242,4 +242,170 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// RelAXI4+ATOP Channel and Request/Response Structs
+//
+// Usage Example:
+// `RELAXI_TYPEDEF_AW_CHAN_T(relaxi_aw_t, relaxi_addr_t, relaxi_id_t, relaxi_user_t)
+// `RELAXI_TYPEDEF_W_CHAN_T(relaxi_w_t, relaxi_data_t, relaxi_strb_t, relaxi_user_t)
+// `RELAXI_TYPEDEF_B_CHAN_T(relaxi_b_t, relaxi_id_t, relaxi_user_t)
+// `RELAXI_TYPEDEF_AR_CHAN_T(relaxi_ar_t, relaxi_addr_t, relaxi_id_t, relaxi_user_t)
+// `RELAXI_TYPEDEF_R_CHAN_T(relaxi_r_t, relaxi_data_t, relaxi_id_t, relaxi_user_t)
+// `RELAXI_TYPEDEF_REQ_T(relaxi_req_t, relaxi_aw_t, relaxi_w_t, relaxi_ar_t)
+// `RELAXI_TYPEDEF_RESP_T(relaxi_resp_t, relaxi_b_t, relaxi_r_t)
+`define RELAXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)            \
+  typedef struct packed {                                                    \
+    id_t                                                             id;     \
+    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]      addr;   \
+    axi_pkg::len_t                                                   len;    \
+    axi_pkg::size_t                                                  size;   \
+    axi_pkg::burst_t                                                 burst;  \
+    logic                                                            lock;   \
+    axi_pkg::cache_t                                                 cache;  \
+    axi_pkg::prot_t                                                  prot;   \
+    axi_pkg::qos_t                                                   qos;    \
+    axi_pkg::region_t                                                region; \
+    axi_pkg::atop_t                                                  atop;   \
+    user_t                                                           user;   \
+    logic [hsiao_ecc_pkg::min_ecc(                                           \
+             ID_WIDTH          +                                             \
+             `RELAXI_AXI_LEN_W    +                                          \
+             `RELAXI_AXI_SIZE_W   +                                          \
+             `RELAXI_AXI_BURST_W  +                                          \
+             `RELAXI_AXI_LOCK_W   +                                          \
+             `RELAXI_AXI_CACHE_W  +                                          \
+             `RELAXI_AXI_PROT_W   +                                          \
+             `RELAXI_AXI_QOS_W    +                                          \
+             `RELAXI_AXI_REGION_W +                                          \
+             `RELAXI_AXI_ATOP_W   +                                          \
+             USER_WIDTH)-1:0]                                awother_ecc;    \
+  } aw_chan_t;
+
+`define RELAXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)            \
+  typedef struct packed {                                                    \
+    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     data;    \
+    strb_t                                                          strb;    \
+    logic                                                           last;    \
+    user_t                                                          user;    \
+    logic [hsiao_ecc_pkg::min_ecc(                                           \
+             STRB_WIDTH         +                                            \
+             1 +                                                             \
+             USER_WIDTH)-1:0]                                w_other_ecc;    \
+  } w_chan_t;
+
+`define AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)                         \
+  typedef struct packed {                                                    \
+    id_t            id;                                                      \
+    axi_pkg::resp_t resp;                                                    \
+    user_t          user;                                                    \
+     logic [hsiao_ecc_pkg::min_ecc(                                          \
+             ID_WIDTH          +                                             \
+             `RELAXI_AXI_RESP_W +                                            \
+             USER_WIDTH)-1:0]                                     b_ecc;     \
+  } b_chan_t;
+
+`define RELAXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)            \
+  typedef struct packed {                                                    \
+    id_t              id;                                                    \
+    logic [ADDR_WIDTH + hsiao_ecc_pkg::min_ecc(ADDR_WIDTH)-1:0]     addr;    \
+    axi_pkg::len_t    len;                                                   \
+    axi_pkg::size_t   size;                                                  \
+    axi_pkg::burst_t  burst;                                                 \
+    logic             lock;                                                  \
+    axi_pkg::cache_t  cache;                                                 \
+    axi_pkg::prot_t   prot;                                                  \
+    axi_pkg::qos_t    qos;                                                   \
+    axi_pkg::region_t region;                                                \
+    user_t            user;                                                  \
+    logic [hsiao_ecc_pkg::min_ecc(                                           \
+             ID_WIDTH          +                                             \
+             `RELAXI_AXI_LEN_W    +                                          \
+             `RELAXI_AXI_SIZE_W   +                                          \
+             `RELAXI_AXI_BURST_W  +                                          \
+             `RELAXI_AXI_LOCK_W   +                                          \
+             `RELAXI_AXI_CACHE_W  +                                          \
+             `RELAXI_AXI_PROT_W   +                                          \
+             `RELAXI_AXI_QOS_W    +                                          \
+             `RELAXI_AXI_REGION_W +                                          \
+             USER_WIDTH)-1:0]                               ar_other_ecc;    \
+  } ar_chan_t;
+
+`define RELAXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)              \
+  typedef struct packed {                                                    \
+    id_t            id;                                                      \
+    logic [DATA_WIDTH + hsiao_ecc_pkg::min_ecc(DATA_WIDTH)-1:0]      data;   \
+    axi_pkg::resp_t resp;                                                    \
+    logic           last;                                                    \
+    user_t          user;                                                    \
+    logic [hsiao_ecc_pkg::min_ecc(                                           \
+             ID_WIDTH          +                                             \
+             DATA_WIDTH        +                                             \
+             `RELAXI_AXI_RESP_W +                                            \
+             1 +                                                             \
+             USER_WIDTH)-1:0]                                 r_other_ecc;   \
+  } r_chan_t;
+
+`define RELAXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)  \
+  typedef struct packed {                                            \
+    aw_chan_t       aw;                                              \
+    logic [2:0]     aw_valid;                                        \
+    w_chan_t        w;                                               \
+    logic [2:0]     w_valid;                                         \
+    logic [2:0]     b_ready;                                         \
+    ar_chan_t       ar;                                              \
+    logic [2:0]     ar_valid;                                        \
+    logic [2:0]     r_ready;                                         \
+  } req_t;
+
+`define RELAXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)  \
+  typedef struct packed {                                  \ 
+    logic [2:0]     aw_ready;                              \
+    logic [2:0]     ar_ready;                              \
+    logic [2:0]     w_ready;                               \
+    logic [2:0]     b_valid;                               \
+    b_chan_t        b;                                     \
+    logic [2:0]     r_valid;                               \   
+    r_chan_t  r;                                           \
+  } resp_t;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// All AXI4+ATOP Channels and Request/Response Structs in One Macro - Custom Type Name Version
+//
+// This can be used whenever the user is not interested in "precise" control of the naming of the
+// individual channels.
+//
+// Usage Example:
+// `RELAXI_TYPEDEF_ALL_CT(axi, axi_req_t, axi_rsp_t, addr_t, id_t, data_t, strb_t, user_t)
+//
+// This defines `axi_req_t` and `axi_rsp_t` request/response structs as well as `axi_aw_chan_t`,
+// `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
+`define RELAXI_TYPEDEF_ALL_CT(__name, __req, __rsp, __addr_t, __id_t, __data_t, __strb_t, __user_t) \
+  `RELAXI_TYPEDEF_AW_CHAN_T(__name``_aw_chan_t, __addr_t, __id_t, __user_t)                         \
+  `RELAXI_TYPEDEF_W_CHAN_T(__name``_w_chan_t, __data_t, __strb_t, __user_t)                         \
+  `RELAXI_TYPEDEF_B_CHAN_T(__name``_b_chan_t, __id_t, __user_t)                                     \
+  `RELAXI_TYPEDEF_AR_CHAN_T(__name``_ar_chan_t, __addr_t, __id_t, __user_t)                         \
+  `RELAXI_TYPEDEF_R_CHAN_T(__name``_r_chan_t, __data_t, __id_t, __user_t)                           \
+  `RELAXI_TYPEDEF_REQ_T(__req, __name``_aw_chan_t, __name``_w_chan_t, __name``_ar_chan_t)           \
+  `RELAXI_TYPEDEF_RESP_T(__rsp, __name``_b_chan_t, __name``_r_chan_t)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// All AXI4+ATOP Channels and Request/Response Structs in One Macro
+//
+// This can be used whenever the user is not interested in "precise" control of the naming of the
+// individual channels.
+//
+// Usage Example:
+// `AXI_TYPEDEF_ALL(axi, addr_t, id_t, data_t, strb_t, user_t)
+//
+// This defines `axi_req_t` and `axi_resp_t` request/response structs as well as `axi_aw_chan_t`,
+// `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, and `axi_r_chan_t` channel structs.
+`define RELAXI_TYPEDEF_ALL(__name, __addr_t, __id_t, __data_t, __strb_t, __user_t)                                \
+  `RELAXI_TYPEDEF_ALL_CT(__name, __name``_req_t, __name``_resp_t, __addr_t, __id_t, __data_t, __strb_t, __user_t)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 `endif
