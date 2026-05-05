@@ -2145,7 +2145,7 @@ package axi_test;
                             Exp Data: %h \n \
                             Act Data: %h \n \
                             BeatData: %h",
-                  r_beat.r_id, beat_address+j, idx_data, exp_data, act_data, r_beat.r_data);
+                  r_beat.r_id, beat_address+j, idx_data, exp_data[0], act_data, r_beat.r_data);
                 end
               end
             end
