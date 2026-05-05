@@ -21,13 +21,14 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module tb_axi_lite_xbar;
+module tb_axi_lite_xbar #(
   // Dut parameters
-  localparam int unsigned NoMasters   = 32'd6;    // How many Axi Masters there are
-  localparam int unsigned NoSlaves    = 32'd8;    // How many Axi Slaves  there are
+  parameter int unsigned NoMasters   = 32'd6,    // How many Axi Masters there are
+  parameter int unsigned NoSlaves    = 32'd8,    // How many Axi Slaves  there are
   // Random master no Transactions
-  localparam int unsigned NoWrites   = 32'd10000;  // How many writes per master
-  localparam int unsigned NoReads    = 32'd10000;  // How many reads per master
+  parameter int unsigned NoWrites   = 32'd10000, // How many writes per master
+  parameter int unsigned NoReads    = 32'd10000  // How many reads per master
+);
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;

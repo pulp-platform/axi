@@ -16,12 +16,14 @@
 
 `include "axi/assign.svh"
 
-module tb_axi_to_axi_lite;
-
-  parameter AW = 32;
-  parameter DW = 32;
-  parameter IW = 8;
-  parameter UW = 8;
+module tb_axi_to_axi_lite #(
+  parameter int unsigned AW = 32,
+  parameter int unsigned DW = 32,
+  parameter int unsigned IW = 8,
+  parameter int unsigned UW = 8,
+  parameter int unsigned NoReads  = 1000,
+  parameter int unsigned NoWrites = 2000
+);
 
   localparam tCK = 1ns;
   localparam TA = tCK * 1/4;
@@ -124,7 +126,7 @@ module tb_axi_to_axi_lite;
                                       axi_pkg::WBACK_RWALLOCATE);
     axi_drv.reset();
     @(posedge rst);
-    axi_drv.run(1000, 2000);
+    axi_drv.run(NoReads, NoWrites);
 
     repeat (4) @(posedge clk);
     done = 1'b1;

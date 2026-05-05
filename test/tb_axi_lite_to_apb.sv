@@ -21,14 +21,14 @@
 
 module tb_axi_lite_to_apb #(
   parameter bit TbPipelineRequest = 1'b0,
-  parameter bit TbPipelineResponse = 1'b0
+  parameter bit TbPipelineResponse = 1'b0,
+  // Random master no Transactions
+  parameter int unsigned NoWrites    = 10000,  // How many rand writes of the master
+  parameter int unsigned NoReads     = 20000   // How many rand reads of the master
 );
   // Dut parameters
   localparam int unsigned NoApbSlaves = 8;    // How many APB Slaves  there are
   localparam int unsigned NoAddrRules = 9;    // How many address rules for the APB slaves
-  // Random master no Transactions
-  localparam int unsigned NoWrites    = 10000;  // How many rand writes of the master
-  localparam int unsigned NoReads     = 20000;  // How many rand reads of the master
   // timing parameters
   localparam time CyclTime = 10ns;
   localparam time ApplTime =  2ns;
