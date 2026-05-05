@@ -430,7 +430,7 @@ module tb_axi_lite_mailbox;
     end else begin
         $info("Simulation stopped as all Masters transferred their data, Success.",);
     end
-    $stop();
+    $finish();
   end
 
   //-----------------------------------

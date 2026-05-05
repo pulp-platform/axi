@@ -141,7 +141,7 @@ module tb_axi_isolate #(
     axi_rand_master.run(NoReads, NoWrites);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
-    $stop();
+    $finish();
   end
 
   initial begin : proc_axi_slave

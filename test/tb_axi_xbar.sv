@@ -288,7 +288,7 @@ module tb_axi_xbar #(
         #TestTime;
         if(end_of_sim == '1) begin
           monitor.print_result();
-          $stop();
+          $finish();
         end
         @(posedge clk);
       end while (1'b1);

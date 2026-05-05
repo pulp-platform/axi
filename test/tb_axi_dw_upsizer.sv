@@ -171,7 +171,7 @@ module tb_axi_dw_upsizer #(
         #TbTestTime;
         if(eos) begin
           monitor.print_result();
-          $stop()               ;
+          $finish()               ;
         end
         @(posedge clk);
       end

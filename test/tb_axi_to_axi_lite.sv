@@ -130,7 +130,7 @@ module tb_axi_to_axi_lite;
     done = 1'b1;
     $info("All AXI4+ATOP Bursts converted to AXI4-Lite");
     repeat (4) @(posedge clk);
-    $stop();
+    $finish();
   end
 
   initial begin

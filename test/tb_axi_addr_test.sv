@@ -121,7 +121,7 @@ module tb_axi_addr_test #(
     axi_rand_master.run(0, NumTests);
     end_of_sim <= 1'b1;
     repeat (10000) @(posedge clk);
-    $stop();
+    $finish();
   end
 
   initial begin : proc_axi_slave

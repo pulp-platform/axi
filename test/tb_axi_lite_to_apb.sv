@@ -164,7 +164,7 @@ module tb_axi_lite_to_apb #(
   initial begin : proc_sim_stop
     @(posedge rst_n);
     wait (end_of_sim);
-    $stop();
+    $finish();
   end
 
   // pragma translate_off

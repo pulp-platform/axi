@@ -352,7 +352,7 @@ module tb_axi_to_mem_banked #(
         $display("Sum bank utilization:      %0f", bank_busy_percent);
         $display("Sum axi utilization:       %0f", axi_busy_percent);
         $display("###############################################################################");
-        $stop();
+        $finish();
       end
     end
   end

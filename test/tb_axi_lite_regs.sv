@@ -325,7 +325,7 @@ module tb_axi_lite_regs #(
     wait (end_of_sim);
     repeat (1000) @(posedge clk);
     $display("Simulation stopped as Master transferred its data.");
-    $stop();
+    $finish();
   end
 
   //-----------------------------------
