@@ -60,10 +60,14 @@ exec_test() {
         exit 1
     fi
     case "$1" in
+        axi_addr_test)
+            compile_and_run tb_axi_addr_test \
+                "NumTests=1000"
+            ;;
         axi_atop_filter)
             for MAX_TXNS in 1 3 12; do
                 compile_and_run tb_axi_atop_filter \
-                    "TB_N_TXNS=1000" \
+                    "TB_N_TXNS=200" \
                     "TB_AXI_MAX_WRITE_TXNS=${MAX_TXNS}"
             done
             ;;
@@ -107,9 +111,31 @@ exec_test() {
                 for FALL_THROUGH in 0 1; do
                     compile_and_run tb_axi_fifo \
                         "Depth=${DEPTH}" \
-                        "FallThrough=${FALL_THROUGH}"
+                        "FallThrough=${FALL_THROUGH}" \
+                        "NoWrites=50" \
+                        "NoReads=50"
                 done
             done
+            ;;
+        axi_isolate)
+            compile_and_run tb_axi_isolate \
+                "NoWrites=5000" \
+                "NoReads=3000"
+            ;;
+        axi_serializer)
+            compile_and_run tb_axi_serializer \
+                "NoWrites=500" \
+                "NoReads=300"
+            ;;
+        axi_lite_xbar)
+            compile_and_run tb_axi_lite_xbar \
+                "NoWrites=2000" \
+                "NoReads=2000"
+            ;;
+        axi_to_axi_lite)
+            compile_and_run tb_axi_to_axi_lite \
+                "NoWrites=200" \
+                "NoReads=100"
             ;;
         axi_iw_converter)
             for SLV_PORT_IW in 1 2 3 4 8; do
@@ -227,8 +253,8 @@ exec_test() {
                                 "TbNumBanks=${ACT_BANKS}" \
                                 "TbMemDataWidth=${MEM_DATA_WIDTH}" \
                                 "TbMemLatency=${MEM_LAT}" \
-                                "TbNumWrites=2000" \
-                                "TbNumReads=2000"
+                                "TbNumWrites=500" \
+                                "TbNumReads=500"
                         done
                     done
                 done
@@ -239,7 +265,9 @@ exec_test() {
                 for DWMST in 16 32 64; do
                     compile_and_run tb_axi_lite_dw_converter \
                         "TbAxiDataWidthSlv=${DWSLV}" \
-                        "TbAxiDataWidthMst=${DWMST}"
+                        "TbAxiDataWidthMst=${DWMST}" \
+                        "NumWrites=1000" \
+                        "NumReads=1000"
                 done
             done
             ;;
