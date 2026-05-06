@@ -146,15 +146,20 @@ module tb_axi_lite_regs #(
     reg_load[byte_i] = 1'b0;
     reg_d[byte_i]    = 8'h00;
     @(posedge clk);
+    #ApplTime;
     forever begin
       rand_wait = $urandom_range(0, 20);
-      repeat (rand_wait) @(posedge clk);
+      repeat (rand_wait) begin
+        @(posedge clk);
+        #ApplTime;
+      end
       rand_val          = byte_t'($urandom());
-      reg_d[byte_i]    <= #ApplTime rand_val;
-      reg_load[byte_i] <= #ApplTime 1'b1;
+      reg_d[byte_i]    <= rand_val;
+      reg_load[byte_i] <= 1'b1;
       @(posedge clk);
-      reg_d[byte_i]    <= #ApplTime '0;
-      reg_load[byte_i] <= #ApplTime 1'b0;
+      #ApplTime;
+      reg_d[byte_i]    <= '0;
+      reg_load[byte_i] <= 1'b0;
     end
   endtask : toggle_load
 
