@@ -44,7 +44,7 @@ SIM_TARGETS := $(addsuffix .log,$(addprefix sim-,$(TBS)))
 
 .SHELL: bash
 
-.PHONY: help all sim_all clean
+.PHONY: help all sim_all verilator clean
 
 
 help:
@@ -83,6 +83,10 @@ sim-%.log: compile.log
 	export VSIM="$(VSIM)"; cd build && ../scripts/run_vsim.sh --random-seed $* | tee ../$@
 	(! grep -n "Error:" $@)
 	(! grep -n "Fatal:" $@)
+
+
+verilator: Bender.yml | build
+	cd build && ../scripts/run_verilator.sh
 
 
 clean:
