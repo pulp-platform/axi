@@ -258,7 +258,11 @@ module tb_axi_xbar #(
         #TestTime;
         if(end_of_sim == '1) begin
           monitor.print_result();
+          `ifdef TARGET_VCS
+          $finish(1);
+          `else
           $stop();
+          `endif
         end
         @(posedge clk);
       end while (1'b1);

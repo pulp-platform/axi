@@ -152,7 +152,11 @@ module tb_axi_lite_xbar;
     wait (&end_of_sim);
     repeat (1000) @(posedge clk);
     $display("Simulation stopped as all Masters transferred their data, Success.",);
+    `ifdef TARGET_VCS
+    $finish(1);
+    `else
     $stop();
+    `endif
   end
 
   //-----------------------------------
