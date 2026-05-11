@@ -238,8 +238,33 @@ module tb_axi_xbar #(
     end
   end
 
+  // Bind interface-instance arrays element-wise to virtual-interface arrays.
+  // Element-wise assignment is the form defined by IEEE 1800-2017 §25.9; the
+  // whole-array implicit conversion used previously is a vendor extension that
+  // not all tools (e.g. slang) accept. A genvar loop makes each index a
+  // compile-time constant so the indexed reference resolves to a specific
+  // interface instance rather than appearing in expression context.
+  virtual AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH ( TbAxiAddrWidth      ),
+    .AXI_DATA_WIDTH ( TbAxiDataWidth      ),
+    .AXI_ID_WIDTH   ( TbAxiIdWidthMasters ),
+    .AXI_USER_WIDTH ( TbAxiUserWidth      )
+  ) master_monitor_vif [TbNumMasters-1:0];
+  virtual AXI_BUS_DV #(
+    .AXI_ADDR_WIDTH ( TbAxiAddrWidth     ),
+    .AXI_DATA_WIDTH ( TbAxiDataWidth     ),
+    .AXI_ID_WIDTH   ( TbAxiIdWidthSlaves ),
+    .AXI_USER_WIDTH ( TbAxiUserWidth     )
+  ) slave_monitor_vif [TbNumSlaves-1:0];
+  for (genvar i = 0; i < TbNumMasters; i++) begin : gen_bind_master_vif
+    initial master_monitor_vif[i] = master_monitor_dv[i];
+  end
+  for (genvar i = 0; i < TbNumSlaves; i++) begin : gen_bind_slave_vif
+    initial slave_monitor_vif[i] = slave_monitor_dv[i];
+  end
+
   initial begin : proc_monitor
-    static tb_axi_xbar_pkg::axi_xbar_monitor #(
+    tb_axi_xbar_pkg::axi_xbar_monitor #(
       .AxiAddrWidth      ( TbAxiAddrWidth       ),
       .AxiDataWidth      ( TbAxiDataWidth       ),
       .AxiIdWidthMasters ( TbAxiIdWidthMasters  ),
@@ -251,7 +276,12 @@ module tb_axi_xbar #(
       .rule_t            ( rule_t               ),
       .AddrMap           ( AddrMap              ),
       .TimeTest          ( TestTime             )
-    ) monitor = new( master_monitor_dv, slave_monitor_dv );
+    ) monitor;
+    // Defer to the inactive region so the per-element vif binds in the
+    // gen_bind_*_vif blocks (also scheduled at time 0) have settled before
+    // the constructor copies the array into the monitor.
+    #0;
+    monitor = new( master_monitor_vif, slave_monitor_vif );
     fork
       monitor.run();
       do begin
