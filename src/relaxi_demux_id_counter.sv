@@ -26,15 +26,15 @@ module relaxi_demux_id_counters #(
   output logic              [2:0] lookup_mst_select_occupied_o,
   // push
   output logic              [2:0] full_o,
-  input  logic   [2:0][AxiIdBits-1:0]  push_axi_id_i,
-  input  mst_port_select_t [2:0]       push_mst_select_i,
-  input  logic   [2:0]                 push_i,
+  input  logic   [AxiIdBits-1:0]  push_axi_id_i,
+  input  mst_port_select_t        push_mst_select_i, 
+  input  logic   [2:0]            push_i,
   // inject ATOPs in AR channel
-  input  logic   [2:0][AxiIdBits-1:0]  inject_axi_id_i,
-  input  logic   [2:0]                 inject_i,
+  input  logic   [AxiIdBits-1:0]  inject_axi_id_i,
+  input  logic   [2:0]            inject_i,
   // pop
-  input  logic   [2:0][AxiIdBits-1:0]  pop_axi_id_i,
-  input  logic   [2:0]                 pop_i,
+  input  logic   [AxiIdBits-1:0]  pop_axi_id_i,
+  input  logic   [2:0]            pop_i,
   // outstanding transactions
   output logic                    any_outstanding_trx_o,
   // fault detection
@@ -62,9 +62,9 @@ module relaxi_demux_id_counters #(
   //-----------------------------------
   for (genvar i = 0; i < 3; i++) begin : gen_enables
   // one-hot encoding of push, inject and pop enables for each counter
-    assign push_en[i]   = push_i[i]   ? (1 << push_axi_id_i[i])   : '0;
-    assign inject_en[i] = inject_i[i] ? (1 << inject_axi_id_i[i]) : '0;
-    assign pop_en[i]    = pop_i[i]    ? (1 << pop_axi_id_i[i])    : '0;
+    assign push_en[i]   = push_i[i]   ? (1 << push_axi_id_i)   : '0;
+    assign inject_en[i] = inject_i[i] ? (1 << inject_axi_id_i) : '0;
+    assign pop_en[i]    = pop_i[i]    ? (1 << pop_axi_id_i)    : '0;
   end
 
   //-----------------------------------
@@ -106,7 +106,7 @@ module relaxi_demux_id_counters #(
   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
     logic [2:0]                   cnt_en;
     logic [2:0]                   cnt_down;
-    cnt_t [2:0]                   cnt_delta;
+    cnt_t                         cnt_delta;
     
     for (genvar r = 0; r < 3; r++) begin : gen_cnt_ctrl
       always_comb begin
@@ -114,34 +114,34 @@ module relaxi_demux_id_counters #(
           3'b001  : begin // pop_i = -1
             cnt_en[r]    = 1'b1;
             cnt_down[r]  = 1'b1;
-            cnt_delta[r] = cnt_t'(1);
+            cnt_delta    = cnt_t'(1);
           end
           3'b010  : begin // inject_i = +1
             cnt_en[r]    = 1'b1;
             cnt_down[r]  = 1'b0;
-            cnt_delta[r] = cnt_t'(1);
+            cnt_delta    = cnt_t'(1);
           end
        // 3'b011, inject_i & pop_i = 0 --> use default
           3'b100  : begin // push_i = +1
             cnt_en[r]    = 1'b1;
             cnt_down[r]  = 1'b0;
-            cnt_delta[r] = cnt_t'(1);
+            cnt_delta    = cnt_t'(1);
           end
        // 3'b101, push_i & pop_i = 0 --> use default
           3'b110  : begin // push_i & inject_i = +2
             cnt_en[r]    = 1'b1;
             cnt_down[r]  = 1'b0;
-            cnt_delta[r] = cnt_t'(2);
+            cnt_delta    = cnt_t'(2);
           end
           3'b111  : begin // push_i & inject_i & pop_i = +1
             cnt_en[r]    = 1'b1;
             cnt_down[r]  = 1'b0;
-            cnt_delta[r] = cnt_t'(1);
+            cnt_delta    = cnt_t'(1);
           end
           default : begin // do nothing to the counters
             cnt_en[r]    = 1'b0;
             cnt_down[r]  = 1'b0;
-            cnt_delta[r] = cnt_t'(0);
+            cnt_delta    = cnt_t'(0);
           end
         endcase
       end
@@ -152,14 +152,15 @@ module relaxi_demux_id_counters #(
 
     rel_delta_counter #(
       .WIDTH           ( CounterWidth ),
-      .STICKY_OVERFLOW ( 1'b0         )
+      .STICKY_OVERFLOW ( 1'b0         ),
+      .TmrStatus       ( 1'b1         )
     ) i_in_flight_cnt (
       .clk_i      ( clk_i       ),
       .rst_ni     ( rst_ni      ),
       .clear_i    ( 3'b000      ),
       .en_i       ( cnt_en      ),
       .load_i     ( 3'b000      ),
-      .down_i     ( cnt_down    ), 
+      .down_i     ( cnt_down    ), // prim fault, at both primitive input and output
       .delta_i    ( cnt_delta   ),
       .d_i        ( '0          ),
       .q_o        ( in_flight   ),
