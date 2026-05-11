@@ -26,15 +26,15 @@ module relaxi_demux_id_counters #(
   output logic              [2:0] lookup_mst_select_occupied_o,
   // push
   output logic              [2:0] full_o,
-  input  logic   [AxiIdBits-1:0]  push_axi_id_i,
-  input  mst_port_select_t [2:0]  push_mst_select_i,
-  input  logic                    push_i,
+  input  logic   [2:0][AxiIdBits-1:0]  push_axi_id_i,
+  input  mst_port_select_t [2:0]       push_mst_select_i,
+  input  logic   [2:0]                 push_i,
   // inject ATOPs in AR channel
-  input  logic   [AxiIdBits-1:0]  inject_axi_id_i,
-  input  logic                    inject_i,
+  input  logic   [2:0][AxiIdBits-1:0]  inject_axi_id_i,
+  input  logic   [2:0]                 inject_i,
   // pop
-  input  logic   [AxiIdBits-1:0]  pop_axi_id_i,
-  input  logic                    pop_i,
+  input  logic   [2:0][AxiIdBits-1:0]  pop_axi_id_i,
+  input  logic   [2:0]                 pop_i,
   // outstanding transactions
   output logic                    any_outstanding_trx_o,
   // fault detection
@@ -53,9 +53,19 @@ module relaxi_demux_id_counters #(
 
   // per-counter fault signals from rel_delta_counter
   logic [NoCounters-1:0] cnt_fault;
-
+  
   // control signals
-  logic [NoCounters-1:0] push_en, inject_en, pop_en;
+  logic [2:0][NoCounters-1:0] push_en, inject_en, pop_en;
+
+  //-----------------------------------
+  // Push and Pop
+  //-----------------------------------
+  for (genvar i = 0; i < 3; i++) begin : gen_enables
+  // one-hot encoding of push, inject and pop enables for each counter
+    assign push_en[i]   = push_i[i]   ? (1 << push_axi_id_i[i])   : '0;
+    assign inject_en[i] = inject_i[i] ? (1 << inject_axi_id_i[i]) : '0;
+    assign pop_en[i]    = pop_i[i]    ? (1 << pop_axi_id_i[i])    : '0;
+  end
 
   //-----------------------------------
   // Lookup
@@ -64,93 +74,96 @@ module relaxi_demux_id_counters #(
     assign lookup_mst_select_o[i]          = mst_select_q[i][lookup_axi_id_i];
     assign lookup_mst_select_occupied_o[i] = occupied[i][lookup_axi_id_i];
   end
-
-  //-----------------------------------
-  // Push and Pop
-  //-----------------------------------
-  assign push_en   = push_i   ? (1 << push_axi_id_i)   : '0;
-  assign inject_en = inject_i ? (1 << inject_axi_id_i) : '0;
-  assign pop_en    = pop_i    ? (1 << pop_axi_id_i)    : '0;
-
-  for (genvar i = 0; i < 3; i++)
+  
+  //------------------------------------------------------------------
+  // Full output
+  //------------------------------------------------------------------
+  for (genvar i = 0; i < 3; i++) begin : gen_full
     assign full_o[i] = |cnt_full[i];
-
+  end
+  
   //-----------------------------------
   // Status
   //-----------------------------------
   logic [2:0] any_outstanding;
   logic outstand_fault;
-  for (genvar r = 0; r < 3; r++)
+
+  for (genvar r = 0; r < 3; r++) begin : gen_outstanding
     assign any_outstanding[r] = |occupied[r];
+  end
 
   TMR_voter_fail i_any_outstanding_vote (
     .a_i              ( any_outstanding[0] ),
     .b_i              ( any_outstanding[1] ),
     .c_i              ( any_outstanding[2] ),
-    .majority_o       ( any_outstanding_trx_o  ),
+    .majority_o       ( any_outstanding_trx_o  ), 
     .fault_detected_o ( outstand_fault         )
   );
-
-  assign fault_o = outstand_fault | |cnt_fault | |overflow_fault;
   
+  assign fault_o = outstand_fault | |cnt_fault;
+
   // counters
   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
-    logic                         cnt_en, cnt_down;
-    cnt_t                         cnt_delta;
+    logic [2:0]                   cnt_en;
+    logic [2:0]                   cnt_down;
+    cnt_t [2:0]                   cnt_delta;
+    
+    for (genvar r = 0; r < 3; r++) begin : gen_cnt_ctrl
+      always_comb begin
+        unique case ({push_en[r][i], inject_en[r][i], pop_en[r][i]})
+          3'b001  : begin // pop_i = -1
+            cnt_en[r]    = 1'b1;
+            cnt_down[r]  = 1'b1;
+            cnt_delta[r] = cnt_t'(1);
+          end
+          3'b010  : begin // inject_i = +1
+            cnt_en[r]    = 1'b1;
+            cnt_down[r]  = 1'b0;
+            cnt_delta[r] = cnt_t'(1);
+          end
+       // 3'b011, inject_i & pop_i = 0 --> use default
+          3'b100  : begin // push_i = +1
+            cnt_en[r]    = 1'b1;
+            cnt_down[r]  = 1'b0;
+            cnt_delta[r] = cnt_t'(1);
+          end
+       // 3'b101, push_i & pop_i = 0 --> use default
+          3'b110  : begin // push_i & inject_i = +2
+            cnt_en[r]    = 1'b1;
+            cnt_down[r]  = 1'b0;
+            cnt_delta[r] = cnt_t'(2);
+          end
+          3'b111  : begin // push_i & inject_i & pop_i = +1
+            cnt_en[r]    = 1'b1;
+            cnt_down[r]  = 1'b0;
+            cnt_delta[r] = cnt_t'(1);
+          end
+          default : begin // do nothing to the counters
+            cnt_en[r]    = 1'b0;
+            cnt_down[r]  = 1'b0;
+            cnt_delta[r] = cnt_t'(0);
+          end
+        endcase
+      end
+    end
+    
     logic [2:0][CounterWidth-1:0] in_flight;
     logic [2:0]                   overflow;
-    logic [NoCounters-1:0]        overflow_fault;
-    always_comb begin
-      unique case ({push_en[i], inject_en[i], pop_en[i]})
-        3'b001  : begin // pop_i = -1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b1;
-          cnt_delta = cnt_t'(1);
-        end
-        3'b010  : begin // inject_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-     // 3'b011, inject_i & pop_i = 0 --> use default
-        3'b100  : begin // push_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-     // 3'b101, push_i & pop_i = 0 --> use default
-        3'b110  : begin // push_i & inject_i = +2
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(2);
-        end
-        3'b111  : begin // push_i & inject_i & pop_i = +1
-          cnt_en    = 1'b1;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(1);
-        end
-        default : begin // do nothing to the counters
-          cnt_en    = 1'b0;
-          cnt_down  = 1'b0;
-          cnt_delta = cnt_t'(0);
-        end
-      endcase
-    end
 
     rel_delta_counter #(
       .WIDTH           ( CounterWidth ),
       .STICKY_OVERFLOW ( 1'b0         )
     ) i_in_flight_cnt (
-      .clk_i      ( clk_i     ),
-      .rst_ni     ( rst_ni    ),
-      .clear_i    ( 1'b0      ),
-      .en_i       ( cnt_en    ),
-      .load_i     ( 1'b0      ),
-      .down_i     ( cnt_down  ),
-      .delta_i    ( cnt_delta ),
-      .d_i        ( '0        ),
-      .q_o        ( in_flight ),
-      .overflow_o ( overflow  ),
+      .clk_i      ( clk_i       ),
+      .rst_ni     ( rst_ni      ),
+      .clear_i    ( 3'b000      ),
+      .en_i       ( cnt_en      ),
+      .load_i     ( 3'b000      ),
+      .down_i     ( cnt_down    ), 
+      .delta_i    ( cnt_delta   ),
+      .d_i        ( '0          ),
+      .q_o        ( in_flight   ),
+      .overflow_o ( overflow    ),
       .fault_o    ( cnt_fault[i] )
     );
     
@@ -162,7 +175,7 @@ module relaxi_demux_id_counters #(
     
     // inside gen_counters (genvar i = ID slot):
     for (genvar r = 0; r < 3; r++) begin : gen_mst_select_tmr
-        `FFLARN(mst_select_q[r][i], push_mst_select_i[r], push_en[i], '0, clk_i, rst_ni)
+      `FFLARN(mst_select_q[r][i], push_mst_select_i[r], push_en[r][i], '0, clk_i, rst_ni)
     end
 
 // pragma translate_off
@@ -174,7 +187,7 @@ module relaxi_demux_id_counters #(
       .b_i              ( overflow[1]    ),
       .c_i              ( overflow[2]    ),
       .majority_o       ( overflow_voted ),
-      .fault_detected_o ( overflow_fault[i] )
+      .fault_detected_o (                ) // simulation only, not in fault_o
     );
     // Validate parameters.
     cnt_underflow: assert property(
