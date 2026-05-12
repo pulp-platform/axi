@@ -89,8 +89,9 @@ module relaxi_demux_simple #(
     //--------------------------------------
 
     // Register which locks the AW valid signal
-    logic  [2:0]              lock_aw_valid_d,    lock_aw_valid_q, load_aw_lock;
-    logic  [2:0]              aw_valid,           aw_ready;
+    logic  [2:0]              lock_aw_valid_d, lock_aw_valid_q, lock_aw_valid_next, load_aw_lock;
+    logic  [2:0]              aw_valid, aw_ready;
+    logic  [2:0][1:0]         alt_lock_aw_valid; 
 
     // AW ID counter
     select_t  [2:0]                lookup_aw_select;
@@ -100,6 +101,7 @@ module relaxi_demux_simple #(
 
     // W select counter: stores the decision to which master W beats should go
     select_t   [2:0]               w_select,           w_select_q;
+    select_t   [2:0][1:0]          alt_w_select;
     logic      [2:0]               w_select_valid;
     id_cnt_t   [2:0]               w_open;
     logic      [2:0]               w_cnt_up,           w_cnt_down;
@@ -130,50 +132,56 @@ module relaxi_demux_simple #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
-
-    // Control of the AW handshake
-    always_comb begin
-      // AXI Handshakes
-      slv_resp_o.aw_ready = 3'b000;
-      aw_valid     = 3'b000;
-      // `lock_aw_valid`, used to be protocol conform as it is not allowed to deassert
-      // a valid if there was no corresponding ready. As this process has to be able to inject
-      // an AXI ID into the counter of the AR channel on an ATOP, there could be a case where
-      // this process waits on `aw_ready` but in the mean time on the AR channel the counter gets
-      // full.
-      lock_aw_valid_d = lock_aw_valid_q;
-      load_aw_lock    = 3'b000;
-      // AW ID counter and W FIFO
-      w_cnt_up        = 3'b000;
-      // ATOP injection into ar counter
-      atop_inject     = 3'b000;
-      // we had an arbitration decision, the valid is locked, wait for the transaction
-      for (int unsigned r = 0; r < 3; r++) begin
-        if (lock_aw_valid_q[r]) begin
-          aw_valid[r] = 1'b1;
+    for (genvar i = 0; i < 3; i++) begin : gen_aw_ctrl
+      // each replica uses its own raw inputs 
+      // Control of the AW handshake
+      always_comb begin
+        // AXI Handshakes
+        slv_resp_o.aw_ready[i] = 1'b0;
+        aw_valid[i]     = 1'b0;
+        // `lock_aw_valid`, used to be protocol conform as it is not allowed to deassert
+        // a valid if there was no corresponding ready. As this process has to be able to inject
+        // an AXI ID into the counter of the AR channel on an ATOP, there could be a case where
+        // this process waits on `aw_ready` but in the mean time on the AR channel the counter gets
+        // full.
+        lock_aw_valid_d[i] = lock_aw_valid_q[i];
+        load_aw_lock[i]    = 1'b0;
+        // AW ID counter and W FIFO
+        w_cnt_up[i]        = 1'b0;
+        // ATOP injection into ar counter
+        atop_inject[i]     = 1'b0;
+        // we had an arbitration decision, the valid is locked, wait for the transaction
+        if (lock_aw_valid_q[i]) begin
+          aw_valid[i] = 1'b1;
           // transaction
-          if (aw_ready[r]) begin
-            slv_resp_o.aw_ready[r] = 1'b1;
-            lock_aw_valid_d[r] = 1'b0;
-            load_aw_lock[r]    = 1'b1;
-            atop_inject[r]        = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP][r] & AtopSupport;
+          if (aw_ready[i]) begin
+            slv_resp_o.aw_ready[i] = 1'b1;
+            lock_aw_valid_d[i] = 1'b0;
+            load_aw_lock[i]    = 1'b1;
+            // inject the ATOP if necessary
+            atop_inject[i]     = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
           end
         end else begin
-          if (!aw_id_cnt_full[r] && (w_open[r] != {IdCounterWidth{1'b1}}) && (!ar_id_cnt_full[r] && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP][r]) || !AtopSupport)) begin
-            if (slv_req_i.aw_valid[r] &&
-                   ((w_open[r] == '0) || (w_select[r] == slv_aw_select_i[r])) &&
-                   (!aw_select_occupied[r] || (slv_aw_select_i[r] == lookup_aw_select[r]))) begin
+          // an AW can be handles if 'o_aw_id_counter' and 'i_coutner_open_w' are not full. An ATOP that 
+          // requires an R resposne can be handled if 'i_ar_id_counter' is not full (this 
+          // only applies if ATOPs are supported at all)
+          if (!aw_id_cnt_full[i] && (w_open[i] != {IdCounterWidth{1'b1}}) && 
+             (!(ar_id_cnt_full[i] && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) || 
+             !AtopSupport)) begin
+            if (slv_req_i.aw_valid[i] &&
+                  ((w_open[i] == '0) || (w_select[i] == slv_aw_select_i[i])) &&
+                  (!aw_select_occupied[i] || (slv_aw_select_i[i] == lookup_aw_select[i]))) begin
               // connect the handshake
-              aw_valid[r] = 1'b1;
-              w_cnt_up[r] = 1'b1;
+              aw_valid[i] = 1'b1;
+              w_cnt_up[i] = 1'b1;
               // on AW transaction
-              if (aw_ready[r]) begin
-                slv_resp_o.aw_ready[r] = 1'b1;
-                atop_inject[r]        = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
+              if (aw_ready[i]) begin
+                slv_resp_o.aw_ready[i] = 1'b1;
+                atop_inject[i]        = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
               // no AW transaction this cycle, lock the decision
               end else begin
-                lock_aw_valid_d[r] = 1'b1;
-                load_aw_lock[r]    = 1'b1;
+                lock_aw_valid_d[i] = 1'b1;
+                load_aw_lock[i]    = 1'b1;
               end
             end
           end
@@ -181,10 +189,22 @@ module relaxi_demux_simple #(
       end
     end 
     
-    // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
-    // prevent further pushing
-    for (genvar r = 0; r < 3; r++) begin : gen_aw_lock
-        `FFLARN(lock_aw_valid_q[r], lock_aw_valid_d[r], load_aw_lock[r], '0, clk_i, rst_ni)
+    for (genvar i = 0; i < 3; i++) begin : gen_lock_aw_alt
+      for (genvar j = 0; j < 2; j++) begin
+        assign alt_lock_aw_valid[i][j] = lock_aw_valid_next[(i+j+1) % 3];
+      end
+    end
+
+    for (genvar i = 0; i < 3; i++) begin : gen_lock_aw
+      TMR_voter_fail #(.VoterType(1)) i_lock_aw_voted (
+        .a_i              ( lock_aw_valid_next[i]    ),
+        .b_i              ( alt_lock_aw_valid[i][0]  ),
+        .c_i              ( alt_lock_aw_valid[i][1]  ),
+        .majority_o       ( lock_aw_valid_q[i]       ),
+        .fault_detected_o (                          )  // fault to-do
+      );
+
+      `FFLARN(lock_aw_valid_next[i], lock_aw_valid_d[i], load_aw_lock[i], '0, clk_i, rst_ni)
     end
 
     if (UniqueIds) begin : gen_unique_ids_aw
@@ -193,9 +213,11 @@ module relaxi_demux_simple #(
       // master port as all write transactions with the same ID, or both.  This means that the
       // signals that are driven by the ID counters if this parameter is not set can instead be
       // derived from existing signals.  The ID counters can therefore be omitted.
-      assign lookup_aw_select = slv_aw_select_i;
-      assign aw_select_occupied = 3'b000;
-      assign aw_id_cnt_full = 3'b000;
+      for (genvar i = 0; i < 3; i++) begin : gen_unique_ids_aw
+        assign lookup_aw_select[i] = slv_aw_select_i[i];
+        assign aw_select_occupied[i] = 1'b0;
+        assign aw_id_cnt_full[i] = 1'b0;
+      end 
     end else begin : gen_aw_id_counter
       relaxi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
@@ -209,7 +231,7 @@ module relaxi_demux_simple #(
         .lookup_mst_select_occupied_o ( aw_select_occupied             ),
         .full_o                       ( aw_id_cnt_full                 ),
         .inject_axi_id_i              ( '0                             ),
-        .inject_i                     ( 1'b0                           ),
+        .inject_i                     ( 3'b000                         ),
         .push_axi_id_i                ( slv_req_i.aw.id[0+:AxiLookBits] ),
         .push_mst_select_i            ( slv_aw_select_i                ),
         .push_i                       ( w_cnt_up                       ),
@@ -226,22 +248,41 @@ module relaxi_demux_simple #(
     // `slv_aw_select_i`.
     rel_counter #(
       .WIDTH           ( IdCounterWidth ),
-      .STICKY_OVERFLOW ( 1'b0           )
+      .STICKY_OVERFLOW ( 1'b0           ),
+      .TmrStatus       ( 1'b1           )
     ) i_counter_open_w (
       .clk_i,
       .rst_ni,
-      .clear_i    ( 1'b0                  ),
+      .clear_i    ( 3'b000                ),
       .en_i       ( w_cnt_up ^ w_cnt_down ),
-      .load_i     ( 1'b0                  ),
+      .load_i     ( 3'b000                ),
       .down_i     ( w_cnt_down            ),
       .d_i        ( '0                    ),
       .q_o        ( w_open                ),
       .overflow_o ( /*not used*/          )
     );
-
-    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
-    assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
-    assign w_select_valid = w_cnt_up | (|w_open);
+    
+    for (genvar i = 0; i < 3; i++) begin : gen_w_sel_alt
+      for (genvar j = 0; j < 2; j++) begin
+        assign alt_w_select[i][j] = w_select_next[(i+j+1) % 3];
+      end
+    end
+    
+    for (genvar i = 0; i < 3; i++) begin : gen_w_sel_tmr
+      bitwise_TMR_voter_fail #(.DataWidth(SelectWidth)) i_w_sel_vote (
+        .a_i              ( w_select_next[i]   ),
+        .b_i              ( alt_w_select[i][0] ),
+        .c_i              ( alt_w_select[i][1] ),
+        .majority_o       ( w_select_q[i]      ),
+        .fault_detected_o (                    )
+      );
+      `FFLARN(w_select_next[i], slv_aw_select_i[i], w_cnt_up[i], select_t'(0), clk_i, rst_ni)
+    end
+ 
+    for (genvar i = 0; i < 3; i++) begin : gen_w_select
+      assign w_select[i]       = (|w_open[i]) ? w_select_q[i] : slv_aw_select_i[i];
+      assign w_select_valid[i] = w_cnt_up[i] | (|w_open[i]);
+    end
 
     //--------------------------------------
     //  W Channel
@@ -250,8 +291,8 @@ module relaxi_demux_simple #(
     //--------------------------------------
     //  B Channel
     //--------------------------------------
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
-
+    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0][2:0] b_idx;
+   
     // Arbitration of the different B responses
     rel_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
@@ -274,65 +315,83 @@ module relaxi_demux_simple #(
     );
 
     always_comb begin
-      if (slv_resp_o.b_valid) begin
-        `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx].b)
-      end else begin
-        slv_resp_o.b = '0;
+      for (int i = 0; i < 3; i++) begin
+        if (slv_resp_o.b_valid[i]) begin
+          `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx[i]].b)
+        end else begin
+          slv_resp_o.b = '0;
+        end
       end
     end
 
-    //--------------------------------------
+    //--------------------------------------\
     //  AR Channel
     //--------------------------------------
 
     // control of the AR handshake
-    always_comb begin
-      // AXI Handshakes
-      slv_resp_o.ar_ready    = 1'b0;
-      ar_valid        = 1'b0;
-      // `lock_ar_valid`: Used to be protocol conform as it is not allowed to deassert `ar_valid`
-      // if there was no corresponding `ar_ready`. There is the possibility that an injection
-      // of a R response from an `atop` from the AW channel can change the occupied flag of the
-      // `i_ar_id_counter`, even if it was previously empty. This FF prevents the deassertion.
-      lock_ar_valid_d = lock_ar_valid_q;
-      load_ar_lock    = 1'b0;
-      // AR id counter
-      ar_push         = 1'b0;
-      // The process had an arbitration decision in a previous cycle, the valid is locked,
-      // wait for the AR transaction.
-      if (lock_ar_valid_q) begin
-        ar_valid = 1'b1;
-        // transaction
-        if (ar_ready) begin
-          slv_resp_o.ar_ready    = 1'b1;
-          ar_push         = 1'b1;
-          lock_ar_valid_d = 1'b0;
-          load_ar_lock    = 1'b1;
-        end
-      end else begin
-        // The process can start handling AR transaction if `i_ar_id_counter` has space.
-        if (!ar_id_cnt_full) begin
-          // There is a valid AR, so look the ID up.
-          if (slv_req_i.ar_valid && (!ar_select_occupied ||
-             (slv_ar_select_i == lookup_ar_select))) begin
-            // connect the AR handshake
-            ar_valid     = 1'b1;
-            // on transaction
-            if (ar_ready) begin
-              slv_resp_o.ar_ready = 1'b1;
-              ar_push      = 1'b1;
-            // no transaction this cycle, lock the valid decision!
-            end else begin
-              lock_ar_valid_d = 1'b1;
-              load_ar_lock    = 1'b1;
+    for (genvar i = 0; i < 3; i++) begin : gen_ar_ctrl
+      always_comb begin
+        // AXI Handshakes
+        slv_resp_o.ar_ready[i]    = 1'b0;
+        ar_valid[i]        = 1'b0;
+        // `lock_ar_valid`: Used to be protocol conform as it is not allowed to deassert `ar_valid`
+        // if there was no corresponding `ar_ready`. There is the possibility that an injection
+        // of a R response from an `atop` from the AW channel can change the occupied flag of the
+        // `i_ar_id_counter`, even if it was previously empty. This FF prevents the deassertion.
+        lock_ar_valid_d[i] = lock_ar_valid_q[i];
+        load_ar_lock[i]    = 1'b0;
+        // AR id counter
+        ar_push[i]         = 1'b0;
+        // The process had an arbitration decision in a previous cycle, the valid is locked,
+        // wait for the AR transaction.
+        if (lock_ar_valid_q[i]) begin
+          ar_valid[i] = 1'b1;
+          // transaction
+          if (ar_ready[i]) begin
+            slv_resp_o.ar_ready[i]    = 1'b1;
+            ar_push[i]         = 1'b1;
+            lock_ar_valid_d[i] = 1'b0;
+            load_ar_lock[i]    = 1'b1;
+          end
+        end else begin
+          // The process can start handling AR transaction if `i_ar_id_counter` has space.
+          if (!ar_id_cnt_full[i]) begin
+            // There is a valid AR, so look the ID up.
+            if (slv_req_i.ar_valid && (!ar_select_occupied[i] ||
+              (slv_ar_select_i[i] == lookup_ar_select[i]))) begin
+              // connect the AR handshake
+              ar_valid[i]     = 1'b1;
+              // on transaction
+              if (ar_ready[i]) begin
+                slv_resp_o.ar_ready[i] = 1'b1;
+                ar_push[i]      = 1'b1;
+              // no transaction this cycle, lock the valid decision!
+              end else begin
+                lock_ar_valid_d[i] = 1'b1;
+                load_ar_lock[i]    = 1'b1;
+              end
             end
           end
         end
       end
     end
+    
+    for (genvar i = 0; i < 3; i++) begin : gen_lock_ar_alt
+      for (genvar j = 0; j < 2; j++) begin
+        assign alt_lock_ar_valid[i][j] = lock_ar_valid_next[(i+j+1) % 3];
+      end
+    end
 
-    // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
+    for (genvar i = 0; i < 3; i++) begin : gen_lock_ar
+      TMR_voter_fail #(.VoterType(1)) i_lock_ar_voted (
+        .a_i              ( lock_ar_valid_next[i]   ),
+        .b_i              ( alt_lock_ar_valid[i][0] ),
+        .c_i              ( alt_lock_ar_valid[i][1] ),
+        .majority_o       ( lock_ar_valid_q[i]      ),
+        .fault_detected_o (                         )
+      );
+      `FFLARN(lock_ar_valid_next[i], lock_ar_valid_d[i], load_ar_lock[i], '0, clk_i, rst_ni)
+    end
 
     if (UniqueIds) begin : gen_unique_ids_ar
       // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
@@ -340,9 +399,11 @@ module relaxi_demux_simple #(
       // master port as all read transactions with the same ID, or both.  This means that the
       // signals that are driven by the ID counters if this parameter is not set can instead be
       // derived from existing signals.  The ID counters can therefore be omitted.
-      assign lookup_ar_select = slv_ar_select_i;
-      assign ar_select_occupied = 1'b0;
-      assign ar_id_cnt_full = 1'b0;
+      for (genvar i = 0; i < 3; i++) begin : gen_unique_ids_ar
+        assign lookup_ar_select[i] = slv_ar_select_i[i];
+        assign ar_select_occupied[i] = 1'b0;
+        assign ar_id_cnt_full[i] = 1'b0;
+      end
     end else begin : gen_ar_id_counter
       relaxi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
@@ -370,7 +431,7 @@ module relaxi_demux_simple #(
     //  R Channel
     //--------------------------------------
 
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0][2:0] r_idx;
 
     // Arbitration of the different r responses
     rr_arb_tree #(
@@ -393,61 +454,68 @@ module relaxi_demux_simple #(
     );
 
     always_comb begin
-      if (slv_resp_o.r_valid) begin
-        `AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
-      end else begin
-        slv_resp_o.r = '0;
+      for (int i = 0; i < 3; i++) begin
+        if (slv_resp_o.r_valid[i]) begin
+          `AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx[i]].r)
+        end else begin
+          slv_resp_o.r = '0;
+        end
       end
     end
-
-    assign ar_ready = ar_valid & mst_resps_i[slv_ar_select_i].ar_ready;
-    assign aw_ready = aw_valid & mst_resps_i[slv_aw_select_i].aw_ready;
-
+    
+    for (genvar i = 0; i < 3; i ++ ) begin: gen_ax_readies
+      assign ar_ready[i] = ar_valid[i] & mst_resps_i[slv_ar_select_i[i]].ar_ready[i];
+      assign aw_ready[i] = aw_valid[i] & mst_resps_i[slv_aw_select_i[i]].aw_ready[i];
+    end
+    
     // process that defines the individual demuxes and assignments for the arbitration
     // as mst_reqs_o has to be drivem from the same always comb block!
     always_comb begin
-      // default assignments
-      mst_reqs_o  = '0;
-      slv_resp_o.w_ready = 1'b0;
-      w_cnt_down  = 1'b0;
+      for (int i = 0; i < 3; i++) begin
+        // default assignments
+        mst_reqs_o  = '0; // out of the loop? to save area? 
+        slv_resp_o.w_ready[i] = 1'b0;
+        w_cnt_down[i]  = 1'b0;
 
-      for (int unsigned i = 0; i < NoMstPorts; i++) begin
-        // AW channel
-        mst_reqs_o[i].aw       = slv_req_i.aw;
-        mst_reqs_o[i].aw_valid = 1'b0;
-        if (aw_valid && (slv_aw_select_i == i)) begin
-          mst_reqs_o[i].aw_valid = 1'b1;
+        for (int unsigned j = 0; j < NoMstPorts; j++) begin
+          // AW channel
+          mst_reqs_o[j].aw       = slv_req_i.aw;
+          mst_reqs_o[j].aw_valid[j] = 1'b0;
+          if (aw_valid[i] && (slv_aw_select_i[j] == j)) begin
+            mst_reqs_o[j].aw_valid[i] = 1'b1;
+          end
+
+          //  W channel
+          mst_reqs_o[j].w       = slv_req_i.w;
+          mst_reqs_o[j].w_valid = 1'b0;
+          if (w_select_valid && (w_select == j)) begin
+            mst_reqs_o[j].w_valid = slv_req_i.w_valid;
+            slv_resp_o.w_ready           = mst_resps_i[j].w_ready;
+            w_cnt_down            = slv_req_i.w_valid & mst_resps_i[j].w_ready & slv_req_i.w.last;
+          end
+
+          //  B channel
+          mst_reqs_o[j].b_ready[i] = mst_b_readies[j];
+
+          // AR channel
+          mst_reqs_o[j].ar       = slv_req_i.ar;
+          mst_reqs_o[j].ar_valid = 1'b0;
+          if (ar_valid && (slv_ar_select_i == j)) begin
+            mst_reqs_o[j].ar_valid = 1'b1;
+          end
+
+          //  R channel
+          mst_reqs_o[j].r_ready = mst_r_readies[j];
         end
-
-        //  W channel
-        mst_reqs_o[i].w       = slv_req_i.w;
-        mst_reqs_o[i].w_valid = 1'b0;
-        if (w_select_valid && (w_select == i)) begin
-          mst_reqs_o[i].w_valid = slv_req_i.w_valid;
-          slv_resp_o.w_ready           = mst_resps_i[i].w_ready;
-          w_cnt_down            = slv_req_i.w_valid & mst_resps_i[i].w_ready & slv_req_i.w.last;
-        end
-
-        //  B channel
-        mst_reqs_o[i].b_ready = mst_b_readies[i];
-
-        // AR channel
-        mst_reqs_o[i].ar       = slv_req_i.ar;
-        mst_reqs_o[i].ar_valid = 1'b0;
-        if (ar_valid && (slv_ar_select_i == i)) begin
-          mst_reqs_o[i].ar_valid = 1'b1;
-        end
-
-        //  R channel
-        mst_reqs_o[i].r_ready = mst_r_readies[i];
       end
     end
+
     // unpack the response B and R channels for the arbitration
-    for (genvar i = 0; i < NoMstPorts; i++) begin : gen_b_channels
-      // assign mst_b_chans[i]        = mst_resps_i[i].b;
-      assign mst_b_valids[i]       = mst_resps_i[i].b_valid;
-      // assign mst_r_chans[i]        = mst_resps_i[i].r;
-      assign mst_r_valids[i]       = mst_resps_i[i].r_valid;
+    for (genvar i = 0; i < 3; i++) begin : gen_b_channels
+      for (genvar j = 0; j < NoMstPorts; j++) begin
+        assign mst_b_valids[j]       = mst_resps_i[j].b_valid[i];
+        assign mst_r_valids[j]       = mst_resps_i[j].r_valid[i];
+      end
     end
 
 // Validate parameters.
@@ -499,5 +567,5 @@ module relaxi_demux_simple #(
 `endif
 `endif
 // pragma translate_on
-  end
+  end // gen_demux
 endmodule
