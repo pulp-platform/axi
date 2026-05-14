@@ -22,7 +22,7 @@ graph TD
 
     E --> L0["Level 0: axi_pkg.sv\n(의존성 없음)"]
     E --> L1["Level 1: axi_demux_id_counters.sv\naxi_intf.sv"]
-    E --> L2["Level 2: 34개 RTL 모듈\n(Level 0/1에만 의존)"]
+    E --> L2["Level 2: 35개 RTL 모듈\n(Level 0/1에만 의존)"]
     E --> L3["Level 3: 12개 RTL 모듈\n(Level 0~2에 의존)"]
     E --> L4["Level 4: 7개 RTL 모듈\n(Level 0~3에 의존)"]
     E --> L5["Level 5: axi_xbar.sv"]
@@ -84,7 +84,7 @@ export_include_dirs:
 |---|---|---|---|
 | Level 0 | 1 | `axi_pkg.sv` | 기본 타입/파라미터 패키지, 의존성 없음 |
 | Level 1 | 2 | `axi_demux_id_counters.sv`, `axi_intf.sv` | Level 0에만 의존 |
-| Level 2 | 34 | `axi_atop_filter.sv`, `axi_lite_regs_wrapper.sv` 등 | Level 0/1에만 의존 |
+| Level 2 | 35 | `axi_atop_filter.sv`, `axi_burst_splitter_gran_wrapper.sv` 등 | Level 0/1에만 의존 |
 | Level 3 | 12 | `axi_burst_splitter.sv`, `axi_cdc.sv` 등 | Level 0~2에 의존 |
 | Level 4 | 7 | `axi_iw_converter.sv`, `axi_xbar_unmuxed.sv` 등 | Level 0~3에 의존 |
 | Level 5 | 1 | `axi_xbar.sv` | 최상위 크로스바 |

@@ -46,6 +46,7 @@ graph TD
 |------|------|
 | `src/axi_atop_filter.sv` | ATOP 필터링 |
 | `src/axi_burst_splitter_gran.sv` | 버스트 분할 (세분화) |
+| `src/axi_burst_splitter_gran_wrapper.sv` | AMD Vivado Custom IP 패키징용 flat-port 래퍼 |
 | `src/axi_burst_unwrap.sv` | 버스트 언랩 |
 | `src/axi_bus_compare.sv` | 버스 비교 |
 | `src/axi_cdc_dst.sv` / `src.sv` | CDC 목적지/소스 |

@@ -58,7 +58,7 @@ graph TD
 |------|--------|------|
 | Level 0 | `src/axi_pkg.sv` | 패키지 정의 (의존성 없음) |
 | Level 1 | `src/axi_intf.sv` | AXI 인터페이스 (axi_pkg 의존) |
-| Level 2 | `src/axi_atop_filter.sv` ... `src/axi_to_detailed_mem.sv` (33개) | 기본 모듈들 |
+| Level 2 | `src/axi_atop_filter.sv` ... `src/axi_to_detailed_mem.sv` (34개) | 기본 모듈들 |
 | Level 3 | `src/axi_burst_splitter.sv` ... `src/axi_zero_mem.sv` (11개) | Level 2 의존 모듈 |
 | Level 4 | `src/axi_interleaved_xbar.sv` ... `src/axi_xbar_unmuxed.sv` (10개) | Level 3 의존 모듈 |
 | Level 5 | `src/axi_xbar.sv` | 크로스바 모듈 |
