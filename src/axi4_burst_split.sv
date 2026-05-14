@@ -205,7 +205,7 @@ module axi4_burst_split #(
     .AxiAddrWidth ( CfgAddrWidth ),
     .AxiDataWidth ( CfgDataWidth ),
     .byte_t       ( logic [7:0]  ),
-    .RegRstVal    ( '{LenLimitResetVal, 8'h00, 8'h00, 8'h00} ),
+    .RegRstVal    ( '{0: LenLimitResetVal, default: 8'h00} ),
     .req_lite_t   ( cfg_req_t    ),
     .resp_lite_t  ( cfg_resp_t   )
   ) i_axi_lite_regs (
