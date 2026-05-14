@@ -75,6 +75,7 @@ sources:
   - src/axi_throttle.sv
   - src/axi_to_detailed_mem.sv
   # Level 3
+  - src/axi4_burst_split.sv
   - src/axi_burst_splitter.sv
   - src/axi_cdc.sv
   - src/axi_demux.sv
