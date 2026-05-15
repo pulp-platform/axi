@@ -35,7 +35,7 @@ module axi_inval_filter #(
     input  logic                 inval_ready_i
   );
 
-  import cf_math_pkg::idx_width;
+  import cc_pkg::idx_width;
 
   // Includes
   `include "axi/typedef.svh"
@@ -127,7 +127,7 @@ module axi_inval_filter #(
     end
   end
 
-  fifo_v3 #(
+  cc_fifo #(
     .FALL_THROUGH ( 1'b1      ),
     .DEPTH        ( MaxTxns   ),
     .dtype        ( aw_chan_t )
@@ -135,7 +135,6 @@ module axi_inval_filter #(
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
     .flush_i    ( 1'b0          ),
-    .testmode_i ( 1'b0          ),
     .full_o     ( aw_fifo_full  ),
     .empty_o    ( aw_fifo_empty ),
     .usage_o    (               ),

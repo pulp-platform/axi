@@ -133,7 +133,7 @@ module axi_lite_dw_converter #(
     axi_lite_aw_t aw_chan_spill;
     logic         aw_chan_spill_valid, aw_chan_spill_ready;
 
-    spill_register #(
+    cc_spill_register #(
       .T      ( axi_lite_aw_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_aw (
@@ -160,12 +160,12 @@ module axi_lite_dw_converter #(
 
     assign aw_sel_load = mst_req_o.aw_valid & mst_res_i.aw_ready;
     assign aw_sel_d    = sel_t'(aw_sel_q + 1'b1);
-    `FFLARN(aw_sel_q, aw_sel_d, aw_sel_load, '0, clk_i, rst_ni)
+    `FFL(aw_sel_q, aw_sel_d, aw_sel_load, '0, clk_i, rst_ni)
 
     // Input spill register of the W channel.
     axi_lite_slv_w_t w_chan_spill;
     logic            w_chan_spill_valid, w_chan_spill_ready;
-    spill_register #(
+    cc_spill_register #(
       .T      ( axi_lite_slv_w_t ),
       .Bypass ( 1'b0             )
     ) i_spill_register_w (
@@ -193,7 +193,7 @@ module axi_lite_dw_converter #(
 
     assign w_sel_load = mst_req_o.w_valid & mst_res_i.w_ready;
     assign w_sel_d    = sel_t'(w_sel_q + 1'b1);
-    `FFLARN(w_sel_q, w_sel_d, w_sel_load, '0, clk_i, rst_ni)
+    `FFL(w_sel_q, w_sel_d, w_sel_load, '0, clk_i, rst_ni)
 
     // B response aggregation
     // Slave port B output is the aggregated error of the last few B responses.
@@ -216,15 +216,15 @@ module axi_lite_dw_converter #(
     assign b_sel_d     = sel_t'(b_sel_q + 1'b1);
     assign b_resp_d    = (&b_sel_q) ? axi_pkg::RESP_OKAY : (b_resp_q | mst_res_i.b.resp);
     assign b_resp_load = mst_res_i.b_valid & mst_req_o.b_ready;
-    `FFLARN(b_sel_q, b_sel_d, b_resp_load, '0, clk_i, rst_ni)
-    `FFLARN(b_resp_q, b_resp_d, b_resp_load, axi_pkg::RESP_OKAY, clk_i, rst_ni)
+    `FFL(b_sel_q, b_sel_d, b_resp_load, '0, clk_i, rst_ni)
+    `FFL(b_resp_q, b_resp_d, b_resp_load, axi_pkg::RESP_OKAY, clk_i, rst_ni)
 
     // Read channels.
     // Input spill register of the AW channel.
     axi_lite_ar_t ar_chan_spill;
     logic         ar_chan_spill_valid, ar_chan_spill_ready;
 
-    spill_register #(
+    cc_spill_register #(
       .T      ( axi_lite_ar_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_ar (
@@ -251,7 +251,7 @@ module axi_lite_dw_converter #(
 
     assign ar_sel_load = mst_req_o.ar_valid & mst_res_i.ar_ready;
     assign ar_sel_d    = sel_t'(ar_sel_q + 1'b1);
-    `FFLARN(ar_sel_q, ar_sel_d, ar_sel_load, '0, clk_i, rst_ni)
+    `FFL(ar_sel_q, ar_sel_d, ar_sel_load, '0, clk_i, rst_ni)
 
     // Responses have to be aggregated, one FF less, as the last data is feed directly through.
     sel_t                                 r_sel_q,        r_sel_d;
@@ -260,11 +260,11 @@ module axi_lite_dw_converter #(
     logic            [DownsizeFactor-2:0] r_chan_mst_load;
     for (genvar i = 0; unsigned'(i) < (DownsizeFactor-1); i++) begin : gen_r_chan_ff
       assign r_chan_mst_load[i] = (sel_t'(i) == r_sel_q) & mst_res_i.r_valid & mst_req_o.r_ready;
-      `FFLARN(r_chan_mst_q[i], mst_res_i.r, r_chan_mst_load[i], axi_lite_mst_r_t'{default: '0}, clk_i, rst_ni)
+      `FFL(r_chan_mst_q[i], mst_res_i.r, r_chan_mst_load[i], axi_lite_mst_r_t'{default: '0}, clk_i, rst_ni)
     end
     assign r_sel_load = mst_res_i.r_valid & mst_req_o.r_ready;
     assign r_sel_d    = sel_t'(r_sel_q + 1'b1);
-    `FFLARN(r_sel_q, r_sel_d, r_sel_load, '0, clk_i, rst_ni)
+    `FFL(r_sel_q, r_sel_d, r_sel_load, '0, clk_i, rst_ni)
 
     always_comb begin : proc_r_chan_oup
       slv_res_o.r = axi_lite_slv_r_t'{
@@ -332,12 +332,12 @@ module axi_lite_dw_converter #(
       end
     end
     assign lock_aw_d = ~lock_aw_q;
-    `FFLARN(lock_aw_q, lock_aw_d, load_aw_lock, 1'b0, clk_i, rst_ni)
+    `FFL(lock_aw_q, lock_aw_d, load_aw_lock, 1'b0, clk_i, rst_ni)
 
     // The selection comes from part of the AW address.
     assign aw_sel = sel_t'(slv_req_i.aw.addr >> SelOffset);
 
-    fifo_v3 #(
+    cc_fifo #(
       .FALL_THROUGH ( 1'b1         ),
       .DEPTH        ( UpsizeFactor ),
       .dtype        ( sel_t        )
@@ -345,7 +345,6 @@ module axi_lite_dw_converter #(
       .clk_i,
       .rst_ni,
       .flush_i    ( 1'b0         ),
-      .testmode_i ( 1'b0         ),
       .full_o     ( w_full       ),
       .empty_o    ( w_empty      ),
       .usage_o    ( /*not used*/ ),
@@ -414,12 +413,12 @@ module axi_lite_dw_converter #(
       end
     end
     assign lock_ar_d = ~lock_ar_q;
-    `FFLARN(lock_ar_q, lock_ar_d, load_ar_lock, 1'b0, clk_i, rst_ni)
+    `FFL(lock_ar_q, lock_ar_d, load_ar_lock, 1'b0, clk_i, rst_ni)
 
     // The selection comes from part of the AW address.
     assign ar_sel = sel_t'(slv_req_i.ar.addr >> SelOffset);
 
-    fifo_v3 #(
+    cc_fifo #(
       .FALL_THROUGH ( 1'b1         ),
       .DEPTH        ( UpsizeFactor ),
       .dtype        ( sel_t        )
@@ -427,7 +426,6 @@ module axi_lite_dw_converter #(
       .clk_i,
       .rst_ni,
       .flush_i    ( 1'b0         ),
-      .testmode_i ( 1'b0         ),
       .full_o     ( r_full       ),
       .empty_o    ( r_empty      ),
       .usage_o    ( /*not used*/ ),

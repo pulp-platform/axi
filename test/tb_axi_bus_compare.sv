@@ -79,7 +79,7 @@ module tb_axi_bus_compare #(
   logic w_ready;
   logic ar_ready;
 
-  stream_fork #(.N_OUP(32'd2)) i_stream_fork_aw (
+  cc_stream_fork #(.N_OUP(32'd2)) i_stream_fork_aw (
     .clk_i   ( clk                        ),
     .rst_ni  ( rst_n                      ),
     .valid_i ( axi_req.aw_valid           ),
@@ -88,7 +88,7 @@ module tb_axi_bus_compare #(
     .ready_i ( { aw_ready_a, aw_ready_b } )
   );
 
-  stream_fork #(.N_OUP(32'd2)) i_stream_fork_ar (
+  cc_stream_fork #(.N_OUP(32'd2)) i_stream_fork_ar (
     .clk_i   ( clk                        ),
     .rst_ni  ( rst_n                      ),
     .valid_i ( axi_req.ar_valid           ),
@@ -97,7 +97,7 @@ module tb_axi_bus_compare #(
     .ready_i ( { ar_ready_a, ar_ready_b } )
   );
 
-  stream_fork #(.N_OUP(32'd2)) i_stream_fork_w (
+  cc_stream_fork #(.N_OUP(32'd2)) i_stream_fork_w (
     .clk_i   ( clk                      ),
     .rst_ni  ( rst_n                    ),
     .valid_i ( axi_req.w_valid          ),
@@ -149,7 +149,6 @@ module tb_axi_bus_compare #(
   ) i_axi_bus_compare (
     .clk_i         ( clk           ),
     .rst_ni        ( rst_n         ),
-    .testmode_i    ( 1'b0          ),
     .axi_a_req_i   ( axi_req_a_in  ),
     .axi_a_rsp_o   ( axi_rsp_a_in  ),
     .axi_a_req_o   ( axi_req_a_out ),

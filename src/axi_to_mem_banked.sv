@@ -69,7 +69,6 @@ module axi_to_mem_banked #(
   /// Asynchronous reset, active low
   input  logic                        rst_ni,
   /// Testmode enable
-  input  logic                        test_i,
   /// AXI4+ATOP slave port, request struct
   input  axi_req_t                    axi_req_i,
   /// AXI4+ATOP slave port, response struct
@@ -101,7 +100,7 @@ module axi_to_mem_banked #(
   localparam int unsigned BankSelOffset = $clog2(MemDataWidth / 32'd8);
   /// Selection signal width of the xbar. This is the reason for power of two banks, otherwise
   /// There are holes in the address mapping.
-  localparam int unsigned BankSelWidth  = cf_math_pkg::idx_width(MemNumBanks);
+  localparam int unsigned BankSelWidth  = cc_pkg::idx_width(MemNumBanks);
   typedef logic [BankSelWidth-1:0] xbar_sel_t;
 
   // Typedef for defining the channels
@@ -159,7 +158,6 @@ module axi_to_mem_banked #(
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_req_i       ( axi_req_i     ),
     .slv_aw_select_i ( WriteAccess   ),
     .slv_ar_select_i ( ReadAccess    ),
@@ -240,7 +238,7 @@ module axi_to_mem_banked #(
       assign res_rdata[j] = mem_rdata_i[r_shift_oup.sel];
 
       // Connect for the response data `MemLatency` cycles after a request was made to the xbar.
-      shift_reg #(
+      cc_shift_reg #(
         .dtype ( read_sel_t ),
         .Depth ( MemLatency )
       ) i_shift_reg_rdata_mux (
@@ -255,7 +253,7 @@ module axi_to_mem_banked #(
   // Xbar to arbitrate data over the different memory banks
   xbar_payload_t [MemNumBanks-1:0] mem_payload;
 
-  stream_xbar #(
+  cc_stream_xbar #(
     .NumInp      ( 32'd2 * BanksPerAxiChannel ),
     .NumOut      ( MemNumBanks                ),
     .payload_t   ( xbar_payload_t             ),
@@ -346,7 +344,6 @@ module axi_to_mem_banked_intf #(
   /// Asynchronous reset, active low
   input  logic                          rst_ni,
   /// Testmode enable
-  input  logic                          test_i,
   /// AXI4+ATOP slave port
   AXI_BUS.Slave                         slv,
   /// Memory bank request
@@ -407,7 +404,6 @@ module axi_to_mem_banked_intf #(
   ) i_axi_to_mem_banked (
     .clk_i,
     .rst_ni,
-    .test_i,
     .axi_to_mem_busy_o,
     .axi_req_i      ( mem_axi_req  ),
     .axi_resp_o     ( mem_axi_resp ),
