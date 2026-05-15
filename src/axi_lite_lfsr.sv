@@ -27,8 +27,6 @@ module axi_lite_lfsr #(
     input  logic          clk_i,
     /// Active-low reset
     input  logic          rst_ni,
-    /// Testmode
-    input  logic          testmode_i,
     /// AXI4 Lite request struct
     input  axi_lite_req_t req_i,
     /// AXI4 Lite response struct
@@ -93,14 +91,13 @@ module axi_lite_lfsr #(
     end
 
     // B
-    stream_fifo #(
+    cc_stream_fifo #(
         .FALL_THROUGH ( 1'b0 ),
         .DATA_WIDTH   ( 'd1  ),
         .DEPTH        ( 'd2  )
     ) i_stream_fifo_w_b (
         .clk_i,
         .rst_ni,
-        .testmode_i,
         .flush_i    ( 1'b0                ),
         .usage_o    ( /* NOT CONNECTED */ ),
         .data_i     ( 1'b0                ),
@@ -156,7 +153,7 @@ module axi_opt_lfsr #(
 );
 
     /// Number of bits required to hold the LFSR tab configuration
-    localparam int unsigned LfsrIdxWidth = cf_math_pkg::idx_width(Width);
+    localparam int unsigned LfsrIdxWidth = cc_pkg::idx_width(Width);
     /// Maximum number of tabs
     localparam int unsigned MaxNumTabs = 4;
 

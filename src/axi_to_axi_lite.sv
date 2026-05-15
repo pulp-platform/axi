@@ -31,7 +31,6 @@ module axi_to_axi_lite #(
 ) (
   input  logic       clk_i,    // Clock
   input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
   // slave port full AXI4+ATOP
   input  full_req_t  slv_req_i,
   output full_resp_t slv_resp_o,
@@ -91,7 +90,6 @@ module axi_to_axi_lite #(
   ) i_axi_to_axi_lite_id_reflect (
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
-    .test_i     ( test_i        ),
     .slv_req_i  ( splitted_req  ),
     .slv_resp_o ( splitted_resp ),
     .mst_req_o  ( mst_req_o     ),
@@ -127,7 +125,6 @@ module axi_to_axi_lite_id_reflect #(
 ) (
   input  logic       clk_i,    // Clock
   input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
   // slave port full AXI
   input  full_req_t  slv_req_i,
   output full_resp_t slv_resp_o,
@@ -165,7 +162,7 @@ module axi_to_axi_lite_id_reflect #(
   // Write ID reflection
   assign aw_push = mst_req_o.aw_valid & slv_resp_o.aw_ready;
   assign aw_pop  = slv_resp_o.b_valid & mst_req_o.b_ready;
-  fifo_v3 #(
+  cc_fifo #(
     .FALL_THROUGH ( FallThrough     ),
     .DEPTH        ( AxiMaxWriteTxns ),
     .dtype        ( id_t            )
@@ -173,7 +170,6 @@ module axi_to_axi_lite_id_reflect #(
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
     .flush_i   ( 1'b0            ),
-    .testmode_i( test_i          ),
     .full_o    ( aw_full         ),
     .empty_o   ( aw_empty        ),
     .usage_o   ( /*not used*/    ),
@@ -186,7 +182,7 @@ module axi_to_axi_lite_id_reflect #(
   // Read ID reflection
   assign ar_push = mst_req_o.ar_valid & slv_resp_o.ar_ready;
   assign ar_pop  = slv_resp_o.r_valid & mst_req_o.r_ready;
-  fifo_v3 #(
+  cc_fifo #(
     .FALL_THROUGH ( FallThrough    ),
     .DEPTH        ( AxiMaxReadTxns ),
     .dtype        ( id_t           )
@@ -194,7 +190,6 @@ module axi_to_axi_lite_id_reflect #(
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
     .flush_i   ( 1'b0            ),
-    .testmode_i( test_i          ),
     .full_o    ( ar_full         ),
     .empty_o   ( ar_empty        ),
     .usage_o   ( /*not used*/    ),
@@ -262,7 +257,6 @@ module axi_to_axi_lite_intf #(
 ) (
   input logic     clk_i,
   input logic     rst_ni,
-  input logic     testmode_i,
   AXI_BUS.Slave   slv,
   AXI_LITE.Master mst
 );
@@ -315,7 +309,6 @@ module axi_to_axi_lite_intf #(
   ) i_axi_to_axi_lite (
     .clk_i      ( clk_i      ),
     .rst_ni     ( rst_ni     ),
-    .test_i     ( testmode_i ),
     // slave port full AXI4+ATOP
     .slv_req_i  ( full_req   ),
     .slv_resp_o ( full_resp  ),

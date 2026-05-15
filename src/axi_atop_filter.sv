@@ -345,13 +345,12 @@ module axi_atop_filter #(
     end
   end
 
-  stream_register #(
+  cc_stream_register #(
     .T(r_resp_cmd_t)
   ) r_resp_cmd (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
     .clr_i      (1'b0),
-    .testmode_i (1'b0),
     .valid_i    (r_resp_cmd_push_valid),
     .ready_o    (r_resp_cmd_push_ready),
     .data_i     (r_resp_cmd_push),

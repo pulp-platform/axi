@@ -53,7 +53,7 @@ module axi_dw_downsizer #(
   import axi_pkg::aligned_addr;
   import axi_pkg::modifiable  ;
 
-  import cf_math_pkg::idx_width;
+  import cc_pkg::idx_width;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -96,7 +96,7 @@ module axi_dw_downsizer #(
   logic        [AxiMaxReads-1:0] slv_r_valid_tran;
   logic        [AxiMaxReads-1:0] slv_r_ready_tran;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
     .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
@@ -132,7 +132,7 @@ module axi_dw_downsizer #(
 
   assign arb_slv_ar_gnt = |arb_slv_ar_gnt_tran;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn     (2         ),
     .DataWidth (AxiIdWidth),
     .ExtPrio   (1'b0      ),
@@ -158,7 +158,7 @@ module axi_dw_downsizer #(
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
   tran_id_t                   mst_req_idx;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
     .DataType (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
@@ -193,7 +193,6 @@ module axi_dw_downsizer #(
   ) i_axi_err_slv (
     .clk_i     (clk_i       ),
     .rst_ni    (rst_ni      ),
-    .test_i    (1'b0        ),
     .slv_req_i (axi_err_req ),
     .slv_resp_o(axi_err_resp)
   );
@@ -224,7 +223,6 @@ module axi_dw_downsizer #(
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),
-    .test_i         (1'b0                       ),
     .mst_reqs_o     ({axi_err_req, mst_req_o}   ),
     .mst_resps_i    ({axi_err_resp, mst_resp_i} ),
     .slv_ar_select_i(mst_req_ar_err[mst_req_idx]),
@@ -276,7 +274,7 @@ module axi_dw_downsizer #(
 
   // Find an idle downsizer to handle this transaction
   tran_id_t idx_idle_downsizer;
-  lzc #(
+  cc_lzc #(
     .WIDTH(AxiMaxReads)
   ) i_idle_lzc (
     .in_i   (idle_read_downsizer),
@@ -291,7 +289,7 @@ module axi_dw_downsizer #(
     assign id_clash_downsizer[t] = arb_slv_ar_id == mst_ar_id[t] && !idle_read_downsizer[t];
   end
 
-  onehot_to_bin #(
+  cc_onehot_to_bin #(
     .ONEHOT_WIDTH(AxiMaxReads)
   ) i_id_clash_onehot_to_bin (
     .onehot(id_clash_downsizer    ),
@@ -309,7 +307,7 @@ module axi_dw_downsizer #(
   tran_id_t                   idqueue_id;
   logic                       idqueue_valid;
 
-  id_queue #(
+  cc_id_queue #(
     .ID_WIDTH(AxiIdWidth ),
     .CAPACITY(AxiMaxReads),
     .data_t  (tran_id_t  )
@@ -679,7 +677,7 @@ module axi_dw_downsizer #(
   logic forward_b_beat_pop;
   logic forward_b_beat_full;
 
-  fifo_v3 #(
+  cc_fifo #(
     .DATA_WIDTH  (1          ),
     .DEPTH       (AxiMaxReads),
     .FALL_THROUGH(1'b1       )
@@ -687,7 +685,6 @@ module axi_dw_downsizer #(
     .clk_i     (clk_i               ),
     .rst_ni    (rst_ni              ),
     .flush_i   (1'b0                ),
-    .testmode_i(1'b0                ),
     .data_i    (forward_b_beat_i    ),
     .push_i    (forward_b_beat_push ),
     .full_o    (forward_b_beat_full ),
