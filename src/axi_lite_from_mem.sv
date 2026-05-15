@@ -170,21 +170,20 @@ module axi_lite_from_mem #(
     end
   end
 
-  `FFARN(aw_sent_q, aw_sent_d, 1'b0, clk_i, rst_ni)
-  `FFARN(w_sent_q, w_sent_d, 1'b0, clk_i, rst_ni)
+  `FF(aw_sent_q, aw_sent_d, 1'b0, clk_i, rst_ni)
+  `FF(w_sent_q, w_sent_d, 1'b0, clk_i, rst_ni)
 
   // Select which response should be forwarded. `1` write response, `0` read response.
   logic rsp_sel;
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0        ), // No fallthrough for one cycle delay before ready on AXI.
-    .DEPTH        ( MaxRequests ),
-    .dtype        ( logic       )
+  cc_fifo #(
+    .FallThrough ( 1'b0        ), // No fallthrough for one cycle delay before ready on AXI.
+    .Depth       ( MaxRequests ),
+    .data_t      ( logic       )
   ) i_fifo_rsp_mux (
     .clk_i,
     .rst_ni,
     .flush_i    ( 1'b0            ),
-    .testmode_i ( 1'b0            ),
     .full_o     ( fifo_full       ),
     .empty_o    ( fifo_empty      ),
     .usage_o    ( /*not used*/    ),

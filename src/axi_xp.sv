@@ -135,7 +135,6 @@ module axi_xp #(
   ) i_xbar (
     .clk_i,
     .rst_ni,
-    .test_i                 ( test_en_i                               ),
     .slv_ports_req_i        ( slv_req_i                               ),
     .slv_ports_resp_o       ( slv_resp_o                              ),
     .mst_ports_req_o        ( xbar_req                                ),
@@ -171,7 +170,7 @@ endmodule
 `include "axi/typedef.svh"
 
 module axi_xp_intf
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   parameter bit  ATOPs = 1'b1,
   parameter axi_pkg::xbar_cfg_t Cfg = '0,

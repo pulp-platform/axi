@@ -115,7 +115,6 @@ module axi_isolate #(
     ) i_axi_demux (
       .clk_i,
       .rst_ni,
-      .test_i          ( 1'b0       ),
       .slv_req_i,
       .slv_aw_select_i ( isolated_o ),
       .slv_ar_select_i ( isolated_o ),
@@ -135,7 +134,6 @@ module axi_isolate #(
     ) i_axi_err_slv (
       .clk_i,
       .rst_ni,
-      .test_i     ( 1'b0         ),
       .slv_req_i  ( demux_req[1] ),
       .slv_resp_o ( demux_rsp[1] )
     );
@@ -200,11 +198,11 @@ module axi_isolate_inner #(
   cnt_t pending_ar_d,  pending_ar_q;
   logic update_ar_cnt;
 
-  `FFLARN(pending_aw_q, pending_aw_d, update_aw_cnt, '0, clk_i, rst_ni)
-  `FFLARN(pending_w_q, pending_w_d, update_w_cnt, '0, clk_i, rst_ni)
-  `FFLARN(pending_ar_q, pending_ar_d, update_ar_cnt, '0, clk_i, rst_ni)
-  `FFLARN(state_aw_q, state_aw_d, update_aw_state, Isolate, clk_i, rst_ni)
-  `FFLARN(state_ar_q, state_ar_d, update_ar_state, Isolate, clk_i, rst_ni)
+  `FFL(pending_aw_q, pending_aw_d, update_aw_cnt, '0, clk_i, rst_ni)
+  `FFL(pending_w_q, pending_w_d, update_w_cnt, '0, clk_i, rst_ni)
+  `FFL(pending_ar_q, pending_ar_d, update_ar_cnt, '0, clk_i, rst_ni)
+  `FFL(state_aw_q, state_aw_d, update_aw_state, Isolate, clk_i, rst_ni)
+  `FFL(state_ar_q, state_ar_d, update_ar_state, Isolate, clk_i, rst_ni)
 
   // Update counters.
   always_comb begin

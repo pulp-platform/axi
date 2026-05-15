@@ -46,8 +46,8 @@ module axi_cut #(
 );
 
   // a spill register for each channel
-  spill_register #(
-    .T       ( aw_chan_t ),
+  cc_spill_register #(
+    .data_t  ( aw_chan_t ),
     .Bypass  ( BypassAw  )
   ) i_reg_aw (
     .clk_i   ( clk_i               ),
@@ -60,8 +60,8 @@ module axi_cut #(
     .data_o  ( mst_req_o.aw        )
   );
 
-  spill_register #(
-    .T       ( w_chan_t ),
+  cc_spill_register #(
+    .data_t  ( w_chan_t ),
     .Bypass  ( BypassW  )
   ) i_reg_w  (
     .clk_i   ( clk_i              ),
@@ -74,8 +74,8 @@ module axi_cut #(
     .data_o  ( mst_req_o.w        )
   );
 
-  spill_register #(
-    .T       ( b_chan_t ),
+  cc_spill_register #(
+    .data_t  ( b_chan_t ),
     .Bypass  ( BypassB  )
   ) i_reg_b  (
     .clk_i   ( clk_i              ),
@@ -88,8 +88,8 @@ module axi_cut #(
     .data_o  ( slv_resp_o.b       )
   );
 
-  spill_register #(
-    .T       ( ar_chan_t ),
+  cc_spill_register #(
+    .data_t  ( ar_chan_t ),
     .Bypass  ( BypassAr  )
   ) i_reg_ar (
     .clk_i   ( clk_i               ),
@@ -102,8 +102,8 @@ module axi_cut #(
     .data_o  ( mst_req_o.ar        )
   );
 
-  spill_register #(
-    .T       ( r_chan_t ),
+  cc_spill_register #(
+    .data_t  ( r_chan_t ),
     .Bypass  ( BypassR  )
   ) i_reg_r  (
     .clk_i   ( clk_i              ),

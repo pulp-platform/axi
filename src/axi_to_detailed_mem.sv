@@ -264,9 +264,9 @@ module axi_to_detailed_mem #(
   end
 
   // Arbitrate between reads and writes.
-  stream_mux #(
-    .DATA_T ( meta_t ),
-    .N_INP  ( 32'd2  )
+  cc_stream_mux #(
+    .data_t ( meta_t ),
+    .NumInp ( 32'd2  )
   ) i_ax_mux (
     .inp_data_i   ({wr_meta,  rd_meta }),
     .inp_valid_i  ({wr_valid, rd_valid}),
@@ -321,8 +321,8 @@ module axi_to_detailed_mem #(
   end
 
   // Fork arbitrated stream to meta data, memory requests, and R/B channel selection.
-  stream_fork #(
-    .N_OUP ( 32'd3 )
+  cc_stream_fork #(
+    .NumOup ( 32'd3 )
   ) i_fork (
     .clk_i,
     .rst_ni,
@@ -335,15 +335,14 @@ module axi_to_detailed_mem #(
   assign sel_b = meta.write & meta.last;
   assign sel_r = ~meta.write | meta.atop[5];
 
-  stream_fifo #(
-    .FALL_THROUGH ( 1'b1             ),
-    .DEPTH        ( 32'd1 + BufDepth ),
-    .T            ( logic[1:0]       )
+  cc_stream_fifo #(
+    .FallThrough ( 1'b1             ),
+    .Depth       ( 32'd1 + BufDepth ),
+    .data_t      ( logic[1:0]       )
   ) i_sel_buf (
     .clk_i,
     .rst_ni,
     .flush_i    ( 1'b0                    ),
-    .testmode_i ( 1'b0                    ),
     .data_i     ({sel_b,        sel_r    }),
     .valid_i    ( sel_valid               ),
     .ready_o    ( sel_ready               ),
@@ -353,15 +352,14 @@ module axi_to_detailed_mem #(
     .usage_o    ( /* unused */            )
   );
 
-  stream_fifo #(
-    .FALL_THROUGH ( 1'b1             ),
-    .DEPTH        ( 32'd1 + BufDepth ),
-    .T            ( meta_t           )
+  cc_stream_fifo #(
+    .FallThrough ( 1'b1             ),
+    .Depth       ( 32'd1 + BufDepth ),
+    .data_t      ( meta_t           )
   ) i_meta_buf (
     .clk_i,
     .rst_ni,
     .flush_i    ( 1'b0           ),
-    .testmode_i ( 1'b0           ),
     .data_i     ( meta           ),
     .valid_i    ( meta_valid     ),
     .ready_o    ( meta_ready     ),
@@ -470,8 +468,8 @@ module axi_to_detailed_mem #(
 
   // Join memory read data and meta data stream.
   logic mem_join_valid, mem_join_ready;
-  stream_join #(
-    .N_INP ( 32'd2 )
+  cc_stream_join #(
+    .NumInp ( 32'd2 )
   ) i_join (
     .inp_valid_i  ({m2s_resp_valid, meta_buf_valid}),
     .inp_ready_o  ({m2s_resp_ready, meta_buf_ready}),
@@ -480,8 +478,8 @@ module axi_to_detailed_mem #(
   );
 
   // Dynamically fork the joined stream to B and R channels.
-  stream_fork_dynamic #(
-    .N_OUP ( 32'd2 )
+  cc_stream_fork_dynamic #(
+    .NumOup ( 32'd2 )
   ) i_fork_dynamic (
     .clk_i,
     .rst_ni,
@@ -555,14 +553,14 @@ module axi_to_detailed_mem #(
   };
 
   // Registers
-  `FFARN(meta_sel_q, meta_sel_d, 1'b0, clk_i, rst_ni)
-  `FFARN(sel_lock_q, sel_lock_d, 1'b0, clk_i, rst_ni)
-  `FFARN(rd_meta_q, rd_meta_d, meta_t'{default: '0}, clk_i, rst_ni)
-  `FFARN(wr_meta_q, wr_meta_d, meta_t'{default: '0}, clk_i, rst_ni)
-  `FFARN(r_cnt_q, r_cnt_d, '0, clk_i, rst_ni)
-  `FFARN(w_cnt_q, w_cnt_d, '0, clk_i, rst_ni)
-  `FFARN(collect_b_err_q, collect_b_err_d, '0, clk_i, rst_ni)
-  `FFARN(collect_b_exokay_q, collect_b_exokay_d, 1'b1, clk_i, rst_ni)
+  `FF(meta_sel_q, meta_sel_d, 1'b0, clk_i, rst_ni)
+  `FF(sel_lock_q, sel_lock_d, 1'b0, clk_i, rst_ni)
+  `FF(rd_meta_q, rd_meta_d, meta_t'{default: '0}, clk_i, rst_ni)
+  `FF(wr_meta_q, wr_meta_d, meta_t'{default: '0}, clk_i, rst_ni)
+  `FF(r_cnt_q, r_cnt_d, '0, clk_i, rst_ni)
+  `FF(w_cnt_q, w_cnt_d, '0, clk_i, rst_ni)
+  `FF(collect_b_err_q, collect_b_err_d, '0, clk_i, rst_ni)
+  `FF(collect_b_exokay_q, collect_b_exokay_d, 1'b1, clk_i, rst_ni)
 
   // Assertions
   // pragma translate_off
@@ -864,7 +862,7 @@ module mem_stream_to_banks_detailed #(
     assign mem_req_valid = req_i & cnt_req_ready;
 
     // Register
-    `FFARN(cnt_q, cnt_d, '0, clk_i, rst_ni)
+    `FF(cnt_q, cnt_d, '0, clk_i, rst_ni)
   end
 
   // Handle requests.
@@ -875,16 +873,15 @@ module mem_stream_to_banks_detailed #(
     assign bank_req[i].strb  = strb_i[i*BytesPerBank+:BytesPerBank];
     assign bank_req[i].wuser = wuser_i;
     assign bank_req[i].we    = we_i;
-    stream_fifo #(
-      .FALL_THROUGH ( 1'b1         ),
-      .DATA_WIDTH   ( $bits(req_t) ),
-      .DEPTH        ( OutFifoDepth ),
-      .T            ( req_t        )
+    cc_stream_fifo #(
+      .FallThrough ( 1'b1         ),
+      .DataWidth   ( $bits(req_t) ),
+      .Depth       ( OutFifoDepth ),
+      .data_t      ( req_t        )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
       .flush_i    ( 1'b0          ),
-      .testmode_i ( 1'b0          ),
       .usage_o    (),
       .data_i     ( bank_req[i]   ),
       .valid_i    ( req_valid     ),
@@ -921,15 +918,14 @@ module mem_stream_to_banks_detailed #(
     for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin
       assign zero_strobe_on_input[i] = (strb_i[i*BytesPerBank+:BytesPerBank] == '0);
     end
-    fifo_v3 #(
-      .FALL_THROUGH ( 1'b0     ),
-      .DEPTH        ( MaxTrans+1 ),
-      .DATA_WIDTH   ( NumBanks )
+    cc_fifo #(
+      .FallThrough ( 1'b0     ),
+      .Depth       ( MaxTrans+1 ),
+      .DataWidth   ( NumBanks )
     ) i_dead_write_fifo (
       .clk_i,
       .rst_ni,
       .flush_i    ( 1'b0                             ),
-      .testmode_i ( 1'b0                             ),
       .full_o     ( dead_write_fifo_full             ),
       .empty_o    ( dead_write_fifo_empty            ),
       .usage_o    (                                  ),
@@ -948,15 +944,14 @@ module mem_stream_to_banks_detailed #(
 
   // Handle responses.
   for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
-    stream_fifo #(
-      .FALL_THROUGH ( 1'b1              ),
-      .DATA_WIDTH   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
-      .DEPTH        ( MaxTrans         )
+    cc_stream_fifo #(
+      .FallThrough ( 1'b1              ),
+      .DataWidth   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
+      .Depth       ( MaxTrans         )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
       .flush_i    ( 1'b0                                              ),
-      .testmode_i ( 1'b0                                              ),
       .usage_o    (),
       .data_i     ( {bank_rdata_i[i], bank_ruser_i[i]}                ),
       .valid_i    ( bank_rvalid_i[i]                                  ),

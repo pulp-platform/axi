@@ -128,7 +128,7 @@ module axi_id_remap #(
 
 
   // Remap tables keep track of in-flight bursts and their input and output IDs.
-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(AxiSlvPortMaxUniqIds);
+  localparam int unsigned IdxWidth = cc_pkg::idx_width(AxiSlvPortMaxUniqIds);
   typedef logic [AxiSlvPortMaxUniqIds-1:0]  field_t;
   typedef logic [AxiSlvPortIdWidth-1:0]     id_inp_t;
   typedef logic [IdxWidth-1:0]              idx_t;
@@ -185,9 +185,9 @@ module axi_id_remap #(
     .pop_inp_id_o     ( slv_resp_o.r.id                                              )
   );
   assign both_free = wr_free & rd_free;
-  lzc #(
-    .WIDTH  ( AxiSlvPortMaxUniqIds  ),
-    .MODE   ( 1'b0                  )
+  cc_lzc #(
+    .Width  ( AxiSlvPortMaxUniqIds  ),
+    .Mode   ( 1'b0                  )
   ) i_lzc (
     .in_i     ( both_free        ),
     .cnt_o    ( both_free_oup_id ),
@@ -415,10 +415,10 @@ module axi_id_remap #(
   end
 
   // Registers
-  `FFARN(ar_id_q, ar_id_d, '0, clk_i, rst_ni)
-  `FFARN(ar_prio_q, ar_prio_d, 1'b0, clk_i, rst_ni)
-  `FFARN(aw_id_q, aw_id_d, '0, clk_i, rst_ni)
-  `FFARN(state_q, state_d, Ready, clk_i, rst_ni)
+  `FF(ar_id_q, ar_id_d, '0, clk_i, rst_ni)
+  `FF(ar_prio_q, ar_prio_d, 1'b0, clk_i, rst_ni)
+  `FF(aw_id_q, aw_id_d, '0, clk_i, rst_ni)
+  `FF(state_q, state_d, Ready, clk_i, rst_ni)
 
   // pragma translate_off
   `ifndef VERILATOR
@@ -505,7 +505,7 @@ module axi_id_remap_table #(
   localparam type id_inp_t = logic [InpIdWidth-1:0],
   /// Derived (**=do not override**) width of table index (ceiled binary logarithm of
   /// `MaxUniqInpIds`).
-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(MaxUniqInpIds),
+  localparam int unsigned IdxWidth = cc_pkg::idx_width(MaxUniqInpIds),
   /// Derived (**=do not override**) type of table index (width = `IdxWidth`).
   localparam type idx_t = logic [IdxWidth-1:0],
   /// Derived (**=do not override**) type with one bit per table entry (thus also output ID).
@@ -569,9 +569,9 @@ module axi_id_remap_table #(
   for (genvar i = 0; i < MaxUniqInpIds; i++) begin : gen_free_o
     assign free_o[i] = table_q[i].cnt == '0;
   end
-  lzc #(
-    .WIDTH ( MaxUniqInpIds  ),
-    .MODE  ( 1'b0           )
+  cc_lzc #(
+    .Width ( MaxUniqInpIds  ),
+    .Mode  ( 1'b0           )
   ) i_lzc_free (
     .in_i    ( free_o        ),
     .cnt_o   ( free_oup_id_o ),
@@ -591,9 +591,9 @@ module axi_id_remap_table #(
     assign match[i] = table_q[i].cnt > 0 && table_q[i].inp_id == exists_inp_id_i;
   end
   logic no_match;
-  lzc #(
-      .WIDTH ( MaxUniqInpIds  ),
-      .MODE  ( 1'b0           )
+  cc_lzc #(
+      .Width ( MaxUniqInpIds  ),
+      .Mode  ( 1'b0           )
   ) i_lzc_match (
       .in_i     ( match           ),
       .cnt_o    ( exists_oup_id_o ),
@@ -619,7 +619,7 @@ module axi_id_remap_table #(
   end
 
   // Registers
-  `FFARN(table_q, table_d, '0, clk_i, rst_ni)
+  `FF(table_q, table_d, '0, clk_i, rst_ni)
 
   // Assertions
   // pragma translate_off

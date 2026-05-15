@@ -45,8 +45,6 @@ module axi_bus_compare #(
     input  logic     clk_i,
     /// Asynchronous reset, active low
     input  logic     rst_ni,
-    /// Testmode
-    input  logic     testmode_i,
     /// AXI4+ATOP A channel request in
     input  axi_req_t axi_a_req_i,
     /// AXI4+ATOP A channel response out
@@ -164,8 +162,8 @@ module axi_bus_compare #(
     //-----------------------------------
     // Channel A stream forks
     //-----------------------------------
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_aw_a (
         .clk_i,
         .rst_ni,
@@ -175,8 +173,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_aw_a, axi_a_rsp_i.aw_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_w_a (
         .clk_i,
         .rst_ni,
@@ -186,8 +184,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_w_a, axi_a_rsp_i.w_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_b_a (
         .clk_i,
         .rst_ni,
@@ -197,8 +195,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_b_a, axi_a_req_i.b_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_ar_a (
         .clk_i,
         .rst_ni,
@@ -208,8 +206,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_ar_a, axi_a_rsp_i.ar_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_r_a (
         .clk_i,
         .rst_ni,
@@ -225,15 +223,14 @@ module axi_bus_compare #(
     //-----------------------------------
     for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_fifos_a
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_aw_chan_t )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_aw_chan_t )
         ) i_stream_fifo_aw_a (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                                ),
             .usage_o    ( /* NOT CONNECTED */                                 ),
             .data_i     ( axi_a_req_i.aw                                      ),
@@ -244,15 +241,14 @@ module axi_bus_compare #(
             .ready_i    ( fifo_cmp_valid_aw_a [id] & fifo_cmp_valid_aw_b [id] )
         );
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_b_chan_t  )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_b_chan_t  )
         ) i_stream_fifo_b_a (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                              ),
             .usage_o    ( /* NOT CONNECTED */                               ),
             .data_i     ( axi_a_rsp_i.b                                     ),
@@ -263,15 +259,14 @@ module axi_bus_compare #(
             .ready_i    ( fifo_cmp_valid_b_a [id] & fifo_cmp_valid_b_b [id] )
         );
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_ar_chan_t )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_ar_chan_t )
         ) i_stream_fifo_ar_a (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                                ),
             .usage_o    ( /* NOT CONNECTED */                                 ),
             .data_i     ( axi_a_req_i.ar                                      ),
@@ -283,15 +278,13 @@ module axi_bus_compare #(
         );
 
         if (UseSize) begin : gen_r_size
-            stream_fifo #(
-                .FALL_THROUGH ( 1'b0 ),
-                .DATA_WIDTH   ( $clog2(DataWidth/8)+3 ),
-                // .DATA_WIDTH   ( 7+3 ),
-                .DEPTH        ( 2*FifoDepth )
+            cc_stream_fifo #(
+                .FallThrough ( 1'b0 ),
+                .DataWidth   ( $clog2(DataWidth/8)+3 ),
+                .Depth       ( 2*FifoDepth )
             ) i_stream_fifo_w_size (
                 .clk_i,
                 .rst_ni,
-                .testmode_i,
                 .flush_i   ( 1'b0 ),
                 .usage_o   (),
                 .data_i    ( {axi_a_req_i.ar.addr[$clog2(DataWidth/8)-1:0], axi_a_req_i.ar.size} ),
@@ -322,15 +315,14 @@ module axi_bus_compare #(
         end
 
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_r_chan_t  )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_r_chan_t  )
         ) i_stream_fifo_r_a (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                              ),
             .usage_o    ( /* NOT CONNECTED */                               ),
             .data_i     ( axi_a_rsp_i.r                                     ),
@@ -343,15 +335,13 @@ module axi_bus_compare #(
     end
 
     if (UseSize) begin : gen_w_size
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0 ),
-            .DATA_WIDTH   ( $clog2(DataWidth/8)+3 ),
-            // .DATA_WIDTH   ( 7+3 ),
-            .DEPTH        ( FifoDepth )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0 ),
+            .DataWidth   ( $clog2(DataWidth/8)+3 ),
+            .Depth       ( FifoDepth )
         ) i_stream_fifo_w_size (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i   ( 1'b0 ),
             .usage_o   (),
             .data_i    ( {axi_a_req_i.aw.addr[$clog2(DataWidth/8)-1:0], axi_a_req_i.aw.size} ),
@@ -381,15 +371,14 @@ module axi_bus_compare #(
         assign w_lower = '0;
     end
 
-    stream_fifo #(
-        .FALL_THROUGH ( 1'b0          ),
-        .DATA_WIDTH   ( 1'b0          ),
-        .DEPTH        ( FifoDepth     ),
-        .T            ( axi_w_chan_t  )
+    cc_stream_fifo #(
+        .FallThrough ( 1'b0          ),
+        .DataWidth   ( 1'b0          ),
+        .Depth       ( FifoDepth     ),
+        .data_t      ( axi_w_chan_t  )
     ) i_stream_fifo_w_a (
         .clk_i,
         .rst_ni,
-        .testmode_i,
         .flush_i    ( 1'b0                                    ),
         .usage_o    ( /* NOT CONNECTED */                     ),
         .data_i     ( axi_a_req_i.w                           ),
@@ -443,8 +432,8 @@ module axi_bus_compare #(
     //-----------------------------------
     // Channel B stream forks
     //-----------------------------------
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_aw_b (
         .clk_i,
         .rst_ni,
@@ -454,8 +443,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_aw_b, axi_b_rsp_i.aw_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_w_b (
         .clk_i,
         .rst_ni,
@@ -465,8 +454,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_w_b, axi_b_rsp_i.w_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_b_b (
         .clk_i,
         .rst_ni,
@@ -476,8 +465,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_b_b, axi_b_req_i.b_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_ar_b (
         .clk_i,
         .rst_ni,
@@ -487,8 +476,8 @@ module axi_bus_compare #(
         .ready_i ( {fifo_sel_ready_ar_b, axi_b_rsp_i.ar_ready} )
     );
 
-    stream_fork #(
-        .N_OUP ( 32'd2 )
+    cc_stream_fork #(
+        .NumOup ( 32'd2 )
     ) i_stream_fork_r_b (
         .clk_i,
         .rst_ni,
@@ -504,15 +493,14 @@ module axi_bus_compare #(
     //-----------------------------------
     for (genvar id = 0; id < 2**AxiIdWidth; id++) begin : gen_fifos_b
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_aw_chan_t )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_aw_chan_t )
         ) i_stream_fifo_aw_b (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                                ),
             .usage_o    ( /* NOT CONNECTED */                                 ),
             .data_i     ( axi_b_req_i.aw                                      ),
@@ -523,15 +511,14 @@ module axi_bus_compare #(
             .ready_i    ( fifo_cmp_valid_aw_a [id] & fifo_cmp_valid_aw_b [id] )
         );
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_b_chan_t  )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_b_chan_t  )
         ) i_stream_fifo_b_b (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                               ),
             .usage_o    ( /* NOT CONNECTED */                                ),
             .data_i     ( axi_b_rsp_i.b                                      ),
@@ -542,15 +529,14 @@ module axi_bus_compare #(
             .ready_i    ( fifo_cmp_valid_b_a  [id] & fifo_cmp_valid_b_b [id] )
         );
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_ar_chan_t )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_ar_chan_t )
         ) i_stream_fifo_ar_b (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                                ),
             .usage_o    ( /* NOT CONNECTED */                                 ),
             .data_i     ( axi_b_req_i.ar                                      ),
@@ -561,15 +547,14 @@ module axi_bus_compare #(
             .ready_i    ( fifo_cmp_valid_ar_a [id] & fifo_cmp_valid_ar_b [id] )
         );
 
-        stream_fifo #(
-            .FALL_THROUGH ( 1'b0          ),
-            .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH        ( FifoDepth     ),
-            .T            ( axi_r_chan_t  )
+        cc_stream_fifo #(
+            .FallThrough ( 1'b0          ),
+            .DataWidth   ( 1'b0          ),
+            .Depth       ( FifoDepth     ),
+            .data_t      ( axi_r_chan_t  )
         ) i_stream_fifo_r_b (
             .clk_i,
             .rst_ni,
-            .testmode_i,
             .flush_i    ( 1'b0                                               ),
             .usage_o    ( /* NOT CONNECTED */                                ),
             .data_i     ( axi_b_rsp_i.r                                      ),
@@ -581,15 +566,14 @@ module axi_bus_compare #(
         );
     end
 
-    stream_fifo #(
-        .FALL_THROUGH ( 1'b0          ),
-        .DATA_WIDTH   ( 1'b0          ),
-        .DEPTH        ( FifoDepth     ),
-        .T            ( axi_w_chan_t  )
+    cc_stream_fifo #(
+        .FallThrough ( 1'b0          ),
+        .DataWidth   ( 1'b0          ),
+        .Depth       ( FifoDepth     ),
+        .data_t      ( axi_w_chan_t  )
     ) i_stream_fifo_w_b (
         .clk_i,
         .rst_ni,
-        .testmode_i,
         .flush_i    ( 1'b0                                    ),
         .usage_o    ( /* NOT CONNECTED */                     ),
         .data_i     ( axi_b_req_i.w                           ),

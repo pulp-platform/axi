@@ -47,8 +47,6 @@ module axi_slave_compare #(
     input  logic     clk_i,
     /// Asynchronous reset, active low
     input  logic     rst_ni,
-    /// Testmode
-    input  logic     testmode_i,
     /// AXI4+ATOP channel request in
     input  axi_req_t axi_mst_req_i,
     /// AXI4+ATOP channel response out
@@ -92,8 +90,8 @@ module axi_slave_compare #(
     logic w_ready_mst;
     logic ar_ready_mst;
 
-    stream_fork #(
-        .N_OUP   ( 32'd2  )
+    cc_stream_fork #(
+        .NumOup   ( 32'd2  )
     ) i_stream_fork_aw (
         .clk_i,
         .rst_ni,
@@ -103,8 +101,8 @@ module axi_slave_compare #(
         .ready_i ( { aw_ready_ref, aw_ready_test } )
     );
 
-    stream_fork #(
-        .N_OUP   ( 32'd2  )
+    cc_stream_fork #(
+        .NumOup   ( 32'd2  )
       ) i_stream_fork_ar (
         .clk_i,
         .rst_ni,
@@ -114,8 +112,8 @@ module axi_slave_compare #(
         .ready_i ( { ar_ready_ref, ar_ready_test } )
     );
 
-    stream_fork #(
-        .N_OUP   ( 32'd2  )
+    cc_stream_fork #(
+        .NumOup   ( 32'd2  )
     ) i_stream_fork_w (
         .clk_i,
         .rst_ni,
@@ -170,7 +168,6 @@ module axi_slave_compare #(
   ) i_axi_bus_compare (
     .clk_i,
     .rst_ni,
-    .testmode_i,
     .aw_mismatch_o,
     .w_mismatch_o,
     .b_mismatch_o,
