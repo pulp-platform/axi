@@ -34,7 +34,6 @@ module axi_lite_xbar #(
 ) (
   input  logic                                        clk_i,
   input  logic                                        rst_ni,
-  input  logic                                        test_i,
   input  axi_req_t  [Cfg.NoSlvPorts-1:0]              slv_ports_req_i,
   output axi_resp_t [Cfg.NoSlvPorts-1:0]              slv_ports_resp_o,
   output axi_req_t  [Cfg.NoMstPorts-1:0]              mst_ports_req_o,
@@ -76,7 +75,7 @@ module axi_lite_xbar #(
     full_req_t  decerr_req;
     full_resp_t decerr_resp;
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .NoRules    ( Cfg.NoAddrRules ),
       .addr_t     ( addr_t          ),
@@ -91,7 +90,7 @@ module axi_lite_xbar #(
       .default_idx_i    ( default_mst_port_i[i]      )
     );
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),
@@ -158,7 +157,6 @@ module axi_lite_xbar #(
     ) i_axi_lite_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       .slv_req_i       ( slv_ports_req_i[i]  ),
       .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
@@ -195,7 +193,6 @@ module axi_lite_xbar #(
     ) i_axi_err_slv (
       .clk_i      ( clk_i       ),  // Clock
       .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
-      .test_i     ( test_i      ),  // Testmode enable
       // slave port
       .slv_req_i  ( decerr_req  ),
       .slv_resp_o ( decerr_resp )
@@ -230,7 +227,6 @@ module axi_lite_xbar #(
     ) i_axi_lite_mux (
       .clk_i,  // Clock
       .rst_ni, // Asynchronous reset active low
-      .test_i, // Test Mode enable
       .slv_reqs_i  ( mst_reqs[i]         ),
       .slv_resps_o ( mst_resps[i]        ),
       .mst_req_o   ( mst_ports_req_o[i]  ),
@@ -247,7 +243,6 @@ module axi_lite_xbar_intf #(
 ) (
   input  logic                                                    clk_i,
   input  logic                                                    rst_ni,
-  input  logic                                                    test_i,
   AXI_LITE.Slave                                                  slv_ports [Cfg.NoSlvPorts-1:0],
   AXI_LITE.Master                                                 mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                             addr_map_i,
@@ -294,7 +289,6 @@ module axi_lite_xbar_intf #(
   ) i_xbar (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_ports_req_i  (slv_reqs ),
     .slv_ports_resp_o (slv_resps),
     .mst_ports_req_o  (mst_reqs ),
