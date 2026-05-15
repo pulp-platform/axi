@@ -44,7 +44,6 @@ module axi_lite_mux #(
 ) (
   input  logic                       clk_i,    // Clock
   input  logic                       rst_ni,   // Asynchronous reset active low
-  input  logic                       test_i,   // Test Mode enable
   // slave ports (AXI4-Lite inputs), connect master modules here
   input  axi_req_t  [NoSlvPorts-1:0] slv_reqs_i,
   output axi_resp_t [NoSlvPorts-1:0] slv_resps_o,
@@ -54,8 +53,8 @@ module axi_lite_mux #(
 );
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
-    spill_register #(
-      .T       ( aw_chan_t  ),
+    cc_spill_register #(
+      .data_t  ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
@@ -67,8 +66,8 @@ module axi_lite_mux #(
       .ready_i ( mst_resp_i.aw_ready      ),
       .data_o  ( mst_req_o.aw             )
     );
-    spill_register #(
-      .T       ( w_chan_t ),
+    cc_spill_register #(
+      .data_t  ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
@@ -80,8 +79,8 @@ module axi_lite_mux #(
       .ready_i ( mst_resp_i.w_ready      ),
       .data_o  ( mst_req_o.w             )
     );
-    spill_register #(
-      .T       ( b_chan_t ),
+    cc_spill_register #(
+      .data_t  ( b_chan_t ),
       .Bypass  ( ~SpillB  )
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
@@ -93,8 +92,8 @@ module axi_lite_mux #(
       .ready_i ( slv_reqs_i[0].b_ready  ),
       .data_o  ( slv_resps_o[0].b       )
     );
-    spill_register #(
-      .T       ( ar_chan_t ),
+    cc_spill_register #(
+      .data_t  ( ar_chan_t ),
       .Bypass  ( ~SpillAr  )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
@@ -106,8 +105,8 @@ module axi_lite_mux #(
       .ready_i ( mst_resp_i.ar_ready      ),
       .data_o  ( mst_req_o.ar             )
     );
-    spill_register #(
-      .T       ( r_chan_t ),
+    cc_spill_register #(
+      .data_t  ( r_chan_t ),
       .Bypass  ( ~SpillR  )
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
@@ -196,9 +195,9 @@ module axi_lite_mux #(
       assign slv_aw_valids[i]        = slv_reqs_i[i].aw_valid;
       assign slv_resps_o[i].aw_ready = slv_aw_readies[i];
     end
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts ),
-      .DataType ( aw_chan_t  ),
+      .data_t   ( aw_chan_t  ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_aw_arbiter (
@@ -247,17 +246,16 @@ module axi_lite_mux #(
       end
     end
 
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
-    fifo_v3 #(
-      .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxTrans    ),
-      .dtype        ( select_t    )
+    cc_fifo #(
+      .FallThrough ( FallThrough ),
+      .Depth       ( MaxTrans    ),
+      .data_t      ( select_t    )
     ) i_w_fifo (
       .clk_i     ( clk_i        ),
       .rst_ni    ( rst_ni       ),
       .flush_i   ( 1'b0         ),
-      .testmode_i( test_i       ),
       .full_o    ( w_fifo_full  ),
       .empty_o   ( w_fifo_empty ),
       .usage_o   (              ),
@@ -267,8 +265,8 @@ module axi_lite_mux #(
       .pop_i     ( w_fifo_pop   )
     );
 
-    spill_register #(
-      .T       ( aw_chan_t  ),
+    cc_spill_register #(
+      .data_t  ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   ) // Param indicated that we want a spill reg
     ) i_aw_spill_reg (
       .clk_i   ( clk_i               ),
@@ -293,15 +291,14 @@ module axi_lite_mux #(
     end
     assign w_fifo_pop      = mst_w_valid & mst_w_ready;
 
-    fifo_v3 #(
-      .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxTrans    ),
-      .dtype        ( select_t    )
+    cc_fifo #(
+      .FallThrough ( FallThrough ),
+      .Depth       ( MaxTrans    ),
+      .data_t      ( select_t    )
     ) i_b_fifo (
       .clk_i     ( clk_i        ),
       .rst_ni    ( rst_ni       ),
       .flush_i   ( 1'b0         ),
-      .testmode_i( test_i       ),
       .full_o    ( b_fifo_full  ),
       .empty_o   ( b_fifo_empty ),
       .usage_o   (              ),
@@ -311,8 +308,8 @@ module axi_lite_mux #(
       .pop_i     ( b_fifo_pop   )
     );
 
-    spill_register #(
-      .T       ( w_chan_t ),
+    cc_spill_register #(
+      .data_t  ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
       .clk_i   ( clk_i              ),
@@ -336,8 +333,8 @@ module axi_lite_mux #(
     assign mst_b_ready    = ~b_fifo_empty & slv_reqs_i[b_select].b_ready;
     assign b_fifo_pop     = mst_b_valid & mst_b_ready;
 
-    spill_register #(
-      .T       ( b_chan_t ),
+    cc_spill_register #(
+      .data_t  ( b_chan_t ),
       .Bypass  ( ~SpillB  )
     ) i_b_spill_reg (
       .clk_i   ( clk_i              ),
@@ -359,9 +356,9 @@ module axi_lite_mux #(
       assign slv_ar_valids[i]        = slv_reqs_i[i].ar_valid;
       assign slv_resps_o[i].ar_ready = slv_ar_readies[i];
     end
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts ),
-      .DataType ( ar_chan_t  ),
+      .data_t   ( ar_chan_t  ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_ar_arbiter (
@@ -384,15 +381,14 @@ module axi_lite_mux #(
     assign ar_ready     = (!r_fifo_full) ? mst_ar_ready : 1'b0;
     assign r_fifo_push  = mst_ar_valid & mst_ar_ready;
 
-    fifo_v3 #(
-      .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxTrans    ),
-      .dtype        ( select_t    )
+    cc_fifo #(
+      .FallThrough ( FallThrough ),
+      .Depth       ( MaxTrans    ),
+      .data_t      ( select_t    )
     ) i_r_fifo (
       .clk_i     ( clk_i        ),
       .rst_ni    ( rst_ni       ),
       .flush_i   ( 1'b0         ),
-      .testmode_i( test_i       ),
       .full_o    ( r_fifo_full  ),
       .empty_o   ( r_fifo_empty ),
       .usage_o   (              ),
@@ -402,8 +398,8 @@ module axi_lite_mux #(
       .pop_i     ( r_fifo_pop   )
     );
 
-    spill_register #(
-      .T       ( ar_chan_t ),
+    cc_spill_register #(
+      .data_t  ( ar_chan_t ),
       .Bypass  ( ~SpillAr  )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i               ),
@@ -427,8 +423,8 @@ module axi_lite_mux #(
     assign mst_r_ready    = ~r_fifo_empty & slv_reqs_i[r_select].r_ready;
     assign r_fifo_pop     = mst_r_valid & mst_r_ready;
 
-    spill_register #(
-      .T       ( r_chan_t ),
+    cc_spill_register #(
+      .data_t  ( r_chan_t ),
       .Bypass  ( ~SpillR  )
     ) i_r_spill_reg (
       .clk_i   ( clk_i              ),
@@ -474,7 +470,6 @@ module axi_lite_mux_intf #(
 ) (
   input  logic    clk_i,                // Clock
   input  logic    rst_ni,               // Asynchronous reset active low
-  input  logic    test_i,               // Testmode enable
   AXI_LITE.Slave  slv [NoSlvPorts-1:0], // slave ports
   AXI_LITE.Master mst                   // master port
 );
@@ -523,7 +518,6 @@ module axi_lite_mux_intf #(
   ) i_axi_mux (
     .clk_i,  // Clock
     .rst_ni, // Asynchronous reset active low
-    .test_i, // Test Mode enable
     .slv_reqs_i  ( slv_reqs  ),
     .slv_resps_o ( slv_resps ),
     .mst_req_o   ( mst_req   ),
