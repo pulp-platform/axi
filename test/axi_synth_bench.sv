@@ -242,7 +242,6 @@ module synth_slice #(
   ) a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
-    .testmode_i (1'b0),
     .slv        (a_full.Slave),
     .mst        (a_lite.Master)
   );
@@ -452,7 +451,6 @@ module synth_axi_lite_xbar #(
   ) i_xbar_dut (
     .clk_i                 ( clk_i     ),
     .rst_ni                ( rst_ni    ),
-    .test_i                ( test      ),
     .slv_ports_req_i       ( mst_reqs  ),
     .slv_ports_resp_o      ( mst_resps ),
     .mst_ports_req_o       ( slv_reqs  ),
@@ -491,7 +489,6 @@ module synth_axi_lite_mailbox #(
   ) i_axi_lite_mailbox (
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
-    .test_i      ( test      ), // Testmode enable
     // slave ports [1:0]
     .slv         ( slv       ),
     .irq_o       ( irq       ), // interrupt output for each port
@@ -746,7 +743,6 @@ module synth_axi_to_mem_banked #(
   ) i_axi_to_mem_banked_intf (
     .clk_i,
     .rst_ni,
-    .test_i            ( test            ),
     .slv               ( axi             ),
     .mem_req_o         ( mem_req         ),
     .mem_gnt_i         ( mem_gnt         ),
@@ -1132,7 +1128,6 @@ module synth_axi_xbar #(
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
-      .test_i               ('0),
       .slv_ports_req_i      (slv_reqs),
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
@@ -1161,7 +1156,6 @@ module synth_axi_xbar #(
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
-      .test_i               ('0),
       .slv_ports_req_i      (slv_reqs),
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
@@ -1471,7 +1465,6 @@ module synth_axi_demux import axi_pkg::*; #(
   ) i_axi_demux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         ('0),
     .slv_req_i      (slv_req),
     .slv_aw_select_i(slv_aw_select_i),
     .slv_ar_select_i(slv_ar_select_i),
@@ -1795,7 +1788,6 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   ) i_axi_mcast_demux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         ('0),
     .slv_req_i      (slv_req),
     .slv_aw_select_i(slv_aw_select_i),
     .slv_ar_select_i(slv_ar_select_i),

@@ -60,7 +60,6 @@ module axi_mcast_demux_simple #(
 ) (
   input  logic                          clk_i,
   input  logic                          rst_ni,
-  input  logic                          test_i,
   // Slave Port
   input  axi_req_t                      slv_req_i,
   input  mask_select_t                  slv_aw_select_i,
@@ -75,7 +74,7 @@ module axi_mcast_demux_simple #(
   output logic        [NoMstPorts-1:0]  mst_aw_commit_o
 );
 
-  localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
+  localparam int unsigned IdCounterWidth = cc_pkg::idx_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
   localparam int unsigned McastCounterWidth = (MaxMcastTrans > 32'd1) ? $clog2(MaxMcastTrans+1) : 32'd1;
@@ -233,7 +232,7 @@ module axi_mcast_demux_simple #(
 
     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
     // prevent further pushing
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     //--------------------------------------
     // Multicast logic
@@ -244,7 +243,7 @@ module axi_mcast_demux_simple #(
     // the ID counters. We anyways don't use the ID counters on
     // multicast transactions...
 
-    onehot_to_bin #(
+    cc_onehot_to_bin #(
       .ONEHOT_WIDTH(NoMstPorts)
     ) i_onehot_to_bin  (
         .onehot(slv_aw_select_i & {NoMstPorts{!aw_is_multicast}}),
@@ -252,7 +251,7 @@ module axi_mcast_demux_simple #(
     );
 
     // Popcount to identify multicast requests
-    popcount #(NoMstPorts) i_aw_select_popcount (
+    cc_popcount #(NoMstPorts) i_aw_select_popcount (
         .data_i    (slv_aw_select_i),
         .popcount_o(aw_select_popcount)
     );
@@ -287,8 +286,8 @@ module axi_mcast_demux_simple #(
     assign mst_is_mcast_o = {NoMstPorts{aw_is_multicast}};
 
     // Keep track of which B responses need to be returned to complete the multicast
-    `FFARN(multicast_select_q, multicast_select_d, '0, clk_i, rst_ni)
-    `FFARN(outstanding_mcast_cnt_q, outstanding_mcast_cnt_d, '0, clk_i, rst_ni)
+    `FF(multicast_select_q, multicast_select_d, '0, clk_i, rst_ni)
+    `FF(outstanding_mcast_cnt_q, outstanding_mcast_cnt_d, '0, clk_i, rst_ni)
 
     // Logic to update number of outstanding multicast transactions and current multicast
     // transactions' select mask. Counter is incremented upon the AW handshake of a multicast
@@ -332,7 +331,7 @@ module axi_mcast_demux_simple #(
 
     assign mcast_aw_hs_in_progress = mcast_aw_hs_state_q == MCastAwHandshakeInProgress;
 
-    `FFARN(mcast_aw_hs_state_q, mcast_aw_hs_state_d, MCastAwHandshakeIdle, clk_i, rst_ni)
+    `FF(mcast_aw_hs_state_q, mcast_aw_hs_state_d, MCastAwHandshakeIdle, clk_i, rst_ni)
 
     // When a multicast occurs, the upstream valid signals need to
     // be forwarded to multiple master ports.
@@ -391,7 +390,7 @@ module axi_mcast_demux_simple #(
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
     // `slv_aw_select_i`.
-    counter #(
+    cc_counter #(
       .WIDTH           ( IdCounterWidth ),
       .STICKY_OVERFLOW ( 1'b0           )
     ) i_counter_open_w (
@@ -406,7 +405,7 @@ module axi_mcast_demux_simple #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
+    `FFL(w_select_q, slv_aw_select_i, w_cnt_up, mask_select_t'(0), clk_i, rst_ni)
     assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
     assign w_select_valid = w_cnt_up | (|w_open);
     assign w_cnt_down     = slv_req_i.w_valid & slv_resp_o.w_ready & slv_req_i.w.last;
@@ -418,7 +417,7 @@ module axi_mcast_demux_simple #(
     // When a multicast occurs, the upstream valid signals need to
     // be forwarded to multiple master ports.
     // Proper stream forking is necessary to avoid protocol violations
-    stream_fork_dynamic #(
+    cc_stream_fork_dynamic #(
       .N_OUP(NoMstPorts)
     ) i_w_stream_fork_dynamic (
       .clk_i      (clk_i),
@@ -435,10 +434,10 @@ module axi_mcast_demux_simple #(
     //--------------------------------------
     //  B Channel
     //--------------------------------------
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] b_idx;
 
     // Arbitration of the different B responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),
@@ -458,7 +457,7 @@ module axi_mcast_demux_simple #(
     );
 
     // Streams must be joined instead of arbitrated when multicast
-    stream_join_dynamic #(NoMstPorts) i_b_stream_join (
+    cc_stream_join_dynamic #(NoMstPorts) i_b_stream_join (
       .inp_valid_i(mst_b_valids & {NoMstPorts{outstanding_multicast}}),
       .inp_ready_o(mst_b_readies_join),
       .sel_i      (multicast_select_q),
@@ -475,7 +474,7 @@ module axi_mcast_demux_simple #(
 
     // All fields of B other than RESP can be taken from any slave (need not be merged).
     // We use a priority encoder to take them from the first addressed slave.
-    lzc #(
+    cc_lzc #(
       .WIDTH ( NoMstPorts ),
       .MODE  ( 1'b0       ) // Trailing zero mode
     ) i_mst_b_valids_tzc (
@@ -551,7 +550,7 @@ module axi_mcast_demux_simple #(
     end
 
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
+    `FFL(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
 
     if (UniqueIds) begin : gen_unique_ids_ar
       // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
@@ -589,10 +588,10 @@ module axi_mcast_demux_simple #(
     //  R Channel
     //--------------------------------------
 
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] r_idx;
 
     // Arbitration of the different r responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),

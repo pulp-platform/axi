@@ -56,7 +56,6 @@ module axi_mcast_mux #(
 ) (
   input  logic                       clk_i,    // Clock
   input  logic                       rst_ni,   // Asynchronous reset active low
-  input  logic                       test_i,   // Test Mode enable
   // slave ports (AXI inputs), connect master modules here
   input  logic      [NoSlvPorts-1:0] slv_is_mcast_i,
   input  logic      [NoSlvPorts-1:0] slv_aw_commit_i,
@@ -72,7 +71,7 @@ module axi_mcast_mux #(
 
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
     ) i_aw_spill_reg (
@@ -87,7 +86,7 @@ module axi_mcast_mux #(
       .ready_i ( mst_resp_i.aw_ready      ),
       .data_o  ( mst_req_o.aw             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
@@ -100,7 +99,7 @@ module axi_mcast_mux #(
       .ready_i ( mst_resp_i.w_ready      ),
       .data_o  ( mst_req_o.w             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
@@ -113,7 +112,7 @@ module axi_mcast_mux #(
       .ready_i ( slv_reqs_i[0].b_ready  ),
       .data_o  ( slv_resps_o[0].b       )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
@@ -126,7 +125,7 @@ module axi_mcast_mux #(
       .ready_i ( mst_resp_i.ar_ready      ),
       .data_o  ( mst_req_o.ar             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
@@ -276,7 +275,7 @@ module axi_mcast_mux #(
     // AW Channel
     //--------------------------------------
     // Arbitrate unicast requests in round-robin fashion
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
       .DataType ( mst_aw_chan_t ),
       .AxiVldRdy( 1'b1          ),
@@ -296,7 +295,7 @@ module axi_mcast_mux #(
     );
 
     // Arbitrate multicast requests in priority encoder fashion
-    lzc #(
+    cc_lzc #(
       .WIDTH ( NoSlvPorts ),
       .MODE  ( 1'b0       ) // Trailing zero mode
     ) i_aw_mcast_lzc (
@@ -377,7 +376,7 @@ module axi_mcast_mux #(
     `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
     `FFL(lock_unicast_q, lock_unicast_d, load_aw_lock, '0, clk_i, rst_ni)
 
-    fifo_v3 #(
+    cc_fifo #(
       .FALL_THROUGH ( FallThrough ),
       .DEPTH        ( MaxWTrans   ),
       .dtype        ( switch_id_t )
@@ -385,7 +384,6 @@ module axi_mcast_mux #(
       .clk_i     ( clk_i                                     ),
       .rst_ni    ( rst_ni                                    ),
       .flush_i   ( 1'b0                                      ),
-      .testmode_i( test_i                                    ),
       .full_o    ( w_fifo_full                               ),
       .empty_o   ( w_fifo_empty                              ),
       .usage_o   (                                           ),
@@ -395,7 +393,7 @@ module axi_mcast_mux #(
       .pop_i     ( w_fifo_pop                                )
     );
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      ) // Param indicated that we want a spill reg
     ) i_aw_spill_reg (
@@ -429,7 +427,7 @@ module axi_mcast_mux #(
       end
     end
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
@@ -452,7 +450,7 @@ module axi_mcast_mux #(
     assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
@@ -469,7 +467,7 @@ module axi_mcast_mux #(
     //--------------------------------------
     // AR Channel
     //--------------------------------------
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
       .DataType ( mst_ar_chan_t ),
       .AxiVldRdy( 1'b1          ),
@@ -488,7 +486,7 @@ module axi_mcast_mux #(
       .idx_o  (                 )
     );
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
@@ -511,7 +509,7 @@ module axi_mcast_mux #(
     assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
@@ -581,7 +579,6 @@ module axi_mcast_mux_intf #(
 ) (
   input  logic   clk_i,                  // Clock
   input  logic   rst_ni,                 // Asynchronous reset active low
-  input  logic   test_i,                 // Testmode enable
   input  logic [NO_SLV_PORTS-1:0] slv_is_mcast_i,
   input  logic [NO_SLV_PORTS-1:0] slv_aw_commit_i,
   AXI_BUS.Slave  slv [NO_SLV_PORTS-1:0], // slave ports
@@ -654,7 +651,6 @@ module axi_mcast_mux_intf #(
   ) i_axi_mux (
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
-    .test_i      ( test_i    ), // Test Mode enable
     .slv_is_mcast_i,
     .slv_aw_commit_i,
     .slv_reqs_i  ( slv_reqs  ),

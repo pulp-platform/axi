@@ -56,7 +56,6 @@ module axi_mux #(
 ) (
   input  logic                       clk_i,    // Clock
   input  logic                       rst_ni,   // Asynchronous reset active low
-  input  logic                       test_i,   // Test Mode enable
   // slave ports (AXI inputs), connect master modules here
   input  slv_req_t  [NoSlvPorts-1:0] slv_reqs_i,
   output slv_resp_t [NoSlvPorts-1:0] slv_resps_o,
@@ -91,7 +90,6 @@ module axi_mux #(
   ) i_axi_mcast_mux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         (test_i),
     .slv_is_mcast_i ('0),
     .slv_aw_commit_i('0),
     .slv_reqs_i     (slv_reqs_i),
@@ -126,7 +124,6 @@ module axi_mux_intf #(
 ) (
   input  logic   clk_i,                  // Clock
   input  logic   rst_ni,                 // Asynchronous reset active low
-  input  logic   test_i,                 // Testmode enable
   AXI_BUS.Slave  slv [NO_SLV_PORTS-1:0], // slave ports
   AXI_BUS.Master mst                     // master port
 );
@@ -197,7 +194,6 @@ module axi_mux_intf #(
   ) i_axi_mux (
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
-    .test_i      ( test_i    ), // Test Mode enable
     .slv_reqs_i  ( slv_reqs  ),
     .slv_resps_o ( slv_resps ),
     .mst_req_o   ( mst_req   ),
