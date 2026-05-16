@@ -70,7 +70,6 @@ module axi_mcast_demux_mapped #(
 ) (
   input  logic                       clk_i,
   input  logic                       rst_ni,
-  input  logic                       test_i,
   // Addressing rules
   input  rule_t    [NoAddrRules-1:0] addr_map_i,
   input  logic                       en_default_mst_port_i,
@@ -88,8 +87,8 @@ module axi_mcast_demux_mapped #(
   // Account for additional error slave
   localparam int unsigned NoMstPortsExt = NoMstPorts + 1;
 
-  localparam int unsigned IdxSelectWidth = cf_math_pkg::idx_width(NoMstPorts);
-  localparam int unsigned IdxSelectWidthExt = cf_math_pkg::idx_width(NoMstPortsExt);
+  localparam int unsigned IdxSelectWidth = cc_pkg::idx_width(NoMstPorts);
+  localparam int unsigned IdxSelectWidthExt = cc_pkg::idx_width(NoMstPortsExt);
   typedef logic [IdxSelectWidth-1:0] idx_select_t;
   typedef logic [IdxSelectWidthExt-1:0] idx_select_ext_t;
 
@@ -110,8 +109,8 @@ module axi_mcast_demux_mapped #(
   axi_req_t slv_req_cut;
   axi_resp_t slv_resp_cut;
 
-  spill_register #(
-    .T       ( aw_chan_t  ),
+  cc_spill_register #(
+    .data_t  ( aw_chan_t  ),
     .Bypass  ( ~SpillAw   )
   ) i_aw_spill_reg (
     .clk_i,
@@ -123,8 +122,8 @@ module axi_mcast_demux_mapped #(
     .ready_i ( slv_resp_cut.aw_ready ),
     .data_o  ( slv_req_cut.aw        )
   );
-  spill_register #(
-    .T       ( w_chan_t  ),
+  cc_spill_register #(
+    .data_t  ( w_chan_t  ),
     .Bypass  ( ~SpillW   )
   ) i_w_spill_reg (
     .clk_i,
@@ -136,8 +135,8 @@ module axi_mcast_demux_mapped #(
     .ready_i ( slv_resp_cut.w_ready ),
     .data_o  ( slv_req_cut.w        )
   );
-  spill_register #(
-    .T       ( ar_chan_t  ),
+  cc_spill_register #(
+    .data_t  ( ar_chan_t  ),
     .Bypass  ( ~SpillAr   )
   ) i_ar_spill_reg (
     .clk_i,
@@ -149,8 +148,8 @@ module axi_mcast_demux_mapped #(
     .ready_i ( slv_resp_cut.ar_ready ),
     .data_o  ( slv_req_cut.ar        )
   );
-  spill_register #(
-    .T       ( b_chan_t ),
+  cc_spill_register #(
+    .data_t  ( b_chan_t ),
     .Bypass  ( ~SpillB  )
   ) i_b_spill_reg (
     .clk_i,
@@ -162,8 +161,8 @@ module axi_mcast_demux_mapped #(
     .ready_i ( slv_req_i.b_ready    ),
     .data_o  ( slv_resp_o.b         )
   );
-  spill_register #(
-    .T       ( r_chan_t ),
+  cc_spill_register #(
+    .data_t  ( r_chan_t ),
     .Bypass  ( ~SpillR  )
   ) i_r_spill_reg (
     .clk_i,
@@ -185,7 +184,7 @@ module axi_mcast_demux_mapped #(
   idx_select_ext_t ar_select_idx;
 
   // Address decoding for unicast requests
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices          (NoMstPorts),
     .NoRules            (NoAddrRules),
     .addr_t             (addr_t),
@@ -229,7 +228,7 @@ module axi_mcast_demux_mapped #(
   addr_t [NoMstPortsExt-1:0] dec_aw_mask;
 
   // Address decoding for unicast requests
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices          (NoMstPorts),
     .NoRules            (NoAddrRules),
     .addr_t             (addr_t),
@@ -348,7 +347,6 @@ module axi_mcast_demux_mapped #(
   ) i_mcast_demux_simple (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_req_i       ( slv_req_cut                         ),
     .slv_aw_select_i ( dec_aw_select_mask                  ),
     .slv_aw_addr_i   ( dec_aw_addr                         ),
@@ -373,7 +371,6 @@ module axi_mcast_demux_mapped #(
   ) i_axi_err_slv (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_req_i  ( errslv_req  ),
     .slv_resp_o ( errslv_resp )
   );
@@ -469,7 +466,6 @@ module axi_mcast_demux_intf #(
 ) (
   input  logic                     clk_i,                  // Clock
   input  logic                     rst_ni,                 // Asynchronous reset active low
-  input  logic                     test_i,                 // Testmode enable
   input  rule_t [NO_MST_PORTS-2:0] addr_map_i,
   input  idx_select_t              slv_ar_select_i,        // has to be stable, when ar_valid
   input  logic                     en_default_mst_port_i,
@@ -530,7 +526,6 @@ module axi_mcast_demux_intf #(
   ) i_axi_demux (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    .test_i,  // Testmode enable
     .addr_map_i            ( addr_map_i            ),
     .en_default_mst_port_i ( en_default_mst_port_i ),
     .default_mst_port_i    ( default_mst_port_i    ),

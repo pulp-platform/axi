@@ -317,7 +317,6 @@ module tb_axi_mcast_xbar #(
   ) i_xbar_dut (
     .clk_i                  ( clk     ),
     .rst_ni                 ( rst_n   ),
-    .test_i                 ( 1'b0    ),
     .slv_ports              ( master  ),
     .mst_ports              ( slave   ),
     .addr_map_i             ( AddrMap ),
