@@ -53,7 +53,7 @@ module axi_dw_upsizer #(
   import axi_pkg::beat_addr   ;
   import axi_pkg::modifiable  ;
 
-  import cf_math_pkg::idx_width;
+  import cc_pkg::idx_width;
 
   // Type used to index which adapter is handling each outstanding transaction.
   localparam TranIdWidth = AxiMaxReads > 1 ? $clog2(AxiMaxReads) : 1;
@@ -93,7 +93,7 @@ module axi_dw_upsizer #(
   logic        [AxiMaxReads-1:0] slv_r_valid_tran;
   logic        [AxiMaxReads-1:0] slv_r_ready_tran;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
     .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
@@ -129,7 +129,7 @@ module axi_dw_upsizer #(
 
   assign arb_slv_ar_gnt = |arb_slv_ar_gnt_tran;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn     (2         ),
     .DataWidth (AxiIdWidth),
     .ExtPrio   (1'b0      ),
@@ -155,7 +155,7 @@ module axi_dw_upsizer #(
   logic     [AxiMaxReads-1:0] mst_ar_ready_tran;
   tran_id_t                   mst_req_idx;
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
     .DataType (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
@@ -190,7 +190,6 @@ module axi_dw_upsizer #(
   ) i_axi_err_slv (
     .clk_i     (clk_i       ),
     .rst_ni    (rst_ni      ),
-    .test_i    (1'b0        ),
     .slv_req_i (axi_err_req ),
     .slv_resp_o(axi_err_resp)
   );
@@ -221,7 +220,6 @@ module axi_dw_upsizer #(
   ) i_axi_demux (
     .clk_i          (clk_i                      ),
     .rst_ni         (rst_ni                     ),
-    .test_i         (1'b0                       ),
     .mst_reqs_o     ({axi_err_req, mst_req_o}   ),
     .mst_resps_i    ({axi_err_resp, mst_resp_i} ),
     .slv_ar_select_i(mst_req_ar_err[mst_req_idx]),
@@ -260,7 +258,7 @@ module axi_dw_upsizer #(
 
   // Find an idle upsizer to handle this transaction
   tran_id_t idx_idle_upsizer;
-  lzc #(
+  cc_lzc #(
     .WIDTH(AxiMaxReads)
   ) i_idle_lzc (
     .in_i   (idle_read_upsizer),
@@ -275,7 +273,7 @@ module axi_dw_upsizer #(
     assign id_clash_upsizer[t] = arb_slv_ar_id == mst_ar_id[t] && !idle_read_upsizer[t];
   end
 
-  onehot_to_bin #(
+  cc_onehot_to_bin #(
     .ONEHOT_WIDTH(AxiMaxReads)
   ) i_id_clash_onehot_to_bin (
     .onehot(id_clash_upsizer    ),
@@ -300,7 +298,7 @@ module axi_dw_upsizer #(
     assign rid_upsizer_match[t] = (mst_resp.r.id == mst_ar_id[t]) && !idle_read_upsizer[t];
   end
 
-  onehot_to_bin #(
+  cc_onehot_to_bin #(
     .ONEHOT_WIDTH(AxiMaxReads)
   ) i_rid_upsizer_lzc (
     .onehot(rid_upsizer_match),

@@ -141,7 +141,7 @@ module axi_lite_regs #(
   // Reg byte:   B A 9 8   7 6 5 4   3 2 1 0
   //           | chunk_2 | chunk_1 | chunk_0 |
   localparam int unsigned AxiStrbWidth  = AxiDataWidth / 32'd8;
-  localparam int unsigned NumChunks     = cf_math_pkg::ceil_div(RegNumBytes, AxiStrbWidth);
+  localparam int unsigned NumChunks     = cc_pkg::ceil_div(RegNumBytes, AxiStrbWidth);
   localparam int unsigned ChunkIdxWidth = (NumChunks > 32'd1) ? $clog2(NumChunks) : 32'd1;
   // Type of the index to identify a specific register chunk.
   typedef logic [ChunkIdxWidth-1:0] chunk_idx_t;
@@ -313,11 +313,11 @@ module axi_lite_regs #(
 
   // Register array mapping, even read only register can be loaded over `reg_load_i`.
   for (genvar i = 0; i < RegNumBytes; i++) begin : gen_rw_regs
-    `FFLARN(reg_q[i], reg_d[i], reg_update[i], RegRstVal[i], clk_i, rst_ni)
+    `FFL(reg_q[i], reg_d[i], reg_update[i], RegRstVal[i], clk_i, rst_ni)
     assign reg_q_o[i] = reg_q[i];
   end
 
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices ( NumChunks  ),
     .NoRules   ( NumChunks  ),
     .addr_t    ( addr_t     ),
@@ -332,7 +332,7 @@ module axi_lite_regs #(
     .default_idx_i    ( '0                         )
   );
 
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices ( NumChunks  ),
     .NoRules   ( NumChunks  ),
     .addr_t    ( addr_t     ),
@@ -348,7 +348,7 @@ module axi_lite_regs #(
   );
 
   // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
-  spill_register #(
+  cc_spill_register #(
     .T      ( b_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_b_spill_register (
@@ -363,7 +363,7 @@ module axi_lite_regs #(
   );
 
   // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
-  spill_register #(
+  cc_spill_register #(
     .T      ( r_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_r_spill_register (

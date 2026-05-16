@@ -146,7 +146,7 @@ module axi_serializer #(
     mst_req_o.r_ready  = slv_req_i.r_ready  & ~rd_fifo_empty;
   end
 
-  fifo_v3 #(
+  cc_fifo #(
     .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
     .DEPTH        ( MaxReadTxns ),
     .dtype        ( id_t        )
@@ -154,7 +154,6 @@ module axi_serializer #(
     .clk_i,
     .rst_ni,
     .flush_i    ( 1'b0          ),
-    .testmode_i ( 1'b0          ),
     .data_i     ( ar_id         ),
     .push_i     ( rd_fifo_push  ),
     .full_o     ( rd_fifo_full  ),
@@ -166,7 +165,7 @@ module axi_serializer #(
   // Assign as this condition is needed in FSM
   assign rd_fifo_pop = slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last;
 
-  fifo_v3 #(
+  cc_fifo #(
     .FALL_THROUGH ( 1'b0         ),
     .DEPTH        ( MaxWriteTxns ),
     .dtype        ( id_t         )
@@ -174,7 +173,6 @@ module axi_serializer #(
     .clk_i,
     .rst_ni,
     .flush_i    ( 1'b0            ),
-    .testmode_i ( 1'b0            ),
     .data_i     ( slv_req_i.aw.id ),
     .push_i     ( wr_fifo_push    ),
     .full_o     ( wr_fifo_full    ),
@@ -186,7 +184,7 @@ module axi_serializer #(
   // Assign as this condition is needed in FSM
   assign wr_fifo_pop = slv_resp_o.b_valid & slv_req_i.b_ready;
 
-  `FFARN(state_q, state_d, AtopIdle, clk_i, rst_ni)
+  `FF(state_q, state_d, AtopIdle, clk_i, rst_ni)
 
 // pragma translate_off
 `ifndef VERILATOR

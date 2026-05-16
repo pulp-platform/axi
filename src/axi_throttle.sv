@@ -19,9 +19,9 @@ module axi_throttle #(
     /// AXI4+ATOP response type
     parameter type axi_rsp_t = logic,
     /// The width of the write credit counter (*DO NOT OVERWRITE*)
-    parameter int unsigned WCntWidth = cf_math_pkg::idx_width(MaxNumAwPending),
+    parameter int unsigned WCntWidth = cc_pkg::idx_width(MaxNumAwPending),
     /// The width of the read credit counter (*DO NOT OVERWRITE*)
-    parameter int unsigned RCntWidth = cf_math_pkg::idx_width(MaxNumArPending),
+    parameter int unsigned RCntWidth = cc_pkg::idx_width(MaxNumArPending),
     /// The type of the write credit counter (*DO NOT OVERWRITE*)
     parameter type w_credit_t = logic [WCntWidth-1:0],
     /// The type of the read credit counter (*DO NOT OVERWRITE*)

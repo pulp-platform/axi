@@ -109,7 +109,7 @@ module axi_demux_id_counters #(
       endcase
     end
 
-    delta_counter #(
+    cc_delta_counter #(
       .WIDTH           ( CounterWidth ),
       .STICKY_OVERFLOW ( 1'b0         )
     ) i_in_flight_cnt (
@@ -128,7 +128,7 @@ module axi_demux_id_counters #(
     assign cnt_full[i] = overflow | (&in_flight);
 
     // holds the selection signal for this id
-    `FFLARN(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
+    `FFL(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
 
 // pragma translate_off
 `ifndef VERILATOR
