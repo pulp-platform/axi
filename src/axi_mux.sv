@@ -90,7 +90,6 @@ module axi_mux #(
   ) i_axi_mcast_mux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         (test_i),
     .slv_is_mcast_i ('0),
     .slv_aw_commit_i('0),
     .slv_reqs_i     (slv_reqs_i),

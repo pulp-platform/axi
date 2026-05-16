@@ -83,7 +83,6 @@ module axi_demux_simple #(
   ) i_axi_mcast_demux_simple (
     .clk_i                (clk_i),
     .rst_ni               (rst_ni),
-    .test_i               (test_i),
     .slv_req_i            (slv_req_i),
     .slv_aw_select_i      (aw_select_mask),
     .slv_aw_addr_i        ('0),

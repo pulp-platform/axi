@@ -1125,7 +1125,6 @@ module synth_axi_xbar #(
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
-      .test_i               ('0),
       .slv_ports_req_i      (slv_reqs),
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
@@ -1154,7 +1153,6 @@ module synth_axi_xbar #(
     ) i_xbar_dut (
       .clk_i                (clk_i),
       .rst_ni               (rst_ni),
-      .test_i               ('0),
       .slv_ports_req_i      (slv_reqs),
       .slv_ports_resp_o     (slv_resps),
       .mst_ports_req_o      (mst_reqs),
@@ -1464,7 +1462,6 @@ module synth_axi_demux import axi_pkg::*; #(
   ) i_axi_demux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         ('0),
     .slv_req_i      (slv_req),
     .slv_aw_select_i(slv_aw_select_i),
     .slv_ar_select_i(slv_ar_select_i),
@@ -1788,7 +1785,6 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   ) i_axi_mcast_demux (
     .clk_i          (clk_i),
     .rst_ni         (rst_ni),
-    .test_i         ('0),
     .slv_req_i      (slv_req),
     .slv_aw_select_i(slv_aw_select_i),
     .slv_ar_select_i(slv_ar_select_i),
