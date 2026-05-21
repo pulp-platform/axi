@@ -205,7 +205,9 @@ module axi_demux #(
     .slv_ar_select_i ( slv_ar_select ),
     .slv_resp_o      ( slv_resp_cut  ),
     .mst_reqs_o      ( mst_reqs_o    ),
-    .mst_resps_i     ( mst_resps_i   )
+    .mst_resps_i     ( mst_resps_i   ),
+    .mst_b_idx_o     (               ),
+    .mst_r_idx_o     (               )
   );
 
 endmodule
