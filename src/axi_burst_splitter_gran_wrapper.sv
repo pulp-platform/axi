@@ -45,7 +45,7 @@ module axi_burst_splitter_gran_wrapper #(
   input  logic                              aresetn,
 
   /// Maximum burst length emitted by this splitter, encoded as AXI `AxLEN` (`0` means one beat).
-  input  logic [axi_pkg::LenWidth-1:0]      len_limit_i,
+  input  logic [8-1:0]      len_limit_i,
 
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 S_AXI AWID" *)
   input  logic [AXI_ID_WIDTH-1:0]           s_axi_awid,
