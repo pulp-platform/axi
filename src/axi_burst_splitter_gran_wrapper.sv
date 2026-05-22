@@ -35,7 +35,8 @@ module axi_burst_splitter_gran_wrapper #(
   /// AXI ID width.
   parameter int unsigned AXI_ID_WIDTH    = 32'd1,
   /// AXI user signal width.
-  parameter int unsigned AXI_USER_WIDTH  = 32'd1
+  parameter int unsigned AXI_USER_WIDTH  = 32'd1,
+  parameter int unsigned LenWidth.       = 32'd8
 ) (
   (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 ACLK CLK" *)
   (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF S_AXI:M_AXI, ASSOCIATED_RESET aresetn" *)
@@ -45,7 +46,7 @@ module axi_burst_splitter_gran_wrapper #(
   input  logic                              aresetn,
 
   /// Maximum burst length emitted by this splitter, encoded as AXI `AxLEN` (`0` means one beat).
-  input  logic [8-1:0]      len_limit_i,
+  input  logic [LenWidth-1:0]      len_limit_i,
 
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 S_AXI AWID" *)
   input  logic [AXI_ID_WIDTH-1:0]           s_axi_awid,
