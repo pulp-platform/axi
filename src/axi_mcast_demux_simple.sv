@@ -243,12 +243,19 @@ module axi_mcast_demux_simple #(
     // the ID counters. We anyways don't use the ID counters on
     // multicast transactions...
 
-    cc_onehot_to_bin #(
-      .OnehotWidth(NoMstPorts)
-    ) i_onehot_to_bin  (
-        .onehot_i(slv_aw_select_i & {NoMstPorts{!aw_is_multicast}}),
-        .bin_o   (slv_aw_select)
-    );
+    // Only needed when UniqueIds=0: slv_aw_select feeds the ID counter to track which
+    // master port a write transaction targets. When UniqueIds=1 the ID counter is absent
+    // and aw_select_occupied is hardwired to 0, so slv_aw_select is never used.
+    if (!UniqueIds) begin : gen_onehot_to_bin
+      cc_onehot_to_bin #(
+        .OnehotWidth(NoMstPorts)
+      ) i_onehot_to_bin (
+          .onehot_i(slv_aw_select_i & {NoMstPorts{!aw_is_multicast}}),
+          .bin_o   (slv_aw_select)
+      );
+    end else begin : gen_no_onehot_to_bin
+      assign slv_aw_select = '0;
+    end
 
     // Popcount to identify multicast requests
     cc_popcount #(NoMstPorts) i_aw_select_popcount (
