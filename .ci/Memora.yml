@@ -1,4 +1,4 @@
-cache_root_dir: /home/gitlabci/buildcache/axi
+cache_root_dir: /home/gitlabci/caches/memora
 artifacts:
   vsim-%:
     inputs:
