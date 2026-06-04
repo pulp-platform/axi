@@ -9,7 +9,7 @@ on:
 jobs:
   gitlab-ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 310
+    timeout-minutes: 360
     steps:
       - name: Check Gitlab CI
         uses: pulp-platform/pulp-actions/gitlab-ci@v2

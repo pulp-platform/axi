@@ -27,7 +27,6 @@ This table describes the ports of the module.
 |:---------------|:---------------------------|:-------------------------------------------------------|
 | `clk_i`        | `input  logic`             | clock                                                  |
 | `rst_ni`       | `input  logic`             | asynchronous reset active low                          |
-| `test_i`       | `input  logic`             | testmode enable                                        |
 | `slv_reqs_i`   | `input  req_lite_t  [1:0]` | requests of the two AXI4-Lite ports                    |
 | `slv_resps_o`  | `output resp_lite_t [1:0]` | responses of the two AXI4-Lite ports                   |
 | `irq_o`        | `output logic       [1:0]` | interrupt output for each port                         |

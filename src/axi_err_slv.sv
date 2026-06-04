@@ -28,7 +28,6 @@ module axi_err_slv #(
 ) (
   input  logic      clk_i,   // Clock
   input  logic      rst_ni,  // Asynchronous reset active low
-  input  logic      test_i,  // Testmode enable
   // slave port
   input  axi_req_t  slv_req_i,
   output axi_resp_t slv_resp_o
@@ -87,15 +86,14 @@ module axi_err_slv #(
   assign w_fifo_push        = err_req.aw_valid & ~w_fifo_full;
   assign err_resp.aw_ready  = ~w_fifo_full;
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b1      ),
-    .DEPTH        ( MaxTrans  ),
-    .dtype        ( id_t      )
+  cc_fifo #(
+    .FallThrough ( 1'b1      ),
+    .Depth       ( MaxTrans  ),
+    .data_t      ( id_t      )
   ) i_w_fifo (
     .clk_i      ( clk_i             ),
     .rst_ni     ( rst_ni            ),
     .flush_i    ( 1'b0              ),
-    .testmode_i ( test_i            ),
     .full_o     ( w_fifo_full       ),
     .empty_o    ( w_fifo_empty      ),
     .usage_o    (                   ),
@@ -120,15 +118,14 @@ module axi_err_slv #(
     end
   end
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
-    .dtype        ( id_t         )
+  cc_fifo #(
+    .FallThrough ( 1'b0         ),
+    .Depth       ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
+    .data_t      ( id_t         )
   ) i_b_fifo (
     .clk_i      ( clk_i        ),
     .rst_ni     ( rst_ni       ),
     .flush_i    ( 1'b0         ),
-    .testmode_i ( test_i       ),
     .full_o     ( b_fifo_full  ),
     .empty_o    ( b_fifo_empty ),
     .usage_o    (              ),
@@ -162,15 +159,14 @@ module axi_err_slv #(
   assign r_fifo_inp.id  = err_req.ar.id;
   assign r_fifo_inp.len = err_req.ar.len;
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0      ),
-    .DEPTH        ( MaxTrans  ),
-    .dtype        ( r_data_t  )
+  cc_fifo #(
+    .FallThrough ( 1'b0      ),
+    .Depth       ( MaxTrans  ),
+    .data_t      ( r_data_t  )
   ) i_r_fifo (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
     .flush_i   ( 1'b0         ),
-    .testmode_i( test_i       ),
     .full_o    ( r_fifo_full  ),
     .empty_o   ( r_fifo_empty ),
     .usage_o   (              ),
@@ -228,8 +224,8 @@ module axi_err_slv #(
     end
   end
 
-  counter #(
-    .WIDTH     ($bits(axi_pkg::len_t))
+  cc_counter #(
+    .Width     ($bits(axi_pkg::len_t))
   ) i_r_counter (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),

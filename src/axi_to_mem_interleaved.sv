@@ -48,7 +48,6 @@ module axi_to_mem_interleaved #(
   /// Asynchronous reset, active low.
   input  logic                           rst_ni,
   /// Testmode enable
-  input  logic                           test_i,
   /// The unit is busy handling an AXI4+ATOP request.
   output logic                           busy_o,
   /// AXI4+ATOP slave port, request input.
@@ -113,7 +112,6 @@ module axi_to_mem_interleaved #(
   ) i_split_read_write (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_req_i       ( axi_req_i                ),
     .slv_ar_select_i ( 1'b0                     ),
     .slv_aw_select_i ( 1'b1                     ),
@@ -221,9 +219,9 @@ module axi_to_mem_interleaved #(
     assign r_axi_to_mem_gnt[i] = r_mem_gnt[i] & ~fifo_full[i];
 
     // fine-grain arbitration
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn     ( 2                 ),
-      .DataType  ( mem_req_payload_t )
+      .data_t    ( mem_req_payload_t )
     ) i_rr_arb_tree (
       .clk_i    ( clk_i                          ),
       .rst_ni   ( rst_ni                         ),
@@ -239,14 +237,13 @@ module axi_to_mem_interleaved #(
     );
 
     // back-routing store
-    fifo_v3 #(
-      .DATA_WIDTH ( 1            ),
-      .DEPTH      ( BufDepth + 1 )
+    cc_fifo #(
+      .DataWidth ( 1            ),
+      .Depth     ( BufDepth + 1 )
     ) i_fifo_v3_response_trgt_store (
       .clk_i      ( clk_i                       ),
       .rst_ni     ( rst_ni                      ),
       .flush_i    ( 1'b0                        ),
-      .testmode_i ( 1'b0                        ),
       .full_o     ( fifo_full[i]                ),
       .empty_o    ( ),
       .usage_o    ( ),
@@ -294,7 +291,6 @@ module axi_to_mem_interleaved_intf #(
   /// Asynchronous reset, active low
   input  logic                          rst_ni,
   /// Testmode enable
-  input  logic                          test_i,
   /// Status output, busy flag of `axi_to_mem`
   output logic                          busy_o,
   /// AXI4+ATOP slave port
@@ -350,7 +346,6 @@ module axi_to_mem_interleaved_intf #(
   ) i_axi_to_mem_interleaved (
     .clk_i,
     .rst_ni,
-    .test_i,
     .busy_o,
     .axi_req_i  ( mem_axi_req  ),
     .axi_resp_o ( mem_axi_resp ),

@@ -45,7 +45,6 @@ If all `SpillXX` and `FallThrough` are disabled, all paths through this multiple
 |:----------------------------------|:------------|
 | `clk_i`                           | Clock to which all other signals (except `rst_ni`) are synchronous. |
 | `rst_ni`                          | Reset, asynchronous, active-low. |
-| `test_i`                          | Test mode enable (active-high). |
 | `slv_*` (except `slv_*_select_i`) | Single slave port of the demultiplexer. |
 | `slv_{aw,ar}_select_i`            | Index of the master port to which a write or read, respectively, is demultiplexed.  This signal must be stable while a handshake on the AW respectively AR channel is [pending](../doc#pending). |
 | `mst_*`                           | Array of master ports of the demultiplexer.  The array index of each port is the index of the master port. |
@@ -71,7 +70,7 @@ Setting the `UniqueIds` parameter to `1'b1` reduces the area complexity of the d
 
 `2 * 2^AxiLookBits` counters track the number of [in-flight](../doc#in-flight) transactions.  That is, for each ID in the (potentially) reduced set of IDs of `AxiLookBits` bits, there is one counter for write transactions and one for read transactions.  Each counter can count up to (and including) `MaxTrans`, and there is a register that holds the index of the master port to which a counter is assigned.
 
-When the demultiplexer gets an AW or an AR, it indexes the counters with the AXI ID.  If the indexed counter has a value greater than zero and its master port index register is not equal to the index to which the AW or AR is to be sent, a transaction with the same direction and ID is already in flight to another master port.  The demultiplexer then stalls the AW or AR.  In all other cases, the demultiplexer forwards the AW or AR, increments the value of the indexed counter, and sets the master port index of the counter.  A counter is decremented upon a handshake a B respectively last R beat at a slave port.
+When the demultiplexer gets an AW or an AR, it indexes the counters with the AXI ID.  If the indexed counter has a value greater than zero and its master port index register is not equal to the index to which the AW or AR is to be sent, a transaction with the same direction and ID is already in flight to another master port.  The demultiplexer then stalls the AW or AR.  In all other cases, the demultiplexer forwards the AW or AR, increments the value of the indexed counter, and sets the master port index of the counter.  A counter associated with the AW or AR channel is decremented upon a handshake on the slave port respectively on the B channel or on the R channel in correspondence of the last beat.
 
 W beats are routed to the master port defined by the value of `slv_aw_select_i` for the corresponding AW.  As the order of the W bursts is given by the order of the AWs, the select signals are stored in a FIFO queue.  This FIFO is pushed upon a handshake on the AW slave channel and popped upon a handshake of the last W beat of a burst on a W master channel.
 
