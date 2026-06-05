@@ -26,6 +26,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_burst_splitter_gran`](src/axi_burst_splitter_gran.sv) | Split AXI4 burst transfers into transactions of runtime-configurable granularity.                    |                                  |
 | [`axi_burst_unwrap`](src/axi_burst_unwrap.sv)               | Convert AXI4 wrapping burst transfers into up to two incremental bursts.                             |                                  |
 | [`axi_cdc`](src/axi_cdc.sv)                                 | AXI clock domain crossing based on a Gray FIFO implementation.                                       |                                  |
+| [`axi_cdc_isolatable`](src/axi_cdc_isolatable.sv)           | Isolatable AXI clock domain crossing based on a Gray FIFO implementation allowing one-sided resets.  |                                  |
 | [`axi_cut`](src/axi_cut.sv)                                 | Breaks all combinatorial paths between its input and output.                                         |                                  |
 | [`axi_delayer`](src/axi_delayer.sv)                         | Synthesizable module which can (randomly) delays AXI channels.                                       |                                  |
 | [`axi_demux_simple`](src/axi_demux_simple.sv)               | Demux without spill registers.                                                                       | [Doc](doc/axi_demux.md)          |
