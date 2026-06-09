@@ -1,0 +1,32 @@
+name: Elaboration
+
+on:
+  push:
+    branches-ignore:
+      - gh-pages
+      - v**
+  pull_request:
+    branches-ignore:
+      - gh-pages
+      - v**
+
+jobs:
+  yosys-slang:
+    name: yosys-slang elaboration
+    runs-on: ubuntu-latest
+    container:
+      image: hpretl/iic-osic-tools:latest
+      options: --user root
+    defaults:
+      run:
+        shell: bash -leo pipefail {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Bender checkout
+        run: bender checkout
+
+      - name: Run yosys-slang
+        run: scripts/run_yosys_slang.sh
