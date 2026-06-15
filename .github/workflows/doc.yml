@@ -40,33 +40,16 @@ jobs:
           morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
         shell: bash
 
-      - name: Determine documentation target folder
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-            DOC_TARGET="$GITHUB_HEAD_REF"
-          elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
-            if echo $GITHUB_REF | grep -qE '^refs/(head|tag)s'; then
-              DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
-            else
-              echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
-              exit 1
-            fi
-          else
-            echo "Error: Unsupported event: '$GITHUB_EVENT_NAME'!"
-            exit 1
-          fi
-          echo "DOC_TARGET=$DOC_TARGET" >> $GITHUB_ENV
-
       - name: Deploy documentation
         uses: JamesIves/github-pages-deploy-action@v4
         if: >
-          (github.event_name == 'push'
-          || github.event.pull_request.head.repo.full_name == github.repository) &&
-          github.ref == 'refs/heads/master'
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' ||
+          startsWith(github.ref, 'refs/tags/v'))
         with:
           token: ${{ secrets.GH_PAGES }}
           branch: gh-pages # The branch the action should deploy to.
           folder: docs # The folder the action should deploy.
-          target-folder: ${{ env.DOC_TARGET }}
+          target-folder: ${{ github.ref_name }}
           clean: true # remove files from `TARGET_FOLDER` that are not in `FOLDER`
                       # (`rsync --delete`)
