@@ -1,190 +1,257 @@
 variables:
   SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
+  VSIM: questa-2025.1 vsim
+  VERILATOR: oseda -2026.04 verilator
 
 before_script:
-  - export PATH=~/.cargo/bin:$PATH
   - mkdir -p build
 
+# Recompile the simulation library only when the sources, their dependencies or
+# the simulator version (pinned in this file) change. The compiled `work`
+# library is handed to the test jobs as a regular GitLab artifact. The `changes`
+# list is a superset of every `run_vsim` test trigger, so whenever a test runs
+# its `needs: vsim` dependency is guaranteed to be part of the pipeline.
+#
+# Every `changes` rule compares against `master` (`compare_to`) rather than the
+# previous commit. This makes the trigger reflect the cumulative diff of the
+# whole branch, like memora's content-addressed cache did: a file touched
+# anywhere on the branch keeps triggering its job until merged, so a later
+# unrelated commit cannot "hide" an earlier failing change behind a green
+# pipeline. Note this still trusts the hand-maintained dependency lists below;
+# a missing entry silently skips a test.
 vsim:
   stage: build
   script:
-    - export ARTIFACT="vsim-$VSIM_VER"
-    - >
-      case $VSIM_VER in 20*)
-        export VSIM="questa-$VSIM_VER vsim -64";
-        export VLIB="questa-$VSIM_VER vlib";
-        export VLOG="questa-$VSIM_VER vlog -64";
-        ;;
-      *)
-        export VSIM="vsim-$VSIM_VER -64";
-        export VLIB="vlib-$VSIM_VER";
-        export VLOG="vlog-$VSIM_VER -64";
-        ;;
-      esac
-    - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
-        cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
-      fi
-  parallel:
-    matrix:
-      - VSIM_VER: ['2025.1']
+    - cd build && ../scripts/compile_vsim.sh
+  artifacts:
+    paths:
+      - build/work
+    expire_in: 1 day
+  rules:
+    - &build_common_change_rule
+      changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - .gitlab-ci.yml
+          - Bender.yml
+          - include/**/*
+          - src/**/*
+          - test/**/*
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - scripts/compile_vsim.sh
+          - scripts/run_vsim.sh
 
 synopsys_dc:
   stage: build
   script:
-    - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup synopsys_dc; then
-        cd build && ../scripts/synth.sh
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
-      fi
+    - cd build && ../scripts/synth.sh
+  rules:
+    - *build_common_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - scripts/synth.sh
 
 fuse_xsim:
   stage: build
   allow_failure: true
   timeout: 5 minutes
   script:
-    - bender sources
-    - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
+    - bender checkout
     - mkdir fusesoc && cd fusesoc
-    - $HOME/.local/bin/fusesoc library add axi ..
-    - $HOME/.local/bin/fusesoc core list
-    - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
+    - uvx fusesoc library add axi ..
+    - uvx fusesoc core list
+    - vitis-2022.1-zr uvx fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
 verilator_lint:
   stage: build
-  variables:
-    VERILATOR: verilator-5.020 verilator
   script:
     - scripts/run_verilator.sh
 
-.run_vsim: &run_vsim
+# Shared definition for the per-module simulation tests. The anchored rules are
+# the full dependency set for modules that only depend on their own DUT and
+# testbench. Modules with shared submodule dependencies append one local rule.
+.run_vsim:
   stage: test
   needs:
     - vsim
   script:
-    - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
-    - >
-      case $VSIM_VER in 20*)
-        export VSIM="questa-$VSIM_VER vsim -64";
-        ;;
-      *)
-        export VSIM="vsim-$VSIM_VER -64";
-        ;;
-      esac
-    - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
-        cd build
-        mv work{-$VSIM_VER,}
-        ../scripts/run_vsim.sh --random-seed $TEST_MODULE && touch $ARTIFACT.tested
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
-      fi
+    - cd build && ../scripts/run_vsim.sh --random-seed $TEST_MODULE
+  rules:
+    - &run_vsim_common_change_rule
+      changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - Bender.yml
+          - include/**/*
+          - scripts/run_vsim.sh
+          - src/axi_pkg.sv
+          - src/axi_intf.sv
+          - src/axi_test.sv
+    - &run_vsim_module_change_rule
+      changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/$TEST_MODULE.sv
+          - test/tb_$TEST_MODULE.sv
+
+# "Leaf" modules whose only RTL dependency is their own source file. Their
+# trigger list is fully derivable from $TEST_MODULE, so they share a single
+# matrix job. (`src/axi_addr_test.sv` does not exist; that path simply never
+# matches and the test is triggered by its testbench instead.)
+run_vsim:
+  extends: .run_vsim
   parallel:
     matrix:
-      - VSIM_VER: ['2025.1']
+      - TEST_MODULE:
+          - axi_addr_test
+          - axi_atop_filter
+          - axi_delayer
+          - axi_fifo
+          - axi_lite_dw_converter
+          - axi_lite_mailbox
+          - axi_lite_regs
+          - axi_lite_to_apb
+          - axi_lite_to_axi
+          - axi_modify_address
+          - axi_serializer
+          - axi_sim_mem
 
-axi_addr_test:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_addr_test
-
-axi_atop_filter:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_atop_filter
-
+# Modules that pull in shared submodules keep explicit additional dependencies
+# to avoid missing a rerun when a shared submodule changes.
 axi_cdc:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_cdc
-
-axi_delayer:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_delayer
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_cdc_dst.sv
+          - src/axi_cdc_src.sv
 
 axi_dw_downsizer:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_dw_downsizer
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_err_slv.sv
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_dw_converter.sv
 
 axi_dw_upsizer:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_dw_upsizer
-
-axi_fifo:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_fifo
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_err_slv.sv
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_dw_converter.sv
 
 axi_isolate:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_isolate
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_err_slv.sv
 
 axi_iw_converter:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_iw_converter
-
-axi_lite_dw_converter:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_dw_converter
-
-axi_lite_mailbox:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_mailbox
-
-axi_lite_regs:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_regs
-
-axi_lite_to_apb:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_to_apb
-
-axi_lite_to_axi:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_lite_to_axi
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_id_prepend.sv
+          - src/axi_id_remap.sv
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_serializer.sv
+          - src/axi_mux.sv
+          - src/axi_id_serialize.sv
 
 axi_lite_xbar:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_lite_xbar
-
-axi_modify_address:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_modify_address
-
-axi_serializer:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_serializer
-
-axi_sim_mem:
-  <<: *run_vsim
-  variables:
-    TEST_MODULE: axi_sim_mem
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_err_slv.sv
+          - src/axi_lite_demux.sv
+          - src/axi_lite_mux.sv
+          - src/axi_lite_to_axi.sv
 
 axi_to_axi_lite:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_to_axi_lite
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_atop_filter.sv
+          - src/axi_burst_splitter.sv
 
 axi_to_mem_banked:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_to_mem_banked
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_to_detailed_mem.sv
+          - src/axi_to_mem.sv
 
 axi_xbar:
-  <<: *run_vsim
+  extends: .run_vsim
   variables:
     TEST_MODULE: axi_xbar
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_err_slv.sv
+          - src/axi_mux.sv
+          - src/axi_multicut.sv
+          - src/axi_xbar_unmuxed.sv

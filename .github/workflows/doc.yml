@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bender
-        uses: pulp-platform/pulp-actions/bender-install@v2
+        uses: pulp-platform/pulp-actions/bender-install@v2.5.1
         with:
           version: 0.30.0
 
