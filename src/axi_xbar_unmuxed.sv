@@ -267,9 +267,6 @@ import cf_math_pkg::idx_width;
   // pragma translate_on
 endmodule
 
-`ifndef VCS
-`ifndef TARGET_GENUS
-// As of now, VCS and Genus does not support multi-dimensional array of interfaces.
 `include "axi/assign.svh"
 `include "axi/typedef.svh"
 
@@ -286,7 +283,10 @@ import cf_math_pkg::idx_width;
   input  logic                                                      rst_ni,
   input  logic                                                      test_i,
   AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
-  AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0],
+  // Flattened, row-major master-port array: `mst_ports[i*Cfg.NoSlvPorts + j]` corresponds to
+  // master port `i` connected from slave port `j`. A flat 1-D interface array is used here
+  // because multi-dimensional arrays of interfaces are not supported by many tools.
+  AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts*Cfg.NoSlvPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
   input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
   input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
@@ -313,8 +313,8 @@ import cf_math_pkg::idx_width;
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
     for (genvar j = 0; j < Cfg.NoSlvPorts; j++) begin : gen_assign_mst_inner
-      `AXI_ASSIGN_FROM_REQ(mst_ports[i][j], mst_reqs[i][j])
-      `AXI_ASSIGN_TO_RESP(mst_resps[i][j], mst_ports[i][j])
+      `AXI_ASSIGN_FROM_REQ(mst_ports[i*Cfg.NoSlvPorts + j], mst_reqs[i][j])
+      `AXI_ASSIGN_TO_RESP(mst_resps[i][j], mst_ports[i*Cfg.NoSlvPorts + j])
     end
   end
 
@@ -349,6 +349,3 @@ import cf_math_pkg::idx_width;
   );
 
 endmodule
-
-`endif
-`endif
