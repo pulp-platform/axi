@@ -84,6 +84,7 @@ verilator_lint:
       changes:
         compare_to: 'refs/heads/master'
         paths:
+          - .gitlab-ci.yml
           - Bender.yml
           - include/**/*
           - scripts/run_vsim.sh
