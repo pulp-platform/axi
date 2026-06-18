@@ -253,6 +253,9 @@ module axi_id_remap #(
           // free on both read and write direction and push also to the read table.
           // Only allowed if AR does not have arbitration priority
           end else if (!(ar_prio_q && mst_req_o.ar_valid)) begin
+            // Give AR priority in the next cycle (so ATOPs cannot infinitely preempt ARs)
+            // iff AR is waiting.
+            ar_prio_d = mst_req_o.ar_valid & (|both_free);
             // Nullify a potential AR at our output.  This is legal in this state.
             mst_req_o.ar_valid  = 1'b0;
             slv_resp_o.ar_ready = 1'b0;
@@ -266,8 +269,6 @@ module axi_id_remap #(
               mst_req_o.aw_valid = 1'b1;
               rd_push            = 1'b1;
               wr_push            = 1'b1;
-              // Give AR priority in the next cycle (so ATOPs cannot infinitely preempt ARs).
-              ar_prio_d = 1'b1;
             end
           end
         end
@@ -387,7 +388,6 @@ module axi_id_remap #(
             state_d = HoldAx;
           end else begin
             state_d = HoldAW;
-            ar_prio_d = 1'b0; // Reset AR priority, because no handshake was successful in this cycle.
           end
         end
       end
