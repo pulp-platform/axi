@@ -341,10 +341,10 @@ module axi_sim_mem #(
 
   // Parameter Assertions
   initial begin
-    assert (AddrWidth != 0) else $fatal("AddrWidth must be non-zero!", 1);
-    assert (DataWidth != 0) else $fatal("DataWidth must be non-zero!", 1);
-    assert (IdWidth != 0) else $fatal("IdWidth must be non-zero!", 1);
-    assert (UserWidth != 0) else $fatal("UserWidth must be non-zero!", 1);
+    assert (AddrWidth != 0) else $fatal(1, "AddrWidth must be non-zero!");
+    assert (DataWidth != 0) else $fatal(1, "DataWidth must be non-zero!");
+    assert (IdWidth != 0) else $fatal(1, "IdWidth must be non-zero!");
+    assert (UserWidth != 0) else $fatal(1, "UserWidth must be non-zero!");
   end
 
 endmodule

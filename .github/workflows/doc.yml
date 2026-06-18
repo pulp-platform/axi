@@ -17,14 +17,14 @@ jobs:
     runs-on: ubuntu-latest                        # will fail)
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
       - name: Install Bender
         uses: pulp-platform/pulp-actions/bender-install@v2
         with:
-          version: 0.27.2
+          version: 0.30.0
 
       - name: Install Morty
         run: |
