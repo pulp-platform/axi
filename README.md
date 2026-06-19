@@ -30,6 +30,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_delayer`](src/axi_delayer.sv)                         | Synthesizable module which can (randomly) delays AXI channels.                                       |                                  |
 | [`axi_demux_simple`](src/axi_demux_simple.sv)               | Demux without spill registers.                                                                       | [Doc](doc/axi_demux.md)          |
 | [`axi_demux`](src/axi_demux.sv)                             | Demultiplexes an AXI bus from one slave port to multiple master ports.                               | [Doc](doc/axi_demux.md)          |
+| [`axi_demux_id_counters`](src/axi_demux_id_counters.sv)     | ID counters used by `axi_demux` to track outstanding transactions.                                   |                                  |
 | [`axi_dw_converter`](src/axi_dw_converter.sv)               | A data width converter between AXI interfaces of any data width.                                     |                                  |
 | [`axi_dw_downsizer`](src/axi_dw_downsizer.sv)               | A data width converter between a wide AXI master and a narrower AXI slave.                           |                                  |
 | [`axi_dw_upsizer`](src/axi_dw_upsizer.sv)                   | A data width converter between a narrow AXI master and a wider AXI slave.                            |                                  |
@@ -64,7 +65,6 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_rw_join`](src/axi_rw_join.sv)                         | Joins a read and a write slave into one single read / write master.                                  |                                  |
 | [`axi_rw_split`](src/axi_rw_split.sv)                       | Splits a single read / write slave into one read and one write master.                               |                                  |
 | [`axi_serializer`](src/axi_serializer.sv)                   | Serializes transactions with different IDs to the same ID.                                           |                                  |
-| [`axi_slave_compare`](src/axi_slave_compare.sv)             | Compares two slave devices.                                                                          |                                  |
 | [`axi_throttle`](src/axi_throttle.sv)                       | Limits the maximum number of outstanding transfers sent to the downstream logic.                     |                                  |
 | [`axi_test`](src/axi_test.sv)                               | A set of testbench utilities for AXI interfaces.                                                     |                                  |
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)                 | AXI4 to AXI4-Lite protocol converter.                                                                |                                  |

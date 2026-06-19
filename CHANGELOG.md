@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.10 - 2026-06-19
+
+### Added
+- Add core file entries required for the FuseSoC package database. #404
+- `axi_demux_id_counters`: Separate into its own module and add port. #406
+- Add `DECL` macros to be used in the parameter port list. #413
+- Add GitHub Action for Verilator lint and yosys-slang elaboration. #414
+
+### Fixed
+- Use XSIM define to remove all default disable blocks under `src`. #391
+- `axi_fifo_delay_dyn`: Correct FF macro termination. #403
+- `axi_lite_mailbox`: Fix `wstrb` AXI violation. #412
+- treewide: Fix various lint issues. #416
+- `tb_axi_xbar`: Fix queue format specifier. #417
+- `axi_to_detailed_mem_intf`: Fix user/id width. #418
+- `axi_sim_mem`, `tb_axi_xbar`: Fix elaboration issues surfaced by Verilator/yosys-slang. #414
+
+### Changed
+- `axi_xbar_unmuxed`: Exclude multidimensional interface code from Genus targets. #405
+- `axi_xbar`: Remove redundant assertions. #407
+- `axi_id_remap`: Enable non-atop writes when reads are stalled and vice versa #409
+- Replace memora with GitLab-native artifacts and rules in CI. #424
+
+
 ## 0.39.9 - 2025-11-21
 
 ### Added
