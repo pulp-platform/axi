@@ -2,8 +2,9 @@ package:
   name: axi
   authors:
     # Alphabetically ordered by last name (maintainers first)
-    - "Thomas Benz <tbenz@iis.ee.ethz.ch>" # current maintainer
-    - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>" # current maintainer
+    - "Chen Wu <chenwu@iis.ee.ethz.ch>" # current maintainer
+    - "Niccolo Giuliani <niccolo.giuliani@chips.it>" # current maintainer
+    - "Thomas Benz <tbenz@iis.ee.ethz.ch>"
     - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
     - "Tim Fischer <fischeti@iis.ee.ethz.ch>"
     - "Noah Huetter <huettern@ethz.ch>"
@@ -11,6 +12,7 @@ package:
     - "Andreas Kurth <akurth@iis.ee.ethz.ch>"
     - "Stefan Mach <smach@iis.ee.ethz.ch>"
     - "Samuel Riedel <sriedel@iis.ee.ethz.ch>"
+    - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>"
     - "Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>"
     - "Paul Scheffler <paulsc@iis.ee.ethz.ch>"
     - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
