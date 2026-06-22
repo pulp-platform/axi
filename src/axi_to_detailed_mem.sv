@@ -505,8 +505,8 @@ module axi_to_detailed_mem #(
     // Set active write banks based on strobe
     assign meta_buf_bank_strb[i] = |meta_buf.strb[i*NumBytesPerBank +: NumBytesPerBank];
     // Set active read banks based on size and address offset: (bank.end > addr) && (bank.start < addr+size)
-    assign meta_buf_size_enable[i] = ((i*NumBytesPerBank + NumBytesPerBank) > (meta_buf.addr % DataWidth/8)) &&
-                                     ((i*NumBytesPerBank) < ((meta_buf.addr % DataWidth/8) + 1<<meta_buf.size));
+    assign meta_buf_size_enable[i] = ((i*NumBytesPerBank + NumBytesPerBank) > (meta_buf.addr % (DataWidth/8))) &&
+                                     ((i*NumBytesPerBank) < ((meta_buf.addr % (DataWidth/8)) + (1<<meta_buf.size)));
   end
   assign resp_b_err    = |(m2s_resp.err    &  meta_buf_bank_strb);   // Ensure only active banks are used (strobe)
   assign resp_b_exokay = &(m2s_resp.exokay | ~meta_buf_bank_strb) & meta_buf.lock;   // Ensure only active banks are used (strobe)
