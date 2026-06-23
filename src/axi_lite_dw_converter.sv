@@ -465,6 +465,7 @@ module axi_lite_dw_converter #(
     assume ($onehot(AxiMstPortDataWidth)) else $fatal(1, "AxiMstPortDataWidth must be power of 2");
   end
   `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   default disable iff (~rst_ni);
   stable_aw: assert property (@(posedge clk_i)
       (mst_req_o.aw_valid && !mst_res_i.aw_ready) |=> $stable(mst_req_o.aw)) else
@@ -481,6 +482,7 @@ module axi_lite_dw_converter #(
   stable_r:  assert property (@(posedge clk_i)
       (slv_res_o.r_valid  && !slv_req_i.r_ready)  |=> $stable(slv_res_o.r)) else
       $fatal(1, "R must remain stable until handshake happened.");
+  `endif
   `endif
   `endif
   // pragma translate_on

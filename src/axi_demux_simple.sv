@@ -469,6 +469,7 @@ module axi_demux_simple #(
         $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
     end
 `ifndef XSIM
+`ifndef XILINX_SIMULATOR
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
                                                  (slv_aw_select_i < NoMstPorts))) else
@@ -505,6 +506,7 @@ module axi_demux_simple #(
         ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
         $fatal(1, "W counter underflowed!");
     `ASSUME(NoAtopAllowed, !AtopSupport && slv_req_i.aw_valid |-> slv_req_i.aw.atop == '0)
+`endif
 `endif
 `endif
 // pragma translate_on

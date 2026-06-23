@@ -381,6 +381,7 @@ module axi_lite_regs #(
   // pragma translate_off
   `ifndef VERILATOR
   `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
     initial begin: p_assertions
       assert (RegNumBytes > 32'd0) else
           $fatal(1, "The number of bytes must be at least 1!");
@@ -402,6 +403,7 @@ module axi_lite_regs #(
       assert property (@(posedge clk_i) (!reg_load_i[i] && AxiReadOnly[i] |=> $stable(reg_q_o[i])))
           else $fatal(1, "Read-only register at `byte_index: %0d` was changed by AXI!", i);
     end
+  `endif
   `endif
   `endif
   // pragma translate_on
