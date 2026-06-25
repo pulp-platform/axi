@@ -87,9 +87,9 @@ module axi_err_slv #(
   assign err_resp.aw_ready  = ~w_fifo_full;
 
   cc_fifo #(
-    .FallThrough ( 1'b1      ),
-    .Depth       ( MaxTrans  ),
-    .data_t      ( id_t      )
+    .FALL_THROUGH ( 1'b1      ),
+    .DEPTH        ( MaxTrans  ),
+    .dtype        ( id_t      )
   ) i_w_fifo (
     .clk_i      ( clk_i             ),
     .rst_ni     ( rst_ni            ),
@@ -119,9 +119,9 @@ module axi_err_slv #(
   end
 
   cc_fifo #(
-    .FallThrough ( 1'b0         ),
-    .Depth       ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
-    .data_t      ( id_t         )
+    .FALL_THROUGH ( 1'b0         ),
+    .DEPTH        ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
+    .dtype        ( id_t         )
   ) i_b_fifo (
     .clk_i      ( clk_i        ),
     .rst_ni     ( rst_ni       ),
@@ -160,9 +160,9 @@ module axi_err_slv #(
   assign r_fifo_inp.len = err_req.ar.len;
 
   cc_fifo #(
-    .FallThrough ( 1'b0      ),
-    .Depth       ( MaxTrans  ),
-    .data_t      ( r_data_t  )
+    .FALL_THROUGH ( 1'b0      ),
+    .DEPTH        ( MaxTrans  ),
+    .dtype        ( r_data_t  )
   ) i_r_fifo (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
@@ -225,7 +225,7 @@ module axi_err_slv #(
   end
 
   cc_counter #(
-    .Width     ($bits(axi_pkg::len_t))
+    .WIDTH     ($bits(axi_pkg::len_t))
   ) i_r_counter (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),

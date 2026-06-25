@@ -110,8 +110,8 @@ module axi_demux_id_counters #(
     end
 
     cc_delta_counter #(
-      .Width          ( CounterWidth ),
-      .StickyOverflow ( 1'b0         )
+      .WIDTH          ( CounterWidth ),
+      .STICKY_OVERFLOW( 1'b0         )
     ) i_in_flight_cnt (
       .clk_i      ( clk_i     ),
       .rst_ni     ( rst_ni    ),
