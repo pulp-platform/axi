@@ -70,7 +70,7 @@ module axi_mux #(
 
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
     ) i_aw_spill_reg (
@@ -83,7 +83,7 @@ module axi_mux #(
       .ready_i ( mst_resp_i.aw_ready      ),
       .data_o  ( mst_req_o.aw             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
@@ -96,7 +96,7 @@ module axi_mux #(
       .ready_i ( mst_resp_i.w_ready      ),
       .data_o  ( mst_req_o.w             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
@@ -109,7 +109,7 @@ module axi_mux #(
       .ready_i ( slv_reqs_i[0].b_ready  ),
       .data_o  ( slv_resps_o[0].b       )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
@@ -122,7 +122,7 @@ module axi_mux #(
       .ready_i ( mst_resp_i.ar_ready      ),
       .data_o  ( mst_req_o.ar             )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
@@ -332,7 +332,7 @@ module axi_mux #(
       .pop_i     ( w_fifo_pop                                )
     );
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      ) // Param indicated that we want a spill reg
     ) i_aw_spill_reg (
@@ -366,7 +366,7 @@ module axi_mux #(
       end
     end
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
@@ -389,7 +389,7 @@ module axi_mux #(
     assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
@@ -425,7 +425,7 @@ module axi_mux #(
       .idx_o  (                 )
     );
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
@@ -448,7 +448,7 @@ module axi_mux #(
     assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
-    spill_register #(
+    cc_spill_register #(
       .T       ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
