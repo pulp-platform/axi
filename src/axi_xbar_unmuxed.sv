@@ -317,7 +317,7 @@ import cf_math_pkg::idx_width;
 
   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
     for (genvar j = 0; j < Cfg.NoSlvPorts; j++) begin : gen_assign_mst_inner
-`ifdef QUESTA
+`ifdef TARGET_VSIM
       `AXI_ASSIGN_FROM_REQ(mst_ports[i][j], mst_reqs[i][j])
       `AXI_ASSIGN_TO_RESP(mst_resps[i][j], mst_ports[i][j])
 `else
