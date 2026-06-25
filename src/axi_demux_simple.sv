@@ -263,7 +263,7 @@ module axi_demux_simple #(
     logic [cc_pkg::idx_width(NoMstPorts)-1:0] b_idx;
 
     // Arbitration of the different B responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),
@@ -382,7 +382,7 @@ module axi_demux_simple #(
     logic [cc_pkg::idx_width(NoMstPorts)-1:0] r_idx;
 
     // Arbitration of the different r responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),
