@@ -283,7 +283,7 @@ import cf_math_pkg::idx_width;
   input  logic                                                      rst_ni,
   input  logic                                                      test_i,
   AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
-`ifdef QUESTA
+`ifdef TARGET_VSIM
   // 2-D array: `mst_ports[i][j]` is master port `i` connected from slave port `j`.
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0],
 `else
