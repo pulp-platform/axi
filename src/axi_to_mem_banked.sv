@@ -238,8 +238,8 @@ module axi_to_mem_banked #(
       assign res_rdata[j] = mem_rdata_i[r_shift_oup.sel];
 
       // Connect for the response data `MemLatency` cycles after a request was made to the xbar.
-      cc_shift_reg #(
-        .data_t ( read_sel_t ),
+      cc_shift_register #(
+        .dtype  ( read_sel_t ),
         .Depth  ( MemLatency )
       ) i_shift_reg_rdata_mux (
         .clk_i,
@@ -303,6 +303,7 @@ module axi_to_mem_banked #(
 `endif
 // pragma translate_on
 endmodule
+
 
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
@@ -428,4 +429,3 @@ module axi_to_mem_banked_intf #(
 `endif
 // pragma translate_on
 endmodule
-

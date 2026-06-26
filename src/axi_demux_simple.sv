@@ -234,7 +234,7 @@ module axi_demux_simple #(
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
     // `slv_aw_select_i`.
-    counter #(
+    cc_counter #(
       .WIDTH           ( IdCounterWidth ),
       .STICKY_OVERFLOW ( 1'b0           )
     ) i_counter_open_w (

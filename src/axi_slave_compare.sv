@@ -91,7 +91,7 @@ module axi_slave_compare #(
     logic ar_ready_mst;
 
     cc_stream_fork #(
-        .NumOup   ( 32'd2  )
+        .N_OUP   ( 32'd2  )
     ) i_stream_fork_aw (
         .clk_i,
         .rst_ni,
@@ -102,7 +102,7 @@ module axi_slave_compare #(
     );
 
     cc_stream_fork #(
-        .NumOup   ( 32'd2  )
+        .N_OUP   ( 32'd2  )
       ) i_stream_fork_ar (
         .clk_i,
         .rst_ni,
@@ -113,7 +113,7 @@ module axi_slave_compare #(
     );
 
     cc_stream_fork #(
-        .NumOup   ( 32'd2  )
+        .N_OUP   ( 32'd2  )
     ) i_stream_fork_w (
         .clk_i,
         .rst_ni,

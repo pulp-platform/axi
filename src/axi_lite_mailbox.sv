@@ -122,9 +122,9 @@ module axi_lite_mailbox #(
   // the usage gets concatinated with the full flag to have consistent threshold detection
   logic [FifoUsageWidth-1:0] mbox_0_to_1_usage, mbox_1_to_0_usage;
   cc_fifo #(
-    .FallThrough ( 1'b0         ),
-    .Depth       ( MailboxDepth ),
-    .data_t      ( data_t       )
+    .FALL_THROUGH ( 1'b0         ),
+    .DEPTH       ( MailboxDepth ),
+    .dtype      ( data_t       )
   ) i_mbox_0_to_1 (
     .clk_i,
     .rst_ni,
@@ -141,9 +141,9 @@ module axi_lite_mailbox #(
   assign mbox_usage[0] = {mbox_full[0], mbox_0_to_1_usage};
 
   cc_fifo #(
-    .FallThrough ( 1'b0         ),
-    .Depth       ( MailboxDepth ),
-    .data_t      ( data_t       )
+    .FALL_THROUGH ( 1'b0         ),
+    .DEPTH       ( MailboxDepth ),
+    .dtype      ( data_t       )
   ) i_mbox_1_to_0 (
     .clk_i,
     .rst_ni,
@@ -501,7 +501,7 @@ module axi_lite_mailbox_slave #(
     .default_idx_i    ( '0                )
   );
   cc_spill_register #(
-    .data_t ( b_chan_lite_t )
+    .T ( b_chan_lite_t )
   ) i_b_chan_outp (
     .clk_i,
     .rst_ni,
@@ -527,7 +527,7 @@ module axi_lite_mailbox_slave #(
     .default_idx_i    ( '0                )
   );
   cc_spill_register #(
-    .data_t ( r_chan_lite_t )
+    .T ( r_chan_lite_t )
   ) i_r_chan_outp (
     .clk_i,
     .rst_ni,

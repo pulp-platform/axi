@@ -148,7 +148,7 @@ module axi_lite_to_apb #(
 
   cc_rr_arb_tree #(
     .NumIn    ( 32'd2     ),
-    .data_t   ( int_req_t ),
+    .DataType   ( int_req_t ),
     .ExtPrio  ( 1'b0      ),
     .AxiVldRdy( 1'b1      ),
     .LockIn   ( 1'b1      )
@@ -168,7 +168,7 @@ module axi_lite_to_apb #(
 
   if (PipelineRequest) begin : gen_req_spill
     cc_spill_register #(
-      .data_t ( int_req_t ),
+      .T ( int_req_t ),
       .Bypass ( 1'b0      )
     ) i_req_spill (
       .clk_i,
@@ -182,7 +182,7 @@ module axi_lite_to_apb #(
     );
   end else begin : gen_req_ft_reg
     cc_fall_through_register #(
-      .data_t  ( int_req_t )
+      .T  ( int_req_t )
     ) i_req_ft_reg (
       .clk_i,
       .rst_ni,
@@ -198,7 +198,7 @@ module axi_lite_to_apb #(
 
   if (PipelineResponse) begin : gen_resp_spill
     cc_spill_register #(
-      .data_t ( axi_pkg::resp_t ),
+      .T ( axi_pkg::resp_t ),
       .Bypass ( 1'b0            )
     ) i_write_resp_spill (
       .clk_i,
@@ -211,7 +211,7 @@ module axi_lite_to_apb #(
       .data_o  ( axi_bresp              )
     );
     cc_spill_register #(
-      .data_t ( int_resp_t  ),
+      .T ( int_resp_t  ),
       .Bypass ( 1'b0        )
     ) i_read_resp_spill (
       .clk_i,
@@ -225,7 +225,7 @@ module axi_lite_to_apb #(
     );
   end else begin : gen_resp_ft_reg
     cc_fall_through_register #(
-      .data_t  ( axi_pkg::resp_t )
+      .T  ( axi_pkg::resp_t )
     ) i_write_resp_ft_reg (
       .clk_i,
       .rst_ni,
@@ -238,7 +238,7 @@ module axi_lite_to_apb #(
       .data_o     ( axi_bresp               )
     );
     cc_fall_through_register #(
-      .data_t  ( int_resp_t )
+      .T  ( int_resp_t )
     ) i_read_resp_ft_reg (
       .clk_i,
       .rst_ni,
@@ -449,7 +449,7 @@ module axi_lite_to_apb_intf #(
   `AXI_LITE_ASSIGN_FROM_RESP(slv, axi_resp)
 
   cc_onehot_to_bin #(
-    .OnehotWidth ( NoApbSlaves )
+    .ONEHOT_WIDTH ( NoApbSlaves )
   ) i_onehot_to_bin (
     .onehot ( pselx_o ),
     .bin    ( apb_sel )

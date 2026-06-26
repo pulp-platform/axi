@@ -63,9 +63,9 @@ module axi_fifo #(
 
     // A FiFo for each channel
     cc_fifo #(
-        .data_t(aw_chan_t),
-        .Depth(Depth),
-        .FallThrough(FallThrough)
+        .dtype(aw_chan_t),
+        .DEPTH(Depth),
+        .FALL_THROUGH(FallThrough)
     ) i_aw_fifo (
         .clk_i,
         .rst_ni,
@@ -79,9 +79,9 @@ module axi_fifo #(
         .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
     );
     cc_fifo #(
-        .data_t(ar_chan_t),
-        .Depth(Depth),
-        .FallThrough(FallThrough)
+        .dtype(ar_chan_t),
+        .DEPTH(Depth),
+        .FALL_THROUGH(FallThrough)
     ) i_ar_fifo (
         .clk_i,
         .rst_ni,
@@ -95,9 +95,9 @@ module axi_fifo #(
         .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
     );
     cc_fifo #(
-        .data_t(w_chan_t),
-        .Depth(Depth),
-        .FallThrough(FallThrough)
+        .dtype(w_chan_t),
+        .DEPTH(Depth),
+        .FALL_THROUGH(FallThrough)
     ) i_w_fifo (
         .clk_i,
         .rst_ni,
@@ -111,9 +111,9 @@ module axi_fifo #(
         .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
     );
     cc_fifo #(
-        .data_t(r_chan_t),
-        .Depth(Depth),
-        .FallThrough(FallThrough)
+        .dtype(r_chan_t),
+        .DEPTH(Depth),
+        .FALL_THROUGH(FallThrough)
     ) i_r_fifo (
         .clk_i,
         .rst_ni,
@@ -127,9 +127,9 @@ module axi_fifo #(
         .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
     );
     cc_fifo #(
-        .data_t(b_chan_t),
-        .Depth(Depth),
-        .FallThrough(FallThrough)
+        .dtype(b_chan_t),
+        .DEPTH(Depth),
+        .FALL_THROUGH(FallThrough)
     ) i_b_fifo (
         .clk_i,
         .rst_ni,

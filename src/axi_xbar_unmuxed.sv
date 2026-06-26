@@ -98,7 +98,7 @@ import cc_pkg::idx_width;
     logic                                 dec_aw_valid,  dec_aw_error;
     logic                                 dec_ar_valid,  dec_ar_error;
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .NoRules    ( Cfg.NoAddrRules ),
       .addr_t     ( addr_t          ),
@@ -113,7 +113,7 @@ import cc_pkg::idx_width;
       .default_idx_i    ( default_mst_port_i[i]      )
     );
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),

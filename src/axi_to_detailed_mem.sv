@@ -265,8 +265,8 @@ module axi_to_detailed_mem #(
 
   // Arbitrate between reads and writes.
   cc_stream_mux #(
-    .data_t ( meta_t ),
-    .NumInp ( 32'd2  )
+    .DATA_T ( meta_t ),
+    .N_INP ( 32'd2  )
   ) i_ax_mux (
     .inp_data_i   ({wr_meta,  rd_meta }),
     .inp_valid_i  ({wr_valid, rd_valid}),
@@ -322,7 +322,7 @@ module axi_to_detailed_mem #(
 
   // Fork arbitrated stream to meta data, memory requests, and R/B channel selection.
   cc_stream_fork #(
-    .NumOup ( 32'd3 )
+    .N_OUP ( 32'd3 )
   ) i_fork (
     .clk_i,
     .rst_ni,
@@ -336,9 +336,9 @@ module axi_to_detailed_mem #(
   assign sel_r = ~meta.write | meta.atop[5];
 
   cc_stream_fifo #(
-    .FallThrough ( 1'b1             ),
-    .Depth       ( 32'd1 + BufDepth ),
-    .data_t      ( logic[1:0]       )
+    .FALL_THROUGH ( 1'b1             ),
+    .DEPTH       ( 32'd1 + BufDepth ),
+    .T      ( logic[1:0]       )
   ) i_sel_buf (
     .clk_i,
     .rst_ni,
@@ -353,9 +353,9 @@ module axi_to_detailed_mem #(
   );
 
   cc_stream_fifo #(
-    .FallThrough ( 1'b1             ),
-    .Depth       ( 32'd1 + BufDepth ),
-    .data_t      ( meta_t           )
+    .FALL_THROUGH ( 1'b1             ),
+    .DEPTH       ( 32'd1 + BufDepth ),
+    .T      ( meta_t           )
   ) i_meta_buf (
     .clk_i,
     .rst_ni,
@@ -469,7 +469,7 @@ module axi_to_detailed_mem #(
   // Join memory read data and meta data stream.
   logic mem_join_valid, mem_join_ready;
   cc_stream_join #(
-    .NumInp ( 32'd2 )
+    .N_INP ( 32'd2 )
   ) i_join (
     .inp_valid_i  ({m2s_resp_valid, meta_buf_valid}),
     .inp_ready_o  ({m2s_resp_ready, meta_buf_ready}),
@@ -479,7 +479,7 @@ module axi_to_detailed_mem #(
 
   // Dynamically fork the joined stream to B and R channels.
   cc_stream_fork_dynamic #(
-    .NumOup ( 32'd2 )
+    .N_OUP ( 32'd2 )
   ) i_fork_dynamic (
     .clk_i,
     .rst_ni,
@@ -874,10 +874,10 @@ module mem_stream_to_banks_detailed #(
     assign bank_req[i].wuser = wuser_i;
     assign bank_req[i].we    = we_i;
     cc_stream_fifo #(
-      .FallThrough ( 1'b1         ),
-      .DataWidth   ( $bits(req_t) ),
-      .Depth       ( OutFifoDepth ),
-      .data_t      ( req_t        )
+      .FALL_THROUGH ( 1'b1         ),
+      .DATA_WIDTH   ( $bits(req_t) ),
+      .DEPTH       ( OutFifoDepth ),
+      .T      ( req_t        )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
@@ -919,9 +919,9 @@ module mem_stream_to_banks_detailed #(
       assign zero_strobe_on_input[i] = (strb_i[i*BytesPerBank+:BytesPerBank] == '0);
     end
     cc_fifo #(
-      .FallThrough ( 1'b0     ),
-      .Depth       ( MaxTrans+1 ),
-      .DataWidth   ( NumBanks )
+      .FALL_THROUGH ( 1'b0     ),
+      .DEPTH       ( MaxTrans+1 ),
+      .DATA_WIDTH   ( NumBanks )
     ) i_dead_write_fifo (
       .clk_i,
       .rst_ni,
@@ -945,9 +945,9 @@ module mem_stream_to_banks_detailed #(
   // Handle responses.
   for (genvar i = 0; unsigned'(i) < NumBanks; i++) begin : gen_resp_regs
     cc_stream_fifo #(
-      .FallThrough ( 1'b1              ),
-      .DataWidth   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
-      .Depth       ( MaxTrans         )
+      .FALL_THROUGH ( 1'b1              ),
+      .DATA_WIDTH   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
+      .DEPTH       ( MaxTrans         )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,

@@ -134,7 +134,7 @@ module axi_lite_dw_converter #(
     logic         aw_chan_spill_valid, aw_chan_spill_ready;
 
     cc_spill_register #(
-      .data_t ( axi_lite_aw_t ),
+      .T ( axi_lite_aw_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_aw (
       .clk_i,
@@ -166,7 +166,7 @@ module axi_lite_dw_converter #(
     axi_lite_slv_w_t w_chan_spill;
     logic            w_chan_spill_valid, w_chan_spill_ready;
     cc_spill_register #(
-      .data_t ( axi_lite_slv_w_t ),
+      .T ( axi_lite_slv_w_t ),
       .Bypass ( 1'b0             )
     ) i_spill_register_w (
       .clk_i,
@@ -225,7 +225,7 @@ module axi_lite_dw_converter #(
     logic         ar_chan_spill_valid, ar_chan_spill_ready;
 
     cc_spill_register #(
-      .data_t ( axi_lite_ar_t ),
+      .T ( axi_lite_ar_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_ar (
       .clk_i,
@@ -338,9 +338,9 @@ module axi_lite_dw_converter #(
     assign aw_sel = sel_t'(slv_req_i.aw.addr >> SelOffset);
 
     cc_fifo #(
-      .FallThrough ( 1'b1         ),
-      .Depth       ( UpsizeFactor ),
-      .data_t      ( sel_t        )
+      .FALL_THROUGH ( 1'b1         ),
+      .DEPTH       ( UpsizeFactor ),
+      .dtype      ( sel_t        )
     ) i_fifo_w_sel (
       .clk_i,
       .rst_ni,
@@ -419,9 +419,9 @@ module axi_lite_dw_converter #(
     assign ar_sel = sel_t'(slv_req_i.ar.addr >> SelOffset);
 
     cc_fifo #(
-      .FallThrough ( 1'b1         ),
-      .Depth       ( UpsizeFactor ),
-      .data_t      ( sel_t        )
+      .FALL_THROUGH ( 1'b1         ),
+      .DEPTH       ( UpsizeFactor ),
+      .dtype      ( sel_t        )
     ) i_fifo_r_sel (
       .clk_i,
       .rst_ni,

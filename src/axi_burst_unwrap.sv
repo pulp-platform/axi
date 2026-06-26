@@ -566,7 +566,7 @@ module axi_burst_counters #(
   cnt_idx_t            cnt_free_idx, cnt_r_idx;
   for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
     cc_counter #(
-      .Width ( $bits(cnt_t) )
+      .WIDTH ( $bits(cnt_t) )
     ) i_cnt (
       .clk_i,
       .rst_ni,
@@ -583,8 +583,8 @@ module axi_burst_counters #(
   assign cnt_inp = {1'b0, alloc_len_i} + 1;
 
   cc_lzc #(
-    .Width  ( MaxTxns ),
-    .Mode   ( 1'b0    )  // start counting at index 0
+    .WIDTH  ( MaxTxns ),
+    .MODE   ( 1'b0    )  // start counting at index 0
   ) i_lzc (
     .in_i    ( cnt_free     ),
     .cnt_o   ( cnt_free_idx ),
@@ -594,8 +594,8 @@ module axi_burst_counters #(
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   cc_id_queue #(
-    .IdWidth  ( $bits(id_t) ),
-    .Capacity ( MaxTxns     ),
+    .ID_WIDTH  ( $bits(id_t) ),
+    .CAPACITY ( MaxTxns     ),
     .data_t   ( cnt_idx_t   )
   ) i_idq (
     .clk_i,
