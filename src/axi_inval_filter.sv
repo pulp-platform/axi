@@ -128,9 +128,9 @@ module axi_inval_filter #(
   end
 
   cc_fifo #(
-    .FallThrough ( 1'b1      ),
-    .Depth       ( MaxTxns   ),
-    .data_t      ( aw_chan_t )
+    .FALL_THROUGH ( 1'b1      ),
+    .DEPTH       ( MaxTxns   ),
+    .dtype      ( aw_chan_t )
   ) i_aw_fifo (
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),

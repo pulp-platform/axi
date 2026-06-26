@@ -60,13 +60,13 @@ module axi_cdc_dst #(
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
     // Workaround for a bug in Questa: Pass flat logic vector instead of struct to type parameter.
-    .data_t     ( logic [$bits(aw_chan_t)-1:0]  ),
+    .T     ( logic [$bits(aw_chan_t)-1:0]  ),
 `else
     // Other tools, such as VCS, have problems with type parameters constructed through `$bits()`.
-    .data_t     ( aw_chan_t                     ),
+    .T     ( aw_chan_t                     ),
 `endif
-    .LogDepth   ( LogDepth                      ),
-    .SyncStages ( SyncStages                    )
+    .LOG_DEPTH   ( LogDepth                      ),
+    .SYNC_STAGES ( SyncStages                    )
   ) i_cdc_fifo_gray_dst_aw (
     .async_data_i ( async_data_slave_aw_data_i  ),
     .async_wptr_i ( async_data_slave_aw_wptr_i  ),
@@ -80,12 +80,12 @@ module axi_cdc_dst #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .data_t     ( logic [$bits(w_chan_t)-1:0] ),
+    .T     ( logic [$bits(w_chan_t)-1:0] ),
 `else
-    .data_t     ( w_chan_t                    ),
+    .T     ( w_chan_t                    ),
 `endif
-    .LogDepth   ( LogDepth                    ),
-    .SyncStages ( SyncStages                  )
+    .LOG_DEPTH   ( LogDepth                    ),
+    .SYNC_STAGES ( SyncStages                  )
   ) i_cdc_fifo_gray_dst_w (
     .async_data_i ( async_data_slave_w_data_i ),
     .async_wptr_i ( async_data_slave_w_wptr_i ),
@@ -99,12 +99,12 @@ module axi_cdc_dst #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .data_t     ( logic [$bits(b_chan_t)-1:0] ),
+    .T     ( logic [$bits(b_chan_t)-1:0] ),
 `else
-    .data_t     ( b_chan_t                    ),
+    .T     ( b_chan_t                    ),
 `endif
-    .LogDepth   ( LogDepth                    ),
-    .SyncStages ( SyncStages                  )
+    .LOG_DEPTH   ( LogDepth                    ),
+    .SYNC_STAGES ( SyncStages                  )
   ) i_cdc_fifo_gray_src_b (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),
@@ -118,12 +118,12 @@ module axi_cdc_dst #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .data_t     ( logic [$bits(ar_chan_t)-1:0]  ),
+    .T     ( logic [$bits(ar_chan_t)-1:0]  ),
 `else
-    .data_t     ( ar_chan_t                     ),
+    .T     ( ar_chan_t                     ),
 `endif
-    .LogDepth   ( LogDepth                      ),
-    .SyncStages ( SyncStages                    )
+    .LOG_DEPTH   ( LogDepth                      ),
+    .SYNC_STAGES ( SyncStages                    )
   ) i_cdc_fifo_gray_dst_ar (
     .dst_clk_i,
     .dst_rst_ni,
@@ -137,12 +137,12 @@ module axi_cdc_dst #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .data_t     ( logic [$bits(r_chan_t)-1:0] ),
+    .T     ( logic [$bits(r_chan_t)-1:0] ),
 `else
-    .data_t     ( r_chan_t                    ),
+    .T     ( r_chan_t                    ),
 `endif
-    .LogDepth   ( LogDepth                    ),
-    .SyncStages ( SyncStages                  )
+    .LOG_DEPTH   ( LogDepth                    ),
+    .SYNC_STAGES ( SyncStages                  )
   ) i_cdc_fifo_gray_src_r (
     .src_clk_i    ( dst_clk_i                 ),
     .src_rst_ni   ( dst_rst_ni                ),

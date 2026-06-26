@@ -56,7 +56,7 @@ module axi_throttle #(
     logic throttled_ar_ready;
 
     // limit Aw requests -> wait for b
-    stream_throttle #(
+    cc_stream_throttle #(
         .MaxNumPending ( MaxNumAwPending  )
     ) i_stream_throttle_aw (
         .clk_i,
@@ -71,7 +71,7 @@ module axi_throttle #(
     );
 
     // limit Ar requests -> wait for r.last
-    stream_throttle #(
+    cc_stream_throttle #(
         .MaxNumPending ( MaxNumArPending  )
     ) i_stream_throttle_ar (
         .clk_i,

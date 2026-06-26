@@ -40,7 +40,7 @@ module axi_delayer #(
   input  axi_resp_t mst_resp_i
 );
   // AW
-  stream_delay #(
+  cc_stream_delay #(
     .StallRandom ( StallRandomInput ),
     .FixedDelay  ( FixedDelayInput  ),
     .payload_t   ( aw_chan_t        )
@@ -56,7 +56,7 @@ module axi_delayer #(
   );
 
   // AR
-  stream_delay #(
+  cc_stream_delay #(
     .StallRandom ( StallRandomInput ),
     .FixedDelay  ( FixedDelayInput  ),
     .payload_t   ( ar_chan_t        )
@@ -72,7 +72,7 @@ module axi_delayer #(
   );
 
   // W
-  stream_delay #(
+  cc_stream_delay #(
     .StallRandom ( StallRandomInput ),
     .FixedDelay  ( FixedDelayInput  ),
     .payload_t   ( w_chan_t         )
@@ -88,7 +88,7 @@ module axi_delayer #(
   );
 
   // B
-  stream_delay #(
+  cc_stream_delay #(
     .StallRandom ( StallRandomOutput ),
     .FixedDelay  ( FixedDelayOutput  ),
     .payload_t   ( b_chan_t          )
@@ -104,7 +104,7 @@ module axi_delayer #(
   );
 
   // R
-   stream_delay #(
+   cc_stream_delay #(
     .StallRandom ( StallRandomOutput ),
     .FixedDelay  ( FixedDelayOutput  ),
     .payload_t   ( r_chan_t          )

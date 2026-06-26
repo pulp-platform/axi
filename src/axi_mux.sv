@@ -261,7 +261,7 @@ module axi_mux #(
     //--------------------------------------
     // AW Channel
     //--------------------------------------
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
       .DataType ( mst_aw_chan_t ),
       .AxiVldRdy( 1'b1          ),
@@ -314,7 +314,7 @@ module axi_mux #(
 
     `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
-    fifo_v3 #(
+    cc_fifo #(
       .FALL_THROUGH ( FallThrough ),
       .DEPTH        ( MaxWTrans   ),
       .dtype        ( switch_id_t )
@@ -322,7 +322,6 @@ module axi_mux #(
       .clk_i     ( clk_i                                     ),
       .rst_ni    ( rst_ni                                    ),
       .flush_i   ( 1'b0                                      ),
-      .testmode_i( test_i                                    ),
       .full_o    ( w_fifo_full                               ),
       .empty_o   ( w_fifo_empty                              ),
       .usage_o   (                                           ),
@@ -406,7 +405,7 @@ module axi_mux #(
     //--------------------------------------
     // AR Channel
     //--------------------------------------
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
       .DataType ( mst_ar_chan_t ),
       .AxiVldRdy( 1'b1          ),

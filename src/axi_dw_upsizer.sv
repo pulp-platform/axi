@@ -95,7 +95,7 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
-    .data_t   (slv_r_chan_t),
+    .DataType   (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
@@ -157,7 +157,7 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
-    .data_t   (ar_chan_t  ),
+    .DataType   (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
@@ -259,8 +259,8 @@ module axi_dw_upsizer #(
   // Find an idle upsizer to handle this transaction
   tran_id_t idx_idle_upsizer;
   cc_lzc #(
-    .Width(AxiMaxReads),
-    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
+    .WIDTH(AxiMaxReads),
+    .MODE (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_idle_lzc (
     .in_i   (idle_read_upsizer),
     .cnt_o  (idx_idle_upsizer ),
@@ -275,7 +275,7 @@ module axi_dw_upsizer #(
   end
 
   cc_onehot_to_bin #(
-    .OnehotWidth(AxiMaxReads)
+    .ONEHOT_WIDTH(AxiMaxReads)
   ) i_id_clash_onehot_to_bin (
     .onehot(id_clash_upsizer    ),
     .bin   (idx_id_clash_upsizer)
@@ -300,7 +300,7 @@ module axi_dw_upsizer #(
   end
 
   cc_onehot_to_bin #(
-    .OnehotWidth(AxiMaxReads)
+    .ONEHOT_WIDTH(AxiMaxReads)
   ) i_rid_upsizer_lzc (
     .onehot(rid_upsizer_match),
     .bin   (idx_r_upsizer    )

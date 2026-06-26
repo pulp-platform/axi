@@ -70,7 +70,7 @@ module axi_lite_demux #(
   if (NoMstPorts == 32'd1) begin : gen_no_demux
     // degenerate case, connect slave to master port
     cc_spill_register #(
-      .data_t  ( aw_chan_t  ),
+      .T  ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
@@ -83,7 +83,7 @@ module axi_lite_demux #(
       .data_o  ( mst_reqs_o[0].aw         )
     );
     cc_spill_register #(
-      .data_t  ( w_chan_t  ),
+      .T  ( w_chan_t  ),
       .Bypass  ( ~SpillW   )
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
@@ -96,7 +96,7 @@ module axi_lite_demux #(
       .data_o  ( mst_reqs_o[0].w         )
     );
     cc_spill_register #(
-      .data_t  ( b_chan_t ),
+      .T  ( b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
@@ -109,7 +109,7 @@ module axi_lite_demux #(
       .data_o  ( slv_resp_o.b           )
     );
     cc_spill_register #(
-      .data_t  ( ar_chan_t  ),
+      .T  ( ar_chan_t  ),
       .Bypass  ( ~SpillAr   )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
@@ -122,7 +122,7 @@ module axi_lite_demux #(
       .data_o  ( mst_reqs_o[0].ar         )
     );
     cc_spill_register #(
-      .data_t  ( r_chan_t ),
+      .T  ( r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
@@ -204,7 +204,7 @@ module axi_lite_demux #(
                           slv_aw_chan_select_out_flat;
     assign slv_aw_chan_select_in_flat = {slv_req_i.aw, slv_aw_select_i};
     cc_spill_register #(
-      .data_t ( aw_chan_select_flat_t         ),
+      .T ( aw_chan_select_flat_t         ),
       .Bypass ( ~SpillAw                      )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                        ),
@@ -267,9 +267,9 @@ module axi_lite_demux #(
     `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     cc_fifo #(
-      .FallThrough ( FallThrough ),
-      .Depth       ( MaxTrans    ),
-      .data_t      ( select_t    )
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH       ( MaxTrans    ),
+      .dtype      ( select_t    )
     ) i_w_fifo (
       .clk_i      ( clk_i              ),
       .rst_ni     ( rst_ni             ),
@@ -287,7 +287,7 @@ module axi_lite_demux #(
     // W Channel
     //--------------------------------------
     cc_spill_register #(
-      .data_t ( w_chan_t ),
+      .T ( w_chan_t ),
       .Bypass ( ~SpillW  )
     ) i_w_spill_reg (
       .clk_i   ( clk_i              ),
@@ -310,9 +310,9 @@ module axi_lite_demux #(
     assign w_fifo_pop  = slv_w_valid & slv_w_ready;
 
     cc_fifo #(
-      .FallThrough ( FallThrough ),
-      .Depth       ( MaxTrans    ),
-      .data_t      ( select_t    )
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH       ( MaxTrans    ),
+      .dtype      ( select_t    )
     ) i_b_fifo (
       .clk_i      ( clk_i        ),
       .rst_ni     ( rst_ni       ),
@@ -330,7 +330,7 @@ module axi_lite_demux #(
     // B Channel
     //--------------------------------------
     cc_spill_register #(
-      .data_t ( b_chan_t ),
+      .T ( b_chan_t ),
       .Bypass ( ~SpillB  )
     ) i_b_spill_reg (
       .clk_i   ( clk_i              ),
@@ -364,7 +364,7 @@ module axi_lite_demux #(
                           slv_ar_chan_select_out_flat;
     assign slv_ar_chan_select_in_flat = {slv_req_i.ar, slv_ar_select_i};
     cc_spill_register #(
-      .data_t ( ar_chan_select_flat_t         ),
+      .T ( ar_chan_select_flat_t         ),
       .Bypass ( ~SpillAr                      )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                        ),
@@ -388,9 +388,9 @@ module axi_lite_demux #(
     assign r_fifo_push  = slv_ar_valid & slv_ar_ready;
 
     cc_fifo #(
-      .FallThrough ( FallThrough ),
-      .Depth       ( MaxTrans    ),
-      .data_t      ( select_t    )
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH       ( MaxTrans    ),
+      .dtype      ( select_t    )
     ) i_r_fifo (
       .clk_i      ( clk_i              ),
       .rst_ni     ( rst_ni             ),
@@ -408,7 +408,7 @@ module axi_lite_demux #(
     // R Channel
     //--------------------------------------
     cc_spill_register #(
-      .data_t ( r_chan_t ),
+      .T ( r_chan_t ),
       .Bypass ( ~SpillR  )
     ) i_r_spill_reg (
       .clk_i   ( clk_i              ),
