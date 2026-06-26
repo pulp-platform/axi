@@ -183,7 +183,6 @@ import cc_pkg::idx_width;
     ) i_axi_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       .slv_req_i       ( slv_ports_req_i[i]  ),
       .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
@@ -204,7 +203,6 @@ import cc_pkg::idx_width;
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       // slave port
       .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
       .slv_resp_o ( slv_resps[i][cfg_NoMstPorts]  )
@@ -245,7 +243,6 @@ import cc_pkg::idx_width;
         ) i_axi_err_slv (
           .clk_i,
           .rst_ni,
-          .test_i,
           .slv_req_i  ( slv_reqs[i][j]  ),
           .slv_resp_o ( slv_resps[i][j] )
         );
