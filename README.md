@@ -74,6 +74,8 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_xp`](src/axi_xp.sv)                                   | AXI Crosspoint (XP) with homomorphous slave and master ports.                                        |                                  |
 | [`axi_zero_mem`](src/axi_zero_mem.sv)                       | AXI-attached /dev/zero. All reads will be zero, writes are absorbed.                                 |                                  |
 
+> **Burst-type support of the data-width converters (`axi_dw_converter` / `axi_dw_downsizer` / `axi_dw_upsizer`).** These modules support `INCR` bursts of any length. `WRAP` bursts are **not** supported and are answered with `SLVERR`. `FIXED` bursts are supported **only when they consist of a single beat** (`axlen == 0`); a multi-beat `FIXED` burst is answered with `SLVERR`. Note that a single-beat `FIXED` transaction that requires downsizing is re-encoded as an `INCR` burst on the master (narrow) port — this is address-equivalent for one beat, but a downstream observer will see `INCR`, not `FIXED`.
+
 ## Synthesizable Verification Modules
 
 The following modules are meant to be used for verification purposes only but are synthesizable to be used in FPGA environments.
