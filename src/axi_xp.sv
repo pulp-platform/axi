@@ -84,8 +84,6 @@ module axi_xp #(
   input  logic                          clk_i,
   /// Asynchronous reset, active low
   input  logic                          rst_ni,
-  /// Test mode enable
-  input  logic                          test_en_i,
   /// Slave ports request
   input  axi_req_t  [NumSlvPorts-1:0]   slv_req_i,
   /// Slave ports response
@@ -191,7 +189,6 @@ import cc_pkg::idx_width;
 ) (
   input  logic                       clk_i,
   input  logic                       rst_ni,
-  input  logic                       test_en_i,
   AXI_BUS.Slave                      slv_ports [NumSlvPorts-1:0],
   AXI_BUS.Master                     mst_ports [NumMstPorts-1:0],
   input  rule_t  [NumAddrRules-1:0]  addr_map_i
@@ -244,7 +241,6 @@ import cc_pkg::idx_width;
   ) i_xp (
     .clk_i,
     .rst_ni,
-    .test_en_i,
     .slv_req_i  (slv_reqs ),
     .slv_resp_o (slv_resps),
     .mst_req_o  (mst_reqs ),

@@ -56,8 +56,6 @@ import cc_pkg::idx_width;
   input  logic                                                          clk_i,
   /// Asynchronous reset, active low.
   input  logic                                                          rst_ni,
-  /// Testmode enable, active high.
-  input  logic                                                          test_i,
   /// AXI4+ATOP requests to the slave ports.
   input  req_t  [Cfg.NoSlvPorts-1:0]                                    slv_ports_req_i,
   /// AXI4+ATOP responses of the slave ports.

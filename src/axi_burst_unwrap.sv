@@ -584,7 +584,7 @@ module axi_burst_counters #(
 
   cc_lzc #(
     .WIDTH  ( MaxTxns ),
-    .MODE   ( 1'b0    )  // start counting at index 0
+    .MODE   ( cc_pkg::LZC_TRAILING_ZERO_CNT )  // start counting at index 0
   ) i_lzc (
     .in_i    ( cnt_free     ),
     .cnt_o   ( cnt_free_idx ),
