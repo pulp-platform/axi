@@ -266,7 +266,7 @@ module axi_to_detailed_mem #(
   // Arbitrate between reads and writes.
   cc_stream_mux #(
     .DATA_T ( meta_t ),
-    .N_INP ( 32'd2  )
+    .N_INP  ( 32'd2  )
   ) i_ax_mux (
     .inp_data_i   ({wr_meta,  rd_meta }),
     .inp_valid_i  ({wr_valid, rd_valid}),
@@ -337,8 +337,8 @@ module axi_to_detailed_mem #(
 
   cc_stream_fifo #(
     .FALL_THROUGH ( 1'b1             ),
-    .DEPTH       ( 32'd1 + BufDepth ),
-    .T      ( logic[1:0]       )
+    .DEPTH        ( 32'd1 + BufDepth ),
+    .T            ( logic[1:0]       )
   ) i_sel_buf (
     .clk_i,
     .rst_ni,
@@ -354,8 +354,8 @@ module axi_to_detailed_mem #(
 
   cc_stream_fifo #(
     .FALL_THROUGH ( 1'b1             ),
-    .DEPTH       ( 32'd1 + BufDepth ),
-    .T      ( meta_t           )
+    .DEPTH        ( 32'd1 + BufDepth ),
+    .T            ( meta_t           )
   ) i_meta_buf (
     .clk_i,
     .rst_ni,
@@ -876,8 +876,8 @@ module mem_stream_to_banks_detailed #(
     cc_stream_fifo #(
       .FALL_THROUGH ( 1'b1         ),
       .DATA_WIDTH   ( $bits(req_t) ),
-      .DEPTH       ( OutFifoDepth ),
-      .T      ( req_t        )
+      .DEPTH        ( OutFifoDepth ),
+      .T            ( req_t        )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,
@@ -920,7 +920,7 @@ module mem_stream_to_banks_detailed #(
     end
     cc_fifo #(
       .FALL_THROUGH ( 1'b0     ),
-      .DEPTH       ( MaxTrans+1 ),
+      .DEPTH        ( MaxTrans+1 ),
       .DATA_WIDTH   ( NumBanks )
     ) i_dead_write_fifo (
       .clk_i,
@@ -947,7 +947,7 @@ module mem_stream_to_banks_detailed #(
     cc_stream_fifo #(
       .FALL_THROUGH ( 1'b1              ),
       .DATA_WIDTH   ( $bits(oup_data_t) + $bits(oup_ruser_t) ),
-      .DEPTH       ( MaxTrans         )
+      .DEPTH        ( MaxTrans         )
     ) i_ft_reg (
       .clk_i,
       .rst_ni,

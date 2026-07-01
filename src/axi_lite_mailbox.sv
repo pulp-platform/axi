@@ -123,8 +123,8 @@ module axi_lite_mailbox #(
   logic [FifoUsageWidth-1:0] mbox_0_to_1_usage, mbox_1_to_0_usage;
   cc_fifo #(
     .FALL_THROUGH ( 1'b0         ),
-    .DEPTH       ( MailboxDepth ),
-    .dtype      ( data_t       )
+    .DEPTH        ( MailboxDepth ),
+    .dtype        ( data_t       )
   ) i_mbox_0_to_1 (
     .clk_i,
     .rst_ni,
@@ -142,8 +142,8 @@ module axi_lite_mailbox #(
 
   cc_fifo #(
     .FALL_THROUGH ( 1'b0         ),
-    .DEPTH       ( MailboxDepth ),
-    .dtype      ( data_t       )
+    .DEPTH        ( MailboxDepth ),
+    .dtype        ( data_t       )
   ) i_mbox_1_to_0 (
     .clk_i,
     .rst_ni,

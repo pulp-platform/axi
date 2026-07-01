@@ -86,7 +86,7 @@ module axi_demux #(
   select_t slv_aw_select, slv_ar_select;
 
   cc_spill_register #(
-    .T  ( aw_chan_t  ),
+    .T       ( aw_chan_t  ),
     .Bypass  ( ~SpillAw   )
   ) i_aw_spill_reg (
     .clk_i,
@@ -99,7 +99,7 @@ module axi_demux #(
     .data_o  ( slv_req_cut.aw        )
   );
   cc_spill_register #(
-    .T  ( select_t ),
+    .T       ( select_t ),
     .Bypass  ( ~SpillAw )
   ) i_aw_select_spill_reg (
     .clk_i,
@@ -116,7 +116,7 @@ module axi_demux #(
   assign slv_req_cut.aw_valid = slv_aw_valid_chan & slv_aw_valid_sel;
 
   cc_spill_register #(
-    .T  ( w_chan_t  ),
+    .T       ( w_chan_t  ),
     .Bypass  ( ~SpillW   )
   ) i_w_spill_reg (
     .clk_i,
@@ -129,7 +129,7 @@ module axi_demux #(
     .data_o  ( slv_req_cut.w        )
   );
   cc_spill_register #(
-    .T  ( ar_chan_t  ),
+    .T       ( ar_chan_t  ),
     .Bypass  ( ~SpillAr   )
   ) i_ar_spill_reg (
     .clk_i,
@@ -142,7 +142,7 @@ module axi_demux #(
     .data_o  ( slv_req_cut.ar        )
   );
   cc_spill_register #(
-    .T  ( select_t ),
+    .T       ( select_t ),
     .Bypass  ( ~SpillAr )
   ) i_ar_sel_spill_reg (
     .clk_i,
@@ -159,7 +159,7 @@ module axi_demux #(
   assign slv_req_cut.ar_valid = slv_ar_valid_chan & slv_ar_valid_sel;
 
   cc_spill_register #(
-    .T  ( b_chan_t ),
+    .T       ( b_chan_t ),
     .Bypass  ( ~SpillB  )
   ) i_b_spill_reg (
     .clk_i,
@@ -172,7 +172,7 @@ module axi_demux #(
     .data_o  ( slv_resp_o.b         )
   );
   cc_spill_register #(
-    .T  ( r_chan_t ),
+    .T       ( r_chan_t ),
     .Bypass  ( ~SpillR  )
   ) i_r_spill_reg (
     .clk_i,

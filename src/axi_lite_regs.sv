@@ -349,7 +349,7 @@ module axi_lite_regs #(
 
   // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
   cc_spill_register #(
-    .T ( b_chan_lite_t ),
+    .T      ( b_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_b_spill_register (
     .clk_i,
@@ -364,7 +364,7 @@ module axi_lite_regs #(
 
   // Add a cycle delay on AXI response, cut all comb paths between slave port inputs and outputs.
   cc_spill_register #(
-    .T ( r_chan_lite_t ),
+    .T      ( r_chan_lite_t ),
     .Bypass ( 1'b0          )
   ) i_r_spill_register (
     .clk_i,

@@ -148,8 +148,8 @@ module axi_serializer #(
 
   cc_fifo #(
     .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
-    .DEPTH       ( MaxReadTxns ),
-    .dtype      ( id_t        )
+    .DEPTH        ( MaxReadTxns ),
+    .dtype        ( id_t        )
   ) i_rd_id_fifo (
     .clk_i,
     .rst_ni,
@@ -167,8 +167,8 @@ module axi_serializer #(
 
   cc_fifo #(
     .FALL_THROUGH ( 1'b0         ),
-    .DEPTH       ( MaxWriteTxns ),
-    .dtype      ( id_t         )
+    .DEPTH        ( MaxWriteTxns ),
+    .dtype        ( id_t         )
   ) i_wr_id_fifo (
     .clk_i,
     .rst_ni,

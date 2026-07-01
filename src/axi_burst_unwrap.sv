@@ -133,11 +133,11 @@ module axi_burst_unwrap #(
   logic           w_cnt_dec, w_cnt_req, w_cnt_gnt;
   axi_pkg::len_t  b_cnt_len, w_cnt_len;
   axi_burst_unwrap_ax_chan #(
-    .AwChan   ( 1'b1         ),
-    .chan_t   ( aw_chan_t    ),
+    .AwChan    ( 1'b1         ),
+    .chan_t    ( aw_chan_t    ),
     .AddrWidth ( AddrWidth   ),
-    .IdWidth  ( IdWidth      ),
-    .MaxTxns  ( MaxWriteTxns )
+    .IdWidth   ( IdWidth      ),
+    .MaxTxns   ( MaxWriteTxns )
   ) i_axi_burst_unwrap_aw_chan (
     .clk_i,
     .rst_ni,
@@ -583,7 +583,7 @@ module axi_burst_counters #(
   assign cnt_inp = {1'b0, alloc_len_i} + 1;
 
   cc_lzc #(
-    .WIDTH  ( MaxTxns ),
+    .WIDTH  ( MaxTxns                       ),
     .MODE   ( cc_pkg::LZC_TRAILING_ZERO_CNT )  // start counting at index 0
   ) i_lzc (
     .in_i    ( cnt_free     ),
@@ -594,7 +594,7 @@ module axi_burst_counters #(
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   cc_id_queue #(
-    .ID_WIDTH  ( $bits(id_t) ),
+    .ID_WIDTH ( $bits(id_t) ),
     .CAPACITY ( MaxTxns     ),
     .data_t   ( cnt_idx_t   )
   ) i_idq (
