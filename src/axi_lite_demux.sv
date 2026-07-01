@@ -45,7 +45,6 @@ module axi_lite_demux #(
 ) (
   input  logic                        clk_i,
   input  logic                        rst_ni,
-  input  logic                        test_i,
   // slave port (AXI4-Lite input), connect master module here
   input  axi_req_t                    slv_req_i,
   input  select_t                     slv_aw_select_i,
@@ -70,7 +69,7 @@ module axi_lite_demux #(
 
   if (NoMstPorts == 32'd1) begin : gen_no_demux
     // degenerate case, connect slave to master port
-    spill_register #(
+    cc_spill_register #(
       .T       ( aw_chan_t  ),
       .Bypass  ( ~SpillAw   )
     ) i_aw_spill_reg (
@@ -83,7 +82,7 @@ module axi_lite_demux #(
       .ready_i ( mst_resps_i[0].aw_ready  ),
       .data_o  ( mst_reqs_o[0].aw         )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( w_chan_t  ),
       .Bypass  ( ~SpillW   )
     ) i_w_spill_reg (
@@ -96,7 +95,7 @@ module axi_lite_demux #(
       .ready_i ( mst_resps_i[0].w_ready  ),
       .data_o  ( mst_reqs_o[0].w         )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
@@ -109,7 +108,7 @@ module axi_lite_demux #(
       .ready_i ( slv_req_i.b_ready      ),
       .data_o  ( slv_resp_o.b           )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( ar_chan_t  ),
       .Bypass  ( ~SpillAr   )
     ) i_ar_spill_reg (
@@ -122,7 +121,7 @@ module axi_lite_demux #(
       .ready_i ( mst_resps_i[0].ar_ready  ),
       .data_o  ( mst_reqs_o[0].ar         )
     );
-    spill_register #(
+    cc_spill_register #(
       .T       ( r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
@@ -194,7 +193,7 @@ module axi_lite_demux #(
     //--------------------------------------
     `ifdef TARGET_VSIM
     // Workaround for bug in Questa 2020.2 and 2021.1: Flatten the struct into a logic vector before
-    // instantiating `spill_register`.
+    // instantiating `cc_spill_register`.
     typedef logic [$bits(aw_chan_select_t)-1:0] aw_chan_select_flat_t;
     `else
     // Other tools, such as VCS, have problems with `$bits()`, so the workaround cannot be used
@@ -204,7 +203,7 @@ module axi_lite_demux #(
     aw_chan_select_flat_t slv_aw_chan_select_in_flat,
                           slv_aw_chan_select_out_flat;
     assign slv_aw_chan_select_in_flat = {slv_req_i.aw, slv_aw_select_i};
-    spill_register #(
+    cc_spill_register #(
       .T      ( aw_chan_select_flat_t         ),
       .Bypass ( ~SpillAw                      )
     ) i_aw_spill_reg (
@@ -265,17 +264,16 @@ module axi_lite_demux #(
 
     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
     // prevent further pushing
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
-    fifo_v3 #(
-      .FALL_THROUGH( FallThrough ),
-      .DEPTH       ( MaxTrans    ),
-      .dtype       ( select_t    )
+    cc_fifo #(
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH        ( MaxTrans    ),
+      .dtype        ( select_t    )
     ) i_w_fifo (
       .clk_i      ( clk_i              ),
       .rst_ni     ( rst_ni             ),
       .flush_i    ( 1'b0               ), // not used, because AXI4-Lite no preemtion rule
-      .testmode_i ( test_i             ),
       .full_o     ( w_fifo_full        ),
       .empty_o    ( w_fifo_empty       ),
       .usage_o    ( /*not used*/       ),
@@ -288,7 +286,7 @@ module axi_lite_demux #(
     //--------------------------------------
     // W Channel
     //--------------------------------------
-    spill_register #(
+    cc_spill_register #(
       .T      ( w_chan_t ),
       .Bypass ( ~SpillW  )
     ) i_w_spill_reg (
@@ -311,15 +309,14 @@ module axi_lite_demux #(
     assign slv_w_ready = ~w_fifo_empty & ~b_fifo_full & mst_resps_i[w_select].w_ready;
     assign w_fifo_pop  = slv_w_valid & slv_w_ready;
 
-    fifo_v3 #(
-      .FALL_THROUGH( FallThrough ),
-      .DEPTH       ( MaxTrans    ),
-      .dtype       ( select_t    )
+    cc_fifo #(
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH        ( MaxTrans    ),
+      .dtype        ( select_t    )
     ) i_b_fifo (
       .clk_i      ( clk_i        ),
       .rst_ni     ( rst_ni       ),
       .flush_i    ( 1'b0         ), // not used, because AXI4-Lite no preemption
-      .testmode_i ( test_i       ),
       .full_o     ( b_fifo_full  ),
       .empty_o    ( b_fifo_empty ),
       .usage_o    ( /*not used*/ ),
@@ -332,7 +329,7 @@ module axi_lite_demux #(
     //--------------------------------------
     // B Channel
     //--------------------------------------
-    spill_register #(
+    cc_spill_register #(
       .T      ( b_chan_t ),
       .Bypass ( ~SpillB  )
     ) i_b_spill_reg (
@@ -366,7 +363,7 @@ module axi_lite_demux #(
     ar_chan_select_flat_t slv_ar_chan_select_in_flat,
                           slv_ar_chan_select_out_flat;
     assign slv_ar_chan_select_in_flat = {slv_req_i.ar, slv_ar_select_i};
-    spill_register #(
+    cc_spill_register #(
       .T      ( ar_chan_select_flat_t         ),
       .Bypass ( ~SpillAr                      )
     ) i_ar_spill_reg (
@@ -390,15 +387,14 @@ module axi_lite_demux #(
     assign slv_ar_ready = ~r_fifo_full & mst_resps_i[slv_ar_chan.select].ar_ready;
     assign r_fifo_push  = slv_ar_valid & slv_ar_ready;
 
-    fifo_v3 #(
-      .FALL_THROUGH( FallThrough ),
-      .DEPTH       ( MaxTrans    ),
-      .dtype       ( select_t    )
+    cc_fifo #(
+      .FALL_THROUGH ( FallThrough ),
+      .DEPTH        ( MaxTrans    ),
+      .dtype        ( select_t    )
     ) i_r_fifo (
       .clk_i      ( clk_i              ),
       .rst_ni     ( rst_ni             ),
       .flush_i    ( 1'b0               ), // not used, because AXI4-Lite no preemption rule
-      .testmode_i ( test_i             ),
       .full_o     ( r_fifo_full        ),
       .empty_o    ( r_fifo_empty       ),
       .usage_o    ( /*not used*/       ),
@@ -411,7 +407,7 @@ module axi_lite_demux #(
     //--------------------------------------
     // R Channel
     //--------------------------------------
-    spill_register #(
+    cc_spill_register #(
       .T      ( r_chan_t ),
       .Bypass ( ~SpillR  )
     ) i_r_spill_reg (
@@ -498,7 +494,6 @@ module axi_lite_demux_intf #(
 ) (
   input  logic     clk_i,               // Clock
   input  logic     rst_ni,              // Asynchronous reset active low
-  input  logic     test_i,              // Testmode enable
   input  select_t  slv_aw_select_i,     // has to be stable, when aw_valid
   input  select_t  slv_ar_select_i,     // has to be stable, when ar_valid
   AXI_LITE.Slave   slv,                 // slave port
@@ -547,7 +542,6 @@ module axi_lite_demux_intf #(
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
-    .test_i,
     // slave Port
     .slv_req_i       ( slv_req         ),
     .slv_aw_select_i ( slv_aw_select_i ), // must be stable while slv_aw_valid_i

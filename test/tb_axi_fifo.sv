@@ -111,7 +111,6 @@ module tb_axi_fifo #(
   ) i_dut (
       .clk_i (clk),  // clock
       .rst_ni(rst_n),  // asynchronous reset active low
-      .test_i(1'b0),
       .slv   (master),  // slave port
       .mst   (slave)  // master port
   );

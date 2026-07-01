@@ -64,7 +64,6 @@ module axi_demux #(
 ) (
   input  logic                          clk_i,
   input  logic                          rst_ni,
-  input  logic                          test_i,
   // Slave Port
   input  axi_req_t                      slv_req_i,
   input  select_t                       slv_aw_select_i,
@@ -86,7 +85,7 @@ module axi_demux #(
 
   select_t slv_aw_select, slv_ar_select;
 
-  spill_register #(
+  cc_spill_register #(
     .T       ( aw_chan_t  ),
     .Bypass  ( ~SpillAw   )
   ) i_aw_spill_reg (
@@ -99,7 +98,7 @@ module axi_demux #(
     .ready_i ( slv_resp_cut.aw_ready ),
     .data_o  ( slv_req_cut.aw        )
   );
-  spill_register #(
+  cc_spill_register #(
     .T       ( select_t ),
     .Bypass  ( ~SpillAw )
   ) i_aw_select_spill_reg (
@@ -116,7 +115,7 @@ module axi_demux #(
   assign slv_resp_o.aw_ready  = slv_aw_ready_chan & slv_aw_ready_sel;
   assign slv_req_cut.aw_valid = slv_aw_valid_chan & slv_aw_valid_sel;
 
-  spill_register #(
+  cc_spill_register #(
     .T       ( w_chan_t  ),
     .Bypass  ( ~SpillW   )
   ) i_w_spill_reg (
@@ -129,7 +128,7 @@ module axi_demux #(
     .ready_i ( slv_resp_cut.w_ready ),
     .data_o  ( slv_req_cut.w        )
   );
-  spill_register #(
+  cc_spill_register #(
     .T       ( ar_chan_t  ),
     .Bypass  ( ~SpillAr   )
   ) i_ar_spill_reg (
@@ -142,7 +141,7 @@ module axi_demux #(
     .ready_i ( slv_resp_cut.ar_ready ),
     .data_o  ( slv_req_cut.ar        )
   );
-  spill_register #(
+  cc_spill_register #(
     .T       ( select_t ),
     .Bypass  ( ~SpillAr )
   ) i_ar_sel_spill_reg (
@@ -159,7 +158,7 @@ module axi_demux #(
   assign slv_resp_o.ar_ready  = slv_ar_ready_chan & slv_ar_ready_sel;
   assign slv_req_cut.ar_valid = slv_ar_valid_chan & slv_ar_valid_sel;
 
-  spill_register #(
+  cc_spill_register #(
     .T       ( b_chan_t ),
     .Bypass  ( ~SpillB  )
   ) i_b_spill_reg (
@@ -172,7 +171,7 @@ module axi_demux #(
     .ready_i ( slv_req_i.b_ready    ),
     .data_o  ( slv_resp_o.b         )
   );
-  spill_register #(
+  cc_spill_register #(
     .T       ( r_chan_t ),
     .Bypass  ( ~SpillR  )
   ) i_r_spill_reg (
@@ -198,7 +197,6 @@ module axi_demux #(
   ) i_demux_simple (
     .clk_i,
     .rst_ni,
-    .test_i,
 
     .slv_req_i       ( slv_req_cut   ),
     .slv_aw_select_i ( slv_aw_select ),
@@ -234,7 +232,6 @@ module axi_demux_intf #(
 ) (
   input  logic    clk_i,                 // Clock
   input  logic    rst_ni,                // Asynchronous reset active low
-  input  logic    test_i,                // Testmode enable
   input  select_t slv_aw_select_i,       // has to be stable, when aw_valid
   input  select_t slv_ar_select_i,       // has to be stable, when ar_valid
   AXI_BUS.Slave   slv,                   // slave port
@@ -289,7 +286,6 @@ module axi_demux_intf #(
   ) i_axi_demux (
     .clk_i,   // Clock
     .rst_ni,  // Asynchronous reset active low
-    .test_i,  // Testmode enable
     // slave port
     .slv_req_i       ( slv_req         ),
     .slv_aw_select_i ( slv_aw_select_i ),

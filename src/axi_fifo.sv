@@ -33,7 +33,6 @@ module axi_fifo #(
 ) (
     input  logic      clk_i,  // Clock
     input  logic      rst_ni,  // Asynchronous reset active low
-    input  logic      test_i,
     // slave port
     input  axi_req_t  slv_req_i,
     output axi_resp_t slv_resp_o,
@@ -63,15 +62,14 @@ module axi_fifo #(
     assign mst_req_o.b_ready   = ~b_fifo_full;
 
     // A FiFo for each channel
-    fifo_v3 #(
-        .dtype(aw_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+    cc_fifo #(
+        .dtype        (aw_chan_t),
+        .DEPTH        (Depth),
+        .FALL_THROUGH (FallThrough)
     ) i_aw_fifo (
         .clk_i,
         .rst_ni,
         .flush_i   (1'b0),
-        .testmode_i(test_i),
         .full_o    (aw_fifo_full),
         .empty_o   (aw_fifo_empty),
         .usage_o   (),
@@ -80,15 +78,14 @@ module axi_fifo #(
         .data_o    (mst_req_o.aw),
         .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
     );
-    fifo_v3 #(
-        .dtype(ar_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+    cc_fifo #(
+        .dtype        (ar_chan_t),
+        .DEPTH        (Depth),
+        .FALL_THROUGH (FallThrough)
     ) i_ar_fifo (
         .clk_i,
         .rst_ni,
         .flush_i   (1'b0),
-        .testmode_i(test_i),
         .full_o    (ar_fifo_full),
         .empty_o   (ar_fifo_empty),
         .usage_o   (),
@@ -97,15 +94,14 @@ module axi_fifo #(
         .data_o    (mst_req_o.ar),
         .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
     );
-    fifo_v3 #(
-        .dtype(w_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+    cc_fifo #(
+        .dtype        (w_chan_t),
+        .DEPTH        (Depth),
+        .FALL_THROUGH (FallThrough)
     ) i_w_fifo (
         .clk_i,
         .rst_ni,
         .flush_i   (1'b0),
-        .testmode_i(test_i),
         .full_o    (w_fifo_full),
         .empty_o   (w_fifo_empty),
         .usage_o   (),
@@ -114,15 +110,14 @@ module axi_fifo #(
         .data_o    (mst_req_o.w),
         .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
     );
-    fifo_v3 #(
-        .dtype(r_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+    cc_fifo #(
+        .dtype        (r_chan_t),
+        .DEPTH        (Depth),
+        .FALL_THROUGH (FallThrough)
     ) i_r_fifo (
         .clk_i,
         .rst_ni,
         .flush_i   (1'b0),
-        .testmode_i(test_i),
         .full_o    (r_fifo_full),
         .empty_o   (r_fifo_empty),
         .usage_o   (),
@@ -131,15 +126,14 @@ module axi_fifo #(
         .data_o    (slv_resp_o.r),
         .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
     );
-    fifo_v3 #(
-        .dtype(b_chan_t),
-        .DEPTH(Depth),
-        .FALL_THROUGH(FallThrough)
+    cc_fifo #(
+        .dtype        (b_chan_t),
+        .DEPTH        (Depth),
+        .FALL_THROUGH (FallThrough)
     ) i_b_fifo (
         .clk_i,
         .rst_ni,
         .flush_i   (1'b0),
-        .testmode_i(test_i),
         .full_o    (b_fifo_full),
         .empty_o   (b_fifo_empty),
         .usage_o   (),
@@ -174,7 +168,6 @@ module axi_fifo_intf #(
 ) (
     input logic    clk_i,
     input logic    rst_ni,
-    input logic    test_i,
     AXI_BUS.Slave  slv,
     AXI_BUS.Master mst
 );
@@ -215,7 +208,6 @@ module axi_fifo_intf #(
   ) i_axi_fifo (
       .clk_i,
       .rst_ni,
-      .test_i,
       .slv_req_i (slv_req),
       .slv_resp_o(slv_resp),
       .mst_req_o (mst_req),

@@ -17,7 +17,7 @@
 
 /// Interleaved version of the crossbar. This module is experimental; use at your own risk.
 module axi_interleaved_xbar
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   parameter axi_pkg::xbar_cfg_t Cfg                                   = '0,
   parameter bit  ATOPs                                                = 1'b1,
@@ -42,7 +42,6 @@ import cf_math_pkg::idx_width;
 ) (
   input  logic                                                          clk_i,
   input  logic                                                          rst_ni,
-  input  logic                                                          test_i,
   input  slv_req_t  [Cfg.NoSlvPorts-1:0]                                slv_ports_req_i,
   output slv_resp_t [Cfg.NoSlvPorts-1:0]                                slv_ports_resp_o,
   output mst_req_t  [Cfg.NoMstPorts-1:0]                                mst_ports_req_o,
@@ -118,7 +117,7 @@ import cf_math_pkg::idx_width;
       end
     end
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .NoRules    ( Cfg.NoAddrRules ),
       .addr_t     ( addr_t          ),
@@ -133,7 +132,7 @@ import cf_math_pkg::idx_width;
       .default_idx_i    ( default_mst_port_i[i]      )
     );
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),
@@ -210,7 +209,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       .slv_req_i       ( slv_reqs_mod[i]     ),
       .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
@@ -231,7 +229,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       // slave port
       .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
       .slv_resp_o ( slv_resps[i][cfg_NoMstPorts]  )
@@ -257,7 +254,6 @@ import cf_math_pkg::idx_width;
         ) i_axi_err_slv (
           .clk_i,
           .rst_ni,
-          .test_i,
           .slv_req_i  ( slv_reqs[i][j]  ),
           .slv_resp_o ( slv_resps[i][j] )
         );
@@ -292,7 +288,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_mux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Test Mode enable
       .slv_reqs_i  ( mst_reqs[i]         ),
       .slv_resps_o ( mst_resps[i]        ),
       .mst_req_o   ( mst_ports_req_o[i]  ),
@@ -318,7 +313,7 @@ endmodule : axi_interleaved_xbar
 `include "axi/typedef.svh"
 
 module axi_interleaved_xbar_intf
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
   parameter int unsigned AXI_USER_WIDTH =  0,
@@ -332,7 +327,6 @@ import cf_math_pkg::idx_width;
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
-  input  logic                                                      test_i,
   AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
@@ -404,7 +398,6 @@ import cf_math_pkg::idx_width;
   ) i_interleaved_xbar (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_ports_req_i  (slv_reqs ),
     .slv_ports_resp_o (slv_resps),
     .mst_ports_req_o  (mst_reqs ),

@@ -55,7 +55,6 @@ module axi_demux_simple #(
 ) (
   input  logic                          clk_i,
   input  logic                          rst_ni,
-  input  logic                          test_i,
   // Slave Port
   input  axi_req_t                      slv_req_i,
   input  select_t                       slv_aw_select_i,
@@ -66,7 +65,7 @@ module axi_demux_simple #(
   input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
 );
 
-  localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
+  localparam int unsigned IdCounterWidth = cc_pkg::idx_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
   // pass through if only one master port
@@ -195,7 +194,7 @@ module axi_demux_simple #(
 
     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
     // prevent further pushing
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
@@ -234,7 +233,7 @@ module axi_demux_simple #(
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
     // `slv_aw_select_i`.
-    counter #(
+    cc_counter #(
       .WIDTH           ( IdCounterWidth ),
       .STICKY_OVERFLOW ( 1'b0           )
     ) i_counter_open_w (
@@ -249,7 +248,7 @@ module axi_demux_simple #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
+    `FFL(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
     assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
     assign w_select_valid = w_cnt_up | (|w_open);
 
@@ -260,10 +259,10 @@ module axi_demux_simple #(
     //--------------------------------------
     //  B Channel
     //--------------------------------------
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] b_idx;
 
     // Arbitration of the different B responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),
@@ -341,7 +340,7 @@ module axi_demux_simple #(
     end
 
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
+    `FFL(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
 
     if (UniqueIds) begin : gen_unique_ids_ar
       // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
@@ -379,10 +378,10 @@ module axi_demux_simple #(
     //  R Channel
     //--------------------------------------
 
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] r_idx;
 
     // Arbitration of the different r responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
       .DataType ( logic   ),
       .AxiVldRdy( 1'b1       ),

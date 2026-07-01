@@ -20,10 +20,13 @@ package:
     - "Nils Wistoff <nwistoff@iis.ee.ethz.ch>"
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
 
+remotes:
+  pulp: https://github.com/pulp-platform
+
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.39.0 }
-  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.5 }
-  tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: v2-test }
+  common_verification: 0.2.5
+  tech_cells_generic: 0.2.2
 
 export_include_dirs:
   - include

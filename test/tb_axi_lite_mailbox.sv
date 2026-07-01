@@ -456,7 +456,6 @@ module tb_axi_lite_mailbox;
   ) i_mailbox_dut (
     .clk_i       ( clk       ),
     .rst_ni      ( rst_n     ),
-    .test_i      ( 1'b0      ),
     .slv         ( master    ),
     .irq_o       ( irq       ),
     .base_addr_i ( '0        ) // set base address to '0
