@@ -186,7 +186,7 @@ module axi_id_remap #(
   );
   assign both_free = wr_free & rd_free;
   cc_lzc #(
-    .WIDTH  ( AxiSlvPortMaxUniqIds  ),
+    .WIDTH  ( AxiSlvPortMaxUniqIds          ),
     .MODE   ( cc_pkg::LZC_TRAILING_ZERO_CNT )
   ) i_lzc (
     .in_i     ( both_free        ),
@@ -570,7 +570,7 @@ module axi_id_remap_table #(
     assign free_o[i] = table_q[i].cnt == '0;
   end
   cc_lzc #(
-    .WIDTH ( MaxUniqInpIds  ),
+    .WIDTH ( MaxUniqInpIds                 ),
     .MODE  ( cc_pkg::LZC_TRAILING_ZERO_CNT )
   ) i_lzc_free (
     .in_i    ( free_o        ),
@@ -592,7 +592,7 @@ module axi_id_remap_table #(
   end
   logic no_match;
   cc_lzc #(
-      .WIDTH ( MaxUniqInpIds  ),
+      .WIDTH ( MaxUniqInpIds                 ),
       .MODE  ( cc_pkg::LZC_TRAILING_ZERO_CNT )
   ) i_lzc_match (
       .in_i     ( match           ),

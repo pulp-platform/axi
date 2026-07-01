@@ -60,9 +60,9 @@ module axi_cdc_src #(
   cc_cdc_fifo_gray_src #(
     // Workaround for a bug in Questa (see comment in `axi_cdc_dst` for details).
 `ifdef QUESTA
-    .T    ( logic [$bits(aw_chan_t)-1:0] ),
+    .T           ( logic [$bits(aw_chan_t)-1:0] ),
 `else
-    .T    ( aw_chan_t                    ),
+    .T           ( aw_chan_t                    ),
 `endif
     .LOG_DEPTH   ( LogDepth                    ),
     .SYNC_STAGES ( SyncStages                  )
@@ -79,9 +79,9 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T    ( logic [$bits(w_chan_t)-1:0]  ),
+    .T           ( logic [$bits(w_chan_t)-1:0]  ),
 `else
-    .T    ( w_chan_t                     ),
+    .T           ( w_chan_t                     ),
 `endif
     .LOG_DEPTH   ( LogDepth                    ),
     .SYNC_STAGES ( SyncStages                  )
@@ -98,9 +98,9 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T    ( logic [$bits(b_chan_t)-1:0]  ),
+    .T           ( logic [$bits(b_chan_t)-1:0]  ),
 `else
-    .T    ( b_chan_t                     ),
+    .T           ( b_chan_t                     ),
 `endif
     .LOG_DEPTH   ( LogDepth                    ),
     .SYNC_STAGES ( SyncStages                  )
@@ -117,9 +117,9 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T    ( logic [$bits(ar_chan_t)-1:0] ),
+    .T           ( logic [$bits(ar_chan_t)-1:0] ),
 `else
-    .T    ( ar_chan_t                    ),
+    .T           ( ar_chan_t                    ),
 `endif
     .LOG_DEPTH   ( LogDepth                    ),
     .SYNC_STAGES ( SyncStages                  )
@@ -136,9 +136,9 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T    ( logic [$bits(r_chan_t)-1:0]  ),
+    .T           ( logic [$bits(r_chan_t)-1:0]  ),
 `else
-    .T    ( r_chan_t                     ),
+    .T           ( r_chan_t                     ),
 `endif
     .LOG_DEPTH   ( LogDepth                    ),
     .SYNC_STAGES ( SyncStages                  )

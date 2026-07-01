@@ -620,7 +620,7 @@ module axi_burst_splitter_gran_counters #(
 
   if (CutPath) begin : gen_spill
     cc_spill_register #(
-      .T ( alloc_pld_t ),
+      .T      ( alloc_pld_t ),
       .Bypass ( 1'b0        )
     ) i_spill_register_alloc (
       .clk_i,
@@ -675,9 +675,9 @@ module axi_burst_splitter_gran_counters #(
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   cc_id_queue #(
-    .ID_WIDTH  ( $bits(id_t) ),
+    .ID_WIDTH ( $bits(id_t) ),
     .CAPACITY ( MaxTxns     ),
-    .FULL_BW   ( FullBW      ),
+    .FULL_BW  ( FullBW      ),
     .data_t   ( cnt_idx_t   )
   ) i_idq (
     .clk_i,

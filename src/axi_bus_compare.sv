@@ -226,8 +226,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_aw_chan_t )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_aw_chan_t )
         ) i_stream_fifo_aw_a (
             .clk_i,
             .rst_ni,
@@ -244,8 +244,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_b_chan_t  )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_b_chan_t  )
         ) i_stream_fifo_b_a (
             .clk_i,
             .rst_ni,
@@ -262,8 +262,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_ar_chan_t )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_ar_chan_t )
         ) i_stream_fifo_ar_a (
             .clk_i,
             .rst_ni,
@@ -281,7 +281,7 @@ module axi_bus_compare #(
             cc_stream_fifo #(
                 .FALL_THROUGH ( 1'b0 ),
                 .DATA_WIDTH   ( $clog2(DataWidth/8)+3 ),
-                .DEPTH       ( 2*FifoDepth )
+                .DEPTH        ( 2*FifoDepth )
             ) i_stream_fifo_w_size (
                 .clk_i,
                 .rst_ni,
@@ -318,8 +318,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_r_chan_t  )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_r_chan_t  )
         ) i_stream_fifo_r_a (
             .clk_i,
             .rst_ni,
@@ -338,7 +338,7 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0 ),
             .DATA_WIDTH   ( $clog2(DataWidth/8)+3 ),
-            .DEPTH       ( FifoDepth )
+            .DEPTH        ( FifoDepth )
         ) i_stream_fifo_w_size (
             .clk_i,
             .rst_ni,
@@ -374,8 +374,8 @@ module axi_bus_compare #(
     cc_stream_fifo #(
         .FALL_THROUGH ( 1'b0          ),
         .DATA_WIDTH   ( 1'b0          ),
-        .DEPTH       ( FifoDepth     ),
-        .T      ( axi_w_chan_t  )
+        .DEPTH        ( FifoDepth     ),
+        .T            ( axi_w_chan_t  )
     ) i_stream_fifo_w_a (
         .clk_i,
         .rst_ni,
@@ -496,8 +496,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_aw_chan_t )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_aw_chan_t )
         ) i_stream_fifo_aw_b (
             .clk_i,
             .rst_ni,
@@ -514,8 +514,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_b_chan_t  )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_b_chan_t  )
         ) i_stream_fifo_b_b (
             .clk_i,
             .rst_ni,
@@ -532,8 +532,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_ar_chan_t )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_ar_chan_t )
         ) i_stream_fifo_ar_b (
             .clk_i,
             .rst_ni,
@@ -550,8 +550,8 @@ module axi_bus_compare #(
         cc_stream_fifo #(
             .FALL_THROUGH ( 1'b0          ),
             .DATA_WIDTH   ( 1'b0          ),
-            .DEPTH       ( FifoDepth     ),
-            .T      ( axi_r_chan_t  )
+            .DEPTH        ( FifoDepth     ),
+            .T            ( axi_r_chan_t  )
         ) i_stream_fifo_r_b (
             .clk_i,
             .rst_ni,
@@ -569,8 +569,8 @@ module axi_bus_compare #(
     cc_stream_fifo #(
         .FALL_THROUGH ( 1'b0          ),
         .DATA_WIDTH   ( 1'b0          ),
-        .DEPTH       ( FifoDepth     ),
-        .T      ( axi_w_chan_t  )
+        .DEPTH        ( FifoDepth     ),
+        .T            ( axi_w_chan_t  )
     ) i_stream_fifo_w_b (
         .clk_i,
         .rst_ni,

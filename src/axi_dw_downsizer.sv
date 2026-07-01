@@ -98,7 +98,7 @@ module axi_dw_downsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
-    .DataType   (slv_r_chan_t),
+    .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
@@ -160,7 +160,7 @@ module axi_dw_downsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
-    .DataType   (ar_chan_t  ),
+    .DataType (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
@@ -309,7 +309,7 @@ module axi_dw_downsizer #(
   logic                       idqueue_valid;
 
   cc_id_queue #(
-    .ID_WIDTH (AxiIdWidth ),
+    .ID_WIDTH(AxiIdWidth ),
     .CAPACITY(AxiMaxReads),
     .data_t  (tran_id_t  )
   ) i_read_id_queue (
@@ -680,7 +680,7 @@ module axi_dw_downsizer #(
 
   cc_fifo #(
     .DATA_WIDTH  (1          ),
-    .DEPTH      (AxiMaxReads),
+    .DEPTH       (AxiMaxReads),
     .FALL_THROUGH(1'b1       )
   ) i_forward_b_beats_queue (
     .clk_i     (clk_i               ),

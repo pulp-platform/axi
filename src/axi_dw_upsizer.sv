@@ -95,7 +95,7 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
-    .DataType   (slv_r_chan_t),
+    .DataType (slv_r_chan_t),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
@@ -157,7 +157,7 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
-    .DataType   (ar_chan_t  ),
+    .DataType (ar_chan_t  ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )

@@ -147,11 +147,11 @@ module axi_lite_to_apb #(
   logic           apb_rresp_valid, apb_rresp_ready;
 
   cc_rr_arb_tree #(
-    .NumIn    ( 32'd2     ),
-    .DataType   ( int_req_t ),
-    .ExtPrio  ( 1'b0      ),
-    .AxiVldRdy( 1'b1      ),
-    .LockIn   ( 1'b1      )
+    .NumIn     ( 32'd2     ),
+    .DataType  ( int_req_t ),
+    .ExtPrio   ( 1'b0      ),
+    .AxiVldRdy ( 1'b1      ),
+    .LockIn    ( 1'b1      )
   ) i_req_arb (
     .clk_i,
     .rst_ni,
@@ -168,7 +168,7 @@ module axi_lite_to_apb #(
 
   if (PipelineRequest) begin : gen_req_spill
     cc_spill_register #(
-      .T ( int_req_t ),
+      .T      ( int_req_t ),
       .Bypass ( 1'b0      )
     ) i_req_spill (
       .clk_i,
@@ -198,7 +198,7 @@ module axi_lite_to_apb #(
 
   if (PipelineResponse) begin : gen_resp_spill
     cc_spill_register #(
-      .T ( axi_pkg::resp_t ),
+      .T      ( axi_pkg::resp_t ),
       .Bypass ( 1'b0            )
     ) i_write_resp_spill (
       .clk_i,
@@ -211,7 +211,7 @@ module axi_lite_to_apb #(
       .data_o  ( axi_bresp              )
     );
     cc_spill_register #(
-      .T ( int_resp_t  ),
+      .T      ( int_resp_t  ),
       .Bypass ( 1'b0        )
     ) i_read_resp_spill (
       .clk_i,

@@ -94,7 +94,7 @@ module axi_lite_lfsr #(
     cc_stream_fifo #(
         .FALL_THROUGH ( 1'b0 ),
         .DATA_WIDTH   ( 'd1  ),
-        .DEPTH       ( 'd2  )
+        .DEPTH        ( 'd2  )
     ) i_stream_fifo_w_b (
         .clk_i,
         .rst_ni,

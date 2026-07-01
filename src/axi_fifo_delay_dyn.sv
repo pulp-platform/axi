@@ -376,7 +376,7 @@ module stream_fifo_delay_dyn #(
 `else
   cc_fifo #(
     .DATA_WIDTH   ( $bits(payload_t) ),
-    .DEPTH       ( Depth            ),
+    .DEPTH        ( Depth            ),
     .FALL_THROUGH ( 1'b0             )
   ) data_fifo (
     .clk_i      ( clk_i           ),
@@ -427,7 +427,7 @@ module stream_fifo_delay_dyn #(
 `else
   cc_fifo #(
   .DATA_WIDTH   ( CounterWidth ),
-  .DEPTH       ( Depth        ),
+  .DEPTH        ( Depth        ),
   .FALL_THROUGH ( 1'b0         )
   ) deadline_fifo (
     .clk_i      ( clk_i           ),
