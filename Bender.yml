@@ -91,6 +91,7 @@ sources:
   - src/axi_interleaved_xbar.sv
   - src/axi_iw_converter.sv
   - src/axi_lite_xbar.sv
+  - src/axi_to_apb.sv
   - src/axi_xbar_unmuxed.sv
   - src/axi_to_mem_banked.sv
   - src/axi_to_mem_interleaved.sv
@@ -131,6 +132,7 @@ sources:
       - test/tb_axi_lite_regs.sv
       - test/tb_axi_iw_converter.sv
       - test/tb_axi_lite_to_apb.sv
+      - test/tb_axi_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_xbar.sv
       - test/tb_axi_modify_address.sv

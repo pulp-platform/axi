@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- `axi_to_apb`: AXI4+ATOP to APB4 bridge supporting data-width downsizing and address truncation,
+  built on `axi_to_detailed_mem`. Adds the `axi_to_apb_intf` interface variant and the
+  `tb_axi_to_apb` testbench.
+
 ## 0.39.10 - 2026-06-19
 
 ### Added

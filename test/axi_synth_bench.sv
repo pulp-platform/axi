@@ -90,6 +90,19 @@ module axi_synth_bench (
     end
   end
 
+  // AXI4+ATOP to APB bridge (with data-width downsize and address truncation).
+  // `ApbDataWidth` is swept over {8, 16, 32} (banking-based downsizing supports 8-bit APB).
+  for (genvar i_data = 0; i_data < 3; i_data++) begin
+    localparam int unsigned ApbDataWidth = (2**i_data) * 8;
+    for (genvar i_slv = 0; i_slv < 3; i_slv++) begin
+      synth_axi_to_apb #(
+        .NoApbSlaves  ( NUM_SLAVE_MASTER[i_slv] ),
+        .AxiDataWidth ( 32'd64                  ),
+        .ApbDataWidth ( ApbDataWidth            )
+      ) i_axi_to_apb (.*);
+    end
+  end
+
   // AXI4-Lite Mailbox
   for (genvar i_irq_mode = 0; i_irq_mode < 4; i_irq_mode++) begin
     localparam bit EDGE_TRIG = i_irq_mode[0];
@@ -356,6 +369,94 @@ module synth_axi_lite_to_apb #(
     .apb_req_o       ( apb_req  ),
     .apb_resp_i      ( apb_resp ),
     .addr_map_i      ( addr_map )
+  );
+
+endmodule
+
+module synth_axi_to_apb #(
+  parameter int unsigned NoApbSlaves  = 0,
+  parameter int unsigned AxiDataWidth = 0,
+  parameter int unsigned ApbDataWidth = 0
+) (
+  input logic clk_i,  // Clock
+  input logic rst_ni  // Asynchronous reset active low
+);
+
+  localparam int unsigned AxiAddrWidth = 32'd48;
+  localparam int unsigned ApbAddrWidth = 32'd32;
+  localparam int unsigned AxiIdWidth   = 32'd4;
+  localparam int unsigned AxiUserWidth = 32'd1;
+
+  typedef logic [ApbAddrWidth-1:0] apb_addr_t;
+  typedef logic [ApbDataWidth-1:0] apb_data_t;
+  typedef logic [ApbDataWidth/8-1:0] apb_strb_t;
+
+  typedef struct packed {
+    apb_addr_t      paddr;
+    axi_pkg::prot_t pprot;
+    logic           psel;
+    logic           penable;
+    logic           pwrite;
+    apb_data_t      pwdata;
+    apb_strb_t      pstrb;
+  } apb_req_t;
+
+  typedef struct packed {
+    logic      pready;
+    apb_data_t prdata;
+    logic      pslverr;
+  } apb_resp_t;
+
+  typedef logic [AxiAddrWidth-1:0]   addr_t;
+  typedef logic [AxiDataWidth-1:0]   data_t;
+  typedef logic [AxiIdWidth-1:0]     id_t;
+  typedef logic [AxiDataWidth/8-1:0] strb_t;
+  typedef logic [AxiUserWidth-1:0]   user_t;
+
+  typedef struct packed {
+    int unsigned idx;
+    addr_t       start_addr;
+    addr_t       end_addr;
+  } rule_t;
+
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
+
+  axi_req_t                    axi_req;
+  axi_resp_t                   axi_resp;
+  apb_req_t  [NoApbSlaves-1:0] apb_req;
+  apb_resp_t [NoApbSlaves-1:0] apb_resp;
+
+  rule_t [NoApbSlaves-1:0] addr_map;
+
+  axi_to_apb #(
+    .NoApbSlaves     ( NoApbSlaves  ),
+    .NoRules         ( NoApbSlaves  ),
+    .AxiAddrWidth    ( AxiAddrWidth ),
+    .AxiDataWidth    ( AxiDataWidth ),
+    .AxiIdWidth      ( AxiIdWidth   ),
+    .AxiUserWidth    ( AxiUserWidth ),
+    .ApbAddrWidth    ( ApbAddrWidth ),
+    .ApbDataWidth    ( ApbDataWidth ),
+    .axi_req_t       ( axi_req_t    ),
+    .axi_resp_t      ( axi_resp_t   ),
+    .apb_req_t       ( apb_req_t    ),
+    .apb_resp_t      ( apb_resp_t   ),
+    .rule_t          ( rule_t       )
+  ) i_axi_to_apb_dut (
+    .clk_i      ( clk_i    ),
+    .rst_ni     ( rst_ni   ),
+    .test_i     ( 1'b0     ),
+    .axi_req_i  ( axi_req  ),
+    .axi_resp_o ( axi_resp ),
+    .apb_req_o  ( apb_req  ),
+    .apb_resp_i ( apb_resp ),
+    .addr_map_i ( addr_map )
   );
 
 endmodule
