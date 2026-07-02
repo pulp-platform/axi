@@ -134,11 +134,12 @@ module axi_lite_dw_converter #(
     logic         aw_chan_spill_valid, aw_chan_spill_ready;
 
     cc_spill_register #(
-      .T      ( axi_lite_aw_t ),
+      .data_t ( axi_lite_aw_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_aw (
       .clk_i,
       .rst_ni,
+      .clr_i   ( 1'b0                ),
       .valid_i ( slv_req_i.aw_valid  ),
       .ready_o ( slv_res_o.aw_ready  ),
       .data_i  ( slv_req_i.aw        ),
@@ -166,11 +167,12 @@ module axi_lite_dw_converter #(
     axi_lite_slv_w_t w_chan_spill;
     logic            w_chan_spill_valid, w_chan_spill_ready;
     cc_spill_register #(
-      .T      ( axi_lite_slv_w_t ),
+      .data_t ( axi_lite_slv_w_t ),
       .Bypass ( 1'b0             )
     ) i_spill_register_w (
       .clk_i,
       .rst_ni,
+      .clr_i   ( 1'b0               ),
       .valid_i ( slv_req_i.w_valid  ),
       .ready_o ( slv_res_o.w_ready  ),
       .data_i  ( slv_req_i.w        ),
@@ -225,11 +227,12 @@ module axi_lite_dw_converter #(
     logic         ar_chan_spill_valid, ar_chan_spill_ready;
 
     cc_spill_register #(
-      .T      ( axi_lite_ar_t ),
+      .data_t ( axi_lite_ar_t ),
       .Bypass ( 1'b0          )
     ) i_spill_register_ar (
       .clk_i,
       .rst_ni,
+      .clr_i   ( 1'b0                ),
       .valid_i ( slv_req_i.ar_valid  ),
       .ready_o ( slv_res_o.ar_ready  ),
       .data_i  ( slv_req_i.ar        ),
@@ -338,12 +341,13 @@ module axi_lite_dw_converter #(
     assign aw_sel = sel_t'(slv_req_i.aw.addr >> SelOffset);
 
     cc_fifo #(
-      .FALL_THROUGH ( 1'b1         ),
-      .DEPTH        ( UpsizeFactor ),
-      .dtype        ( sel_t        )
+      .FallThrough ( 1'b1         ),
+      .Depth       ( UpsizeFactor ),
+      .data_t      ( sel_t        )
     ) i_fifo_w_sel (
       .clk_i,
       .rst_ni,
+      .clr_i      ( 1'b0         ),
       .flush_i    ( 1'b0         ),
       .full_o     ( w_full       ),
       .empty_o    ( w_empty      ),
@@ -419,12 +423,13 @@ module axi_lite_dw_converter #(
     assign ar_sel = sel_t'(slv_req_i.ar.addr >> SelOffset);
 
     cc_fifo #(
-      .FALL_THROUGH ( 1'b1         ),
-      .DEPTH        ( UpsizeFactor ),
-      .dtype        ( sel_t        )
+      .FallThrough ( 1'b1         ),
+      .Depth       ( UpsizeFactor ),
+      .data_t      ( sel_t        )
     ) i_fifo_r_sel (
       .clk_i,
       .rst_ni,
+      .clr_i      ( 1'b0         ),
       .flush_i    ( 1'b0         ),
       .full_o     ( r_full       ),
       .empty_o    ( r_empty      ),

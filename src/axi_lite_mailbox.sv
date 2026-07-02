@@ -119,44 +119,41 @@ module axi_lite_mailbox #(
     .clear_irq_o    ( clear_irq[1]    )
   );
 
-  // the usage gets concatinated with the full flag to have consistent threshold detection
-  logic [FifoUsageWidth-1:0] mbox_0_to_1_usage, mbox_1_to_0_usage;
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MailboxDepth ),
-    .dtype        ( data_t       )
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MailboxDepth ),
+    .data_t      ( data_t       )
   ) i_mbox_0_to_1 (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0                              ),
     .flush_i   ( w_mbox_flush[0] | r_mbox_flush[1] ),
     .full_o    ( mbox_full[0]                      ),
     .empty_o   ( mbox_empty[0]                     ),
-    .usage_o   ( mbox_0_to_1_usage                 ),
+    .usage_o   ( mbox_usage[0]                     ),
     .data_i    ( mbox_w_data[0]                    ),
     .push_i    ( mbox_push[0]                      ),
     .data_o    ( mbox_r_data[1]                    ),
     .pop_i     ( mbox_pop[1]                       )
   );
-  // assign the MSB of the FIFO to the correct usage signal
-  assign mbox_usage[0] = {mbox_full[0], mbox_0_to_1_usage};
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MailboxDepth ),
-    .dtype        ( data_t       )
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MailboxDepth ),
+    .data_t      ( data_t       )
   ) i_mbox_1_to_0 (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0                              ),
     .flush_i   ( w_mbox_flush[1] | r_mbox_flush[0] ),
     .full_o    ( mbox_full[1]                      ),
     .empty_o   ( mbox_empty[1]                     ),
-    .usage_o   ( mbox_1_to_0_usage                 ),
+    .usage_o   ( mbox_usage[1]                     ),
     .data_i    ( mbox_w_data[1]                    ),
     .push_i    ( mbox_push[1]                      ),
     .data_o    ( mbox_r_data[0]                    ),
     .pop_i     ( mbox_pop[0]                       )
   );
-  assign mbox_usage[1] = {mbox_full[1], mbox_1_to_0_usage};
 
   for (genvar i = 0; i < 2; i++) begin : gen_irq_conversion
     if (IrqEdgeTrig) begin : gen_irq_edge
@@ -188,6 +185,8 @@ module axi_lite_mailbox #(
   `ifndef VERILATOR
   initial begin : proc_check_params
     mailbox_depth:  assert (MailboxDepth > 1) else $fatal(1, "MailboxDepth has to be at least 2");
+    mailbox_depth_pow2: assert ((MailboxDepth & (MailboxDepth - 1)) == 0)
+      else $fatal(1, "MailboxDepth has to be a power of two (usage_t sizing relies on it).");
     axi_addr_width: assert (AxiAddrWidth > 0) else $fatal(1, "AxiAddrWidth has to be > 0");
     axi_data_width: assert (AxiDataWidth > 0) else $fatal(1, "AxiDataWidth has to be > 0");
   end
@@ -501,10 +500,11 @@ module axi_lite_mailbox_slave #(
     .default_idx_i    ( '0                )
   );
   cc_spill_register #(
-    .T ( b_chan_lite_t )
+    .data_t ( b_chan_lite_t )
   ) i_b_chan_outp (
     .clk_i,
     .rst_ni,
+    .clr_i   ( 1'b0               ),
     .valid_i ( b_valid            ),
     .ready_o ( b_ready            ),
     .data_i  ( b_chan             ),
@@ -527,10 +527,11 @@ module axi_lite_mailbox_slave #(
     .default_idx_i    ( '0                )
   );
   cc_spill_register #(
-    .T ( r_chan_lite_t )
+    .data_t ( r_chan_lite_t )
   ) i_r_chan_outp (
     .clk_i,
     .rst_ni,
+    .clr_i   ( 1'b0               ),
     .valid_i ( r_valid            ),
     .ready_o ( r_ready            ),
     .data_i  ( r_chan             ),

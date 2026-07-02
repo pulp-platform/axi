@@ -95,14 +95,14 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
-    .DataType (slv_r_chan_t),
+    .data_t   ( slv_r_chan_t ),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
   ) i_slv_r_arb (
     .clk_i  (clk_i             ),
     .rst_ni (rst_ni            ),
-    .flush_i(1'b0              ),
+    .clr_i  ( 1'b0             ),
     .rr_i   ('0                ),
     .req_i  (slv_r_valid_tran  ),
     .gnt_o  (slv_r_ready_tran  ),
@@ -138,7 +138,7 @@ module axi_dw_upsizer #(
   ) i_slv_ar_arb (
     .clk_i  (clk_i                                       ),
     .rst_ni (rst_ni                                      ),
-    .flush_i(1'b0                                        ),
+    .clr_i  ( 1'b0                                       ),
     .rr_i   ('0                                          ),
     .req_i  ({inject_aw_into_ar_req, slv_req_i.ar_valid} ),
     .gnt_o  ({inject_aw_into_ar_gnt, slv_resp_o.ar_ready}),
@@ -157,14 +157,14 @@ module axi_dw_upsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
-    .DataType (ar_chan_t  ),
+    .data_t   ( ar_chan_t ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
   ) i_mst_ar_arb (
     .clk_i  (clk_i            ),
     .rst_ni (rst_ni           ),
-    .flush_i(1'b0             ),
+    .clr_i  ( 1'b0            ),
     .rr_i   ('0               ),
     .req_i  (mst_ar_valid_tran),
     .gnt_o  (mst_ar_ready_tran),
@@ -259,8 +259,8 @@ module axi_dw_upsizer #(
   // Find an idle upsizer to handle this transaction
   tran_id_t idx_idle_upsizer;
   cc_lzc #(
-    .WIDTH(AxiMaxReads),
-    .MODE (cc_pkg::LZC_TRAILING_ZERO_CNT)
+    .Width (AxiMaxReads),
+    .Mode  (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_idle_lzc (
     .in_i   (idle_read_upsizer),
     .cnt_o  (idx_idle_upsizer ),
@@ -275,10 +275,10 @@ module axi_dw_upsizer #(
   end
 
   cc_onehot_to_bin #(
-    .ONEHOT_WIDTH(AxiMaxReads)
+    .OnehotWidth (AxiMaxReads)
   ) i_id_clash_onehot_to_bin (
-    .onehot(id_clash_upsizer    ),
-    .bin   (idx_id_clash_upsizer)
+    .onehot_i (id_clash_upsizer    ),
+    .bin_o    (idx_id_clash_upsizer)
   );
 
   // Choose an idle upsizer, unless there is an id clash
@@ -300,10 +300,10 @@ module axi_dw_upsizer #(
   end
 
   cc_onehot_to_bin #(
-    .ONEHOT_WIDTH(AxiMaxReads)
+    .OnehotWidth (AxiMaxReads)
   ) i_rid_upsizer_lzc (
-    .onehot(rid_upsizer_match),
-    .bin   (idx_r_upsizer    )
+    .onehot_i (rid_upsizer_match),
+    .bin_o    (idx_r_upsizer    )
   );
 
   typedef struct packed {

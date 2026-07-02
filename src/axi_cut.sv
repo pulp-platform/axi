@@ -47,11 +47,12 @@ module axi_cut #(
 
   // a spill register for each channel
   cc_spill_register #(
-    .T       ( aw_chan_t ),
+    .data_t  ( aw_chan_t ),
     .Bypass  ( BypassAw  )
   ) i_reg_aw (
     .clk_i   ( clk_i               ),
     .rst_ni  ( rst_ni              ),
+    .clr_i   ( 1'b0                ),
     .valid_i ( slv_req_i.aw_valid  ),
     .ready_o ( slv_resp_o.aw_ready ),
     .data_i  ( slv_req_i.aw        ),
@@ -61,11 +62,12 @@ module axi_cut #(
   );
 
   cc_spill_register #(
-    .T       ( w_chan_t ),
+    .data_t  ( w_chan_t ),
     .Bypass  ( BypassW  )
   ) i_reg_w  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
+    .clr_i   ( 1'b0               ),
     .valid_i ( slv_req_i.w_valid  ),
     .ready_o ( slv_resp_o.w_ready ),
     .data_i  ( slv_req_i.w        ),
@@ -75,11 +77,12 @@ module axi_cut #(
   );
 
   cc_spill_register #(
-    .T       ( b_chan_t ),
+    .data_t  ( b_chan_t ),
     .Bypass  ( BypassB  )
   ) i_reg_b  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
+    .clr_i   ( 1'b0               ),
     .valid_i ( mst_resp_i.b_valid ),
     .ready_o ( mst_req_o.b_ready  ),
     .data_i  ( mst_resp_i.b       ),
@@ -89,11 +92,12 @@ module axi_cut #(
   );
 
   cc_spill_register #(
-    .T       ( ar_chan_t ),
+    .data_t  ( ar_chan_t ),
     .Bypass  ( BypassAr  )
   ) i_reg_ar (
     .clk_i   ( clk_i               ),
     .rst_ni  ( rst_ni              ),
+    .clr_i   ( 1'b0                ),
     .valid_i ( slv_req_i.ar_valid  ),
     .ready_o ( slv_resp_o.ar_ready ),
     .data_i  ( slv_req_i.ar        ),
@@ -103,11 +107,12 @@ module axi_cut #(
   );
 
   cc_spill_register #(
-    .T       ( r_chan_t ),
+    .data_t  ( r_chan_t ),
     .Bypass  ( BypassR  )
   ) i_reg_r  (
     .clk_i   ( clk_i              ),
     .rst_ni  ( rst_ni             ),
+    .clr_i   ( 1'b0               ),
     .valid_i ( mst_resp_i.r_valid ),
     .ready_o ( mst_req_o.r_ready  ),
     .data_i  ( mst_resp_i.r       ),

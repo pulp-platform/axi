@@ -63,12 +63,13 @@ module axi_fifo #(
 
     // A FiFo for each channel
     cc_fifo #(
-        .dtype        (aw_chan_t),
-        .DEPTH        (Depth),
-        .FALL_THROUGH (FallThrough)
+        .data_t      (aw_chan_t),
+        .Depth       (Depth),
+        .FallThrough (FallThrough)
     ) i_aw_fifo (
         .clk_i,
         .rst_ni,
+        .clr_i     ( 1'b0                                    ),
         .flush_i   (1'b0),
         .full_o    (aw_fifo_full),
         .empty_o   (aw_fifo_empty),
@@ -79,12 +80,13 @@ module axi_fifo #(
         .pop_i     (mst_req_o.aw_valid && mst_resp_i.aw_ready)
     );
     cc_fifo #(
-        .dtype        (ar_chan_t),
-        .DEPTH        (Depth),
-        .FALL_THROUGH (FallThrough)
+        .data_t      (ar_chan_t),
+        .Depth       (Depth),
+        .FallThrough (FallThrough)
     ) i_ar_fifo (
         .clk_i,
         .rst_ni,
+        .clr_i     ( 1'b0                                    ),
         .flush_i   (1'b0),
         .full_o    (ar_fifo_full),
         .empty_o   (ar_fifo_empty),
@@ -95,12 +97,13 @@ module axi_fifo #(
         .pop_i     (mst_req_o.ar_valid && mst_resp_i.ar_ready)
     );
     cc_fifo #(
-        .dtype        (w_chan_t),
-        .DEPTH        (Depth),
-        .FALL_THROUGH (FallThrough)
+        .data_t      (w_chan_t),
+        .Depth       (Depth),
+        .FallThrough (FallThrough)
     ) i_w_fifo (
         .clk_i,
         .rst_ni,
+        .clr_i     ( 1'b0                                  ),
         .flush_i   (1'b0),
         .full_o    (w_fifo_full),
         .empty_o   (w_fifo_empty),
@@ -111,12 +114,13 @@ module axi_fifo #(
         .pop_i     (mst_req_o.w_valid && mst_resp_i.w_ready)
     );
     cc_fifo #(
-        .dtype        (r_chan_t),
-        .DEPTH        (Depth),
-        .FALL_THROUGH (FallThrough)
+        .data_t      (r_chan_t),
+        .Depth       (Depth),
+        .FallThrough (FallThrough)
     ) i_r_fifo (
         .clk_i,
         .rst_ni,
+        .clr_i     ( 1'b0                                  ),
         .flush_i   (1'b0),
         .full_o    (r_fifo_full),
         .empty_o   (r_fifo_empty),
@@ -127,12 +131,13 @@ module axi_fifo #(
         .pop_i     (slv_resp_o.r_valid && slv_req_i.r_ready)
     );
     cc_fifo #(
-        .dtype        (b_chan_t),
-        .DEPTH        (Depth),
-        .FALL_THROUGH (FallThrough)
+        .data_t      (b_chan_t),
+        .Depth       (Depth),
+        .FallThrough (FallThrough)
     ) i_b_fifo (
         .clk_i,
         .rst_ni,
+        .clr_i     ( 1'b0                                  ),
         .flush_i   (1'b0),
         .full_o    (b_fifo_full),
         .empty_o   (b_fifo_empty),

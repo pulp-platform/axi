@@ -239,11 +239,12 @@ module axi_to_mem_banked #(
 
       // Connect for the response data `MemLatency` cycles after a request was made to the xbar.
       cc_shift_register #(
-        .dtype  ( read_sel_t ),
+        .data_t ( read_sel_t ),
         .Depth  ( MemLatency )
       ) i_shift_reg_rdata_mux (
         .clk_i,
         .rst_ni,
+        .clr_i  ( 1'b0        ),
         .d_i    ( r_shift_inp ),
         .d_o    ( r_shift_oup )
       );
@@ -264,7 +265,8 @@ module axi_to_mem_banked #(
   ) i_stream_xbar (
     .clk_i,
     .rst_ni,
-    .flush_i ( 1'b0          ),
+    .clr_arb_i ( 1'b0        ),
+    .clr_i   ( 1'b0          ),
     .rr_i    ( '0            ),
     .data_i  ( inter_payload ),
     .sel_i   ( inter_sel     ),

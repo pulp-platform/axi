@@ -221,11 +221,11 @@ module axi_to_mem_interleaved #(
     // fine-grain arbitration
     cc_rr_arb_tree #(
       .NumIn       ( 2                 ),
-      .DataType    ( mem_req_payload_t )
+      .data_t      ( mem_req_payload_t )
     ) i_rr_arb_tree (
       .clk_i    ( clk_i                          ),
       .rst_ni   ( rst_ni                         ),
-      .flush_i  ( 1'b0                           ),
+      .clr_i    ( 1'b0                           ),
       .rr_i     (  '0                            ),
       .req_i    ( { r_mem_req[i], w_mem_req[i] } ),
       .gnt_o    ( { r_mem_gnt[i], w_mem_gnt[i] } ),
@@ -238,11 +238,12 @@ module axi_to_mem_interleaved #(
 
     // back-routing store
     cc_fifo #(
-      .DATA_WIDTH ( 1            ),
-      .DEPTH      ( BufDepth + 1 )
+      .DataWidth ( 1            ),
+      .Depth     ( BufDepth + 1 )
     ) i_fifo_v3_response_trgt_store (
       .clk_i      ( clk_i                       ),
       .rst_ni     ( rst_ni                      ),
+      .clr_i      ( 1'b0                        ),
       .flush_i    ( 1'b0                        ),
       .full_o     ( fifo_full[i]                ),
       .empty_o    ( ),

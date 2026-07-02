@@ -328,11 +328,11 @@ module stream_fifo_delay_dyn #(
   assign payload_o = head_data;
 
   cc_counter #(
-    .WIDTH ( CounterWidth )
+    .Width ( CounterWidth )
   ) i_counter (
     .clk_i      ( clk_i     ),
     .rst_ni     ( rst_ni    ),
-    .clear_i    ( 1'b0      ),
+    .clr_i      ( 1'b0      ),
     .en_i       ( 1'b1      ),
     .load_i     ( 1'b0      ),
     .down_i     ( 1'b0      ),
@@ -375,12 +375,13 @@ module stream_fifo_delay_dyn #(
   );
 `else
   cc_fifo #(
-    .DATA_WIDTH   ( $bits(payload_t) ),
-    .DEPTH        ( Depth            ),
-    .FALL_THROUGH ( 1'b0             )
+    .DataWidth   ( $bits(payload_t) ),
+    .Depth       ( Depth            ),
+    .FallThrough ( 1'b0             )
   ) data_fifo (
     .clk_i      ( clk_i           ),
     .rst_ni     ( rst_ni          ),
+    .clr_i      ( 1'b0            ),
     .flush_i    ( 1'b0            ),
     .data_i     ( payload_i       ),
     .push_i     ( fifo_data_push  ),
@@ -426,12 +427,13 @@ module stream_fifo_delay_dyn #(
   );
 `else
   cc_fifo #(
-  .DATA_WIDTH   ( CounterWidth ),
-  .DEPTH        ( Depth        ),
-  .FALL_THROUGH ( 1'b0         )
+  .DataWidth   ( CounterWidth ),
+  .Depth       ( Depth        ),
+  .FallThrough ( 1'b0         )
   ) deadline_fifo (
     .clk_i      ( clk_i           ),
     .rst_ni     ( rst_ni          ),
+    .clr_i      ( 1'b0            ),
     .flush_i    ( 1'b0            ),
     .data_i     ( tail_deadline   ),
     .push_i     ( fifo_dead_push  ),

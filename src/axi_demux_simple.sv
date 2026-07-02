@@ -234,12 +234,12 @@ module axi_demux_simple #(
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
     // `slv_aw_select_i`.
     cc_counter #(
-      .WIDTH           ( IdCounterWidth ),
-      .STICKY_OVERFLOW ( 1'b0           )
+      .Width          ( IdCounterWidth ),
+      .StickyOverflow ( 1'b0           )
     ) i_counter_open_w (
       .clk_i,
       .rst_ni,
-      .clear_i    ( 1'b0                  ),
+      .clr_i      ( 1'b0                  ),
       .en_i       ( w_cnt_up ^ w_cnt_down ),
       .load_i     ( 1'b0                  ),
       .down_i     ( w_cnt_down            ),
@@ -264,13 +264,13 @@ module axi_demux_simple #(
     // Arbitration of the different B responses
     cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
-      .DataType ( logic   ),
+      .data_t   ( logic      ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_b_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
-      .flush_i( 1'b0          ),
+      .clr_i  ( 1'b0               ),
       .rr_i   ( '0            ),
       .req_i  ( mst_b_valids  ),
       .gnt_o  ( mst_b_readies ),
@@ -383,13 +383,13 @@ module axi_demux_simple #(
     // Arbitration of the different r responses
     cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
-      .DataType ( logic   ),
+      .data_t   ( logic      ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_r_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
-      .flush_i( 1'b0          ),
+      .clr_i  ( 1'b0                 ),
       .rr_i   ( '0            ),
       .req_i  ( mst_r_valids  ),
       .gnt_o  ( mst_r_readies ),

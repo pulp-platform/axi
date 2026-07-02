@@ -98,14 +98,14 @@ module axi_dw_downsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads ),
-    .DataType (slv_r_chan_t),
+    .data_t   ( slv_r_chan_t ),
     .AxiVldRdy(1'b1        ),
     .ExtPrio  (1'b0        ),
     .LockIn   (1'b1        )
   ) i_slv_r_arb (
     .clk_i  (clk_i             ),
     .rst_ni (rst_ni            ),
-    .flush_i(1'b0              ),
+    .clr_i  ( 1'b0             ),
     .rr_i   ('0                ),
     .req_i  (slv_r_valid_tran  ),
     .gnt_o  (slv_r_ready_tran  ),
@@ -141,7 +141,7 @@ module axi_dw_downsizer #(
   ) i_slv_ar_arb (
     .clk_i   (clk_i                                       ),
     .rst_ni  (rst_ni                                      ),
-    .flush_i (1'b0                                        ),
+    .clr_i   ( 1'b0                                       ),
     .rr_i    ('0                                          ),
     .req_i   ({inject_aw_into_ar_req, slv_req_i.ar_valid} ),
     .gnt_o   ({inject_aw_into_ar_gnt, slv_resp_o.ar_ready}),
@@ -160,14 +160,14 @@ module axi_dw_downsizer #(
 
   cc_rr_arb_tree #(
     .NumIn    (AxiMaxReads),
-    .DataType (ar_chan_t  ),
+    .data_t   ( ar_chan_t ),
     .AxiVldRdy(1'b1       ),
     .ExtPrio  (1'b0       ),
     .LockIn   (1'b1       )
   ) i_mst_ar_arb (
     .clk_i  (clk_i            ),
     .rst_ni (rst_ni           ),
-    .flush_i(1'b0             ),
+    .clr_i  ( 1'b0            ),
     .rr_i   ('0               ),
     .req_i  (mst_ar_valid_tran),
     .gnt_o  (mst_ar_ready_tran),
@@ -275,8 +275,8 @@ module axi_dw_downsizer #(
   // Find an idle downsizer to handle this transaction
   tran_id_t idx_idle_downsizer;
   cc_lzc #(
-    .WIDTH(AxiMaxReads),
-    .MODE (cc_pkg::LZC_TRAILING_ZERO_CNT)
+    .Width (AxiMaxReads),
+    .Mode  (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_idle_lzc (
     .in_i   (idle_read_downsizer),
     .cnt_o  (idx_idle_downsizer ),
@@ -291,10 +291,10 @@ module axi_dw_downsizer #(
   end
 
   cc_onehot_to_bin #(
-    .ONEHOT_WIDTH(AxiMaxReads)
+    .OnehotWidth (AxiMaxReads)
   ) i_id_clash_onehot_to_bin (
-    .onehot(id_clash_downsizer    ),
-    .bin   (idx_id_clash_downsizer)
+    .onehot_i (id_clash_downsizer    ),
+    .bin_o    (idx_id_clash_downsizer)
   );
 
   // Choose an idle downsizer, unless there is an id clash
@@ -309,12 +309,13 @@ module axi_dw_downsizer #(
   logic                       idqueue_valid;
 
   cc_id_queue #(
-    .ID_WIDTH(AxiIdWidth ),
-    .CAPACITY(AxiMaxReads),
+    .IdWidth ( AxiIdWidth ),
+    .Capacity ( AxiMaxReads ),
     .data_t  (tran_id_t  )
   ) i_read_id_queue (
     .clk_i           (clk_i           ),
     .rst_ni          (rst_ni          ),
+    .clr_i           ( 1'b0           ),
     .inp_id_i        (arb_slv_ar_id   ),
     .inp_data_i      (idx_ar_downsizer),
     .inp_req_i       (|idqueue_push   ),
@@ -679,12 +680,13 @@ module axi_dw_downsizer #(
   logic forward_b_beat_full;
 
   cc_fifo #(
-    .DATA_WIDTH  (1          ),
-    .DEPTH       (AxiMaxReads),
-    .FALL_THROUGH(1'b1       )
+    .DataWidth   (1          ),
+    .Depth       (AxiMaxReads),
+    .FallThrough (1'b1       )
   ) i_forward_b_beats_queue (
     .clk_i     (clk_i               ),
     .rst_ni    (rst_ni              ),
+    .clr_i     ( 1'b0               ),
     .flush_i   (1'b0                ),
     .data_i    (forward_b_beat_i    ),
     .push_i    (forward_b_beat_push ),

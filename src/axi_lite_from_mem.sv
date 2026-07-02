@@ -177,12 +177,13 @@ module axi_lite_from_mem #(
   logic rsp_sel;
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0        ), // No fallthrough for one cycle delay before ready on AXI.
-    .DEPTH        ( MaxRequests ),
-    .dtype        ( logic       )
+    .FallThrough ( 1'b0        ), // No fallthrough for one cycle delay before ready on AXI.
+    .Depth       ( MaxRequests ),
+    .data_t      ( logic       )
   ) i_fifo_rsp_mux (
     .clk_i,
     .rst_ni,
+    .clr_i      ( 1'b0            ),
     .flush_i    ( 1'b0            ),
     .full_o     ( fifo_full       ),
     .empty_o    ( fifo_empty      ),

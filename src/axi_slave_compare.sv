@@ -91,10 +91,11 @@ module axi_slave_compare #(
     logic ar_ready_mst;
 
     cc_stream_fork #(
-        .N_OUP   ( 32'd2  )
+        .NumOup ( 32'd2  )
     ) i_stream_fork_aw (
         .clk_i,
         .rst_ni,
+        .clr_i   ( 1'b0                            ),
         .valid_i ( axi_mst_req_i.aw_valid          ),
         .ready_o ( aw_ready_mst                    ),
         .valid_o ( { aw_valid_ref, aw_valid_test } ),
@@ -102,10 +103,11 @@ module axi_slave_compare #(
     );
 
     cc_stream_fork #(
-        .N_OUP   ( 32'd2  )
+        .NumOup ( 32'd2  )
       ) i_stream_fork_ar (
         .clk_i,
         .rst_ni,
+        .clr_i   ( 1'b0                            ),
         .valid_i ( axi_mst_req_i.ar_valid          ),
         .ready_o ( ar_ready_mst                    ),
         .valid_o ( { ar_valid_ref, ar_valid_test } ),
@@ -113,10 +115,11 @@ module axi_slave_compare #(
     );
 
     cc_stream_fork #(
-        .N_OUP   ( 32'd2  )
+        .NumOup ( 32'd2  )
     ) i_stream_fork_w (
         .clk_i,
         .rst_ni,
+        .clr_i   ( 1'b0                          ),
         .valid_i ( axi_mst_req_i.w_valid         ),
         .ready_o ( w_ready_mst                   ),
         .valid_o ( { w_valid_ref, w_valid_test } ),

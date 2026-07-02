@@ -163,12 +163,13 @@ module axi_to_axi_lite_id_reflect #(
   assign aw_push = mst_req_o.aw_valid & slv_resp_o.aw_ready;
   assign aw_pop  = slv_resp_o.b_valid & mst_req_o.b_ready;
   cc_fifo #(
-    .FALL_THROUGH ( FallThrough     ),
-    .DEPTH        ( AxiMaxWriteTxns ),
-    .dtype        ( id_t            )
+    .FallThrough ( FallThrough     ),
+    .Depth       ( AxiMaxWriteTxns ),
+    .data_t      ( id_t            )
   ) i_aw_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
+    .clr_i     ( 1'b0            ),
     .flush_i   ( 1'b0            ),
     .full_o    ( aw_full         ),
     .empty_o   ( aw_empty        ),
@@ -183,12 +184,13 @@ module axi_to_axi_lite_id_reflect #(
   assign ar_push = mst_req_o.ar_valid & slv_resp_o.ar_ready;
   assign ar_pop  = slv_resp_o.r_valid & mst_req_o.r_ready;
   cc_fifo #(
-    .FALL_THROUGH ( FallThrough    ),
-    .DEPTH        ( AxiMaxReadTxns ),
-    .dtype        ( id_t           )
+    .FallThrough ( FallThrough    ),
+    .Depth       ( AxiMaxReadTxns ),
+    .data_t      ( id_t           )
   ) i_ar_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
+    .clr_i     ( 1'b0            ),
     .flush_i   ( 1'b0            ),
     .full_o    ( ar_full         ),
     .empty_o   ( ar_empty        ),

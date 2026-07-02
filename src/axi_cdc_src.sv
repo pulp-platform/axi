@@ -60,12 +60,12 @@ module axi_cdc_src #(
   cc_cdc_fifo_gray_src #(
     // Workaround for a bug in Questa (see comment in `axi_cdc_dst` for details).
 `ifdef QUESTA
-    .T           ( logic [$bits(aw_chan_t)-1:0] ),
+    .data_t     ( logic [$bits(aw_chan_t)-1:0] ),
 `else
-    .T           ( aw_chan_t                    ),
+    .data_t     ( aw_chan_t                    ),
 `endif
-    .LOG_DEPTH   ( LogDepth                    ),
-    .SYNC_STAGES ( SyncStages                  )
+    .LogDepth   ( LogDepth                    ),
+    .SyncStages ( SyncStages                  )
   ) i_cdc_fifo_gray_src_aw (
     .src_clk_i,
     .src_rst_ni,
@@ -79,12 +79,12 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T           ( logic [$bits(w_chan_t)-1:0]  ),
+    .data_t     ( logic [$bits(w_chan_t)-1:0]  ),
 `else
-    .T           ( w_chan_t                     ),
+    .data_t     ( w_chan_t                     ),
 `endif
-    .LOG_DEPTH   ( LogDepth                    ),
-    .SYNC_STAGES ( SyncStages                  )
+    .LogDepth   ( LogDepth                    ),
+    .SyncStages ( SyncStages                  )
   ) i_cdc_fifo_gray_src_w (
     .src_clk_i,
     .src_rst_ni,
@@ -98,12 +98,12 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T           ( logic [$bits(b_chan_t)-1:0]  ),
+    .data_t     ( logic [$bits(b_chan_t)-1:0]  ),
 `else
-    .T           ( b_chan_t                     ),
+    .data_t     ( b_chan_t                     ),
 `endif
-    .LOG_DEPTH   ( LogDepth                    ),
-    .SYNC_STAGES ( SyncStages                  )
+    .LogDepth   ( LogDepth                    ),
+    .SyncStages ( SyncStages                  )
   ) i_cdc_fifo_gray_dst_b (
     .dst_clk_i    ( src_clk_i                   ),
     .dst_rst_ni   ( src_rst_ni                  ),
@@ -117,12 +117,12 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_src #(
 `ifdef QUESTA
-    .T           ( logic [$bits(ar_chan_t)-1:0] ),
+    .data_t     ( logic [$bits(ar_chan_t)-1:0] ),
 `else
-    .T           ( ar_chan_t                    ),
+    .data_t     ( ar_chan_t                    ),
 `endif
-    .LOG_DEPTH   ( LogDepth                    ),
-    .SYNC_STAGES ( SyncStages                  )
+    .LogDepth   ( LogDepth                    ),
+    .SyncStages ( SyncStages                  )
   ) i_cdc_fifo_gray_src_ar (
     .src_clk_i,
     .src_rst_ni,
@@ -136,12 +136,12 @@ module axi_cdc_src #(
 
   cc_cdc_fifo_gray_dst #(
 `ifdef QUESTA
-    .T           ( logic [$bits(r_chan_t)-1:0]  ),
+    .data_t     ( logic [$bits(r_chan_t)-1:0]  ),
 `else
-    .T           ( r_chan_t                     ),
+    .data_t     ( r_chan_t                     ),
 `endif
-    .LOG_DEPTH   ( LogDepth                    ),
-    .SYNC_STAGES ( SyncStages                  )
+    .LogDepth   ( LogDepth                    ),
+    .SyncStages ( SyncStages                  )
   ) i_cdc_fifo_gray_dst_r (
     .dst_clk_i    ( src_clk_i                   ),
     .dst_rst_ni   ( src_rst_ni                  ),
