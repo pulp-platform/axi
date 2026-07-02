@@ -241,6 +241,12 @@ exec_test() {
                 done
             done
             ;;
+        axi_to_apb)
+            for DW in 32 64; do
+                call_vsim tb_axi_to_apb -gTbAxiDataWidth=$DW \
+                        -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            done
+            ;;
         *)
             call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
             ;;
