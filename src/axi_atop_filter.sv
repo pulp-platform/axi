@@ -346,7 +346,7 @@ module axi_atop_filter #(
   end
 
   cc_stream_register #(
-    .T(r_resp_cmd_t)
+    .data_t (r_resp_cmd_t)
   ) r_resp_cmd (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),

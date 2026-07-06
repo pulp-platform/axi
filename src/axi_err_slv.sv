@@ -87,12 +87,13 @@ module axi_err_slv #(
   assign err_resp.aw_ready  = ~w_fifo_full;
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b1      ),
-    .DEPTH        ( MaxTrans  ),
-    .dtype        ( id_t      )
+    .FallThrough ( 1'b1      ),
+    .Depth       ( MaxTrans  ),
+    .data_t      ( id_t      )
   ) i_w_fifo (
     .clk_i      ( clk_i             ),
     .rst_ni     ( rst_ni            ),
+    .clr_i      ( 1'b0              ),
     .flush_i    ( 1'b0              ),
     .full_o     ( w_fifo_full       ),
     .empty_o    ( w_fifo_empty      ),
@@ -119,12 +120,13 @@ module axi_err_slv #(
   end
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
-    .dtype        ( id_t         )
+    .FallThrough ( 1'b0         ),
+    .Depth       ( unsigned'(2) ), // two placed so that w can eat beats if b is not sent
+    .data_t      ( id_t         )
   ) i_b_fifo (
     .clk_i      ( clk_i        ),
     .rst_ni     ( rst_ni       ),
+    .clr_i      ( 1'b0         ),
     .flush_i    ( 1'b0         ),
     .full_o     ( b_fifo_full  ),
     .empty_o    ( b_fifo_empty ),
@@ -160,12 +162,13 @@ module axi_err_slv #(
   assign r_fifo_inp.len = err_req.ar.len;
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0      ),
-    .DEPTH        ( MaxTrans  ),
-    .dtype        ( r_data_t  )
+    .FallThrough ( 1'b0      ),
+    .Depth       ( MaxTrans  ),
+    .data_t      ( r_data_t  )
   ) i_r_fifo (
     .clk_i     ( clk_i        ),
     .rst_ni    ( rst_ni       ),
+    .clr_i     ( 1'b0         ),
     .flush_i   ( 1'b0         ),
     .full_o    ( r_fifo_full  ),
     .empty_o   ( r_fifo_empty ),
@@ -225,11 +228,11 @@ module axi_err_slv #(
   end
 
   cc_counter #(
-    .WIDTH     ($bits(axi_pkg::len_t))
+    .Width ($bits(axi_pkg::len_t))
   ) i_r_counter (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
-    .clear_i   ( r_cnt_clear     ),
+    .clr_i     ( r_cnt_clear     ),
     .en_i      ( r_cnt_en        ),
     .load_i    ( r_cnt_load      ),
     .down_i    ( 1'b1            ),

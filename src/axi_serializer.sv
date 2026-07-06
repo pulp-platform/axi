@@ -147,12 +147,13 @@ module axi_serializer #(
   end
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
-    .DEPTH        ( MaxReadTxns ),
-    .dtype        ( id_t        )
+    .FallThrough ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
+    .Depth       ( MaxReadTxns ),
+    .data_t      ( id_t        )
   ) i_rd_id_fifo (
     .clk_i,
     .rst_ni,
+    .clr_i      ( 1'b0          ),
     .flush_i    ( 1'b0          ),
     .data_i     ( ar_id         ),
     .push_i     ( rd_fifo_push  ),
@@ -166,12 +167,13 @@ module axi_serializer #(
   assign rd_fifo_pop = slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last;
 
   cc_fifo #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MaxWriteTxns ),
-    .dtype        ( id_t         )
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MaxWriteTxns ),
+    .data_t      ( id_t         )
   ) i_wr_id_fifo (
     .clk_i,
     .rst_ni,
+    .clr_i      ( 1'b0            ),
     .flush_i    ( 1'b0            ),
     .data_i     ( slv_req_i.aw.id ),
     .push_i     ( wr_fifo_push    ),

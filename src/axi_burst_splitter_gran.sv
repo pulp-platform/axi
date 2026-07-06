@@ -620,11 +620,12 @@ module axi_burst_splitter_gran_counters #(
 
   if (CutPath) begin : gen_spill
     cc_spill_register #(
-      .T      ( alloc_pld_t ),
+      .data_t ( alloc_pld_t ),
       .Bypass ( 1'b0        )
     ) i_spill_register_alloc (
       .clk_i,
       .rst_ni,
+      .clr_i   ( 1'b0          ),
       .valid_i ( alloc_req_i   ),
       .ready_o ( alloc_gnt_o   ),
       .data_i  ( alloc_pld_in  ),
@@ -646,11 +647,11 @@ module axi_burst_splitter_gran_counters #(
   cnt_idx_t            cnt_free_idx, cnt_r_idx;
   for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
     cc_delta_counter #(
-      .WIDTH ( $bits(cnt_t) )
+      .Width ( $bits(cnt_t) )
     ) i_cnt (
       .clk_i,
       .rst_ni,
-      .clear_i    ( cnt_clr[i]   ),
+      .clr_i      ( cnt_clr[i]   ),
       .en_i       ( cnt_dec[i]   ),
       .load_i     ( cnt_set[i]   ),
       .down_i     ( 1'b1         ),
@@ -664,8 +665,8 @@ module axi_burst_splitter_gran_counters #(
   assign cnt_inp = {1'b0, alloc_pld_out.len} + 1;
 
   cc_lzc #(
-    .WIDTH  ( MaxTxns ),
-    .MODE   ( cc_pkg::LZC_TRAILING_ZERO_CNT )
+    .Width ( MaxTxns ),
+    .Mode  ( cc_pkg::LZC_TRAILING_ZERO_CNT )
   ) i_lzc (
     .in_i    ( cnt_free     ),
     .cnt_o   ( cnt_free_idx ),
@@ -675,13 +676,14 @@ module axi_burst_splitter_gran_counters #(
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   cc_id_queue #(
-    .ID_WIDTH ( $bits(id_t) ),
-    .CAPACITY ( MaxTxns     ),
-    .FULL_BW  ( FullBW      ),
+    .IdWidth  ( $bits(id_t) ),
+    .Capacity ( MaxTxns     ),
+    .FullBw   ( FullBW      ),
     .data_t   ( cnt_idx_t   )
   ) i_idq (
     .clk_i,
     .rst_ni,
+    .clr_i            ( 1'b0             ),
     .inp_id_i         ( alloc_pld_out.id ),
     .inp_data_i       ( cnt_free_idx  ),
     .inp_req_i        ( idq_inp_req   ),

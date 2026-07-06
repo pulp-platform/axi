@@ -61,6 +61,7 @@ module axi_throttle #(
     ) i_stream_throttle_aw (
         .clk_i,
         .rst_ni,
+        .clr_i       ( 1'b0               ),
         .req_valid_i ( req_i.aw_valid     ),
         .req_valid_o ( throttled_aw_valid ),
         .req_ready_i ( rsp_i.aw_ready     ),
@@ -76,6 +77,7 @@ module axi_throttle #(
     ) i_stream_throttle_ar (
         .clk_i,
         .rst_ni,
+        .clr_i       ( 1'b0                         ),
         .req_valid_i ( req_i.ar_valid               ),
         .req_valid_o ( throttled_ar_valid           ),
         .req_ready_i ( rsp_i.ar_ready               ),

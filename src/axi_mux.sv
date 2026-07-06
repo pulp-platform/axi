@@ -70,11 +70,12 @@ module axi_mux #(
   // pass through if only one slave port
   if (NoSlvPorts == 32'h1) begin : gen_no_mux
     cc_spill_register #(
-      .T       ( mst_aw_chan_t ),
+      .data_t  ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      )
     ) i_aw_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
+      .clr_i   ( 1'b0                     ),
       .valid_i ( slv_reqs_i[0].aw_valid   ),
       .ready_o ( slv_resps_o[0].aw_ready  ),
       .data_i  ( slv_reqs_i[0].aw         ),
@@ -83,11 +84,12 @@ module axi_mux #(
       .data_o  ( mst_req_o.aw             )
     );
     cc_spill_register #(
-      .T       ( w_chan_t ),
+      .data_t  ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
       .clk_i   ( clk_i                   ),
       .rst_ni  ( rst_ni                  ),
+      .clr_i   ( 1'b0                    ),
       .valid_i ( slv_reqs_i[0].w_valid   ),
       .ready_o ( slv_resps_o[0].w_ready  ),
       .data_i  ( slv_reqs_i[0].w         ),
@@ -96,11 +98,12 @@ module axi_mux #(
       .data_o  ( mst_req_o.w             )
     );
     cc_spill_register #(
-      .T       ( mst_b_chan_t ),
+      .data_t  ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
+      .clr_i   ( 1'b0                   ),
       .valid_i ( mst_resp_i.b_valid     ),
       .ready_o ( mst_req_o.b_ready      ),
       .data_i  ( mst_resp_i.b           ),
@@ -109,11 +112,12 @@ module axi_mux #(
       .data_o  ( slv_resps_o[0].b       )
     );
     cc_spill_register #(
-      .T       ( mst_ar_chan_t ),
+      .data_t  ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i                    ),
       .rst_ni  ( rst_ni                   ),
+      .clr_i   ( 1'b0                     ),
       .valid_i ( slv_reqs_i[0].ar_valid   ),
       .ready_o ( slv_resps_o[0].ar_ready  ),
       .data_i  ( slv_reqs_i[0].ar         ),
@@ -122,11 +126,12 @@ module axi_mux #(
       .data_o  ( mst_req_o.ar             )
     );
     cc_spill_register #(
-      .T       ( mst_r_chan_t ),
+      .data_t  ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
       .clk_i   ( clk_i                  ),
       .rst_ni  ( rst_ni                 ),
+      .clr_i   ( 1'b0                   ),
       .valid_i ( mst_resp_i.r_valid     ),
       .ready_o ( mst_req_o.r_ready      ),
       .data_i  ( mst_resp_i.r           ),
@@ -262,13 +267,13 @@ module axi_mux #(
     //--------------------------------------
     cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
-      .DataType ( mst_aw_chan_t ),
+      .data_t   ( mst_aw_chan_t ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
     ) i_aw_arbiter (
       .clk_i  ( clk_i           ),
       .rst_ni ( rst_ni          ),
-      .flush_i( 1'b0            ),
+      .clr_i  ( 1'b0            ),
       .rr_i   ( '0              ),
       .req_i  ( slv_aw_valids   ),
       .gnt_o  ( slv_aw_readies  ),
@@ -314,12 +319,13 @@ module axi_mux #(
     `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     cc_fifo #(
-      .FALL_THROUGH ( FallThrough ),
-      .DEPTH        ( MaxWTrans   ),
-      .dtype        ( switch_id_t )
+      .FallThrough ( FallThrough ),
+      .Depth       ( MaxWTrans   ),
+      .data_t      ( switch_id_t )
     ) i_w_fifo (
       .clk_i     ( clk_i                                     ),
       .rst_ni    ( rst_ni                                    ),
+      .clr_i     ( 1'b0                                      ),
       .flush_i   ( 1'b0                                      ),
       .full_o    ( w_fifo_full                               ),
       .empty_o   ( w_fifo_empty                              ),
@@ -331,11 +337,12 @@ module axi_mux #(
     );
 
     cc_spill_register #(
-      .T       ( mst_aw_chan_t ),
+      .data_t  ( mst_aw_chan_t ),
       .Bypass  ( ~SpillAw      ) // Param indicated that we want a spill reg
     ) i_aw_spill_reg (
       .clk_i   ( clk_i               ),
       .rst_ni  ( rst_ni              ),
+      .clr_i   ( 1'b0                ),
       .valid_i ( mst_aw_valid        ),
       .ready_o ( mst_aw_ready        ),
       .data_i  ( mst_aw_chan         ),
@@ -365,11 +372,12 @@ module axi_mux #(
     end
 
     cc_spill_register #(
-      .T       ( w_chan_t ),
+      .data_t  ( w_chan_t ),
       .Bypass  ( ~SpillW  )
     ) i_w_spill_reg (
       .clk_i   ( clk_i              ),
       .rst_ni  ( rst_ni             ),
+      .clr_i   ( 1'b0               ),
       .valid_i ( mst_w_valid        ),
       .ready_o ( mst_w_ready        ),
       .data_i  ( mst_w_chan         ),
@@ -388,11 +396,12 @@ module axi_mux #(
     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
 
     cc_spill_register #(
-      .T       ( mst_b_chan_t ),
+      .data_t  ( mst_b_chan_t ),
       .Bypass  ( ~SpillB      )
     ) i_b_spill_reg (
       .clk_i   ( clk_i                      ),
       .rst_ni  ( rst_ni                     ),
+      .clr_i   ( 1'b0                       ),
       .valid_i ( mst_resp_i.b_valid         ),
       .ready_o ( mst_req_o.b_ready          ),
       .data_i  ( mst_resp_i.b               ),
@@ -406,13 +415,13 @@ module axi_mux #(
     //--------------------------------------
     cc_rr_arb_tree #(
       .NumIn    ( NoSlvPorts    ),
-      .DataType ( mst_ar_chan_t ),
+      .data_t   ( mst_ar_chan_t ),
       .AxiVldRdy( 1'b1          ),
       .LockIn   ( 1'b1          )
     ) i_ar_arbiter (
       .clk_i  ( clk_i           ),
       .rst_ni ( rst_ni          ),
-      .flush_i( 1'b0            ),
+      .clr_i  ( 1'b0            ),
       .rr_i   ( '0              ),
       .req_i  ( slv_ar_valids   ),
       .gnt_o  ( slv_ar_readies  ),
@@ -424,11 +433,12 @@ module axi_mux #(
     );
 
     cc_spill_register #(
-      .T       ( mst_ar_chan_t ),
+      .data_t  ( mst_ar_chan_t ),
       .Bypass  ( ~SpillAr      )
     ) i_ar_spill_reg (
       .clk_i   ( clk_i               ),
       .rst_ni  ( rst_ni              ),
+      .clr_i   ( 1'b0                ),
       .valid_i ( ar_valid            ),
       .ready_o ( ar_ready            ),
       .data_i  ( mst_ar_chan         ),
@@ -447,11 +457,12 @@ module axi_mux #(
     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
 
     cc_spill_register #(
-      .T       ( mst_r_chan_t ),
+      .data_t  ( mst_r_chan_t ),
       .Bypass  ( ~SpillR      )
     ) i_r_spill_reg (
       .clk_i   ( clk_i                      ),
       .rst_ni  ( rst_ni                     ),
+      .clr_i   ( 1'b0                       ),
       .valid_i ( mst_resp_i.r_valid         ),
       .ready_o ( mst_req_o.r_ready          ),
       .data_i  ( mst_resp_i.r               ),

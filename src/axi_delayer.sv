@@ -47,6 +47,7 @@ module axi_delayer #(
   ) i_stream_delay_aw (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0                ),
     .payload_i ( slv_req_i.aw        ),
     .ready_o   ( slv_resp_o.aw_ready ),
     .valid_i   ( slv_req_i.aw_valid  ),
@@ -63,6 +64,7 @@ module axi_delayer #(
   ) i_stream_delay_ar (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0                ),
     .payload_i ( slv_req_i.ar        ),
     .ready_o   ( slv_resp_o.ar_ready ),
     .valid_i   ( slv_req_i.ar_valid  ),
@@ -79,6 +81,7 @@ module axi_delayer #(
   ) i_stream_delay_w (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0               ),
     .payload_i ( slv_req_i.w        ),
     .ready_o   ( slv_resp_o.w_ready ),
     .valid_i   ( slv_req_i.w_valid  ),
@@ -95,6 +98,7 @@ module axi_delayer #(
   ) i_stream_delay_b (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0               ),
     .payload_i ( mst_resp_i.b       ),
     .ready_o   ( mst_req_o.b_ready  ),
     .valid_i   ( mst_resp_i.b_valid ),
@@ -111,6 +115,7 @@ module axi_delayer #(
   ) i_stream_delay_r (
     .clk_i,
     .rst_ni,
+    .clr_i     ( 1'b0               ),
     .payload_i ( mst_resp_i.r       ),
     .ready_o   ( mst_req_o.r_ready  ),
     .valid_i   ( mst_resp_i.r_valid ),

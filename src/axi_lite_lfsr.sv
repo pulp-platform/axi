@@ -92,12 +92,13 @@ module axi_lite_lfsr #(
 
     // B
     cc_stream_fifo #(
-        .FALL_THROUGH ( 1'b0 ),
-        .DATA_WIDTH   ( 'd1  ),
-        .DEPTH        ( 'd2  )
+        .FallThrough ( 1'b0 ),
+        .DataWidth   ( 'd1  ),
+        .Depth       ( 'd2  )
     ) i_stream_fifo_w_b (
         .clk_i,
         .rst_ni,
+        .clr_i      ( 1'b0                ),
         .flush_i    ( 1'b0                ),
         .usage_o    ( /* NOT CONNECTED */ ),
         .data_i     ( 1'b0                ),
