@@ -143,3 +143,4 @@ All code in each release and on the default branch is tested on a recent version
 [doc.axi_id_serialize]: https://pulp-platform.github.io/axi/master/module.axi_id_serialize
 [doc.axi_iw_converter]: https://pulp-platform.github.io/axi/master/module.axi_iw_converter
 [doc.axi_lite_regs]: https://pulp-platform.github.io/axi/master/module.axi_lite_regs
+[doc.axi_lite_dw_converter]: https://pulp-platform.github.io/axi/master/module.axi_lite_dw_converter
