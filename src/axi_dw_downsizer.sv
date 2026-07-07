@@ -15,10 +15,8 @@
 // Data width downsize conversion.
 // Connects a wide master to a narrower slave.
 
-// NOTE: The downsizer does not support WRAP bursts, and will answer with SLVERR
-// upon receiving a burst of such type.  The downsizer does support FIXED
-// bursts, but only if they consist of a single beat; it will answer with SLVERR
-// on multi-beat FIXED bursts.
+// Burst support: INCR fully supported. FIXED single-beat only, multi-beat
+// answers with SLVERR. WRAP not supported, answers with SLVERR.
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
