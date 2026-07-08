@@ -20,7 +20,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 [ ! -z "$SYNOPSYS_DC" ] || SYNOPSYS_DC="synopsys dc_shell -64"
 
 echo 'remove_design -all' > ./synth.tcl
-bender script synopsys -t synth_test -t tech_cells_generic_exclude_tc_sram -t cc_no_deprecated -D NO_SYNOPSYS_FF >> ./synth.tcl
+bender script synopsys -t synth_test -t tech_cells_generic_exclude_tc_sram -t cc_no_deprecated >> ./synth.tcl
 echo 'elaborate axi_synth_bench' >> ./synth.tcl
 
 cat ./synth.tcl | $SYNOPSYS_DC | tee synth.log 2>&1
