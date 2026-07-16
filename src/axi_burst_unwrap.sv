@@ -364,7 +364,7 @@ module axi_burst_unwrap #(
   // Assumptions and assertions
   // --------------------------------------------------
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   // pragma translate_off
   default disable iff (!rst_ni);
   // Inputs
