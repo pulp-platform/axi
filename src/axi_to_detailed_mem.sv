@@ -567,7 +567,7 @@ module axi_to_detailed_mem #(
   // Assertions
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   default disable iff (!rst_ni);
   assume property (@(posedge clk_i)
       axi_req_i.ar_valid && !axi_resp_o.ar_ready |=> $stable(axi_req_i.ar))

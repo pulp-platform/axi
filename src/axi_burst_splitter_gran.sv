@@ -395,7 +395,7 @@ module axi_burst_splitter_gran #(
   // Assumptions and assertions
   // --------------------------------------------------
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   // pragma translate_off
   default disable iff (!rst_ni);
   // Inputs
