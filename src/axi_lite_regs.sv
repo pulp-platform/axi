@@ -380,7 +380,7 @@ module axi_lite_regs #(
   // Validate parameters.
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
     initial begin: p_assertions
       assert (RegNumBytes > 32'd0) else
           $fatal(1, "The number of bytes must be at least 1!");

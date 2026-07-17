@@ -132,7 +132,7 @@ module axi_demux_id_counters #(
 
 // pragma translate_off
 `ifndef VERILATOR
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
     // Validate parameters.
     cnt_underflow: assert property(
       @(posedge clk_i) disable iff (~rst_ni) (pop_en[i] |=> !overflow)) else
