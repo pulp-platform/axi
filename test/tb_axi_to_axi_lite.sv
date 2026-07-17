@@ -74,7 +74,6 @@ module tb_axi_to_axi_lite;
   ) i_dut (
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
-    .testmode_i ( 1'b0     ),
     .slv        ( axi      ),
     .mst        ( axi_lite )
   );

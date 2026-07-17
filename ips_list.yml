@@ -1,5 +1,5 @@
 common_cells:
-    commit: v1.39.0
+    commit: v2.0.0-beta.2
     group: pulp-platform
 
 common_verification:
@@ -7,5 +7,5 @@ common_verification:
     group: pulp-platform
 
 tech_cells_generic:
-    commit: v0.2.2
+    commit: v0.2.14
     group: pulp-platform
