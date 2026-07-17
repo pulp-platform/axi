@@ -3,7 +3,6 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/clk_i
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/rst_ni
-add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/test_i
 add wave -noupdate -divider Ports
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/slv_reqs_i
 add wave -noupdate /tb_axi_lite_mailbox/i_mailbox_dut/i_axi_lite_mailbox/slv_resps_o

@@ -31,7 +31,6 @@ module axi_lite_mailbox #(
 ) (
   input  logic             clk_i,       // Clock
   input  logic             rst_ni,      // Asynchronous reset active low
-  input  logic             test_i,      // Testmode enable
   // slave ports [1:0]
   input  req_lite_t  [1:0] slv_reqs_i,
   output resp_lite_t [1:0] slv_resps_o,
@@ -120,46 +119,41 @@ module axi_lite_mailbox #(
     .clear_irq_o    ( clear_irq[1]    )
   );
 
-  // the usage gets concatinated with the full flag to have consistent threshold detection
-  logic [FifoUsageWidth-1:0] mbox_0_to_1_usage, mbox_1_to_0_usage;
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MailboxDepth ),
-    .dtype        ( data_t       )
+  cc_fifo #(
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MailboxDepth ),
+    .data_t      ( data_t       )
   ) i_mbox_0_to_1 (
     .clk_i,
     .rst_ni,
-    .testmode_i( test_i                            ),
+    .clr_i     ( 1'b0                              ),
     .flush_i   ( w_mbox_flush[0] | r_mbox_flush[1] ),
     .full_o    ( mbox_full[0]                      ),
     .empty_o   ( mbox_empty[0]                     ),
-    .usage_o   ( mbox_0_to_1_usage                 ),
+    .usage_o   ( mbox_usage[0]                     ),
     .data_i    ( mbox_w_data[0]                    ),
     .push_i    ( mbox_push[0]                      ),
     .data_o    ( mbox_r_data[1]                    ),
     .pop_i     ( mbox_pop[1]                       )
   );
-  // assign the MSB of the FIFO to the correct usage signal
-  assign mbox_usage[0] = {mbox_full[0], mbox_0_to_1_usage};
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MailboxDepth ),
-    .dtype        ( data_t       )
+  cc_fifo #(
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MailboxDepth ),
+    .data_t      ( data_t       )
   ) i_mbox_1_to_0 (
     .clk_i,
     .rst_ni,
-    .testmode_i( test_i                            ),
+    .clr_i     ( 1'b0                              ),
     .flush_i   ( w_mbox_flush[1] | r_mbox_flush[0] ),
     .full_o    ( mbox_full[1]                      ),
     .empty_o   ( mbox_empty[1]                     ),
-    .usage_o   ( mbox_1_to_0_usage                 ),
+    .usage_o   ( mbox_usage[1]                     ),
     .data_i    ( mbox_w_data[1]                    ),
     .push_i    ( mbox_push[1]                      ),
     .data_o    ( mbox_r_data[0]                    ),
     .pop_i     ( mbox_pop[0]                       )
   );
-  assign mbox_usage[1] = {mbox_full[1], mbox_1_to_0_usage};
 
   for (genvar i = 0; i < 2; i++) begin : gen_irq_conversion
     if (IrqEdgeTrig) begin : gen_irq_edge
@@ -181,7 +175,7 @@ module axi_lite_mailbox #(
         end
       end
 
-      `FFLARN(irq_q, irq_d, update_irq, '0, clk_i, rst_ni)
+      `FFL(irq_q, irq_d, update_irq, '0, clk_i, rst_ni)
     end else begin : gen_irq_level
       assign irq_o[i] = (IrqActHigh) ? slv_irq[i] : ~slv_irq[i];
     end
@@ -191,6 +185,8 @@ module axi_lite_mailbox #(
   `ifndef VERILATOR
   initial begin : proc_check_params
     mailbox_depth:  assert (MailboxDepth > 1) else $fatal(1, "MailboxDepth has to be at least 2");
+    mailbox_depth_pow2: assert ((MailboxDepth & (MailboxDepth - 1)) == 0)
+      else $fatal(1, "MailboxDepth has to be a power of two (usage_t sizing relies on it).");
     axi_addr_width: assert (AxiAddrWidth > 0) else $fatal(1, "AxiAddrWidth has to be > 0");
     axi_data_width: assert (AxiDataWidth > 0) else $fatal(1, "AxiDataWidth has to be > 0");
   end
@@ -292,11 +288,11 @@ module axi_lite_mailbox_slave #(
   logic       update_regs;        // register enable signal
 
   // register instantiation
-  `FFLARN(error_q, error_d, update_regs, '0, clk_i, rst_ni)
-  `FFLARN(wirqt_q, wirqt_d, update_regs, '0, clk_i, rst_ni)
-  `FFLARN(rirqt_q, rirqt_d, update_regs, '0, clk_i, rst_ni)
-  `FFLARN(irqs_q, irqs_d, update_regs, '0, clk_i, rst_ni)
-  `FFLARN(irqen_q, irqen_d, update_regs, '0, clk_i, rst_ni)
+  `FFL(error_q, error_d, update_regs, '0, clk_i, rst_ni)
+  `FFL(wirqt_q, wirqt_d, update_regs, '0, clk_i, rst_ni)
+  `FFL(rirqt_q, rirqt_d, update_regs, '0, clk_i, rst_ni)
+  `FFL(irqs_q, irqs_d, update_regs, '0, clk_i, rst_ni)
+  `FFL(irqen_q, irqen_d, update_regs, '0, clk_i, rst_ni)
 
   // Mailbox FIFO data assignments
   for (genvar i = 0; i < (AxiDataWidth/8); i++) begin : gen_w_mbox_data
@@ -489,7 +485,7 @@ module axi_lite_mailbox_slave #(
 
   // address decoder and response FIFOs for the LITE channel, the port can take a new transaction if
   // these FIFOs are not full, not fall through to prevent combinational paths to the return path
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices( NoRegs ),
     .NoRules  ( NoRegs ),
     .addr_t   ( addr_t ),
@@ -503,11 +499,12 @@ module axi_lite_mailbox_slave #(
     .en_default_idx_i ( 1'b0              ),
     .default_idx_i    ( '0                )
   );
-  spill_register #(
-    .T ( b_chan_lite_t )
+  cc_spill_register #(
+    .data_t ( b_chan_lite_t )
   ) i_b_chan_outp (
     .clk_i,
     .rst_ni,
+    .clr_i   ( 1'b0               ),
     .valid_i ( b_valid            ),
     .ready_o ( b_ready            ),
     .data_i  ( b_chan             ),
@@ -515,7 +512,7 @@ module axi_lite_mailbox_slave #(
     .ready_i ( slv_req_i.b_ready  ),
     .data_o  ( slv_resp_o.b       )
   );
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices( NoRegs ),
     .NoRules  ( NoRegs ),
     .addr_t   ( addr_t ),
@@ -529,11 +526,12 @@ module axi_lite_mailbox_slave #(
     .en_default_idx_i ( 1'b0              ),
     .default_idx_i    ( '0                )
   );
-  spill_register #(
-    .T ( r_chan_lite_t )
+  cc_spill_register #(
+    .data_t ( r_chan_lite_t )
   ) i_r_chan_outp (
     .clk_i,
     .rst_ni,
+    .clr_i   ( 1'b0               ),
     .valid_i ( r_valid            ),
     .ready_o ( r_ready            ),
     .data_i  ( r_chan             ),
@@ -566,7 +564,6 @@ module axi_lite_mailbox_intf #(
 ) (
   input  logic         clk_i,      // Clock
   input  logic         rst_ni,     // Asynchronous reset active low
-  input  logic         test_i,     // Testmode enable
   AXI_LITE.Slave       slv [1:0],  // slave ports [1:0]
   output logic   [1:0] irq_o,      // interrupt output for each port
   input  addr_t  [1:0] base_addr_i // base address for each port
@@ -600,7 +597,6 @@ module axi_lite_mailbox_intf #(
   ) i_axi_lite_mailbox (
     .clk_i,      // Clock
     .rst_ni,     // Asynchronous reset active low
-    .test_i,     // Testmode enable
     // slave ports [1:0]
     .slv_reqs_i  ( slv_reqs  ),
     .slv_resps_o ( slv_resps ),

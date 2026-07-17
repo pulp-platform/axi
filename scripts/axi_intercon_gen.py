@@ -150,7 +150,6 @@ def assigns(w, max_idw, masters, slaves):
 def instance_ports(w, id_width, masters, slaves):
     ports = [Port('clk_i'  , 'clk_i'),
              Port('rst_ni', 'rst_ni'),
-             Port('test_i', "1'b0"),
              Port('slv_ports_req_i' , 'masters_req'),
              Port('slv_ports_resp_o', 'masters_resp'),
              Port('mst_ports_req_o' , 'slaves_req'),

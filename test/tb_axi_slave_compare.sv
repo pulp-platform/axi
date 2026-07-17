@@ -82,7 +82,6 @@ module tb_axi_slave_compare #(
   ) i_axi_bus_compare (
     .clk_i          ( clk           ),
     .rst_ni         ( rst_n         ),
-    .testmode_i     ( 1'b0          ),
     .axi_mst_req_i  ( axi_req       ),
     .axi_mst_rsp_o  ( axi_rsp       ),
     .axi_ref_req_o  ( axi_req_a_out ),
