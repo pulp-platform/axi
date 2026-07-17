@@ -84,7 +84,7 @@ filesets:
       - src/axi_xp.sv
     file_type : systemVerilogSource
     depend :
-      - ">=pulp-platform.org::common_cells:1.31.1"
+      - ">=pulp-platform.org::common_cells:1.39.0"
   benchs:
     files:
       - test/tb_axi_dw_pkg.sv
