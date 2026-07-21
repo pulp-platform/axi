@@ -815,9 +815,9 @@ module synth_axi_xbar #(
   input  logic                     clk_i,
   input  logic                     rst_ni,
 
-  /***********************************
-  /* Slave ports request inputs
-  ***********************************/
+  ////////////////////////////////
+  // Slave ports request inputs //
+  ////////////////////////////////
 
   // AW
   input id_slv_t          [NoSlvMst-1:0] slv_aw_id,
@@ -857,9 +857,9 @@ module synth_axi_xbar #(
   // R
   input logic             [NoSlvMst-1:0] slv_r_ready,
 
-  /***********************************
-  /* Slave ports response outputs
-  ***********************************/
+  //////////////////////////////////
+  // Slave ports response outputs //
+  //////////////////////////////////
 
   // AW
   output logic           [NoSlvMst-1:0] slv_aw_ready,
@@ -880,9 +880,9 @@ module synth_axi_xbar #(
   output logic           [NoSlvMst-1:0] slv_r_last,
   output user_t          [NoSlvMst-1:0] slv_r_user,
 
-  /***********************************
-  /* Master ports request outputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports request outputs //
+  //////////////////////////////////
 
   // AW
   output id_mst_t          [NoSlvMst-1:0] mst_aw_id,
@@ -922,9 +922,9 @@ module synth_axi_xbar #(
   // R
   output logic             [NoSlvMst-1:0] mst_r_ready,
 
-  /***********************************
-  /* Master ports response inputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports response inputs //
+  //////////////////////////////////
 
   // AW
   input logic           [NoSlvMst-1:0] mst_aw_ready,
@@ -1193,9 +1193,9 @@ module synth_axi_demux import axi_pkg::*; #(
   input  select_t slv_aw_select_i,
   input  select_t slv_ar_select_i,
 
-  /***********************************
-  /* Slave ports request inputs
-  ***********************************/
+  ////////////////////////////////
+  // Slave ports request inputs //
+  ////////////////////////////////
 
   // AW
   input id_t              slv_aw_id,
@@ -1235,9 +1235,9 @@ module synth_axi_demux import axi_pkg::*; #(
   // R
   input logic             slv_r_ready,
 
-  /***********************************
-  /* Slave ports response outputs
-  ***********************************/
+  //////////////////////////////////
+  // Slave ports response outputs //
+  //////////////////////////////////
 
   // AW
   output logic           slv_aw_ready,
@@ -1258,9 +1258,9 @@ module synth_axi_demux import axi_pkg::*; #(
   output logic           slv_r_last,
   output user_t          slv_r_user,
 
-  /***********************************
-  /* Master ports request outputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports request outputs //
+  //////////////////////////////////
 
   // AW
   output id_t              [NoMstPorts-1:0] mst_aw_id,
@@ -1300,9 +1300,9 @@ module synth_axi_demux import axi_pkg::*; #(
   // R
   output logic             [NoMstPorts-1:0] mst_r_ready,
 
-  /***********************************
-  /* Master ports response inputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports response inputs //
+  //////////////////////////////////
 
   // AW
   input logic           [NoMstPorts-1:0] mst_aw_ready,
@@ -1505,9 +1505,9 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   input idx_select_t                  slv_ar_select_i,
   input multi_addr_t [NoMstPorts-1:0] slv_aw_mcast_i,
 
-  /***********************************
-  /* Slave ports request inputs
-  ***********************************/
+  ////////////////////////////////
+  // Slave ports request inputs //
+  ////////////////////////////////
 
   // AW
   input id_t              slv_aw_id,
@@ -1547,9 +1547,9 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   // R
   input logic             slv_r_ready,
 
-  /***********************************
-  /* Slave ports response outputs
-  ***********************************/
+  //////////////////////////////////
+  // Slave ports response outputs //
+  //////////////////////////////////
 
   // AW
   output logic           slv_aw_ready,
@@ -1570,9 +1570,9 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   output logic           slv_r_last,
   output user_t          slv_r_user,
 
-  /***********************************
-  /* Master ports request outputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports request outputs //
+  //////////////////////////////////
 
   // AW
   output id_t              [NoMstPorts-1:0] mst_aw_id,
@@ -1612,9 +1612,9 @@ module synth_axi_mcast_demux import axi_pkg::*; #(
   // R
   output logic             [NoMstPorts-1:0] mst_r_ready,
 
-  /***********************************
-  /* Master ports response inputs
-  ***********************************/
+  //////////////////////////////////
+  // Master ports response inputs //
+  //////////////////////////////////
 
   // AW
   input logic           [NoMstPorts-1:0] mst_aw_ready,
