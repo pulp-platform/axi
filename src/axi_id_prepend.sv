@@ -33,7 +33,7 @@ module axi_id_prepend #(
   parameter int unsigned PreIdWidth        = AxiIdWidthMstPort - AxiIdWidthSlvPort
 ) (
   // Keep the port at least one bit wide when no ID bits need to be prepended.
-  input logic [((PreIdWidth == 0) ? 1 : PreIdWidth)-1:0] pre_id_i,
+  input  logic [((PreIdWidth == 0) ? 1 : PreIdWidth)-1:0] pre_id_i,
   // slave port (input), connect master modules here
   // AW channel
   input  slv_aw_chan_t [NoBus-1:0] slv_aw_chans_i,
