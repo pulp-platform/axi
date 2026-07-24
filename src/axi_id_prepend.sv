@@ -117,7 +117,7 @@ module axi_id_prepend #(
       else $fatal(1, "Input must be at least one element wide.");
     assert(PreIdWidth == ($bits(mst_aw_chans_o[0].id) - $bits(slv_aw_chans_i[0].id)))
       else $fatal(1, "Prepend ID Width must be: $bits(mst_aw_chans_o.id)-$bits(slv_aw_chans_i.id)");
-   assert ($bits(mst_aw_chans_o[0].id) >= $bits(slv_aw_chans_i[0].id))
+    assert ($bits(mst_aw_chans_o[0].id) >= $bits(slv_aw_chans_i[0].id))
       else $fatal(1, "The master AXI port ID must not be narrower than the slave port ID.");
   end
 
