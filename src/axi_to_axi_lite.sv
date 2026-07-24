@@ -19,6 +19,7 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,
   parameter int unsigned AxiIdWidth      = 32'd0,
+  parameter int unsigned AxiLookBits     = AxiIdWidth,
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
@@ -65,6 +66,7 @@ module axi_to_axi_lite #(
     .AddrWidth    ( AxiAddrWidth    ),
     .DataWidth    ( AxiDataWidth    ),
     .IdWidth      ( AxiIdWidth      ),
+    .AxiLookBits  ( AxiLookBits     ),
     .UserWidth    ( AxiUserWidth    ),
     .axi_req_t    ( full_req_t      ),
     .axi_resp_t   ( full_resp_t     )
@@ -249,6 +251,7 @@ module axi_to_axi_lite_intf #(
   parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
   parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  parameter int unsigned AXI_LOOK_BITS      = AXI_ID_WIDTH,
   parameter int unsigned AXI_USER_WIDTH     = 32'd0,
   /// Maximum number of outstanding writes.
   parameter int unsigned AXI_MAX_WRITE_TXNS = 32'd1,
@@ -299,6 +302,7 @@ module axi_to_axi_lite_intf #(
     .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),
     .AxiDataWidth    ( AXI_DATA_WIDTH     ),
     .AxiIdWidth      ( AXI_ID_WIDTH       ),
+    .AxiLookBits     ( AXI_LOOK_BITS      ),
     .AxiUserWidth    ( AXI_USER_WIDTH     ),
     .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
     .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),

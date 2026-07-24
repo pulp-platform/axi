@@ -34,6 +34,7 @@ module axi_burst_splitter_gran #(
   parameter int unsigned AddrWidth     = 32'd0,
   parameter int unsigned DataWidth     = 32'd0,
   parameter int unsigned IdWidth       = 32'd0,
+  parameter int unsigned AxiLookBits   = IdWidth,
   parameter int unsigned UserWidth     = 32'd0,
   parameter type         axi_req_t     = logic,
   parameter type         axi_resp_t    = logic,
@@ -88,7 +89,7 @@ module axi_burst_splitter_gran #(
     .axi_resp_t   ( axi_resp_t  ),
     .NoMstPorts   ( 2           ),
     .MaxTrans     ( MaxTxns     ),
-    .AxiLookBits  ( IdWidth     )
+    .AxiLookBits  ( AxiLookBits )
   ) i_demux_supported_vs_unsupported (
     .clk_i,
     .rst_ni,
