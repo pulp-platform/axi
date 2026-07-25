@@ -738,6 +738,10 @@ module axi_burst_splitter_gran_counters #(
   // pragma translate_off
   assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid)
     else $warning("Invalid output at ID queue, read not granted!");
+  initial begin
+    assume (AxiLookBits > 0 && AxiLookBits <= IdWidth) else
+      $fatal(1, "AxiLookBits (%0d) must be in ]0, IdWidth (%0d)]!", AxiLookBits, IdWidth);
+  end
   // pragma translate_on
   `endif
 

@@ -33,6 +33,7 @@ module axi_burst_unwrap #(
   parameter int unsigned AddrWidth    = 32'd0,
   parameter int unsigned DataWidth    = 32'd0,
   parameter int unsigned IdWidth      = 32'd0,
+  parameter int unsigned AxiLookBits  = IdWidth, // Number of ID bits to use for internal demux (AxiLookBits <= IdWidth)
   parameter int unsigned UserWidth    = 32'd0,
   parameter type         axi_req_t    = logic,
   parameter type         axi_resp_t   = logic
@@ -76,7 +77,7 @@ module axi_burst_unwrap #(
     .axi_resp_t   ( axi_resp_t  ),
     .NoMstPorts   ( 2           ),
     .MaxTrans     ( MaxTxns     ),
-    .AxiLookBits  ( IdWidth     ),
+    .AxiLookBits  ( AxiLookBits ),
     .SpillAw      ( 1'b0        ),
     .SpillW       ( 1'b0        ),
     .SpillB       ( 1'b0        ),
