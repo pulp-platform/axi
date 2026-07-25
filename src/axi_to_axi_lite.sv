@@ -105,6 +105,8 @@ module axi_to_axi_lite #(
     assume (AxiIdWidth   > 0) else $fatal(1, "AXI ID width has to be > 0");
     assume (AxiAddrWidth > 0) else $fatal(1, "AXI address width has to be > 0");
     assume (AxiDataWidth > 0) else $fatal(1, "AXI data width has to be > 0");
+    assume (AxiLookBits > 0 && AxiLookBits <= AxiIdWidth) else
+      $fatal(1, "AxiLookBits (%0d) must be in ]0, AxiIdWidth (%0d)]!", AxiLookBits, AxiIdWidth);
   end
   `endif
   // pragma translate_on
