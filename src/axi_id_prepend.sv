@@ -32,7 +32,8 @@ module axi_id_prepend #(
   // DEPENDENT PARAMETER DO NOT OVERWRITE!
   parameter int unsigned PreIdWidth        = AxiIdWidthMstPort - AxiIdWidthSlvPort
 ) (
-  input  logic [PreIdWidth-1:0] pre_id_i, // ID to be prepended
+  // Keep the port at least one bit wide when no ID bits need to be prepended.
+  input  logic [((PreIdWidth == 0) ? 1 : PreIdWidth)-1:0] pre_id_i,
   // slave port (input), connect master modules here
   // AW channel
   input  slv_aw_chan_t [NoBus-1:0] slv_aw_chans_i,
@@ -116,8 +117,8 @@ module axi_id_prepend #(
       else $fatal(1, "Input must be at least one element wide.");
     assert(PreIdWidth == ($bits(mst_aw_chans_o[0].id) - $bits(slv_aw_chans_i[0].id)))
       else $fatal(1, "Prepend ID Width must be: $bits(mst_aw_chans_o.id)-$bits(slv_aw_chans_i.id)");
-    assert ($bits(mst_aw_chans_o[0].id) > $bits(slv_aw_chans_i[0].id))
-      else $fatal(1, "The master AXI port has to have a wider ID than the slave port.");
+    assert ($bits(mst_aw_chans_o[0].id) >= $bits(slv_aw_chans_i[0].id))
+      else $fatal(1, "The master AXI port ID must not be narrower than the slave port ID.");
   end
 
   aw_id   : assert final(
