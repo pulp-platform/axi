@@ -106,6 +106,7 @@ module axi_burst_splitter_gran #(
       axi_pkg::len_t len, axi_pkg::len_t len_limit);
 
     
+    // if the splitter does not touch the transaction: allow it
     if (len <= len_limit) begin
       return 1'b1;
 
