@@ -34,6 +34,8 @@ module axi_burst_splitter_gran #(
   parameter int unsigned AddrWidth     = 32'd0,
   parameter int unsigned DataWidth     = 32'd0,
   parameter int unsigned IdWidth       = 32'd0,
+  /// Number of least-significant ID bits used by the internal demux to track in-flight
+  /// transactions (0 < AxiLookBits <= IdWidth), see doc/axi_demux.md for the trade-off.
   parameter int unsigned AxiLookBits   = IdWidth,
   parameter int unsigned UserWidth     = 32'd0,
   parameter type         axi_req_t     = logic,
@@ -410,6 +412,10 @@ module axi_burst_splitter_gran #(
     else $fatal(1, "AW burst longer than a single beat emitted!");
   assert property (@(posedge clk_i) mst_req_o.ar_valid |-> mst_req_o.ar.len <= len_limit_i)
     else $fatal(1, "AR burst longer than a single beat emitted!");
+  initial begin
+    assume (AxiLookBits > 0 && AxiLookBits <= IdWidth) else
+      $fatal(1, "AxiLookBits (%0d) must be in ]0, IdWidth (%0d)]!", AxiLookBits, IdWidth);
+  end
   // pragma translate_on
   `endif
   `endif
@@ -738,10 +744,6 @@ module axi_burst_splitter_gran_counters #(
   // pragma translate_off
   assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid)
     else $warning("Invalid output at ID queue, read not granted!");
-  initial begin
-    assume (AxiLookBits > 0 && AxiLookBits <= IdWidth) else
-      $fatal(1, "AxiLookBits (%0d) must be in ]0, IdWidth (%0d)]!", AxiLookBits, IdWidth);
-  end
   // pragma translate_on
   `endif
 

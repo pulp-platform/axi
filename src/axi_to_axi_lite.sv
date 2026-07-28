@@ -19,6 +19,8 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,
   parameter int unsigned AxiIdWidth      = 32'd0,
+  // Number of least-significant ID bits used by the internal demux to track in-flight
+  // transactions (0 < AxiLookBits <= IdWidth), see doc/axi_demux.md for the trade-off.
   parameter int unsigned AxiLookBits     = AxiIdWidth,
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
@@ -253,6 +255,8 @@ module axi_to_axi_lite_intf #(
   parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
   parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  /// Number of least-significant ID bits used to track in-flight transactions
+  /// (0 < AXI_LOOK_BITS <= AXI_ID_WIDTH), see doc/axi_demux.md for the trade-off.
   parameter int unsigned AXI_LOOK_BITS      = AXI_ID_WIDTH,
   parameter int unsigned AXI_USER_WIDTH     = 32'd0,
   /// Maximum number of outstanding writes.
