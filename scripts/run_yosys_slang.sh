@@ -20,4 +20,4 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 bender script flist-plus -t synthesis -t synth_test > ./slang.flist
 
-$YOSYS -m slang -p "read_slang -Werror -f slang.flist --allow-use-before-declare --ignore-unknown-modules --keep-hierarchy --top axi_synth_bench; hierarchy"
+$YOSYS -m slang -p "read_slang -Werror -f slang.flist --allow-use-before-declare --keep-hierarchy --top axi_synth_bench; hierarchy"

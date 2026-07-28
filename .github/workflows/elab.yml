@@ -15,7 +15,7 @@ jobs:
     name: yosys-slang elaboration
     runs-on: ubuntu-latest
     container:
-      image: hpretl/iic-osic-tools:latest
+      image: hpretl/iic-osic-tools:2026.07
       options: --user root
     defaults:
       run:
