@@ -105,8 +105,9 @@ module axi_burst_splitter_gran #(
   function bit txn_supported(axi_pkg::atop_t atop, axi_pkg::burst_t burst, axi_pkg::cache_t cache,
       axi_pkg::len_t len, axi_pkg::len_t len_limit);
 
+    
     // if the splitter does not touch the transaction: allow it
-    if (len >= len_limit) begin
+    if (len <= len_limit) begin
       return 1'b1;
 
     //
