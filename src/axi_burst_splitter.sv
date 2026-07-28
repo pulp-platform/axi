@@ -35,6 +35,8 @@ module axi_burst_splitter #(
   parameter int unsigned AddrWidth    = 32'd0,
   parameter int unsigned DataWidth    = 32'd0,
   parameter int unsigned IdWidth      = 32'd0,
+  // Number of least-significant ID bits used by the internal demux to track in-flight
+  // transactions (0 < AxiLookBits <= IdWidth), see doc/axi_demux.md for the trade-off.
   parameter int unsigned AxiLookBits  = IdWidth,
   parameter int unsigned UserWidth    = 32'd0,
   parameter type         axi_req_t    = logic,
