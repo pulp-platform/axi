@@ -18,7 +18,7 @@ set -e
 
 [ ! -z "$VSIM" ] || VSIM=vsim
 
-bender script vsim -t test -t rtl \
+bender script vsim -t test -t rtl -t cc_no_deprecated \
     --vlog-arg="-svinputport=compat" \
     --vlog-arg="-override_timescale 1ns/1ps" \
     --vlog-arg="-suppress 2583" \

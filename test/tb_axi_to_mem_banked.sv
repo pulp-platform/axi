@@ -165,7 +165,7 @@ module tb_axi_to_mem_banked #(
       assign mem_rvalid[i] = mem_req[i];
     end else begin : gen_mem_lat
       logic [TbMemLatency-1:0] mem_lat_q, mem_lat_d;
-      `FFARN(mem_lat_q, mem_lat_d, '0, clk, rst_n)
+      `FF(mem_lat_q, mem_lat_d, '0, clk, rst_n)
       assign mem_lat_d[TbMemLatency-1] = mem_req[i];
       if (TbMemLatency > 1) begin
         for (genvar lat_i = 0; lat_i < TbMemLatency - 1; lat_i++) begin
@@ -198,7 +198,6 @@ module tb_axi_to_mem_banked #(
   ) i_axi_to_mem_banked_dut (
     .clk_i             ( clk       ),
     .rst_ni            ( rst_n     ),
-    .test_i            ( 1'b0      ),
     .axi_to_mem_busy_o ( dut_busy  ),
     .slv               ( mem_axi   ),
     .mem_req_o         ( mem_req   ),

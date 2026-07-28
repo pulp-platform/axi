@@ -98,7 +98,6 @@ add wave -noupdate -divider Custom
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/clk_i
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/rst_ni
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/flush_i
-add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/testmode_i
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/full_o
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/empty_o
 add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_aw_fifo/usage_o
@@ -109,7 +108,6 @@ add wave -noupdate -expand -group {AW FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_ax
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/clk_i
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/rst_ni
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/flush_i
-add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/testmode_i
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/full_o
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/empty_o
 add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_w_fifo/usage_o
@@ -120,7 +118,6 @@ add wave -noupdate -expand -group {W FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/clk_i
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/rst_ni
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/flush_i
-add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/testmode_i
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/full_o
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/empty_o
 add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_b_fifo/usage_o
@@ -131,7 +128,6 @@ add wave -noupdate -expand -group {B FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/clk_i
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/rst_ni
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/flush_i
-add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/testmode_i
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/full_o
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/empty_o
 add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_ar_fifo/usage_o
@@ -142,7 +138,6 @@ add wave -noupdate -expand -group {Ar FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_ax
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/clk_i
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/rst_ni
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/flush_i
-add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/testmode_i
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/full_o
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/empty_o
 add wave -noupdate -expand -group {R FiFo} /tb_axi_fifo/i_dut/i_axi_fifo/gen_axi_fifo/i_r_fifo/usage_o
