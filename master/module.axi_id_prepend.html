@@ -1,4 +1,4 @@
-<!-- Compiled by morty-0.9.0 / 2026-06-22 16:09:03.848226814 +00:00 -->
+<!-- Compiled by morty-0.9.0 / 2026-07-29 13:53:17.537266733 +00:00 -->
 
 <html>
 <link rel="stylesheet" type="text/css" href="static/rustdoc.css">
@@ -24,7 +24,7 @@
 </div><h3 id="parameter.mst_r_chan_t" class="impl"><code class="in-band"><a href="#parameter.mst_r_chan_t">mst_r_chan_t</a><span class="type-annotation">: type</span></code></h3><div class="docblock">
 </div><h3 id="parameter.PreIdWidth" class="impl"><code class="in-band"><a href="#parameter.PreIdWidth">PreIdWidth</a><span class="type-annotation">: int unsigned</span></code></h3><div class="docblock">
 </div><h2 id="ports" class="section-header"><a href="#ports">Ports</a></h2>
-<h3 id="port.pre_id_i" class="impl"><code class="in-band"><a href="#port.pre_id_i">pre_id_i</a><span class="type-annotation">: input  logic [PreIdWidth-1:0]</span></code></h3><div class="docblock">
+<h3 id="port.pre_id_i" class="impl"><code class="in-band"><a href="#port.pre_id_i">pre_id_i</a><span class="type-annotation">: input  logic [((PreIdWidth == 0) ? 1 : PreIdWidth)-1:0]</span></code></h3><div class="docblock">
 </div><h3 id="port.slv_aw_chans_i" class="impl"><code class="in-band"><a href="#port.slv_aw_chans_i">slv_aw_chans_i</a><span class="type-annotation">: input  slv_aw_chan_t [NoBus-1:0]</span></code></h3><div class="docblock">
 </div><h3 id="port.slv_aw_valids_i" class="impl"><code class="in-band"><a href="#port.slv_aw_valids_i">slv_aw_valids_i</a><span class="type-annotation">: input  logic         [NoBus-1:0]</span></code></h3><div class="docblock">
 </div><h3 id="port.slv_aw_readies_o" class="impl"><code class="in-band"><a href="#port.slv_aw_readies_o">slv_aw_readies_o</a><span class="type-annotation">: output logic         [NoBus-1:0]</span></code></h3><div class="docblock">
