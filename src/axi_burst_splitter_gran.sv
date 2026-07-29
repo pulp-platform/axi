@@ -26,6 +26,8 @@ module axi_burst_splitter_gran #(
   parameter int unsigned MaxWriteTxns  = 32'd0,
   /// Internal ID queue can work in two bandwidth modes: see id_queue.sv for details
   parameter bit          FullBW        = 1'b0,
+  /// Downstream responses are guaranteed to arrive in request order
+  parameter bit          InOrderRsp    = 1'b0,
   /// Cut paths through the IP
   parameter bit          CutPath       = 1'b0,
   /// Disable checks, handle unsupported transfers as bypass instead of reporting an error
@@ -160,11 +162,12 @@ module axi_burst_splitter_gran #(
   logic           w_cnt_dec, w_cnt_req, w_cnt_gnt, w_cnt_err;
   axi_pkg::len_t  w_cnt_len;
   axi_burst_splitter_gran_ax_chan #(
-    .chan_t   ( axi_aw_chan_t ),
-    .IdWidth  ( IdWidth       ),
-    .MaxTxns  ( MaxWriteTxns  ),
-    .CutPath  ( CutPath       ),
-    .FullBW   ( FullBW        )
+    .chan_t     ( axi_aw_chan_t     ),
+    .IdWidth    ( IdWidth           ),
+    .MaxTxns    ( MaxWriteTxns      ),
+    .CutPath    ( CutPath           ),
+    .FullBW     ( FullBW            ),
+    .InOrderRsp ( InOrderRsp        )
   ) i_axi_burst_splitter_gran_aw_chan (
     .clk_i,
     .rst_ni,
@@ -291,11 +294,12 @@ module axi_burst_splitter_gran #(
   logic           r_cnt_dec, r_cnt_req, r_cnt_gnt;
   axi_pkg::len_t  r_cnt_len;
   axi_burst_splitter_gran_ax_chan #(
-    .chan_t   ( axi_ar_chan_t ),
-    .IdWidth  ( IdWidth       ),
-    .MaxTxns  ( MaxReadTxns   ),
-    .CutPath  ( CutPath       ),
-    .FullBW   ( FullBW        )
+    .chan_t     ( axi_ar_chan_t ),
+    .IdWidth    ( IdWidth       ),
+    .MaxTxns    ( MaxReadTxns   ),
+    .CutPath    ( CutPath       ),
+    .FullBW     ( FullBW        ),
+    .InOrderRsp ( InOrderRsp    )
   ) i_axi_burst_splitter_gran_ar_chan (
     .clk_i,
     .rst_ni,
@@ -426,12 +430,13 @@ endmodule
 /// Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
 /// reordering of responses w.r.t. requests).
 module axi_burst_splitter_gran_ax_chan #(
-  parameter type         chan_t  = logic,
-  parameter int unsigned IdWidth = 32'd0,
-  parameter int unsigned MaxTxns = 32'd0,
-  parameter bit          CutPath =  1'b0,
-  parameter bit          FullBW  =  1'b0,
-  parameter type         id_t    = logic[IdWidth-1:0]
+  parameter type         chan_t     = logic,
+  parameter int unsigned IdWidth    = 32'd0,
+  parameter int unsigned MaxTxns    = 32'd0,
+  parameter bit          CutPath    =  1'b0,
+  parameter bit          FullBW     =  1'b0,
+  parameter bit          InOrderRsp =  1'b0,
+  parameter type         id_t       = logic [IdWidth-1:0]
 ) (
   input  logic          clk_i,
   input  logic          rst_ni,
@@ -447,7 +452,7 @@ module axi_burst_splitter_gran_ax_chan #(
   input  logic          ax_ready_i,
 
   input  id_t           cnt_id_i,
-  output axi_pkg::len_t cnt_len_o,
+  output axi_pkg::len_t  cnt_len_o,
   input  logic          cnt_set_err_i,
   output logic          cnt_err_o,
   input  logic          cnt_dec_i,
@@ -455,8 +460,8 @@ module axi_burst_splitter_gran_ax_chan #(
   output logic          cnt_gnt_o
 );
 
-  typedef logic[IdWidth-1:0]           cnt_id_t;
-  typedef logic[axi_pkg::LenWidth:0] num_beats_t;
+  typedef logic [IdWidth-1:0]         cnt_id_t;
+  typedef logic [axi_pkg::LenWidth:0] num_beats_t;
 
   chan_t      ax_d, ax_q;
   // keep the number of remaining beats. != len
@@ -467,10 +472,11 @@ module axi_burst_splitter_gran_ax_chan #(
 
   logic cnt_alloc_req, cnt_alloc_gnt;
   axi_burst_splitter_gran_counters #(
-    .MaxTxns ( MaxTxns  ),
-    .IdWidth ( IdWidth  ),
-    .CutPath ( CutPath  ),
-    .FullBW  ( FullBW   )
+    .MaxTxns     ( MaxTxns     ),
+    .IdWidth     ( IdWidth     ),
+    .CutPath     ( CutPath     ),
+    .FullBW      ( FullBW      ),
+    .InOrderRsp  ( InOrderRsp  )
   ) i_axi_burst_splitter_gran_counters (
     .clk_i,
     .rst_ni,
@@ -582,13 +588,21 @@ endmodule
 
 /// Internal module of [`axi_burst_splitter_gran`](module.axi_burst_splitter_gran) to order
 /// transactions.
+///
+/// When `InOrderRsp` is set, the response port is guaranteed to be invoked in allocation order.
+/// This holds when the bursts are split into single-beat transactions and sent to a
+/// downstream slave that answers requests in order per channel, such as any AXI4-Lite slave.  In
+/// this mode the associative [`id_queue`](module.id_queue) and the counter free list are replaced
+/// by a plain FIFO of per-burst counters.  The selection is purely structural.
+/// The interface and handshake behavior are identical in both modes.
 module axi_burst_splitter_gran_counters #(
-  parameter int unsigned MaxTxns = 32'd0,
-  parameter int unsigned IdWidth = 32'd0,
-  parameter bit          CutPath =  1'b0,
-  parameter bit          FullBW  =  1'b0,
-  parameter type         id_t    = logic [IdWidth-1:0],
-  parameter type         cnt_t   = logic [axi_pkg::LenWidth:0]
+  parameter int unsigned MaxTxns    = 32'd0,
+  parameter int unsigned IdWidth    = 32'd0,
+  parameter bit          CutPath    = 1'b0,
+  parameter bit          FullBW     = 1'b0,
+  parameter bit          InOrderRsp = 1'b0,
+  parameter type         id_t       = logic [IdWidth-1:0],
+  parameter type         cnt_t      = logic [axi_pkg::LenWidth:0]
 ) (
   input  logic          clk_i,
   input  logic          rst_ni,
@@ -642,103 +656,191 @@ module axi_burst_splitter_gran_counters #(
   end
 
   localparam int unsigned CntIdxWidth = (MaxTxns > 1) ? $clog2(MaxTxns) : 32'd1;
-  typedef logic [CntIdxWidth-1:0]         cnt_idx_t;
-  logic [MaxTxns-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q, cnt_clr;
-  cnt_t                cnt_inp;
-  cnt_t [MaxTxns-1:0]  cnt_oup;
-  cnt_idx_t            cnt_free_idx, cnt_r_idx;
-  for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
-    delta_counter #(
-      .WIDTH ( $bits(cnt_t) )
-    ) i_cnt (
+  typedef logic [CntIdxWidth-1:0] cnt_idx_t;
+
+  if (!InOrderRsp) begin : gen_out_of_order_counters
+    logic [MaxTxns-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q, cnt_clr;
+    cnt_t                cnt_inp;
+    cnt_t [MaxTxns-1:0]  cnt_oup;
+    cnt_idx_t            cnt_free_idx, cnt_r_idx;
+    for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
+      delta_counter #(
+        .WIDTH ( $bits(cnt_t) )
+      ) i_cnt (
+        .clk_i,
+        .rst_ni,
+        .clear_i    ( cnt_clr[i]   ),
+        .en_i       ( cnt_dec[i]   ),
+        .load_i     ( cnt_set[i]   ),
+        .down_i     ( 1'b1         ),
+        .delta_i    ( cnt_delta_i  ),
+        .d_i        ( cnt_inp      ),
+        .q_o        ( cnt_oup[i]   ),
+        .overflow_o ( cnt_clr[i]   )
+      );
+      assign cnt_free[i] = (cnt_oup[i] == '0);
+    end
+    assign cnt_inp = {1'b0, alloc_pld_out.len} + 1;
+
+    lzc #(
+      .WIDTH  ( MaxTxns ),
+      .MODE   ( 1'b0    )  // start counting at index 0
+    ) i_lzc (
+      .in_i    ( cnt_free     ),
+      .cnt_o   ( cnt_free_idx ),
+      .empty_o (              )
+    );
+
+    logic idq_inp_req, idq_inp_gnt,
+          idq_oup_gnt, idq_oup_valid, idq_oup_pop;
+    id_queue #(
+      .ID_WIDTH ( $bits(id_t) ),
+      .CAPACITY ( MaxTxns     ),
+      .FULL_BW  ( FullBW      ),
+      .data_t   ( cnt_idx_t   )
+    ) i_idq (
       .clk_i,
       .rst_ni,
-      .clear_i    ( cnt_clr[i]   ),
-      .en_i       ( cnt_dec[i]   ),
-      .load_i     ( cnt_set[i]   ),
-      .down_i     ( 1'b1         ),
-      .delta_i    ( cnt_delta_i  ),
-      .d_i        ( cnt_inp      ),
-      .q_o        ( cnt_oup[i]   ),
-      .overflow_o ( cnt_clr[i]   )
+      .inp_id_i         ( alloc_pld_out.id ),
+      .inp_data_i       ( cnt_free_idx  ),
+      .inp_req_i        ( idq_inp_req   ),
+      .inp_gnt_o        ( idq_inp_gnt   ),
+      .exists_data_i    ( '0            ),
+      .exists_mask_i    ( '0            ),
+      .exists_req_i     ( 1'b0          ),
+      .exists_o         (/* keep open */),
+      .exists_gnt_o     (/* keep open */),
+      .oup_id_i         ( cnt_id_i      ),
+      .oup_pop_i        ( idq_oup_pop   ),
+      .oup_req_i        ( cnt_req_i     ),
+      .oup_data_o       ( cnt_r_idx     ),
+      .oup_data_valid_o ( idq_oup_valid ),
+      .oup_gnt_o        ( idq_oup_gnt   ),
+      .full_o           (/* keep open */),
+      .empty_o          (/* keep open */)
     );
-    assign cnt_free[i] = (cnt_oup[i] == '0);
-  end
-  assign cnt_inp = {1'b0, alloc_pld_out.len} + 1;
+    assign idq_inp_req = alloc_req   & alloc_gnt;
+    assign alloc_gnt   = idq_inp_gnt & |(cnt_free);
+    assign cnt_gnt_o   = idq_oup_gnt & idq_oup_valid;
+    logic [8:0] read_len;
+    assign read_len    = cnt_oup[cnt_r_idx] - 1;
+    assign cnt_len_o   = read_len[7:0];
 
-  lzc #(
-    .WIDTH  ( MaxTxns ),
-    .MODE   ( 1'b0    )  // start counting at index 0
-  ) i_lzc (
-    .in_i    ( cnt_free     ),
-    .cnt_o   ( cnt_free_idx ),
-    .empty_o (              )
-  );
-
-  logic idq_inp_req, idq_inp_gnt,
-        idq_oup_gnt, idq_oup_valid, idq_oup_pop;
-  id_queue #(
-    .ID_WIDTH ( $bits(id_t) ),
-    .CAPACITY ( MaxTxns     ),
-    .FULL_BW  ( FullBW      ),
-    .data_t   ( cnt_idx_t   )
-  ) i_idq (
-    .clk_i,
-    .rst_ni,
-    .inp_id_i         ( alloc_pld_out.id ),
-    .inp_data_i       ( cnt_free_idx  ),
-    .inp_req_i        ( idq_inp_req   ),
-    .inp_gnt_o        ( idq_inp_gnt   ),
-    .exists_data_i    ( '0            ),
-    .exists_mask_i    ( '0            ),
-    .exists_req_i     ( 1'b0          ),
-    .exists_o         (/* keep open */),
-    .exists_gnt_o     (/* keep open */),
-    .oup_id_i         ( cnt_id_i      ),
-    .oup_pop_i        ( idq_oup_pop   ),
-    .oup_req_i        ( cnt_req_i     ),
-    .oup_data_o       ( cnt_r_idx     ),
-    .oup_data_valid_o ( idq_oup_valid ),
-    .oup_gnt_o        ( idq_oup_gnt   ),
-    .full_o           (/* keep open */),
-    .empty_o          (/* keep open */)
-  );
-  assign idq_inp_req = alloc_req   & alloc_gnt;
-  assign alloc_gnt   = idq_inp_gnt & |(cnt_free);
-  assign cnt_gnt_o   = idq_oup_gnt & idq_oup_valid;
-  logic [8:0] read_len;
-  assign read_len    = cnt_oup[cnt_r_idx] - 1;
-  assign cnt_len_o   = read_len[7:0];
-
-  assign idq_oup_pop = cnt_req_i & cnt_gnt_o & cnt_dec_i & (cnt_len_o < cnt_delta_i);
-  always_comb begin
-    cnt_dec            = '0;
-    cnt_dec[cnt_r_idx] = cnt_req_i & cnt_gnt_o & cnt_dec_i;
-  end
-  always_comb begin
-    cnt_set               = '0;
-    cnt_set[cnt_free_idx] = alloc_req & alloc_gnt;
-  end
-  always_comb begin
-    err_d     = err_q;
-    cnt_err_o = err_q[cnt_r_idx];
-    if (cnt_req_i && cnt_gnt_o && cnt_set_err_i) begin
-      err_d[cnt_r_idx] = 1'b1;
-      cnt_err_o        = 1'b1;
+    assign idq_oup_pop = cnt_req_i & cnt_gnt_o & cnt_dec_i & (cnt_t'({1'b0, cnt_len_o}) < cnt_delta_i);
+    always_comb begin
+      cnt_dec            = '0;
+      cnt_dec[cnt_r_idx] = cnt_req_i & cnt_gnt_o & cnt_dec_i;
     end
-    if (alloc_req && alloc_gnt) begin
-      err_d[cnt_free_idx] = 1'b0;
+    always_comb begin
+      cnt_set               = '0;
+      cnt_set[cnt_free_idx] = alloc_req & alloc_gnt;
     end
+    always_comb begin
+      err_d     = err_q;
+      cnt_err_o = err_q[cnt_r_idx];
+      if (cnt_req_i && cnt_gnt_o && cnt_set_err_i) begin
+        err_d[cnt_r_idx] = 1'b1;
+        cnt_err_o        = 1'b1;
+      end
+      if (alloc_req && alloc_gnt) begin
+        err_d[cnt_free_idx] = 1'b0;
+      end
+    end
+
+    // registers
+    `FFARN(err_q, err_d, '0, clk_i, rst_ni)
+
+`ifndef VERILATOR
+    // pragma translate_off
+    assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid)
+      else $warning("Invalid output at ID queue, read not granted!");
+    // pragma translate_on
+`endif
+
+  end else begin : gen_in_order_counters
+    // In-order response tracking: the response is always served for the head of a FIFO of
+    // per-burst counters, because responses return in allocation order.  This eliminates the
+    // associative `id_queue` and the counter free list used above.
+    typedef struct packed {
+      id_t  id;
+      logic err;
+      cnt_t cnt;
+    } fifo_entry_t;
+
+    localparam int unsigned OccupancyWidth =
+        (MaxTxns > 32'd0) ? $clog2(MaxTxns + 32'd1) : 32'd1;
+    typedef logic [OccupancyWidth-1:0] occupancy_t;
+
+    fifo_entry_t [MaxTxns-1:0] fifo_d, fifo_q;
+    cnt_idx_t                   head_d, head_q, tail_d, tail_q;
+    occupancy_t                 occupancy_d, occupancy_q;
+    logic                       empty, alloc_taken, cnt_req_granted, head_pop;
+    logic                       head_pop_overshoot, release_pending_d, release_pending_q;
+    logic [axi_pkg::LenWidth:0] read_len;
+
+    assign empty = (occupancy_q == '0);
+
+    assign cnt_req_granted = cnt_req_i & cnt_gnt_o;
+    assign head_pop = cnt_req_granted & cnt_dec_i & (cnt_t'({1'b0, cnt_len_o}) < cnt_delta_i);
+    assign head_pop_overshoot = head_pop & (cnt_delta_i > fifo_q[head_q].cnt);
+    // A terminal decrement that exactly reaches zero releases its slot on the next cycle.
+    // An overshooting decrement first sets the legacy delta counter's overflow bit and is
+    // cleared one cycle later.
+    assign alloc_gnt = ((occupancy_q + occupancy_t'(release_pending_q)) < occupancy_t'(MaxTxns));
+    assign alloc_taken = alloc_req & alloc_gnt;
+    // With FullBW=0 the response port is not served in a cycle in which an allocation
+    // takes place (input priority, as in `id_queue`); the caller retries.
+    assign cnt_gnt_o   = cnt_req_i & !empty & (FullBW | !alloc_taken);
+
+    assign read_len    = fifo_q[head_q].cnt - 9'h001;
+    assign cnt_len_o   = read_len[7:0];
+    assign cnt_err_o   = fifo_q[head_q].err | (cnt_req_granted & cnt_set_err_i);
+
+    // Update the head entry on a response, then write the tail slot on an allocation.
+    always_comb begin
+      fifo_d = fifo_q;
+      if (cnt_req_granted) begin
+        if (cnt_dec_i && !head_pop) begin
+          fifo_d[head_q].cnt = fifo_q[head_q].cnt - cnt_delta_i;
+        end
+        if (cnt_set_err_i) begin
+          fifo_d[head_q].err = 1'b1;
+        end
+      end
+      if (alloc_taken) begin
+        fifo_d[tail_q] = '{id: alloc_pld_out.id, err: 1'b0,
+                           cnt: cnt_t'({1'b0, alloc_pld_out.len} + 9'h001)};
+      end
+    end
+
+    always_comb begin
+      head_d            = head_q;
+      tail_d            = tail_q;
+      occupancy_d       = occupancy_q;
+      release_pending_d = 1'b0;
+
+      if (head_pop) begin
+        head_d = (head_q == cnt_idx_t'(MaxTxns - 1)) ? '0 : head_q + cnt_idx_t'(1);
+        if (head_pop_overshoot) begin
+          release_pending_d = 1'b1;
+        end
+      end
+      if (alloc_taken) begin
+        tail_d = (tail_q == cnt_idx_t'(MaxTxns - 1)) ? '0 : tail_q + cnt_idx_t'(1);
+      end
+      unique case ({alloc_taken, head_pop})
+        2'b10:   occupancy_d = occupancy_q + occupancy_t'(1);
+        2'b01:   occupancy_d = occupancy_q - occupancy_t'(1);
+        default: occupancy_d = occupancy_q;
+      endcase
+    end
+
+    // registers
+    `FFARN(head_q, head_d, '0, clk_i, rst_ni)
+    `FFARN(tail_q, tail_d, '0, clk_i, rst_ni)
+    `FFARN(occupancy_q, occupancy_d, '0, clk_i, rst_ni)
+    `FFARN(release_pending_q, release_pending_d, 1'b0, clk_i, rst_ni)
+    `FFARN(fifo_q, fifo_d, '0, clk_i, rst_ni)
   end
-
-  // registers
-  `FFARN(err_q, err_d, '0, clk_i, rst_ni)
-
-  `ifndef VERILATOR
-  // pragma translate_off
-  assume property (@(posedge clk_i) idq_oup_gnt |-> idq_oup_valid)
-    else $warning("Invalid output at ID queue, read not granted!");
-  // pragma translate_on
-  `endif
 
 endmodule

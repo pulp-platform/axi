@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Added
+- `axi_burst_splitter_gran`, `axi_burst_splitter`: Add `InOrderRsp` parameter.  When set, the burst
+  keeper tracks outstanding split bursts with a plain counter FIFO instead of the associative
+  `id_queue` plus counter free list, significantly reducing area.  Requires downstream responses in
+  request order per channel.
+
+### Changed
+- `axi_to_axi_lite`: The internal burst splitter always uses the new in-order burst bookkeeping
+  (`InOrderRsp`), as AXI4-Lite slaves return responses in request order per channel by protocol.
 
 ## 0.39.10 - 2026-06-19
 

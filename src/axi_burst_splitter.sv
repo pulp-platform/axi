@@ -30,7 +30,9 @@ module axi_burst_splitter #(
   // Maximum number of AXI write bursts outstanding at the same time
   parameter int unsigned MaxWriteTxns = 32'd0,
   // Internal ID queue can work in two bandwidth modes: see id_queue.sv for details
-  parameter bit          FullBW       = 0,
+  parameter bit          FullBW       = 1'b0,
+  // Downstream responses are guaranteed to arrive in request order. Allows for a smaller implementation of the internal ID queue
+  parameter bit          InOrderRsp   = 1'b0,
   // AXI Bus Types
   parameter int unsigned AddrWidth    = 32'd0,
   parameter int unsigned DataWidth    = 32'd0,
@@ -69,6 +71,7 @@ module axi_burst_splitter #(
     .CutPath       ( 1'b0          ),
     .DisableChecks ( 1'b0          ),
     .FullBW        ( FullBW        ),
+    .InOrderRsp    ( InOrderRsp    ),
     .AddrWidth     ( AddrWidth     ),
     .DataWidth     ( DataWidth     ),
     .IdWidth       ( IdWidth       ),

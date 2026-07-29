@@ -22,7 +22,7 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
-  parameter bit          FullBW          = 0,     // ID Queue in Full BW mode in axi_burst_splitter
+  parameter bit          FullBW          = 1'b0,  // ID Queue in Full BW mode in axi_burst_splitter
   parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
   parameter type         full_req_t      = logic,
   parameter type         full_resp_t     = logic,
@@ -63,6 +63,7 @@ module axi_to_axi_lite #(
     .MaxReadTxns  ( AxiMaxReadTxns  ),
     .MaxWriteTxns ( AxiMaxWriteTxns ),
     .FullBW       ( FullBW          ),
+    .InOrderRsp   ( 1'b1            ),
     .AddrWidth    ( AxiAddrWidth    ),
     .DataWidth    ( AxiDataWidth    ),
     .IdWidth      ( AxiIdWidth      ),
