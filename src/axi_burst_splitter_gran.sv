@@ -762,7 +762,6 @@ module axi_burst_splitter_gran_counters #(
     // per-burst counters, because responses return in allocation order.  This eliminates the
     // associative `id_queue` and the counter free list used above.
     typedef struct packed {
-      id_t  id;
       logic err;
       cnt_t cnt;
     } fifo_entry_t;
@@ -808,8 +807,7 @@ module axi_burst_splitter_gran_counters #(
         end
       end
       if (alloc_taken) begin
-        fifo_d[tail_q] = '{id: alloc_pld_out.id, err: 1'b0,
-                           cnt: cnt_t'({1'b0, alloc_pld_out.len} + 9'h001)};
+        fifo_d[tail_q] = '{err: 1'b0, cnt: cnt_t'({1'b0, alloc_pld_out.len} + 9'h001)};
       end
     end
 
