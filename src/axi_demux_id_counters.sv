@@ -20,6 +20,10 @@ module axi_demux_id_counters #(
   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
   parameter int unsigned AxiIdBits         = 2,
   parameter int unsigned CounterWidth      = 4,
+  // Maximum number of in-flight transactions per counter; a counter reports full once it
+  // reaches this value.  Defaults to the counter's saturation value, which preserves the
+  // legacy behavior for instantiations that do not set this parameter.
+  parameter int unsigned MaxTrans          = 2**CounterWidth - 1,
   parameter type         mst_port_select_t = logic
 ) (
   input  logic                 clk_i,   // Clock
@@ -125,7 +129,9 @@ module axi_demux_id_counters #(
       .overflow_o ( overflow  )
     );
     assign occupied[i] = |in_flight;
-    assign cnt_full[i] = overflow | (&in_flight);
+    // `>=` rather than `==`: a simultaneous push and ATOP injection advances the counter
+    // by 2, which could step over an exact-equality threshold from `MaxTrans - 1`.
+    assign cnt_full[i] = overflow | (in_flight >= cnt_t'(MaxTrans));
 
     // holds the selection signal for this id
     `FFL(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
