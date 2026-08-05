@@ -23,18 +23,21 @@ if test -z ${VSIM+x}; then
 fi
 
 # Seed values for `sv_seed`; can be extended with specific values on a per-TB basis, as well as with
-# a random number by passing the `--random` flag.  The default value, 0, is always included to stay
-# regression-consistent.
+# a random number by passing the `--random-seed` flag.  The default value, 0, is always included to
+# stay regression-consistent.
 SEEDS=(0)
 
 call_vsim() {
     for seed in ${SEEDS[@]}; do
-        echo "run -all" | $VSIM -sv_seed $seed "$@" | tee vsim.log 2>&1
+        echo "run -all" | $VSIM -sv_seed $seed "$@" 2>&1 | tee vsim.log
         grep "Errors: 0," vsim.log
     done
 }
 
 exec_test() {
+    # Work on a per-test copy so that any per-TB seed additions below do not leak into the
+    # subsequent tests of a full run.
+    local SEEDS=("${SEEDS[@]}")
     if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
         echo "Testbench for '$1' not found!"
         exit 1
@@ -176,6 +179,8 @@ exec_test() {
             done
             ;;
         axi_xbar)
+            # Two complementary sweeps (see issue #438): the first varies exclusive-access and
+            # unique-id handling, the second varies ID-width usage, data width and pipelining.
             for NumMst in 1 6; do
                 for NumSlv in 1 8; do
                     for Atop in 0 1; do
@@ -184,6 +189,27 @@ exec_test() {
                                 call_vsim tb_axi_xbar -gTbNumMasters=$NumMst -gTbNumSlaves=$NumSlv \
                                         -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive \
                                         -gTbUniqueIds=$UniqueIds
+                            done
+                        done
+                    done
+                done
+            done
+            for GEN_ATOP in 0 1; do
+                for NUM_MST in 1 6; do
+                    for NUM_SLV in 2 9; do
+                        for MST_ID_USE in 3 5; do
+                            MST_ID=5
+                            for DATA_WIDTH in 64 256; do
+                                for PIPE in 0 1; do
+                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
+                                        -gTbNumMasters=$NUM_MST       \
+                                        -gTbNumSlaves=$NUM_SLV        \
+                                        -gTbAxiIdWidthMasters=$MST_ID \
+                                        -gTbAxiIdUsed=$MST_ID_USE     \
+                                        -gTbAxiDataWidth=$DATA_WIDTH  \
+                                        -gTbPipeline=$PIPE            \
+                                        -gTbEnAtop=$GEN_ATOP
+                                done
                             done
                         done
                     done
@@ -211,29 +237,6 @@ exec_test() {
                 done
             done
             ;;
-        axi_xbar)
-            for GEN_ATOP in 0 1; do
-                for NUM_MST in 1 6; do
-                    for NUM_SLV in 2 9; do
-                        for MST_ID_USE in 3 5; do
-                            MST_ID=5
-                            for DATA_WIDTH in 64 256; do
-                                for PIPE in 0 1; do
-                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
-                                        -gTbNumMasters=$NUM_MST       \
-                                        -gTbNumSlaves=$NUM_SLV        \
-                                        -gTbAxiIdWidthMasters=$MST_ID \
-                                        -gTbAxiIdUsed=$MST_ID_USE     \
-                                        -gTbAxiDataWidth=$DATA_WIDTH  \
-                                        -gTbPipeline=$PIPE            \
-                                        -gTbEnAtop=$GEN_ATOP
-                                done
-                            done
-                        done
-                    done
-                done
-            done
-            ;;
         axi_lite_dw_converter)
             for DWSLV in 32 64 128; do
                 for DWMST in 16 32 64; do
@@ -254,7 +257,7 @@ while (( "$#" )); do
         --random-seed)
             SEEDS+=(random)
             shift;;
-        -*--*) # unsupported flag
+        -*) # unsupported flag (any dash-prefixed token not matched above)
             echo "Error: Unsupported flag '$1'." >&2
             exit 1;;
         *) # preserve positional arguments
