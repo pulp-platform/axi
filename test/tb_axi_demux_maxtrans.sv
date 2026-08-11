@@ -99,7 +99,6 @@ module tb_axi_demux_maxtrans #(
   ) i_dut (
     .clk_i           ( clk       ),
     .rst_ni          ( rst_n     ),
-    .test_i          ( 1'b0      ),
     .slv_req_i       ( slv_req   ),
     .slv_aw_select_i ( 1'b0      ),
     .slv_ar_select_i ( 1'b0      ),
