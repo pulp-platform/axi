@@ -128,7 +128,7 @@ module axi_demux_id_counters #(
       .q_o        ( in_flight ),
       .overflow_o ( overflow  )
     );
-    assign occupied[i] = |in_flight;
+    assign occupied[i] = |{overflow, in_flight};
     // `>=` rather than `==`: a simultaneous push and ATOP injection advances the counter
     // by 2, which could step over an exact-equality threshold from `MaxTrans - 1`.
     assign cnt_full[i] = overflow | (in_flight >= cnt_t'(MaxTrans));
