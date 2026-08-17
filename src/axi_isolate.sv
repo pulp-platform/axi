@@ -89,10 +89,7 @@ module axi_isolate #(
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
   // Capacity of `axi_isolate_inner`, derived from the maximum number of transactions the demux
-  // admits (`2**AxiLookBits` ID buckets, each counting up to `2**IdCounterWidth - 1`).  The
-  // inner's counters can then never saturate, so the inner never stalls a request the demux
-  // has already committed to a master port; surplus requests instead stall at the demux's
-  // slave port, before they are committed.
+  // admits (`2**AxiLookBits` ID buckets, each counting up to `2**IdCounterWidth - 1`).
   localparam int unsigned DemuxLookBits   = 32'd1;
   localparam int unsigned DemuxCntWidth   = cf_math_pkg::idx_width(NumPending);
   localparam int unsigned DemuxMaxPending =
@@ -104,10 +101,6 @@ module axi_isolate #(
   axi_resp_t [1:0]  demux_rsp;
 
   if (TerminateTransaction) begin
-    // Registered demux select, one per channel: 0 routes to `axi_isolate_inner`, 1 to the
-    // error slave.  It follows `isolate_i`, but holds while the demux has a request presented
-    // at a master port that is not yet accepted, as the demux commits the W routing on first
-    // presentation and requires a stable select until the handshake completes.
     logic sel_aw_q, sel_ar_q;
     // A request is presented at a demux master port and not yet accepted.  Requests stalled by
     // the demux itself are not committed to a port and do not hold the select.
@@ -118,9 +111,6 @@ module axi_isolate #(
     assign demux_ar_unaccepted = (demux_req[0].ar_valid | demux_req[1].ar_valid)
                                  & ~slv_resp_o.ar_ready;
 
-    // Reset to the error slave, as `axi_isolate_inner` resets to `Isolate`.  The hold must act
-    // on the register load; masking the select output combinationally would form a loop
-    // through `slv_resp_o.*_ready`.
     always_ff @(posedge clk_i or negedge rst_ni) begin
       if (!rst_ni) begin
         sel_aw_q <= 1'b1;
