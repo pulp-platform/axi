@@ -178,7 +178,7 @@ module axi_isolate #(
       .slv_req_i  ( demux_req[1] ),
       .slv_resp_o ( demux_rsp[1] )
     );
-  end else begin : g_passthrough
+  end else begin
     assign demux_req[0] = slv_req_i;
     assign slv_resp_o = demux_rsp[0];
     // In pass-through, silence the second demux port as it is not used
@@ -528,3 +528,4 @@ module axi_isolate_intf #(
   `endif
   // pragma translate_on
 endmodule
+
