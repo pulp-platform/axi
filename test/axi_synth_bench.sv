@@ -510,9 +510,9 @@ module synth_axi_isolate #(
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi[1:0] ();
 
@@ -584,9 +584,9 @@ module synth_axi_serializer #(
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi[1:0] ();
 
@@ -713,9 +713,9 @@ module synth_axi_to_mem_banked #(
   typedef logic [BankStrbWidth-1:0] mem_strb_t;
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi ();
 
