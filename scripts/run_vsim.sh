@@ -27,10 +27,50 @@ fi
 # stay regression-consistent.
 SEEDS=(0)
 
+# Maximum number of `vsim` invocations to run concurrently. Each running simulation occupies one
+# simulator license seat, so this also caps the license usage regardless of how many
+# parametrizations a test sweeps. Defaults to 1 (fully sequential, i.e. unchanged behaviour); set
+# e.g. `VSIM_JOBS=4` to parallelize. NOTE: values > 1 run multiple `vsim` processes in the same
+# directory sharing the compiled `work` library; each gets its own log/wlf, but validate on your
+# simulator before relying on it.
+: "${VSIM_JOBS:=2}"
+
+vsim_fail=0   # set to 1 as soon as any background simulation reports errors
+job_idx=0     # unique index per launched simulation, used for per-job artifact names
+
+# Block until fewer than VSIM_JOBS simulations are running.
+vsim_throttle() {
+    while (( $(jobs -rp | wc -l) >= VSIM_JOBS )); do
+        wait -n || vsim_fail=1
+    done
+}
+
+# Wait for all still-running simulations to finish.
+vsim_drain() {
+    local pid
+    for pid in $(jobs -rp); do
+        wait "$pid" || vsim_fail=1
+    done
+}
+
 call_vsim() {
-    for seed in ${SEEDS[@]}; do
-        echo "run -all" | $VSIM -sv_seed $seed "$@" 2>&1 | tee vsim.log
-        grep "Errors: 0," vsim.log
+    local seed idx log
+    for seed in "${SEEDS[@]}"; do
+        if (( VSIM_JOBS <= 1 )); then
+            # Sequential path: legacy behaviour, unchanged. Single log, fail-fast via `set -e`.
+            echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee vsim.log
+            grep "Errors: 0," vsim.log
+        else
+            # Parallel path: bounded job pool, one log/wlf per job, failures collected in vsim_fail.
+            vsim_throttle
+            idx=$job_idx
+            job_idx=$((job_idx + 1))
+            log="vsim.${1}.${idx}.log"
+            (
+                echo "run -all" | $VSIM -sv_seed "$seed" -wlf "vsim.${idx}.wlf" "$@" 2>&1 | tee "$log"
+                grep "Errors: 0," "$log"
+            ) &
+        fi
     done
 }
 
@@ -281,3 +321,7 @@ fi
 for t in "${tests[@]}"; do
     exec_test $t
 done
+
+# Wait for the last in-flight simulations and fail if any of them reported errors.
+vsim_drain
+exit $vsim_fail
