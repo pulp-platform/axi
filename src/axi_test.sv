@@ -1298,9 +1298,9 @@ package axi_test;
     task run(input int n_reads, input int n_writes);
       automatic logic  ar_done = 1'b0,
                        aw_done = 1'b0;
+      // Cache-Partition: randomize the patid
+      automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
       fork
-        // Cache-Partition: randomize the patid
-        automatic user_t ax_user = rand_user(AX_USER_RANGE, AX_USER_RAND);
         begin
           send_ars(n_reads, ax_user);
           ar_done = 1'b1;

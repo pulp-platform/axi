@@ -56,7 +56,6 @@ synopsys_dc:
 
 fuse_xsim:
   stage: build
-  allow_failure: true
   timeout: 5 minutes
   script:
     - bender checkout

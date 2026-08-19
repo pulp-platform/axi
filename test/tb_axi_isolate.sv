@@ -202,6 +202,7 @@ module tb_axi_isolate #(
   end
 
 
+`ifndef XILINX_SIMULATOR
   default disable iff (!rst_n);
   aw_unstable: assert property (@(posedge clk)
       (slave.aw_valid && !slave.aw_ready) |=> $stable(slave.aw_addr)) else
@@ -218,6 +219,7 @@ module tb_axi_isolate #(
   r_unstable:  assert property (@(posedge clk)
       (master.r_valid && !master.r_ready) |=> $stable(master.r_data)) else
       $fatal(1, "R is unstable.");
+`endif
 
 
 endmodule
