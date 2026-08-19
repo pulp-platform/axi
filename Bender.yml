@@ -24,9 +24,9 @@ remotes:
   pulp: https://github.com/pulp-platform
 
 dependencies:
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: v2.0.0-beta.2 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: xsim-fix }
   common_verification: 0.2.5
-  tech_cells_generic: 0.2.14
+  tech_cells_generic: { git: "https://github.com/pulp-platform/tech_cells_generic.git", rev: xsim-fix }
 
 export_include_dirs:
   - include
