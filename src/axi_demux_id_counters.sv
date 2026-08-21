@@ -49,6 +49,15 @@ module axi_demux_id_counters #(
   localparam int unsigned NoCounters = 2**AxiIdBits;
   typedef logic [CounterWidth-1:0] cnt_t;
 
+// pragma translate_off
+  initial begin : validate_params
+    counter_holds_maxtrans : assert (2**CounterWidth > MaxTrans) else
+      $fatal(1, "CounterWidth (%0d bits, maximum value %0d) cannot represent MaxTrans (%0d): \
+                 the counters would report full at %0d in-flight transactions.",
+             CounterWidth, 2**CounterWidth - 1, MaxTrans, 2**CounterWidth - 1);
+  end
+// pragma translate_on
+
   // registers, each gets loaded when push_en[i]
   mst_port_select_t [NoCounters-1:0] mst_select_q;
 

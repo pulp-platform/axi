@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - `axi_demux`: The in-flight ID counters saturated at `MaxTrans - 1` when `MaxTrans` is a
   power of two, and otherwise allowed more than `MaxTrans` outstanding transactions.  The
-  counters now enforce exactly `MaxTrans`, and a directed regression
-  (`tb_axi_demux_maxtrans`) verifies the limit. #249
+  counters now enforce exactly `MaxTrans`, and an elaboration-time assertion in
+  `axi_demux_id_counters` checks that the counters can represent the configured limit. #249
 
 ## 0.39.10 - 2026-06-19
 
