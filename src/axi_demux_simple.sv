@@ -65,11 +65,9 @@ module axi_demux_simple #(
   input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
 );
 
-  // The in-flight counters must be able to hold the value `MaxTrans` itself (0 to MaxTrans
-  // inclusive), so they are sized for `MaxTrans + 1` states.  Sizing them with
-  // `idx_width(MaxTrans)` lets them saturate at `MaxTrans - 1` when `MaxTrans` is a power of
-  // two, silently reducing the configured concurrency by one transaction (issue #249).
-  localparam int unsigned IdCounterWidth = cc_pkg::idx_width(MaxTrans + 1);
+  // The in-flight counters must be able to hold the value `MaxTrans` itself; `idx_width`
+  // would let them saturate at `MaxTrans - 1` when `MaxTrans` is a power of two (issue #249).
+  localparam int unsigned IdCounterWidth = cc_pkg::cnt_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
   // pass through if only one master port
