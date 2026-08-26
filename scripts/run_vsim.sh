@@ -27,57 +27,15 @@ fi
 # stay regression-consistent.
 SEEDS=(0)
 
-# Maximum number of `vsim` invocations to run concurrently. Each running simulation occupies one
-# simulator license seat, so this also caps the license usage regardless of how many
-# parametrizations a test sweeps. Defaults to 2; set `VSIM_JOBS=1` for the legacy fully-sequential
-# behaviour, or e.g. `VSIM_JOBS=4` for more parallelism. NOTE: values > 1 run multiple `vsim`
-# processes in the same directory sharing the compiled `work` library; each gets its own log/wlf,
-# but validate on your simulator before relying on it.
-: "${VSIM_JOBS:=2}"
-
-vsim_fail=0   # set to 1 as soon as any background simulation reports errors
-job_idx=0     # unique index per launched simulation, used for per-job artifact names
-vsim_pids=()  # PIDs of launched background simulations not yet waited on
-
-# Block until fewer than VSIM_JOBS simulations are in flight. We wait on tracked PIDs rather than
-# scanning `jobs -rp`: `wait "$pid"` reliably reports the exit status of a job even if it already
-# terminated before we got here (e.g. a fast elaboration error), which `jobs -rp` would omit and
-# thus silently drop the failure.
-vsim_throttle() {
-    while (( ${#vsim_pids[@]} >= VSIM_JOBS )); do
-        wait "${vsim_pids[0]}" || vsim_fail=1
-        vsim_pids=("${vsim_pids[@]:1}")
-    done
-}
-
-# Wait for all still-pending simulations to finish, recording any failures.
-vsim_drain() {
-    local pid
-    for pid in "${vsim_pids[@]}"; do
-        wait "$pid" || vsim_fail=1
-    done
-    vsim_pids=()
-}
-
+# Parallelism is provided by the CI: heavy sweeps (e.g. `axi_xbar`) are split across separate CI
+# jobs (`axi_xbar`, `axi_xbar2`, ...) that the runner schedules concurrently. This keeps this
+# script simple and sequential, with fail-fast semantics via `set -e`, and lets the CI cap the
+# concurrent simulator-license usage through its own job concurrency limits.
 call_vsim() {
-    local seed idx log
+    local seed
     for seed in "${SEEDS[@]}"; do
-        if (( VSIM_JOBS <= 1 )); then
-            # Sequential path: legacy behaviour, unchanged. Single log, fail-fast via `set -e`.
-            echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee vsim.log
-            grep "Errors: 0," vsim.log
-        else
-            # Parallel path: bounded job pool, one log/wlf per job, failures collected in vsim_fail.
-            vsim_throttle
-            idx=$job_idx
-            job_idx=$((job_idx + 1))
-            log="vsim.${1}.${idx}.log"
-            (
-                echo "run -all" | $VSIM -sv_seed "$seed" -wlf "vsim.${idx}.wlf" "$@" 2>&1 | tee "$log"
-                grep "Errors: 0," "$log"
-            ) &
-            vsim_pids+=($!)
-        fi
+        echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee vsim.log
+        grep "Errors: 0," vsim.log
     done
 }
 
@@ -85,7 +43,13 @@ exec_test() {
     # Work on a per-test copy so that any per-TB seed additions below do not leak into the
     # subsequent tests of a full run.
     local SEEDS=("${SEEDS[@]}")
-    if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
+    # Testbench source backing this test. Usually `tb_<name>.sv`, but sweep shards such as
+    # `axi_xbar2` are additional CI jobs that reuse another test's testbench.
+    local tb="tb_$1"
+    case "$1" in
+        axi_xbar2) tb="tb_axi_xbar" ;;
+    esac
+    if [ ! -e "$ROOT/test/$tb.sv" ]; then
         echo "Testbench for '$1' not found!"
         exit 1
     fi
@@ -226,8 +190,8 @@ exec_test() {
             done
             ;;
         axi_xbar)
-            # Two complementary sweeps (see issue #438): the first varies exclusive-access and
-            # unique-id handling, the second varies ID-width usage, data width and pipelining.
+            # Sweep 1 of 2 (see issue #438): vary exclusive-access and unique-id handling.
+            # The complementary sweep runs as a separate CI job, `axi_xbar2`.
             for NumMst in 1 6; do
                 for NumSlv in 1 8; do
                     for Atop in 0 1; do
@@ -241,6 +205,10 @@ exec_test() {
                     done
                 done
             done
+            ;;
+        axi_xbar2)
+            # Sweep 2 of 2 (see issue #438): vary ID-width usage, data width and pipelining.
+            # Reuses tb_axi_xbar; split into its own CI job so it runs in parallel with `axi_xbar`.
             for GEN_ATOP in 0 1; do
                 for NUM_MST in 1 6; do
                     NUM_SLV=9
@@ -329,7 +297,3 @@ fi
 for t in "${tests[@]}"; do
     exec_test $t
 done
-
-# Wait for the last in-flight simulations and fail if any of them reported errors.
-vsim_drain
-exit $vsim_fail
