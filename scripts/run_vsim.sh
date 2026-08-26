@@ -29,25 +29,29 @@ SEEDS=(0)
 
 # Every simulation (one parametrization run with one seed) gets a deterministic index in the
 # enumeration order of this script. Parallelism is provided by the CI: a heavy sweep is split by
-# running N identical copies of its job (GitLab `parallel: N`), and each copy walks the same
-# enumeration but executes only the configs whose index falls on it (round-robin over
-# `CI_NODE_INDEX`/`CI_NODE_TOTAL`). 
+# putting `parallel: N` on its job together with `VSIM_SHARDED=1`. Each copy walks the same
+# enumeration but executes only the configs whose index falls on its shard (round-robin over
+# `CI_NODE_INDEX`/`CI_NODE_TOTAL`). The `VSIM_SHARDED` opt-in is needed because `parallel:matrix`
+# jobs also get `CI_NODE_*` set, where they mean the matrix position, not a sweep shard.
 #
 # Reproduce one CI shard locally with e.g.:
-#   CI_NODE_INDEX=2 CI_NODE_TOTAL=2 ../scripts/run_vsim.sh axi_xbar
+#   VSIM_SHARDED=1 CI_NODE_INDEX=2 CI_NODE_TOTAL=2 ../scripts/run_vsim.sh axi_xbar
 # Pass `--list` to print the enumerated configs with their indices instead of simulating.
 CONFIG_IDX=0
 NUM_EXECUTED=0
-NODE_INDEX=${CI_NODE_INDEX:-1}
-NODE_TOTAL=${CI_NODE_TOTAL:-1}
+SHARD_INDEX=1
+SHARD_TOTAL=1
+if [[ -n ${VSIM_SHARDED:-} ]]; then
+    SHARD_INDEX=${CI_NODE_INDEX:-1}
+    SHARD_TOTAL=${CI_NODE_TOTAL:-1}
+fi
 LIST_ONLY=0
 
 call_vsim() {
     local seed log
     for seed in "${SEEDS[@]}"; do
         CONFIG_IDX=$((CONFIG_IDX + 1))
-        # Round-robin sharding: skip configs that belong to another CI node.
-        if (( (CONFIG_IDX - 1) % NODE_TOTAL != NODE_INDEX - 1 )); then
+        if (( (CONFIG_IDX - 1) % SHARD_TOTAL != SHARD_INDEX - 1 )); then
             continue
         fi
         if (( LIST_ONLY )); then
@@ -307,9 +311,9 @@ for t in "${tests[@]}"; do
     exec_test $t
 done
 
-# A shard that matches no config at all (e.g. `parallel: N` larger than the number of configs of
-# a test) must fail loudly instead of passing as a vacuously green CI job.
+# A shard that matches no config at all (e.g. more shards than a test has configs) must fail
+# loudly instead of passing as a vacuously green CI job.
 if (( ! LIST_ONLY && NUM_EXECUTED == 0 )); then
-    echo "Error: no simulations executed on this shard (node $NODE_INDEX of $NODE_TOTAL)." >&2
+    echo "Error: no simulations executed on this shard (shard $SHARD_INDEX of $SHARD_TOTAL)." >&2
     exit 1
 fi
