@@ -126,7 +126,7 @@ exec_test() {
                                 if [ $MAX_UNIQ_SLV_PORT_IDS -le $MAX_MST_PORT_IDS ]; then
                                     call_vsim tb_axi_iw_converter \
                                             -t 1ns -coverage -classdebug \
-                                            -voptargs="+acc +cover=bcesfx" \
+                                            -voptargs="+cover=bcesfx" \
                                             -GTbEnExcl=$EXCL \
                                             -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                             -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -135,7 +135,7 @@ exec_test() {
                                 else
                                     call_vsim tb_axi_iw_converter \
                                             -t 1ns -coverage -classdebug \
-                                            -voptargs="+acc +cover=bcesfx" \
+                                            -voptargs="+cover=bcesfx" \
                                             -GTbEnExcl=$EXCL \
                                             -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                             -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -148,7 +148,7 @@ exec_test() {
                         else
                             call_vsim tb_axi_iw_converter \
                                     -t 1ns -coverage -classdebug \
-                                    -voptargs="+acc +cover=bcesfx" \
+                                    -voptargs="+cover=bcesfx" \
                                     -GTbEnExcl=$EXCL \
                                     -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                     -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -240,7 +240,7 @@ exec_test() {
                             ACT_BANKS=$((2*$BANK_FACTOR*$NUM_BANKS))
                             MEM_DATA_WIDTH=$(($AXI_DATA_WIDTH/$NUM_BANKS))
                             call_vsim tb_axi_to_mem_banked \
-                                -voptargs="+acc +cover=bcesfx" \
+                                -voptargs="+cover=bcesfx" \
                                 -gTbAxiDataWidth=$AXI_DATA_WIDTH \
                                 -gTbNumWords=2048 \
                                 -gTbNumBanks=$ACT_BANKS \
@@ -261,7 +261,7 @@ exec_test() {
             done
             ;;
         *)
-            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            call_vsim tb_$1 -t 1ns -coverage -voptargs="+cover=bcesfx"
             ;;
     esac
 }
