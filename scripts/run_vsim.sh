@@ -27,15 +27,39 @@ fi
 # stay regression-consistent.
 SEEDS=(0)
 
-# Parallelism is provided by the CI: heavy sweeps (e.g. `axi_xbar`) are split across separate CI
-# jobs (`axi_xbar`, `axi_xbar2`, ...) that the runner schedules concurrently. This keeps this
-# script simple and sequential, with fail-fast semantics via `set -e`, and lets the CI cap the
-# concurrent simulator-license usage through its own job concurrency limits.
+# Every simulation (one parametrization run with one seed) gets a deterministic index in the
+# enumeration order of this script. Parallelism is provided by the CI: a heavy sweep is split by
+# running N identical copies of its job (GitLab `parallel: N`), and each copy walks the same
+# enumeration but executes only the configs whose index falls on it (round-robin over
+# `CI_NODE_INDEX`/`CI_NODE_TOTAL`). 
+#
+# Reproduce one CI shard locally with e.g.:
+#   CI_NODE_INDEX=2 CI_NODE_TOTAL=2 ../scripts/run_vsim.sh axi_xbar
+# Pass `--list` to print the enumerated configs with their indices instead of simulating.
+CONFIG_IDX=0
+NUM_EXECUTED=0
+NODE_INDEX=${CI_NODE_INDEX:-1}
+NODE_TOTAL=${CI_NODE_TOTAL:-1}
+LIST_ONLY=0
+
 call_vsim() {
-    local seed
+    local seed log
     for seed in "${SEEDS[@]}"; do
-        echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee vsim.log
-        grep "Errors: 0," vsim.log
+        CONFIG_IDX=$((CONFIG_IDX + 1))
+        # Round-robin sharding: skip configs that belong to another CI node.
+        if (( (CONFIG_IDX - 1) % NODE_TOTAL != NODE_INDEX - 1 )); then
+            continue
+        fi
+        if (( LIST_ONLY )); then
+            echo "$CONFIG_IDX: $* -sv_seed $seed"
+            continue
+        fi
+        # One log file per config, so a full sweep leaves every log behind and the actual value
+        # of a random seed can be recovered from the log after a failure.
+        log="vsim-$1-$CONFIG_IDX.log"
+        echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee "$log"
+        grep "Errors: 0," "$log"
+        NUM_EXECUTED=$((NUM_EXECUTED + 1))
     done
 }
 
@@ -43,13 +67,7 @@ exec_test() {
     # Work on a per-test copy so that any per-TB seed additions below do not leak into the
     # subsequent tests of a full run.
     local SEEDS=("${SEEDS[@]}")
-    # Testbench source backing this test. Usually `tb_<name>.sv`, but sweep shards such as
-    # `axi_xbar2` are additional CI jobs that reuse another test's testbench.
-    local tb="tb_$1"
-    case "$1" in
-        axi_xbar2) tb="tb_axi_xbar" ;;
-    esac
-    if [ ! -e "$ROOT/test/$tb.sv" ]; then
+    if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
         echo "Testbench for '$1' not found!"
         exit 1
     fi
@@ -187,8 +205,7 @@ exec_test() {
             done
             ;;
         axi_xbar)
-            # Sweep 1 of 2 (see issue #438): vary exclusive-access and unique-id handling.
-            # The complementary sweep runs as a separate CI job, `axi_xbar2`.
+            # Sweep 1: vary exclusive-access and unique-id handling.
             for NumMst in 1 6; do
                 for NumSlv in 1 8; do
                     for Atop in 0 1; do
@@ -202,10 +219,7 @@ exec_test() {
                     done
                 done
             done
-            ;;
-        axi_xbar2)
-            # Sweep 2 of 2 (see issue #438): vary ID-width usage, data width and pipelining.
-            # Reuses tb_axi_xbar; split into its own CI job so it runs in parallel with `axi_xbar`.
+            # Sweep 2: vary ID-width usage, data width and pipelining.
             for GEN_ATOP in 0 1; do
                 for NUM_MST in 1 6; do
                     NUM_SLV=9
@@ -262,34 +276,40 @@ exec_test() {
     esac
 }
 
-# Parse flags.
-PARAMS=""
+# Parse arguments.
+tests=()
 while (( "$#" )); do
     case "$1" in
         --random-seed)
             SEEDS+=(random)
             shift;;
+        --list)
+            LIST_ONLY=1
+            shift;;
         -*) # unsupported flag (any dash-prefixed token not matched above)
             echo "Error: Unsupported flag '$1'." >&2
             exit 1;;
-        *) # preserve positional arguments
-            PARAMS="$PARAMS $1"
+        *) # positional argument: a test name
+            tests+=("$1")
             shift;;
     esac
 done
-eval set -- "$PARAMS"
 
-if [ "$#" -eq 0 ]; then
-    tests=()
+if [ ${#tests[@]} -eq 0 ]; then
     while IFS=  read -r -d $'\0'; do
         tb_name="$(basename -s .sv $REPLY)"
         dut_name="${tb_name#tb_}"
         tests+=("$dut_name")
     done < <(find "$ROOT/test" -name 'tb_*.sv' -a \( ! -name '*_pkg.sv' \) -print0)
-else
-    tests=("$@")
 fi
 
 for t in "${tests[@]}"; do
     exec_test $t
 done
+
+# A shard that matches no config at all (e.g. `parallel: N` larger than the number of configs of
+# a test) must fail loudly instead of passing as a vacuously green CI job.
+if (( ! LIST_ONLY && NUM_EXECUTED == 0 )); then
+    echo "Error: no simulations executed on this shard (node $NODE_INDEX of $NODE_TOTAL)." >&2
+    exit 1
+fi
