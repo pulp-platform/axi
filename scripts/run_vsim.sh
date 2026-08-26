@@ -29,28 +29,34 @@ SEEDS=(0)
 
 # Maximum number of `vsim` invocations to run concurrently. Each running simulation occupies one
 # simulator license seat, so this also caps the license usage regardless of how many
-# parametrizations a test sweeps. Defaults to 1 (fully sequential, i.e. unchanged behaviour); set
-# e.g. `VSIM_JOBS=4` to parallelize. NOTE: values > 1 run multiple `vsim` processes in the same
-# directory sharing the compiled `work` library; each gets its own log/wlf, but validate on your
-# simulator before relying on it.
+# parametrizations a test sweeps. Defaults to 2; set `VSIM_JOBS=1` for the legacy fully-sequential
+# behaviour, or e.g. `VSIM_JOBS=4` for more parallelism. NOTE: values > 1 run multiple `vsim`
+# processes in the same directory sharing the compiled `work` library; each gets its own log/wlf,
+# but validate on your simulator before relying on it.
 : "${VSIM_JOBS:=2}"
 
 vsim_fail=0   # set to 1 as soon as any background simulation reports errors
 job_idx=0     # unique index per launched simulation, used for per-job artifact names
+vsim_pids=()  # PIDs of launched background simulations not yet waited on
 
-# Block until fewer than VSIM_JOBS simulations are running.
+# Block until fewer than VSIM_JOBS simulations are in flight. We wait on tracked PIDs rather than
+# scanning `jobs -rp`: `wait "$pid"` reliably reports the exit status of a job even if it already
+# terminated before we got here (e.g. a fast elaboration error), which `jobs -rp` would omit and
+# thus silently drop the failure.
 vsim_throttle() {
-    while (( $(jobs -rp | wc -l) >= VSIM_JOBS )); do
-        wait -n || vsim_fail=1
+    while (( ${#vsim_pids[@]} >= VSIM_JOBS )); do
+        wait "${vsim_pids[0]}" || vsim_fail=1
+        vsim_pids=("${vsim_pids[@]:1}")
     done
 }
 
-# Wait for all still-running simulations to finish.
+# Wait for all still-pending simulations to finish, recording any failures.
 vsim_drain() {
     local pid
-    for pid in $(jobs -rp); do
+    for pid in "${vsim_pids[@]}"; do
         wait "$pid" || vsim_fail=1
     done
+    vsim_pids=()
 }
 
 call_vsim() {
@@ -70,6 +76,7 @@ call_vsim() {
                 echo "run -all" | $VSIM -sv_seed "$seed" -wlf "vsim.${idx}.wlf" "$@" 2>&1 | tee "$log"
                 grep "Errors: 0," "$log"
             ) &
+            vsim_pids+=($!)
         fi
     done
 }
@@ -238,17 +245,20 @@ exec_test() {
                 for NUM_MST in 1 6; do
                     NUM_SLV=9
                     MST_ID=5
-                    MST_ID_USE=3
-                    for DATA_WIDTH in 64 256; do
-                        for PIPE in 0 1; do
-                            call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
-                                -gTbNumMasters=$NUM_MST       \
-                                -gTbNumSlaves=$NUM_SLV        \
-                                -gTbAxiIdWidthMasters=$MST_ID \
-                                -gTbAxiIdUsed=$MST_ID_USE     \
-                                -gTbAxiDataWidth=$DATA_WIDTH  \
-                                -gTbPipeline=$PIPE            \
-                                -gTbEnAtop=$GEN_ATOP
+                    # Sweep both IdUsed < IdWidth (3) and IdUsed == IdWidth (5), as the equal-width
+                    # case exercises a distinct code path in the ID handling.
+                    for MST_ID_USE in 3 5; do
+                        for DATA_WIDTH in 64 256; do
+                            for PIPE in 0 1; do
+                                call_vsim tb_axi_xbar -t 1ns \
+                                    -gTbNumMasters=$NUM_MST       \
+                                    -gTbNumSlaves=$NUM_SLV        \
+                                    -gTbAxiIdWidthMasters=$MST_ID \
+                                    -gTbAxiIdUsed=$MST_ID_USE     \
+                                    -gTbAxiDataWidth=$DATA_WIDTH  \
+                                    -gTbPipeline=$PIPE            \
+                                    -gTbEnAtop=$GEN_ATOP
+                            done
                         done
                     done
                 done
