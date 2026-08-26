@@ -79,6 +79,11 @@ verilator_lint:
     - vsim
   script:
     - cd build && ../scripts/run_vsim.sh --random-seed $TEST_MODULE
+  artifacts:
+    when: on_failure
+    paths:
+      - build/vsim-*.log
+    expire_in: 1 week
   rules:
     - &run_vsim_common_change_rule
       changes:
@@ -240,14 +245,17 @@ axi_to_mem_banked:
           - src/axi_to_detailed_mem.sv
           - src/axi_to_mem.sv
 
+# The xbar sweep is the heaviest; `parallel:` splits it into shards that the runner executes
+# concurrently. Each shard runs the identical `run_vsim.sh axi_xbar` enumeration and executes its
+# share of the configs, selected round-robin via `CI_NODE_INDEX` (see scripts/run_vsim.sh).
 axi_xbar:
   extends: .run_vsim
+  parallel: 2
   variables:
     TEST_MODULE: axi_xbar
   rules:
     - *run_vsim_common_change_rule
-    - &axi_xbar_module_change_rule
-      changes:
+    - changes:
         compare_to: 'refs/heads/master'
         paths:
           - src/axi_xbar.sv
@@ -259,14 +267,3 @@ axi_xbar:
           - src/axi_mux.sv
           - src/axi_multicut.sv
           - src/axi_xbar_unmuxed.sv
-
-# Second half of the `axi_xbar` parameter sweep (see scripts/run_vsim.sh). Split into its own CI
-# job so the runner executes it in parallel with `axi_xbar`; both reuse the same testbench and share
-# the identical trigger set.
-axi_xbar2:
-  extends: .run_vsim
-  variables:
-    TEST_MODULE: axi_xbar2
-  rules:
-    - *run_vsim_common_change_rule
-    - *axi_xbar_module_change_rule
