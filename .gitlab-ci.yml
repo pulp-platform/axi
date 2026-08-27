@@ -270,11 +270,10 @@ axi_xbar:
     VSIM_SHARDED: '1'
   rules:
     - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
     - changes:
         compare_to: 'refs/heads/master'
         paths:
-          - src/axi_xbar.sv
-          - test/tb_axi_xbar.sv
           - test/tb_axi_xbar_pkg.sv
           - src/axi_atop_filter.sv
           - src/axi_cut.sv
