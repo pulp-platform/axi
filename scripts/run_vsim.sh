@@ -23,18 +23,54 @@ if test -z ${VSIM+x}; then
 fi
 
 # Seed values for `sv_seed`; can be extended with specific values on a per-TB basis, as well as with
-# a random number by passing the `--random` flag.  The default value, 0, is always included to stay
-# regression-consistent.
+# a random number by passing the `--random-seed` flag.  The default value, 0, is always included to
+# stay regression-consistent.
 SEEDS=(0)
 
+# Every simulation (one parametrization run with one seed) gets a deterministic index in the
+# enumeration order of this script. Parallelism is provided by the CI: a heavy sweep is split by
+# putting `parallel: N` on its job together with `VSIM_SHARDED=1`. Each copy walks the same
+# enumeration but executes only the configs whose index falls on its shard (round-robin over
+# `CI_NODE_INDEX`/`CI_NODE_TOTAL`). The `VSIM_SHARDED` opt-in is needed because `parallel:matrix`
+# jobs also get `CI_NODE_*` set, where they mean the matrix position, not a sweep shard.
+#
+# Reproduce one CI shard locally with e.g.:
+#   VSIM_SHARDED=1 CI_NODE_INDEX=2 CI_NODE_TOTAL=2 ../scripts/run_vsim.sh axi_xbar
+# Pass `--list` to print the enumerated configs with their indices instead of simulating.
+CONFIG_IDX=0
+NUM_EXECUTED=0
+SHARD_INDEX=1
+SHARD_TOTAL=1
+if [[ -n ${VSIM_SHARDED:-} ]]; then
+    SHARD_INDEX=${CI_NODE_INDEX:-1}
+    SHARD_TOTAL=${CI_NODE_TOTAL:-1}
+fi
+LIST_ONLY=0
+
 call_vsim() {
-    for seed in ${SEEDS[@]}; do
-        echo "run -all" | $VSIM -sv_seed $seed "$@" | tee vsim.log 2>&1
-        grep "Errors: 0," vsim.log
+    local seed log
+    for seed in "${SEEDS[@]}"; do
+        CONFIG_IDX=$((CONFIG_IDX + 1))
+        if (( (CONFIG_IDX - 1) % SHARD_TOTAL != SHARD_INDEX - 1 )); then
+            continue
+        fi
+        if (( LIST_ONLY )); then
+            echo "$CONFIG_IDX: $* -sv_seed $seed"
+            continue
+        fi
+        # One log file per config, so a full sweep leaves every log behind and the actual value
+        # of a random seed can be recovered from the log after a failure.
+        log="vsim-$1-$CONFIG_IDX.log"
+        echo "run -all" | $VSIM -sv_seed "$seed" "$@" 2>&1 | tee "$log"
+        grep "Errors: 0," "$log"
+        NUM_EXECUTED=$((NUM_EXECUTED + 1))
     done
 }
 
 exec_test() {
+    # Work on a per-test copy so that any per-TB seed additions below do not leak into the
+    # subsequent tests of a full run.
+    local SEEDS=("${SEEDS[@]}")
     if [ ! -e "$ROOT/test/tb_$1.sv" ]; then
         echo "Testbench for '$1' not found!"
         exit 1
@@ -111,8 +147,7 @@ exec_test() {
                                 MAX_MST_PORT_IDS=$((2**MST_PORT_IW))
                                 if [ $MAX_UNIQ_SLV_PORT_IDS -le $MAX_MST_PORT_IDS ]; then
                                     call_vsim tb_axi_iw_converter \
-                                            -t 1ns -coverage -classdebug \
-                                            -voptargs="+acc +cover=bcesfx" \
+                                            -t 1ns \
                                             -GTbEnExcl=$EXCL \
                                             -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                             -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -120,8 +155,7 @@ exec_test() {
                                             -GTbAxiSlvPortMaxTxnsPerId=5
                                 else
                                     call_vsim tb_axi_iw_converter \
-                                            -t 1ns -coverage -classdebug \
-                                            -voptargs="+acc +cover=bcesfx" \
+                                            -t 1ns \
                                             -GTbEnExcl=$EXCL \
                                             -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                             -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -133,8 +167,7 @@ exec_test() {
                             done
                         else
                             call_vsim tb_axi_iw_converter \
-                                    -t 1ns -coverage -classdebug \
-                                    -voptargs="+acc +cover=bcesfx" \
+                                    -t 1ns \
                                     -GTbEnExcl=$EXCL \
                                     -GTbAxiSlvPortIdWidth=$SLV_PORT_IW \
                                     -GTbAxiMstPortIdWidth=$MST_PORT_IW \
@@ -176,6 +209,7 @@ exec_test() {
             done
             ;;
         axi_xbar)
+            # Sweep 1: vary exclusive-access and unique-id handling.
             for NumMst in 1 6; do
                 for NumSlv in 1 8; do
                     for Atop in 0 1; do
@@ -184,6 +218,29 @@ exec_test() {
                                 call_vsim tb_axi_xbar -gTbNumMasters=$NumMst -gTbNumSlaves=$NumSlv \
                                         -gTbEnAtop=$Atop -gTbEnExcl=$Exclusive \
                                         -gTbUniqueIds=$UniqueIds
+                            done
+                        done
+                    done
+                done
+            done
+            # Sweep 2: vary ID-width usage, data width and pipelining.
+            for GEN_ATOP in 0 1; do
+                for NUM_MST in 1 6; do
+                    NUM_SLV=9
+                    MST_ID=5
+                    # Sweep both IdUsed < IdWidth (3) and IdUsed == IdWidth (5), as the equal-width
+                    # case exercises a distinct code path in the ID handling.
+                    for MST_ID_USE in 3 5; do
+                        for DATA_WIDTH in 64 256; do
+                            for PIPE in 0 1; do
+                                call_vsim tb_axi_xbar -t 1ns \
+                                    -gTbNumMasters=$NUM_MST       \
+                                    -gTbNumSlaves=$NUM_SLV        \
+                                    -gTbAxiIdWidthMasters=$MST_ID \
+                                    -gTbAxiIdUsed=$MST_ID_USE     \
+                                    -gTbAxiDataWidth=$DATA_WIDTH  \
+                                    -gTbPipeline=$PIPE            \
+                                    -gTbEnAtop=$GEN_ATOP
                             done
                         done
                     done
@@ -198,7 +255,6 @@ exec_test() {
                             ACT_BANKS=$((2*$BANK_FACTOR*$NUM_BANKS))
                             MEM_DATA_WIDTH=$(($AXI_DATA_WIDTH/$NUM_BANKS))
                             call_vsim tb_axi_to_mem_banked \
-                                -voptargs="+acc +cover=bcesfx" \
                                 -gTbAxiDataWidth=$AXI_DATA_WIDTH \
                                 -gTbNumWords=2048 \
                                 -gTbNumBanks=$ACT_BANKS \
@@ -206,29 +262,6 @@ exec_test() {
                                 -gTbMemLatency=$MEM_LAT \
                                 -gTbNumWrites=2000 \
                                 -gTbNumReads=2000
-                        done
-                    done
-                done
-            done
-            ;;
-        axi_xbar)
-            for GEN_ATOP in 0 1; do
-                for NUM_MST in 1 6; do
-                    for NUM_SLV in 2 9; do
-                        for MST_ID_USE in 3 5; do
-                            MST_ID=5
-                            for DATA_WIDTH in 64 256; do
-                                for PIPE in 0 1; do
-                                    call_vsim tb_axi_xbar -t 1ns -voptargs="+acc" \
-                                        -gTbNumMasters=$NUM_MST       \
-                                        -gTbNumSlaves=$NUM_SLV        \
-                                        -gTbAxiIdWidthMasters=$MST_ID \
-                                        -gTbAxiIdUsed=$MST_ID_USE     \
-                                        -gTbAxiDataWidth=$DATA_WIDTH  \
-                                        -gTbPipeline=$PIPE            \
-                                        -gTbEnAtop=$GEN_ATOP
-                                done
-                            done
                         done
                     done
                 done
@@ -242,39 +275,45 @@ exec_test() {
             done
             ;;
         *)
-            call_vsim tb_$1 -t 1ns -coverage -voptargs="+acc +cover=bcesfx"
+            call_vsim tb_$1 -t 1ns
             ;;
     esac
 }
 
-# Parse flags.
-PARAMS=""
+# Parse arguments.
+tests=()
 while (( "$#" )); do
     case "$1" in
         --random-seed)
             SEEDS+=(random)
             shift;;
-        -*--*) # unsupported flag
+        --list)
+            LIST_ONLY=1
+            shift;;
+        -*) # unsupported flag (any dash-prefixed token not matched above)
             echo "Error: Unsupported flag '$1'." >&2
             exit 1;;
-        *) # preserve positional arguments
-            PARAMS="$PARAMS $1"
+        *) # positional argument: a test name
+            tests+=("$1")
             shift;;
     esac
 done
-eval set -- "$PARAMS"
 
-if [ "$#" -eq 0 ]; then
-    tests=()
+if [ ${#tests[@]} -eq 0 ]; then
     while IFS=  read -r -d $'\0'; do
         tb_name="$(basename -s .sv $REPLY)"
         dut_name="${tb_name#tb_}"
         tests+=("$dut_name")
     done < <(find "$ROOT/test" -name 'tb_*.sv' -a \( ! -name '*_pkg.sv' \) -print0)
-else
-    tests=("$@")
 fi
 
 for t in "${tests[@]}"; do
     exec_test $t
 done
+
+# A shard that matches no config at all (e.g. more shards than a test has configs) must fail
+# loudly instead of passing as a vacuously green CI job.
+if (( ! LIST_ONLY && NUM_EXECUTED == 0 )); then
+    echo "Error: no simulations executed on this shard (shard $SHARD_INDEX of $SHARD_TOTAL)." >&2
+    exit 1
+fi

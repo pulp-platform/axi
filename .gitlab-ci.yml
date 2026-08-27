@@ -145,10 +145,13 @@ axi_dw_downsizer:
     - changes:
         compare_to: 'refs/heads/master'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_dw_converter.sv
+          - src/axi_dw_upsizer.sv
 
 axi_dw_upsizer:
   extends: .run_vsim
@@ -160,10 +163,13 @@ axi_dw_upsizer:
     - changes:
         compare_to: 'refs/heads/master'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_dw_converter.sv
+          - src/axi_dw_downsizer.sv
 
 axi_isolate:
   extends: .run_vsim
@@ -175,8 +181,10 @@ axi_isolate:
     - changes:
         compare_to: 'refs/heads/master'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_err_slv.sv
 
 axi_iw_converter:
@@ -193,6 +201,7 @@ axi_iw_converter:
           - src/axi_id_remap.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_serializer.sv
           - src/axi_mux.sv
           - src/axi_id_serialize.sv
@@ -207,6 +216,7 @@ axi_lite_xbar:
     - changes:
         compare_to: 'refs/heads/master'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_lite_demux.sv
           - src/axi_lite_mux.sv
@@ -224,6 +234,12 @@ axi_to_axi_lite:
         paths:
           - src/axi_atop_filter.sv
           - src/axi_burst_splitter.sv
+          - src/axi_burst_splitter_gran.sv
+          - src/axi_cut.sv
+          - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
+          - src/axi_err_slv.sv
+          - src/axi_multicut.sv
 
 axi_to_mem_banked:
   extends: .run_vsim
@@ -237,22 +253,35 @@ axi_to_mem_banked:
         paths:
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_to_detailed_mem.sv
           - src/axi_to_mem.sv
 
+# The xbar sweep is the heaviest; `parallel:` splits it into shards that the runner executes
+# concurrently. Each shard runs the identical `run_vsim.sh axi_xbar` enumeration and executes its
+# share of the configs, selected round-robin via `CI_NODE_INDEX` (see scripts/run_vsim.sh).
+# `VSIM_SHARDED` opts in to that: without it the script must ignore `CI_NODE_*`, which GitLab
+# also sets on every `parallel:matrix` job (as the matrix position).
 axi_xbar:
   extends: .run_vsim
+  parallel: 4
   variables:
     TEST_MODULE: axi_xbar
+    VSIM_SHARDED: '1'
   rules:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
         compare_to: 'refs/heads/master'
         paths:
+          - test/tb_axi_xbar_pkg.sv
+          - src/axi_atop_filter.sv
+          - src/axi_cut.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_err_slv.sv
+          - src/axi_id_prepend.sv
           - src/axi_mux.sv
           - src/axi_multicut.sv
           - src/axi_xbar_unmuxed.sv
