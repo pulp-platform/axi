@@ -295,19 +295,14 @@ module axi_to_detailed_mem #(
           meta_sel_d = 1'b1;
         end else if (rd_meta.qos > wr_meta.qos) begin
           meta_sel_d = 1'b0;
-        // Decide requests with identical QoS.
         end else if (wr_meta.qos == rd_meta.qos) begin
-          // 1. Prioritize individual writes over read bursts.
-          // Rationale: Read bursts can be interleaved on AXI but write bursts cannot.
-          if (wr_meta.last && !rd_meta.last) begin
-            meta_sel_d = 1'b1;
-          // 2. Prioritize ongoing burst.
+          // 1. Prioritize ongoing burst.
           // Rationale: Stalled bursts create back-pressure or require costly buffers.
-          end else if (w_cnt_q > '0) begin
+          if (w_cnt_q > '0) begin
             meta_sel_d = 1'b1;
           end else if (r_cnt_q > '0) begin
             meta_sel_d = 1'b0;
-          // 3. Otherwise arbitrate round robin to prevent starvation.
+          // 2. Otherwise arbitrate round robin to prevent starvation.
           end else begin
             meta_sel_d = ~meta_sel_q;
           end
@@ -479,6 +474,9 @@ module axi_to_detailed_mem #(
     .oup_ready_i  ( mem_join_ready                 )
   );
 
+  logic b_valid_int, b_ready_int;
+  logic r_valid_int, r_ready_int;
+
   // Dynamically fork the joined stream to B and R channels.
   stream_fork_dynamic #(
     .N_OUP ( 32'd2 )
@@ -490,8 +488,8 @@ module axi_to_detailed_mem #(
     .sel_i        ({sel_buf_b,          sel_buf_r         }),
     .sel_valid_i  ( sel_buf_valid                          ),
     .sel_ready_o  ( sel_buf_ready                          ),
-    .valid_o      ({axi_resp_o.b_valid, axi_resp_o.r_valid}),
-    .ready_i      ({axi_req_i.b_ready,  axi_req_i.r_ready })
+    .valid_o      ({b_valid_int,        r_valid_int       }),
+    .ready_i      ({b_ready_int,        r_ready_int       })
   );
 
   localparam NumBytesPerBank = DataWidth/NumBanks/8;
@@ -539,20 +537,42 @@ module axi_to_detailed_mem #(
   end
 
   // Compose B responses.
-  assign axi_resp_o.b = '{
-    id:   meta_buf.id,
-    resp: next_collect_b_err ? axi_pkg::RESP_SLVERR : next_collect_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
-    user: '0
-  };
+  spill_register #(
+    .T ( type(axi_resp_o.b) )
+  ) i_b_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .valid_i ( b_valid_int ),
+    .ready_o ( b_ready_int ),
+    .data_i  ( '{
+      id:   meta_buf.id,
+      resp: next_collect_b_err ? axi_pkg::RESP_SLVERR : next_collect_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
+      user: '0
+    } ),
+    .valid_o ( axi_resp_o.b_valid ),
+    .ready_i ( axi_req_i.b_ready  ),
+    .data_o  ( axi_resp_o.b       )
+  );
 
   // Compose R responses.
-  assign axi_resp_o.r = '{
-    data: m2s_resp.data,
-    id:   meta_buf.id,
-    last: meta_buf.last,
-    resp: resp_r_err ? axi_pkg::RESP_SLVERR : resp_r_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
-    user: '0
-  };
+  spill_register #(
+    .T ( type(axi_resp_o.r) )
+  ) i_r_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .valid_i ( r_valid_int ),
+    .ready_o ( r_ready_int ),
+    .data_i  ( '{
+      data: m2s_resp.data,
+      id:   meta_buf.id,
+      last: meta_buf.last,
+      resp: resp_r_err ? axi_pkg::RESP_SLVERR : resp_r_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
+      user: '0
+    } ),
+    .valid_o ( axi_resp_o.r_valid ),
+    .ready_i ( axi_req_i.r_ready  ),
+    .data_o  ( axi_resp_o.r       )
+  );
 
   // Registers
   `FFARN(meta_sel_q, meta_sel_d, 1'b0, clk_i, rst_ni)
