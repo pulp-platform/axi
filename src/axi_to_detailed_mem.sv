@@ -39,6 +39,9 @@ module axi_to_detailed_mem #(
   parameter bit          HideStrb   = 1'b0,
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OutFifoDepth = 1,
+  /// Cut the combinational paths from `b_ready`/`r_ready` to `aw_ready`/`w_ready`/`ar_ready`
+  /// with spill registers on the B and R channels (+1 cycle response latency). See #287.
+  parameter bit          CutResp      = 1'b0,
   /// Dependent parameter, do not override. Memory address type.
   localparam type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -295,19 +298,14 @@ module axi_to_detailed_mem #(
           meta_sel_d = 1'b1;
         end else if (rd_meta.qos > wr_meta.qos) begin
           meta_sel_d = 1'b0;
-        // Decide requests with identical QoS.
         end else if (wr_meta.qos == rd_meta.qos) begin
-          // 1. Prioritize individual writes over read bursts.
-          // Rationale: Read bursts can be interleaved on AXI but write bursts cannot.
-          if (wr_meta.last && !rd_meta.last) begin
-            meta_sel_d = 1'b1;
-          // 2. Prioritize ongoing burst.
+          // 1. Prioritize ongoing burst.
           // Rationale: Stalled bursts create back-pressure or require costly buffers.
-          end else if (w_cnt_q > '0) begin
+          if (w_cnt_q > '0) begin
             meta_sel_d = 1'b1;
           end else if (r_cnt_q > '0) begin
             meta_sel_d = 1'b0;
-          // 3. Otherwise arbitrate round robin to prevent starvation.
+          // 2. Otherwise arbitrate round robin to prevent starvation.
           end else begin
             meta_sel_d = ~meta_sel_q;
           end
@@ -480,6 +478,9 @@ module axi_to_detailed_mem #(
     .oup_ready_i  ( mem_join_ready                 )
   );
 
+  logic b_spill_valid, b_spill_ready;
+  logic r_spill_valid, r_spill_ready;
+
   // Dynamically fork the joined stream to B and R channels.
   cc_stream_fork_dynamic #(
     .NumOup ( 32'd2 )
@@ -492,8 +493,8 @@ module axi_to_detailed_mem #(
     .sel_i        ({sel_buf_b,          sel_buf_r         }),
     .sel_valid_i  ( sel_buf_valid                          ),
     .sel_ready_o  ( sel_buf_ready                          ),
-    .valid_o      ({axi_resp_o.b_valid, axi_resp_o.r_valid}),
-    .ready_i      ({axi_req_i.b_ready,  axi_req_i.r_ready })
+    .valid_o      ({b_spill_valid,      r_spill_valid     }),
+    .ready_i      ({b_spill_ready,      r_spill_ready     })
   );
 
   localparam NumBytesPerBank = DataWidth/NumBanks/8;
@@ -540,21 +541,53 @@ module axi_to_detailed_mem #(
     end
   end
 
+  axi_resp_t resp_payload;
+
   // Compose B responses.
-  assign axi_resp_o.b = '{
+  assign resp_payload.b = '{
     id:   meta_buf.id,
     resp: next_collect_b_err ? axi_pkg::RESP_SLVERR : next_collect_b_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
     user: '0
   };
 
+  cc_spill_register #(
+    .data_t ( logic [$bits(axi_resp_o.b)-1:0] ),
+    .Bypass ( !CutResp                        )
+  ) i_b_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .clr_i   ( 1'b0               ),
+    .valid_i ( b_spill_valid      ),
+    .ready_o ( b_spill_ready      ),
+    .data_i  ( resp_payload.b     ),
+    .valid_o ( axi_resp_o.b_valid ),
+    .ready_i ( axi_req_i.b_ready  ),
+    .data_o  ( axi_resp_o.b       )
+  );
+
   // Compose R responses.
-  assign axi_resp_o.r = '{
+  assign resp_payload.r = '{
     data: m2s_resp.data,
     id:   meta_buf.id,
     last: meta_buf.last,
     resp: resp_r_err ? axi_pkg::RESP_SLVERR : resp_r_exokay ? axi_pkg::RESP_EXOKAY : axi_pkg::RESP_OKAY,
     user: '0
   };
+
+  cc_spill_register #(
+    .data_t ( logic [$bits(axi_resp_o.r)-1:0] ),
+    .Bypass ( !CutResp                        )
+  ) i_r_spill_reg (
+    .clk_i,
+    .rst_ni,
+    .clr_i   ( 1'b0               ),
+    .valid_i ( r_spill_valid      ),
+    .ready_o ( r_spill_ready      ),
+    .data_i  ( resp_payload.r     ),
+    .valid_o ( axi_resp_o.r_valid ),
+    .ready_i ( axi_req_i.r_ready  ),
+    .data_o  ( axi_resp_o.r       )
+  );
 
   // Registers
   `FF(meta_sel_q, meta_sel_d, 1'b0, clk_i, rst_ni)
@@ -620,6 +653,8 @@ module axi_to_detailed_mem_intf #(
   parameter bit          HIDE_STRB      = 1'b0,
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OUT_FIFO_DEPTH = 32'd1,
+  /// See `axi_to_detailed_mem`, parameter `CutResp`.
+  parameter bit          CUT_RESP       = 1'b0,
   /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `addr_t`.
   localparam type addr_t     = logic [ADDR_WIDTH-1:0],
   /// Dependent parameter, do not override. See `axi_to_detailed_mem`, parameter `mem_data_t`.
@@ -701,7 +736,8 @@ module axi_to_detailed_mem_intf #(
     .NumBanks     ( NUM_BANKS      ),
     .BufDepth     ( BUF_DEPTH      ),
     .HideStrb     ( HIDE_STRB      ),
-    .OutFifoDepth ( OUT_FIFO_DEPTH )
+    .OutFifoDepth ( OUT_FIFO_DEPTH ),
+    .CutResp      ( CUT_RESP       )
   ) i_axi_to_detailed_mem (
     .clk_i,
     .rst_ni,
