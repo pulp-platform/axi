@@ -688,8 +688,8 @@ module axi_dw_downsizer #(
     .rst_ni    (rst_ni              ),
     .flush_i   (1'b0                ),
     .testmode_i(1'b0                ),
-    .data_i    (forward_b_beat_i    ),
     .push_i    (forward_b_beat_push ),
+    .data_i    (forward_b_beat_i    ),
     .full_o    (forward_b_beat_full ),
     .data_o    (forward_b_beat_o    ),
     .pop_i     (forward_b_beat_pop  ),
@@ -729,12 +729,8 @@ module axi_dw_downsizer #(
     w_data = '0;
 
     // B Channel (No latency)
-    if (mst_resp.b_valid) begin
-      // Merge response of this burst with prior one according to precedence rules.
-      w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
-    end
     slv_resp_o.b      = mst_resp.b        ;
-    slv_resp_o.b.resp = w_req_d.burst_resp;
+    slv_resp_o.b.resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
 
     // Each write transaction might trigger several B beats on the master (narrow) side.
     // Only forward the last B beat of each transaction.
@@ -745,12 +741,17 @@ module axi_dw_downsizer #(
       // Got an ack on the B channel. Pop transaction.
       if (mst_req.b_ready && mst_resp.b_valid) begin
         forward_b_beat_pop = 1'b1;
+        w_req_d.burst_resp = axi_pkg::RESP_EXOKAY;
       end
     end else begin
       // Otherwise, just acknowlegde the B beats
       slv_resp_o.b_valid = 1'b0            ;
       mst_req.b_ready    = 1'b1            ;
       forward_b_beat_pop = mst_resp.b_valid;
+
+      if (mst_req.b_ready && mst_resp.b_valid) begin
+        w_req_d.burst_resp = axi_pkg::resp_precedence(w_req_q.burst_resp, mst_resp.b.resp);
+      end
     end
 
     // Got a grant on the AW channel
@@ -845,7 +846,6 @@ module axi_dw_downsizer #(
       w_req_d.aw             = '0                  ;
       w_req_d.aw_valid       = 1'b0                ;
       w_req_d.aw_throw_error = 1'b0                ;
-      w_req_d.burst_resp     = axi_pkg::RESP_EXOKAY;
 
       if (!forward_b_beat_full) begin
         if (slv_req_i.aw_valid && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin // ATOP with an R response
@@ -937,6 +937,7 @@ module axi_dw_downsizer #(
     if (!rst_ni) begin
       w_state_q <= W_IDLE;
       w_req_q   <= '0    ;
+      w_req_q.burst_resp <= axi_pkg::RESP_EXOKAY;
     end else begin
       w_state_q <= w_state_d;
       w_req_q   <= w_req_d  ;
