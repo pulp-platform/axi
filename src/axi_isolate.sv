@@ -88,10 +88,39 @@ module axi_isolate #(
   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
+  // Capacity of `axi_isolate_inner`, derived from the maximum number of transactions the demux
+  // admits (`2**AxiLookBits` ID buckets, each counting up to `2**IdCounterWidth - 1`).
+  localparam int unsigned DemuxLookBits   = 32'd1;
+  localparam int unsigned DemuxCntWidth   = cf_math_pkg::idx_width(NumPending);
+  localparam int unsigned DemuxMaxPending =
+      (32'd1 << DemuxLookBits) * ((32'd1 << DemuxCntWidth) - 32'd1);
+  localparam int unsigned InnerPending    =
+      TerminateTransaction ? DemuxMaxPending + 32'd1 : NumPending;
+
   axi_req_t [1:0]   demux_req;
   axi_resp_t [1:0]  demux_rsp;
 
   if (TerminateTransaction) begin
+    logic sel_aw_q, sel_ar_q;
+    // A request is presented at a demux master port and not yet accepted.  Requests stalled by
+    // the demux itself are not committed to a port and do not hold the select.
+    logic demux_aw_unaccepted, demux_ar_unaccepted;
+
+    assign demux_aw_unaccepted = (demux_req[0].aw_valid | demux_req[1].aw_valid)
+                                 & ~slv_resp_o.aw_ready;
+    assign demux_ar_unaccepted = (demux_req[0].ar_valid | demux_req[1].ar_valid)
+                                 & ~slv_resp_o.ar_ready;
+
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        sel_aw_q <= 1'b1;
+        sel_ar_q <= 1'b1;
+      end else begin
+        if (!demux_aw_unaccepted) sel_aw_q <= isolate_i;
+        if (!demux_ar_unaccepted) sel_ar_q <= isolate_i;
+      end
+    end
+
     axi_demux #(
       .AxiIdWidth     ( AxiIdWidth  ),
       .AtopSupport    ( AtopSupport ),
@@ -105,20 +134,20 @@ module axi_isolate #(
       .NoMstPorts     ( 2           ),
       .MaxTrans       ( NumPending  ),
       // We don't need many bits here as the common case will be to go for the pass-through.
-      .AxiLookBits    ( 1           ),
-      .UniqueIds      ( 1'b0        ),
-      .SpillAw        ( 1'b0        ),
-      .SpillW         ( 1'b0        ),
-      .SpillB         ( 1'b0        ),
-      .SpillAr        ( 1'b0        ),
-      .SpillR         ( 1'b0        )
+      .AxiLookBits    ( DemuxLookBits ),
+      .UniqueIds      ( 1'b0          ),
+      .SpillAw        ( 1'b0          ),
+      .SpillW         ( 1'b0          ),
+      .SpillB         ( 1'b0          ),
+      .SpillAr        ( 1'b0          ),
+      .SpillR         ( 1'b0          )
     ) i_axi_demux (
       .clk_i,
       .rst_ni,
-      .test_i          ( 1'b0       ),
+      .test_i          ( 1'b0      ),
       .slv_req_i,
-      .slv_aw_select_i ( isolated_o ),
-      .slv_ar_select_i ( isolated_o ),
+      .slv_aw_select_i ( sel_aw_q  ),
+      .slv_ar_select_i ( sel_ar_q  ),
       .slv_resp_o,
       .mst_reqs_o      ( demux_req ),
       .mst_resps_i     ( demux_rsp )
@@ -148,9 +177,9 @@ module axi_isolate #(
   end
 
   axi_isolate_inner #(
-    .NumPending ( NumPending  ),
-    .axi_req_t  ( axi_req_t   ),
-    .axi_resp_t ( axi_resp_t  )
+    .NumPending ( InnerPending ),
+    .axi_req_t  ( axi_req_t    ),
+    .axi_resp_t ( axi_resp_t   )
   ) i_axi_isolate (
     .clk_i,
     .rst_ni,
