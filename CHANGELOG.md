@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.39.11 - 2026-09-08
+
+### Added
+- `axi_id_prepend`: Support equal slave and master port ID widths. #435
+
+### Fixed
+- `axi_to_detailed_mem`: Parenthesize the per-bank read-error mask. #426
+- `axi_burst_splitter_gran`: Fix inverted bypass condition in `txn_supported`. #437
+- `axi_synth_bench`: Fix swapped AXI widths in `synth_axi_isolate`, `synth_axi_serializer` and `synth_axi_to_mem_banked`. #445
+- `axi.core`: Add the missing `axi_demux_id_counters` entry. #406
+
+### Changed
+- CI: Pin the `iic-osic-tools` image and drop the removed `--ignore-unknown-modules` yosys-slang option.
+
 ## 0.39.10 - 2026-06-19
 
 ### Added
