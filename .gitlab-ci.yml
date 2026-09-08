@@ -256,3 +256,20 @@ axi_xbar:
           - src/axi_mux.sv
           - src/axi_multicut.sv
           - src/axi_xbar_unmuxed.sv
+  timeout: 6h 00m
+
+axi_mcast_xbar:
+  extends: .run_vsim
+  variables:
+    TEST_MODULE: axi_mcast_xbar
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: 'refs/heads/master'
+        paths:
+          - src/axi_mcast_demux.sv
+          - src/axi_err_slv.sv
+          - src/axi_mcast_mux.sv
+          - src/axi_multicut.sv
+  timeout: 6h 00m
