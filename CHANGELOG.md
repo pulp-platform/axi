@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- `axi_dw_converter`, `axi_dw_downsizer`, `axi_dw_upsizer`: Document INCR/FIXED/WRAP burst support
+  in the module headers. #429
+- `README`: Add the missing documentation link for `axi_lite_dw_converter`. #429
+
+### Fixed
+- `axi_fifo_delay_dyn`: Fix the power-of-two check for the `Depth` parameter, which rejected valid
+  values. #399
+
+### Changed
+- Bump `common_cells` to `v2.0.0-beta.2` and `tech_cells_generic` to `v0.2.14`. All instantiated
+  common cells are renamed to their `cc_*` equivalents and their parameters updated accordingly.
+  The `vsim` compile script now builds with the `cc_no_deprecated` target. #420
+- Replace the custom `XSIM` define with the tool-predefined `XILINX_SIMULATOR` macro. #434
+
+### Removed
+- `axi_xbar_unmuxed_intf`: Remove the interface variant. Its multi-dimensional interface arrays are
+  unsupported by many tools; downstream users can trivially wrap `axi_xbar_unmuxed` themselves. #353
+- Remove the unused `test_i` port from `axi_demux`, `axi_demux_simple`, `axi_err_slv`, `axi_fifo`,
+  `axi_interleaved_xbar`, `axi_lite_demux`, `axi_lite_mailbox`, `axi_lite_mux`, `axi_lite_xbar`,
+  `axi_mux`, `axi_to_axi_lite`, `axi_to_mem_banked`, `axi_to_mem_interleaved`, `axi_to_mem_split`,
+  `axi_xbar` and `axi_xbar_unmuxed`. #420
+
+### Breaking Changes
+This release is **not backward-compatible** to `v0.39.11`:
+- `common_cells` `v2.0.0-beta.2` is now required and is not compatible with the `1.x` series.
+- `axi_xbar_unmuxed_intf` was removed.
+- The `test_i` port was removed from the modules listed above.
+
 ## 0.39.11 - 2026-09-08
 
 ### Added

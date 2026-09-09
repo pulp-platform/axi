@@ -16,7 +16,7 @@
 /// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
 /// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar_unmuxed
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
   parameter axi_pkg::xbar_cfg_t Cfg                                   = '0,
@@ -56,8 +56,6 @@ import cf_math_pkg::idx_width;
   input  logic                                                          clk_i,
   /// Asynchronous reset, active low.
   input  logic                                                          rst_ni,
-  /// Testmode enable, active high.
-  input  logic                                                          test_i,
   /// AXI4+ATOP requests to the slave ports.
   input  req_t  [Cfg.NoSlvPorts-1:0]                                    slv_ports_req_i,
   /// AXI4+ATOP responses of the slave ports.
@@ -98,7 +96,7 @@ import cf_math_pkg::idx_width;
     logic                                 dec_aw_valid,  dec_aw_error;
     logic                                 dec_ar_valid,  dec_ar_error;
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .NoRules    ( Cfg.NoAddrRules ),
       .addr_t     ( addr_t          ),
@@ -113,7 +111,7 @@ import cf_math_pkg::idx_width;
       .default_idx_i    ( default_mst_port_i[i]      )
     );
 
-    addr_decode #(
+    cc_addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
       .addr_t     ( addr_t          ),
       .NoRules    ( Cfg.NoAddrRules ),
@@ -136,7 +134,7 @@ import cf_math_pkg::idx_width;
     // make sure that the default slave does not get changed, if there is an unserved Ax
     // pragma translate_off
     `ifndef VERILATOR
-    `ifndef XSIM
+    `ifndef XILINX_SIMULATOR
     default disable iff (~rst_ni);
     default_aw_mst_port_en: assert property(
       @(posedge clk_i) (slv_ports_req_i[i].aw_valid && !slv_ports_resp_o[i].aw_ready)
@@ -183,7 +181,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_demux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       .slv_req_i       ( slv_ports_req_i[i]  ),
       .slv_aw_select_i ( slv_aw_select       ),
       .slv_ar_select_i ( slv_ar_select       ),
@@ -204,7 +201,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_err_slv (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Testmode enable
       // slave port
       .slv_req_i  ( slv_reqs[i][Cfg.NoMstPorts]   ),
       .slv_resp_o ( slv_resps[i][cfg_NoMstPorts]  )
@@ -245,7 +241,6 @@ import cf_math_pkg::idx_width;
         ) i_axi_err_slv (
           .clk_i,
           .rst_ni,
-          .test_i,
           .slv_req_i  ( slv_reqs[i][j]  ),
           .slv_resp_o ( slv_resps[i][j] )
         );
@@ -255,7 +250,7 @@ import cf_math_pkg::idx_width;
 
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   initial begin : check_params
     id_slv_req_ports: assert ($bits(slv_ports_req_i[0].aw.id ) == Cfg.AxiIdWidthSlvPorts) else
       $fatal(1, $sformatf("Slv_req and aw_chan id width not equal."));
@@ -266,89 +261,3 @@ import cf_math_pkg::idx_width;
   `endif
   // pragma translate_on
 endmodule
-
-`ifndef VCS
-`ifndef TARGET_GENUS
-// As of now, VCS and Genus does not support multi-dimensional array of interfaces.
-`include "axi/assign.svh"
-`include "axi/typedef.svh"
-
-module axi_xbar_unmuxed_intf
-import cf_math_pkg::idx_width;
-#(
-  parameter int unsigned AXI_USER_WIDTH =  0,
-  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
-  parameter bit ATOPS                   = 1'b1,
-  parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
-  parameter type rule_t                 = axi_pkg::xbar_rule_64_t
-) (
-  input  logic                                                      clk_i,
-  input  logic                                                      rst_ni,
-  input  logic                                                      test_i,
-  AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
-  AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0],
-  input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
-  input  logic  [Cfg.NoSlvPorts-1:0]                                en_default_mst_port_i,
-  input  logic  [Cfg.NoSlvPorts-1:0][idx_width(Cfg.NoMstPorts)-1:0] default_mst_port_i
-);
-
-  typedef logic [Cfg.AxiIdWidthSlvPorts -1:0] id_t;
-  typedef logic [Cfg.AxiAddrWidth       -1:0] addr_t;
-  typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
-  typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
-  typedef logic [AXI_USER_WIDTH         -1:0] user_t;
-
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
-  `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
-
-  req_t   [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
-  resp_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
-  req_t   [Cfg.NoSlvPorts-1:0]                     slv_reqs;
-  resp_t  [Cfg.NoSlvPorts-1:0]                     slv_resps;
-
-  for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
-    for (genvar j = 0; j < Cfg.NoSlvPorts; j++) begin : gen_assign_mst_inner
-      `AXI_ASSIGN_FROM_REQ(mst_ports[i][j], mst_reqs[i][j])
-      `AXI_ASSIGN_TO_RESP(mst_resps[i][j], mst_ports[i][j])
-    end
-  end
-
-  for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_assign_slv
-    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
-    `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
-  end
-
-  axi_xbar_unmuxed #(
-    .Cfg          ( Cfg          ),
-    .ATOPs        ( ATOPS        ),
-    .Connectivity ( CONNECTIVITY ),
-    .aw_chan_t    ( aw_chan_t    ),
-    .w_chan_t     ( w_chan_t     ),
-    .b_chan_t     ( b_chan_t     ),
-    .ar_chan_t    ( ar_chan_t    ),
-    .r_chan_t     ( r_chan_t     ),
-    .req_t        ( req_t        ),
-    .resp_t       ( resp_t       ),
-    .rule_t       ( rule_t       )
-  ) i_xbar (
-    .clk_i,
-    .rst_ni,
-    .test_i,
-    .slv_ports_req_i  (slv_reqs ),
-    .slv_ports_resp_o (slv_resps),
-    .mst_ports_req_o  (mst_reqs ),
-    .mst_ports_resp_i (mst_resps),
-    .addr_map_i,
-    .en_default_mst_port_i,
-    .default_mst_port_i
-  );
-
-endmodule
-
-`endif
-`endif

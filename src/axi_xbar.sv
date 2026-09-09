@@ -16,7 +16,7 @@
 /// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
 /// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
 module axi_xbar
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
   parameter axi_pkg::xbar_cfg_t Cfg                                   = '0,
@@ -68,8 +68,6 @@ import cf_math_pkg::idx_width;
   input  logic                                                          clk_i,
   /// Asynchronous reset, active low.
   input  logic                                                          rst_ni,
-  /// Testmode enable, active high.
-  input  logic                                                          test_i,
   /// AXI4+ATOP requests to the slave ports.
   input  slv_req_t  [Cfg.NoSlvPorts-1:0]                                slv_ports_req_i,
   /// AXI4+ATOP responses of the slave ports.
@@ -109,7 +107,6 @@ import cf_math_pkg::idx_width;
   ) i_xbar_unmuxed (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_ports_req_i,
     .slv_ports_resp_o,
     .mst_ports_req_o  (mst_reqs),
@@ -146,7 +143,6 @@ import cf_math_pkg::idx_width;
     ) i_axi_mux (
       .clk_i,   // Clock
       .rst_ni,  // Asynchronous reset active low
-      .test_i,  // Test Mode enable
       .slv_reqs_i  ( mst_reqs[i]         ),
       .slv_resps_o ( mst_resps[i]        ),
       .mst_req_o   ( mst_ports_req_o[i]  ),
@@ -160,7 +156,7 @@ endmodule
 `include "axi/typedef.svh"
 
 module axi_xbar_intf
-import cf_math_pkg::idx_width;
+import cc_pkg::idx_width;
 #(
   parameter int unsigned AXI_USER_WIDTH =  0,
   parameter axi_pkg::xbar_cfg_t Cfg     = '0,
@@ -172,7 +168,6 @@ import cf_math_pkg::idx_width;
 ) (
   input  logic                                                      clk_i,
   input  logic                                                      rst_ni,
-  input  logic                                                      test_i,
   AXI_BUS.Slave                                                     slv_ports [Cfg.NoSlvPorts-1:0],
   AXI_BUS.Master                                                    mst_ports [Cfg.NoMstPorts-1:0],
   input  rule_t [Cfg.NoAddrRules-1:0]                               addr_map_i,
@@ -239,7 +234,6 @@ import cf_math_pkg::idx_width;
   ) i_xbar (
     .clk_i,
     .rst_ni,
-    .test_i,
     .slv_ports_req_i  (slv_reqs ),
     .slv_ports_resp_o (slv_resps),
     .mst_ports_req_o  (mst_reqs ),

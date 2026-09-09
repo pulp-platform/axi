@@ -100,7 +100,7 @@ module tb_axi_sim_mem #(
     wait (rst_n);
     // AW
     forever begin
-`ifdef XSIM
+`ifdef XILINX_SIMULATOR
       // std::randomize(aw_beat) may behave differently to aw_beat.randomize() wrt. limited ranges
       // Keeping alternate implementation for XSIM only
       rand_success = std::randomize(aw_beat); assert (rand_success);
@@ -121,7 +121,7 @@ module tb_axi_sim_mem #(
     drv.send_aw(aw_beat);
     // W beats
     for (int unsigned i = 0; i <= aw_beat.ax_len; i++) begin
-`ifdef XSIM
+`ifdef XILINX_SIMULATOR
       // std::randomize(w_beat) may behave differently to w_beat.randomize() wrt. limited ranges
       // Keeping alternate implementation for XSIM only
       rand_success = std::randomize(w_beat); assert (rand_success);

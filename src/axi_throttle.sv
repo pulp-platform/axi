@@ -19,9 +19,9 @@ module axi_throttle #(
     /// AXI4+ATOP response type
     parameter type axi_rsp_t = logic,
     /// The width of the write credit counter (*DO NOT OVERWRITE*)
-    parameter int unsigned WCntWidth = cf_math_pkg::idx_width(MaxNumAwPending),
+    parameter int unsigned WCntWidth = cc_pkg::idx_width(MaxNumAwPending),
     /// The width of the read credit counter (*DO NOT OVERWRITE*)
-    parameter int unsigned RCntWidth = cf_math_pkg::idx_width(MaxNumArPending),
+    parameter int unsigned RCntWidth = cc_pkg::idx_width(MaxNumArPending),
     /// The type of the write credit counter (*DO NOT OVERWRITE*)
     parameter type w_credit_t = logic [WCntWidth-1:0],
     /// The type of the read credit counter (*DO NOT OVERWRITE*)
@@ -56,11 +56,12 @@ module axi_throttle #(
     logic throttled_ar_ready;
 
     // limit Aw requests -> wait for b
-    stream_throttle #(
+    cc_stream_throttle #(
         .MaxNumPending ( MaxNumAwPending  )
     ) i_stream_throttle_aw (
         .clk_i,
         .rst_ni,
+        .clr_i       ( 1'b0               ),
         .req_valid_i ( req_i.aw_valid     ),
         .req_valid_o ( throttled_aw_valid ),
         .req_ready_i ( rsp_i.aw_ready     ),
@@ -71,11 +72,12 @@ module axi_throttle #(
     );
 
     // limit Ar requests -> wait for r.last
-    stream_throttle #(
+    cc_stream_throttle #(
         .MaxNumPending ( MaxNumArPending  )
     ) i_stream_throttle_ar (
         .clk_i,
         .rst_ni,
+        .clr_i       ( 1'b0                         ),
         .req_valid_i ( req_i.ar_valid               ),
         .req_valid_o ( throttled_ar_valid           ),
         .req_ready_i ( rsp_i.ar_ready               ),

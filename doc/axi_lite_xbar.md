@@ -55,7 +55,6 @@ If two crossbars are connected in both directions, meaning both have one of thei
 |:------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `clk_i`                 | Clock to which all other signals (except `rst_ni`) are synchronous.                                                                                                           |
 | `rst_ni`                | Reset, asynchronous, active-low.                                                                                                                                              |
-| `test_i`                | Test mode enable (active-high).                                                                                                                                               |
 | `slv_ports_*`           | Array of slave ports of the crossbar.  The array index of each port is the index of the slave port.  This index will be prepended to all requests at one of the master ports. |
 | `mst_ports_*`           | Array of master ports of the crossbar.  The array index of each port is the index of the master port.                                                                         |
 | `addr_map_i`            | Address map of the crossbar (see section *Address Map* above).                                                                                                                |

@@ -85,7 +85,6 @@ module axi_burst_unwrap #(
   ) i_demux_supported_vs_unsupported (
     .clk_i,
     .rst_ni,
-    .test_i           ( 1'b0                          ),
     .slv_req_i,
     .slv_aw_select_i  ( sel_aw_unsupported            ),
     .slv_ar_select_i  ( sel_ar_unsupported            ),
@@ -123,7 +122,6 @@ module axi_burst_unwrap #(
   ) i_err_slv (
     .clk_i,
     .rst_ni,
-    .test_i     ( 1'b0              ),
     .slv_req_i  ( unsupported_req   ),
     .slv_resp_o ( unsupported_resp  )
   );
@@ -135,11 +133,11 @@ module axi_burst_unwrap #(
   logic           w_cnt_dec, w_cnt_req, w_cnt_gnt;
   axi_pkg::len_t  b_cnt_len, w_cnt_len;
   axi_burst_unwrap_ax_chan #(
-    .AwChan   ( 1'b1         ),
-    .chan_t   ( aw_chan_t    ),
+    .AwChan    ( 1'b1         ),
+    .chan_t    ( aw_chan_t    ),
     .AddrWidth ( AddrWidth   ),
-    .IdWidth  ( IdWidth      ),
-    .MaxTxns  ( MaxWriteTxns )
+    .IdWidth   ( IdWidth      ),
+    .MaxTxns   ( MaxWriteTxns )
   ) i_axi_burst_unwrap_aw_chan (
     .clk_i,
     .rst_ni,
@@ -353,18 +351,18 @@ module axi_burst_unwrap #(
   // --------------------------------------------------
   // Flip-Flops
   // --------------------------------------------------
-  `FFARN(b_err_q, b_err_d, 1'b0, clk_i, rst_ni)
-  `FFARN(b_state_q, b_state_d, BReady, clk_i, rst_ni)
-  `FFARN(r_last_q, r_last_d, 1'b0, clk_i, rst_ni)
-  `FFARN(r_state_q, r_state_d, RFeedthrough, clk_i, rst_ni)
-  `FFARN(w_last_q, w_last_d, 1'b0, clk_i, rst_ni)
-  `FFARN(w_state_q, w_state_d, WReady, clk_i, rst_ni)
+  `FF(b_err_q, b_err_d, 1'b0, clk_i, rst_ni)
+  `FF(b_state_q, b_state_d, BReady, clk_i, rst_ni)
+  `FF(r_last_q, r_last_d, 1'b0, clk_i, rst_ni)
+  `FF(r_state_q, r_state_d, RFeedthrough, clk_i, rst_ni)
+  `FF(w_last_q, w_last_d, 1'b0, clk_i, rst_ni)
+  `FF(w_state_q, w_state_d, WReady, clk_i, rst_ni)
 
   // --------------------------------------------------
   // Assumptions and assertions
   // --------------------------------------------------
   `ifndef VERILATOR
-  `ifndef XSIM
+  `ifndef XILINX_SIMULATOR
   // pragma translate_off
   default disable iff (!rst_ni);
   // Inputs
@@ -533,8 +531,8 @@ module axi_burst_unwrap_ax_chan #(
   end
 
   // registers
-  `FFARN(ax_q, ax_d, '0, clk_i, rst_ni)
-  `FFARN(state_q, state_d, Idle, clk_i, rst_ni)
+  `FF(ax_q, ax_d, '0, clk_i, rst_ni)
+  `FF(state_q, state_d, Idle, clk_i, rst_ni)
 endmodule
 
 /// Internal module of [`axi_burst_splitter`](module.axi_burst_splitter) to order transactions.
@@ -567,12 +565,12 @@ module axi_burst_counters #(
   cnt_t [MaxTxns-1:0]  cnt_oup;
   cnt_idx_t            cnt_free_idx, cnt_r_idx;
   for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
-    counter #(
-      .WIDTH ( $bits(cnt_t) )
+    cc_counter #(
+      .Width ( $bits(cnt_t) )
     ) i_cnt (
       .clk_i,
       .rst_ni,
-      .clear_i    ( 1'b0       ),
+      .clr_i      ( 1'b0       ),
       .en_i       ( cnt_dec[i] ),
       .load_i     ( cnt_set[i] ),
       .down_i     ( 1'b1       ),
@@ -584,9 +582,9 @@ module axi_burst_counters #(
   end
   assign cnt_inp = {1'b0, alloc_len_i} + 1;
 
-  lzc #(
-    .WIDTH  ( MaxTxns ),
-    .MODE   ( 1'b0    )  // start counting at index 0
+  cc_lzc #(
+    .Width ( MaxTxns                       ),
+    .Mode  ( cc_pkg::LZC_TRAILING_ZERO_CNT )  // start counting at index 0
   ) i_lzc (
     .in_i    ( cnt_free     ),
     .cnt_o   ( cnt_free_idx ),
@@ -595,13 +593,14 @@ module axi_burst_counters #(
 
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
-  id_queue #(
-    .ID_WIDTH ( $bits(id_t) ),
-    .CAPACITY ( MaxTxns     ),
+  cc_id_queue #(
+    .IdWidth  ( $bits(id_t) ),
+    .Capacity ( MaxTxns     ),
     .data_t   ( cnt_idx_t   )
   ) i_idq (
     .clk_i,
     .rst_ni,
+    .clr_i            ( 1'b0          ),
     .inp_id_i         ( alloc_id_i    ),
     .inp_data_i       ( cnt_free_idx  ),
     .inp_req_i        ( idq_inp_req   ),
@@ -649,6 +648,6 @@ module axi_burst_counters #(
   end
 
   // registers
-  `FFARN(err_q, err_d, '0, clk_i, rst_ni)
+  `FF(err_q, err_d, '0, clk_i, rst_ni)
 
 endmodule
