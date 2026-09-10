@@ -2,6 +2,22 @@ variables:
   SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
   VSIM: questa-2025.1 vsim
   VERILATOR: oseda -2026.04 verilator
+  CI_DIFF_BASE: 'refs/heads/master'
+
+default:
+  interruptible: true
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "push"'
+      variables:
+        CI_DIFF_BASE: '$CI_COMMIT_BEFORE_SHA'
+      # Each master push tests its own diff, so later pushes must not cancel it.
+      auto_cancel:
+        on_new_commit: none
+    - when: always
 
 before_script:
   - mkdir -p build
@@ -12,13 +28,8 @@ before_script:
 # list is a superset of every `run_vsim` test trigger, so whenever a test runs
 # its `needs: vsim` dependency is guaranteed to be part of the pipeline.
 #
-# Every `changes` rule compares against `master` (`compare_to`) rather than the
-# previous commit. This makes the trigger reflect the cumulative diff of the
-# whole branch, like memora's content-addressed cache did: a file touched
-# anywhere on the branch keeps triggering its job until merged, so a later
-# unrelated commit cannot "hide" an earlier failing change behind a green
-# pipeline. Note this still trusts the hand-maintained dependency lists below;
-# a missing entry silently skips a test.
+# Development branches compare against master to keep checking cumulative changes.
+# Master pushes compare against the previous tip, not master itself.
 vsim:
   stage: build
   script:
@@ -30,7 +41,7 @@ vsim:
   rules:
     - &build_common_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - .gitlab-ci.yml
           - Bender.yml
@@ -38,7 +49,7 @@ vsim:
           - src/**/*
           - test/**/*
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - scripts/compile_vsim.sh
           - scripts/run_vsim.sh
@@ -50,7 +61,7 @@ synopsys_dc:
   rules:
     - *build_common_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - scripts/synth.sh
 
@@ -82,7 +93,7 @@ verilator_lint:
   rules:
     - &run_vsim_common_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - .gitlab-ci.yml
           - Bender.yml
@@ -93,7 +104,7 @@ verilator_lint:
           - src/axi_test.sv
     - &run_vsim_module_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/$TEST_MODULE.sv
           - test/tb_$TEST_MODULE.sv
@@ -130,7 +141,7 @@ axi_cdc:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_cdc_dst.sv
           - src/axi_cdc_src.sv
@@ -143,7 +154,7 @@ axi_dw_downsizer:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
@@ -161,7 +172,7 @@ axi_dw_upsizer:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
@@ -179,7 +190,7 @@ axi_isolate:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_demux.sv
@@ -195,7 +206,7 @@ axi_iw_converter:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_id_prepend.sv
           - src/axi_id_remap.sv
@@ -214,7 +225,7 @@ axi_lite_xbar:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
@@ -230,7 +241,7 @@ axi_to_axi_lite:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_burst_splitter.sv
@@ -249,7 +260,7 @@ axi_to_mem_banked:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
@@ -272,7 +283,7 @@ axi_xbar:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - test/tb_axi_xbar_pkg.sv
           - src/axi_atop_filter.sv
