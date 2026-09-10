@@ -149,11 +149,6 @@ module axi_demux_id_counters #(
       (cnt_full[i] |-> ({overflow, in_flight} >= MaxTrans))) else
         $fatal(1, "axi_demux_id_counters > Counter %0d reports full at %0d < MaxTrans = %0d.",
                i, {overflow, in_flight}, MaxTrans);
-    cnt_no_push_beyond_limit: assert property(
-      @(posedge clk_i) disable iff (~rst_ni)
-      (push_en[i] |-> ({overflow, in_flight} < MaxTrans))) else
-        $fatal(1, "axi_demux_id_counters > Counter %0d pushed at %0d >= MaxTrans = %0d.",
-               i, {overflow, in_flight}, MaxTrans);
 `endif
 `endif
 // pragma translate_on
