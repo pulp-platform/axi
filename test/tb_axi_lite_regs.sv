@@ -300,6 +300,7 @@ module tb_axi_lite_regs #(
   endtask : check_q
 
   // Some assertions for additional checking.
+`ifndef XILINX_SIMULATOR
   default disable iff (~rst_n);
   for (genvar i = 0; i < TbRegNumBytes; i++) begin : gen_check_ro_bytes
     if (TbAxiReadOnly[i]) begin : gen_check_ro
@@ -320,6 +321,7 @@ module tb_axi_lite_regs #(
         (!reg_load[i] && !wr_active[i]) |=> $stable(reg_q[i])) else
         $fatal(1, "Byte %0d is unstable, when no AXI write or direct load.", i);
   end
+`endif
 
   initial begin : proc_stop_sim
     wait (end_of_sim);

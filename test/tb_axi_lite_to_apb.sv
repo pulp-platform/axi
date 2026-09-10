@@ -169,6 +169,7 @@ module tb_axi_lite_to_apb #(
 
   // pragma translate_off
   `ifndef VERILATOR
+  `ifndef XILINX_SIMULATOR
   // Assertions to determine correct APB protocol sequencing
   default disable iff (!rst_n);
   for (genvar i = 0; i < NoApbSlaves; i++) begin : gen_apb_assertions
@@ -210,6 +211,7 @@ module tb_axi_lite_to_apb #(
     strb_stable:    assert property ( @(posedge clk)
         ((apb_req[i].penable && apb_req[i].pwrite) |-> $stable(apb_req[i].pstrb)));
   end
+  `endif
   `endif
   // pragma translate_on
 

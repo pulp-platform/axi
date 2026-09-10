@@ -56,14 +56,13 @@ synopsys_dc:
 
 fuse_xsim:
   stage: build
-  allow_failure: true
   timeout: 5 minutes
   script:
     - bender checkout
     - mkdir fusesoc && cd fusesoc
     - uvx fusesoc library add axi ..
     - uvx fusesoc core list
-    - vitis-2022.1-zr uvx fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
+    - vitis-2025.2-dz uvx fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
 verilator_lint:
   stage: build
