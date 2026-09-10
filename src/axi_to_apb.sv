@@ -234,7 +234,7 @@ module axi_to_apb #(
               penable: 1'b0,
               pwrite:  mem_we[bank_sel],
               pwdata:  mem_wdata[bank_sel],
-              pstrb:   mem_strb[bank_sel]
+              pstrb:   mem_we[bank_sel] ? mem_strb[bank_sel] : '0
             };
           end
         end
@@ -255,7 +255,7 @@ module axi_to_apb #(
             penable: 1'b1,
             pwrite:  mem_we[bank_sel_q],
             pwdata:  mem_wdata[bank_sel_q],
-            pstrb:   mem_strb[bank_sel_q]
+            pstrb:   mem_we[bank_sel_q] ? mem_strb[bank_sel_q] : '0
           };
           if (apb_resp_i[apb_sel_idx_q].pready) begin
             mem_gnt[bank_sel_q]    = 1'b1;
