@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
+- `axi_to_apb`: AXI4+ATOP to APB4 bridge supporting data-width downsizing and address truncation,
+  built on `axi_to_detailed_mem`. Adds the `axi_to_apb_intf` interface variant and the
+  `tb_axi_to_apb` testbench. #431
 - `axi_dw_converter`, `axi_dw_downsizer`, `axi_dw_upsizer`: Document INCR/FIXED/WRAP burst support
   in the module headers. #429
 - `README`: Add the missing documentation link for `axi_lite_dw_converter`. #429

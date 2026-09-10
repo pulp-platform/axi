@@ -67,6 +67,7 @@ axi:
     - src/axi_interleaved_xbar.sv
     - src/axi_iw_converter.sv
     - src/axi_lite_xbar.sv
+    - src/axi_to_apb.sv
     - src/axi_xbar_unmuxed.sv
     - src/axi_to_mem_banked.sv
     - src/axi_to_mem_interleaved.sv

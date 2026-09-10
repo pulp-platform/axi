@@ -119,6 +119,7 @@ run_vsim:
           - axi_modify_address
           - axi_serializer
           - axi_sim_mem
+          - axi_to_apb
 
 # Modules that pull in shared submodules keep explicit additional dependencies
 # to avoid missing a rerun when a shared submodule changes.
