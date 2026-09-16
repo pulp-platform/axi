@@ -33,8 +33,6 @@ module axi_lfsr #(
     input  logic     clk_i,
     /// Active-low reset
     input  logic     rst_ni,
-    /// Testmode
-    input  logic     testmode_i,
     /// AXI4 request struct
     input  axi_req_t req_i,
     /// AXI4 response struct
@@ -93,7 +91,6 @@ module axi_lfsr #(
     ) i_axi_to_axi_lite (
         .clk_i,
         .rst_ni,
-        .test_i     ( testmode_i   ),
         .slv_req_i  ( req_i        ),
         .slv_resp_o ( rsp_o        ),
         .mst_req_o  ( axi_lite_req ),
@@ -107,7 +104,6 @@ module axi_lfsr #(
     ) i_axi_lite_lfsr (
         .clk_i,
         .rst_ni,
-        .testmode_i,
         .w_ser_data_i,
         .w_ser_data_o,
         .w_ser_en_i,

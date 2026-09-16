@@ -146,15 +146,15 @@ module axi_serializer #(
     mst_req_o.r_ready  = slv_req_i.r_ready  & ~rd_fifo_empty;
   end
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
-    .DEPTH        ( MaxReadTxns ),
-    .dtype        ( id_t        )
+  cc_fifo #(
+    .FallThrough ( 1'b0        ), // No fall-through as response has to come a cycle later anyway
+    .Depth       ( MaxReadTxns ),
+    .data_t      ( id_t        )
   ) i_rd_id_fifo (
     .clk_i,
     .rst_ni,
+    .clr_i      ( 1'b0          ),
     .flush_i    ( 1'b0          ),
-    .testmode_i ( 1'b0          ),
     .data_i     ( ar_id         ),
     .push_i     ( rd_fifo_push  ),
     .full_o     ( rd_fifo_full  ),
@@ -166,15 +166,15 @@ module axi_serializer #(
   // Assign as this condition is needed in FSM
   assign rd_fifo_pop = slv_resp_o.r_valid & slv_req_i.r_ready & slv_resp_o.r.last;
 
-  fifo_v3 #(
-    .FALL_THROUGH ( 1'b0         ),
-    .DEPTH        ( MaxWriteTxns ),
-    .dtype        ( id_t         )
+  cc_fifo #(
+    .FallThrough ( 1'b0         ),
+    .Depth       ( MaxWriteTxns ),
+    .data_t      ( id_t         )
   ) i_wr_id_fifo (
     .clk_i,
     .rst_ni,
+    .clr_i      ( 1'b0            ),
     .flush_i    ( 1'b0            ),
-    .testmode_i ( 1'b0            ),
     .data_i     ( slv_req_i.aw.id ),
     .push_i     ( wr_fifo_push    ),
     .full_o     ( wr_fifo_full    ),
@@ -186,7 +186,7 @@ module axi_serializer #(
   // Assign as this condition is needed in FSM
   assign wr_fifo_pop = slv_resp_o.b_valid & slv_req_i.b_ready;
 
-  `FFARN(state_q, state_d, AtopIdle, clk_i, rst_ni)
+  `FF(state_q, state_d, AtopIdle, clk_i, rst_ni)
 
 // pragma translate_off
 `ifndef VERILATOR
@@ -197,7 +197,7 @@ module axi_serializer #(
     assert (MaxWriteTxns  >= 1)
       else $fatal(1, "Maximum number of write transactions must be >= 1!");
   end
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
   default disable iff (~rst_ni);
   aw_lost : assert property( @(posedge clk_i)
       (slv_req_i.aw_valid & slv_resp_o.aw_ready |-> mst_req_o.aw_valid & mst_resp_i.aw_ready))

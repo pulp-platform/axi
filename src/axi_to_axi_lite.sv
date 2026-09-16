@@ -19,6 +19,9 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiAddrWidth    = 32'd0,
   parameter int unsigned AxiDataWidth    = 32'd0,
   parameter int unsigned AxiIdWidth      = 32'd0,
+  // Number of least-significant ID bits used by the internal demux to track in-flight
+  // transactions (0 < AxiLookBits <= IdWidth), see doc/axi_demux.md for the trade-off.
+  parameter int unsigned AxiLookBits     = AxiIdWidth,
   parameter int unsigned AxiUserWidth    = 32'd0,
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
@@ -31,7 +34,6 @@ module axi_to_axi_lite #(
 ) (
   input  logic       clk_i,    // Clock
   input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
   // slave port full AXI4+ATOP
   input  full_req_t  slv_req_i,
   output full_resp_t slv_resp_o,
@@ -66,6 +68,7 @@ module axi_to_axi_lite #(
     .AddrWidth    ( AxiAddrWidth    ),
     .DataWidth    ( AxiDataWidth    ),
     .IdWidth      ( AxiIdWidth      ),
+    .AxiLookBits  ( AxiLookBits     ),
     .UserWidth    ( AxiUserWidth    ),
     .axi_req_t    ( full_req_t      ),
     .axi_resp_t   ( full_resp_t     )
@@ -91,7 +94,6 @@ module axi_to_axi_lite #(
   ) i_axi_to_axi_lite_id_reflect (
     .clk_i      ( clk_i         ),
     .rst_ni     ( rst_ni        ),
-    .test_i     ( test_i        ),
     .slv_req_i  ( splitted_req  ),
     .slv_resp_o ( splitted_resp ),
     .mst_req_o  ( mst_req_o     ),
@@ -105,6 +107,8 @@ module axi_to_axi_lite #(
     assume (AxiIdWidth   > 0) else $fatal(1, "AXI ID width has to be > 0");
     assume (AxiAddrWidth > 0) else $fatal(1, "AXI address width has to be > 0");
     assume (AxiDataWidth > 0) else $fatal(1, "AXI data width has to be > 0");
+    assume (AxiLookBits > 0 && AxiLookBits <= AxiIdWidth) else
+      $fatal(1, "AxiLookBits (%0d) must be in ]0, AxiIdWidth (%0d)]!", AxiLookBits, AxiIdWidth);
   end
   `endif
   // pragma translate_on
@@ -127,7 +131,6 @@ module axi_to_axi_lite_id_reflect #(
 ) (
   input  logic       clk_i,    // Clock
   input  logic       rst_ni,   // Asynchronous reset active low
-  input  logic       test_i,   // Testmode enable
   // slave port full AXI
   input  full_req_t  slv_req_i,
   output full_resp_t slv_resp_o,
@@ -165,15 +168,15 @@ module axi_to_axi_lite_id_reflect #(
   // Write ID reflection
   assign aw_push = mst_req_o.aw_valid & slv_resp_o.aw_ready;
   assign aw_pop  = slv_resp_o.b_valid & mst_req_o.b_ready;
-  fifo_v3 #(
-    .FALL_THROUGH ( FallThrough     ),
-    .DEPTH        ( AxiMaxWriteTxns ),
-    .dtype        ( id_t            )
+  cc_fifo #(
+    .FallThrough ( FallThrough     ),
+    .Depth       ( AxiMaxWriteTxns ),
+    .data_t      ( id_t            )
   ) i_aw_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
+    .clr_i     ( 1'b0            ),
     .flush_i   ( 1'b0            ),
-    .testmode_i( test_i          ),
     .full_o    ( aw_full         ),
     .empty_o   ( aw_empty        ),
     .usage_o   ( /*not used*/    ),
@@ -186,15 +189,15 @@ module axi_to_axi_lite_id_reflect #(
   // Read ID reflection
   assign ar_push = mst_req_o.ar_valid & slv_resp_o.ar_ready;
   assign ar_pop  = slv_resp_o.r_valid & mst_req_o.r_ready;
-  fifo_v3 #(
-    .FALL_THROUGH ( FallThrough    ),
-    .DEPTH        ( AxiMaxReadTxns ),
-    .dtype        ( id_t           )
+  cc_fifo #(
+    .FallThrough ( FallThrough    ),
+    .Depth       ( AxiMaxReadTxns ),
+    .data_t      ( id_t           )
   ) i_ar_id_fifo (
     .clk_i     ( clk_i           ),
     .rst_ni    ( rst_ni          ),
+    .clr_i     ( 1'b0            ),
     .flush_i   ( 1'b0            ),
-    .testmode_i( test_i          ),
     .full_o    ( ar_full         ),
     .empty_o   ( ar_empty        ),
     .usage_o   ( /*not used*/    ),
@@ -252,6 +255,9 @@ module axi_to_axi_lite_intf #(
   parameter int unsigned AXI_ADDR_WIDTH     = 32'd0,
   parameter int unsigned AXI_DATA_WIDTH     = 32'd0,
   parameter int unsigned AXI_ID_WIDTH       = 32'd0,
+  /// Number of least-significant ID bits used to track in-flight transactions
+  /// (0 < AXI_LOOK_BITS <= AXI_ID_WIDTH), see doc/axi_demux.md for the trade-off.
+  parameter int unsigned AXI_LOOK_BITS      = AXI_ID_WIDTH,
   parameter int unsigned AXI_USER_WIDTH     = 32'd0,
   /// Maximum number of outstanding writes.
   parameter int unsigned AXI_MAX_WRITE_TXNS = 32'd1,
@@ -262,7 +268,6 @@ module axi_to_axi_lite_intf #(
 ) (
   input logic     clk_i,
   input logic     rst_ni,
-  input logic     testmode_i,
   AXI_BUS.Slave   slv,
   AXI_LITE.Master mst
 );
@@ -303,6 +308,7 @@ module axi_to_axi_lite_intf #(
     .AxiAddrWidth    ( AXI_ADDR_WIDTH     ),
     .AxiDataWidth    ( AXI_DATA_WIDTH     ),
     .AxiIdWidth      ( AXI_ID_WIDTH       ),
+    .AxiLookBits     ( AXI_LOOK_BITS      ),
     .AxiUserWidth    ( AXI_USER_WIDTH     ),
     .AxiMaxWriteTxns ( AXI_MAX_WRITE_TXNS ),
     .AxiMaxReadTxns  ( AXI_MAX_READ_TXNS  ),
@@ -315,7 +321,6 @@ module axi_to_axi_lite_intf #(
   ) i_axi_to_axi_lite (
     .clk_i      ( clk_i      ),
     .rst_ni     ( rst_ni     ),
-    .test_i     ( testmode_i ),
     // slave port full AXI4+ATOP
     .slv_req_i  ( full_req   ),
     .slv_resp_o ( full_resp  ),

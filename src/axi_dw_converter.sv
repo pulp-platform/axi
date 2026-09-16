@@ -11,9 +11,9 @@
 // Authors:
 // - Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 
-// NOTE: The upsizer does not support WRAP bursts, and will answer with SLVERR
-// upon receiving a burst of such type. In addition to that, the downsizer also
-// does not support FIXED bursts with incoming axlen != 0.
+// Burst support: INCR fully supported. FIXED passed through when upsizing,
+// single-beat only when downsizing (multi-beat answers with SLVERR). WRAP not
+// supported, answers with SLVERR (single-beat WRAP tolerated when upsizing).
 
 module axi_dw_converter #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads

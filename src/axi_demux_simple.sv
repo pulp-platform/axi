@@ -55,7 +55,6 @@ module axi_demux_simple #(
 ) (
   input  logic                          clk_i,
   input  logic                          rst_ni,
-  input  logic                          test_i,
   // Slave Port
   input  axi_req_t                      slv_req_i,
   input  select_t                       slv_aw_select_i,
@@ -66,7 +65,9 @@ module axi_demux_simple #(
   input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
 );
 
-  localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
+  // The in-flight counters must be able to hold the value `MaxTrans` itself; `idx_width`
+  // would let them saturate at `MaxTrans - 1` when `MaxTrans` is a power of two (issue #249).
+  localparam int unsigned IdCounterWidth = cc_pkg::cnt_width(MaxTrans);
   typedef logic [IdCounterWidth-1:0] id_cnt_t;
 
   // pass through if only one master port
@@ -165,7 +166,7 @@ module axi_demux_simple #(
         // An AW can be handled if `i_aw_id_counter` and `i_counter_open_w` are not full.  An ATOP that
         // requires an R response can be handled if additionally `i_ar_id_counter` is not full (this
         // only applies if ATOPs are supported at all).
-        if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) &&
+        if (!aw_id_cnt_full && (w_open < IdCounterWidth'(MaxTrans)) &&
             (!(ar_id_cnt_full && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) ||
              !AtopSupport)) begin
           // There is a valid AW vector make the id lookup and go further, if it passes.
@@ -195,7 +196,7 @@ module axi_demux_simple #(
 
     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
     // prevent further pushing
-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+    `FFL(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
 
     if (UniqueIds) begin : gen_unique_ids_aw
       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
@@ -210,6 +211,7 @@ module axi_demux_simple #(
       axi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
+        .MaxTrans          ( MaxTrans       ),
         .mst_port_select_t ( select_t       )
       ) i_aw_id_counter (
         .clk_i                        ( clk_i                          ),
@@ -234,13 +236,13 @@ module axi_demux_simple #(
     // `w_select` determines, which handshaking is connected.
     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
     // `slv_aw_select_i`.
-    counter #(
-      .WIDTH           ( IdCounterWidth ),
-      .STICKY_OVERFLOW ( 1'b0           )
+    cc_counter #(
+      .Width          ( IdCounterWidth ),
+      .StickyOverflow ( 1'b0           )
     ) i_counter_open_w (
       .clk_i,
       .rst_ni,
-      .clear_i    ( 1'b0                  ),
+      .clr_i      ( 1'b0                  ),
       .en_i       ( w_cnt_up ^ w_cnt_down ),
       .load_i     ( 1'b0                  ),
       .down_i     ( w_cnt_down            ),
@@ -249,7 +251,7 @@ module axi_demux_simple #(
       .overflow_o ( /*not used*/          )
     );
 
-    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
+    `FFL(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
     assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
     assign w_select_valid = w_cnt_up | (|w_open);
 
@@ -260,18 +262,18 @@ module axi_demux_simple #(
     //--------------------------------------
     //  B Channel
     //--------------------------------------
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] b_idx;
 
     // Arbitration of the different B responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
-      .DataType ( logic   ),
+      .data_t   ( logic      ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_b_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
-      .flush_i( 1'b0          ),
+      .clr_i  ( 1'b0               ),
       .rr_i   ( '0            ),
       .req_i  ( mst_b_valids  ),
       .gnt_o  ( mst_b_readies ),
@@ -341,7 +343,7 @@ module axi_demux_simple #(
     end
 
     // this ff is needed so that ar does not get de-asserted if an atop gets injected
-    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
+    `FFL(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
 
     if (UniqueIds) begin : gen_unique_ids_ar
       // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
@@ -356,6 +358,7 @@ module axi_demux_simple #(
       axi_demux_id_counters #(
         .AxiIdBits         ( AxiLookBits    ),
         .CounterWidth      ( IdCounterWidth ),
+        .MaxTrans          ( MaxTrans       ),
         .mst_port_select_t ( select_t       )
       ) i_ar_id_counter (
         .clk_i                        ( clk_i                                       ),
@@ -379,18 +382,18 @@ module axi_demux_simple #(
     //  R Channel
     //--------------------------------------
 
-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+    logic [cc_pkg::idx_width(NoMstPorts)-1:0] r_idx;
 
     // Arbitration of the different r responses
-    rr_arb_tree #(
+    cc_rr_arb_tree #(
       .NumIn    ( NoMstPorts ),
-      .DataType ( logic   ),
+      .data_t   ( logic      ),
       .AxiVldRdy( 1'b1       ),
       .LockIn   ( 1'b1       )
     ) i_r_mux (
       .clk_i  ( clk_i         ),
       .rst_ni ( rst_ni        ),
-      .flush_i( 1'b0          ),
+      .clr_i  ( 1'b0                 ),
       .rr_i   ( '0            ),
       .req_i  ( mst_r_valids  ),
       .gnt_o  ( mst_r_readies ),
@@ -468,7 +471,7 @@ module axi_demux_simple #(
       AXI_ID_BITS:  assume (AxiIdWidth >= AxiLookBits) else
         $fatal(1, "AxiIdBits has to be equal or smaller than AxiIdWidth.");
     end
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
     default disable iff (!rst_ni);
     aw_select: assume property( @(posedge clk_i) (slv_req_i.aw_valid |->
                                                  (slv_aw_select_i < NoMstPorts))) else

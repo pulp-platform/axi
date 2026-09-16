@@ -3,7 +3,6 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -label Clock /tb_axi_xbar/i_xbar_dut/clk_i
 add wave -noupdate -label Reset /tb_axi_xbar/i_xbar_dut/rst_ni
-add wave -noupdate -label {Test Mode} /tb_axi_xbar/i_xbar_dut/test_i
 add wave -noupdate -divider {Slave Ports}
 add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_ports_req_i
 add wave -noupdate /tb_axi_xbar/i_xbar_dut/slv_ports_resp_o

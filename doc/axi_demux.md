@@ -45,7 +45,6 @@ If all `SpillXX` and `FallThrough` are disabled, all paths through this multiple
 |:----------------------------------|:------------|
 | `clk_i`                           | Clock to which all other signals (except `rst_ni`) are synchronous. |
 | `rst_ni`                          | Reset, asynchronous, active-low. |
-| `test_i`                          | Test mode enable (active-high). |
 | `slv_*` (except `slv_*_select_i`) | Single slave port of the demultiplexer. |
 | `slv_{aw,ar}_select_i`            | Index of the master port to which a write or read, respectively, is demultiplexed.  This signal must be stable while a handshake on the AW respectively AR channel is [pending](../doc#pending). |
 | `mst_*`                           | Array of master ports of the demultiplexer.  The array index of each port is the index of the master port. |

@@ -83,7 +83,7 @@ module axi_id_serialize #(
 );
 
   /// Number of bits of the slave port ID that determine the mapping to the master port ID
-  localparam int unsigned SelectWidth = cf_math_pkg::idx_width(AxiMstPortMaxUniqIds);
+  localparam int unsigned SelectWidth = cc_pkg::idx_width(AxiMstPortMaxUniqIds);
   /// Slice of slave port IDs that determines the master port ID
   typedef logic [SelectWidth-1:0] select_t;
 
@@ -200,7 +200,6 @@ module axi_id_serialize #(
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
-    .test_i          ( 1'b0                ),
     .slv_req_i       ( slv_req_i           ),
     .slv_aw_select_i ( slv_aw_select       ),
     .slv_ar_select_i ( slv_ar_select       ),
@@ -270,7 +269,6 @@ module axi_id_serialize #(
   ) i_axi_mux (
     .clk_i,
     .rst_ni,
-    .test_i      ( 1'b0                   ),
     .slv_reqs_i  ( from_serializer_reqs   ),
     .slv_resps_o ( from_serializer_resps  ),
     .mst_req_o   ( axi_mux_req            ),

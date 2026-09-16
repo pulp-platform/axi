@@ -241,7 +241,6 @@ module synth_slice #(
   ) a (
     .clk_i      (clk_i),
     .rst_ni     (rst_ni),
-    .testmode_i (1'b0),
     .slv        (a_full.Slave),
     .mst        (a_lite.Master)
   );
@@ -434,7 +433,6 @@ module synth_axi_lite_xbar #(
   };
 
   axi_pkg::xbar_rule_32_t [NoSlvMst-1:0] addr_map;
-  logic                                  test;
   axi_req_t               [NoSlvMst-1:0] mst_reqs,  slv_reqs;
   axi_resp_t              [NoSlvMst-1:0] mst_resps, slv_resps;
 
@@ -451,7 +449,6 @@ module synth_axi_lite_xbar #(
   ) i_xbar_dut (
     .clk_i                 ( clk_i     ),
     .rst_ni                ( rst_ni    ),
-    .test_i                ( test      ),
     .slv_ports_req_i       ( mst_reqs  ),
     .slv_ports_resp_o      ( mst_resps ),
     .mst_ports_req_o       ( slv_reqs  ),
@@ -477,7 +474,6 @@ module synth_axi_lite_mailbox #(
     .AXI_DATA_WIDTH (32'd32)
   ) slv [1:0] ();
 
-  logic        test;
   logic  [1:0] irq;
   addr_t [1:0] base_addr;
 
@@ -490,7 +486,6 @@ module synth_axi_lite_mailbox #(
   ) i_axi_lite_mailbox (
     .clk_i       ( clk_i     ), // Clock
     .rst_ni      ( rst_ni    ), // Asynchronous reset active low
-    .test_i      ( test      ), // Testmode enable
     // slave ports [1:0]
     .slv         ( slv       ),
     .irq_o       ( irq       ), // interrupt output for each port
@@ -510,9 +505,9 @@ module synth_axi_isolate #(
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi[1:0] ();
 
@@ -584,9 +579,9 @@ module synth_axi_serializer #(
 );
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi[1:0] ();
 
@@ -713,14 +708,13 @@ module synth_axi_to_mem_banked #(
   typedef logic [BankStrbWidth-1:0] mem_strb_t;
 
   AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AxiIdWidth   ),
-    .AXI_DATA_WIDTH ( AxiAddrWidth ),
-    .AXI_ID_WIDTH   ( AxiDataWidth ),
+    .AXI_ADDR_WIDTH ( AxiAddrWidth ),
+    .AXI_DATA_WIDTH ( AxiDataWidth ),
+    .AXI_ID_WIDTH   ( AxiIdWidth   ),
     .AXI_USER_WIDTH ( AxiUserWidth )
   ) axi ();
 
   // Misc signals
-  logic                             test;
   logic           [1:0]             axi_to_mem_busy;
   // Signals for mem macros
   logic           [BankNum-1:0] mem_req;
@@ -745,7 +739,6 @@ module synth_axi_to_mem_banked #(
   ) i_axi_to_mem_banked_intf (
     .clk_i,
     .rst_ni,
-    .test_i            ( test            ),
     .slv               ( axi             ),
     .mem_req_o         ( mem_req         ),
     .mem_gnt_i         ( mem_gnt         ),
