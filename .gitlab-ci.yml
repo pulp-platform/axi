@@ -2,6 +2,22 @@ variables:
   SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
   VSIM: questa-2025.1 vsim
   VERILATOR: oseda -2026.04 verilator
+  CI_DIFF_BASE: 'refs/heads/master'
+
+default:
+  interruptible: true
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "push"'
+      variables:
+        CI_DIFF_BASE: '$CI_COMMIT_BEFORE_SHA'
+      # Each master push tests its own diff, so later pushes must not cancel it.
+      auto_cancel:
+        on_new_commit: none
+    - when: always
 
 before_script:
   - mkdir -p build
@@ -12,13 +28,8 @@ before_script:
 # list is a superset of every `run_vsim` test trigger, so whenever a test runs
 # its `needs: vsim` dependency is guaranteed to be part of the pipeline.
 #
-# Every `changes` rule compares against `master` (`compare_to`) rather than the
-# previous commit. This makes the trigger reflect the cumulative diff of the
-# whole branch, like memora's content-addressed cache did: a file touched
-# anywhere on the branch keeps triggering its job until merged, so a later
-# unrelated commit cannot "hide" an earlier failing change behind a green
-# pipeline. Note this still trusts the hand-maintained dependency lists below;
-# a missing entry silently skips a test.
+# Development branches compare against master to keep checking cumulative changes.
+# Master pushes compare against the previous tip, not master itself.
 vsim:
   stage: build
   script:
@@ -30,7 +41,7 @@ vsim:
   rules:
     - &build_common_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - .gitlab-ci.yml
           - Bender.yml
@@ -38,7 +49,7 @@ vsim:
           - src/**/*
           - test/**/*
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - scripts/compile_vsim.sh
           - scripts/run_vsim.sh
@@ -50,7 +61,7 @@ synopsys_dc:
   rules:
     - *build_common_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - scripts/synth.sh
 
@@ -82,7 +93,7 @@ verilator_lint:
   rules:
     - &run_vsim_common_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - .gitlab-ci.yml
           - Bender.yml
@@ -93,7 +104,7 @@ verilator_lint:
           - src/axi_test.sv
     - &run_vsim_module_change_rule
       changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/$TEST_MODULE.sv
           - test/tb_$TEST_MODULE.sv
@@ -130,7 +141,7 @@ axi_cdc:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_cdc_dst.sv
           - src/axi_cdc_src.sv
@@ -143,12 +154,15 @@ axi_dw_downsizer:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_dw_converter.sv
+          - src/axi_dw_upsizer.sv
 
 axi_dw_upsizer:
   extends: .run_vsim
@@ -158,12 +172,15 @@ axi_dw_upsizer:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_dw_converter.sv
+          - src/axi_dw_downsizer.sv
 
 axi_isolate:
   extends: .run_vsim
@@ -173,10 +190,12 @@ axi_isolate:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_err_slv.sv
 
 axi_iw_converter:
@@ -187,12 +206,13 @@ axi_iw_converter:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_id_prepend.sv
           - src/axi_id_remap.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_serializer.sv
           - src/axi_mux.sv
           - src/axi_id_serialize.sv
@@ -205,8 +225,9 @@ axi_lite_xbar:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
+          - src/axi_atop_filter.sv
           - src/axi_err_slv.sv
           - src/axi_lite_demux.sv
           - src/axi_lite_mux.sv
@@ -220,10 +241,16 @@ axi_to_axi_lite:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_atop_filter.sv
           - src/axi_burst_splitter.sv
+          - src/axi_burst_splitter_gran.sv
+          - src/axi_cut.sv
+          - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
+          - src/axi_err_slv.sv
+          - src/axi_multicut.sv
 
 axi_to_mem_banked:
   extends: .run_vsim
@@ -233,26 +260,39 @@ axi_to_mem_banked:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_to_detailed_mem.sv
           - src/axi_to_mem.sv
 
+# The xbar sweep is the heaviest; `parallel:` splits it into shards that the runner executes
+# concurrently. Each shard runs the identical `run_vsim.sh axi_xbar` enumeration and executes its
+# share of the configs, selected round-robin via `CI_NODE_INDEX` (see scripts/run_vsim.sh).
+# `VSIM_SHARDED` opts in to that: without it the script must ignore `CI_NODE_*`, which GitLab
+# also sets on every `parallel:matrix` job (as the matrix position).
 axi_xbar:
   extends: .run_vsim
+  parallel: 4
   variables:
     TEST_MODULE: axi_xbar
+    VSIM_SHARDED: '1'
   rules:
     - *run_vsim_common_change_rule
     - *run_vsim_module_change_rule
     - changes:
-        compare_to: 'refs/heads/master'
+        compare_to: '$CI_DIFF_BASE'
         paths:
+          - test/tb_axi_xbar_pkg.sv
+          - src/axi_atop_filter.sv
+          - src/axi_cut.sv
           - src/axi_demux.sv
           - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
           - src/axi_err_slv.sv
+          - src/axi_id_prepend.sv
           - src/axi_mux.sv
           - src/axi_multicut.sv
           - src/axi_xbar_unmuxed.sv
