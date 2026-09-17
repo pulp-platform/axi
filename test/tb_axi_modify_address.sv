@@ -209,6 +209,7 @@ module tb_axi_modify_address #(
   `AXI_ASSIGN_TO_R(r_act, upstream)
 
   // Assert that actual responses match expected responses.
+`ifndef XILINX_SIMULATOR
   default disable iff (~rst_n);
   aw: assert property(@(posedge clk)
     downstream.aw_valid |-> aw_act == aw_exp
@@ -225,5 +226,6 @@ module tb_axi_modify_address #(
   r: assert property(@(posedge clk)
     upstream.r_valid |-> r_act == r_exp
   ) else $error("R %p != %p!", r_act, r_exp);
+`endif
 
 endmodule

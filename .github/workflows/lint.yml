@@ -31,3 +31,21 @@ jobs:
 
       - name: Run Verilator lint
         run: scripts/run_verilator.sh
+
+  # The FuseSoC core file duplicates the source list in Bender.yml and is only
+  # exercised by a single simulation target in CI, so a file added to one
+  # manifest but not the other goes unnoticed. Fail fast on such drift.
+  fusesoc-manifest:
+    name: FuseSoC core file sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2
+        with:
+          version: 0.32.0
+
+      - name: Check FuseSoC core file against Bender manifest
+        run: scripts/check_fusesoc_manifest.sh
