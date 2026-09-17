@@ -67,6 +67,7 @@ In addition to the documents linked in the following table, we are setting up [d
 | [`axi_serializer`](src/axi_serializer.sv)                   | Serializes transactions with different IDs to the same ID.                                           |                                  |
 | [`axi_throttle`](src/axi_throttle.sv)                       | Limits the maximum number of outstanding transfers sent to the downstream logic.                     |                                  |
 | [`axi_test`](src/axi_test.sv)                               | A set of testbench utilities for AXI interfaces.                                                     |                                  |
+| [`axi_to_apb`](src/axi_to_apb.sv)                           | AXI4 to APB4 protocol converter with data-width downsizing and optional address decoding.            |                                  |
 | [`axi_to_axi_lite`](src/axi_to_axi_lite.sv)                 | AXI4 to AXI4-Lite protocol converter.                                                                |                                  |
 | [`axi_to_mem`](src/axi_to_mem.sv)                           | AXI4 to memory protocol (req, gnt, rvalid) converter. Additional banked, interleaved, split variant. |                                  |
 | [`axi_xbar`](src/axi_xbar.sv)                               | Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.               | [Doc](doc/axi_xbar.md)           |
