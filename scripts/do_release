@@ -1,0 +1,352 @@
+#!/usr/bin/env bash
+#
+# Copyright (c) 2020 ETH Zurich, University of Bologna
+# SPDX-License-Identifier: Apache-2.0
+#
+# See `usage()` for description, or execute with the `--help` flag.
+#
+# Authors:
+# - Andreas Kurth <akurth@iis.ee.ethz.ch>
+
+set -euo pipefail
+readonly THIS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+readonly REPO_ROOT="$(readlink -f "$THIS_DIR/..")"
+
+### Settings #######################################################################################
+# Changelog
+readonly CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
+# FuseSoC
+readonly FUSESOC_FILE="$REPO_ROOT/axi.core"
+readonly FUSESOC_IP_VLN='pulp-platform.org::axi'
+# Git
+readonly GIT_MAIN_BRANCH='master'
+readonly GIT_REMOTE='origin'
+# Version file
+readonly VERSION_FILE="$REPO_ROOT/VERSION"
+####################################################################################################
+
+### Generic helper functions #######################################################################
+git_cur_ver_tag() {
+    git describe --match 'v*' --abbrev=0
+}
+semver_major() {
+    echo "$1" | cut -d. -f1
+}
+semver_minor() {
+    echo "$1" | cut -d. -f2
+}
+semver_noprerel() {
+    echo "$1" | cut -d- -f1
+}
+semver_patch() {
+    echo "$1" | cut -d. -f3
+}
+git_cur_semver_noprerel() {
+    local -r GIT_CUR_VER_TAG="$(git_cur_ver_tag)"
+    semver_noprerel "${GIT_CUR_VER_TAG:1}"
+}
+stderr() {
+    echo "$@" >&2
+}
+confirm() {
+    read -n 1 -p "$@ [yN] " yn
+    case "$yn" in
+        [Yy]) stderr "";;
+        *) exit 1;;
+    esac
+}
+####################################################################################################
+
+usage() {
+    stderr "Do a release: update version numbers in files, update Changelog, and publish on GitHub."
+    stderr -e "\nUsage:"
+    stderr -e "\t$(basename $0) [flags] <major|minor|patch>"
+    stderr -e "\nArguments:"
+    stderr -e "\t<major|minor|patch>\tType of release to create"
+    stderr -e "\nFlags:"
+    stderr -e "\t    --dev\tIncrement development version but do not create a release"
+    stderr -e "\t\t\tand do not push anything."
+    stderr -e "\t-h, --help\tPrint usage information and exit."
+}
+
+# Parse flags.
+DEV_ONLY=false
+PARAMS=""
+while (( "$#" )); do
+    case "$1" in
+        --dev)
+            DEV_ONLY=true
+            shift;;
+        -h|--help)
+            usage
+            exit 0;;
+        -*|--*) # unsupported flags
+            stderr "Error: Unsupported flag '$1'"
+            exit 1;;
+        *) # preserve positional arguments
+            PARAMS="$PARAMS $1"
+            shift;;
+    esac
+done
+eval set -- "$PARAMS"
+readonly DEV_ONLY
+
+# Parse positional arguments.
+if test "$#" -ne 1; then
+    usage
+    exit 1
+fi
+case "$1" in
+    major|minor|patch)
+        readonly REL_TYPE="$1";;
+    *)
+        usage
+        exit 1
+esac
+
+### Implementation functions #######################################################################
+# Update FuseSoC core description.
+fusesoc() {
+    sed -i -e "s/name\s*:\s*$FUSESOC_IP_VLN.*/name : $FUSESOC_IP_VLN:$1/" "$FUSESOC_FILE"
+    git add "$FUSESOC_FILE"
+}
+
+# Update `VERSION` file.
+version_file() {
+    echo "$1" > "$VERSION_FILE"
+    git add "$VERSION_FILE"
+}
+
+# Calculate the next SemVer.
+# First argument: current SemVer (without pre-release suffixes).
+# Second argument: type of increment (major|minor|patch).
+semver_next() {
+    local -r CUR_MAJOR=$(semver_major $1)
+    local -r CUR_MINOR=$(semver_minor $1)
+    local -r CUR_PATCH=$(semver_patch $1)
+    case $2 in
+        major)
+            local -r NEW_MAJOR=$(($CUR_MAJOR + 1))
+            local -r NEW_MINOR=0
+            local -r NEW_PATCH=0
+            ;;
+        minor)
+            local -r NEW_MAJOR=$CUR_MAJOR
+            local -r NEW_MINOR=$(($CUR_MINOR + 1))
+            local -r NEW_PATCH=0
+            ;;
+        patch)
+            local -r NEW_MAJOR=$CUR_MAJOR
+            local -r NEW_MINOR=$CUR_MINOR
+            local -r NEW_PATCH=$(($CUR_PATCH + 1))
+            ;;
+        *)
+            stderr "Fatal: unreachable code reached!"
+            exit 1
+            ;;
+    esac
+    echo "$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+}
+
+# Increment development version
+incr_dev_ver() {
+    local -r DEV_VER="$(semver_next "$(git_cur_semver_noprerel)" "$1")-dev"
+    fusesoc "$DEV_VER"
+    version_file "$DEV_VER"
+    git commit -m "Increment development version towards next $1 release"
+    stderr
+    git show
+    stderr 'Updated files to increment development version and created commit shown above.'
+    confirm 'Is this commit correct?'
+}
+####################################################################################################
+
+# Make sure there are no staged changes.
+if ! git diff --staged --quiet; then
+    stderr "Error: You have staged changes."
+    stderr "Commit them before running this script."
+    exit 1
+fi
+
+# Make sure the files we are about to modify contain no uncommitted changes.
+ensure_clean() {
+    if ! git diff --quiet -- "$1"; then
+        stderr "Error: '$(realpath --relative-to="$REPO_ROOT" "$1")' contains uncommitted changes!"
+        exit 1
+    fi
+}
+for f in "$CHANGELOG_FILE" "$FUSESOC_FILE" "$VERSION_FILE"; do
+    ensure_clean "$f"
+done
+
+if $DEV_ONLY; then
+    incr_dev_ver $REL_TYPE
+    # If we only have to increment the development version, we are done.
+    exit 0
+fi
+
+# Calculate the next version.
+readonly NEW_VER="$(semver_next "$(git_cur_semver_noprerel)" "$REL_TYPE")"
+readonly NEW_GIT_VER_TAG="v$NEW_VER"
+
+# Create release branch.
+readonly NEW_BRANCH="release-$NEW_VER"
+git checkout -b "$NEW_BRANCH"
+
+# Update Changelog.
+# First, remove unused subsections from `Unreleased` section.
+gawk -i inplace '
+BEGIN { unreleased=0; subhdr=""; subhdrprinted=1; }
+{
+    # Determine if we are in the "Unreleased" section.
+    if (unreleased) {
+        if ($0 ~ /^##\s+.*$/) {
+            unreleased=0;
+        }
+    } else if ($0 ~ /^##\s+Unreleased$/) {
+        unreleased=1;
+    }
+    if (unreleased) {
+        # If we are in the "Unreleased" section, process subheaders.
+        if ($0 ~ /^###\s+.*$/) {
+            # Current line is a subheader
+            subhdr=$0;
+            subhdrprinted=0;
+        } else {
+            # Current line is not a subheader.
+            if (subhdrprinted) {
+                # Print current line if the subheader was already printed.
+                print $0;
+            } else if (!($0 ~ /^\s*$/)) {
+                # Otherwise, if current line is not empty, print the subheader and the current line.
+                print subhdr;
+                subhdrprinted=1;
+                print $0;
+            }
+        }
+    } else {
+        # If we are outside the "Unreleased" section, print each line as-is.
+        print $0;
+    }
+    prev=$0;
+}' "$CHANGELOG_FILE"
+# Second, extract release notes to temporary file.
+readonly REL_NOTES_FILE_2="$(mktemp)"
+gawk '
+BEGIN { unreleased=0; }
+{
+    # Determine if we are in the "Unreleased" section.
+    if (unreleased) {
+        if ($0 ~ /^##\s+.*$/) {
+            nextfile;
+        }
+    } else if ($0 ~ /^##\s+Unreleased$/) {
+        unreleased=1;
+        next;
+    }
+    if (unreleased) {
+        print $0;
+    }
+}' "$CHANGELOG_FILE" > "$REL_NOTES_FILE_2"
+readonly REL_NOTES_FILE="$(mktemp)"
+# Remove empty lines from beginning and end of release notes.
+# Source: https://unix.stackexchange.com/a/552198
+awk 'NF {p=1} p' <<< "$(< $REL_NOTES_FILE_2)" > "$REL_NOTES_FILE"
+rm "$REL_NOTES_FILE_2"
+# Third, make sure there are (still) two empty lines above every section header.
+gawk -i inplace '{
+    if ($0 ~ /^##\s+.*$/) {
+        if (!(prev ~ /^\s*$/)) {
+            print "";
+            print "";
+        } else if (!(pprev ~ /^\s*$/)) {
+            print "";
+        }
+    }
+    print $0;
+    pprev=prev;
+    prev=$0;
+}' "$CHANGELOG_FILE"
+# Fourth, rename 'Unreleased' to release version and UTC date.
+sed -i -e "s/Unreleased/$NEW_VER - $(date -u --iso-8601=date)/" "$CHANGELOG_FILE"
+# Finally, stage Changelog modifications.
+git add "$CHANGELOG_FILE"
+
+# Update other files for release.
+fusesoc $NEW_VER
+version_file $NEW_VER
+
+# Create release commit.
+git commit -m "Release v$NEW_VER"
+
+# Let user review release commit, then ask for confirmation to continue.
+git show
+stderr 'Updated files and created release commit; it is shown above.'
+confirm 'Is the release commit correct?'
+
+# Create Git tag for release and push tag.
+git tag -a "$NEW_GIT_VER_TAG" -m "Release v$NEW_VER"
+stderr "Git-tagged release commit as '$NEW_GIT_VER_TAG'."
+
+# Create commit to continue development.
+sed -i -e '7a\
+## Unreleased\
+\
+### Added\
+\
+### Changed\
+\
+### Fixed\
+\
+' "$CHANGELOG_FILE"
+git add "$CHANGELOG_FILE"
+incr_dev_ver 'patch'
+
+# Push branch with release and post-release commit and let user review it.
+git push -u "$GIT_REMOTE" "$NEW_BRANCH"
+stderr
+stderr "Up to this point, all commits have been created on the '$NEW_BRANCH' branch,"
+stderr "and the release tag only exists on your local machine."
+stderr "Now review the '$NEW_BRANCH' branch."
+stderr
+stderr 'Then confirm that I shall continue to:'
+stderr "1. Merge (using fast-forward) '$NEW_BRANCH' to '$GIT_MAIN_BRANCH'."
+stderr "2. Push '$GIT_MAIN_BRANCH'."
+stderr "3. Push the '$NEW_GIT_VER_TAG' tag to '$GIT_REMOTE'."
+confirm 'Those are non-reversible operations.  Do you want to continue?'
+
+# Fast-forward main branch to release branch and push main branch.
+git checkout "$GIT_MAIN_BRANCH"
+git merge --ff-only "$NEW_BRANCH"
+git push "$GIT_REMOTE" "$GIT_MAIN_BRANCH"
+
+# Push Git tag of release.
+git push "$GIT_REMOTE" "$NEW_GIT_VER_TAG"
+
+# Create release with GitHub CLI.
+if which gh >/dev/null; then
+    readonly GH_VERSION=$(gh --version | grep -o 'version\s\+\S\+' | \
+            grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+    if test $(semver_major $GH_VERSION) -ge 1; then
+        stderr
+        stderr "Creating Release 'v$NEW_VER' on GitHub."
+        gh release create "$NEW_GIT_VER_TAG" --title "v$NEW_VER" -F "$REL_NOTES_FILE"
+    else
+        echo "GitHub CLI >= 1.0.0 required but $GH_VERSION installed."
+        echo "Please create GitHub release manually."
+    fi
+else
+    echo "GitHub CLI executable not found; please create GitHub release manually."
+fi
+
+# Remove temporary file for release notes.
+rm "$REL_NOTES_FILE"
+
+# Remove release branch, both remotely and locally.
+stderr
+stderr "Deleting '$NEW_BRANCH' locally and remotely."
+git push "$GIT_REMOTE" --delete "$NEW_BRANCH"
+git branch -d "$NEW_BRANCH"
+
+stderr
+stderr "All done!"

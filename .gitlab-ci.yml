@@ -1,0 +1,190 @@
+variables:
+  SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
+
+before_script:
+  - export PATH=~/.cargo/bin:$PATH
+  - mkdir -p build
+
+vsim:
+  stage: build
+  script:
+    - export ARTIFACT="vsim-$VSIM_VER"
+    - >
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        export VLIB="questa-$VSIM_VER vlib";
+        export VLOG="questa-$VSIM_VER vlog -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        export VLIB="vlib-$VSIM_VER";
+        export VLOG="vlog-$VSIM_VER -64";
+        ;;
+      esac
+    - >
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
+        cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
+      fi
+  parallel:
+    matrix:
+      - VSIM_VER: ['2025.1']
+
+synopsys_dc:
+  stage: build
+  script:
+    - >
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup synopsys_dc; then
+        cd build && ../scripts/synth.sh
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
+      fi
+
+fuse_xsim:
+  stage: build
+  allow_failure: true
+  timeout: 5 minutes
+  script:
+    - bender sources
+    - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
+    - mkdir fusesoc && cd fusesoc
+    - $HOME/.local/bin/fusesoc library add axi ..
+    - $HOME/.local/bin/fusesoc core list
+    - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
+
+verilator_lint:
+  stage: build
+  variables:
+    VERILATOR: verilator-5.020 verilator
+  script:
+    - scripts/run_verilator.sh
+
+.run_vsim: &run_vsim
+  stage: test
+  needs:
+    - vsim
+  script:
+    - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
+    - >
+      case $VSIM_VER in 20*)
+        export VSIM="questa-$VSIM_VER vsim -64";
+        ;;
+      *)
+        export VSIM="vsim-$VSIM_VER -64";
+        ;;
+      esac
+    - >
+      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
+        cd build
+        mv work{-$VSIM_VER,}
+        ../scripts/run_vsim.sh --random-seed $TEST_MODULE && touch $ARTIFACT.tested
+        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
+      fi
+  parallel:
+    matrix:
+      - VSIM_VER: ['2025.1']
+
+axi_addr_test:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_addr_test
+
+axi_atop_filter:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_atop_filter
+
+axi_cdc:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_cdc
+
+axi_delayer:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_delayer
+
+axi_dw_downsizer:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_dw_downsizer
+
+axi_dw_upsizer:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_dw_upsizer
+
+axi_fifo:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_fifo
+
+axi_isolate:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_isolate
+
+axi_iw_converter:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_iw_converter
+
+axi_lite_dw_converter:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_dw_converter
+
+axi_lite_mailbox:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_mailbox
+
+axi_lite_regs:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_regs
+
+axi_lite_to_apb:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_to_apb
+
+axi_lite_to_axi:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_to_axi
+
+axi_lite_xbar:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_lite_xbar
+
+axi_modify_address:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_modify_address
+
+axi_serializer:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_serializer
+
+axi_sim_mem:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_sim_mem
+
+axi_to_axi_lite:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_to_axi_lite
+
+axi_to_mem_banked:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_to_mem_banked
+
+axi_xbar:
+  <<: *run_vsim
+  variables:
+    TEST_MODULE: axi_xbar

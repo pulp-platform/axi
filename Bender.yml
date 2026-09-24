@@ -1,0 +1,150 @@
+package:
+  name: relaxi
+  authors:
+    # Alphabetically ordered by last name (maintainers first)
+    - "Thomas Benz <tbenz@iis.ee.ethz.ch>" # current maintainer
+    - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>" # current maintainer
+    - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
+    - "Tim Fischer <fischeti@iis.ee.ethz.ch>"
+    - "Noah Huetter <huettern@ethz.ch>"
+    - "Cyril Koenig <cykoenig@iis.ee.ethz.ch>"
+    - "Andreas Kurth <akurth@iis.ee.ethz.ch>"
+    - "Stefan Mach <smach@iis.ee.ethz.ch>"
+    - "Samuel Riedel <sriedel@iis.ee.ethz.ch>"
+    - "Wolfgang Rönninger <wroennin@iis.ee.ethz.ch>"
+    - "Paul Scheffler <paulsc@iis.ee.ethz.ch>"
+    - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
+    - "Luca Valente <luca.valente@unibo.it>"
+    - "Nils Wistoff <nwistoff@iis.ee.ethz.ch>"
+    - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
+
+dependencies:
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.38.0 }
+  common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.5 }
+  tech_cells_generic:  { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.2 }
+  #redundancy_cells: { git: "https://github.com/pulp-platform/redundancy_cells.git", rev: "dee5b71" }
+  redundancy_cells: { path: "redundancy_cells" }
+export_include_dirs:
+  - include
+
+sources:
+  # Source files grouped in levels. Files in level 0 have no dependencies on files in this
+  # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
+  # levels 1 and 0, etc. Files within a level are ordered alphabetically.
+  # Level 0
+  - src/axi_pkg.sv
+  # Level 1
+  - src/relaxi_demux_id_counters.sv
+  - src/axi_intf.sv
+  # Level 2
+  - src/axi_atop_filter.sv
+  - src/axi_burst_splitter_gran.sv
+  - src/axi_burst_unwrap.sv
+  - src/axi_bus_compare.sv
+  - src/axi_cdc_dst.sv
+  - src/axi_cdc_src.sv
+  - src/relaxi_cut.sv
+  - src/axi_delayer.sv
+  - src/relaxi_demux_simple.sv
+  - src/axi_dw_downsizer.sv
+  - src/axi_dw_upsizer.sv
+  - src/axi_fifo.sv
+  - src/axi_fifo_delay_dyn.sv
+  - src/axi_id_remap.sv
+  - src/relaxi_id_shift.sv
+  - src/relaxi_id_prepend.sv
+  - src/axi_inval_filter.sv
+  - src/axi_isolate.sv
+  - src/axi_join.sv
+  - src/axi_lite_demux.sv
+  - src/axi_lite_dw_converter.sv
+  - src/axi_lite_from_mem.sv
+  - src/axi_lite_join.sv
+  - src/axi_lite_lfsr.sv
+  - src/axi_lite_mailbox.sv
+  - src/axi_lite_mux.sv
+  - src/axi_lite_regs.sv
+  - src/axi_lite_to_apb.sv
+  - src/axi_lite_to_axi.sv
+  - src/axi_modify_address.sv
+  - src/relaxi_mux.sv
+  - src/axi_rw_join.sv
+  - src/axi_rw_split.sv
+  - src/axi_serializer.sv
+  - src/axi_slave_compare.sv
+  - src/axi_throttle.sv
+  - src/axi_to_detailed_mem.sv
+  # Level 3
+  - src/axi_burst_splitter.sv
+  - src/axi_cdc.sv
+  - src/relaxi_demux.sv
+  - src/relaxi_err_slv.sv
+  - src/axi_dw_converter.sv
+  - src/axi_from_mem.sv
+  - src/axi_id_serialize.sv
+  - src/axi_lfsr.sv
+  - src/relaxi_multicut.sv
+  - src/axi_to_axi_lite.sv
+  - src/axi_to_mem.sv
+  - src/axi_zero_mem.sv
+  # Level 4
+  - src/axi_interleaved_xbar.sv
+  - src/axi_iw_converter.sv
+  - src/axi_lite_xbar.sv
+  - src/relaxi_xbar_unmuxed.sv
+  - src/axi_to_mem_banked.sv
+  - src/axi_to_mem_interleaved.sv
+  - src/axi_to_mem_split.sv
+  # Level 5
+  - src/relaxi_ecc_cells.sv
+  - src/relaxi_encoder.sv
+  - src/relaxi_decoder.sv
+  - src/relaxi_xbar.sv
+  # Level 6
+  - src/axi_xp.sv
+
+  - target: synth_test
+    files:
+      - test/relaxi_xbar_synth.sv
+
+  - target: netlist_sim
+    files:
+      - monitor-synth/synopsys/out/relaxi_xbar_sspg_0p72v_125c_1ns/netlist_relaxi_xbar.v
+
+  - target: simulation
+    files:
+      - src/axi_chan_compare.sv
+      - src/axi_dumper.sv
+      - src/axi_sim_mem.sv
+      - src/axi_test.sv
+
+  - target: test
+    files:
+      # Level 0
+      - test/tb_axi_dw_pkg.sv
+      - test/tb_axi_xbar_pkg.sv
+      # Level 1
+      - test/tb_axi_addr_test.sv
+      - test/tb_axi_atop_filter.sv
+      - test/tb_axi_bus_compare.sv
+      - test/tb_axi_cdc.sv
+      - test/tb_axi_delayer.sv
+      - test/tb_axi_dw_downsizer.sv
+      - test/tb_axi_dw_upsizer.sv
+      - test/tb_axi_fifo.sv
+      - test/tb_axi_isolate.sv
+      - test/tb_axi_lite_dw_converter.sv
+      - test/tb_axi_lite_mailbox.sv
+      - test/tb_axi_lite_regs.sv
+      - test/tb_axi_iw_converter.sv
+      - test/tb_axi_lite_to_apb.sv
+      - test/tb_axi_lite_to_axi.sv
+      - test/tb_axi_lite_xbar.sv
+      - test/tb_axi_modify_address.sv
+      - test/tb_axi_serializer.sv
+      - test/tb_axi_sim_mem.sv
+      - test/tb_axi_slave_compare.sv
+      - test/tb_axi_to_axi_lite.sv
+      - test/tb_axi_to_mem_banked.sv
+      - test/tb_axi_xbar.sv
+      - test/tb_axi_xbar_zoix.sv

@@ -1,0 +1,72 @@
+name: Build and deploy documentation
+on:
+  push:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
+    tags:
+      - v**
+  pull_request:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
+
+jobs:
+  build-and-deploy:
+    if: github.repository == 'pulp-platform/axi'  # do not run this job on forks (because deployment
+    runs-on: ubuntu-latest                        # will fail)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Install Bender
+        uses: pulp-platform/pulp-actions/bender-install@v2
+        with:
+          version: 0.27.2
+
+      - name: Install Morty
+        run: |
+          sudo mkdir -p /tools/morty && sudo chmod 777 /tools/morty
+          cd /tools/morty && curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/morty/init -sSf | bash -s -- 0.9.0
+          echo "PATH=/tools/morty:$PATH" >> ${GITHUB_ENV}
+
+      - name: Build documentation
+        run: |
+          mkdir -p docs
+          cp doc/axi_demux.png docs/module.axi_demux.png
+          cp doc/svg/axi_id_remap_table.svg docs/axi_id_remap_table.svg
+          morty -I include -I $(bender path common_cells)/include src/*.sv -d docs
+        shell: bash
+
+      - name: Determine documentation target folder
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+            DOC_TARGET="$GITHUB_HEAD_REF"
+          elif [ "$GITHUB_EVENT_NAME" == "push" ]; then
+            if echo $GITHUB_REF | grep -qE '^refs/(head|tag)s'; then
+              DOC_TARGET="$(echo $GITHUB_REF | cut -d '/' -f3-)"
+            else
+              echo "Error: Could not derive documentation target folder for ref '$GITHUB_REF'!"
+              exit 1
+            fi
+          else
+            echo "Error: Unsupported event: '$GITHUB_EVENT_NAME'!"
+            exit 1
+          fi
+          echo "DOC_TARGET=$DOC_TARGET" >> $GITHUB_ENV
+
+      - name: Deploy documentation
+        uses: JamesIves/github-pages-deploy-action@v4
+        if: >
+          (github.event_name == 'push'
+          || github.event.pull_request.head.repo.full_name == github.repository) &&
+          github.ref == 'refs/heads/master'
+        with:
+          token: ${{ secrets.GH_PAGES }}
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs # The folder the action should deploy.
+          target-folder: ${{ env.DOC_TARGET }}
+          clean: true # remove files from `TARGET_FOLDER` that are not in `FOLDER`
+                      # (`rsync --delete`)

@@ -1,0 +1,22 @@
+name: Internal CI
+on:
+  push:
+    branches-ignore:
+      - gh-pages  # deployment target branch (this workflow should not exist on that branch anyway)
+      - v**       # such branch names conflict with tags
+  workflow_dispatch:
+
+jobs:
+  gitlab-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 310
+    steps:
+      - name: Check Gitlab CI
+        uses: pulp-platform/pulp-actions/gitlab-ci@v2
+        # Skip on forks or pull requests from forks due to missing secrets.
+        if: github.repository == 'pulp-platform/axi' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          domain: iis-git.ee.ethz.ch
+          repo: github-mirror/axi
+          token: ${{ secrets.GITLAB_TOKEN }}
+          poll-count: 1800

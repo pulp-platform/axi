@@ -1,0 +1,332 @@
+cache_root_dir: /home/gitlabci/buildcache/axi
+artifacts:
+  vsim-%:
+    inputs:
+      - Bender.yml # external dependencies
+      - include
+      - .gitlab-ci.yml # vsim version
+      - scripts/compile_vsim.sh
+      - src
+      - test
+    outputs:
+      - build/work-%
+
+  synopsys_dc:
+    inputs:
+      - Bender.yml
+      - include
+      - .gitlab-ci.yml # DC version
+      - scripts/synth.sh
+      - src
+      - test
+    outputs:
+      - build/synth.completed
+
+  axi_addr_test-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - test/tb_axi_addr_test.sv
+    outputs:
+      - build/axi_addr_test-%.tested
+
+  axi_atop_filter-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_atop_filter.sv
+      - test/tb_axi_atop_filter.sv
+    outputs:
+      - build/axi_atop_filter-%.tested
+
+  axi_cdc-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_cdc_dst.sv
+      - src/axi_cdc_src.sv
+      - src/axi_cdc.sv
+      - test/tb_axi_cdc.sv
+    outputs:
+      - build/axi_cdc-%.tested
+
+  axi_delayer-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_delayer.sv
+      - test/tb_axi_delayer.sv
+    outputs:
+      - build/axi_delayer-%.tested
+
+  axi_dw_downsizer-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_err_slv.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_dw_downsizer.sv
+      - src/axi_dw_converter.sv
+      - test/tb_axi_dw_downsizer.sv
+    outputs:
+      - build/axi_dw_downsizer-%.tested
+
+  axi_dw_upsizer-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_err_slv.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_dw_upsizer.sv
+      - src/axi_dw_converter.sv
+      - test/tb_axi_dw_upsizer.sv
+    outputs:
+      - build/axi_dw_upsizer-%.tested
+
+  axi_fifo-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_fifo.sv
+      - test/tb_axi_fifo.sv
+    outputs:
+      - build/axi_fifo-%.tested
+
+
+  axi_isolate-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_err_slv.sv
+      - src/axi_isolate.sv
+      - test/tb_axi_isolate.sv
+    outputs:
+      - build/axi_isolate-%.tested
+
+  axi_iw_converter-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_id_prepend.sv
+      - src/axi_id_remap.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_serializer.sv
+      - src/axi_mux.sv
+      - src/axi_id_serialize.sv
+      - src/axi_iw_converter.sv
+      - test/tb_axi_iw_converter.sv
+    outputs:
+      - build/axi_iw_converter-%.tested
+
+  axi_lite_dw_converter-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_dw_converter.sv
+      - test/tb_axi_lite_dw_converter.sv
+    outputs:
+      - build/axi_lite_dw_converter-%.tested
+
+  axi_lite_mailbox-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_mailbox.sv
+      - test/tb_axi_lite_mailbox.sv
+    outputs:
+      - build/axi_lite_mailbox-%.tested
+
+  axi_lite_regs-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_regs.sv
+      - test/tb_axi_lite_regs.sv
+    outputs:
+      - build/axi_lite_regs-%.tested
+
+  axi_lite_to_apb-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_to_apb.sv
+      - test/tb_axi_lite_to_apb.sv
+    outputs:
+      - build/axi_lite_to_apb-%.tested
+
+  axi_lite_to_axi-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_lite_to_axi.sv
+      - test/tb_axi_lite_to_axi.sv
+    outputs:
+      - build/axi_lite_to_axi-%.tested
+
+  axi_lite_xbar-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_err_slv.sv
+      - src/axi_lite_demux.sv
+      - src/axi_lite_mux.sv
+      - src/axi_lite_to_axi.sv
+      - src/axi_lite_xbar.sv
+      - test/tb_axi_lite_xbar.sv
+    outputs:
+      - build/axi_lite_xbar-%.tested
+
+  axi_modify_address-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_modify_address.sv
+      - test/tb_axi_modify_address.sv
+    outputs:
+      - build/axi_modify_address-%.tested
+
+  axi_serializer-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_serializer.sv
+      - test/tb_axi_serializer.sv
+    outputs:
+      - build/axi_serializer-%.tested
+
+  axi_sim_mem-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_sim_mem.sv
+      - test/tb_axi_sim_mem.sv
+    outputs:
+      - build/axi_sim_mem-%.tested
+
+  axi_to_axi_lite-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_atop_filter.sv
+      - src/axi_burst_splitter.sv
+      - src/axi_to_axi_lite.sv
+      - test/tb_axi_to_axi_lite.sv
+    outputs:
+      - build/axi_to_axi_lite-%.tested
+
+  axi_to_mem_banked-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_to_detailed_mem.sv
+      - src/axi_to_mem.sv
+      - src/axi_to_mem_banked.sv
+      - test/tb_axi_to_mem_banked.sv
+    outputs:
+      - build/axi_to_mem_banked-%.tested
+
+  axi_xbar-%:
+    inputs:
+      - Bender.yml
+      - include
+      - scripts/run_vsim.sh
+      - src/axi_pkg.sv
+      - src/axi_intf.sv
+      - src/axi_test.sv
+      - src/axi_demux.sv
+      - src/axi_demux_simple.sv
+      - src/axi_err_slv.sv
+      - src/axi_mux.sv
+      - src/axi_multicut.sv
+      - src/axi_xbar_unmuxed.sv
+      - src/axi_xbar.sv
+      - test/tb_axi_xbar.sv
+    outputs:
+      - build/axi_xbar-%.tested
