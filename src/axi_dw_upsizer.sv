@@ -751,7 +751,7 @@ module axi_dw_upsizer #(
 
 // pragma translate_off
 `ifndef VERILATOR
-`ifndef XSIM
+`ifndef XILINX_SIMULATOR
   default disable iff (!rst_ni);
   // Only unsupported reads, i.e., WRAP bursts of more than one beat, go to the error slave. A read
   // must not inherit the error flag of a rejected atomic operation served before by its upsizer.
