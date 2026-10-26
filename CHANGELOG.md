@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Fixed
+- `axi_dw_upsizer`: Clear the stale `ar_throw_error` of a read upsizer after a rejected atomic
+  `WRAP` burst, which answered the next read with `SLVERR`. #456
+
 ## 0.39.9 - 2025-11-21
 
 ### Added
