@@ -18,6 +18,12 @@
 // Burst support: INCR fully supported. FIXED passed through unmodified.
 // WRAP not supported, answers with SLVERR (single-beat WRAP is tolerated).
 
+// NOTE: The upsizer does not check for the reserved burst type (`AxBURST == 2'b11`): a request that
+// uses it is forwarded to the master port unchanged, without any error.  Its beats are handled like
+// those of a FIXED burst, i.e., the address used to steer the data lanes does not advance, so the
+// data may end up in the wrong lanes if the downstream slave interprets the burst type differently.
+// The behavior is therefore undefined: a master must not use this burst type (A3.4.1).
+
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
