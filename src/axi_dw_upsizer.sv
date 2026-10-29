@@ -24,6 +24,9 @@
 // data may end up in the wrong lanes if the downstream slave interprets the burst type differently.
 // The behavior is therefore undefined: a master must not use this burst type (A3.4.1).
 
+// NOTE: Exclusive accesses (`AxLOCK == 1'b1`) are never upsized, even if modifiable: they pass
+// through the upsizer unchanged, to respect the restrictions of the exclusive monitor.
+
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
@@ -391,8 +394,9 @@ module axi_dw_upsizer #(
 
               unique case (r_req_d.ar.burst)
                 axi_pkg::BURST_INCR: begin
-                  // Modifiable transaction
-                  if (modifiable(r_req_d.ar.cache)) begin
+                  // Modifiable transaction, unless it is an exclusive access: this must keep its
+                  // address, size and length to respect the restrictions of the exclusive monitor.
+                  if (modifiable(r_req_d.ar.cache) && !r_req_d.ar.lock) begin
                     // No need to upsize single-beat transactions.
                     if (r_req_d.ar.len != '0) begin
                       // Evaluate output burst length
@@ -453,8 +457,8 @@ module axi_dw_upsizer #(
 
           unique case (r_req_d.ar.burst)
             axi_pkg::BURST_INCR: begin
-              // Modifiable transaction
-              if (modifiable(r_req_d.ar.cache)) begin
+              // Modifiable transaction, unless it is an exclusive access (see above)
+              if (modifiable(r_req_d.ar.cache) && !r_req_d.ar.lock) begin
                 // No need to upsize single-beat transactions.
                 if (r_req_d.ar.len != '0) begin
                   // Evaluate output burst length
@@ -705,8 +709,8 @@ module axi_dw_upsizer #(
 
         unique case (slv_req_i.aw.burst)
           axi_pkg::BURST_INCR: begin
-            // Modifiable transaction
-            if (modifiable(slv_req_i.aw.cache))
+            // Modifiable transaction, unless it is an exclusive access (see above)
+            if (modifiable(slv_req_i.aw.cache) && !slv_req_i.aw.lock)
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate output burst length
