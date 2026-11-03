@@ -475,24 +475,39 @@ module axi_burst_unwrap_ax_chan #(
   // For wrapping bursts, this returns the wrap boundary (container size is power of two according to A.3.4.1)
   assign wrap_boundary = ax_i.addr & ~(AddrWidth'(container_size) - 1);
 
+  // Counter allocation must not wait for the downstream Ax handshake: for AW,
+  // the W channel FSM may only assert `w_valid` once its counter has been
+  // allocated, and a downstream slave is allowed to wait for `w_valid` before
+  // asserting `aw_ready` (AXI IHI0022, A3.3.1).  Gating the allocation on
+  // `ax_ready_i` therefore deadlocks (https://github.com/pulp-platform/axi/issues/448).
+  // Instead, allocate the counters once when the transaction is first
+  // presented; `cnt_alloc_done_q` makes this a one-shot per transaction and
+  // keeps the Ax presented (no `ax_valid_o` retraction) after the allocation
+  // has occupied a counter, which could deassert `&cnt_alloc_gnt`.
+  logic cnt_alloc_done_d, cnt_alloc_done_q;
   enum logic {Idle, Busy} state_d, state_q;
   always_comb begin
-    cnt_alloc_req = '0;
-    ax_d          = ax_q;
-    state_d       = state_q;
-    ax_o          = '0;
-    ax_valid_o    = 1'b0;
-    ax_ready_o    = 1'b0;
-    split_len     = 8'd0;
+    cnt_alloc_req    = '0;
+    cnt_alloc_done_d = cnt_alloc_done_q;
+    ax_d             = ax_q;
+    state_d          = state_q;
+    ax_o             = '0;
+    ax_valid_o       = 1'b0;
+    ax_ready_o       = 1'b0;
+    split_len        = 8'd0;
     unique case (state_q)
       Idle: begin
-        if (ax_valid_i && &cnt_alloc_gnt) begin
+        if (ax_valid_i && (cnt_alloc_done_q || &cnt_alloc_gnt)) begin
+          // Allocate the counters for this transaction (once).
+          if (!cnt_alloc_done_q) begin
+            cnt_alloc_req    = { AwChan, 1'b1 };
+            cnt_alloc_done_d = 1'b1;
+          end
           if (ax_i.burst == axi_pkg::BURST_WRAP && ax_i.addr != wrap_boundary) begin // Splitting required.
-            // Store Ax, allocate a counter, and acknowledge upstream.
+            // Store Ax and try to feed the first burst through.
             ax_d          = ax_i;
             ax_d.burst    = axi_pkg::BURST_INCR;
             split_len     = 8'd1;
-            // Try to feed first burst through.
             ax_o       = ax_d;
             // First (this) incr burst from addr to wrap boundary + container size
             ax_o.len   = ((wrap_boundary + container_size - ax_i.addr) >> ax_i.size) - 1;
@@ -501,10 +516,10 @@ module axi_burst_unwrap_ax_chan #(
             ax_d.addr  = wrap_boundary;
             ax_valid_o = 1'b1;
             if (ax_ready_i) begin
-              ax_ready_o = 1'b1;
-              state_d    = Busy;
-              // Allocate second counter only for AwChan
-              cnt_alloc_req = { AwChan, 1'b1 };
+              // Acknowledge upstream and send the second burst from the split.
+              ax_ready_o       = 1'b1;
+              state_d          = Busy;
+              cnt_alloc_done_d = 1'b0;
             end
           end else begin // No splitting required -> feed through.
             ax_o       = ax_i;
@@ -513,10 +528,10 @@ module axi_burst_unwrap_ax_chan #(
               ax_o.burst = axi_pkg::BURST_INCR;
             end
             ax_valid_o = 1'b1;
-            // As soon as downstream is ready, allocate a counter and acknowledge upstream.
+            // As soon as downstream is ready, acknowledge upstream.
             if (ax_ready_i) begin
-              cnt_alloc_req = { AwChan, 1'b1 };
-              ax_ready_o    = 1'b1;
+              ax_ready_o       = 1'b1;
+              cnt_alloc_done_d = 1'b0;
             end
           end
         end
@@ -536,6 +551,7 @@ module axi_burst_unwrap_ax_chan #(
   // registers
   `FF(ax_q, ax_d, '0, clk_i, rst_ni)
   `FF(state_q, state_d, Idle, clk_i, rst_ni)
+  `FF(cnt_alloc_done_q, cnt_alloc_done_d, 1'b0, clk_i, rst_ni)
 endmodule
 
 /// Internal module of [`axi_burst_splitter`](module.axi_burst_splitter) to order transactions.

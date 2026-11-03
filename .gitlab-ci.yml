@@ -133,6 +133,21 @@ run_vsim:
 
 # Modules that pull in shared submodules keep explicit additional dependencies
 # to avoid missing a rerun when a shared submodule changes.
+axi_burst_unwrap:
+  extends: .run_vsim
+  variables:
+    TEST_MODULE: axi_burst_unwrap
+  rules:
+    - *run_vsim_common_change_rule
+    - *run_vsim_module_change_rule
+    - changes:
+        compare_to: '$CI_DIFF_BASE'
+        paths:
+          - src/axi_demux.sv
+          - src/axi_demux_simple.sv
+          - src/axi_demux_id_counters.sv
+          - src/axi_err_slv.sv
+
 axi_cdc:
   extends: .run_vsim
   variables:

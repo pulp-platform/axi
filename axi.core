@@ -94,6 +94,7 @@ filesets:
       - test/axi_synth_bench.sv
       - test/tb_axi_addr_test.sv
       - test/tb_axi_atop_filter.sv
+      - test/tb_axi_burst_unwrap.sv
       - test/tb_axi_bus_compare.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
@@ -188,6 +189,7 @@ targets:
     toplevel: tb_axi_dw_downsizer
   sim_addr_test     : { filesets : [rtl,benchs] , toplevel: tb_axi_addr_test      }
   sim_atop_filter   : { filesets : [rtl,benchs] , toplevel: tb_axi_atop_filter    }
+  sim_burst_unwrap  : { filesets : [rtl,benchs] , toplevel: tb_axi_burst_unwrap   }
   sim_cdc           : { filesets : [rtl,benchs] , toplevel: tb_axi_cdc            }
   sim_delayer       : { filesets : [rtl,benchs] , toplevel: tb_axi_delayer        }
   sim_dw_pkg        : { filesets : [rtl,benchs] , toplevel: tb_axi_dw_pkg         }

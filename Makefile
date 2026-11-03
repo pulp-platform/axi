@@ -21,6 +21,7 @@ endif
 
 TBS         ?= axi_addr_test \
                axi_atop_filter \
+               axi_burst_unwrap \
                axi_cdc axi_delayer \
                axi_dw_downsizer \
                axi_dw_upsizer \
