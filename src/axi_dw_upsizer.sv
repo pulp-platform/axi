@@ -18,6 +18,15 @@
 // Burst support: INCR fully supported. FIXED passed through unmodified.
 // WRAP not supported, answers with SLVERR (single-beat WRAP is tolerated).
 
+// NOTE: The upsizer deviates from the AXI specification in the handling of WRAP bursts:
+// - A WRAP burst with a single beat is forwarded to the master port unchanged, for both reads and
+//   writes.  The specification allows it only for an AtomicCompare.
+// - A WRAP burst with more than one beat is not supported: it is not forwarded, and it is answered
+//   with SLVERR.  This also holds for an AtomicCompare with more than one beat that uses a WRAP
+//   burst, i.e., with an address in the upper half of its data.
+// - An AtomicCompare with more than one beat that uses an INCR burst is supported, see below for
+//   the length of its response.
+
 // NOTE: The upsizer does not check for the reserved burst type (`AxBURST == 2'b11`): a request that
 // uses it is forwarded to the master port unchanged, without any error.  Its beats are handled like
 // those of a FIXED burst, i.e., the address used to steer the data lanes does not advance, so the
