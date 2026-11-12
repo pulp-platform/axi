@@ -131,6 +131,19 @@ run_vsim:
           - axi_sim_mem
           - axi_to_apb
 
+# The reset regression exercises axi_sim_mem through a separate testbench.
+axi_sim_mem_reset:
+  extends: .run_vsim
+  variables:
+    TEST_MODULE: axi_sim_mem_reset
+  rules:
+    - *run_vsim_common_change_rule
+    - changes:
+        compare_to: '$CI_DIFF_BASE'
+        paths:
+          - src/axi_sim_mem.sv
+          - test/tb_axi_sim_mem_reset.sv
+
 # Modules that pull in shared submodules keep explicit additional dependencies
 # to avoid missing a rerun when a shared submodule changes.
 axi_cdc:
