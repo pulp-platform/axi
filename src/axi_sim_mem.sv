@@ -125,177 +125,192 @@ module axi_sim_mem #(
   axi_pkg::resp_t [NumPorts-1:0] error_happened = axi_pkg::RESP_OKAY;
 
   for (genvar i = 0; i < NumPorts; i++) begin
+    ar_t ar_queue[$];
+    aw_t aw_queue[$];
+    b_t b_queue[$];
+    shortint unsigned r_cnt = 0, w_cnt = 0;
     initial begin
-      automatic ar_t ar_queue[$];
-      automatic aw_t aw_queue[$];
-      automatic b_t b_queue[$];
-      automatic shortint unsigned r_cnt = 0, w_cnt = 0;
       axi_rsp_o[i] = '0;
       // Monitor interface
       mon_w[i] = '0;
       mon_r[i] = '0;
-      wait (rst_ni);
-      fork
-        // AW
-        forever begin
-          @(posedge clk_i);
-          #(ApplDelay);
-          axi_rsp_o[i].aw_ready = 1'b1;
-          #(AcqDelay - ApplDelay);
-          if (axi_req_i[i].aw_valid) begin
-            automatic aw_t aw = axi_req_i[i].aw;
-            aw_queue.push_back(aw);
-          end
-        end
-        // W
-        forever begin
-          @(posedge clk_i);
-          #(ApplDelay);
-          axi_rsp_o[i].w_ready = 1'b0;
-          mon_w[i] = '0;
-          if (aw_queue.size() != 0) begin
-            axi_rsp_o[i].w_ready = 1'b1;
+      forever begin
+        wait (rst_ni);
+        fork : reset_scope
+          // AW
+          forever begin
+            @(posedge clk_i);
+            #(ApplDelay);
+            axi_rsp_o[i].aw_ready = 1'b1;
             #(AcqDelay - ApplDelay);
-            if (axi_req_i[i].w_valid) begin
-              automatic axi_pkg::burst_t burst = aw_queue[0].burst;
-              automatic axi_pkg::len_t len = aw_queue[0].len;
-              automatic axi_pkg::size_t size = aw_queue[0].size;
-              automatic addr_t addr = axi_pkg::beat_addr(aw_queue[0].addr, size, len, burst,
-                  w_cnt);
-              mon_w[i].valid = 1'b1;
-              mon_w[i].addr = addr;
-              mon_w[i].data = axi_req_i[i].w.data;
-              mon_w[i].id = aw_queue[0].id;
-              mon_w[i].user = aw_queue[0].user;
-              mon_w[i].beat_count = w_cnt;
+            if (axi_req_i[i].aw_valid) begin
+              automatic aw_t aw = axi_req_i[i].aw;
+              aw_queue.push_back(aw);
+            end
+          end
+          // W
+          forever begin
+            @(posedge clk_i);
+            #(ApplDelay);
+            axi_rsp_o[i].w_ready = 1'b0;
+            mon_w[i] = '0;
+            if (aw_queue.size() != 0) begin
+              axi_rsp_o[i].w_ready = 1'b1;
+              #(AcqDelay - ApplDelay);
+              if (axi_req_i[i].w_valid) begin
+                automatic axi_pkg::burst_t burst = aw_queue[0].burst;
+                automatic axi_pkg::len_t len = aw_queue[0].len;
+                automatic axi_pkg::size_t size = aw_queue[0].size;
+                automatic addr_t addr = axi_pkg::beat_addr(aw_queue[0].addr, size, len, burst,
+                    w_cnt);
+                mon_w[i].valid = 1'b1;
+                mon_w[i].addr = addr;
+                mon_w[i].data = axi_req_i[i].w.data;
+                mon_w[i].id = aw_queue[0].id;
+                mon_w[i].user = aw_queue[0].user;
+                mon_w[i].beat_count = w_cnt;
+                for (shortint unsigned
+                    i_byte = axi_pkg::beat_lower_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
+                    i_byte <= axi_pkg::beat_upper_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
+                    i_byte++) begin
+                  if (axi_req_i[i].w.strb[i_byte]) begin
+                    automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
+                    mem[byte_addr] = axi_req_i[i].w.data[i_byte*8+:8];
+                    error_happened[i] = axi_pkg::resp_precedence(werr[byte_addr], error_happened[i]);
+                    if (ClearErrOnAccess)
+                      werr[byte_addr] = axi_pkg::RESP_OKAY;
+                  end
+                end
+                if (w_cnt == aw_queue[0].len) begin
+                  automatic b_t b_beat = '0;
+                  assert (axi_req_i[i].w.last) else $error("Expected last beat of W burst!");
+                  b_beat.id = aw_queue[0].id;
+                  b_beat.resp = error_happened[i];
+                  b_beat.user = aw_queue[0].user;
+                  b_queue.push_back(b_beat);
+                  w_cnt = 0;
+                  mon_w[i].last = 1'b1;
+                  error_happened[i] = axi_pkg::RESP_OKAY;
+                  void'(aw_queue.pop_front());
+                end else begin
+                  assert (!axi_req_i[i].w.last) else $error("Did not expect last beat of W burst!");
+                  w_cnt++;
+                end
+              end
+            end
+          end
+          // B
+          forever begin
+            @(posedge clk_i);
+            #(ApplDelay);
+            axi_rsp_o[i].b_valid = 1'b0;
+            if (b_queue.size() != 0) begin
+              axi_rsp_o[i].b = b_queue[0];
+              axi_rsp_o[i].b_valid = 1'b1;
+              #(AcqDelay - ApplDelay);
+              if (axi_req_i[i].b_ready) begin
+                void'(b_queue.pop_front());
+              end
+            end
+          end
+          // AR
+          forever begin
+            @(posedge clk_i);
+            #(ApplDelay);
+            axi_rsp_o[i].ar_ready = 1'b1;
+            #(AcqDelay - ApplDelay);
+            if (axi_req_i[i].ar_valid) begin
+              automatic ar_t ar = axi_req_i[i].ar;
+              ar_queue.push_back(ar);
+            end
+          end
+          // R
+          forever begin
+            @(posedge clk_i);
+            #(ApplDelay);
+            axi_rsp_o[i].r_valid = 1'b0;
+            mon_r[i] = '0;
+            if (ar_queue.size() != 0) begin
+              automatic axi_pkg::burst_t burst = ar_queue[0].burst;
+              automatic axi_pkg::len_t len = ar_queue[0].len;
+              automatic axi_pkg::size_t size = ar_queue[0].size;
+              automatic addr_t addr = axi_pkg::beat_addr(ar_queue[0].addr, size, len, burst, r_cnt);
+              automatic r_t r_beat = '0;
+              automatic data_t r_data = 'x; // compatibility reasons
+              r_beat.data = 'x;
+              r_beat.id = ar_queue[0].id;
+              r_beat.resp = axi_pkg::RESP_OKAY;
+              r_beat.user = ar_queue[0].user;
               for (shortint unsigned
-                  i_byte = axi_pkg::beat_lower_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
-                  i_byte <= axi_pkg::beat_upper_byte(aw_queue[0].addr, size, len, burst, StrbWidth, w_cnt);
+                  i_byte = axi_pkg::beat_lower_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
+                  i_byte <= axi_pkg::beat_upper_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
                   i_byte++) begin
-                if (axi_req_i[i].w.strb[i_byte]) begin
-                  automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
-                  mem[byte_addr] = axi_req_i[i].w.data[i_byte*8+:8];
-                  error_happened[i] = axi_pkg::resp_precedence(werr[byte_addr], error_happened[i]);
-                  if (ClearErrOnAccess)
-                    werr[byte_addr] = axi_pkg::RESP_OKAY;
+                automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
+                if (!mem.exists(byte_addr)) begin
+                  if (WarnUninitialized) begin
+                    $warning("Access to non-initialized byte at address 0x%016x by ID 0x%x.", byte_addr,
+                        r_beat.id);
+                  end
+                  case (UninitializedData)
+                    "random":
+                      r_data[i_byte*8+:8] = $urandom;
+                    "ones":
+                      r_data[i_byte*8+:8] = '1;
+                    "zeros":
+                      r_data[i_byte*8+:8] = '0;
+                    default:
+                      r_data[i_byte*8+:8] = 'x;
+                  endcase
+                end else begin
+                  r_data[i_byte*8+:8] = mem[byte_addr];
+                end
+                r_beat.resp = axi_pkg::resp_precedence(rerr[byte_addr], r_beat.resp);
+                if (ClearErrOnAccess & axi_req_i[i].r_ready) begin
+                  rerr[byte_addr] = axi_pkg::RESP_OKAY;
                 end
               end
-              if (w_cnt == aw_queue[0].len) begin
-                automatic b_t b_beat = '0;
-                assert (axi_req_i[i].w.last) else $error("Expected last beat of W burst!");
-                b_beat.id = aw_queue[0].id;
-                b_beat.resp = error_happened[i];
-                b_beat.user = aw_queue[0].user;
-                b_queue.push_back(b_beat);
-                w_cnt = 0;
-                mon_w[i].last = 1'b1;
-                error_happened[i] = axi_pkg::RESP_OKAY;
-                void'(aw_queue.pop_front());
+              r_beat.data = r_data;
+              if (r_cnt == ar_queue[0].len) begin
+                r_beat.last = 1'b1;
+                mon_r[i].last = 1'b1;
+              end
+              axi_rsp_o[i].r = r_beat;
+              axi_rsp_o[i].r_valid = 1'b1;
+              mon_r[i].valid = 1'b1;
+              mon_r[i].addr = addr;
+              mon_r[i].data = r_beat.data;
+              mon_r[i].id = r_beat.id;
+              mon_r[i].user = ar_queue[0].user;
+              mon_r[i].beat_count = r_cnt;
+              #(AcqDelay - ApplDelay);
+              while (!axi_req_i[i].r_ready) begin
+                @(posedge clk_i);
+                #(AcqDelay);
+                mon_r[i] = '0;
+              end
+              if (r_beat.last) begin
+                r_cnt = 0;
+                void'(ar_queue.pop_front());
               end else begin
-                assert (!axi_req_i[i].w.last) else $error("Did not expect last beat of W burst!");
-                w_cnt++;
+                r_cnt++;
               end
             end
           end
-        end
-        // B
-        forever begin
-          @(posedge clk_i);
-          #(ApplDelay);
-          axi_rsp_o[i].b_valid = 1'b0;
-          if (b_queue.size() != 0) begin
-            axi_rsp_o[i].b = b_queue[0];
-            axi_rsp_o[i].b_valid = 1'b1;
-            #(AcqDelay - ApplDelay);
-            if (axi_req_i[i].b_ready) begin
-              void'(b_queue.pop_front());
-            end
+          begin
+            @(negedge rst_ni);
           end
-        end
-        // AR
-        forever begin
-          @(posedge clk_i);
-          #(ApplDelay);
-          axi_rsp_o[i].ar_ready = 1'b1;
-          #(AcqDelay - ApplDelay);
-          if (axi_req_i[i].ar_valid) begin
-            automatic ar_t ar = axi_req_i[i].ar;
-            ar_queue.push_back(ar);
-          end
-        end
-        // R
-        forever begin
-          @(posedge clk_i);
-          #(ApplDelay);
-          axi_rsp_o[i].r_valid = 1'b0;
-          mon_r[i] = '0;
-          if (ar_queue.size() != 0) begin
-            automatic axi_pkg::burst_t burst = ar_queue[0].burst;
-            automatic axi_pkg::len_t len = ar_queue[0].len;
-            automatic axi_pkg::size_t size = ar_queue[0].size;
-            automatic addr_t addr = axi_pkg::beat_addr(ar_queue[0].addr, size, len, burst, r_cnt);
-            automatic r_t r_beat = '0;
-            automatic data_t r_data = 'x; // compatibility reasons
-            r_beat.data = 'x;
-            r_beat.id = ar_queue[0].id;
-            r_beat.resp = axi_pkg::RESP_OKAY;
-            r_beat.user = ar_queue[0].user;
-            for (shortint unsigned
-                i_byte = axi_pkg::beat_lower_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
-                i_byte <= axi_pkg::beat_upper_byte(ar_queue[0].addr, size, len, burst, StrbWidth, r_cnt);
-                i_byte++) begin
-              automatic addr_t byte_addr = (addr / StrbWidth) * StrbWidth + i_byte;
-              if (!mem.exists(byte_addr)) begin
-                if (WarnUninitialized) begin
-                  $warning("Access to non-initialized byte at address 0x%016x by ID 0x%x.", byte_addr,
-                      r_beat.id);
-                end
-                case (UninitializedData)
-                  "random":
-                    r_data[i_byte*8+:8] = $urandom;
-                  "ones":
-                    r_data[i_byte*8+:8] = '1;
-                  "zeros":
-                    r_data[i_byte*8+:8] = '0;
-                  default: 
-                    r_data[i_byte*8+:8] = 'x;
-                endcase
-              end else begin
-                r_data[i_byte*8+:8] = mem[byte_addr];
-              end
-              r_beat.resp = axi_pkg::resp_precedence(rerr[byte_addr], r_beat.resp);
-              if (ClearErrOnAccess & axi_req_i[i].r_ready) begin
-                rerr[byte_addr] = axi_pkg::RESP_OKAY;
-              end
-            end
-            r_beat.data = r_data;
-            if (r_cnt == ar_queue[0].len) begin
-              r_beat.last = 1'b1;
-              mon_r[i].last = 1'b1;
-            end
-            axi_rsp_o[i].r = r_beat;
-            axi_rsp_o[i].r_valid = 1'b1;
-            mon_r[i].valid = 1'b1;
-            mon_r[i].addr = addr;
-            mon_r[i].data = r_beat.data;
-            mon_r[i].id = r_beat.id;
-            mon_r[i].user = ar_queue[0].user;
-            mon_r[i].beat_count = r_cnt;
-            #(AcqDelay - ApplDelay);
-            while (!axi_req_i[i].r_ready) begin
-              @(posedge clk_i);
-              #(AcqDelay);
-              mon_r[i] = '0;
-            end
-            if (r_beat.last) begin
-              r_cnt = 0;
-              void'(ar_queue.pop_front());
-            end else begin
-              r_cnt++;
-            end
-          end
-        end
-      join
+        join_any
+        disable reset_scope;
+        axi_rsp_o[i] = '0;
+        mon_w[i] = '0;
+        mon_r[i] = '0;
+        ar_queue.delete();
+        aw_queue.delete();
+        b_queue.delete();
+        r_cnt = 0;
+        w_cnt = 0;
+        error_happened[i] = axi_pkg::RESP_OKAY;
+      end
     end
 
     // Assign the monitor output in the next clock cycle.  Rationale: We only know whether we are
@@ -318,23 +333,57 @@ module axi_sim_mem #(
       mon_r_user_o[i] = '0;
       mon_r_beat_count_o[i] = '0;
       mon_r_last_o[i] = '0;
-      wait (rst_ni);
       forever begin
-        @(posedge clk_i);
-        mon_w_valid_o[i] <= #(ApplDelay) mon_w[i].valid;
-        mon_w_addr_o[i] <= #(ApplDelay) mon_w[i].addr;
-        mon_w_data_o[i] <= #(ApplDelay) mon_w[i].data;
-        mon_w_id_o[i] <= #(ApplDelay) mon_w[i].id;
-        mon_w_user_o[i] <= #(ApplDelay) mon_w[i].user;
-        mon_w_beat_count_o[i] <= #(ApplDelay) mon_w[i].beat_count;
-        mon_w_last_o[i] <= #(ApplDelay) mon_w[i].last;
-        mon_r_valid_o[i] <= #(ApplDelay) mon_r[i].valid;
-        mon_r_addr_o[i] <= #(ApplDelay) mon_r[i].addr;
-        mon_r_data_o[i] <= #(ApplDelay) mon_r[i].data;
-        mon_r_id_o[i] <= #(ApplDelay) mon_r[i].id;
-        mon_r_user_o[i] <= #(ApplDelay) mon_r[i].user;
-        mon_r_beat_count_o[i] <= #(ApplDelay) mon_r[i].beat_count;
-        mon_r_last_o[i] <= #(ApplDelay) mon_r[i].last;
+        wait (rst_ni);
+        fork : monitor_reset_scope
+          begin
+            forever begin
+              automatic monitor_t mon_w_snapshot, mon_r_snapshot;
+              @(posedge clk_i);
+              mon_w_snapshot = mon_w[i];
+              mon_r_snapshot = mon_r[i];
+              fork
+                begin
+                  #(ApplDelay);
+                  if (rst_ni) begin
+                    mon_w_valid_o[i] <= mon_w_snapshot.valid;
+                    mon_w_addr_o[i] <= mon_w_snapshot.addr;
+                    mon_w_data_o[i] <= mon_w_snapshot.data;
+                    mon_w_id_o[i] <= mon_w_snapshot.id;
+                    mon_w_user_o[i] <= mon_w_snapshot.user;
+                    mon_w_beat_count_o[i] <= mon_w_snapshot.beat_count;
+                    mon_w_last_o[i] <= mon_w_snapshot.last;
+                    mon_r_valid_o[i] <= mon_r_snapshot.valid;
+                    mon_r_addr_o[i] <= mon_r_snapshot.addr;
+                    mon_r_data_o[i] <= mon_r_snapshot.data;
+                    mon_r_id_o[i] <= mon_r_snapshot.id;
+                    mon_r_user_o[i] <= mon_r_snapshot.user;
+                    mon_r_beat_count_o[i] <= mon_r_snapshot.beat_count;
+                    mon_r_last_o[i] <= mon_r_snapshot.last;
+                  end
+                end
+              join_none
+            end
+          end
+          begin
+            @(negedge rst_ni);
+          end
+        join_any
+        disable monitor_reset_scope;
+        mon_w_valid_o[i] <= '0;
+        mon_w_addr_o[i] <= '0;
+        mon_w_data_o[i] <= '0;
+        mon_w_id_o[i] <= '0;
+        mon_w_user_o[i] <= '0;
+        mon_w_beat_count_o[i] <= '0;
+        mon_w_last_o[i] <= '0;
+        mon_r_valid_o[i] <= '0;
+        mon_r_addr_o[i] <= '0;
+        mon_r_data_o[i] <= '0;
+        mon_r_id_o[i] <= '0;
+        mon_r_user_o[i] <= '0;
+        mon_r_beat_count_o[i] <= '0;
+        mon_r_last_o[i] <= '0;
       end
     end
   end
