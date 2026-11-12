@@ -141,6 +141,7 @@ sources:
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
+      - test/tb_axi_sim_mem_reset.sv
       - test/tb_axi_slave_compare.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv

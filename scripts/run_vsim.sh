@@ -208,6 +208,9 @@ exec_test() {
                 done
             done
             ;;
+        axi_sim_mem_reset)
+            call_vsim tb_axi_sim_mem_reset -t 1ps
+            ;;
         axi_xbar)
             # Sweep 1: vary exclusive-access and unique-id handling.
             for NumMst in 1 6; do
