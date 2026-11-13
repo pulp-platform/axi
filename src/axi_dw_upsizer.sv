@@ -734,10 +734,9 @@ module axi_dw_upsizer #(
                 w_req_d.aw.size = AxiMstPortMaxSize                           ;
                 w_state_d       = W_INCR_UPSIZE                               ;
 
-                // The data of an atomic operation that fits in a single beat of the master port is
-                // sent with the size of the data, and not with the full width of the port. The
-                // number of beats of an atomic operation is a power of two, so its log2 is the
-                // number of ones in AWLEN.
+                // An atomic operation that fits in a single beat is sent with the size of its data
+                // (E1.1.3). Its number of beats is a power of two, so the log2 is the number of ones
+                // in AWLEN.
                 if (slv_req_i.aw.atop != '0 && w_req_d.aw.len == '0) begin
                   atop_data_size = slv_req_i.aw.size;
                   for (int i = 0; i < $bits(slv_req_i.aw.len); i++)
