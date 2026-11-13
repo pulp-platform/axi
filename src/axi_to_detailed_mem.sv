@@ -168,6 +168,7 @@ module axi_to_detailed_mem #(
                     (r_cnt_q > 0) | (w_cnt_q > 0);
 
   // Handle reads.
+  int unsigned read_lower_byte, read_upper_byte;
   always_comb begin
     // Default assignments
     axi_resp_o.ar_ready = 1'b0;
@@ -209,6 +210,15 @@ module axi_to_detailed_mem #(
         r_cnt_d             = axi_req_i.ar.len;
         axi_resp_o.ar_ready = 1'b1;
       end
+    end
+    // Only the bytes in this read beat are active, including an unaligned first beat.
+    read_lower_byte = axi_pkg::beat_lower_byte(rd_meta.addr, rd_meta.size, '0,
+                                              axi_pkg::BURST_INCR, DataWidth/8, '0);
+    read_upper_byte = axi_pkg::beat_upper_byte(rd_meta.addr, rd_meta.size, '0,
+                                              axi_pkg::BURST_INCR, DataWidth/8, '0);
+    for (int unsigned byte_idx = 0; byte_idx < DataWidth/8; byte_idx++) begin
+      rd_meta.strb[byte_idx] = rd_valid && (byte_idx >= read_lower_byte) &&
+                               (byte_idx <= read_upper_byte);
     end
   end
 
@@ -377,7 +387,7 @@ module axi_to_detailed_mem #(
     addr:   meta.addr,
     atop:   meta.atop,
     lock:   meta.lock,
-    strb:   axi_req_i.w.strb,
+    strb:   meta.write ? axi_req_i.w.strb : meta.strb,
     wdata:  axi_req_i.w.data,
     we:     meta.write,
     id:     meta.id,
