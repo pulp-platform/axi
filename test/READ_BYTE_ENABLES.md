@@ -47,6 +47,11 @@ unexplained cells or final blackboxes. This is not technology timing or area sig
 | Full axi_to_detailed_mem | 589 / 7632 | 581 / 8099 |
 | Full axi_to_reg_v2 | 1095 / 11653 | 1087 / 12118 |
 
+The normal Bender `test` target includes the direct-memory regression with
+`DIRECT_MEMORY` defined for its compile group. Run it through the existing
+`make sim-axi_narrow_read_banks.log` target. The register-bridge comparison
+below remains separate because it requires register_interface.
+
 Set `AXI`, `CC2`, `CC1`, and `REG` to the exact inputs stated above.
 Set `TEST` to this public test file. Use independent output directories and fixed
 inputs for every comparison. The following compiles the direct mode. The bridge
