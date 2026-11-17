@@ -661,13 +661,18 @@ package tb_axi_dw_pkg       ;
             axi_pkg::BURST_INCR: begin
               automatic axi_addr_t aligned_start = axi_pkg::aligned_addr(slv_port_axi.aw_addr, AxiMstPortMaxSize)                                                                                                        ;
               automatic axi_addr_t aligned_end   = axi_pkg::aligned_addr(axi_pkg::aligned_addr(slv_port_axi.aw_addr, slv_port_axi.aw_size) + (unsigned'(slv_port_axi.aw_len) << slv_port_axi.aw_size), AxiMstPortMaxSize);
+              automatic len_t      upsized_len   = (aligned_end - aligned_start) >> AxiMstPortMaxSize;
+              // An atomic operation that fits in a single beat is sent with the size of its data
+              // (E1.1.3), i.e., its size plus the log2 of its number of beats.
+              automatic size_t     atop_size     = slv_port_axi.aw_size + $clog2(unsigned'(slv_port_axi.aw_len) + 1);
 
               exp_aw = '{
                 axi_id   : slv_port_axi.aw_id                                 ,
                 axi_addr : slv_port_axi.aw_addr                               ,
-                axi_len  : (aligned_end - aligned_start) >> AxiMstPortMaxSize ,
+                axi_len  : upsized_len                                        ,
                 axi_burst: slv_port_axi.aw_burst                              ,
-                axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size : AxiMstPortMaxSize,
+                axi_size : slv_port_axi.aw_len == 0 ? slv_port_axi.aw_size :
+                           slv_port_axi.aw_atop != '0 && upsized_len == 0 ? atop_size : AxiMstPortMaxSize,
                 axi_cache: slv_port_axi.aw_cache
               };
             end
