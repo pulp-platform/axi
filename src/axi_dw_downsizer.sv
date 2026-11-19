@@ -17,6 +17,11 @@
 
 // Burst support: INCR fully supported. FIXED single-beat only, multi-beat
 // answers with SLVERR. WRAP not supported, answers with SLVERR.
+
+// NOTE: The downsizer does not check for the reserved burst type (`AxBURST == 2'b11`): a request that
+// uses it is forwarded to the master port unchanged, without any error. The behavior is undefined:
+// a master must not use this burst type (A3.4.1).
+
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
