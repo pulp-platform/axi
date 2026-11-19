@@ -37,6 +37,8 @@ module axi_to_mem #(
   parameter bit          HideStrb   = 1'b0,
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OutFifoDepth = 1,
+  /// See `axi_to_detailed_mem`, parameter `CutResp`.
+  parameter bit          CutResp      = 1'b0,
   /// Dependent parameter, do not override. Memory address type.
   localparam type addr_t     = logic [AddrWidth-1:0],
   /// Dependent parameter, do not override. Memory data type.
@@ -85,7 +87,8 @@ module axi_to_mem #(
     .NumBanks     ( NumBanks     ),
     .BufDepth     ( BufDepth     ),
     .HideStrb     ( HideStrb     ),
-    .OutFifoDepth ( OutFifoDepth )
+    .OutFifoDepth ( OutFifoDepth ),
+    .CutResp      ( CutResp      )
   ) i_axi_to_detailed_mem (
     .clk_i,
     .rst_ni,
@@ -135,6 +138,8 @@ module axi_to_mem_intf #(
   parameter bit          HIDE_STRB      = 1'b0,
   /// Depth of output fifo/fall_through_register. Increase for asymmetric backpressure (contention) on banks.
   parameter int unsigned OUT_FIFO_DEPTH = 32'd1,
+  /// See `axi_to_detailed_mem`, parameter `CutResp`.
+  parameter bit          CUT_RESP       = 1'b0,
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `addr_t`.
   localparam type addr_t     = logic [ADDR_WIDTH-1:0],
   /// Dependent parameter, do not override. See `axi_to_mem`, parameter `mem_data_t`.
@@ -193,7 +198,8 @@ module axi_to_mem_intf #(
     .NumBanks     ( NUM_BANKS      ),
     .BufDepth     ( BUF_DEPTH      ),
     .HideStrb     ( HIDE_STRB      ),
-    .OutFifoDepth ( OUT_FIFO_DEPTH )
+    .OutFifoDepth ( OUT_FIFO_DEPTH ),
+    .CutResp      ( CUT_RESP       )
   ) i_axi_to_mem (
     .clk_i,
     .rst_ni,
