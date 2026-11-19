@@ -381,6 +381,9 @@ module axi_dw_downsizer #(
           // Reset channels
           r_req_d.ar = '0;
           r_req_d.r  = '0;
+          // The error flag of a rejected atomic operation is never cleared by a grant, since its
+          // injected AR is not valid: clear it here, or the next read goes to the error slave.
+          r_req_d.ar_throw_error = 1'b0;
 
           // New read request
           if (arb_slv_ar_req && (idx_ar_downsizer == t)) begin
