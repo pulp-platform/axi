@@ -559,6 +559,8 @@ module axi_dw_downsizer #(
           // Got a grant on the R channel
           if (slv_r_valid_tran[t] && slv_r_ready_tran[t]) begin
             r_req_d.r       = '0  ;
+            // Start the next beat from the neutral response: OKAY would override EXOKAY
+            r_req_d.r.resp  = axi_pkg::RESP_EXOKAY;
             r_req_d.r_valid = 1'b0;
             r_data          = '0  ;
           end
@@ -594,7 +596,9 @@ module axi_dw_downsizer #(
                   r_req_d.r.user    = mst_resp.r.user         ;
 
                   // Merge response of this beat with prior one according to precedence rules.
-                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_q.r.resp, mst_resp.r.resp);
+                  // Use the next-state value: when the previous beat is delivered in this very
+                  // cycle, its response must not leak into this one.
+                  r_req_d.r.resp = axi_pkg::resp_precedence(r_req_d.r.resp, mst_resp.r.resp);
 
                   case (r_req_d.ar.burst)
                     axi_pkg::BURST_INCR: begin
