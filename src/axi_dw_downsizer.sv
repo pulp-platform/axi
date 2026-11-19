@@ -22,6 +22,9 @@
 // uses it is forwarded to the master port unchanged, without any error. The behavior is undefined:
 // a master must not use this burst type (A3.4.1).
 
+// NOTE: An exclusive access (`AxLOCK == 1'b1`) that the downsize turns into more than 16 beats, the
+// maximum of the exclusive monitor (A7.2.4), is rejected and answers with SLVERR.
+
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
@@ -471,6 +474,15 @@ module axi_dw_downsizer #(
 
                 default: ;
               endcase
+
+              // An exclusive access has at most 16 beats (A7.2.4): reject it if the downsize
+              // exceeds them. The request is forwarded to the error slave as it came in.
+              if (r_req_d.ar.lock && r_state_d != R_PASSTHROUGH && r_req_d.burst_len > 15) begin
+                r_state_d              = R_PASSTHROUGH;
+                r_req_d.ar             = slv_req_i.ar    ;
+                r_req_d.burst_len      = slv_req_i.ar.len;
+                r_req_d.ar_throw_error = 1'b1            ;
+              end
             end
           end
         end
@@ -957,6 +969,15 @@ module axi_dw_downsizer #(
 
             default: ;
           endcase
+
+          // An exclusive access has at most 16 beats (A7.2.4): reject it if the downsize exceeds
+          // them. The request is forwarded to the error slave as it came in.
+          if (slv_req_i.aw.lock && w_state_d != W_PASSTHROUGH && w_req_d.burst_len > 15) begin
+            w_state_d              = W_PASSTHROUGH;
+            w_req_d.aw             = slv_req_i.aw    ;
+            w_req_d.burst_len      = slv_req_i.aw.len;
+            w_req_d.aw_throw_error = 1'b1            ;
+          end
         end
       end
     end
