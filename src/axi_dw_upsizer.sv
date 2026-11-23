@@ -15,8 +15,16 @@
 // Data width upsize conversion.
 // Connects a narrow master to a wider slave.
 
-// Burst support: INCR fully supported. FIXED passed through unmodified.
-// WRAP not supported, answers with SLVERR (single-beat WRAP is tolerated).
+// Burst support:
+// - INCR fully supported, upsized if modifiable and passed through otherwise.
+// - FIXED passed through unmodified.
+// - WRAP not supported, answers with SLVERR (single-beat WRAP is tolerated). This includes an
+//   AtomicCompare with more than one beat that uses a WRAP burst.
+//
+// Exclusive accesses are passed through unmodified.
+// Atomic operations with more than one beat are always upsized, even if non-modifiable.
+// The R response of an AtomicCompare is expected to have as many beats as its request, while AXI5
+// (E1.1.7) requires half as many: a downstream slave that answers as required stalls the upsizer.
 
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
@@ -385,8 +393,9 @@ module axi_dw_upsizer #(
 
               unique case (r_req_d.ar.burst)
                 axi_pkg::BURST_INCR: begin
-                  // Modifiable transaction
-                  if (modifiable(r_req_d.ar.cache)) begin
+                  // Modifiable transaction, unless it is an exclusive access: this must keep its
+                  // address, size and length to respect the restrictions of the exclusive monitor.
+                  if (modifiable(r_req_d.ar.cache) && !r_req_d.ar.lock) begin
                     // No need to upsize single-beat transactions.
                     if (r_req_d.ar.len != '0) begin
                       // Evaluate output burst length
@@ -447,21 +456,19 @@ module axi_dw_upsizer #(
 
           unique case (r_req_d.ar.burst)
             axi_pkg::BURST_INCR: begin
-              // Modifiable transaction
-              if (modifiable(r_req_d.ar.cache)) begin
-                // No need to upsize single-beat transactions.
-                if (r_req_d.ar.len != '0) begin
-                  // Evaluate output burst length
-                  automatic addr_t start_addr;
-                  automatic addr_t end_addr;
-                  start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize);
-                  end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr,
-                      r_req_d.orig_ar_size, r_req_d.burst_len, r_req_d.ar.burst,
-                      r_req_d.burst_len), AxiMstPortMaxSize);
-                  r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
-                  r_req_d.ar.size = AxiMstPortMaxSize                           ;
-                  r_state_d       = R_INCR_UPSIZE                               ;
-                end
+              // An atomic operation is always upsized, even if it is not modifiable (see the AW)
+              // No need to upsize single-beat transactions.
+              if (r_req_d.ar.len != '0) begin
+                // Evaluate output burst length
+                automatic addr_t start_addr;
+                automatic addr_t end_addr;
+                start_addr = aligned_addr(r_req_d.ar.addr, AxiMstPortMaxSize);
+                end_addr   = aligned_addr(beat_addr(r_req_d.ar.addr,
+                    r_req_d.orig_ar_size, r_req_d.burst_len, r_req_d.ar.burst,
+                    r_req_d.burst_len), AxiMstPortMaxSize);
+                r_req_d.ar.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
+                r_req_d.ar.size = AxiMstPortMaxSize                           ;
+                r_state_d       = R_INCR_UPSIZE                               ;
               end
             end
 
@@ -699,13 +706,18 @@ module axi_dw_upsizer #(
 
         unique case (slv_req_i.aw.burst)
           axi_pkg::BURST_INCR: begin
-            // Modifiable transaction
-            if (modifiable(slv_req_i.aw.cache))
+            // Modifiable transaction, unless it is an exclusive access (see above). An atomic
+            // operation is upsized even if it is not modifiable: it has more than one beat only if
+            // its data is wider than the slave port, and E1.1.3 requires such an operation to use
+            // either the full width of the master port or a single beat as large as its data.
+            if ((modifiable(slv_req_i.aw.cache) && !slv_req_i.aw.lock) ||
+                slv_req_i.aw.atop != '0)
               // No need to upsize single-beat transactions.
               if (slv_req_i.aw.len != '0) begin
                 // Evaluate output burst length
                 automatic addr_t start_addr;
                 automatic addr_t end_addr;
+                automatic axi_pkg::size_t atop_data_size;
                 start_addr = aligned_addr(slv_req_i.aw.addr, AxiMstPortMaxSize);
                 end_addr   = aligned_addr(beat_addr(slv_req_i.aw.addr,
                     slv_req_i.aw.size, slv_req_i.aw.len, slv_req_i.aw.burst, slv_req_i.aw.len),
@@ -714,6 +726,16 @@ module axi_dw_upsizer #(
                 w_req_d.aw.len  = (end_addr - start_addr) >> AxiMstPortMaxSize;
                 w_req_d.aw.size = AxiMstPortMaxSize                           ;
                 w_state_d       = W_INCR_UPSIZE                               ;
+
+                // An atomic operation that fits in a single beat is sent with the size of its data
+                // (E1.1.3). Its number of beats is a power of two, so the log2 is the number of ones
+                // in AWLEN.
+                if (slv_req_i.aw.atop != '0 && w_req_d.aw.len == '0) begin
+                  atop_data_size = slv_req_i.aw.size;
+                  for (int i = 0; i < $bits(slv_req_i.aw.len); i++)
+                    atop_data_size += axi_pkg::size_t'(slv_req_i.aw.len[i]);
+                  w_req_d.aw.size = atop_data_size;
+                end
               end
           end
 
