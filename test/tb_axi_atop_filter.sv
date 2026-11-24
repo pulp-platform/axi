@@ -249,13 +249,16 @@ module tb_axi_atop_filter #(
         if (w_cmd.thru) begin
           aw_xfer_queue.push_back(aw_beat);
         end else if (aw_beat.ax_atop[5:4] != ATOP_ATOMICSTORE) begin
-          for (int unsigned i = 0; i < aw_beat.ax_len + 1; i++) begin
+          // An AtomicCompare gets half as many R beats as its request (AXI5 E1.1.7).
+          automatic int unsigned r_len =
+              (aw_beat.ax_atop == ATOP_ATOMICCMP) ? (aw_beat.ax_len >> 1) : aw_beat.ax_len;
+          for (int unsigned i = 0; i < r_len + 1; i++) begin
             automatic r_beat_t r_beat = new;
             r_beat.r_id = aw_beat.ax_id;
             r_beat.r_resp = RESP_SLVERR;
             r_beat.r_data = '0;
             r_beat.r_user = '0;
-            r_beat.r_last = (i == aw_beat.ax_len);
+            r_beat.r_last = (i == r_len);
             r_inject_queue.push_back(r_beat);
           end
         end

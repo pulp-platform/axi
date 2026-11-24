@@ -17,6 +17,10 @@
 
 // Burst support: INCR fully supported. FIXED single-beat only, multi-beat
 // answers with SLVERR. WRAP not supported, answers with SLVERR.
+
+// NOTE: The response of an AtomicCompare is expected to have half as many beats as its request, as
+// required by AXI5 (E1.1.7).
+
 module axi_dw_downsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
     parameter int unsigned AxiSlvPortDataWidth = 8    , // Data width of the slv port
@@ -550,6 +554,14 @@ module axi_dw_downsizer #(
 
             default: ;
           endcase
+
+          // The response of an AtomicCompare has half as many beats as its request on the master
+          // port (E1.1.7), since it returns only the original value. This also holds if the atomic
+          // is rejected, as the error slave answers in the same way.
+          if (w_req_q.aw.atop == axi_pkg::ATOP_ATOMICCMP) begin
+            r_req_d.burst_len = r_req_d.burst_len >> 1;
+            r_req_d.ar.len    = r_req_d.burst_len     ;
+          end
         end
 
         R_PASSTHROUGH, R_INCR_DOWNSIZE, R_SPLIT_INCR_DOWNSIZE: begin

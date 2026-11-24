@@ -1470,6 +1470,11 @@ package axi_test;
         aw_queue.push_back(aw_beat);
         // Atomic{Load,Swap,Compare}s require an R response.
         if (aw_beat.ax_atop[axi_pkg::ATOP_R_RESP]) begin
+          // An AtomicCompare returns only the original value, i.e., half of the data sent: its
+          // response has half as many beats as its request (AXI5 E1.1.7).
+          if (aw_beat.ax_atop == axi_pkg::ATOP_ATOMICCMP) begin
+            aw_beat.ax_len = aw_beat.ax_len >> 1;
+          end
           ar_queue.push(aw_beat.ax_id, aw_beat);
         end
       end

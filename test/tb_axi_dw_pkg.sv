@@ -110,6 +110,14 @@ package tb_axi_dw_pkg       ;
       return (axi_pkg::num_bytes(tgt_size) + axi_pkg::num_bytes(src_size) - 1)/axi_pkg::num_bytes(src_size);
     endfunction: conv_ratio
 
+    /**
+     * Returns the length of the R response to an atomic operation. An AtomicCompare returns only
+     * the original value, i.e., half of the data sent, hence half as many beats (AXI5 E1.1.7).
+     */
+    function automatic len_t atop_r_len(logic [5:0] atop, len_t len);
+      return atop == axi_pkg::ATOP_ATOMICCMP ? len >> 1 : len;
+    endfunction: atop_r_len
+
     /************************
      *  Virtual Interfaces  *
      ************************/
@@ -267,7 +275,7 @@ package tb_axi_dw_pkg       ;
               axi_burst: slv_port_axi.aw_burst,
               axi_size : slv_port_axi.aw_size ,
               axi_addr : slv_port_axi.aw_addr ,
-              axi_len  : slv_port_axi.aw_len  ,
+              axi_len  : atop_r_len(slv_port_axi.aw_atop, slv_port_axi.aw_len),
               axi_cache: slv_port_axi.aw_cache
             });
       end
@@ -318,7 +326,7 @@ package tb_axi_dw_pkg       ;
               axi_burst: mst_port_axi.aw_burst,
               axi_size : mst_port_axi.aw_size ,
               axi_addr : mst_port_axi.aw_addr ,
-              axi_len  : mst_port_axi.aw_len  ,
+              axi_len  : atop_r_len(mst_port_axi.aw_atop, mst_port_axi.aw_len),
               axi_cache: mst_port_axi.aw_cache
             });
       end

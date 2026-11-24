@@ -192,10 +192,15 @@ package tb_axi_xbar_pkg;
         $display("        Expect B response.");
         // inject expected r beats on this id, if it is an atop
         if(masters_axi[i].aw_atop[5]) begin
+          // An AtomicCompare returns only the original value, i.e., half of the data sent: its
+          // response has half as many beats as its request (AXI5 E1.1.7).
+          automatic axi_pkg::len_t r_len =
+              (masters_axi[i].aw_atop == axi_pkg::ATOP_ATOMICCMP) ? masters_axi[i].aw_len >> 1
+                                                                  : masters_axi[i].aw_len;
           // push the required r beats into the right fifo (reuse the exp_b variable)
-          $display("        Expect R response, len: %0d.", masters_axi[i].aw_len);
-          for (int unsigned j = 0; j <= masters_axi[i].aw_len; j++) begin
-            exp_b = (j == masters_axi[i].aw_len) ?
+          $display("        Expect R response, len: %0d.", r_len);
+          for (int unsigned j = 0; j <= r_len; j++) begin
+            exp_b = (j == r_len) ?
                 '{mst_axi_id: masters_axi[i].aw_id, last: 1'b1} :
                 '{mst_axi_id: masters_axi[i].aw_id, last: 1'b0};
             this.exp_r_queue[i].push(masters_axi[i].aw_id, exp_b);
