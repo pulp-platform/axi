@@ -358,7 +358,10 @@ module axi_atop_filter #(
     .ready_i    (r_resp_cmd_pop_ready),
     .data_o     (r_resp_cmd_pop)
   );
-  assign r_resp_cmd_push.len = slv_req_i.aw.len;
+  // An AtomicCompare returns only the original value, i.e., half of the data sent: its response has
+  // half as many beats as its request (AXI5 E1.1.7).
+  assign r_resp_cmd_push.len = (slv_req_i.aw.atop == axi_pkg::ATOP_ATOMICCMP) ?
+      slv_req_i.aw.len >> 1 : slv_req_i.aw.len;
 
 // pragma translate_off
 `ifndef VERILATOR

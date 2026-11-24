@@ -23,8 +23,7 @@
 //
 // Exclusive accesses are passed through unmodified.
 // Atomic operations with more than one beat are always upsized, even if non-modifiable.
-// The R response of an AtomicCompare has half as many beats as its request (AXI5 E1.1.7), unless
-// the atomic is rejected: the error slave answers with as many beats as the request.
+// The R response of an AtomicCompare has half as many beats as its request (AXI5 E1.1.7).
 
 module axi_dw_upsizer #(
     parameter int unsigned AxiMaxReads         = 1    , // Number of outstanding reads
@@ -452,9 +451,9 @@ module axi_dw_upsizer #(
           r_req_d.orig_ar_size = w_req_q.orig_aw_size;
 
           // The response of an AtomicCompare has half as many beats as its request (E1.1.7), since
-          // it returns only the original value. This does not hold if the atomic is rejected, as
-          // the error slave answers with as many beats as the request.
-          if (w_req_q.aw.atop == axi_pkg::ATOP_ATOMICCMP && !w_req_q.aw_throw_error) begin
+          // it returns only the original value. This also holds if the atomic is rejected, as the
+          // error slave answers in the same way.
+          if (w_req_q.aw.atop == axi_pkg::ATOP_ATOMICCMP) begin
             r_req_d.ar.len    = w_req_q.burst_len >> 1;
             r_req_d.burst_len = w_req_q.burst_len >> 1;
           end
