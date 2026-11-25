@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - `axi_fifo_delay_dyn`: Fix the power-of-two check for the `Depth` parameter, which rejected valid
   values. #399
+- `axi_dw_downsizer`: Do not leak the error response of a write into the B response of another
+  outstanding write. The response accumulator is now cleared when a B beat is forwarded instead of
+  when the W FSM is idle. #467
 
 ### Changed
 - Bump `common_cells` to `v2.0.0-beta.2` and `tech_cells_generic` to `v0.2.14`. All instantiated

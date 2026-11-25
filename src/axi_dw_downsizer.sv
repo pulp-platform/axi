@@ -743,6 +743,8 @@ module axi_dw_downsizer #(
       // Got an ack on the B channel. Pop transaction.
       if (mst_req.b_ready && mst_resp.b_valid) begin
         forward_b_beat_pop = 1'b1;
+        // The response of this transaction is delivered: the next B starts a new accumulation.
+        w_req_d.burst_resp = axi_pkg::RESP_EXOKAY;
       end
     end else begin
       // Otherwise, just acknowlegde the B beats
@@ -843,7 +845,6 @@ module axi_dw_downsizer #(
       w_req_d.aw             = '0                  ;
       w_req_d.aw_valid       = 1'b0                ;
       w_req_d.aw_throw_error = 1'b0                ;
-      w_req_d.burst_resp     = axi_pkg::RESP_EXOKAY;
 
       if (!forward_b_beat_full) begin
         if (slv_req_i.aw_valid && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin // ATOP with an R response
@@ -935,6 +936,7 @@ module axi_dw_downsizer #(
     if (!rst_ni) begin
       w_state_q <= W_IDLE;
       w_req_q   <= '0    ;
+      w_req_q.burst_resp <= axi_pkg::RESP_EXOKAY;
     end else begin
       w_state_q <= w_state_d;
       w_req_q   <= w_req_d  ;
