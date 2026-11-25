@@ -112,6 +112,7 @@ filesets:
       - test/tb_axi_modify_address.sv
       - test/tb_axi_serializer.sv
       - test/tb_axi_sim_mem.sv
+      - test/tb_axi_sim_mem_reset.sv
       - test/tb_axi_slave_compare.sv
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
@@ -202,6 +203,7 @@ targets:
   sim_modify_address: { filesets : [rtl,benchs] , toplevel: tb_axi_modify_address }
   sim_serializer    : { filesets : [rtl,benchs] , toplevel: tb_axi_serializer     }
   sim_sim_mem       : { filesets : [rtl,benchs] , toplevel: tb_axi_sim_mem        }
+  sim_sim_mem_reset : { filesets : [rtl,benchs] , toplevel: tb_axi_sim_mem_reset  }
   sim_to_axi_lite   : { filesets : [rtl,benchs] , toplevel: tb_axi_to_axi_lite    }
   sim_xbar          : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar           }
   sim_xbar_pkg      : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar_pkg       }
