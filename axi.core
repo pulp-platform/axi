@@ -120,6 +120,17 @@ filesets:
     depend :
       - ">=pulp-platform.org::common_verification:0.2.5"
 
+  narrow_read_banks:
+    files:
+      - test/tb_axi_narrow_read_banks.sv
+    file_type: systemVerilogSource
+
+parameters:
+  DIRECT_MEMORY:
+    datatype: bool
+    paramtype: vlogdefine
+    default: true
+
 generators:
   axi_intercon_gen:
     interpreter: python3
@@ -205,3 +216,7 @@ targets:
   sim_to_axi_lite   : { filesets : [rtl,benchs] , toplevel: tb_axi_to_axi_lite    }
   sim_xbar          : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar           }
   sim_xbar_pkg      : { filesets : [rtl,benchs] , toplevel: tb_axi_xbar_pkg       }
+  sim_narrow_read_banks:
+    filesets: [rtl, benchs, narrow_read_banks]
+    parameters: [DIRECT_MEMORY]
+    toplevel: tb_axi_narrow_read_banks

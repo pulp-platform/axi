@@ -145,3 +145,9 @@ sources:
       - test/tb_axi_to_axi_lite.sv
       - test/tb_axi_to_mem_banked.sv
       - test/tb_axi_xbar.sv
+
+  - target: test
+    defines:
+      DIRECT_MEMORY: 1
+    files:
+      - test/tb_axi_narrow_read_banks.sv

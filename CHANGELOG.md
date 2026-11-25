@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `README`: Add the missing documentation link for `axi_lite_dw_converter`. #429
 
 ### Fixed
+- `axi_to_detailed_mem`: Emit the active byte mask for reads, independent of the W channel.
 - `axi_fifo_delay_dyn`: Fix the power-of-two check for the `Depth` parameter, which rejected valid
   values. #399
 
